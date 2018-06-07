@@ -34,7 +34,8 @@ if __name__ == '__main__':
     TYPE=sys.argv[1] #Gamma, Proton, Electron (This are subfolders where simtelarray files of different type are stored)
     filename = sys.argv[2] #Name of the simtelarray file
 
-    storeimg = sys.argv[3] #True for storing pixel information
+    storeimg = eval(sys.argv[3]) #True for storing pixel information
+    assert isinstance(storeimg,bool)
     
     outfile = "/home/queenmab/DATA/LST1/Events/test_img.fits" #File where DL2 data will be stored 
     #######################################################
