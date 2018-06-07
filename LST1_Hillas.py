@@ -5,7 +5,7 @@ Hillas parameters calculation of LST1 events from a simtelarray file.
 Result is stored in a fits file. 
 Running this script for several simtelarray files will concatenate events to the same fits file.
 
-USAGE: python LST1_Hillas.py 'Particle' 'Simtelarray file' 'Store Img(true or false)' 
+USAGE: python LST1_Hillas.py 'Particle' 'Simtelarray file' 'Store Img(True or False)' 
 
 """
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     storeimg = sys.argv[3] #True for storing pixel information
     
-    outfile = "/home/queenmab/DATA/LST1/Events/test.fits" #File where DL2 data will be stored 
+    outfile = "/home/queenmab/DATA/LST1/Events/test_img.fits" #File where DL2 data will be stored 
     #######################################################
     
     #Cleaning levels:
@@ -184,8 +184,9 @@ if __name__ == '__main__':
         pardata = ntuple.as_array()
         parheader = fits.Header()
         parheader.update(ntuple.meta)
-        
-        pixels = fits.ImageHDU(fitsdata) #Image with pixel content
+
+        if storeimg==True:
+            pixels = fits.ImageHDU(fitsdata) #Image with pixel content
 
         #Write the data in an HDUList for storing in a fitsfile
         hdr = fits.Header() #Example header, we can add more things to this header
@@ -193,7 +194,8 @@ if __name__ == '__main__':
         primary_hdu = fits.PrimaryHDU(header=hdr)
         hdul = fits.HDUList([primary_hdu])
         hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-        if storeimg: hdul.append(pixels) 
+        if storeimg==True:
+            hdul.append(pixels) 
         hdul.writeto(outfile)
     #If the destination fits file exists, will concatenate events:
     else:
@@ -202,7 +204,8 @@ if __name__ == '__main__':
         #Get the already existing data:
         primary_hdu = hdul[0]
         data = Table.read(outfile,1)
-        pixdata = hdul[2].data
+        if storeimg==True:
+            pixdata = hdul[2].data
         
         #Concatenate data
         data = vstack([data,ntuple])
@@ -212,13 +215,15 @@ if __name__ == '__main__':
         pardata = data.as_array()
         parheader = fits.Header()
         parheader.update(data.meta)
-        pixhdu = fits.ImageHDU(pixdata)
+        if storeimg==True:
+            pixhdu = fits.ImageHDU(pixdata)
 
         #Write the data in an HDUList for storing in a fitsfile
         
         hdul = fits.HDUList([primary_hdu])
         hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-        hdul.append(pixhdu)
+        if storeimg==True:
+            hdul.append(pixhdu)
         
         hdul.writeto(outfile,overwrite=True)
                 
