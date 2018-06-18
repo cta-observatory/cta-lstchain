@@ -16,7 +16,7 @@ import ctapipe.coordinates as c
 import matplotlib as mpl
 import Disp
 
-hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/events.fits") #File with events
+hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/Gamma_events.fits") #File with events
 hdu_list[1].data
 
 tel = OpticsDescription.from_name('LST') #Telescope description

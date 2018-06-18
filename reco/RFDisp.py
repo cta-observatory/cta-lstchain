@@ -17,7 +17,7 @@ import scipy
 import Disp
 
 
-hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/events.fits") #File with events
+hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/Gamma_events.fits") #File with events
 hdu_list[1].data
 
 tel = OpticsDescription.from_name('LST') #Telescope description
@@ -49,7 +49,7 @@ disp = Disp.calc_DISP(sourcepos[0],sourcepos[1],cen_x,cen_y)
 max_depth = 50
 regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2)
 
-X_disp = np.array([width/length,size,width,length,dist,phi,psi]).T
+X_disp = np.array([width/length,size,width,length,r,phi,psi]).T
 X_dtrain, X_dtest, Disp_train, Disp_test = train_test_split(X_disp, disp,
                                                     train_size=int(2*nevents/3),
                                                     random_state=4)
@@ -59,8 +59,6 @@ Disprec = regr_rf.predict(X_dtest)
 
 difD = ((Disp_test-Disprec))
 print(difD.mean(),difD.std())
-print(Disp_test.mean(),Disp_test.std())
-print(Disprec.mean(),Disprec.std())
 plt.hist(difD,bins=100)
 plt.xlabel('$Disp_{test} - Disp_{rec}$',fontsize=24)
 plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difD).mean,6)),fontsize=15)
