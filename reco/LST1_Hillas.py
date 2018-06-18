@@ -37,7 +37,7 @@ if __name__ == '__main__':
     storeimg = eval(sys.argv[3]) #True for storing pixel information
     assert isinstance(storeimg,bool)
     
-    outfile = "/home/queenmab/DATA/LST1/Events/test_img.fits" #File where DL2 data will be stored 
+    outfile = "/home/queenmab/DATA/LST1/Events/"+TYPE+"_events.fits" #File where DL2 data will be stored 
     #######################################################
     
     #Cleaning levels:
@@ -210,7 +210,8 @@ if __name__ == '__main__':
         
         #Concatenate data
         data = vstack([data,ntuple])
-        pixdata = np.vstack([pixdata,fitsdata])
+        if storeimg==True:
+            pixdata = np.vstack([pixdata,fitsdata])
 
         #Convert into HDU objects
         pardata = data.as_array()
