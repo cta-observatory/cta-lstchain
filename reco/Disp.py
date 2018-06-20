@@ -12,10 +12,10 @@ import ctapipe.coordinates as c
 import astropy.units as u
 
 def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
-    mcAlt = c.alt_to_theta(mcAlt*u.rad).value
-    mcAz = c.az_to_phi(mcAz*u.rad).value
-    mcAlttel = c.alt_to_theta(mcAlttel*u.rad).value
-    mcAztel = c.az_to_phi(mcAztel*u.rad).value
+    #mcAlt = c.alt_to_theta(mcAlt*u.rad).value
+    #mcAz = c.az_to_phi(mcAz*u.rad).value
+    #mcAlttel = c.alt_to_theta(mcAlttel*u.rad).value
+    #mcAztel = c.az_to_phi(mcAztel*u.rad).value
 
     #Sines and cosines of direction angles
     cp = np.cos(mcAz)
