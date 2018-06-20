@@ -9,20 +9,11 @@ USAGE: python LST1_Hillas.py 'Particle' 'Simtelarray file' 'Store Img(True or Fa
 
 """
 
-# import matplotlib.pylab as plt
-# import astropy.units as u
 import numpy as np
-# import ctapipe
 import os
-# import copy
-import sys
-# from ctapipe.core import Container, Field, Map
-# from ctapipe.instrument import CameraGeometry
-# from ctapipe.visualization import CameraDisplay
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
-# from astropy.visualization import quantity_support
 from astropy.table import vstack,Table
 from astropy.io import fits
 import argparse
