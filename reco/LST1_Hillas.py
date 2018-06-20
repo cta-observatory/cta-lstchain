@@ -51,8 +51,6 @@ parser.add_argument('--storeimg', '-s', dest='storeimg', action='store',
 
 
 args = parser.parse_args()
-print(args)
-# print(args.accumulate(args.integers))
 
 
 def guess_type(filename):
@@ -72,7 +70,6 @@ def guess_type(filename):
         if p in filename:
             return p
     return 'unknown'
-
 
 
 if __name__ == '__main__':
