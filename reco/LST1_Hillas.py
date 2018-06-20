@@ -9,35 +9,95 @@ USAGE: python LST1_Hillas.py 'Particle' 'Simtelarray file' 'Store Img(True or Fa
 
 """
 
-import matplotlib.pylab as plt
-import astropy.units as u
+# import matplotlib.pylab as plt
+# import astropy.units as u
 import numpy as np
-import ctapipe
+# import ctapipe
 import os
-import copy
+# import copy
 import sys
-from ctapipe.core import Container, Field, Map
-from ctapipe.instrument import CameraGeometry
-from ctapipe.visualization import CameraDisplay
+# from ctapipe.core import Container, Field, Map
+# from ctapipe.instrument import CameraGeometry
+# from ctapipe.visualization import CameraDisplay
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
-from astropy.visualization import quantity_support
+# from astropy.visualization import quantity_support
 from astropy.table import vstack,Table
 from astropy.io import fits
+import argparse
+from ctapipe.utils import get_dataset
+
+
+
+
+parser = argparse.ArgumentParser(description = "process CTA files.")
+
+# Required argument
+parser.add_argument('--filename', '-f', type=str,
+                    dest='filename',
+                    help='path to the file to process',
+                    default=get_dataset('gamma_test.simtel.gz'))
+
+# Optional arguments
+parser.add_argument('--ptype', '-t', dest='particle_type', action='store',
+                    default=None,
+                    help='Particle type (gamma, proton, electron) - subfolders where simtelarray files of different type are stored)'
+                         'Optional, if not passed, the type will be guessed from the filename'
+                         'If not guessed, "unknown" type will be set'
+                    )
+
+parser.add_argument('--outdir', '-o', dest='outdir', action='store',
+                    default='./results/',
+                    help='Output directory to save fits file.'
+                    )
+
+parser.add_argument('--storeimg', '-s', dest='storeimg', action='store',
+                    default=False, type=bool,
+                    help='Boolean. True for storing pixel information.'
+                         'Default=False, any user input will be considered True'
+                    )
+
+
+args = parser.parse_args()
+print(args)
+# print(args.accumulate(args.integers))
+
+
+def guess_type(filename):
+    """
+    Guess the particle type from the filename
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    str: 'gamma', 'proton', 'electron' or 'unknown'
+    """
+    particles = ['gamma', 'proton', 'electron']
+    for p in particles:
+        if p in filename:
+            return p
+    return 'unknown'
+
+
 
 if __name__ == '__main__':
-    
+
     #Some configuration variables
     ########################################################
-    DATA_PATH="/home/queenmab/DATA/LST1/" # Path where Simtelarray files are stored
-    TYPE=sys.argv[1] #Gamma, Proton, Electron (This are subfolders where simtelarray files of different type are stored)
-    filename = sys.argv[2] #Name of the simtelarray file
+    filename = args.filename
+    particle_type = guess_type(filename) if args.particle_type is None else args.particle_type
 
-    storeimg = eval(sys.argv[3]) #True for storing pixel information
-    assert isinstance(storeimg,bool)
-    
-    outfile = "/home/queenmab/DATA/LST1/Events/"+TYPE+"_events.fits" #File where DL2 data will be stored 
+    storeimg = args.storeimg
+
+    if not os.path.exists(args.outdir):
+        os.mkdir(args.outdir)
+
+    outfile = args.outdir + '/' + particle_type + "_events.fits" #File where DL2 data will be stored
+
     #######################################################
     
     #Cleaning levels:
@@ -49,7 +109,7 @@ if __name__ == '__main__':
         level2[key] *= 0.5
     print(level2)
     
-    source = EventSourceFactory.produce(input_url=DATA_PATH+TYPE+"/"+filename,allowed_tels={1}) #Open Simtelarray file 
+    source = EventSourceFactory.produce(input_url=filename, allowed_tels={1}) #Open Simtelarray file
     camtype = []   # one entry per image
 
     #Hillas Parameters
