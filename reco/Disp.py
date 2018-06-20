@@ -11,12 +11,27 @@ import numpy as np
 import ctapipe.coordinates as c
 import astropy.units as u
 
-def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
-    #mcAlt = c.alt_to_theta(mcAlt*u.rad).value
-    #mcAz = c.az_to_phi(mcAz*u.rad).value
-    #mcAlttel = c.alt_to_theta(mcAlttel*u.rad).value
-    #mcAztel = c.az_to_phi(mcAztel*u.rad).value
+def alt_to_theta(alt):
+    """transforms altitude (angle from the horizon upwards) to theta (angle from z-axis)                                                         
+    for simtel array coordinate systems                                  
+    """
+    return (90 * u.deg - alt).to(alt.unit)
 
+
+def az_to_phi(az):
+    """transforms azimuth (angle from north towards east)                
+    to phi (angle from x-axis towards y-axis)                            
+    for simtel array coordinate systems                                  
+    """
+    return -az
+
+        
+def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
+    mcAlt = alt_to_theta(mcAlt*u.rad).value
+    mcAz = az_to_phi(mcAz*u.rad).value
+    mcAlttel = alt_to_theta(mcAlttel*u.rad).value
+    mcAztel = az_to_phi(mcAztel*u.rad).value
+        
     #Sines and cosines of direction angles
     cp = np.cos(mcAz)
     sp = np.sin(mcAz)
