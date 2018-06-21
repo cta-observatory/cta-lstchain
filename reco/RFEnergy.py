@@ -29,11 +29,11 @@ data = hdu_list[1].data
 
 width = data.field('width')
 length = data.field('length')
-size = data.field('size')
+intensity = data.field('intensity')
 phi = data.field('phi')
 energy = np.log10(data.field('mcEnergy')*1e3) #Log of energy in GeV
-cen_x = data.field('cen_x')
-cen_y = data.field('cen_y')
+x = data.field('x')
+y = data.field('y')
 psi = data.field('psi')
 r = data.field('r')
 
@@ -43,9 +43,9 @@ mcAlttel = data.field('mcAlttel')
 mcAztel = data.field('mcAztel')
 
 sourcepos = Disp.calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length)
-disp = Disp.calc_DISP(sourcepos[0],sourcepos[1],cen_x,cen_y)
+disp = Disp.calc_DISP(sourcepos[0], sourcepos[1], x, y)
 
-X_e = np.array([size,r,width,length,width/length,psi,phi]).T
+X_e = np.array([intensity, r, width, length, width / length, psi, phi]).T
 X_etrain, X_etest, E_train, E_test = train_test_split(X_e, energy,
                                                     train_size=int(2*nevents/3),
                                                       random_state=4)
