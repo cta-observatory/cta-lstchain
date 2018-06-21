@@ -30,11 +30,11 @@ data = hdu_list[1].data
 
 width = data.field('width')
 length = data.field('length')
-size = data.field('size')
+intensity = data.field('intensity')
 phi = data.field('phi')
 energy = np.log10(data.field('mcEnergy')*1e3) #Log of energy in GeV
-cen_x = data.field('cen_x')
-cen_y = data.field('cen_y')
+x = data.field('x')
+y = data.field('y')
 psi = data.field('psi')
 r = data.field('r')
 
@@ -44,12 +44,12 @@ mcAlttel = data.field('mcAlttel')
 mcAztel = data.field('mcAztel')
 
 sourcepos = Disp.calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length)
-disp = Disp.calc_DISP(sourcepos[0],sourcepos[1],cen_x,cen_y)
+disp = Disp.calc_DISP(sourcepos[0], sourcepos[1], x, y)
 
 max_depth = 50
 regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2)
 
-X_disp = np.array([width/length,size,width,length,r,phi,psi]).T
+X_disp = np.array([width / length, intensity, width, length, r, phi, psi]).T
 X_dtrain, X_dtest, Disp_train, Disp_test = train_test_split(X_disp, disp,
                                                     train_size=int(2*nevents/3),
                                                     random_state=4)

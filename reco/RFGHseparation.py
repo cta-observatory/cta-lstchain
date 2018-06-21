@@ -36,17 +36,17 @@ width = np.append(data_gamma.field('width'),
                   data_proton.field('width'))
 length = np.append(data_gamma.field('length'),
                    data_proton.field('length'))
-size = np.append(data_gamma.field('size'),
-                 data_proton.field('size'))
+intensity = np.append(data_gamma.field('intensity'),
+                      data_proton.field('intensity'))
 phi = np.append(data_gamma.field('phi'),
                 data_proton.field('phi'))
 energy = np.append(np.log10(data_gamma.field('mcEnergy')*1e3),
                    np.log10(data_proton.field('mcEnergy')*1e3))
 #Log of energy in GeV
-cen_x = np.append(data_gamma.field('cen_x'),
-                  data_proton.field('cen_x'))
-cen_y = np.append(data_gamma.field('cen_y'),
-                  data_proton.field('cen_y'))
+x = np.append(data_gamma.field('x'),
+              data_proton.field('x'))
+y = np.append(data_gamma.field('y'),
+              data_proton.field('y'))
 psi = np.append(data_gamma.field('psi'),
                 data_proton.field('psi'))
 r = np.append(data_gamma.field('r'),
@@ -62,13 +62,13 @@ mcAztel = np.append(data_gamma.field('mcAztel'),
                     data_proton.field('mcAztel'))
 
 sourcepos = Disp.calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length)
-disp = Disp.calc_DISP(sourcepos[0],sourcepos[1],cen_x,cen_y)
+disp = Disp.calc_DISP(sourcepos[0], sourcepos[1], x, y)
 
-hadroness = np.append(np.zeros(data_gamma.size),np.ones(data_proton.size))
+hadroness = np.append(np.zeros(data_gamma.size), np.ones(data_proton.size))
 
 nevents = hadroness.size
 
-X = np.array([size,r,width,length,width/length,psi,phi]).T
+X = np.array([intensity, r, width, length, width / length, psi, phi]).T
 X_train, X_test, E_train, E_test, D_train, D_test, H_train, H_test = train_test_split(X, energy, disp, hadroness, train_size=int(nevents/2),random_state=4)
 
 #First reconstruct energy
@@ -98,7 +98,7 @@ newX[nfeatures+1] = disprec
 
 newX = newX.T
 
-#newX = np.array([size,r,width,length,width/length,psi,phi,energy,disp]).T
+#newX = np.array([intensity,r,width,length,width/length,psi,phi,energy,disp]).T
 #newX_train, newX_test, newH_train, newH_test = train_test_split(newX,hadroness,train_size=int(2*nevents/3),random_state=4)
 
 newX_train, newX_test, newH_train, newH_test = train_test_split(newX, H_test,train_size=int(2*nevents/3),random_state=4)
