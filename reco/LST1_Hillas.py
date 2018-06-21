@@ -87,7 +87,7 @@ if __name__ == '__main__':
     outfile = args.outdir + '/' + particle_type + "_events.fits" #File where DL2 data will be stored
 
     #######################################################
-    
+
     #Cleaning levels:
 
     level1 = {'LSTCam' : 6.}
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     for key in level2:
         level2[key] *= 0.5
     print(level2)
-    
+
     source = EventSourceFactory.produce(input_url=filename, allowed_tels={1}) #Open Simtelarray file
     camtype = []   # one entry per image
 
@@ -106,14 +106,14 @@ if __name__ == '__main__':
     phi = np.array([])
     psi = np.array([])
     r = np.array([])
-    cen_x = np.array([])
-    cen_y = np.array([])
-    size = np.array([])
-    
+    x = np.array([])
+    y = np.array([])
+    intensity = np.array([])
+
     #Event Parameters
     ObsID = np.array([])
     EvID = np.array([])
-    
+
     #MC Parameters:
     mcEnergy = np.array([])
     mcAlt  = np.array([])
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         log10pixelHGsignal[key] = []
         survived[key] = []
     i=0
-    for event in source:      
+    for event in source:
         if i%100==0:
             print("EVENT_ID: ", event.r0.event_id, "TELS: ",
                   event.r0.tels_with_data,
@@ -150,9 +150,9 @@ if __name__ == '__main__':
             break
         '''
         for ii, tel_id in enumerate(event.r0.tels_with_data):
-            
+
             geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
-                        
+
             data = event.r0.tel[tel_id].waveform
             ped = event.mc.tel[tel_id].pedestal
             # the pedestal is the average (for pedestal events) of the *sum* of all samples, from sim_telarray
@@ -179,15 +179,15 @@ if __name__ == '__main__':
 
             clean = signals.copy()
             clean[~cleanmask] = 0.0   # set to 0 pixels which did not survive cleaning
-            if np.max(clean) < 1.e-6: # skip images with no pixels
+            if np.max(clean) < 1.e-6:  # skip images with no pixels
                 continue
-            
+
             # Calculate image parameters
-            hillas = hillas_parameters(geom, clean) # this one gives some warnings invalid value in sqrt            
+            hillas = hillas_parameters(geom, clean)  # this one gives some warnings invalid value in sqrt
             foclen = event.inst.subarray.tel[tel_id].optics.equivalent_focal_length
 
-            w = np.rad2deg(np.arctan2(hillas.width,foclen));
-            l = np.rad2deg(np.arctan2(hillas.length,foclen));
+            w = np.rad2deg(np.arctan2(hillas.width, foclen))
+            l = np.rad2deg(np.arctan2(hillas.length, foclen))
 
             if w >= 0:
                 if fitsdata.size == 0:
@@ -200,16 +200,16 @@ if __name__ == '__main__':
                 length = np.append(length, l.value)
                 phi = np.append(phi, hillas.phi)
                 psi = np.append(psi, hillas.psi)
-                r = np.append(r,hillas.r)
-                cen_x = np.append(cen_x,hillas.cen_x)
-                cen_y = np.append(cen_y,hillas.cen_y)
-                size = np.append(size, hillas.size)
-                
+                r = np.append(r, hillas.r)
+                x = np.append(x, hillas.x)
+                y = np.append(y, hillas.y)
+                intensity = np.append(intensity, hillas.intensity)
+
 
                 #Store parameters from event and MC:
                 ObsID = np.append(ObsID,event.r0.obs_id)
                 EvID = np.append(EvID,event.r0.event_id)
-            
+
                 mcEnergy = np.append(mcEnergy,event.mc.energy)
                 mcAlt = np.append(mcAlt,event.mc.alt)
                 mcAz = np.append(mcAz,event.mc.az)
@@ -219,15 +219,19 @@ if __name__ == '__main__':
                 mcType = np.append(mcType,event.mc.shower_primary_id)
                 mcAztel = np.append(mcAztel,event.mcheader.run_array_direction[0])
                 mcAlttel = np.append(mcAlttel,event.mcheader.run_array_direction[1])
-                
+
                 GPStime = np.append(GPStime,event.trig.gps_time.value)
 
     #Store the output in an ntuple:
-                
-    output = {'camtype':camtype,'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'cen_x':cen_x,'cen_y':cen_y,'size':size,'mcAlttel':mcAlttel,'mcAztel':mcAztel}
+
+    output = {'camtype': camtype, 'ObsID': ObsID, 'EvID': EvID, 'mcEnergy': mcEnergy, 'mcAlt': mcAlt, 'mcAz': mcAz,
+              'mcCore_x': mcCore_x, 'mcCore_y': mcCore_y, 'mcHfirst': mcHfirst, 'mcType': mcType, 'GPStime': GPStime,
+              'width': width, 'length': length, 'phi': phi, 'psi': psi, 'r': r, 'x': x, 'y': y, 'intensity': intensity,
+              'mcAlttel': mcAlttel, 'mcAztel': mcAztel}
+
     ntuple = Table(output)
 
-    #If destination fitsfile doesn't exist, will create a new one with proper headers 
+    #If destination fitsfile doesn't exist, will create a new one with proper headers
     if os.path.isfile(outfile)==False :
         #Convert Tables of data into HDUBinTables to write them into fits files
         pardata = ntuple.as_array()
@@ -244,7 +248,7 @@ if __name__ == '__main__':
         hdul = fits.HDUList([primary_hdu])
         hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
         if storeimg==True:
-            hdul.append(pixels) 
+            hdul.append(pixels)
         hdul.writeto(outfile)
     #If the destination fits file exists, will concatenate events:
     else:
@@ -255,7 +259,7 @@ if __name__ == '__main__':
         data = Table.read(outfile,1)
         if storeimg==True:
             pixdata = hdul[2].data
-        
+
         #Concatenate data
         data = vstack([data,ntuple])
         if storeimg==True:
@@ -269,16 +273,16 @@ if __name__ == '__main__':
             pixhdu = fits.ImageHDU(pixdata)
 
         #Write the data in an HDUList for storing in a fitsfile
-        
+
         hdul = fits.HDUList([primary_hdu])
         hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
         if storeimg==True:
             hdul.append(pixhdu)
-        
+
         hdul.writeto(outfile,overwrite=True)
-                
-        
 
 
-    
-    
+
+
+
+
