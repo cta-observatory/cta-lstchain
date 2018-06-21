@@ -17,7 +17,7 @@ import astropy.units as u
 import ctapipe.coordinates as c
 import matplotlib as mpl
 import Disp
-
+import sys
 
 hdu_gamma = fits.open("/home/queenmab/DATA/LST1/Events/Gamma_events.fits") #File with events
 hdu_proton = fits.open("/home/queenmab/DATA/LST1/Events/Proton_events.fits") #File with events
@@ -74,18 +74,51 @@ X_train, X_test, E_train, E_test, D_train, D_test, H_train, H_test = train_test_
 #First reconstruct energy
 
 max_depth = 50
-regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2)                                                           
+regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf_e.fit(X_train, E_train)
 erec = regr_rf_e.predict(X_test)
+
+difE = ((E_test-erec)/E_test*np.log10(10))
+print(difE.mean(),difE.std())
+plt.hist(difE,bins=100)
+plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$',fontsize=30)
+plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fontsize=15)
+plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15)
+plt.show()
+
+#figE, ax = plt.subplots()
+hE = plt.hist2d(E_test,erec,bins=50)
+plt.colorbar(hE[3])
+plt.xlabel('$log_{10}E_{test}$',fontsize=24)
+plt.ylabel('$log_{10}E_{rec}$',fontsize=24)
+plt.show()
+
 
 #Second, reconstruct DISP:
 
 max_depth = 50
-regr_rf_d = RandomForestRegressor(max_depth=max_depth, random_state=2)                                                           
+regr_rf_d = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf_d.fit(X_train, D_train)
 disprec = regr_rf_d.predict(X_test)
 
+difD = ((D_test-disprec))
+print(difD.mean(),difD.std())
+plt.hist(difD,bins=100)
+plt.xlabel('$Disp_{test} - Disp_{rec}$',fontsize=24)
+plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difD).mean,6)),fontsize=15)
+plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difD).variance,6)),fontsize=15)
+plt.show()
+
+hD = plt.hist2d(D_test,disprec,bins=50)
+plt.colorbar(hD[3])
+plt.xlabel('$Disp_{test}$',fontsize=24)
+plt.ylabel('$Disp_{rec}$',fontsize=24)
+plt.show()
+
 #Build the new set of training data:
+
+Energy_cut = 2.699
+
 nevents = X_test.shape[0]
 nfeatures = X_test.shape[1]
 
@@ -101,9 +134,12 @@ newX = newX.T
 #newX = np.array([size,r,width,length,width/length,psi,phi,energy,disp]).T
 #newX_train, newX_test, newH_train, newH_test = train_test_split(newX,hadroness,train_size=int(2*nevents/3),random_state=4)
 
-newX_train, newX_test, newH_train, newH_test = train_test_split(newX, H_test,train_size=int(2*nevents/3),random_state=4)
+nevents = X_test[erec > Energy_cut].shape[0]
 
-clf = RandomForestClassifier(n_jobs=2,random_state=0)
+newX_train, newX_test, newH_train, newH_test = train_test_split(newX[erec > Energy_cut], H_test[erec > Energy_cut],train_size=int(2*nevents/3),random_state=4)
+
+
+clf = RandomForestClassifier(max_depth = 50,n_jobs=50,random_state=4, n_estimators=1000)
 
 clf.fit(newX_train,newH_train)
 
