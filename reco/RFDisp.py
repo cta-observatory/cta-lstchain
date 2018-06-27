@@ -15,59 +15,64 @@ import ctapipe.coordinates as c
 import matplotlib as mpl
 import scipy
 import Disp
+import sys
+import pandas as pd
+from astropy.table import Table
 
 
-hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/Gamma_events.fits") #File with events
-hdu_list[1].data
+#Read data into pandas DataFrame
+file = "/home/queenmab/DATA/LST1/Events/Gamma_events.fits" #File with events
+dat = Table.read(file,format='fits')
+df = dat.to_pandas()
 
+#Get some telescope parameters
 tel = OpticsDescription.from_name('LST') #Telescope description
 focal_length = tel.equivalent_focal_length.value #Telescope focal length
 
-nevents = hdu_list[1].data.field(0).size #Total number of events
-disp = np.array([]) #Disp quantity
+#Calculate source position and Disp distance:
+sourcepos = Disp.calc_CamSourcePos(df['mcAlt'].get_values(),
+                                         df['mcAz'].get_values(),
+                                         df['mcAlttel'].get_values(),
+                                         df['mcAztel'].get_values(),
+                                         focal_length)
+disp = Disp.calc_DISP(sourcepos[0],
+                            sourcepos[1],
+                            df['cen_x'].get_values(),
+                            df['cen_y'].get_values())
+#Add dist to the DataFrame
+df['disp'] = disp
 
-data = hdu_list[1].data
+# Set Training and Test sets
+df['is_train'] = np.random.uniform(0,1,len(df))<= 0.75
 
-width = data.field('width')
-length = data.field('length')
-size = data.field('size')
-phi = data.field('phi')
-energy = np.log10(data.field('mcEnergy')*1e3) #Log of energy in GeV
-cen_x = data.field('cen_x')
-cen_y = data.field('cen_y')
-psi = data.field('psi')
-r = data.field('r')
+#Add some features required for training to the DataFrame
+df['w/l'] = df['width']/df['length'] #Width over length
+df['mcEnergy'] = np.log10(df['mcEnergy']*1e3) #Log10(Energy) in GeV
+df['size'] = np.log10(df['size']) #Size in the form log10(size)
 
-mcAlt = data.field('mcAlt')
-mcAz = data.field('mcAz')
-mcAlttel = data.field('mcAlttel')
-mcAztel = data.field('mcAztel')
+train, test = df[df['is_train']==True],df[df['is_train']==False]
 
-sourcepos = Disp.calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length)
-disp = Disp.calc_DISP(sourcepos[0],sourcepos[1],cen_x,cen_y)
+#List of features for training
+features = ['size','r','width','length','w/l','phi','psi']
 
+#Reconstruct DISP
 max_depth = 50
-regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2)
+regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
+regr_rf.fit(train[features], train['disp'])
+disprec = regr_rf.predict(test[features])
 
-X_disp = np.array([width/length,size,width,length,r,phi,psi]).T
-X_dtrain, X_dtest, Disp_train, Disp_test = train_test_split(X_disp, disp,
-                                                    train_size=int(2*nevents/3),
-                                                    random_state=4)
 
-regr_rf.fit(X_dtrain, Disp_train)
-Disprec = regr_rf.predict(X_dtest)
-
-difD = ((Disp_test-Disprec))
+difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())
-plt.hist(difD,bins=100)
-plt.xlabel('$Disp_{test} - Disp_{rec}$',fontsize=24)
+plt.hist(difD,bins=100,range=[-10,5])
+plt.xlabel('$\\frac{Disp_{test}-Disp_{rec}}{Disp_{test}}$',fontsize=30)
 plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difD).mean,6)),fontsize=15)
 plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difD).variance,6)),fontsize=15)
 plt.show()
 
-figD, aax = plt.subplots()
-hD = aax.hist2d(Disp_test,Disprec,bins=50)
-plt.colorbar(hD[3],ax=aax)
+hD = plt.hist2d(test['disp'],disprec,bins=100,range=([0,2],[0,2]))
+plt.colorbar(hD[3])
 plt.xlabel('$Disp_{test}$',fontsize=24)
 plt.ylabel('$Disp_{rec}$',fontsize=24)
-figD.show()
+plt.plot(test['disp'],test['disp'],"-",color='red')
+plt.show()
