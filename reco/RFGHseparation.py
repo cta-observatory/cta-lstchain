@@ -20,12 +20,14 @@ import Disp
 import sys
 import pandas as pd
 from astropy.table import Table
+import h5py
 
 #Read data into pandas DataFrame
-gammafile = "/home/queenmab/DATA/LST1/Events/Gamma_events.fits" #File with events
-protonfile = "/home/queenmab/DATA/LST1/Events/Proton_events.fits" #File with events
-dat_gamma = Table.read(gammafile,format='fits')
-dat_proton = Table.read(protonfile,format='fits')
+filetype = 'hdf5'
+gammafile = "/home/queenmab/DATA/LST1/Events/gamma_events.hdf5" #File with events
+protonfile = "/home/queenmab/DATA/LST1/Events/proton_events.hdf5" #File with events
+dat_gamma = Table.read(gammafile,format=filetype)
+dat_proton = Table.read(protonfile,format=filetype)
 
 df_gamma = dat_gamma.to_pandas()
 df_proton = dat_proton.to_pandas()

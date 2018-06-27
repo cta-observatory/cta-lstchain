@@ -16,12 +16,17 @@ import ctapipe.coordinates as c
 import matplotlib as mpl
 import Disp
 import sys
+import h5py
 import pandas as pd
 from astropy.table import Table
 
 #Read data into pandas DataFrame
-file = "/home/queenmab/DATA/LST1/Events/Gamma_events.fits" #File with events
-dat = Table.read(file,format='fits')
+
+filetype = 'hdf5'
+filename = "/home/queenmab/DATA/LST1/Events/gamma_events.hdf5" #File with events
+dat = Table.read(filename,format=filetype)
+
+
 df = dat.to_pandas()
 
 #Get some telescope parameters
