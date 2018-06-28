@@ -27,7 +27,7 @@ disp = np.array([]) #Disp quantity
 
 width = np.array([])
 length = np.array([])
-size = np.array([])
+intensity = np.array([])
 energy = np.array([])
 ntrain=0;
 for i in range(0,nevents):
@@ -37,10 +37,10 @@ for i in range(0,nevents):
     this_size = hdu_list[1].data.field(18)[i]
     if this_size < 180:
         continue
-    width = np.append(width,hdu_list[1].data.field(11)[i])
-    length = np.append(length,hdu_list[1].data.field(12)[i])
-    size = np.append(size,hdu_list[1].data.field(18)[i])
-    energy = np.append(energy,hdu_list[1].data.field(3)[i])
+    width = np.append(width, hdu_list[1].data.field(11)[i])
+    length = np.append(length, hdu_list[1].data.field(12)[i])
+    intensity = np.append(intensity, hdu_list[1].data.field(18)[i])
+    energy = np.append(energy, hdu_list[1].data.field(3)[i])
 
     #Calculate source position    
     mcAlt = hdu_list[1].data.field(4)[i] 
