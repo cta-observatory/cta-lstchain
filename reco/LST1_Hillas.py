@@ -17,6 +17,7 @@ from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from astropy.table import vstack,Table
 from astropy.io import fits
 import argparse
+import h5py
 from ctapipe.utils import get_dataset
 
 
@@ -42,7 +43,11 @@ parser.add_argument('--outdir', '-o', dest='outdir', action='store',
                     default='./results/',
                     help='Output directory to save fits file.'
                     )
-
+parser.add_argument('--filetype','-ft', dest='filetype',action='store',
+                    default='hdf5',type=str,
+                    help='String. Type of output file: hdf5 or fits'
+                    'Default=hdf5'
+                    )
 parser.add_argument('--storeimg', '-s', dest='storeimg', action='store',
                     default=False, type=bool,
                     help='Boolean. True for storing pixel information.'
@@ -84,8 +89,9 @@ if __name__ == '__main__':
     if not os.path.exists(args.outdir):
         os.mkdir(args.outdir)
 
-    outfile = args.outdir + '/' + particle_type + "_events.fits" #File where DL2 data will be stored
-
+    filetype = args.filetype
+    outfile = args.outdir + '/' + particle_type + "_events."+filetype #File where DL2 data will be stored
+    
     #######################################################
 
     #Cleaning levels:
@@ -205,7 +211,6 @@ if __name__ == '__main__':
                 y = np.append(y, hillas.y)
                 intensity = np.append(intensity, hillas.intensity)
 
-
                 #Store parameters from event and MC:
                 ObsID = np.append(ObsID,event.r0.obs_id)
                 EvID = np.append(EvID,event.r0.event_id)
@@ -223,66 +228,75 @@ if __name__ == '__main__':
                 GPStime = np.append(GPStime,event.trig.gps_time.value)
 
     #Store the output in an ntuple:
-
-    output = {'camtype': camtype, 'ObsID': ObsID, 'EvID': EvID, 'mcEnergy': mcEnergy, 'mcAlt': mcAlt, 'mcAz': mcAz,
-              'mcCore_x': mcCore_x, 'mcCore_y': mcCore_y, 'mcHfirst': mcHfirst, 'mcType': mcType, 'GPStime': GPStime,
-              'width': width, 'length': length, 'phi': phi, 'psi': psi, 'r': r, 'x': x, 'y': y, 'intensity': intensity,
-              'mcAlttel': mcAlttel, 'mcAztel': mcAztel}
-
+              
+    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'mcAlttel':mcAlttel,'mcAztel':mcAztel}
     ntuple = Table(output)
-
-    #If destination fitsfile doesn't exist, will create a new one with proper headers
+    
+    #If destination fitsfile doesn't exist, will create a new one with proper headers 
     if os.path.isfile(outfile)==False :
-        #Convert Tables of data into HDUBinTables to write them into fits files
-        pardata = ntuple.as_array()
-        parheader = fits.Header()
-        parheader.update(ntuple.meta)
+        if filetype=='fits':
+            #Convert Tables of data into HDUBinTables to write them into fits files
+            pardata = ntuple.as_array()
+            parheader = fits.Header()
+            parheader.update(ntuple.meta)
 
-        if storeimg==True:
-            pixels = fits.ImageHDU(fitsdata) #Image with pixel content
-
-        #Write the data in an HDUList for storing in a fitsfile
-        hdr = fits.Header() #Example header, we can add more things to this header
-        hdr['TEL'] = 'LST1'
-        primary_hdu = fits.PrimaryHDU(header=hdr)
-        hdul = fits.HDUList([primary_hdu])
-        hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-        if storeimg==True:
-            hdul.append(pixels)
-        hdul.writeto(outfile)
+            if storeimg==True:
+                pixels = fits.ImageHDU(fitsdata) #Image with pixel content
+                
+            #Write the data in an HDUList for storing in a fitsfile
+            hdr = fits.Header() #Example header, we can add more things to this header
+            hdr['TEL'] = 'LST1'
+            primary_hdu = fits.PrimaryHDU(header=hdr)
+            hdul = fits.HDUList([primary_hdu])
+            hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
+            if storeimg==True:
+                hdul.append(pixels) 
+            hdul.writeto(outfile)
+                    
+        if filetype=='hdf5':
+            f = h5py.File(outfile,'w')
+            f.create_dataset(particle_type,data=ntuple.as_array())
+            f.close()
     #If the destination fits file exists, will concatenate events:
     else:
-        #If this is not the first data set, we must append the new data to the existing HDUBinTables and ImageHDU contained in the events.fits file.
-        hdul=fits.open(outfile) #Open the existing file which contains two tables and 1 image
-        #Get the already existing data:
-        primary_hdu = hdul[0]
-        data = Table.read(outfile,1)
-        if storeimg==True:
-            pixdata = hdul[2].data
+        if filetype=='fits':
+            #If this is not the first data set, we must append the new data to the existing HDUBinTables and ImageHDU contained in the events.fits file.
+            hdul=fits.open(outfile) #Open the existing file which contains two tables and 1 image
+            #Get the already existing data:
+            primary_hdu = hdul[0]
+            data = Table.read(outfile,1)
+            if storeimg==True:
+                pixdata = hdul[2].data
+        
+            #Concatenate data
+            data = vstack([data,ntuple])
+            if storeimg==True:
+                pixdata = np.vstack([pixdata,fitsdata])
 
-        #Concatenate data
-        data = vstack([data,ntuple])
-        if storeimg==True:
-            pixdata = np.vstack([pixdata,fitsdata])
+            #Convert into HDU objects
+            pardata = data.as_array()
+            parheader = fits.Header()
+            parheader.update(data.meta)
+            if storeimg==True:
+                pixhdu = fits.ImageHDU(pixdata)
 
-        #Convert into HDU objects
-        pardata = data.as_array()
-        parheader = fits.Header()
-        parheader.update(data.meta)
-        if storeimg==True:
-            pixhdu = fits.ImageHDU(pixdata)
-
-        #Write the data in an HDUList for storing in a fitsfile
-
-        hdul = fits.HDUList([primary_hdu])
-        hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-        if storeimg==True:
-            hdul.append(pixhdu)
-
-        hdul.writeto(outfile,overwrite=True)
-
-
-
-
-
-
+            #Write the data in an HDUList for storing in a fitsfile
+        
+            hdul = fits.HDUList([primary_hdu])
+            hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
+            if storeimg==True:
+                hdul.append(pixhdu)
+        
+            hdul.writeto(outfile,overwrite=True)
+        
+        if filetype=='hdf5':
+            f = h5py.File(outfile,'r')
+            key=list(f.keys())[0]
+            data = np.array(f[key])
+            data=Table(data)
+            data = vstack([data,ntuple])
+            f.close()
+            f = h5py.File(outfile,'w')
+            f.create_dataset(particle_type,data=data.as_array())
+            f.close()
+    
