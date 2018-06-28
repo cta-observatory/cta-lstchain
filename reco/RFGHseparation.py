@@ -44,8 +44,8 @@ sourcepos_gamma = Disp.calc_CamSourcePos(df_gamma['mcAlt'].get_values(),
                                          focal_length)
 disp_gamma = Disp.calc_DISP(sourcepos_gamma[0],
                             sourcepos_gamma[1],
-                            df_gamma['cen_x'].get_values(),
-                            df_gamma['cen_y'].get_values())
+                            df_gamma['x'].get_values(),
+                            df_gamma['y'].get_values())
 
 sourcepos_proton = Disp.calc_CamSourcePos(df_proton['mcAlt'].get_values(),
                                          df_proton['mcAz'].get_values(),
@@ -54,8 +54,8 @@ sourcepos_proton = Disp.calc_CamSourcePos(df_proton['mcAlt'].get_values(),
                                          focal_length)
 disp_proton = Disp.calc_DISP(sourcepos_proton[0],
                             sourcepos_proton[1],
-                            df_proton['cen_x'].get_values(),
-                            df_proton['cen_y'].get_values())
+                            df_proton['x'].get_values(),
+                            df_proton['y'].get_values())
 
 #Add dist to the DataFrame
 df_gamma['disp'] = disp_gamma
@@ -71,17 +71,15 @@ df = df_gamma.append(df_proton,ignore_index=True)
 #Add some features required for training to the DataFrame
 df['w/l'] = df['width']/df['length'] #Width over length
 df['mcEnergy'] = np.log10(df['mcEnergy']*1e3) #Log10(Energy) in GeV
-df['size'] = np.log10(df['size']) #Size in the form log10(size)
+df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 
 #Create a training set only with gammas and a test set with gammas and protons
 train_gammas, test = df[(df['is_train']==True) & (df['hadroness']==0)],df[df['is_train']==False]
 
 #List of features for training
-#features = ['size','r','width','length','w/l','phi','psi']
+features = ['size','r','width','length','w/l','phi','psi']
+#features = ['size','r','mcHfirst','width','length','w/l','phi','psi'] #Here we include true mcHfirst for testing
 
-features = ['size','r','mcHfirst','width','length','w/l','phi','psi'] #Here we include true mcHfirst for testing
-
-#Reconstruct Energy
 max_depth = 50
 regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf_e.fit(train_gammas[features], train_gammas['mcEnergy'])

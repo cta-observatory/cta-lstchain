@@ -39,30 +39,30 @@ sourcepos = Disp.calc_CamSourcePos(df['mcAlt'].get_values(),
                                          focal_length)
 disp = Disp.calc_DISP(sourcepos[0],
                             sourcepos[1],
-                            df['cen_x'].get_values(),
-                            df['cen_y'].get_values())
+                            df['x'].get_values(),
+                            df['y'].get_values())
 #Add dist to the DataFrame
 df['disp'] = disp
 
 # Set Training and Test sets
 df['is_train'] = np.random.uniform(0,1,len(df))<= 0.75
 
+
 #Add some features required for training to the DataFrame
 df['w/l'] = df['width']/df['length'] #Width over length
 df['mcEnergy'] = np.log10(df['mcEnergy']*1e3) #Log10(Energy) in GeV
-df['size'] = np.log10(df['size']) #Size in the form log10(size)
+df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 
 train, test = df[df['is_train']==True],df[df['is_train']==False]
 
 #List of features for training
-features = ['size','r','width','length','w/l','phi','psi']
+features = ['intensity','r','width','length','w/l','phi','psi']
 
 #Reconstruct DISP
 max_depth = 50
 regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf.fit(train[features], train['disp'])
 disprec = regr_rf.predict(test[features])
-
 
 difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())
