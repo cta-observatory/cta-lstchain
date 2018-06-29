@@ -12,18 +12,15 @@ USAGE: python LST1_Hillas.py 'Particle' 'Simtelarray file' 'Store Img(True or Fa
 import numpy as np
 import os
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
-from ctapipe.io.eventsourcefactory import EventSourceFactory
-from ctapipe.image.charge_extractors import LocalPeakIntegrator
-from astropy.table import vstack,Table
+from ctapipe.io import event_source
+from ctapipe.calib import CameraCalibrator
+from astropy.table import vstack, Table
 from astropy.io import fits
 import argparse
 import h5py
 from ctapipe.utils import get_dataset
 
-
-
-
-parser = argparse.ArgumentParser(description = "process CTA files.")
+parser = argparse.ArgumentParser(description="process CTA files.")
 
 # Required argument
 parser.add_argument('--filename', '-f', type=str,
@@ -43,17 +40,16 @@ parser.add_argument('--outdir', '-o', dest='outdir', action='store',
                     default='./results/',
                     help='Output directory to save fits file.'
                     )
-parser.add_argument('--filetype','-ft', dest='filetype',action='store',
-                    default='hdf5',type=str,
+parser.add_argument('--filetype', '-ft', dest='filetype', action='store',
+                    default='hdf5', type=str,
                     help='String. Type of output file: hdf5 or fits'
-                    'Default=hdf5'
+                         'Default=hdf5'
                     )
 parser.add_argument('--storeimg', '-s', dest='storeimg', action='store',
                     default=False, type=bool,
                     help='Boolean. True for storing pixel information.'
                          'Default=False, any user input will be considered True'
                     )
-
 
 args = parser.parse_args()
 
@@ -79,7 +75,7 @@ def guess_type(filename):
 
 if __name__ == '__main__':
 
-    #Some configuration variables
+    # Some configuration variables
     ########################################################
     filename = args.filename
     particle_type = guess_type(filename) if args.particle_type is None else args.particle_type
@@ -90,23 +86,28 @@ if __name__ == '__main__':
         os.mkdir(args.outdir)
 
     filetype = args.filetype
-    outfile = args.outdir + '/' + particle_type + "_events."+filetype #File where DL2 data will be stored
-    
+    outfile = args.outdir + '/' + particle_type + "_events." + filetype  # File where DL2 data will be stored
+
     #######################################################
 
-    #Cleaning levels:
+    # Setup the calibration to use:
+    cal = CameraCalibrator(None, None, r1_product='HESSIOR1Calibrator', extractor_product='LocalPeakIntegrator')
 
-    level1 = {'LSTCam' : 6.}
+    # Cleaning levels:
+    level1 = {'LSTCam': 6.}
     level2 = level1.copy()
     # We use as second cleaning level just half of the first cleaning level
     for key in level2:
         level2[key] *= 0.5
     print(level2)
 
-    source = EventSourceFactory.produce(input_url=filename, allowed_tels={1}) #Open Simtelarray file
-    camtype = []   # one entry per image
+    source = event_source(filename)     # Open the file
+    source.allowed_tels = {1}
+    # source.max_events = 10  # Limit the number of events to load - useful for tests
 
-    #Hillas Parameters
+    camtype = []  # one entry per image
+
+    # Hillas Parameters
     width = np.array([])
     length = np.array([])
     phi = np.array([])
@@ -116,13 +117,13 @@ if __name__ == '__main__':
     y = np.array([])
     intensity = np.array([])
 
-    #Event Parameters
+    # Event Parameters
     ObsID = np.array([])
     EvID = np.array([])
 
-    #MC Parameters:
+    # MC Parameters:
     mcEnergy = np.array([])
-    mcAlt  = np.array([])
+    mcAlt = np.array([])
     mcAz = np.array([])
     mcCore_x = np.array([])
     mcCore_y = np.array([])
@@ -137,54 +138,35 @@ if __name__ == '__main__':
     log10pixelHGsignal = {}
     survived = {}
 
-
     for key in level1:
-
         log10pixelHGsignal[key] = []
         survived[key] = []
-    i=0
-    for event in source:
-        if i%100==0:
+
+    for i, event in enumerate(source):
+        if i % 100 == 0:
             print("EVENT_ID: ", event.r0.event_id, "TELS: ",
                   event.r0.tels_with_data,
-                  "MC Energy:", event.mc.energy )
-        i=i+1
+                  "MC Energy:", event.mc.energy)
+
         ntels = len(event.r0.tels_with_data)
 
-        '''
-        if i > 100:   # for quick tests
-            break
-        '''
+        cal.calibrate(event)
+
         for ii, tel_id in enumerate(event.r0.tels_with_data):
 
-            geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
+            geom = event.inst.subarray.tel[tel_id].camera  # Camera geometry
 
-            data = event.r0.tel[tel_id].waveform
-            ped = event.mc.tel[tel_id].pedestal
-            # the pedestal is the average (for pedestal events) of the *sum* of all samples, from sim_telarray
-
-            nsamples = data.shape[2]  # total number of samples
-            pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples    # Subtract pedestal baseline. atleast_3d converts 2D to 3D matrix
-
-            integrator = LocalPeakIntegrator(None, None)
-            integration, peakpos, window = integrator.extract_charge(pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
-
-            chan = 0  # high gain used for now...
-            signals = integration[chan].astype(float)
-
-            dc2pe = event.mc.tel[tel_id].dc_to_pe   # numgains * numpixels
-            signals *= dc2pe[chan]
-
-            # Add all individual pixel signals to the numpy array of the corresponding camera inside the log10pixelsignal dictionary
-            log10pixelHGsignal[str(geom)].extend(np.log10(signals))  # This seems to be faster like this, with normal python lists
+            chan = 0
+            signals = event.dl1.tel[tel_id].image[chan]
 
             # Apply image cleaning
             cleanmask = tailcuts_clean(geom, signals, picture_thresh=level1[str(geom)],
-                                       boundary_thresh=level2[str(geom)], keep_isolated_pixels=False, min_number_picture_neighbors=1)
+                                       boundary_thresh=level2[str(geom)], keep_isolated_pixels=False,
+                                       min_number_picture_neighbors=1)
             survived[str(geom)].extend(cleanmask)  # This seems to be faster like this, with normal python lists
 
             clean = signals.copy()
-            clean[~cleanmask] = 0.0   # set to 0 pixels which did not survive cleaning
+            clean[~cleanmask] = 0.0  # set to 0 pixels which did not survive cleaning
             if np.max(clean) < 1.e-6:  # skip images with no pixels
                 continue
 
@@ -199,7 +181,7 @@ if __name__ == '__main__':
                 if fitsdata.size == 0:
                     fitsdata = clean
                 else:
-                    fitsdata = np.vstack([fitsdata,clean]) #Pixel content
+                    fitsdata = np.vstack([fitsdata, clean])  # Pixel content
 
                 camtype.append(str(geom))
                 width = np.append(width, w.value)
@@ -211,92 +193,95 @@ if __name__ == '__main__':
                 y = np.append(y, hillas.y)
                 intensity = np.append(intensity, hillas.intensity)
 
-                #Store parameters from event and MC:
-                ObsID = np.append(ObsID,event.r0.obs_id)
-                EvID = np.append(EvID,event.r0.event_id)
+                # Store parameters from event and MC:
+                ObsID = np.append(ObsID, event.r0.obs_id)
+                EvID = np.append(EvID, event.r0.event_id)
 
-                mcEnergy = np.append(mcEnergy,event.mc.energy)
-                mcAlt = np.append(mcAlt,event.mc.alt)
-                mcAz = np.append(mcAz,event.mc.az)
-                mcCore_x = np.append(mcCore_x,event.mc.core_x)
-                mcCore_y = np.append(mcCore_y,event.mc.core_y)
-                mcHfirst = np.append(mcHfirst,event.mc.h_first_int)
-                mcType = np.append(mcType,event.mc.shower_primary_id)
-                mcAztel = np.append(mcAztel,event.mcheader.run_array_direction[0])
-                mcAlttel = np.append(mcAlttel,event.mcheader.run_array_direction[1])
+                mcEnergy = np.append(mcEnergy, event.mc.energy)
+                mcAlt = np.append(mcAlt, event.mc.alt)
+                mcAz = np.append(mcAz, event.mc.az)
+                mcCore_x = np.append(mcCore_x, event.mc.core_x)
+                mcCore_y = np.append(mcCore_y, event.mc.core_y)
+                mcHfirst = np.append(mcHfirst, event.mc.h_first_int)
+                mcType = np.append(mcType, event.mc.shower_primary_id)
+                mcAztel = np.append(mcAztel, event.mcheader.run_array_direction[0])
+                mcAlttel = np.append(mcAlttel, event.mcheader.run_array_direction[1])
 
-                GPStime = np.append(GPStime,event.trig.gps_time.value)
+                GPStime = np.append(GPStime, event.trig.gps_time.value)
 
-    #Store the output in an ntuple:
-              
-    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'mcAlttel':mcAlttel,'mcAztel':mcAztel}
+    # Store the output in an ntuple:
+
+    output = {'ObsID': ObsID, 'EvID': EvID, 'mcEnergy': mcEnergy, 'mcAlt': mcAlt, 'mcAz': mcAz, 'mcCore_x': mcCore_x,
+              'mcCore_y': mcCore_y, 'mcHfirst': mcHfirst, 'mcType': mcType, 'GPStime': GPStime, 'width': width,
+              'length': length, 'phi': phi, 'psi': psi, 'r': r, 'x': x, 'y': y, 'intensity': intensity,
+              'mcAlttel': mcAlttel, 'mcAztel': mcAztel}
     ntuple = Table(output)
-    
-    #If destination fitsfile doesn't exist, will create a new one with proper headers 
-    if os.path.isfile(outfile)==False :
-        if filetype=='fits':
-            #Convert Tables of data into HDUBinTables to write them into fits files
+
+    # If destination fitsfile doesn't exist, will create a new one with proper headers
+    if os.path.isfile(outfile) == False:
+        if filetype == 'fits':
+            # Convert Tables of data into HDUBinTables to write them into fits files
             pardata = ntuple.as_array()
             parheader = fits.Header()
             parheader.update(ntuple.meta)
 
-            if storeimg==True:
-                pixels = fits.ImageHDU(fitsdata) #Image with pixel content
-                
-            #Write the data in an HDUList for storing in a fitsfile
-            hdr = fits.Header() #Example header, we can add more things to this header
+            if storeimg == True:
+                pixels = fits.ImageHDU(fitsdata)  # Image with pixel content
+
+            # Write the data in an HDUList for storing in a fitsfile
+            hdr = fits.Header()  # Example header, we can add more things to this header
             hdr['TEL'] = 'LST1'
             primary_hdu = fits.PrimaryHDU(header=hdr)
             hdul = fits.HDUList([primary_hdu])
-            hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-            if storeimg==True:
-                hdul.append(pixels) 
+            hdul.append(fits.BinTableHDU(data=pardata, header=parheader))
+            if storeimg == True:
+                hdul.append(pixels)
             hdul.writeto(outfile)
-                    
-        if filetype=='hdf5':
-            f = h5py.File(outfile,'w')
-            f.create_dataset(particle_type,data=ntuple.as_array())
-            f.close()
-    #If the destination fits file exists, will concatenate events:
-    else:
-        if filetype=='fits':
-            #If this is not the first data set, we must append the new data to the existing HDUBinTables and ImageHDU contained in the events.fits file.
-            hdul=fits.open(outfile) #Open the existing file which contains two tables and 1 image
-            #Get the already existing data:
-            primary_hdu = hdul[0]
-            data = Table.read(outfile,1)
-            if storeimg==True:
-                pixdata = hdul[2].data
-        
-            #Concatenate data
-            data = vstack([data,ntuple])
-            if storeimg==True:
-                pixdata = np.vstack([pixdata,fitsdata])
 
-            #Convert into HDU objects
+        if filetype == 'hdf5':
+            f = h5py.File(outfile, 'w')
+            f.create_dataset(particle_type, data=ntuple.as_array())
+            f.close()
+    # If the destination fits file exists, will concatenate events:
+    else:
+        if filetype == 'fits':
+            # If this is not the first data set, we must append the new data to the existing HDUBinTables and ImageHDU contained in the events.fits file.
+            hdul = fits.open(outfile)  # Open the existing file which contains two tables and 1 image
+            # Get the already existing data:
+            primary_hdu = hdul[0]
+            data = Table.read(outfile, 1)
+            if storeimg == True:
+                pixdata = hdul[2].data
+
+            # Concatenate data
+            data = vstack([data, ntuple])
+            if storeimg == True:
+                pixdata = np.vstack([pixdata, fitsdata])
+
+            # Convert into HDU objects
             pardata = data.as_array()
             parheader = fits.Header()
             parheader.update(data.meta)
-            if storeimg==True:
+            if storeimg == True:
                 pixhdu = fits.ImageHDU(pixdata)
 
-            #Write the data in an HDUList for storing in a fitsfile
-        
+            # Write the data in an HDUList for storing in a fitsfile
+
             hdul = fits.HDUList([primary_hdu])
-            hdul.append(fits.BinTableHDU(data=pardata,header=parheader))
-            if storeimg==True:
+            hdul.append(fits.BinTableHDU(data=pardata, header=parheader))
+            if storeimg == True:
                 hdul.append(pixhdu)
-        
-            hdul.writeto(outfile,overwrite=True)
-        
-        if filetype=='hdf5':
-            f = h5py.File(outfile,'r')
-            key=list(f.keys())[0]
+
+            hdul.writeto(outfile, overwrite=True)
+
+        if filetype == 'hdf5':
+            f = h5py.File(outfile, 'r')
+            key = list(f.keys())[0]
             data = np.array(f[key])
-            data=Table(data)
-            data = vstack([data,ntuple])
+            data = Table(data)
+            data = vstack([data, ntuple])
             f.close()
-            f = h5py.File(outfile,'w')
-            f.create_dataset(particle_type,data=data.as_array())
+            f = h5py.File(outfile, 'w')
+            f.create_dataset(particle_type, data=data.as_array())
             f.close()
-    
+
