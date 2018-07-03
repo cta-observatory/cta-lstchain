@@ -21,11 +21,12 @@ import sys
 import pandas as pd
 from astropy.table import Table
 import h5py
+import h5py.highlevel
 
 #Read data into pandas DataFrame
 filetype = 'hdf5'
-gammafile = "/home/queenmab/DATA/LST1/Events/gamma_events.hdf5" #File with events
-protonfile = "/home/queenmab/DATA/LST1/Events/proton_events.hdf5" #File with events
+gammafile = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
+protonfile = "/scratch/bernardos/LST1/Events/proton_events.hdf5" #File with events
 dat_gamma = Table.read(gammafile,format=filetype)
 dat_proton = Table.read(protonfile,format=filetype)
 
@@ -77,7 +78,7 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train_gammas, test = df[(df['is_train']==True) & (df['hadroness']==0)],df[df['is_train']==False]
 
 #List of features for training
-features = ['size','r','width','length','w/l','phi','psi']
+features = ['intensity','r','width','length','w/l','phi','psi','impact']
 #features = ['size','r','mcHfirst','width','length','w/l','phi','psi'] #Here we include true mcHfirst for testing
 
 max_depth = 50
@@ -127,6 +128,10 @@ plt.show()
 
 #Set a cut in energy, 0 for no cuts.
 Energy_cut = 3.
+
+test['Erec'] = erec
+test['Disprec'] = disprec
+
 test = test[test['mcEnergy']>Energy_cut]
 
 #Select the training/test events
@@ -134,6 +139,8 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 
 #Build new train/test sets:
 train,test = test[test['is_train']==True],test[test['is_train']==False]
+
+features = ['Erec','Disprec','intensity','r','width','length','w/l','phi','psi','impact']
 
 
 #Classify Gamma/Hadron
@@ -152,7 +159,7 @@ print(accuracy)
 
 fpr_rf, tpr_rf, _ = roc_curve(test['hadroness'], check)
 
-plt.plot(fpr_rf, tpr_rf, label='Reco Energy and Disp')
+plt.plot(fpr_rf, tpr_rf, label='Energy Cut: '+'%.3f'%(pow(10,Energy_cut)/1000)+' TeV')
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.legend(loc='best')
