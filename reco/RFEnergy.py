@@ -17,13 +17,14 @@ import matplotlib as mpl
 import Disp
 import sys
 import h5py
+import h5py.highlevel
 import pandas as pd
 from astropy.table import Table
 
 #Read data into pandas DataFrame
 
 filetype = 'hdf5'
-filename = "/home/queenmab/DATA/LST1/Events/gamma_events.hdf5" #File with events
+filename = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
 dat = Table.read(filename,format=filetype)
 
 
@@ -57,7 +58,7 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train, test = df[df['is_train']==True],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi']
+features = ['intensity','r','width','length','w/l','phi','psi','impact']
 
 #Reconstruct Energy
 max_depth = 50
