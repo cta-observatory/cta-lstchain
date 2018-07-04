@@ -78,7 +78,8 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train_gammas, test = df[(df['is_train']==True) & (df['hadroness']==0)],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi','impact']
+features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+#features = ['intensity','r','width','length']
 #features = ['size','r','mcHfirst','width','length','w/l','phi','psi'] #Here we include true mcHfirst for testing
 
 max_depth = 50
@@ -92,14 +93,15 @@ regr_rf_disp.fit(train_gammas[features], train_gammas['disp'])
 disprec = regr_rf_disp.predict(test[features])
 
 #Plot Energy and Disp reconstructions
+plt.subplot(121)
 difE = (((test['mcEnergy']-erec)/test['mcEnergy'])*np.log10(10))
 print(difE.mean(),difE.std())
 plt.hist(difE,bins=100)
 plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$',fontsize=30)
 plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fontsize=15)
 plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15)
-plt.show()
 
+plt.subplot(122)
 hE = plt.hist2d(test['mcEnergy'],erec,bins=100)
 plt.colorbar(hE[3])
 plt.xlabel('$log_{10}E_{test}$',fontsize=24)
@@ -107,14 +109,15 @@ plt.ylabel('$log_{10}E_{rec}$',fontsize=24)
 plt.plot(test['mcEnergy'],test['mcEnergy'],"-",color='red')
 plt.show()
 
+plt.subplot(121)
 difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())
 plt.hist(difD,bins=100,range=[-10,5])
 plt.xlabel('$\\frac{Disp_{test}-Disp_{rec}}{Disp_{test}}$',fontsize=30)
 plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difD).mean,6)),fontsize=15)
 plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difD).variance,6)),fontsize=15)
-plt.show()
 
+plt.subplot(122)
 hD = plt.hist2d(test['disp'],disprec,bins=100,range=([0,2],[0,2]))
 plt.colorbar(hD[3])
 plt.xlabel('$Disp_{test}$',fontsize=24)
@@ -127,7 +130,7 @@ plt.show()
 #Now we build a new training set with reconstructed Energy and Disp:
 
 #Set a cut in energy, 0 for no cuts.
-Energy_cut = 3.
+Energy_cut = -1.
 
 test['Erec'] = erec
 test['Disprec'] = disprec
@@ -140,8 +143,8 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 #Build new train/test sets:
 train,test = test[test['is_train']==True],test[test['is_train']==False]
 
-features = ['Erec','Disprec','intensity','r','width','length','w/l','phi','psi','impact']
-
+features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+#features = ['intensity','r','width','length']
 
 #Classify Gamma/Hadron
 clf = RandomForestClassifier(max_depth = 50,
@@ -152,6 +155,25 @@ clf = RandomForestClassifier(max_depth = 50,
 clf.fit(train[features],train['hadroness'])
 result = clf.predict(test[features])
 
+importances = clf.feature_importances_
+std = np.std([tree.feature_importances_ for tree in clf.estimators_],axis=0)
+indices = np.argsort(importances)[::-1]
+
+print("Feature importances (gini index)")
+for f in range(len(features)):
+    print("%d. %s (%f)" % (f + 1, features[indices[f]], importances[indices[f]]))
+
+ordered_features=[]
+for index in indices:
+    ordered_features=ordered_features+[features[index]]
+
+plt.subplot(121)
+plt.title("Feature importances for Disp Reconstruction")
+plt.bar(range(len(features)), importances[indices],
+       color="r", yerr=std[indices], align="center")
+plt.xticks(range(len(features)), ordered_features)
+plt.xlim([-1, len(features)])
+
 # Plot ROC curve:
 check = clf.predict_proba(test[features])[0:,1]
 accuracy = accuracy_score(test['hadroness'], result)
@@ -159,6 +181,7 @@ print(accuracy)
 
 fpr_rf, tpr_rf, _ = roc_curve(test['hadroness'], check)
 
+plt.subplot(122)
 plt.plot(fpr_rf, tpr_rf, label='Energy Cut: '+'%.3f'%(pow(10,Energy_cut)/1000)+' TeV')
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')

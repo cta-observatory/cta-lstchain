@@ -58,26 +58,48 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train, test = df[df['is_train']==True],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi','impact']
-
+features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+#features = ['intensity','r','width','length','w/l','phi','psi']
+#features = ['intensity','r','length','width']
 #Reconstruct Energy
 max_depth = 50
-regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
+regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)
 regr_rf.fit(train[features], train['mcEnergy'])
 erec = regr_rf.predict(test[features])
 
+importances = regr_rf.feature_importances_
+std = np.std([tree.feature_importances_ for tree in regr_rf.estimators_],axis=0)
+indices = np.argsort(importances)[::-1]
+
+print("Feature importances (gini index)")
+for f in range(len(features)):
+    print("%d. %s (%f)" % (f + 1, features[indices[f]], importances[indices[f]]))
+
+ordered_features=[]
+for index in indices:
+    ordered_features=ordered_features+[features[index]]
+
+plt.subplot(221)
+plt.title("Feature importances for Energy Reconstruction")
+plt.bar(range(len(features)), importances[indices],
+       color="r", yerr=std[indices], align="center")
+plt.xticks(range(len(features)), ordered_features)
+plt.xlim([-1, len(features)])
+
+
 #Plot Energy and Disp reconstructions
+plt.subplot(222)
 difE = (((test['mcEnergy']-erec)/test['mcEnergy'])*np.log10(10))
 print(difE.mean(),difE.std())
 plt.hist(difE,bins=100)
-plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$',fontsize=30)
-plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fontsize=15)
-plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15)
-plt.show()
+plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$')
+plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)))
+plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)))
 
+plt.subplot(223)
 hE = plt.hist2d(test['mcEnergy'],erec,bins=100)
 plt.colorbar(hE[3])
-plt.xlabel('$log_{10}E_{test}$',fontsize=24)
-plt.ylabel('$log_{10}E_{rec}$',fontsize=24)
+plt.xlabel('$log_{10}E_{test}$')
+plt.ylabel('$log_{10}E_{rec}$')
 plt.plot(test['mcEnergy'],test['mcEnergy'],"-",color='red')
 plt.show()
