@@ -4,12 +4,12 @@ In order to feed MAGIC data in ctapipe we need to convert MAGIC DL1 data to a sp
 
 The convertions of the MAGIC DL1 root files are done in two steps
 
-# Step 1:
+**Step 1:**
 Addding pointing position container to MAGIC DL1 root files
 
-# step 2:
-1. Converting the files obtained in "Step 1" to HDF5 format
-2. Then remove the files created in step 1.
+**Step 2:**
+ *  Converting the files obtained in **Step 1** to HDF5 format
+ *  Then remove the files created in step 1.
 
 Further details:
 
