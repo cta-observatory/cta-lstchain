@@ -66,7 +66,7 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
         
         rot_Matrix = np.append(rot_Matrix,[np.matmul(mat_Y,mat_Z)],axis=0)
     
-    res = np.einsum("...ij,...i",rot_Matrix,source)
+    res = np.einsum("...ji,...i",rot_Matrix,source)
     res = res.T
     
     Source_X = -focal_length*res[0]/res[2]
