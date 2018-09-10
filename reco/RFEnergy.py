@@ -24,7 +24,7 @@ from astropy.table import Table
 #Read data into pandas DataFrame
 
 filetype = 'hdf5'
-filename = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
+filename = "/home/queenmab/DATA/LST1/Events/gamma_events.hdf5" #File with events
 dat = Table.read(filename,format=filetype)
 
 
