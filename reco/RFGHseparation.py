@@ -25,8 +25,8 @@ import h5py.highlevel
 
 #Read data into pandas DataFrame
 filetype = 'hdf5'
-gammafile = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
-protonfile = "/scratch/bernardos/LST1/Events/proton_events.hdf5" #File with events
+gammafile = "/home/queenmab/DATA/LST1/Events/gamma_events_point.hdf5" #File with events
+protonfile = "/home/queenmab/DATA/LST1/Events/proton_events_diff.hdf5" #File with events
 dat_gamma = Table.read(gammafile,format=filetype)
 dat_proton = Table.read(protonfile,format=filetype)
 
@@ -58,11 +58,16 @@ disp_proton = Disp.calc_DISP(sourcepos_proton[0],
                             df_proton['x'].get_values(),
                             df_proton['y'].get_values())
 
+
 #Add dist to the DataFrame
 df_gamma['disp'] = disp_gamma
 df_proton['disp'] = disp_proton
 df_gamma['hadroness'] = np.zeros(df_gamma.shape[0])
 df_proton['hadroness'] = np.ones(df_proton.shape[0])
+
+#Cut events in the border:
+df_gamma = df_gamma[abs(df_gamma['r'])<0.94]
+df_proton = df_proton[abs(df_proton['r'])<0.94]
 
 # Set Training and Test sets
 df_gamma['is_train'] = np.random.uniform(0,1,len(df_gamma))<= 0.5
@@ -78,9 +83,9 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train_gammas, test = df[(df['is_train']==True) & (df['hadroness']==0)],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+features = ['intensity','r','width','length','w/l','phi','psi']
 #features = ['intensity','r','width','length']
-#features = ['size','r','mcHfirst','width','length','w/l','phi','psi'] #Here we include true mcHfirst for testing
+
 
 max_depth = 50
 regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
@@ -130,7 +135,7 @@ plt.show()
 #Now we build a new training set with reconstructed Energy and Disp:
 
 #Set a cut in energy, 0 for no cuts.
-Energy_cut = -1.
+Energy_cut = 0
 
 test['Erec'] = erec
 test['Disprec'] = disprec
@@ -143,8 +148,8 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 #Build new train/test sets:
 train,test = test[test['is_train']==True],test[test['is_train']==False]
 
-features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
-#features = ['intensity','r','width','length']
+#features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+features = ['Erec','intensity','width','length','w/l','phi','psi']
 
 #Classify Gamma/Hadron
 clf = RandomForestClassifier(max_depth = 50,
@@ -168,7 +173,7 @@ for index in indices:
     ordered_features=ordered_features+[features[index]]
 
 plt.subplot(121)
-plt.title("Feature importances for Disp Reconstruction")
+plt.title("Feature importances for G/H separation")
 plt.bar(range(len(features)), importances[indices],
        color="r", yerr=std[indices], align="center")
 plt.xticks(range(len(features)), ordered_features)

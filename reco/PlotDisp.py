@@ -15,7 +15,7 @@ import ctapipe.coordinates as c
 from scipy.optimize import minimize, newton
 import Disp
 
-hdu_list = fits.open("/home/queenmab/DATA/LST1/Events/events.fits") #File with events
+hdu_list = fits.open("/home/queenmab/GitHub/cta-lstchain/reco/results/gamma_events.fits") #File with events
 hdu_list[1].data
 
 tel = OpticsDescription.from_name('LST') #Telescope description
@@ -31,38 +31,39 @@ intensity = np.array([])
 energy = np.array([])
 ntrain=0;
 for i in range(0,nevents):
-    if i%2==0:
-        continue
+
     ntrain=ntrain+1
-    this_size = hdu_list[1].data.field(18)[i]
-    if this_size < 180:
+    this_size = hdu_list[1].data.field('intensity')[i]
+    if this_size < 0:
         continue
-    width = np.append(width, hdu_list[1].data.field(11)[i])
-    length = np.append(length, hdu_list[1].data.field(12)[i])
-    intensity = np.append(intensity, hdu_list[1].data.field(18)[i])
-    energy = np.append(energy, hdu_list[1].data.field(3)[i])
+    width = np.append(width, hdu_list[1].data.field('width')[i])
+    length = np.append(length, hdu_list[1].data.field('length')[i])
+    intensity = np.append(intensity, hdu_list[1].data.field('intensity')[i])
+    energy = np.append(energy, hdu_list[1].data.field('mcEnergy')[i])
 
     #Calculate source position    
-    mcAlt = hdu_list[1].data.field(4)[i] 
-    mcAz = hdu_list[1].data.field(5)[i]
-    mcAlttel = hdu_list[1].data.field(19)[i]
-    mcAztel = hdu_list[1].data.field(20)[i]
-
-    srcpos = Disp.calc_CamSourcePos([mcAlt],[mcAz],[mcAlttel],[mcAztel],focal_length)
+    mcAlt = hdu_list[1].data.field('mcAlt')[i] 
+    mcAz = hdu_list[1].data.field('mcAz')[i]
+    mcAlttel = hdu_list[1].data.field('mcAlttel')[i]
+    mcAztel = hdu_list[1].data.field('mcAztel')[i]
     
+    srcpos = Disp.calc_CamSourcePos([mcAlt],[mcAz],[mcAlttel],[mcAztel],focal_length)
+
     Source_X = srcpos[0]
     Source_Y = srcpos[1]
     
-    cen_x = hdu_list[1].data.field(16)[i]
-    cen_y = hdu_list[1].data.field(17)[i]
-
+    cen_x = hdu_list[1].data.field('x')[i]
+    cen_y = hdu_list[1].data.field('y')[i]
+    
     disp = Disp.calc_DISP(Source_X,Source_Y,cen_x,cen_y)
-        
+
+    print(hdu_list[1].data.field('skewness')[i],hdu_list[1].data.field('kurtosis')[i])
+    
     display = CameraDisplay(geom)
     display.add_colorbar()
     
     image = hdu_list[2].data[i]
-
+    
     display.image = image
     display.cmap = 'CMRmap'
     

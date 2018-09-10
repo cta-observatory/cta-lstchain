@@ -116,6 +116,9 @@ if __name__ == '__main__':
     y = np.array([])
     intensity = np.array([])
 
+    skewness = np.array([])
+    kurtosis = np.array([])
+    
     #Event Parameters
     ObsID = np.array([])
     EvID = np.array([])
@@ -130,8 +133,11 @@ if __name__ == '__main__':
     mcType = np.array([])
     mcAlttel = np.array([])
     mcAztel = np.array([])
+    mcXmax = np.array([])
     GPStime = np.array([])
 
+    impact = np.array([])
+    
     fitsdata = np.array([])
 
     log10pixelHGsignal = {}
@@ -158,7 +164,7 @@ if __name__ == '__main__':
         for ii, tel_id in enumerate(event.r0.tels_with_data):
 
             geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
-
+            tel_coords = event.inst.subarray.tel_coords[event.inst.subarray.tel_indices[tel_id]]
             data = event.r0.tel[tel_id].waveform
             ped = event.mc.tel[tel_id].pedestal
             # the pedestal is the average (for pedestal events) of the *sum* of all samples, from sim_telarray
@@ -210,7 +216,9 @@ if __name__ == '__main__':
                 x = np.append(x, hillas.x)
                 y = np.append(y, hillas.y)
                 intensity = np.append(intensity, hillas.intensity)
-
+                skewness =  np.append(skewness, hillas.skewness)
+                kurtosis = np.append(kurtosis, hillas.kurtosis)
+                
                 #Store parameters from event and MC:
                 ObsID = np.append(ObsID,event.r0.obs_id)
                 EvID = np.append(EvID,event.r0.event_id)
@@ -224,12 +232,14 @@ if __name__ == '__main__':
                 mcType = np.append(mcType,event.mc.shower_primary_id)
                 mcAztel = np.append(mcAztel,event.mcheader.run_array_direction[0])
                 mcAlttel = np.append(mcAlttel,event.mcheader.run_array_direction[1])
-
+                mcXmax = np.append(mcXmax,event.mc.x_max)
                 GPStime = np.append(GPStime,event.trig.gps_time.value)
 
+                impact = np.append(impact,np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2))
+                
     #Store the output in an ntuple:
               
-    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'mcAlttel':mcAlttel,'mcAztel':mcAztel}
+    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax}
     ntuple = Table(output)
     
     #If destination fitsfile doesn't exist, will create a new one with proper headers 

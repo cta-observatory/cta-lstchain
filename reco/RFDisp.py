@@ -24,7 +24,7 @@ from astropy.table import Table
 
 #Read data into pandas DataFrame
 filetype = 'hdf5'
-filename = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
+filename = "/home/queenmab/DATA/LST1/Events/gamma_events_point.hdf5" #File with events
 dat = Table.read(filename,format=filetype)
 df = dat.to_pandas()
 
@@ -57,13 +57,20 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train, test = df[df['is_train']==True],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi','impact']
+features = ['intensity','r','width','length','w/l','phi','psi']
 
 #Reconstruct DISP
 max_depth = 50
 regr_rf = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf.fit(train[features], train['disp'])
 disprec = regr_rf.predict(test[features])
+
+#Reconstruct the position.
+for i in range(0,test['r'].size):
+    posrec = Disp.Disp_to_Pos(disprec[i],test['x'].get_values()[i],test['y'].get_values()[i],test['psi'].get_values()[i])
+    print("position: ",posrec)
+    
+    print("center",test['x'].get_values()[i],test['y'].get_values()[i])
 
 difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())

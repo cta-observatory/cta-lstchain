@@ -66,7 +66,7 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
         
         rot_Matrix = np.append(rot_Matrix,[np.matmul(mat_Y,mat_Z)],axis=0)
     
-    res = np.einsum("...ij,...i",rot_Matrix,source)
+    res = np.einsum("...ji,...i",rot_Matrix,source)
     res = res.T
     
     Source_X = -focal_length*res[0]/res[2]
@@ -76,3 +76,20 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
 def calc_DISP(Source_X,Source_Y,cen_x,cen_y):
     disp = np.sqrt((Source_X-cen_x)**2+(Source_Y-cen_y)**2)
     return disp
+
+def Disp_to_Pos(Disp,cen_x,cen_y,psi):
+    
+    #if cen_x*cen_y>0:
+    Source_X1 = cen_x - Disp*np.cos(psi*u.rad)
+    Source_Y1 = cen_y - Disp*np.sin(psi*u.rad)
+    Source_X2 = cen_x + Disp*np.cos(psi*u.rad)
+    Source_Y2 = cen_y + Disp*np.sin(psi*u.rad)
+    return Source_X1,Source_Y1,Source_X2,Source_Y2
+    '''    
+    if cen_x*cen_y<0:
+        Source_X1 = cen_x + Disp*np.cos(psi*u.rad)
+        Source_Y1 = cen_y - Disp*np.sin(psi*u.rad)
+        Source_X2 = cen_x - Disp*np.cos(psi*u.rad)
+        Source_Y2 = cen_y + Disp*np.sin(psi*u.rad)
+        return Source_X1,Source_Y1,Source_X2,Source_Y2
+    '''
