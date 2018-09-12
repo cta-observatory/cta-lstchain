@@ -25,7 +25,7 @@ from astropy.table import Table
 #Read data into pandas DataFrame
 filetype = 'hdf5'
 filename = "/home/queenmab/DATA/LST1/Events/gamma_events_point.hdf5" #File with events
-dat = Table.read(filename,format=filetype)
+dat = Table.read(filename,format=filetype,path="gamma")
 df = dat.to_pandas()
 
 #Get some telescope parameters
@@ -42,9 +42,13 @@ disp = Disp.calc_DISP(sourcepos[0],
                             sourcepos[1],
                             df['x'].get_values(),
                             df['y'].get_values())
-#Add dist to the DataFrame
+#Add dist and Src position to the DataFrame
 df['disp'] = disp
-
+df['SrcX'] = sourcepos[0]
+df['SrcY'] = sourcepos[1]
+df = df[abs(df['SrcX'])<1e-8]
+#df = df[df['intensity'] > 200]
+#df = df[abs(df['r']) < 0.9]
 # Set Training and Test sets
 df['is_train'] = np.random.uniform(0,1,len(df))<= 0.75
 
@@ -66,11 +70,17 @@ regr_rf.fit(train[features], train['disp'])
 disprec = regr_rf.predict(test[features])
 
 #Reconstruct the position.
-for i in range(0,test['r'].size):
-    posrec = Disp.Disp_to_Pos(disprec[i],test['x'].get_values()[i],test['y'].get_values()[i],test['psi'].get_values()[i])
-    print("position: ",posrec)
-    
-    print("center",test['x'].get_values()[i],test['y'].get_values()[i])
+
+posdisp = Disp.Disp_to_Pos(test['disp'],test['x'],test['y'],test['psi'])
+theta2_true = (test['SrcX']-posdisp[0])**2+(test['SrcY']-posdisp[1])**2
+posrec = Disp.Disp_to_Pos(disprec,test['x'],test['y'],test['psi'])
+theta2_reco = (test['SrcX']-posrec[0])**2+(test['SrcY']-posrec[1])**2
+plt.hist(theta2_true,bins=50)
+plt.yscale('log')
+plt.xlabel(r'$\theta^{2}$',fontsize=24)
+plt.hist(theta2_reco,bins=50)
+plt.show()
+
 
 difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())

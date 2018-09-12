@@ -157,10 +157,10 @@ if __name__ == '__main__':
         i=i+1
         ntels = len(event.r0.tels_with_data)
 
-        '''
+        
         if i > 100:   # for quick tests
             break
-        '''
+        
         for ii, tel_id in enumerate(event.r0.tels_with_data):
 
             geom = event.inst.subarray.tel[tel_id].camera #Camera geometry

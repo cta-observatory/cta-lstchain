@@ -78,18 +78,10 @@ def calc_DISP(Source_X,Source_Y,cen_x,cen_y):
     return disp
 
 def Disp_to_Pos(Disp,cen_x,cen_y,psi):
-    
-    #if cen_x*cen_y>0:
-    Source_X1 = cen_x - Disp*np.cos(psi*u.rad)
-    Source_Y1 = cen_y - Disp*np.sin(psi*u.rad)
-    Source_X2 = cen_x + Disp*np.cos(psi*u.rad)
-    Source_Y2 = cen_y + Disp*np.sin(psi*u.rad)
-    return Source_X1,Source_Y1,Source_X2,Source_Y2
-    '''    
-    if cen_x*cen_y<0:
-        Source_X1 = cen_x + Disp*np.cos(psi*u.rad)
-        Source_Y1 = cen_y - Disp*np.sin(psi*u.rad)
-        Source_X2 = cen_x - Disp*np.cos(psi*u.rad)
-        Source_Y2 = cen_y + Disp*np.sin(psi*u.rad)
-        return Source_X1,Source_Y1,Source_X2,Source_Y2
-    '''
+   
+    Source_X1 = cen_x - Disp*np.cos(psi)
+    Source_Y1 = cen_y - Disp*np.sin(psi)
+   
+    return Source_X1,Source_Y1
+        
+       

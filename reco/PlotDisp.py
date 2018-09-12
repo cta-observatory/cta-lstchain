@@ -29,6 +29,7 @@ width = np.array([])
 length = np.array([])
 intensity = np.array([])
 energy = np.array([])
+psi = np.array([])
 ntrain=0;
 for i in range(0,nevents):
 
@@ -39,6 +40,7 @@ for i in range(0,nevents):
     width = np.append(width, hdu_list[1].data.field('width')[i])
     length = np.append(length, hdu_list[1].data.field('length')[i])
     intensity = np.append(intensity, hdu_list[1].data.field('intensity')[i])
+    psi = np.append(psi, hdu_list[1].data.field('psi')[i]) 
     energy = np.append(energy, hdu_list[1].data.field('mcEnergy')[i])
 
     #Calculate source position    
@@ -57,19 +59,21 @@ for i in range(0,nevents):
     
     disp = Disp.calc_DISP(Source_X,Source_Y,cen_x,cen_y)
 
-    print(hdu_list[1].data.field('skewness')[i],hdu_list[1].data.field('kurtosis')[i])
+    print(hdu_list[1].data.field('intensity')[i],hdu_list[1].data.field('skewness')[i])
+    if (hdu_list[1].data.field('intensity')[i]) > 0:
+        display = CameraDisplay(geom)
+        display.add_colorbar()
+        
+        image = hdu_list[2].data[i]
+        
+        display.image = image
+        display.cmap = 'CMRmap'
     
-    display = CameraDisplay(geom)
-    display.add_colorbar()
     
-    image = hdu_list[2].data[i]
-    
-    display.image = image
-    display.cmap = 'CMRmap'
-    
-    
-    plt.plot([Source_X],[Source_Y],marker='o',markersize=10,color="green")
-    plt.plot([cen_x],[cen_y],marker='x',markersize=10,color="blue")
-    plt.plot([Source_X,cen_x],[Source_Y,cen_y],'-',color="red")
-    plt.show()
+        plt.plot([Source_X],[Source_Y],marker='o',markersize=10,color="green")
+        plt.plot([cen_x],[cen_y],marker='x',markersize=10,color="blue")
+        plt.plot([Source_X,cen_x],[Source_Y,cen_y],'-',color="red")
+        posrec = Disp.Disp_to_Pos(disp,cen_x,cen_y,psi[i]) 
+        plt.plot(posrec[0],posrec[1],marker='o',color='red')
+        plt.show()
     
