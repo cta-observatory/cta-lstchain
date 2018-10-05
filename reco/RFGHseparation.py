@@ -20,15 +20,14 @@ import Disp
 import sys
 import pandas as pd
 from astropy.table import Table
-import h5py
-import h5py.highlevel
+import RFGHsep_fromfile as rf
 
 #Read data into pandas DataFrame
 filetype = 'hdf5'
-gammafile = "/home/queenmab/DATA/LST1/Events/gamma_events_point.hdf5" #File with events
-protonfile = "/home/queenmab/DATA/LST1/Events/proton_events_diff.hdf5" #File with events
-dat_gamma = Table.read(gammafile,format=filetype,path="gamma")
-dat_proton = Table.read(protonfile,format=filetype,path="proton")
+gammafile = "/scratch/bernardos/LST1/Events/gamma_events_diff.hdf5" #File with events
+protonfile = "/scratch/bernardos/LST1/Events/proton_events.hdf5" #File with events
+dat_gamma = Table.read(gammafile,format=filetype,path='gamma')
+dat_proton = Table.read(protonfile,format=filetype,path='proton')
 
 df_gamma = dat_gamma.to_pandas()
 df_proton = dat_proton.to_pandas()
@@ -69,6 +68,7 @@ df_proton['disp'] = disp_proton
 df_gamma['hadroness'] = np.zeros(df_gamma.shape[0])
 df_proton['hadroness'] = np.ones(df_proton.shape[0])
 
+
 #Cut events in the border:
 df_gamma = df_gamma[abs(df_gamma['r'])<0.94]
 df_proton = df_proton[abs(df_proton['r'])<0.94]
@@ -76,6 +76,11 @@ df_proton = df_proton[abs(df_proton['r'])<0.94]
 #Cut showers with low intensity
 df_gamma = df_gamma[abs(df_gamma['intensity'])>60]
 df_proton = df_proton[abs(df_proton['intensity'])>60]
+
+#Time gradient without sign
+
+df_gamma['time_gradient'] = abs(df_gamma['time_gradient'])
+df_proton['time_gradient'] = abs(df_proton['time_gradient'])
 
 # Set Training and Test sets
 df_gamma['is_train'] = np.random.uniform(0,1,len(df_gamma))<= 0.5
@@ -91,7 +96,7 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train_gammas, test = df[(df['is_train']==True) & (df['hadroness']==0)],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi']
+features = ['intensity','time_gradient','width','length','w/l','phi','psi']
 #features = ['intensity','r','width','length']
 
 
@@ -105,6 +110,9 @@ regr_rf_disp = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estim
 regr_rf_disp.fit(train_gammas[features], train_gammas['disp'])
 disprec = regr_rf_disp.predict(test[features])
 
+test['Erec'] = erec
+test['Disprec'] = disprec
+
 #Reconstruct position of the Source from Disp
 
 posdisp = Disp.Disp_to_Pos(test['disp'],test['x'],test['y'],test['psi'])
@@ -115,14 +123,20 @@ theta2_reco = (test['SrcX']-posrec[0])**2+(test['SrcY']-posrec[1])**2
 test['theta2_true'] = theta2_true
 test['theta2_reco'] = theta2_reco
 
+test['SrcXrec'] = posrec[0]
+test['SrcYrec'] = posrec[1]
+
+#Save the reconstructed data
+test.to_hdf("recoevents_diff.hdf5",key="test",mode="w")
+
 #Plot Energy and Disp reconstructions
 plt.subplot(121)
 difE = (((test['mcEnergy']-erec)/test['mcEnergy'])*np.log10(10))
 print(difE.mean(),difE.std())
 plt.hist(difE,bins=100)
 plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$',fontsize=15)
-plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fontsize=15)
-plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15)
+plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fontsize=15, color='white')
+plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15, color = 'white')
 
 plt.subplot(122)
 hE = plt.hist2d(test['mcEnergy'],erec,bins=100)
@@ -170,10 +184,8 @@ plt.show()
 #Now we build a new training set with reconstructed Energy and Disp:
 
 #Set a cut in energy, 0 for no cuts.
-Energy_cut = -1.
+Energy_cut = 2.699
 
-test['Erec'] = erec
-test['Disprec'] = disprec
 
 test = test[test['mcEnergy']>Energy_cut]
 
@@ -184,7 +196,7 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 train,test = test[test['is_train']==True],test[test['is_train']==False]
 
 #features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
-features = ['Erec','intensity','width','length','w/l','phi','psi']
+features = ['Erec','Disprec','intensity','time_gradient','width','length','w/l','phi','psi']
 
 #Classify Gamma/Hadron
 clf = RandomForestClassifier(max_depth = 50,
@@ -228,10 +240,13 @@ plt.ylabel('True positive rate',fontsize=15)
 plt.legend(loc='best')
 plt.show()
 
-plt.hist(test[test['hadroness']<1]['theta2_true'],bins=50,range=[0,2],histtype=u'step',label =r'With Hillas Disp')
-plt.hist(test[test['hadroness']<1]['theta2_reco'],bins=50,range=[0,2],histtype=u'step',label =r'With Reconstructed Disp')
+test['hadrorec'] = result
+
+plt.hist(test[test['hadrorec']<1]['theta2_true'],bins=50,range=[0,2],histtype=u'step',label =r'With Hillas Disp')
+plt.hist(test[test['hadrorec']<1]['theta2_reco'],bins=50,range=[0,2],histtype=u'step',label =r'With Reconstructed Disp')
 plt.yscale('log')
 plt.xlabel(r'$\theta^{2}$',fontsize=15)
 plt.ylabel(r'# Gamma events (after g/h separation)',fontsize=15)
 plt.legend()
 plt.show()
+

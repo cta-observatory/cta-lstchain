@@ -24,7 +24,7 @@ from astropy.table import Table
 
 #Read data into pandas DataFrame
 filetype = 'hdf5'
-filename = "/home/queenmab/DATA/LST1/Events/gamma_events_point.hdf5" #File with events
+filename = "/scratch/bernardos/LST1/Events/gamma_events.hdf5" #File with events
 dat = Table.read(filename,format=filetype,path="gamma")
 df = dat.to_pandas()
 
@@ -61,7 +61,7 @@ df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 train, test = df[df['is_train']==True],df[df['is_train']==False]
 
 #List of features for training
-features = ['intensity','r','width','length','w/l','phi','psi']
+features = ['intensity','time_gradient','width','length','w/l','phi','psi']
 
 #Reconstruct DISP
 max_depth = 50

@@ -52,19 +52,22 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
     #Rotation matrices towars the camera frame
     
     rot_Matrix = np.empty((0,3,3))
-    for (alttel,aztel) in zip(mcAlttel,mcAztel):
+    #    for (alttel,aztel) in zip(mcAlttel,mcAztel):
         
-        mat_Y = np.array([[np.cos(alttel),0,np.sin(alttel)],
-                        [0,1,0], 
-                        [-np.sin(alttel),0,np.cos(alttel)]]).T
+    alttel = mcAlttel[0]
+    aztel = mcAztel[0]
+    mat_Y = np.array([[np.cos(alttel),0,np.sin(alttel)],
+                      [0,1,0], 
+                      [-np.sin(alttel),0,np.cos(alttel)]]).T
         
         
-        mat_Z = np.array([[np.cos(aztel),-np.sin(aztel),0],
-                        [np.sin(aztel),np.cos(aztel),0],
-                        [0,0,1]]).T
+    mat_Z = np.array([[np.cos(aztel),-np.sin(aztel),0],
+                      [np.sin(aztel),np.cos(aztel),0],
+                      [0,0,1]]).T
     
         
-        rot_Matrix = np.append(rot_Matrix,[np.matmul(mat_Y,mat_Z)],axis=0)
+    #rot_Matrix = np.append(rot_Matrix,[np.matmul(mat_Y,mat_Z)],axis=0)
+    rot_Matrix = np.matmul(mat_Y,mat_Z)
     
     res = np.einsum("...ji,...i",rot_Matrix,source)
     res = res.T
