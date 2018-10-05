@@ -14,14 +14,13 @@ import os
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
+import ctapipe.image.timing_parameters as time
 from astropy.table import vstack,Table
 from astropy.io import fits
 import argparse
 import h5py
 from ctapipe.utils import get_dataset
-
-
-
+import astropy.units as units
 
 parser = argparse.ArgumentParser(description = "process CTA files.")
 
@@ -140,6 +139,10 @@ if __name__ == '__main__':
     
     fitsdata = np.array([])
 
+    #Timing Parameters
+    time_gradient = np.array([])
+    intercept = np.array([])
+
     log10pixelHGsignal = {}
     survived = {}
 
@@ -157,10 +160,10 @@ if __name__ == '__main__':
         i=i+1
         ntels = len(event.r0.tels_with_data)
 
-        
+        '''
         if i > 100:   # for quick tests
             break
-        
+        '''
         for ii, tel_id in enumerate(event.r0.tels_with_data):
 
             geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
@@ -201,6 +204,12 @@ if __name__ == '__main__':
             w = np.rad2deg(np.arctan2(hillas.width, foclen))
             l = np.rad2deg(np.arctan2(hillas.length, foclen))
 
+            #Calculate Timing parameters
+        
+            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
+            timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
+            
+
             if w >= 0:
                 if fitsdata.size == 0:
                     fitsdata = clean
@@ -237,9 +246,13 @@ if __name__ == '__main__':
 
                 impact = np.append(impact,np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2))
                 
+                time_gradient = np.append(time_gradient,timepars[0])
+                intercept = np.append(intercept,timepars[1])
+
+    
     #Store the output in an ntuple:
               
-    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax}
+    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax,'time_gradient':time_gradient,'intercept':intercept}
     ntuple = Table(output)
     
     #If destination fitsfile doesn't exist, will create a new one with proper headers 
