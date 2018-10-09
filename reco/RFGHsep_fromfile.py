@@ -21,7 +21,7 @@ import seaborn as sns
 
 def plot_features(data):
 
-    data = data[data['intensity']>np.log10(200)]
+
     #Energy distribution
     plt.subplot(331)
     plt.hist(data[data['hadroness']<1]['mcEnergy'],histtype=u'step',bins=100,label="Gammas")
@@ -44,19 +44,20 @@ def plot_features(data):
     plt.ylabel(r'# of events',fontsize=15)
     plt.xlabel(r"$log_{10}Intensity$")
 
+    dataforwl = data[data['intensity']>np.log10(200)]
     #Width distribution
     plt.subplot(334)
-    plt.hist(data[data['hadroness']<1]['width'],histtype=u'step',bins=100,label="Gammas")
-    plt.hist(data[data['hadroness']>0]['width'],histtype=u'step',bins=100,label="Protons")
+    plt.hist(dataforwl[dataforwl['hadroness']<1]['width'],histtype=u'step',bins=100,label="Gammas")
+    plt.hist(dataforwl[dataforwl['hadroness']>0]['width'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"Width (m)")
+    plt.xlabel(r"Width (º)")
 
     #Length distribution
     plt.subplot(335)
-    plt.hist(data[data['hadroness']<1]['length'],histtype=u'step',bins=100,label="Gammas")
-    plt.hist(data[data['hadroness']>0]['length'],histtype=u'step',bins=100,label="Protons")
+    plt.hist(dataforwl[dataforwl['hadroness']<1]['length'],histtype=u'step',bins=100,label="Gammas")
+    plt.hist(dataforwl[dataforwl['hadroness']>0]['length'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"Length (m)")
+    plt.xlabel(r"Length (º)")
 
     #r distribution
     plt.subplot(336)
@@ -157,8 +158,8 @@ def plot_Disp(test):
     plt.plot(test['disp'],test['disp'],"-",color='red')   
  
     plt.subplot(223)
-    plt.hist(test['theta2_true'],bins=100,range=[0,0.05],histtype=u'step',label=r'With Hillas Disp')
-    plt.hist(test['theta2_reco'],bins=100,range=[0,0.05],histtype=u'step',label=r'With Reconstructed Disp')
+    #plt.hist(test['theta2_true'],bins=100,range=[0,0.05],histtype=u'step',label=r'With Hillas Disp')
+    plt.hist(test['theta2_reco'],bins=100,range=[0,0.01],histtype=u'step',label=r'With Reconstructed Disp')
     plt.legend()
     plt.xlabel(r'$\theta^{2}(º)$',fontsize=15)
     plt.ylabel(r'# of events',fontsize=15)
@@ -312,7 +313,7 @@ if __name__ == '__main__':
     '''
     
     Energies = [2.699]
-    
+    theta2_cut = 0.01
     #Energies = [-1.]
     for Energy_cut in Energies:
     
@@ -324,6 +325,7 @@ if __name__ == '__main__':
         plt.show()
         
         gammas = result[result['hadroreco']<1]
+        gammas = result[result['theta2_reco']<theta2_cut]
         plot_E(gammas)
         plt.show()
         plot_Disp(gammas)
