@@ -15,6 +15,7 @@ from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 import ctapipe.image.timing_parameters as time
+from ctapipe.image import leakage
 from astropy.table import vstack,Table
 from astropy.io import fits
 import argparse
@@ -143,6 +144,10 @@ if __name__ == '__main__':
     time_gradient = np.array([])
     intercept = np.array([])
 
+    #Leakage Parameters
+    leakage1 = np.array([])    
+    leakage2 = np.array([])
+
     log10pixelHGsignal = {}
     survived = {}
 
@@ -205,9 +210,25 @@ if __name__ == '__main__':
             l = np.rad2deg(np.arctan2(hillas.length, foclen))
 
             #Calculate Timing parameters
-        
-            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
-            timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
+#            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
+#            timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
+            pedcorrectedsamples[~window] = 0.0            
+            pedcorrectedsamples[pedcorrectedsamples < 0] = 0.001 # to avoid sum=0
+            ind = np.indices(data.shape)[2]
+            wmtime = np.average(ind, axis=2, weights=pedcorrectedsamples) # weighted mean time
+ 
+            wmtime_ns = units.Quantity(wmtime[0])*units.Unit("ns")
+            timegrad, intcpt = time.timing_parameters(geom.pix_x,geom.pix_y,clean,wmtime_ns,hillas.psi)
+
+            # Calculate Time Gradient from shower head            
+            if np.sign(hillas.skewness) != 0 :
+                timegrad *= (-1.0) * np.sign(hillas.skewness)
+            print('time gradient : ',timegrad)
+
+            # Calculate Leakage parameters
+            LeakParas = leakage(geom, clean, cleanmask)
+            leak1 = LeakParas['leakage1_intensity']
+            leak2 = LeakParas['leakage2_intensity']
             
 
             if w >= 0:
@@ -246,13 +267,16 @@ if __name__ == '__main__':
 
                 impact = np.append(impact,np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2))
                 
-                time_gradient = np.append(time_gradient,timepars[0])
-                intercept = np.append(intercept,timepars[1])
+                time_gradient = np.append(time_gradient,timegrad)
+                intercept = np.append(intercept,intcpt)
+
+                leakage1 = np.append(leakage1, leak1)
+                leakage2 = np.append(leakage2, leak2)
 
     
     #Store the output in an ntuple:
               
-    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax,'time_gradient':time_gradient,'intercept':intercept}
+    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax,'time_gradient':time_gradient,'intercept':intercept,'leakage1':leakage1,'leakage2':leakage2}
     ntuple = Table(output)
     
     #If destination fitsfile doesn't exist, will create a new one with proper headers 
