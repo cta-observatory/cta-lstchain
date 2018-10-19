@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 '''
-Module for calculating Source position in camera coordinates, and Disp distance.
+Module with auxiliar functions:
+Transform AltAz coordinates into Camera coordinates (This should be implemented already in ctapipe but I haven't managed to find how to do it)
+Calculate source position from Disp distance.
+Calculate Disp distance from source position.
+
 Usage:
-import Disp
+
+"import transformations"
 
 '''
 

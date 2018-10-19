@@ -21,4 +21,10 @@ data = parameters.get_events(datafile,False)
 
 features = ['intensity','time_gradient','width','length','w/l','phi','psi']
 
-RFreg_Energy,RFreg_Disp,RFcls_GH = reconstruction.buildModels(gammafile,protonfile,features)
+RFreg_Energy,RFreg_Disp,RFcls_GH = reconstruction.buildModels(gammafile,protonfile,features,True)
+
+#Apply the models to the data
+
+reconstruction.ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
+
+
