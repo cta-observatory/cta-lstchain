@@ -210,26 +210,22 @@ if __name__ == '__main__':
             l = np.rad2deg(np.arctan2(hillas.length, foclen))
 
             #Calculate Timing parameters
-#            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
-#            timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
-            pedcorrectedsamples[~window] = 0.0            
-            pedcorrectedsamples[pedcorrectedsamples < 0] = 0.001 # to avoid sum=0
-            ind = np.indices(data.shape)[2]
-            wmtime = np.average(ind, axis=2, weights=pedcorrectedsamples) # weighted mean time
- 
-            wmtime_ns = units.Quantity(wmtime[0])*units.Unit("ns")
-            timegrad, intcpt = time.timing_parameters(geom.pix_x,geom.pix_y,clean,wmtime_ns,hillas.psi)
-
-            # Calculate Time Gradient from shower head            
-            if np.sign(hillas.skewness) != 0 :
-                timegrad *= (-1.0) * np.sign(hillas.skewness)
-            print('time gradient : ',timegrad)
+            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
+            timepars = time.timing_parameters(geom,clean,peak_time,hillas)
 
             # Calculate Leakage parameters
             LeakParas = leakage(geom, clean, cleanmask)
             leak1 = LeakParas['leakage1_intensity']
             leak2 = LeakParas['leakage2_intensity']
             
+            # Calculate Impact parameter
+            kh =  (tel_coords.x.value - event.mc.core_x.value) * np.cos(event.mc.alt) * np.cos(event.mc.az) \
+                + (tel_coords.y.value - event.mc.core_y.value) * np.cos(event.mc.alt) * np.sin(event.mc.az) \
+                +  tel_coords.z.value * np.sin(event.mc.alt) # intermediate parameter
+            imp = np.sqrt((tel_coords.x.value - event.mc.core_x.value - kh * np.cos(event.mc.alt) * np.cos(event.mc.az))**2 \
+                           + (tel_coords.y.value - event.mc.core_y.value - kh * np.cos(event.mc.alt) * np.sin(event.mc.az))**2 \
+                           + (tel_coords.z.value - kh * np.sin(event.mc.alt))**2)
+
 
             if w >= 0:
                 if fitsdata.size == 0:
@@ -265,10 +261,10 @@ if __name__ == '__main__':
                 mcXmax = np.append(mcXmax,event.mc.x_max)
                 GPStime = np.append(GPStime,event.trig.gps_time.value)
 
-                impact = np.append(impact,np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2))
+                impact = np.append(impact,imp)
                 
-                time_gradient = np.append(time_gradient,timegrad)
-                intercept = np.append(intercept,intcpt)
+                time_gradient = np.append(time_gradient,timepars['slope'])
+                intercept = np.append(intercept,timepars['intercept'])
 
                 leakage1 = np.append(leakage1, leak1)
                 leakage2 = np.append(leakage2, leak2)
