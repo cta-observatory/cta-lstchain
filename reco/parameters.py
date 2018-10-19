@@ -1,3 +1,10 @@
+"""
+This is a module for extracting data from simtelarray files and calculate image parameters of the events: Hillas parameters, timing parameters. They can be stored in HDF5 file. The option of saving the full camera image is also available.
+Usage:
+
+"import parameters"
+
+"""
 import numpy as np
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
@@ -28,7 +35,7 @@ def guess_type(filename):
             return p
     return 'unknown'
 
-def get_events(filename,concatenate='True',storeimg='False',outdir='./results/'):
+def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir='./results/'):
     """
     Read a Simtelarray file, extract pixels charge, calculate image parameters and timing
     parameters and store the result in an hdf5 file. 
@@ -37,11 +44,19 @@ def get_events(filename,concatenate='True',storeimg='False',outdir='./results/')
     filename: str
     Name of the simtelarray file.
 
+    storedata: boolean
+    True: store extracted data in a hdf5 file
+
+    concatenate: boolean
+    True: store the extracted data at the end of an existing file
+
+    storeimg: boolean
+    True: store also pixel data
+    
     outdir: srt
     Output directory
     
-    storeimg: boolean
-    True: store pixel data
+    
     
     """
     #Particle type:
@@ -85,10 +100,10 @@ def get_events(filename,concatenate='True',storeimg='False',outdir='./results/')
         i=i+1
         ntels = len(event.r0.tels_with_data)
 
-
+        '''
         if i > 100:   # for quick tests
             break
-
+        '''
         for ii, tel_id in enumerate(event.r0.tels_with_data):
             
             geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
@@ -198,29 +213,31 @@ def get_events(filename,concatenate='True',storeimg='False',outdir='./results/')
                 output = output.append(eventdf,ignore_index=True)
 
     outfile = outdir + particle_type + '_events.hdf5'
+    
+    if storedata==True:
 
-    if concatenate==False:
-        output.to_hdf(outfile,key=particle_type+"_events",mode="w")
-        if storeimg==True:
-            f = h5py.File(outfile,'r+')
-            f.create_dataset('images',data=imagedata)                                            
-            f.close()
-    else:
-        if storeimg==True:
-            f = h5py.File(outfile,'r')
-            images = f['images']
-            del f['images']
-            images = np.vstack([images,imagedata])
-            f.close()
-            saved = pd.read_hdf(outfile,key=particle_type+'_events')
-            output = saved.append(output,ignore_index=True)
+        if concatenate==False or (concatenate==True and np.DataSource().exists(outfile)==False):
             output.to_hdf(outfile,key=particle_type+"_events",mode="w")
-            f = h5py.File(outfile,'r+')
-            f.create_dataset('images',data=images)
-            f.close()
+            if storeimg==True:
+                f = h5py.File(outfile,'r+')
+                f.create_dataset('images',data=imagedata)                                            
+                f.close()
         else:
-            saved = pd.read_hdf(outfile,key=particle_type+'_events')
-            output = saved.append(output,ignore_index=True)
-            output.to_hdf(outfile,key=particle_type+"_events",mode="w")
-            
+            if storeimg==True:
+                f = h5py.File(outfile,'r')
+                images = f['images']
+                del f['images']
+                images = np.vstack([images,imagedata])
+                f.close()
+                saved = pd.read_hdf(outfile,key=particle_type+'_events')
+                output = saved.append(output,ignore_index=True)
+                output.to_hdf(outfile,key=particle_type+"_events",mode="w")
+                f = h5py.File(outfile,'r+')
+                f.create_dataset('images',data=images)
+                f.close()
+            else:
+                saved = pd.read_hdf(outfile,key=particle_type+'_events')
+                output = saved.append(output,ignore_index=True)
+                output.to_hdf(outfile,key=particle_type+"_events",mode="w")
+    del source
     return output
