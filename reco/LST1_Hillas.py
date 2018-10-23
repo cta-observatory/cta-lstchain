@@ -58,6 +58,18 @@ parser.add_argument('--storeimg', '-s', dest='storeimg', action='store',
 args = parser.parse_args()
 
 
+def CalcImpact(tel_x,tel_y,tel_z,mcCore_x,mcCore_y,mcAlt,mcAz):
+
+    kh =  (tel_x - mcCore_x) * np.cos(mcAlt) * np.cos(mcAz) \
+        + (tel_y - mcCore_y) * np.cos(mcAlt) * np.sin(mcAz) \
+        +  tel_z * np.sin(mcAlt) # intermediate parameter
+ 
+    imp = np.sqrt((tel_x - mcCore_x - kh * np.cos(mcAlt) * np.cos(mcAz))**2 \
+                      + (tel_y - mcCore_y - kh * np.cos(mcAlt) * np.sin(mcAz))**2 \
+                      + (tel_z - kh * np.sin(mcAlt))**2)
+    return imp
+
+
 def guess_type(filename):
     """
     Guess the particle type from the filename
@@ -219,13 +231,8 @@ if __name__ == '__main__':
             leak2 = LeakParas['leakage2_intensity']
             
             # Calculate Impact parameter
-            kh =  (tel_coords.x.value - event.mc.core_x.value) * np.cos(event.mc.alt) * np.cos(event.mc.az) \
-                + (tel_coords.y.value - event.mc.core_y.value) * np.cos(event.mc.alt) * np.sin(event.mc.az) \
-                +  tel_coords.z.value * np.sin(event.mc.alt) # intermediate parameter
-            imp = np.sqrt((tel_coords.x.value - event.mc.core_x.value - kh * np.cos(event.mc.alt) * np.cos(event.mc.az))**2 \
-                           + (tel_coords.y.value - event.mc.core_y.value - kh * np.cos(event.mc.alt) * np.sin(event.mc.az))**2 \
-                           + (tel_coords.z.value - kh * np.sin(event.mc.alt))**2)
-
+            imp = CalcImpact(tel_coords.x.value, tel_coords.y.value, tel_coords.z.value, event.mc.core_x.value, event.mc.core_y.value, event.mc.alt, event.mc.az)
+            
 
             if w >= 0:
                 if fitsdata.size == 0:
