@@ -1,16 +1,14 @@
-"""
-Module with functions for Energy and Disp reconstruction and G/H separation. There are functions for raining random forest and for applying them to data. The RF can be saved into a file for later use.
+"""Module with functions for Energy and Disp reconstruction and G/H
+separation. There are functions for raining random forest and for
+applying them to data. The RF can be saved into a file for later use.
 
 Usage:
 
-"import reconstruction"
-
+"import reco_dl1_to_dl2"
 """
-
-
 import numpy as np
 import pandas as pd
-import transformations
+import utils
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve
@@ -21,10 +19,17 @@ def split_traintest(data,proportion):
     Split a dataset in "train" and "test" sets.
 
     Parameters:
+    -----------
     data: pandas DataFrame
 
     proportion: float
     Percentage of the total dataset that will be part of the train set.
+
+    Returns:
+    --------
+    pandas dataFrame: train
+    
+    pandas dataFrame: test
     
     """
     data['is_train'] = np.random.uniform(0,1,len(data))<= proportion
@@ -34,69 +39,91 @@ def split_traintest(data,proportion):
 
 def trainRFreco(train,features):
     """
-    Trains two Random Forest regressors for Energy and Disp reconstruction respectively.
-    Returns the trained RF.
+    Trains two Random Forest regressors for Energy and Disp
+    reconstruction respectively. Returns the trained RF.
 
     Parameters:
+    -----------
     train: pandas DataFrame
     data set for training the RF
 
     features: list of strings
     List of features to train the RF
+    
+    Returns:
+    --------
+    RandomForestRegressor: regr_rf_e
 
+    RandomForestRegressor: regr_rf_disp
     """
+
     print("Given features: ",features)
     print("Number of events for training: ",train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
     
     
     max_depth = 50
-    regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=30)                                                           
-    regr_rf_e.fit(train[features], train['mcEnergy'])
-    #erec = regr_rf_e.predict(test[features])
+    regr_rf_e = RandomForestRegressor(max_depth=max_depth, 
+                                      random_state=2,
+                                      n_estimators=30)                                                           
+    regr_rf_e.fit(train[features],
+                  train['mcEnergy'])
+    
     print("Random Forest trained!")    
     print("Training Random Forest Regressor for Disp Reconstruction...")
-    #Reconstruct Disp
-    regr_rf_disp = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=30)                                                           
-    regr_rf_disp.fit(train[features], train['disp'])
-    #disprec = regr_rf_disp.predict(test[features])
+    
+    regr_rf_disp = RandomForestRegressor(max_depth=max_depth,
+                                         random_state=2,
+                                         n_estimators=30)                                                           
+    regr_rf_disp.fit(train[features],
+                     train['disp'])
+    
     print("Random Forest trained!")
     print("Done!")
     return regr_rf_e, regr_rf_disp
 
 def trainRFsep(train,features):
     
-    """
-    Trains a Random Forest classifier for Gamma/Hadron separation.
+    """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
 
     Parameters:
+    -----------
     train: pandas DataFrame
     data set for training the RF
 
     features: list of strings
     List of features to train the RF
 
+    Return:
+    -------
+    RandomForestClassifier: clf
     """
     print("Given features: ",features)
     print("Number of events for training: ",train.shape[0])
-    print("Training Random Forest Classifier for Gamma/Hadron separation...")
+    print("Training Random Forest Classifier for",
+    "Gamma/Hadron separation...")
+    
     clf = RandomForestClassifier(max_depth = 50,
                              n_jobs=10,
                              random_state=4,
                              n_estimators=30)
     
-    clf.fit(train[features],train['hadroness'])
+    clf.fit(train[features],
+            train['hadroness'])
     print("Random Forest trained!")
     print("Done!")
     return clf 
 
-def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",EnergyCut=-1,IntensityCut=60,rCut=0.94):
-    """
-    Uses MC data to train Random Forests for Energy and Disp reconstruction and G/H separation.
-    Returns 3 trained RF.
+
+def buildModels(filegammas,fileprotons,features,
+                SaveModels=True,path_models="",
+                EnergyCut=-1,IntensityCut=60,rCut=0.94):
+    """Uses MC data to train Random Forests for Energy and Disp
+    reconstruction and G/H separation. Returns 3 trained RF.
 
     Parameters:
+    -----------
     filegammas: string
     Name of the file with MC gamma events
     
@@ -121,11 +148,18 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     
     path_models: string
     path to store the trained RF
-   
+
+    Returns:
+    --------
+    RandomForestRegressor: RFreg_Energy
+    RandomForestRegressor: RFreg_Disp
+    RandomForestClassifier: RFcls_GH
     """
     
-    df_gamma = pd.read_hdf(filegammas,key='gamma_events')
-    df_proton = pd.read_hdf(fileprotons,key='proton_events')
+    df_gamma = pd.read_hdf(filegammas,
+                           key='gamma_events')
+    df_proton = pd.read_hdf(fileprotons,
+                            key='proton_events')
 
     #Apply cuts in intensity and r
 
@@ -138,13 +172,17 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,features)
+    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
+                                           features)
 
-    #Train classifier for gamma/hadron separation. We need to use half of the gammas for
-    #training regressors and have Erec and Disp rec for training the classifier
+    #Train classifier for gamma/hadron separation. We need to use half
+    #of the gammas for training regressors and have Erec and Disp rec
+    #for training the classifier.
 
-    train, testg = split_traintest(df_gamma,0.5)
-    test = testg.append(df_proton,ignore_index=True)
+    train, testg = split_traintest(df_gamma,
+                                   0.5)
+    test = testg.append(df_proton,
+                        ignore_index=True)
 
     tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features)
     
@@ -153,10 +191,13 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     test['Erec'] = tempRFreg_Energy.predict(test[features])
     test['Disprec'] = tempRFreg_Disp.predict(test[features])
     
-    #Apply cut in reconstructed energy. New train set is the previous test with energy and disp reconstructed.
+    #Apply cut in reconstructed energy. New train set is the previous
+    #test with energy and disp reconstructed.
+    
     train = test[test['mcEnergy']>EnergyCut]
     
     del tempRFreg_Energy, tempRFreg_Disp
+    
     #Add Erec and Disprec to features.
     features_sep = features
     features_sep.append('Erec')
@@ -164,7 +205,8 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     
     #Train the Classifier
 
-    RFcls_GH = trainRFsep(train,features_sep) 
+    RFcls_GH = trainRFsep(train,
+                          features_sep) 
     
     if SaveModels==True:
         fileE = path_models+"RFreg_Energy.sav"
@@ -174,13 +216,16 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
         joblib.dump(RFreg_Disp, fileD)
         joblib.dump(RFcls_GH, fileH)
         
+    features.remove('Erec')
+    features.remove('Disprec')
     return RFreg_Energy,RFreg_Disp,RFcls_GH
 
-def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
-    """
-    Apply previously trained Random Forests to a set of data depending on a set of features
+def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
+    """Apply previously trained Random Forests to a set of data
+    depending on a set of features.
 
-    Parameters
+    Parameters:
+    -----------
     data: Pandas DataFrame
     
     features: list
@@ -195,17 +240,20 @@ def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RF for Disp reconstruction
 
     """
+    dl2 = dl1
     #Reconstruction of Energy and Disp distance
-    data['Erec'] = RFreg_Energy.predict(data[features])
-    data['Disprec'] = RFreg_Disp.predict(data[features])
+    dl2['Erec'] = RFreg_Energy.predict(dl2[features])
+    dl2['Disprec'] = RFreg_Disp.predict(dl2[features])
+   
     #Construction of Source position in camera coordinates from Disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    data['SrcXrec'],data['SrcYrec'] = transformations.Disp_to_Pos(data['Disprec'],
-                                                                  data['x'],
-                                                                  data['y'],
-                                                                  data['psi'])
+    dl2['SrcXrec'],dl2['SrcYrec'] = utils.Disp_to_Pos(dl2['Disprec'],
+                                                                  dl2['x'],
+                                                                  dl2['y'],
+                                                                  dl2['psi'])
     
     features.append('Erec')
     features.append('Disprec')
-    data['Hadrorec'] = RFcls_GH.predict(data[features])
+    dl2['Hadrorec'] = RFcls_GH.predict(dl2[features])
     
+
