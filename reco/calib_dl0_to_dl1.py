@@ -1,8 +1,11 @@
-"""
-This is a module for extracting data from simtelarray files and calculate image parameters of the events: Hillas parameters, timing parameters. They can be stored in HDF5 file. The option of saving the full camera image is also available.
+"""This is a module for extracting data from simtelarray files and 
+calculate image parameters of the events: Hillas parameters, timing 
+parameters. They can be stored in HDF5 file. The option of saving the 
+full camera image is also available.
+
 Usage:
 
-"import parameters"
+"import calib_dl0_to_dl1"
 
 """
 import numpy as np
@@ -15,12 +18,11 @@ from ctapipe.instrument import OpticsDescription
 import pandas as pd
 import astropy.units as units
 import h5py
-import transformations
+import utils
 
 def guess_type(filename):
-    """
-    Guess the particle type from the filename
-
+    """Guess the particle type from the filename
+    
     Parameters
     ----------
     filename: str
@@ -34,13 +36,16 @@ def guess_type(filename):
         if p in filename:
             return p
     return 'unknown'
-
-def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir='./results/'):
+    
+def get_events(filename,storedata=False,
+               concatenate=False,storeimg=False,outdir='./results/'):
     """
-    Read a Simtelarray file, extract pixels charge, calculate image parameters and timing
-    parameters and store the result in an hdf5 file. 
+    Read a Simtelarray file, extract pixels charge, calculate image 
+    parameters and timing parameters and store the result in an hdf5
+    file. 
     
     Parameters:
+    -----------
     filename: str
     Name of the simtelarray file.
 
@@ -56,8 +61,9 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
     outdir: srt
     Output directory
     
-    
-    
+    Returns:
+    --------
+    pandas DataFrame: output
     """
     #Particle type:
     
@@ -65,22 +71,27 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
     
     #Create data frame where DL2 data will be stored:
 
-    features = ['ObsID','EvID','mcEnergy','mcAlt','mcAz','mcCore_x','mcCore_y','mcHfirst','mcType',
-                'GPStime','width','length','w/l','phi','psi','r','x','y','intensity','skewness',
-                'kurtosis','mcAlttel','mcAztel','impact','mcXmax','time_gradient','intercept',
-                'SrcX','SrcY','disp','hadroness']
+    features = ['ObsID','EvID','mcEnergy','mcAlt','mcAz','mcCore_x','mcCore_y',
+                'mcHfirst','mcType','GPStime','width','length','w/l','phi',
+                'psi','r','x','y','intensity','skewness','kurtosis','mcAlttel',
+                'mcAztel','impact','mcXmax','time_gradient','intercept','SrcX',
+                'SrcY','disp','hadroness']
     output = pd.DataFrame(columns=features)
 
     #Read LST1 events:
-    source = EventSourceFactory.produce(input_url=filename, allowed_tels={1}) #Open Simtelarray file
+    source = EventSourceFactory.produce(
+        input_url=filename, 
+        allowed_tels={1}) #Open Simtelarray file
 
     #Cleaning levels:
         
     level1 = {'LSTCam' : 6.}
     level2 = level1.copy()
     # We use as second cleaning level just half of the first cleaning level
+    
     for key in level2:
         level2[key] *= 0.5
+    
     
     log10pixelHGsignal = {}
     survived = {}
@@ -97,7 +108,9 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
             print("EVENT_ID: ", event.r0.event_id, "TELS: ",
                   event.r0.tels_with_data,
                   "MC Energy:", event.mc.energy )
+
         i=i+1
+
         ntels = len(event.r0.tels_with_data)
 
         '''
@@ -106,39 +119,58 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
         '''
         for ii, tel_id in enumerate(event.r0.tels_with_data):
             
-            geom = event.inst.subarray.tel[tel_id].camera #Camera geometry
-            tel_coords = event.inst.subarray.tel_coords[event.inst.subarray.tel_indices[tel_id]]
+            geom = event.inst.subarray.tel[tel_id].camera     #Camera geometry
+            tel_coords = event.inst.subarray.tel_coords[
+                event.inst.subarray.tel_indices[tel_id]
+            ]
+            
             data = event.r0.tel[tel_id].waveform
-            ped = event.mc.tel[tel_id].pedestal
-            # the pedestal is the average (for pedestal events) of the *sum* of all samples, from sim_telarray
+            
+            ped = event.mc.tel[tel_id].pedestal    # the pedestal is the 
+            #average (for pedestal events) of the *sum* of all samples,
+            #from sim_telarray
 
             nsamples = data.shape[2]  # total number of samples
-            pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples    # Subtract pedestal baseline. atleast_3d converts 2D to 3D matrix
-
+            
+            # Subtract pedestal baseline. atleast_3d converts 2D to 3D matrix
+            
+            pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples    
+            
             integrator = LocalPeakIntegrator(None, None)
-            integration, peakpos, window = integrator.extract_charge(pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
-
+            integration, peakpos, window = integrator.extract_charge(
+                pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
+            
             chan = 0  # high gain used for now...
             signals = integration[chan].astype(float)
 
             dc2pe = event.mc.tel[tel_id].dc_to_pe   # numgains * numpixels
             signals *= dc2pe[chan]
 
-            # Add all individual pixel signals to the numpy array of the corresponding camera inside the log10pixelsignal dictionary
-            log10pixelHGsignal[str(geom)].extend(np.log10(signals))  # This seems to be faster like this, with normal python lists
-
+            # Add all individual pixel signals to the numpy array of the
+            # corresponding camera inside the log10pixelsignal dictionary
+            
+            log10pixelHGsignal[str(geom)].extend(np.log10(signals))  
+            
             # Apply image cleaning
-            cleanmask = tailcuts_clean(geom, signals, picture_thresh=level1[str(geom)],
-                                       boundary_thresh=level2[str(geom)], keep_isolated_pixels=False, min_number_picture_neighbors=1)
-            survived[str(geom)].extend(cleanmask)  # This seems to be faster like this, with normal python lists
-
+        
+            cleanmask = tailcuts_clean(geom, signals, 
+                                       picture_thresh=level1[str(geom)],
+                                       boundary_thresh=level2[str(geom)], 
+                                       keep_isolated_pixels=False, 
+                                       min_number_picture_neighbors=1)
+           
+            survived[str(geom)].extend(cleanmask)  
+           
             clean = signals.copy()
-            clean[~cleanmask] = 0.0   # set to 0 pixels which did not survive cleaning
+            clean[~cleanmask] = 0.0   # set to 0 pixels which did not 
+            # survive cleaning
+            
             if np.max(clean) < 1.e-6:  # skip images with no pixels
                 continue
-
+                
             # Calculate image parameters
-            hillas = hillas_parameters(geom, clean)  # this one gives some warnings invalid value in sqrt
+        
+            hillas = hillas_parameters(geom, clean)  
             foclen = event.inst.subarray.tel[tel_id].optics.equivalent_focal_length
 
             w = np.rad2deg(np.arctan2(hillas.width, foclen))
@@ -149,15 +181,14 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
             peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
             timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
             
-
             if w >= 0:
-                
                 if storeimg==True:
                     if imagedata.size == 0:
                         imagedata = clean
                     else:
                         imagedata = np.vstack([imagedata,clean]) #Pixel content
                 
+                #Hillas parameters
                 width = w.value
                 length = l.value
                 phi = hillas.phi.value
@@ -169,7 +200,7 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
                 skewness =  hillas.skewness
                 kurtosis = hillas.kurtosis
                 
-                #Store parameters from event and MC:
+                #MC data:
                 ObsID = event.r0.obs_id
                 EvID = event.r0.event_id
 
@@ -185,42 +216,56 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
                 mcXmax = event.mc.x_max.value
                 GPStime = event.trig.gps_time.value
 
-                impact = np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2)
+                #Calculate impact parameters
+
+                impact = np.sqrt((
+                    tel_coords.x.value-event.mc.core_x.value)**2
+                    +(tel_coords.y.value-event.mc.core_y.value)**2)
                 
+                #Timing parameters
+
                 time_gradient = timepars[0].value
                 intercept = timepars[1].value
 
                 #Calculate Disp and Source position in camera coordinates
+                
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value
-                sourcepos = transformations.calc_CamSourcePos(mcAlt,mcAz,
+                sourcepos = utils.calc_CamSourcePos(mcAlt,mcAz,
                                                               mcAlttel,mcAztel,
                                                               focal_length) 
                 SrcX = sourcepos[0]
                 SrcY = sourcepos[1]
-                disp = transformations.calc_DISP(sourcepos[0],sourcepos[1],x,y)
+                disp = utils.calc_DISP(sourcepos[0],sourcepos[1],
+                                                 x,y)
                 
                 hadroness = 0
                 if particle_type=='proton':
                     hadroness = 1
 
-                eventdf = pd.DataFrame([[ObsID,EvID,mcEnergy,mcAlt,mcAz,mcCore_x,mcCore_y,mcHfirst,
-                                         mcType,GPStime,width,length,width/length,phi,psi,r,x,y,
-                                         intensity,skewness,kurtosis,mcAlttel,mcAztel,impact,mcXmax,
-                                         time_gradient,intercept,SrcX,SrcY,disp,hadroness]],
+                eventdf = pd.DataFrame([[ObsID,EvID,mcEnergy,mcAlt,mcAz,
+                                         mcCore_x,mcCore_y,mcHfirst,mcType,
+                                         GPStime,width,length,width/length,phi,
+                                         psi,r,x,y,intensity,skewness,kurtosis,
+                                         mcAlttel,mcAztel,impact,mcXmax,
+                                         time_gradient,intercept,SrcX,SrcY,
+                                         disp,hadroness]],
                                        columns=features)
                 
-                output = output.append(eventdf,ignore_index=True)
+                output = output.append(eventdf,
+                                       ignore_index=True)
 
     outfile = outdir + particle_type + '_events.hdf5'
     
     if storedata==True:
-
-        if concatenate==False or (concatenate==True and np.DataSource().exists(outfile)==False):
-            output.to_hdf(outfile,key=particle_type+"_events",mode="w")
+        if (concatenate==False or 
+            (concatenate==True and 
+             np.DataSource().exists(outfile)==False)):
+            output.to_hdf(outfile,
+                          key=particle_type+"_events",mode="w")
             if storeimg==True:
                 f = h5py.File(outfile,'r+')
-                f.create_dataset('images',data=imagedata)                                            
+                f.create_dataset('images',data=imagedata)
                 f.close()
         else:
             if storeimg==True:
