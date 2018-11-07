@@ -18,7 +18,9 @@ from ctapipe.instrument import OpticsDescription
 import pandas as pd
 import astropy.units as units
 import h5py
-import utils
+import sys
+sys.path.insert(0, '../')
+import reco.utils as utils
 
 def guess_type(filename):
     """Guess the particle type from the filename
@@ -37,7 +39,7 @@ def guess_type(filename):
             return p
     return 'unknown'
     
-def get_events(filename,storedata=False,
+def get_events(filename,storedata=False,test=False,
                concatenate=False,storeimg=False,outdir='./results/'):
     """
     Read a Simtelarray file, extract pixels charge, calculate image 
@@ -113,10 +115,10 @@ def get_events(filename,storedata=False,
 
         ntels = len(event.r0.tels_with_data)
 
-        '''
-        if i > 100:   # for quick tests
+        
+        if test==True and i > 1000:   # for quick tests
             break
-        '''
+        
         for ii, tel_id in enumerate(event.r0.tels_with_data):
             
             geom = event.inst.subarray.tel[tel_id].camera     #Camera geometry
