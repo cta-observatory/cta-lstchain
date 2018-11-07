@@ -38,7 +38,6 @@ parser.add_argument('--opath', '-o', action='store', type=str,
 args = parser.parse_args()
 
 if __name__ == '__main__':
-
     #Train the models
 
     features = ['intensity',
@@ -48,7 +47,6 @@ if __name__ == '__main__':
                 'w/l',
                 'phi',
                 'psi']
-    print(args.storerf)
 
     RFreg_Energy,RFreg_Disp,RFcls_GH = reco_dl1_to_dl2.buildModels(
         args.gammafile,args.protonfile,

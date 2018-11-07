@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import scipy.stats
 from scipy.stats import norm
 from matplotlib import gridspec
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_curve
 
 def plot_features(data,truehadroness=False):
     """Plot the distribution of different features that characterize
@@ -330,3 +332,49 @@ def plot_pos(data,truehadroness=False):
     plt.title("Reconstructed position Gammas ")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
+
+
+def plot_importances(clf,features):
+
+    importances = clf.feature_importances_
+    std = np.std([tree.feature_importances_ for tree in clf.estimators_],
+                 axis=0)
+    indices = np.argsort(importances)[::-1]
+
+    print("Feature importances (gini index)")
+    for f in range(len(features)):
+        print("%d. %s (%f)" % (f + 1, 
+                               features[indices[f]], 
+                               importances[indices[f]]))
+
+    ordered_features=[]
+    for index in indices:
+        ordered_features=ordered_features+[features[index]]
+    
+    plt.title("Feature importances for G/H separation",
+              fontsize=15)
+    plt.bar(range(len(features)), 
+            importances[indices],
+            color="r", yerr=std[indices], align="center")
+    plt.xticks(range(len(features)), 
+               ordered_features)
+    plt.xlim([-1, 
+              len(features)])
+
+def plot_ROC(clf,data,features, Energy_cut):
+    # Plot ROC curve:
+    check = clf.predict_proba(data[features])[0:,1]
+    accuracy = accuracy_score(data['hadroness'], 
+                              data['Hadrorec'])
+    print(accuracy)
+    
+    fpr_rf, tpr_rf, _ = roc_curve(data['hadroness'],
+                                  check)
+    
+    plt.plot(fpr_rf, tpr_rf, 
+             label='Energy Cut: '+'%.3f'%(pow(10,Energy_cut)/1000)+' TeV')
+    plt.xlabel('False positive rate',
+               fontsize=15)
+    plt.ylabel('True positive rate',
+               fontsize=15)
+    plt.legend(loc='best')
