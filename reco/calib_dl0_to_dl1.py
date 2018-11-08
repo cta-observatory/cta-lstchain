@@ -181,7 +181,7 @@ def get_events(filename,storedata=False,test=False,
             #Calculate Timing parameters
         
             peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
-            timepars = time.timing_parameters(geom.pix_x,geom.pix_y,clean,peak_time,hillas.psi)
+            timepars = time.timing_parameters(geom,clean,peak_time,hillas)
             
             if w >= 0:
                 if storeimg==True:
@@ -226,8 +226,8 @@ def get_events(filename,storedata=False,test=False,
                 
                 #Timing parameters
 
-                time_gradient = timepars[0].value
-                intercept = timepars[1].value
+                time_gradient = timepars['slope'].value
+                intercept = timepars['intercept']
 
                 #Calculate Disp and Source position in camera coordinates
                 
