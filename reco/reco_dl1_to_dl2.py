@@ -8,11 +8,13 @@ Usage:
 """
 import numpy as np
 import pandas as pd
-import utils
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve
 from sklearn.externals import joblib
+import sys
+sys.path.insert(0, '../')
+import reco.utils as utils
 
 def split_traintest(data,proportion):
     """
@@ -63,9 +65,10 @@ def trainRFreco(train,features):
     
     
     max_depth = 50
-    regr_rf_e = RandomForestRegressor(max_depth=max_depth, 
-                                      random_state=2,
-                                      n_estimators=30)                                                           
+    regr_rf_e = RandomForestRegressor(max_depth=max_depth,
+                                      min_samples_leaf=50,
+                                      n_jobs=4,
+                                      n_estimators=50)
     regr_rf_e.fit(train[features],
                   train['mcEnergy'])
     
@@ -73,8 +76,9 @@ def trainRFreco(train,features):
     print("Training Random Forest Regressor for Disp Reconstruction...")
     
     regr_rf_disp = RandomForestRegressor(max_depth=max_depth,
-                                         random_state=2,
-                                         n_estimators=30)                                                           
+                                         min_samples_leaf=50,
+                                         n_jobs=4,
+                                         n_estimators=50)    
     regr_rf_disp.fit(train[features],
                      train['disp'])
     
@@ -105,9 +109,9 @@ def trainRFsep(train,features):
     "Gamma/Hadron separation...")
     
     clf = RandomForestClassifier(max_depth = 50,
-                             n_jobs=10,
-                             random_state=4,
-                             n_estimators=30)
+                                 n_jobs=4,
+                                 min_samples_leaf=50,
+                                 n_estimators=100)
     
     clf.fit(train[features],
             train['hadroness'])
@@ -155,7 +159,8 @@ def buildModels(filegammas,fileprotons,features,
     RandomForestRegressor: RFreg_Disp
     RandomForestClassifier: RFcls_GH
     """
-    
+    features_=list(features)
+
     df_gamma = pd.read_hdf(filegammas,
                            key='gamma_events')
     df_proton = pd.read_hdf(fileprotons,
@@ -184,12 +189,12 @@ def buildModels(filegammas,fileprotons,features,
     test = testg.append(df_proton,
                         ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features)
+    tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features_)
     
     #Apply the regressors to the test set
 
-    test['Erec'] = tempRFreg_Energy.predict(test[features])
-    test['Disprec'] = tempRFreg_Disp.predict(test[features])
+    test['Erec'] = tempRFreg_Energy.predict(test[features_])
+    test['Disprec'] = tempRFreg_Disp.predict(test[features_])
     
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp reconstructed.
@@ -199,7 +204,7 @@ def buildModels(filegammas,fileprotons,features,
     del tempRFreg_Energy, tempRFreg_Disp
     
     #Add Erec and Disprec to features.
-    features_sep = features
+    features_sep = features_
     features_sep.append('Erec')
     features_sep.append('Disprec')
     
@@ -216,8 +221,7 @@ def buildModels(filegammas,fileprotons,features,
         joblib.dump(RFreg_Disp, fileD)
         joblib.dump(RFcls_GH, fileH)
         
-    features.remove('Erec')
-    features.remove('Disprec')
+    
     return RFreg_Energy,RFreg_Disp,RFcls_GH
 
 def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
@@ -240,10 +244,12 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RF for Disp reconstruction
 
     """
+    
+    features_ = list(features)
     dl2 = dl1
     #Reconstruction of Energy and Disp distance
-    dl2['Erec'] = RFreg_Energy.predict(dl2[features])
-    dl2['Disprec'] = RFreg_Disp.predict(dl2[features])
+    dl2['Erec'] = RFreg_Energy.predict(dl2[features_])
+    dl2['Disprec'] = RFreg_Disp.predict(dl2[features_])
    
     #Construction of Source position in camera coordinates from Disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
@@ -252,8 +258,8 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
                                                                   dl2['y'],
                                                                   dl2['psi'])
     
-    features.append('Erec')
-    features.append('Disprec')
-    dl2['Hadrorec'] = RFcls_GH.predict(dl2[features])
+    features_.append('Erec')
+    features_.append('Disprec')
+    dl2['Hadrorec'] = RFcls_GH.predict(dl2[features_]).astype(int)
     
 
