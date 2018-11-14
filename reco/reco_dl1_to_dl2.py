@@ -70,7 +70,7 @@ def trainRFreco(train,features):
                                       n_jobs=4,
                                       n_estimators=50)
     regr_rf_e.fit(train[features],
-                  train['mcEnergy'])
+                  train['mc_energy'])
     
     print("Random Forest trained!")    
     print("Training Random Forest Regressor for Disp Reconstruction...")
@@ -199,7 +199,7 @@ def buildModels(filegammas,fileprotons,features,
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp reconstructed.
     
-    train = test[test['mcEnergy']>EnergyCut]
+    train = test[test['mc_energy']>EnergyCut]
     
     del tempRFreg_Energy, tempRFreg_Disp
     
@@ -253,7 +253,7 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
    
     #Construction of Source position in camera coordinates from Disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    dl2['SrcXrec'],dl2['SrcYrec'] = utils.Disp_to_Pos(dl2['Disprec'],
+    dl2['src_xrec'],dl2['src_yrec'] = utils.Disp_to_Pos(dl2['Disprec'],
                                                                   dl2['x'],
                                                                   dl2['y'],
                                                                   dl2['psi'])

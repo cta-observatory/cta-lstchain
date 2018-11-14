@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 '''
-Module for calculating Source position in camera coordinates, and Disp distance.
+Module for calculating Source position in camera coordinates, and disp distance.
 Usage:
-import Disp
+import disp
 
 '''
 
 import numpy as np
-import ctapipe.coordinates as c
 import astropy.units as u
 
 def alt_to_theta(alt):
@@ -25,19 +24,18 @@ def az_to_phi(az):
     return -az
 
         
-def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
-    
-    
-    mcAlt = alt_to_theta(mcAlt*u.rad).value
-    mcAz = az_to_phi(mcAz*u.rad).value
-    mcAlttel = alt_to_theta(mcAlttel*u.rad).value
-    mcAztel = az_to_phi(mcAztel*u.rad).value
+def cal_cam_source_pos(mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal_length):
+
+    mc_alt = alt_to_theta(mc_alt*u.rad).value
+    mc_az = az_to_phi(mc_az*u.rad).value
+    mc_alt_tel = alt_to_theta(mc_alt_tel*u.rad).value
+    mc_az_tel = az_to_phi(mc_az_tel*u.rad).value
         
     #Sines and cosines of direction angles
-    cp = np.cos(mcAz)
-    sp = np.sin(mcAz)
-    ct = np.cos(mcAlt)
-    st = np.sin(mcAlt)
+    cp = np.cos(mc_az)
+    sp = np.sin(mc_az)
+    ct = np.cos(mc_alt)
+    st = np.sin(mc_alt)
     
      #Shower direction coordinates
 
@@ -48,44 +46,38 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
     #print(sourcex)
 
     source = np.array([sourcex,sourcey,sourcez])
-    source=source.T
+    source = source.T
     
     #Rotation matrices towars the camera frame
+
+    alttel = mc_alt_tel[0]
+    aztel = mc_az_tel[0]
+    mat_y = np.array([[np.cos(alttel), 0, np.sin(alttel)],
+                      [0, 1, 0],
+                      [-np.sin(alttel), 0, np.cos(alttel)]]).T
+
+    mat_z = np.array([[np.cos(aztel),-np.sin(aztel), 0],
+                      [np.sin(aztel),np.cos(aztel), 0],
+                      [0, 0, 1]]).T
+
+    rot_matrix = np.matmul(mat_y,mat_z)
     
-    rot_Matrix = np.empty((0,3,3))
-    #    for (alttel,aztel) in zip(mcAlttel,mcAztel):
-        
-    alttel = mcAlttel[0]
-    aztel = mcAztel[0]
-    mat_Y = np.array([[np.cos(alttel),0,np.sin(alttel)],
-                      [0,1,0], 
-                      [-np.sin(alttel),0,np.cos(alttel)]]).T
-        
-        
-    mat_Z = np.array([[np.cos(aztel),-np.sin(aztel),0],
-                      [np.sin(aztel),np.cos(aztel),0],
-                      [0,0,1]]).T
-    
-        
-    #rot_Matrix = np.append(rot_Matrix,[np.matmul(mat_Y,mat_Z)],axis=0)
-    rot_Matrix = np.matmul(mat_Y,mat_Z)
-    
-    res = np.einsum("...ji,...i",rot_Matrix,source)
+    res = np.einsum("...ji,...i",rot_matrix,source)
     res = res.T
     
-    Source_X = -focal_length*res[0]/res[2]
-    Source_Y = -focal_length*res[1]/res[2]
-    return Source_X, Source_Y
+    source_x = -focal_length*res[0]/res[2]
+    source_y = -focal_length*res[1]/res[2]
+    return source_x, source_y
 
-def calc_DISP(Source_X,Source_Y,cen_x,cen_y):
-    disp = np.sqrt((Source_X-cen_x)**2+(Source_Y-cen_y)**2)
+def calc_disp(source_x, source_y, cen_x, cen_y):
+    disp = np.sqrt((source_x - cen_x) ** 2 + (source_y - cen_y) ** 2)
     return disp
 
-def Disp_to_Pos(Disp,cen_x,cen_y,psi):
+def disp_to_Pos(disp,cen_x,cen_y,psi):
    
-    Source_X1 = cen_x - Disp*np.cos(psi)
-    Source_Y1 = cen_y - Disp*np.sin(psi)
+    source_x1 = cen_x - disp*np.cos(psi)
+    source_y1 = cen_y - disp*np.sin(psi)
    
-    return Source_X1,Source_Y1
+    return source_x1, source_y1
         
        

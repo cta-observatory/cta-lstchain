@@ -1,6 +1,6 @@
-from .Disp import calc_CamSourcePos, calc_DISP
+from .disp import cal_cam_source_pos, calc_disp
 
 all = [
-    'calc_CamSourcePos', 
-    'calc_DISP'
+    'cal_cam_source_pos',
+    'calc_disp'
 ]
