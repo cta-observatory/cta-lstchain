@@ -1,5 +1,5 @@
 """
-Module with functions for Energy and Disp reconstruction and G/H separation. There are functions for raining random forest and for applying them to data. The RF can be saved into a file for later use.
+Module with functions for Energy and disp reconstruction and G/H separation. There are functions for raining random forest and for applying them to data. The RF can be saved into a file for later use.
 
 Usage:
 
@@ -34,7 +34,7 @@ def split_traintest(data,proportion):
 
 def trainRFreco(train,features):
     """
-    Trains two Random Forest regressors for Energy and Disp reconstruction respectively.
+    Trains two Random Forest regressors for Energy and disp reconstruction respectively.
     Returns the trained RF.
 
     Parameters:
@@ -52,7 +52,7 @@ def trainRFreco(train,features):
     
     max_depth = 50
     regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=30)                                                           
-    regr_rf_e.fit(train[features], train['mcEnergy'])
+    regr_rf_e.fit(train[features], train['mc_energy'])
     #erec = regr_rf_e.predict(test[features])
     print("Random Forest trained!")    
     print("Training Random Forest Regressor for Disp Reconstruction...")
@@ -154,7 +154,7 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     test['Disprec'] = tempRFreg_Disp.predict(test[features])
     
     #Apply cut in reconstructed energy. New train set is the previous test with energy and disp reconstructed.
-    train = test[test['mcEnergy']>EnergyCut]
+    train = test[test['mc_energy']>EnergyCut]
     
     del tempRFreg_Energy, tempRFreg_Disp
     #Add Erec and Disprec to features.
@@ -200,7 +200,7 @@ def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     data['Disprec'] = RFreg_Disp.predict(data[features])
     #Construction of Source position in camera coordinates from Disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    data['SrcXrec'],data['SrcYrec'] = transformations.Disp_to_Pos(data['Disprec'],
+    data['src_xrec'],data['src_yrec'] = transformations.Disp_to_Pos(data['Disprec'],
                                                                   data['x'],
                                                                   data['y'],
                                                                   data['psi'])

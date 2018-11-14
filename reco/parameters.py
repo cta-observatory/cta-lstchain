@@ -65,10 +65,10 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
     
     #Create data frame where DL2 data will be stored:
 
-    features = ['ObsID','EvID','mcEnergy','mcAlt','mcAz','mcCore_x','mcCore_y','mcHfirst','mcType',
-                'GPStime','width','length','w/l','phi','psi','r','x','y','intensity','skewness',
-                'kurtosis','mcAlttel','mcAztel','impact','mcXmax','time_gradient','intercept',
-                'SrcX','SrcY','disp','hadroness']
+    features = ['obs_id','event_id','mc_energy','mc_alt','mc_az','mc_core_x','mc_core_y','mc_h_first_int','mc_type',
+                'gps_time','width','length','w/l','phi','psi','r','x','y','intensity','skewness',
+                'kurtosis','mc_alt_tel','mc_az_tel','impact','mc_x_max','time_gradient','intercept',
+                'src_x','src_y','disp','hadroness']
     output = pd.DataFrame(columns=features)
 
     #Read LST1 events:
@@ -170,20 +170,20 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
                 kurtosis = hillas.kurtosis
                 
                 #Store parameters from event and MC:
-                ObsID = event.r0.obs_id
-                EvID = event.r0.event_id
+                obs_id = event.r0.obs_id
+                event_id = event.r0.event_id
 
-                mcEnergy = np.log10(event.mc.energy.value*1e3) #Log10(Energy) in GeV
-                mcAlt = event.mc.alt.value
-                mcAz = event.mc.az.value
-                mcCore_x = event.mc.core_x.value
-                mcCore_y = event.mc.core_y.value
-                mcHfirst = event.mc.h_first_int.value
-                mcType = event.mc.shower_primary_id
-                mcAztel = event.mcheader.run_array_direction[0].value
-                mcAlttel = event.mcheader.run_array_direction[1].value
-                mcXmax = event.mc.x_max.value
-                GPStime = event.trig.gps_time.value
+                mc_energy = np.log10(event.mc.energy.value*1e3) #Log10(Energy) in GeV
+                mc_alt = event.mc.alt.value
+                mc_az = event.mc.az.value
+                mc_core_x = event.mc.core_x.value
+                mc_core_y = event.mc.core_y.value
+                mc_h_first_int = event.mc.h_first_int.value
+                mc_type = event.mc.shower_primary_id
+                mc_az_tel = event.mcheader.run_array_direction[0].value
+                mc_alt_tel = event.mcheader.run_array_direction[1].value
+                mc_x_max = event.mc.x_max.value
+                gps_time = event.trig.gps_time.value
 
                 impact = np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2)
                 
@@ -193,21 +193,21 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
                 #Calculate Disp and Source position in camera coordinates
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value
-                sourcepos = transformations.calc_CamSourcePos(mcAlt,mcAz,
-                                                              mcAlttel,mcAztel,
+                sourcepos = transformations.cal_cam_source_pos(mc_alt,mc_az,
+                                                              mc_alt_tel,mc_az_tel,
                                                               focal_length) 
-                SrcX = sourcepos[0]
-                SrcY = sourcepos[1]
-                disp = transformations.calc_DISP(sourcepos[0],sourcepos[1],x,y)
+                src_x = sourcepos[0]
+                src_y = sourcepos[1]
+                disp = transformations.calc_disp(sourcepos[0],sourcepos[1],x,y)
                 
                 hadroness = 0
                 if particle_type=='proton':
                     hadroness = 1
 
-                eventdf = pd.DataFrame([[ObsID,EvID,mcEnergy,mcAlt,mcAz,mcCore_x,mcCore_y,mcHfirst,
-                                         mcType,GPStime,width,length,width/length,phi,psi,r,x,y,
-                                         intensity,skewness,kurtosis,mcAlttel,mcAztel,impact,mcXmax,
-                                         time_gradient,intercept,SrcX,SrcY,disp,hadroness]],
+                eventdf = pd.DataFrame([[obs_id,event_id,mc_energy,mc_alt,mc_az,mc_core_x,mc_core_y,mc_h_first_int,
+                                         mc_type,gps_time,width,length,width/length,phi,psi,r,x,y,
+                                         intensity,skewness,kurtosis,mc_alt_tel,mc_az_tel,impact,mc_x_max,
+                                         time_gradient,intercept,src_x,src_y,disp,hadroness]],
                                        columns=features)
                 
                 output = output.append(eventdf,ignore_index=True)

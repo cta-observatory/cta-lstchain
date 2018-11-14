@@ -33,8 +33,8 @@ def plot_features(data,truehadroness=False):
 
     #Energy distribution
     plt.subplot(331)
-    plt.hist(data[data[hadro]<1]['mcEnergy'],histtype=u'step',bins=100,label="Gammas")
-    plt.hist(data[data[hadro]>0]['mcEnergy'],histtype=u'step',bins=100,label="Protons")
+    plt.hist(data[data[hadro]<1]['mc_energy'],histtype=u'step',bins=100,label="Gammas")
+    plt.hist(data[data[hadro]>0]['mc_energy'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
     plt.xlabel(r"$log_{10}E$(GeV)")
     plt.legend()
@@ -120,7 +120,7 @@ def plot_E(data,truehadroness=False):
     gammas = data[data[hadro]==0] 
     
     plt.subplot(221)
-    difE = ((gammas['mcEnergy']-gammas['Erec'])*np.log(10))
+    difE = ((gammas['mc_energy']-gammas['Erec'])*np.log(10))
     section = difE[abs(difE) < 1.5]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
@@ -132,15 +132,15 @@ def plot_E(data,truehadroness=False):
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=10)
     
     plt.subplot(222)
-    hE = plt.hist2d(gammas['mcEnergy'],gammas['Erec'],bins=100)
+    hE = plt.hist2d(gammas['mc_energy'],gammas['Erec'],bins=100)
     plt.colorbar(hE[3])
     plt.xlabel('$log_{10}E_{gammas}$',fontsize=15)
     plt.ylabel('$log_{10}E_{rec}$',fontsize=15)
-    plt.plot(gammas['mcEnergy'],gammas['mcEnergy'],"-",color='red')
+    plt.plot(gammas['mc_energy'],gammas['mc_energy'],"-",color='red')
 
     #Plot a profile
     subplot = plt.subplot(223)
-    means_result = scipy.stats.binned_statistic(gammas['mcEnergy'], [difE, difE**2], bins=50, 
+    means_result = scipy.stats.binned_statistic(gammas['mc_energy'], [difE, difE**2], bins=50,
                                                 range=(1,6), statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
@@ -202,7 +202,7 @@ def plot_Disp(data,truehadroness=False):
     plt.plot(gammas['disp'],gammas['disp'],"-",color='red')   
  
     plt.subplot(223)
-    theta2 = (gammas['SrcX']-gammas['SrcXrec'])**2+(gammas['SrcY']-gammas['SrcY'])**2
+    theta2 = (gammas['src_x']-gammas['src_xrec'])**2+(gammas['src_y']-gammas['src_y'])**2
     plt.hist(theta2,bins=100,range=[0,0.1],histtype=u'step')
     plt.xlabel(r'$\theta^{2}(º)$',fontsize=15)
     plt.ylabel(r'# of events',fontsize=15)
@@ -226,15 +226,15 @@ def plot_pos(data,truehadroness=False):
         hadro = "hadroness"
 
     #True position
-    trueX = data[data[hadro]==0]['SrcX']
-    trueY = data[data[hadro]==0]['SrcY']
-    trueXprot = data[data[hadro]==1]['SrcX']
-    trueYprot = data[data[hadro]==1]['SrcY']
+    trueX = data[data[hadro]==0]['src_x']
+    trueY = data[data[hadro]==0]['src_y']
+    trueXprot = data[data[hadro]==1]['src_x']
+    trueYprot = data[data[hadro]==1]['src_y']
     #Reconstructed position
-    recX = data[data[hadro]==0]['SrcXrec']
-    recY = data[data[hadro]==0]['SrcYrec']
-    recXprot = data[data[hadro]==1]['SrcXrec']
-    recYprot = data[data[hadro]==1]['SrcYrec']
+    recX = data[data[hadro]==0]['src_xrec']
+    recY = data[data[hadro]==0]['src_yrec']
+    recXprot = data[data[hadro]==1]['src_xrec']
+    recYprot = data[data[hadro]==1]['src_yrec']
 
     plt.subplot(221)
     plt.hist2d(trueXprot,trueYprot,bins=100,label="Protons")

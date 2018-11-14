@@ -10,7 +10,7 @@ from ctapipe.instrument import OpticsDescription
 import astropy.units as u
 import ctapipe.coordinates as c
 import matplotlib as mpl
-import Disp
+import disp
 import sys
 import pandas as pd
 from astropy.table import Table
@@ -28,33 +28,33 @@ df_proton = dat_proton.to_pandas()
 tel = OpticsDescription.from_name('LST') #Telescope description
 focal_length = tel.equivalent_focal_length.value #Telescope focal length
 
-#Calculate source position and Disp distance:
-sourcepos_gamma = Disp.calc_CamSourcePos(df_gamma['mcAlt'].get_values(),
-                                         df_gamma['mcAz'].get_values(),
-                                         df_gamma['mcAlttel'].get_values(),
-                                         df_gamma['mcAztel'].get_values(),
+#Calculate source position and disp distance:
+sourcepos_gamma = disp.cal_cam_source_pos(df_gamma['mc_alt'].get_values(),
+                                         df_gamma['mc_az'].get_values(),
+                                         df_gamma['mc_alt_tel'].get_values(),
+                                         df_gamma['mc_az_tel'].get_values(),
                                          focal_length)
-disp_gamma = Disp.calc_DISP(sourcepos_gamma[0],
+disp_gamma = disp.calc_disp(sourcepos_gamma[0],
                             sourcepos_gamma[1],
                             df_gamma['x'].get_values(),
                             df_gamma['y'].get_values())
 
-sourcepos_proton = Disp.calc_CamSourcePos(df_proton['mcAlt'].get_values(),
-                                         df_proton['mcAz'].get_values(),
-                                         df_proton['mcAlttel'].get_values(),
-                                         df_proton['mcAztel'].get_values(),
+sourcepos_proton = disp.cal_cam_source_pos(df_proton['mc_alt'].get_values(),
+                                         df_proton['mc_az'].get_values(),
+                                         df_proton['mc_alt_tel'].get_values(),
+                                         df_proton['mc_az_tel'].get_values(),
                                          focal_length)
-disp_proton = Disp.calc_DISP(sourcepos_proton[0],
+disp_proton = disp.calc_disp(sourcepos_proton[0],
                             sourcepos_proton[1],
                             df_proton['x'].get_values(),
                             df_proton['y'].get_values())
 
 
 #Add dist to the DataFrame
-df_gamma['SrcX'] = sourcepos_gamma[0]
-df_gamma['SrcY'] = sourcepos_gamma[1]
-df_proton['SrcX'] = sourcepos_proton[0]
-df_proton['SrcY'] = sourcepos_proton[1] 
+df_gamma['src_x'] = sourcepos_gamma[0]
+df_gamma['src_y'] = sourcepos_gamma[1]
+df_proton['src_x'] = sourcepos_proton[0]
+df_proton['src_y'] = sourcepos_proton[1]
 df_gamma['disp'] = disp_gamma
 df_proton['disp'] = disp_proton
 df_gamma['hadroness'] = np.zeros(df_gamma.shape[0])
