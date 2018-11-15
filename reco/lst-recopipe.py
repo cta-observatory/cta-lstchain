@@ -1,4 +1,4 @@
-"""Pipeline for reconstruction of Energy, Disp and gamma/hadron
+"""Pipeline for reconstruction of Energy, disp_ and gamma/hadron
 separation of events stored in a simtelarray file.
 Result is a dataframe with dl2 data.
 Already trained Random Forests are required.
@@ -49,11 +49,11 @@ if __name__ == '__main__':
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
-    fileD = args.path_models+"RFreg_Disp.sav"
+    fileD = args.path_models+"RFreg_disp_.sav"
     fileH = args.path_models+"RFcls_GH.sav"
     
     RFreg_Energy = joblib.load(fileE)
-    RFreg_Disp = joblib.load(fileD)
+    RFreg_disp_ = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
     
     #Apply the models to the data
@@ -65,7 +65,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
     dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
+    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_)
 
     if args.storeresults==True:
         #Store results
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     plt.show()
     plot_dl2.plot_E(dl2)
     plt.show()
-    plot_dl2.plot_Disp(dl2)
+    plot_dl2.plot_disp_(dl2)
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()

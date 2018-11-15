@@ -1,4 +1,4 @@
-"""Pipeline for training three Random Forests destinated to Energy, Disp
+"""Pipeline for training three Random Forests destinated to Energy, disp_
 reconstruction and Gamma/Hadron separation.
 The resulting RF models can be stored in files for later use on data.
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    RFreg_Energy,RFreg_Disp,RFcls_GH = reco_dl1_to_dl2.buildModels(
+    RFreg_Energy,RFreg_disp_,RFcls_GH = reco_dl1_to_dl2.buildModels(
         args.gammafile,args.protonfile,
         features,
         args.storerf,args.path_models)

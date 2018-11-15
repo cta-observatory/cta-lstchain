@@ -119,21 +119,21 @@ if __name__ == '__main__':
     kurtosis = np.array([])
     
     #Event Parameters
-    ObsID = np.array([])
-    EvID = np.array([])
+    obs_id = np.array([])
+    event_id = np.array([])
 
     #MC Parameters:
-    mcEnergy = np.array([])
-    mcAlt  = np.array([])
-    mcAz = np.array([])
-    mcCore_x = np.array([])
-    mcCore_y = np.array([])
-    mcHfirst = np.array([])
-    mcType = np.array([])
-    mcAlttel = np.array([])
-    mcAztel = np.array([])
-    mcXmax = np.array([])
-    GPStime = np.array([])
+    mc_energy = np.array([])
+    mc_alt  = np.array([])
+    mc_az = np.array([])
+    mc_core_x = np.array([])
+    mc_core_y = np.array([])
+    mc_h_first_int = np.array([])
+    mc_type = np.array([])
+    mc_alt_tel = np.array([])
+    mc_az_tel = np.array([])
+    mc_x_max = np.array([])
+    gps_time = np.array([])
 
     impact = np.array([])
     
@@ -229,20 +229,20 @@ if __name__ == '__main__':
                 kurtosis = np.append(kurtosis, hillas.kurtosis)
                 
                 #Store parameters from event and MC:
-                ObsID = np.append(ObsID,event.r0.obs_id)
-                EvID = np.append(EvID,event.r0.event_id)
+                obs_id = np.append(obs_id,event.r0.obs_id)
+                event_id = np.append(event_id,event.r0.event_id)
 
-                mcEnergy = np.append(mcEnergy,event.mc.energy)
-                mcAlt = np.append(mcAlt,event.mc.alt)
-                mcAz = np.append(mcAz,event.mc.az)
-                mcCore_x = np.append(mcCore_x,event.mc.core_x)
-                mcCore_y = np.append(mcCore_y,event.mc.core_y)
-                mcHfirst = np.append(mcHfirst,event.mc.h_first_int)
-                mcType = np.append(mcType,event.mc.shower_primary_id)
-                mcAztel = np.append(mcAztel,event.mcheader.run_array_direction[0])
-                mcAlttel = np.append(mcAlttel,event.mcheader.run_array_direction[1])
-                mcXmax = np.append(mcXmax,event.mc.x_max)
-                GPStime = np.append(GPStime,event.trig.gps_time.value)
+                mc_energy = np.append(mc_energy,event.mc.energy)
+                mc_alt = np.append(mc_alt,event.mc.alt)
+                mc_az = np.append(mc_az,event.mc.az)
+                mc_core_x = np.append(mc_core_x,event.mc.core_x)
+                mc_core_y = np.append(mc_core_y,event.mc.core_y)
+                mc_h_first_int = np.append(mc_h_first_int,event.mc.h_first_int)
+                mc_type = np.append(mc_type,event.mc.shower_primary_id)
+                mc_az_tel = np.append(mc_az_tel,event.mcheader.run_array_direction[0])
+                mc_alt_tel = np.append(mc_alt_tel,event.mcheader.run_array_direction[1])
+                mc_x_max = np.append(mc_x_max,event.mc.x_max)
+                gps_time = np.append(gps_time,event.trig.gps_time.value)
 
                 impact = np.append(impact,np.sqrt((tel_coords.x.value-event.mc.core_x.value)**2+(tel_coords.y.value-event.mc.core_y.value)**2))
                 
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     
     #Store the output in an ntuple:
               
-    output = {'ObsID':ObsID,'EvID':EvID,'mcEnergy':mcEnergy,'mcAlt':mcAlt,'mcAz':mcAz, 'mcCore_x':mcCore_x,'mcCore_y':mcCore_y,'mcHfirst':mcHfirst,'mcType':mcType, 'GPStime':GPStime, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mcAlttel':mcAlttel,'mcAztel':mcAztel,'impact':impact,'mcXmax':mcXmax,'time_gradient':time_gradient,'intercept':intercept}
+    output = {'obs_id':obs_id,'event_id':event_id,'mc_energy':mc_energy,'mc_alt':mc_alt,'mc_az':mc_az, 'mc_core_x':mc_core_x,'mc_core_y':mc_core_y,'mc_h_first_int':mc_h_first_int,'mc_type':mc_type, 'gps_time':gps_time, 'width':width, 'length':length, 'phi':phi,'psi':psi,'r':r,'x':x,'y':y,'intensity':intensity,'skewness':skewness,'kurtosis':kurtosis,'mc_alt_tel':mc_alt_tel,'mc_az_tel':mc_az_tel,'impact':impact,'mc_x_max':mc_x_max,'time_gradient':time_gradient,'intercept':intercept}
     ntuple = Table(output)
     
     #If destination fitsfile doesn't exist, will create a new one with proper headers 

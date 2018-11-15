@@ -13,7 +13,7 @@ from ctapipe.instrument import OpticsDescription
 import astropy.units as u
 import ctapipe.coordinates as c
 import matplotlib as mpl
-import Disp
+import disp
 import sys
 import pandas as pd
 from astropy.table import Table
@@ -24,18 +24,18 @@ def plot_features(data):
 
     #Energy distribution
     plt.subplot(331)
-    plt.hist(data[data['hadroness']<1]['mcEnergy'],histtype=u'step',bins=100,label="Gammas")
-    plt.hist(data[data['hadroness']>0]['mcEnergy'],histtype=u'step',bins=100,label="Protons")
+    plt.hist(data[data['hadroness']<1]['mc_energy'],histtype=u'step',bins=100,label="Gammas")
+    plt.hist(data[data['hadroness']>0]['mc_energy'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
     plt.xlabel(r"$log_{10}E$(GeV)")
     plt.legend()
 
-    #Disp distribution
+    #disp distribution
     plt.subplot(332)
     plt.hist(data[data['hadroness']<1]['disp'],histtype=u'step',bins=100,label="Gammas")
     plt.hist(data[data['hadroness']>0]['disp'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"Disp (m)")
+    plt.xlabel(r"disp (m)")
 
     #Intensity distribution
     plt.subplot(333)
@@ -93,7 +93,7 @@ def plot_features(data):
 def plot_E(test):
     
     plt.subplot(221)
-    difE = ((test['mcEnergy']-test['Erec'])*np.log(10))
+    difE = ((test['mc_energy']-test['e_rec'])*np.log(10))
     section = difE[abs(difE) < 1.]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
@@ -105,15 +105,15 @@ def plot_E(test):
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=10)
     
     plt.subplot(222)
-    hE = plt.hist2d(test['mcEnergy'],test['Erec'],bins=100)
+    hE = plt.hist2d(test['mc_energy'],test['e_rec'],bins=100)
     plt.colorbar(hE[3])
     plt.xlabel('$log_{10}E_{test}$',fontsize=15)
     plt.ylabel('$log_{10}E_{rec}$',fontsize=15)
-    plt.plot(test['mcEnergy'],test['mcEnergy'],"-",color='red')
+    plt.plot(test['mc_energy'],test['mc_energy'],"-",color='red')
 
     #Plot a profile
     subplot = plt.subplot(223)
-    means_result = scipy.stats.binned_statistic(test['mcEnergy'], [difE, difE**2], bins=50, 
+    means_result = scipy.stats.binned_statistic(test['mc_energy'], [difE, difE**2], bins=50,
                                                 range=(1,6), statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
@@ -136,38 +136,38 @@ def plot_E(test):
 
     plt.subplots_adjust(hspace=.0)
     
-def plot_Disp(test):
+def plot_disp(test):
 
     plt.subplot(221)
-    difD = ((test['disp']-test['Disprec'])/test['disp'])
+    difD = ((test['disp']-test['disprec'])/test['disp'])
     section = difD[abs(difD) < 0.25]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
     n,bins,patches = plt.hist(difD,100,density=1,alpha=0.75,range=[-2,1.5])
     y = norm.pdf( bins, mu, sigma)
     l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{Disp_{test}-Disp_{rec}}{Disp_{test}}$',fontsize=15)
+    plt.xlabel('$\\frac{disp_{test}-disp_{rec}}{disp_{test}}$',fontsize=15)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),fontsize=12)
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=12)
                 
     plt.subplot(222)
-    hD = plt.hist2d(test['disp'],test['Disprec'],bins=100,range=([0,1.1],[0,1.1]))
+    hD = plt.hist2d(test['disp'],test['disprec'],bins=100,range=([0,1.1],[0,1.1]))
     plt.colorbar(hD[3])
-    plt.xlabel('$Disp_{test}$',fontsize=15)
-    plt.ylabel('$Disp_{rec}$',fontsize=15)
+    plt.xlabel('$disp_{test}$',fontsize=15)
+    plt.ylabel('$disp_{rec}$',fontsize=15)
     plt.plot(test['disp'],test['disp'],"-",color='red')   
  
     plt.subplot(223)
-    #plt.hist(test['theta2_true'],bins=100,range=[0,0.05],histtype=u'step',label=r'With Hillas Disp')
-    plt.hist(test['theta2_reco'],bins=100,range=[0,0.01],histtype=u'step',label=r'With Reconstructed Disp')
+    #plt.hist(test['theta2_true'],bins=100,range=[0,0.05],histtype=u'step',label=r'With Hillas disp')
+    plt.hist(test['theta2_reco'],bins=100,range=[0,0.01],histtype=u'step',label=r'With Reconstructed disp')
     plt.legend()
     plt.xlabel(r'$\theta^{2}(º)$',fontsize=15)
     plt.ylabel(r'# of events',fontsize=15)
     
     '''
     plt.subplot(224)
-    plt.hist(test[test['hadroness']<1]['theta2_true'],bins=50,range=[0,20],histtype=u'step',label=r'With Hillas Disp')
-    plt.hist(test[test['hadroness']<1]['theta2_reco'],bins=50,range=[0,20],histtype=u'step',label=r'With Reconstructed Disp')
+    plt.hist(test[test['hadroness']<1]['theta2_true'],bins=50,range=[0,20],histtype=u'step',label=r'With Hillas disp')
+    plt.hist(test[test['hadroness']<1]['theta2_reco'],bins=50,range=[0,20],histtype=u'step',label=r'With Reconstructed disp')
     plt.yscale('log')
     plt.legend()
     plt.xlabel(r'$\theta^{2}$',fontsize=15)
@@ -176,17 +176,17 @@ def plot_Disp(test):
 
 def plot_pos(data,Energy_cut):
     
-    data = data[data['Erec']>Energy_cut]
+    data = data[data['e_rec']>Energy_cut]
     #True position
-    trueX = data[data['hadroness']==0]['SrcX']
-    trueY = data[data['hadroness']==0]['SrcY']
-    trueXprot = data[data['hadroness']==1]['SrcX']
-    trueYprot = data[data['hadroness']==1]['SrcY']
+    trueX = data[data['hadroness']==0]['src_x']
+    trueY = data[data['hadroness']==0]['src_y']
+    trueXprot = data[data['hadroness']==1]['src_x']
+    trueYprot = data[data['hadroness']==1]['src_y']
     #Reconstructed position
-    recX = data[data['hadroness']==0]['SrcXrec']
-    recY = data[data['hadroness']==0]['SrcYrec']
-    recXprot = data[data['hadroness']==1]['SrcXrec']
-    recYprot = data[data['hadroness']==1]['SrcYrec']
+    recX = data[data['hadroness']==0]['src_x_rec']
+    recY = data[data['hadroness']==0]['src_y_rec']
+    recXprot = data[data['hadroness']==1]['src_x_rec']
+    recYprot = data[data['hadroness']==1]['src_y_rec']
 
     plt.subplot(221)
     plt.hist2d(trueXprot,trueYprot,bins=100,label="Protons")
@@ -217,7 +217,7 @@ def plot_pos(data,Energy_cut):
 
 def GHsep(data,features,Energy_cut):
     
-    data = data[data['Erec']>Energy_cut]
+    data = data[data['e_rec']>Energy_cut]
 
     #Select the training/test events
     data['is_train'] = np.random.uniform(0,1,len(data))<= 0.50
@@ -225,7 +225,7 @@ def GHsep(data,features,Energy_cut):
     #Build new train/test sets:
     train,test = data[data['is_train']==True],data[data['is_train']==False]
     
-    #features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
+    #features = ['intensity','r','width','length','w/l','phi','psi','impact','mc_x_max','mc_h_first_int']
     
 
     #Classify Gamma/Hadron
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     plt.show()
     
     Energies = [-1,2.,2.398,2.699,2.875,3.,4]
-    features = ['Erec','Disprec','intensity','time_gradient','width','length','w/l']
+    features = ['e_rec','disprec','intensity','time_gradient','width','length','w/l']
     '''
     for Energy_cut in Energies:
         result,clf = GHsep(data,features,Energy_cut)
@@ -328,7 +328,7 @@ if __name__ == '__main__':
         gammas = result[result['theta2_reco']<theta2_cut]
         plot_E(gammas)
         plt.show()
-        plot_Disp(gammas)
+        plot_disp(gammas)
         plt.show()
         plot_pos(result,Energy_cut)
         plt.show()
