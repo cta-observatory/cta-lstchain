@@ -12,7 +12,6 @@ import numpy as np
 from ctapipe.image import hillas_parameters, hillas_parameters_2, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
-from ctapipe.utils import get_dataset
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
 import pandas as pd
@@ -257,7 +256,7 @@ def get_events(filename,storedata=False,test=False,
                 time_gradient = timepars['slope'].value
                 intercept = timepars['intercept']
 
-                #Calculate Disp and Source position in camera coordinates
+                #Calculate disp_ and Source position in camera coordinates
                 
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value

@@ -110,7 +110,7 @@ regr_rf_disp = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estim
 regr_rf_disp.fit(train_gammas[features], train_gammas['disp'])
 disprec = regr_rf_disp.predict(test[features])
 
-test['Erec'] = erec
+test['e_rec'] = erec
 test['disprec'] = disprec
 
 #Reconstruct position of the Source from disp
@@ -123,8 +123,8 @@ theta2_reco = (test['src_x']-posrec[0])**2+(test['src_y']-posrec[1])**2
 test['theta2_true'] = theta2_true
 test['theta2_reco'] = theta2_reco
 
-test['src_xrec'] = posrec[0]
-test['src_yrec'] = posrec[1]
+test['src_x_rec'] = posrec[0]
+test['src_y_rec'] = posrec[1]
 
 #Save the reconstructed data
 test.to_hdf("recoevents_diff.hdf5",key="test",mode="w")
@@ -196,7 +196,7 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 train,test = test[test['is_train']==True],test[test['is_train']==False]
 
 #features = ['intensity','r','width','length','w/l','phi','psi','impact','mc_x_max','mc_h_first_int']
-features = ['Erec','disprec','intensity','time_gradient','width','length','w/l','phi','psi']
+features = ['e_rec','disprec','intensity','time_gradient','width','length','w/l','phi','psi']
 
 #Classify Gamma/Hadron
 clf = RandomForestClassifier(max_depth = 50,
