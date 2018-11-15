@@ -13,6 +13,8 @@ Usage:
 
 import numpy as np
 import ctapipe.coordinates as c
+from ctapipe.coordinates import HorizonFrame
+from ctapipe.coordinates import NominalFrame
 import astropy.units as u
 
 def alt_to_theta(alt):
@@ -181,5 +183,84 @@ def disp__to_Pos(disp_,cen_x,cen_y,psi):
     source_y1 = cen_y - disp_*np.sin(psi)
    
     return source_x1,source_y1
-        
-       
+
+
+def guess_type(filename):
+    """Guess the particle type from the filename
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    str: 'gamma', 'proton', 'electron' or 'unknown'
+    """
+    particles = ['gamma', 'proton', 'electron']
+    for p in particles:
+        if p in filename:
+            return p
+    return 'unknown'
+
+
+
+def get_event_pos_in_camera(event, tel):
+    """
+    Return the position of the source in the camera frame
+    Parameters
+    ----------
+    event: `ctapipe.io.containers.DataContainer`
+    tel: `ctapipe.instruement.telescope.TelescopeDescription`
+
+    Returns
+    -------
+    (x, y) (float, float): position in the camera
+    """
+    array_pointing = HorizonFrame(alt=event.mcheader.run_array_direction[1],
+                              az=event.mcheader.run_array_direction[0])
+    event_direction = HorizonFrame(alt=event.mc.alt.to(u.rad),
+                               az=event.mc.az.to(u.rad))
+
+    nom_frame = NominalFrame(array_direction=array_pointing,
+                         pointing_direction=array_pointing)
+
+    event_dir_nom = event_direction.transform_to(nom_frame)
+    focal = tel.optics.equivalent_focal_length
+    return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
+
+
+def disp(event, telescope_id, hillas):
+    """
+    Compute disp parameter
+
+    Parameters
+    ----------
+    event: `ctapipe.io.container.MCEventContainer`
+    tel: `ctapipe.instrument.TelescopeDescription`
+    hillas: `ctapipe.io.container.HillasParametersContainer`
+
+    Returns
+    -------
+    disp: float
+    """
+    tel = event.inst.subarray.tel[telescope_id]
+    source_pos = get_event_pos_in_camera(event, tel)
+    disp = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
+    return disp
+
+
+def get_event_pos_in_sky(hillas, disp, tel, pointing_direction):
+    side = 1  # TODO: method to guess side
+
+    focal = tel.optics.equivalent_focal_length
+    source_pos_in_camera = NominalFrame(array_direction=pointing_direction,
+                                        pointing_direction=pointing_direction,
+                                        x=(hillas.x + side * disp * np.cos(hillas.phi)) / focal * u.rad,
+                                        y=(hillas.y + side * disp * np.sin(hillas.phi)) / focal * u.rad
+                                        )
+
+    horizon_frame = HorizonFrame(alt=pointing_direction.alt, az=pointing_direction.az)
+    return source_pos_in_camera.transform_to(horizon_frame)
+
+
+
