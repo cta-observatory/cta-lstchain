@@ -93,7 +93,7 @@ def plot_features(data):
 def plot_E(test):
     
     plt.subplot(221)
-    difE = ((test['mc_energy']-test['Erec'])*np.log(10))
+    difE = ((test['mc_energy']-test['e_rec'])*np.log(10))
     section = difE[abs(difE) < 1.]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
@@ -105,7 +105,7 @@ def plot_E(test):
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=10)
     
     plt.subplot(222)
-    hE = plt.hist2d(test['mc_energy'],test['Erec'],bins=100)
+    hE = plt.hist2d(test['mc_energy'],test['e_rec'],bins=100)
     plt.colorbar(hE[3])
     plt.xlabel('$log_{10}E_{test}$',fontsize=15)
     plt.ylabel('$log_{10}E_{rec}$',fontsize=15)
@@ -176,17 +176,17 @@ def plot_disp(test):
 
 def plot_pos(data,Energy_cut):
     
-    data = data[data['Erec']>Energy_cut]
+    data = data[data['e_rec']>Energy_cut]
     #True position
     trueX = data[data['hadroness']==0]['src_x']
     trueY = data[data['hadroness']==0]['src_y']
     trueXprot = data[data['hadroness']==1]['src_x']
     trueYprot = data[data['hadroness']==1]['src_y']
     #Reconstructed position
-    recX = data[data['hadroness']==0]['src_xrec']
-    recY = data[data['hadroness']==0]['src_yrec']
-    recXprot = data[data['hadroness']==1]['src_xrec']
-    recYprot = data[data['hadroness']==1]['src_yrec']
+    recX = data[data['hadroness']==0]['src_x_rec']
+    recY = data[data['hadroness']==0]['src_y_rec']
+    recXprot = data[data['hadroness']==1]['src_x_rec']
+    recYprot = data[data['hadroness']==1]['src_y_rec']
 
     plt.subplot(221)
     plt.hist2d(trueXprot,trueYprot,bins=100,label="Protons")
@@ -217,7 +217,7 @@ def plot_pos(data,Energy_cut):
 
 def GHsep(data,features,Energy_cut):
     
-    data = data[data['Erec']>Energy_cut]
+    data = data[data['e_rec']>Energy_cut]
 
     #Select the training/test events
     data['is_train'] = np.random.uniform(0,1,len(data))<= 0.50
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     plt.show()
     
     Energies = [-1,2.,2.398,2.699,2.875,3.,4]
-    features = ['Erec','disprec','intensity','time_gradient','width','length','w/l']
+    features = ['e_rec','disprec','intensity','time_gradient','width','length','w/l']
     '''
     for Energy_cut in Energies:
         result,clf = GHsep(data,features,Energy_cut)

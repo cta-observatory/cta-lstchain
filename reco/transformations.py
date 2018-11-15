@@ -2,8 +2,8 @@
 '''
 Module with auxiliar functions:
 Transform AltAz coordinates into Camera coordinates (This should be implemented already in ctapipe but I haven't managed to find how to do it)
-Calculate source position from Disp distance.
-Calculate Disp distance from source position.
+Calculate source position from disp_ distance.
+Calculate disp_ distance from source position.
 
 Usage:
 
@@ -88,20 +88,20 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
 
 def calc_disp(source_x,source_y,cen_x,cen_y):
     """
-    Calculates "Disp" distance from source position in camera coordinates
+    Calculates "disp_" distance from source position in camera coordinates
     """
     disp = np.sqrt((source_x-cen_x)**2+(source_y-cen_y)**2)
     return disp
 
-def Disp_to_Pos(Disp,cen_x,cen_y,psi):
+def disp__to_Pos(disp_,cen_x,cen_y,psi):
     """
-    Calculates source position in camera coordinates(x,y) from "Disp" distance.
+    Calculates source position in camera coordinates(x,y) from "disp_" distance.
     For now, it only works for POINT GAMMAS, it doesn't take into account the duplicity of the 
     disp method. 
     """
     
-    source_x1 = cen_x - Disp*np.cos(psi)
-    source_y1 = cen_y - Disp*np.sin(psi)
+    source_x1 = cen_x - disp_*np.cos(psi)
+    source_y1 = cen_y - disp_*np.sin(psi)
    
     return source_x1,source_y1
         

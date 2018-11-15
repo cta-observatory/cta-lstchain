@@ -24,10 +24,10 @@ def plot_features(data,truehadroness=False):
     
     truehadroness:
     True: True gammas and proton events are plotted (they are separated using true hadroness). 
-    False: Gammas and protons are separated using reconstructed hadroness (Hadrorec)
+    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     
     """
-    hadro = "Hadrorec"
+    hadro = "hadro_rec"
     if truehadroness:
         hadro = "hadroness"
 
@@ -39,12 +39,12 @@ def plot_features(data,truehadroness=False):
     plt.xlabel(r"$log_{10}E$(GeV)")
     plt.legend()
 
-    #Disp distribution
+    #disp_ distribution
     plt.subplot(332)
     plt.hist(data[data[hadro]<1]['disp'],histtype=u'step',bins=100,label="Gammas")
     plt.hist(data[data[hadro]>0]['disp'],histtype=u'step',bins=100,label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"Disp (m)")
+    plt.xlabel(r"disp_ (m)")
 
     #Intensity distribution
     plt.subplot(333)
@@ -110,17 +110,17 @@ def plot_E(data,truehadroness=False):
     
     truehadroness:
     True: True gammas and proton events are plotted (they are separated using true hadroness). 
-    False: Gammas and protons are separated using reconstructed hadroness (Hadrorec)
+    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     
     """
-    hadro = "Hadrorec"
+    hadro = "hadro_rec"
     if truehadroness:
         hadro = "hadroness"
     
     gammas = data[data[hadro]==0] 
     
     plt.subplot(221)
-    difE = ((gammas['mc_energy']-gammas['Erec'])*np.log(10))
+    difE = ((gammas['mc_energy']-gammas['e_rec'])*np.log(10))
     section = difE[abs(difE) < 1.5]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
@@ -132,7 +132,7 @@ def plot_E(data,truehadroness=False):
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=10)
     
     plt.subplot(222)
-    hE = plt.hist2d(gammas['mc_energy'],gammas['Erec'],bins=100)
+    hE = plt.hist2d(gammas['mc_energy'],gammas['e_rec'],bins=100)
     plt.colorbar(hE[3])
     plt.xlabel('$log_{10}E_{gammas}$',fontsize=15)
     plt.ylabel('$log_{10}E_{rec}$',fontsize=15)
@@ -163,7 +163,7 @@ def plot_E(data,truehadroness=False):
 
     plt.subplots_adjust(hspace=.0)
     
-def plot_Disp(data,truehadroness=False):
+def plot_disp_(data,truehadroness=False):
     
     """
     Plot the performance of reconstructed position
@@ -173,36 +173,36 @@ def plot_Disp(data,truehadroness=False):
     
     truehadroness: boolean
     True: True gammas and proton events are plotted (they are separated using true hadroness). 
-    False: Gammas and protons are separated using reconstructed hadroness (Hadrorec)
+    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     
     """
-    hadro = "Hadrorec"
+    hadro = "hadro_rec"
     if truehadroness:
         hadro = "hadroness"
 
     gammas = data[data[hadro]==0] 
 
     plt.subplot(221)
-    difD = ((gammas['disp']-gammas['Disprec'])/gammas['disp'])
+    difD = ((gammas['disp']-gammas['disp_rec'])/gammas['disp'])
     section = difD[abs(difD) < 0.5]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
     n,bins,patches = plt.hist(difD,100,density=1,alpha=0.75,range=[-2,1.5])
     y = norm.pdf( bins, mu, sigma)
     l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{Disp_{gammas}-Disp_{rec}}{Disp_{gammas}}$',fontsize=15)
+    plt.xlabel('$\\frac{disp__{gammas}-disp__{rec}}{disp__{gammas}}$',fontsize=15)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),fontsize=12)
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),fontsize=12)
                 
     plt.subplot(222)
-    hD = plt.hist2d(gammas['disp'],gammas['Disprec'],bins=100,range=([0,1.1],[0,1.1]))
+    hD = plt.hist2d(gammas['disp'],gammas['disp_rec'],bins=100,range=([0,1.1],[0,1.1]))
     plt.colorbar(hD[3])
-    plt.xlabel('$Disp_{gammas}$',fontsize=15)
-    plt.ylabel('$Disp_{rec}$',fontsize=15)
+    plt.xlabel('$disp__{gammas}$',fontsize=15)
+    plt.ylabel('$disp__{rec}$',fontsize=15)
     plt.plot(gammas['disp'],gammas['disp'],"-",color='red')   
  
     plt.subplot(223)
-    theta2 = (gammas['src_x']-gammas['src_xrec'])**2+(gammas['src_y']-gammas['src_y'])**2
+    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2+(gammas['src_y']-gammas['src_y'])**2
     plt.hist(theta2,bins=100,range=[0,0.1],histtype=u'step')
     plt.xlabel(r'$\theta^{2}(º)$',fontsize=15)
     plt.ylabel(r'# of events',fontsize=15)
@@ -218,10 +218,10 @@ def plot_pos(data,truehadroness=False):
     
     truehadroness: boolean
     True: True gammas and proton events are plotted (they are separated using true hadroness). 
-    False: Gammas and protons are separated using reconstructed hadroness (Hadrorec)
+    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     
     """
-    hadro = "Hadrorec"
+    hadro = "hadro_rec"
     if truehadroness:
         hadro = "hadroness"
 
@@ -231,10 +231,10 @@ def plot_pos(data,truehadroness=False):
     trueXprot = data[data[hadro]==1]['src_x']
     trueYprot = data[data[hadro]==1]['src_y']
     #Reconstructed position
-    recX = data[data[hadro]==0]['src_xrec']
-    recY = data[data[hadro]==0]['src_yrec']
-    recXprot = data[data[hadro]==1]['src_xrec']
-    recYprot = data[data[hadro]==1]['src_yrec']
+    recX = data[data[hadro]==0]['src_x_rec']
+    recY = data[data[hadro]==0]['src_y_rec']
+    recXprot = data[data[hadro]==1]['src_x_rec']
+    recYprot = data[data[hadro]==1]['src_y_rec']
 
     plt.subplot(221)
     plt.hist2d(trueXprot,trueYprot,bins=100,label="Protons")

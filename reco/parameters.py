@@ -190,7 +190,7 @@ def get_events(filename,storedata=False,concatenate=False,storeimg=False,outdir=
                 time_gradient = timepars[0].value
                 intercept = timepars[1].value
 
-                #Calculate Disp and Source position in camera coordinates
+                #Calculate disp_ and Source position in camera coordinates
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value
                 sourcepos = transformations.cal_cam_source_pos(mc_alt,mc_az,
