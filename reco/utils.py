@@ -3,8 +3,8 @@
 Transform AltAz coordinates into Camera coordinates (This should be
 implemented already in ctapipe but I haven't managed to find how to
 do it)
-Calculate source position from Disp distance.
-Calculate Disp distance from source position.
+Calculate source position from disp_ distance.
+Calculate disp_ distance from source position.
 
 Usage:
 
@@ -46,22 +46,22 @@ def az_to_phi(az):
     return -az
 
         
-def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
+def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     """Transform Alt-Az source position into Camera(x,y) coordinates
     source position. 
     
     Parameters:
     -----------
-    mcAlt: float
+    mc_alt: float
     Alt coordinate of the event
 
-    mcAz: float
+    mc_az: float
     Az coordinate of the event
 
-    mcAlttel: float
+    mc_alt_tel: float
     Alt coordinate of the telescope pointing
 
-    mcAztel: float
+    mc_az_tel: float
     Az coordinate of the telescope pointing
 
     focal_length: float
@@ -69,21 +69,21 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
     
     Returns:
     --------
-    float: Source_X1,
+    float: source_x1,
 
-    float: Source_X2
+    float: source_x2
     """
 
-    mcAlt = alt_to_theta(mcAlt*u.rad).value
-    mcAz = az_to_phi(mcAz*u.rad).value
-    mcAlttel = alt_to_theta(mcAlttel*u.rad).value
-    mcAztel = az_to_phi(mcAztel*u.rad).value
+    mc_alt = alt_to_theta(mc_alt*u.rad).value
+    mc_az = az_to_phi(mc_az*u.rad).value
+    mc_alt_tel = alt_to_theta(mc_alt_tel*u.rad).value
+    mc_az_tel = az_to_phi(mc_az_tel*u.rad).value
         
     #Sines and cosines of direction angles
-    cp = np.cos(mcAz)
-    sp = np.sin(mcAz)
-    ct = np.cos(mcAlt)
-    st = np.sin(mcAlt)
+    cp = np.cos(mc_az)
+    sp = np.sin(mc_az)
+    ct = np.cos(mc_alt)
+    st = np.sin(mc_alt)
     
      #Shower direction coordinates
 
@@ -100,8 +100,8 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
     
     rot_Matrix = np.empty((0,3,3))
             
-    alttel = mcAlttel
-    aztel = mcAztel
+    alttel = mc_alt_tel
+    aztel = mc_az_tel
     mat_Y = np.array([[np.cos(alttel),0,np.sin(alttel)],
                       [0,1,0], 
                       [-np.sin(alttel),0,np.cos(alttel)]]).T
@@ -116,21 +116,21 @@ def calc_CamSourcePos(mcAlt,mcAz,mcAlttel,mcAztel,focal_length):
     res = np.einsum("...ji,...i",rot_Matrix,source)
     res = res.T
     
-    Source_X = -focal_length*res[0]/res[2]
-    Source_Y = -focal_length*res[1]/res[2]
-    return Source_X, Source_Y
+    source_x = -focal_length*res[0]/res[2]
+    source_y = -focal_length*res[1]/res[2]
+    return source_x, source_y
 
-def calc_DISP(Source_X,Source_Y,cen_x,cen_y):
+def calc_disp(source_x,source_y,cen_x,cen_y):
     """
-    Calculates "Disp" distance from source position in camera
+    Calculates "disp_" distance from source position in camera
     coordinates
     
     Parameters:
     -----------
-    Source_X: float
+    source_x: float
     Source coordinate X in camera frame
 
-    Source_Y: float
+    source_y: float
     Source coordinate Y in camera frame
 
     cen_x = float
@@ -143,21 +143,21 @@ def calc_DISP(Source_X,Source_Y,cen_x,cen_y):
     --------
     float: disp
     """
-    disp = np.sqrt((Source_X-cen_x)**2
-                   +(Source_Y-cen_y)**2)
+    disp = np.sqrt((source_x-cen_x)**2
+                   +(source_y-cen_y)**2)
     return disp
 
-def Disp_to_Pos(Disp,cen_x,cen_y,psi):
+def disp__to_Pos(disp_,cen_x,cen_y,psi):
     """
-    Calculates source position in camera coordinates(x,y) from "Disp"
+    Calculates source position in camera coordinates(x,y) from "disp_"
     distance.
     For now, it only works for POINT GAMMAS, it doesn't take into
     account the duplicity of the disp method.
     
     Parameters:
     -----------
-    Disp: float
-    Disp distance
+    disp_: float
+    disp_ distance
 
     cen_x = float
     Coordinate x of the center of gravity of Hillas ellipse
@@ -171,15 +171,15 @@ def Disp_to_Pos(Disp,cen_x,cen_y,psi):
 
     Returns:
     --------
-    float: Source_X1
+    float: source_x1
 
-    float: Source_X2
+    float: source_x2
     
     """
     
-    Source_X1 = cen_x - Disp*np.cos(psi)
-    Source_Y1 = cen_y - Disp*np.sin(psi)
+    source_x1 = cen_x - disp_*np.cos(psi)
+    source_y1 = cen_y - disp_*np.sin(psi)
    
-    return Source_X1,Source_Y1
+    return source_x1,source_y1
         
        

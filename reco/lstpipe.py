@@ -61,7 +61,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    RFreg_Energy,RFreg_Disp,RFcls_GH = reco_dl1_to_dl2.buildModels(
+    RFreg_Energy,RFreg_disp,RFcls_GH = reco_dl1_to_dl2.buildModels(
         args.gammafile,args.protonfile,
         features,args.storerf)
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     
     #Apply the models to the data
     dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
+    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp)
     
     if args.storeresults==True:
         #Store results
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     plt.show()
     plot_dl2.plot_E(dl2)
     plt.show()
-    plot_dl2.plot_Disp(dl2)
+    plot_dl2.plot_disp(dl2)
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()
