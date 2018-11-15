@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Script for G/H separation using Ranfom Forest Classifier
-Energy and Disp are reconstructed usign Random Forest Regressor
+Energy and disp are reconstructed usign Random Forest Regressor
 '''
 
 from astropy.io import fits
@@ -16,7 +16,7 @@ from ctapipe.instrument import OpticsDescription
 import astropy.units as u
 import ctapipe.coordinates as c
 import matplotlib as mpl
-import Disp
+import disp
 import sys
 import pandas as pd
 from astropy.table import Table
@@ -36,33 +36,33 @@ df_proton = dat_proton.to_pandas()
 tel = OpticsDescription.from_name('LST') #Telescope description
 focal_length = tel.equivalent_focal_length.value #Telescope focal length
 
-#Calculate source position and Disp distance:
-sourcepos_gamma = Disp.calc_CamSourcePos(df_gamma['mcAlt'].get_values(),
-                                         df_gamma['mcAz'].get_values(),
-                                         df_gamma['mcAlttel'].get_values(),
-                                         df_gamma['mcAztel'].get_values(),
+#Calculate source position and disp distance:
+sourcepos_gamma = disp.cal_cam_source_pos(df_gamma['mc_alt'].get_values(),
+                                         df_gamma['mc_az'].get_values(),
+                                         df_gamma['mc_alt_tel'].get_values(),
+                                         df_gamma['mc_az_tel'].get_values(),
                                          focal_length)
-disp_gamma = Disp.calc_DISP(sourcepos_gamma[0],
+disp_gamma = disp.calc_disp(sourcepos_gamma[0],
                             sourcepos_gamma[1],
                             df_gamma['x'].get_values(),
                             df_gamma['y'].get_values())
 
-sourcepos_proton = Disp.calc_CamSourcePos(df_proton['mcAlt'].get_values(),
-                                         df_proton['mcAz'].get_values(),
-                                         df_proton['mcAlttel'].get_values(),
-                                         df_proton['mcAztel'].get_values(),
+sourcepos_proton = disp.cal_cam_source_pos(df_proton['mc_alt'].get_values(),
+                                         df_proton['mc_az'].get_values(),
+                                         df_proton['mc_alt_tel'].get_values(),
+                                         df_proton['mc_az_tel'].get_values(),
                                          focal_length)
-disp_proton = Disp.calc_DISP(sourcepos_proton[0],
+disp_proton = disp.calc_disp(sourcepos_proton[0],
                             sourcepos_proton[1],
                             df_proton['x'].get_values(),
                             df_proton['y'].get_values())
 
 
 #Add dist to the DataFrame
-df_gamma['SrcX'] = sourcepos_gamma[0]
-df_gamma['SrcY'] = sourcepos_gamma[1]
-df_proton['SrcX'] = sourcepos_proton[0]
-df_proton['SrcY'] = sourcepos_proton[1] 
+df_gamma['src_x'] = sourcepos_gamma[0]
+df_gamma['src_y'] = sourcepos_gamma[1]
+df_proton['src_x'] = sourcepos_proton[0]
+df_proton['src_y'] = sourcepos_proton[1]
 df_gamma['disp'] = disp_gamma
 df_proton['disp'] = disp_proton
 df_gamma['hadroness'] = np.zeros(df_gamma.shape[0])
@@ -89,7 +89,7 @@ df = df_gamma.append(df_proton,ignore_index=True)
 
 #Add some features required for training to the DataFrame
 df['w/l'] = df['width']/df['length'] #Width over length
-df['mcEnergy'] = np.log10(df['mcEnergy']*1e3) #Log10(Energy) in GeV
+df['mc_energy'] = np.log10(df['mc_energy']*1e3) #Log10(Energy) in GeV
 df['intensity'] = np.log10(df['intensity']) #Size in the form log10(size)
 
 #Create a training set only with gammas and a test set with gammas and protons
@@ -102,36 +102,36 @@ features = ['intensity','time_gradient','width','length','w/l','phi','psi']
 
 max_depth = 50
 regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
-regr_rf_e.fit(train_gammas[features], train_gammas['mcEnergy'])
+regr_rf_e.fit(train_gammas[features], train_gammas['mc_energy'])
 erec = regr_rf_e.predict(test[features])
 
-#Reconstruct Disp
+#Reconstruct disp
 regr_rf_disp = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=100)                                                           
 regr_rf_disp.fit(train_gammas[features], train_gammas['disp'])
 disprec = regr_rf_disp.predict(test[features])
 
-test['Erec'] = erec
-test['Disprec'] = disprec
+test['e_rec'] = erec
+test['disprec'] = disprec
 
-#Reconstruct position of the Source from Disp
+#Reconstruct position of the Source from disp
 
-posdisp = Disp.Disp_to_Pos(test['disp'],test['x'],test['y'],test['psi'])
-theta2_true = (test['SrcX']-posdisp[0])**2+(test['SrcY']-posdisp[1])**2
-posrec = Disp.Disp_to_Pos(disprec,test['x'],test['y'],test['psi'])
-theta2_reco = (test['SrcX']-posrec[0])**2+(test['SrcY']-posrec[1])**2
+posdisp = disp.disp_to_Pos(test['disp'],test['x'],test['y'],test['psi'])
+theta2_true = (test['src_x']-posdisp[0])**2+(test['src_y']-posdisp[1])**2
+posrec = disp.disp_to_Pos(disprec,test['x'],test['y'],test['psi'])
+theta2_reco = (test['src_x']-posrec[0])**2+(test['src_y']-posrec[1])**2
 
 test['theta2_true'] = theta2_true
 test['theta2_reco'] = theta2_reco
 
-test['SrcXrec'] = posrec[0]
-test['SrcYrec'] = posrec[1]
+test['src_x_rec'] = posrec[0]
+test['src_y_rec'] = posrec[1]
 
 #Save the reconstructed data
 test.to_hdf("recoevents_diff.hdf5",key="test",mode="w")
 
-#Plot Energy and Disp reconstructions
+#Plot Energy and disp reconstructions
 plt.subplot(121)
-difE = (((test['mcEnergy']-erec)/test['mcEnergy'])*np.log10(10))
+difE = (((test['mc_energy']-erec)/test['mc_energy'])*np.log10(10))
 print(difE.mean(),difE.std())
 plt.hist(difE,bins=100)
 plt.xlabel('$\\frac{E_{test}-E_{rec}}{E_{test}}$',fontsize=15)
@@ -139,39 +139,39 @@ plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difE).mean,6)),fonts
 plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difE).variance,6)),fontsize=15, color = 'white')
 
 plt.subplot(122)
-hE = plt.hist2d(test['mcEnergy'],erec,bins=100)
+hE = plt.hist2d(test['mc_energy'],erec,bins=100)
 plt.colorbar(hE[3])
 plt.xlabel('$log_{10}E_{test}$',fontsize=15)
 plt.ylabel('$log_{10}E_{rec}$',fontsize=15)
-plt.plot(test['mcEnergy'],test['mcEnergy'],"-",color='red')
+plt.plot(test['mc_energy'],test['mc_energy'],"-",color='red')
 plt.show()
 
 plt.subplot(221)
 difD = ((test['disp']-disprec)/test['disp'])
 print(difD.mean(),difD.std())
 plt.hist(difD,bins=100,range=[-2,1.5])
-plt.xlabel('$\\frac{Disp_{test}-Disp_{rec}}{Disp_{test}}$',fontsize=15)
+plt.xlabel('$\\frac{disp_{test}-disp_{rec}}{disp_{test}}$',fontsize=15)
 plt.figtext(0.6,0.7,'Mean: '+str(round(scipy.stats.describe(difD).mean,6)),fontsize=15)
 plt.figtext(0.6,0.65,'Variance: '+str(round(scipy.stats.describe(difD).variance,6)),fontsize=15)
 
 plt.subplot(222)
 hD = plt.hist2d(test['disp'],disprec,bins=100,range=([0,2],[0,2]))
 plt.colorbar(hD[3])
-plt.xlabel('$Disp_{test}$',fontsize=15)
-plt.ylabel('$Disp_{rec}$',fontsize=15)
+plt.xlabel('$disp_{test}$',fontsize=15)
+plt.ylabel('$disp_{rec}$',fontsize=15)
 plt.plot(test['disp'],test['disp'],"-",color='red')
 
 plt.subplot(223)
-plt.hist(test['theta2_true'],bins=50,range=[0,60],histtype=u'step',label=r'With Hillas Disp')
-plt.hist(test['theta2_reco'],bins=50,range=[0,60],histtype=u'step',label=r'With Reconstructed Disp')
+plt.hist(test['theta2_true'],bins=50,range=[0,60],histtype=u'step',label=r'With Hillas disp')
+plt.hist(test['theta2_reco'],bins=50,range=[0,60],histtype=u'step',label=r'With Reconstructed disp')
 plt.yscale('log')
 plt.legend()
 plt.xlabel(r'$\theta^{2}$',fontsize=15)
 plt.ylabel(r'# of Gamma and Proton events',fontsize=15)
 
 plt.subplot(224)
-plt.hist(test[test['hadroness']<1]['theta2_true'],bins=50,range=[0,20],histtype=u'step',label=r'With Hillas Disp')
-plt.hist(test[test['hadroness']<1]['theta2_reco'],bins=50,range=[0,20],histtype=u'step',label=r'With Reconstructed Disp')
+plt.hist(test[test['hadroness']<1]['theta2_true'],bins=50,range=[0,20],histtype=u'step',label=r'With Hillas disp')
+plt.hist(test[test['hadroness']<1]['theta2_reco'],bins=50,range=[0,20],histtype=u'step',label=r'With Reconstructed disp')
 plt.yscale('log')
 plt.legend()
 plt.xlabel(r'$\theta^{2}$',fontsize=15)
@@ -181,13 +181,13 @@ plt.show()
 
 #Perform Gamma/Hadron separation:
 
-#Now we build a new training set with reconstructed Energy and Disp:
+#Now we build a new training set with reconstructed Energy and disp:
 
 #Set a cut in energy, 0 for no cuts.
 Energy_cut = 2.699
 
 
-test = test[test['mcEnergy']>Energy_cut]
+test = test[test['mc_energy']>Energy_cut]
 
 #Select the training/test events
 test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
@@ -195,8 +195,8 @@ test['is_train'] = np.random.uniform(0,1,len(test))<= 0.75
 #Build new train/test sets:
 train,test = test[test['is_train']==True],test[test['is_train']==False]
 
-#features = ['intensity','r','width','length','w/l','phi','psi','impact','mcXmax','mcHfirst']
-features = ['Erec','Disprec','intensity','time_gradient','width','length','w/l','phi','psi']
+#features = ['intensity','r','width','length','w/l','phi','psi','impact','mc_x_max','mc_h_first_int']
+features = ['e_rec','disprec','intensity','time_gradient','width','length','w/l','phi','psi']
 
 #Classify Gamma/Hadron
 clf = RandomForestClassifier(max_depth = 50,
@@ -242,8 +242,8 @@ plt.show()
 
 test['hadrorec'] = result
 
-plt.hist(test[test['hadrorec']<1]['theta2_true'],bins=50,range=[0,2],histtype=u'step',label =r'With Hillas Disp')
-plt.hist(test[test['hadrorec']<1]['theta2_reco'],bins=50,range=[0,2],histtype=u'step',label =r'With Reconstructed Disp')
+plt.hist(test[test['hadrorec']<1]['theta2_true'],bins=50,range=[0,2],histtype=u'step',label =r'With Hillas disp')
+plt.hist(test[test['hadrorec']<1]['theta2_reco'],bins=50,range=[0,2],histtype=u'step',label =r'With Reconstructed disp')
 plt.yscale('log')
 plt.xlabel(r'$\theta^{2}$',fontsize=15)
 plt.ylabel(r'# Gamma events (after g/h separation)',fontsize=15)

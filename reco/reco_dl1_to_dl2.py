@@ -1,4 +1,4 @@
-"""Module with functions for Energy and Disp reconstruction and G/H
+"""Module with functions for Energy and disp_ reconstruction and G/H
 separation. There are functions for raining random forest and for
 applying them to data. The RF can be saved into a file for later use.
 
@@ -41,7 +41,7 @@ def split_traintest(data,proportion):
 
 def trainRFreco(train,features):
     """
-    Trains two Random Forest regressors for Energy and Disp
+    Trains two Random Forest regressors for Energy and disp_
     reconstruction respectively. Returns the trained RF.
 
     Parameters:
@@ -70,10 +70,10 @@ def trainRFreco(train,features):
                                       n_jobs=4,
                                       n_estimators=50)
     regr_rf_e.fit(train[features],
-                  train['mcEnergy'])
+                  train['mc_energy'])
     
     print("Random Forest trained!")    
-    print("Training Random Forest Regressor for Disp Reconstruction...")
+    print("Training Random Forest Regressor for disp_ Reconstruction...")
     
     regr_rf_disp = RandomForestRegressor(max_depth=max_depth,
                                          min_samples_leaf=50,
@@ -123,7 +123,7 @@ def trainRFsep(train,features):
 def buildModels(filegammas,fileprotons,features,
                 SaveModels=True,path_models="",
                 EnergyCut=-1,IntensityCut=60,rCut=0.94):
-    """Uses MC data to train Random Forests for Energy and Disp
+    """Uses MC data to train Random Forests for Energy and disp_
     reconstruction and G/H separation. Returns 3 trained RF.
 
     Parameters:
@@ -156,7 +156,7 @@ def buildModels(filegammas,fileprotons,features,
     Returns:
     --------
     RandomForestRegressor: RFreg_Energy
-    RandomForestRegressor: RFreg_Disp
+    RandomForestRegressor: RFreg_disp_
     RandomForestClassifier: RFcls_GH
     """
     features_=list(features)
@@ -177,11 +177,11 @@ def buildModels(filegammas,fileprotons,features,
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
+    RFreg_Energy, RFreg_disp_ = trainRFreco(df_gamma,
                                            features)
 
     #Train classifier for gamma/hadron separation. We need to use half
-    #of the gammas for training regressors and have Erec and Disp rec
+    #of the gammas for training regressors and have e_rec and disp_ rec
     #for training the classifier.
 
     train, testg = split_traintest(df_gamma,
@@ -189,24 +189,24 @@ def buildModels(filegammas,fileprotons,features,
     test = testg.append(df_proton,
                         ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features_)
+    tempRFreg_Energy, tempRFreg_disp_ = trainRFreco(train,features_)
     
     #Apply the regressors to the test set
 
-    test['Erec'] = tempRFreg_Energy.predict(test[features_])
-    test['Disprec'] = tempRFreg_Disp.predict(test[features_])
+    test['e_rec'] = tempRFreg_Energy.predict(test[features_])
+    test['disp_rec'] = tempRFreg_disp_.predict(test[features_])
     
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp reconstructed.
     
-    train = test[test['mcEnergy']>EnergyCut]
+    train = test[test['mc_energy']>EnergyCut]
     
-    del tempRFreg_Energy, tempRFreg_Disp
+    del tempRFreg_Energy, tempRFreg_disp_
     
-    #Add Erec and Disprec to features.
+    #Add e_rec and disp_rec to features.
     features_sep = features_
-    features_sep.append('Erec')
-    features_sep.append('Disprec')
+    features_sep.append('e_rec')
+    features_sep.append('disp_rec')
     
     #Train the Classifier
 
@@ -215,16 +215,16 @@ def buildModels(filegammas,fileprotons,features,
     
     if SaveModels==True:
         fileE = path_models+"RFreg_Energy.sav"
-        fileD = path_models+"RFreg_Disp.sav"
+        fileD = path_models+"RFreg_disp_.sav"
         fileH = path_models+"RFcls_GH.sav"
         joblib.dump(RFreg_Energy, fileE)
-        joblib.dump(RFreg_Disp, fileD)
+        joblib.dump(RFreg_disp_, fileD)
         joblib.dump(RFcls_GH, fileH)
-        
-    
-    return RFreg_Energy,RFreg_Disp,RFcls_GH
 
-def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
+    return RFreg_Energy,RFreg_disp_,RFcls_GH
+
+
+def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -240,26 +240,26 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RFreg_Energy: Random Forest Regressor
     RF for Energy reconstruction
 
-    RFreg_Disp: Random Forest Regressor
-    RF for Disp reconstruction
+    RFreg_disp_: Random Forest Regressor
+    RF for disp_ reconstruction
 
     """
     
     features_ = list(features)
     dl2 = dl1
-    #Reconstruction of Energy and Disp distance
-    dl2['Erec'] = RFreg_Energy.predict(dl2[features_])
-    dl2['Disprec'] = RFreg_Disp.predict(dl2[features_])
+    #Reconstruction of Energy and disp_ distance
+    dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
+    dl2['disp_rec'] = RFreg_disp_.predict(dl2[features_])
    
-    #Construction of Source position in camera coordinates from Disp distance.
+    #Construction of Source position in camera coordinates from disp_ distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    dl2['SrcXrec'],dl2['SrcYrec'] = utils.Disp_to_Pos(dl2['Disprec'],
+    dl2['src_x_rec'],dl2['src_y_rec'] = utils.disp__to_Pos(dl2['disp_rec'],
                                                                   dl2['x'],
                                                                   dl2['y'],
                                                                   dl2['psi'])
     
-    features_.append('Erec')
-    features_.append('Disprec')
-    dl2['Hadrorec'] = RFcls_GH.predict(dl2[features_]).astype(int)
+    features_.append('e_rec')
+    features_.append('disp_rec')
+    dl2['hadro_rec'] = RFcls_GH.predict(dl2[features_]).astype(int)
     
 

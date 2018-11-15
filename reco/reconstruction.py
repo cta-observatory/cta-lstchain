@@ -1,5 +1,5 @@
 """
-Module with functions for Energy and Disp reconstruction and G/H separation. There are functions for raining random forest and for applying them to data. The RF can be saved into a file for later use.
+Module with functions for Energy and disp reconstruction and G/H separation. There are functions for raining random forest and for applying them to data. The RF can be saved into a file for later use.
 
 Usage:
 
@@ -34,7 +34,7 @@ def split_traintest(data,proportion):
 
 def trainRFreco(train,features):
     """
-    Trains two Random Forest regressors for Energy and Disp reconstruction respectively.
+    Trains two Random Forest regressors for Energy and disp reconstruction respectively.
     Returns the trained RF.
 
     Parameters:
@@ -52,11 +52,11 @@ def trainRFreco(train,features):
     
     max_depth = 50
     regr_rf_e = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=30)                                                           
-    regr_rf_e.fit(train[features], train['mcEnergy'])
+    regr_rf_e.fit(train[features], train['mc_energy'])
     #erec = regr_rf_e.predict(test[features])
     print("Random Forest trained!")    
-    print("Training Random Forest Regressor for Disp Reconstruction...")
-    #Reconstruct Disp
+    print("Training Random Forest Regressor for disp_ Reconstruction...")
+    #Reconstruct disp_
     regr_rf_disp = RandomForestRegressor(max_depth=max_depth, random_state=2,n_estimators=30)                                                           
     regr_rf_disp.fit(train[features], train['disp'])
     #disprec = regr_rf_disp.predict(test[features])
@@ -93,7 +93,7 @@ def trainRFsep(train,features):
 
 def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",EnergyCut=-1,IntensityCut=60,rCut=0.94):
     """
-    Uses MC data to train Random Forests for Energy and Disp reconstruction and G/H separation.
+    Uses MC data to train Random Forests for Energy and disp_ reconstruction and G/H separation.
     Returns 3 trained RF.
 
     Parameters:
@@ -138,29 +138,29 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,features)
+    RFreg_Energy, RFreg_disp_ = trainRFreco(df_gamma,features)
 
     #Train classifier for gamma/hadron separation. We need to use half of the gammas for
-    #training regressors and have Erec and Disp rec for training the classifier
+    #training regressors and have e_rec and disp_ rec for training the classifier
 
     train, testg = split_traintest(df_gamma,0.5)
     test = testg.append(df_proton,ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features)
+    tempRFreg_Energy, tempRFreg_disp_ = trainRFreco(train,features)
     
     #Apply the regressors to the test set
 
-    test['Erec'] = tempRFreg_Energy.predict(test[features])
-    test['Disprec'] = tempRFreg_Disp.predict(test[features])
+    test['e_rec'] = tempRFreg_Energy.predict(test[features])
+    test['disp_rec'] = tempRFreg_disp_.predict(test[features])
     
     #Apply cut in reconstructed energy. New train set is the previous test with energy and disp reconstructed.
-    train = test[test['mcEnergy']>EnergyCut]
+    train = test[test['mc_energy']>EnergyCut]
     
-    del tempRFreg_Energy, tempRFreg_Disp
-    #Add Erec and Disprec to features.
+    del tempRFreg_Energy, tempRFreg_disp_
+    #Add e_rec and disp_rec to features.
     features_sep = features
-    features_sep.append('Erec')
-    features_sep.append('Disprec')
+    features_sep.append('e_rec')
+    features_sep.append('disp_rec')
     
     #Train the Classifier
 
@@ -168,15 +168,15 @@ def buildModels(filegammas,fileprotons,features,SaveModels=True,path_models="",E
     
     if SaveModels==True:
         fileE = path_models+"RFreg_Energy.sav"
-        fileD = path_models+"RFreg_Disp.sav"
+        fileD = path_models+"RFreg_disp_.sav"
         fileH = path_models+"RFcls_GH.sav"
         joblib.dump(RFreg_Energy, fileE)
-        joblib.dump(RFreg_Disp, fileD)
+        joblib.dump(RFreg_disp_, fileD)
         joblib.dump(RFcls_GH, fileH)
         
-    return RFreg_Energy,RFreg_Disp,RFcls_GH
+    return RFreg_Energy,RFreg_disp_,RFcls_GH
 
-def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
+def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_disp_):
     """
     Apply previously trained Random Forests to a set of data depending on a set of features
 
@@ -191,21 +191,21 @@ def ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RFreg_Energy: Random Forest Regressor
     RF for Energy reconstruction
 
-    RFreg_Disp: Random Forest Regressor
-    RF for Disp reconstruction
+    RFreg_disp_: Random Forest Regressor
+    RF for disp_ reconstruction
 
     """
-    #Reconstruction of Energy and Disp distance
-    data['Erec'] = RFreg_Energy.predict(data[features])
-    data['Disprec'] = RFreg_Disp.predict(data[features])
-    #Construction of Source position in camera coordinates from Disp distance.
+    #Reconstruction of Energy and disp_ distance
+    data['e_rec'] = RFreg_Energy.predict(data[features])
+    data['disp_rec'] = RFreg_disp_.predict(data[features])
+    #Construction of Source position in camera coordinates from disp_ distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    data['SrcXrec'],data['SrcYrec'] = transformations.Disp_to_Pos(data['Disprec'],
+    data['src_x_rec'],data['src_y_rec'] = transformations.disp__to_Pos(data['disp_rec'],
                                                                   data['x'],
                                                                   data['y'],
                                                                   data['psi'])
     
-    features.append('Erec')
-    features.append('Disprec')
-    data['Hadrorec'] = RFcls_GH.predict(data[features])
+    features.append('e_rec')
+    features.append('disp_rec')
+    data['hadro_rec'] = RFcls_GH.predict(data[features])
     
