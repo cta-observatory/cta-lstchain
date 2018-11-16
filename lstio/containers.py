@@ -31,6 +31,11 @@ class DL1ParametersContainer(Container):
     skewness = Field(None, 'measure of the asymmetry')
     kurtosis = Field(None, 'measure of the tailedness')
     disp = Field(None, 'disp [m]', unit=u.m)
+    hadroness = Field(None, 'hadroness')
+    src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
+    src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
+    time_gradient = Field(None, 'Time gradient in the camera')
+    intercept = Field(None, 'Intercept')
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
@@ -49,6 +54,7 @@ class DL1ParametersContainer(Container):
     mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
                                     "2(mu-), 100*A+Z for nucleons and nuclei,"
                                     "negative for antimatter.")
+
 
     gps_time = Field(nan, 'GPS time event trigger')
 
