@@ -7,10 +7,11 @@ import astropy.units as u
 from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
-from math import nan
+from ctapipe.image import timing_parameters as time
+
 import sys
 sys.path.insert(0, '../')
-from reco.utils import disp
+from reco.utils import disp, get_event_pos_in_camera
 ### Functions definition
 
 
@@ -24,10 +25,10 @@ class DL1ParametersContainer(Container):
     x = Field(None, 'centroid x coordinate', unit=u.m)
     y = Field(None, 'centroid x coordinate', unit=u.m)
     r = Field(None, 'radial coordinate of centroid', unit=u.m)
-    phi = Field(None, 'polar coordinate of centroid', unit=u.deg)
+    phi = Field(None, 'polar coordinate of centroid', unit=u.rad)
     length = Field(None, 'RMS spread along the major-axis', unit=u.m)
     width = Field(None, 'RMS spread along the minor-axis', unit=u.m)
-    psi = Field(None, 'rotation angle of ellipse', unit=u.deg)
+    psi = Field(None, 'rotation angle of ellipse', unit=u.rad)
     skewness = Field(None, 'measure of the asymmetry')
     kurtosis = Field(None, 'measure of the tailedness')
     disp = Field(None, 'disp [m]', unit=u.m)
@@ -39,6 +40,7 @@ class DL1ParametersContainer(Container):
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
+    gps_time = Field(None, 'GPS time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     mc_alt = Field(None, 'Simulated altitude', unit=u.rad)
@@ -55,8 +57,9 @@ class DL1ParametersContainer(Container):
                                     "2(mu-), 100*A+Z for nucleons and nuclei,"
                                     "negative for antimatter.")
 
-
-    gps_time = Field(nan, 'GPS time event trigger')
+    hadroness = Field(None, "Hadroness")
+    wl = Field(None, "width/length")
+    impact = Field(None, "Impact")
 
 
     def fill_hillas(self, hillas):
@@ -109,8 +112,27 @@ class DL1ParametersContainer(Container):
         distance = np.sqrt((event.mc.core_x - tel_pos[0]) ** 2 + (event.mc.core_y - tel_pos[1]) ** 2)
         self.mc_core_distance = distance
 
-    def set_disp(self, event, telescope_id, hillas):
-        self.disp = disp(event, telescope_id, hillas)
+    def set_disp(self, source_pos, hillas):
+        self.disp = disp(source_pos, hillas)
 
+    def set_timing_features(self, geom, image, peakpos, hillas):
+        try:
+            peak_time = Quantity(peakpos) * u.Unit("ns")
+            timepars = time.timing_parameters(geom, image, peak_time, hillas)
+            self.time_gradient = timepars['slope'].value
+            self.intercept = timepars['intercept']
+        except:
+            pass
+
+    def set_source_camera_position(self, event, telescope_id):
+        # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
+        #                                      mc_alt_tel, mc_az_tel,
+        #                                      focal_length)
+        # self.src_x = sourcepos[0]
+        # self.src_y = sourcepos[1]
+        tel = event.inst.subarray.tel[telescope_id]
+        source_pos = get_event_pos_in_camera(event, tel)
+        self.src_x = source_pos[0]
+        self.src_y = source_pos[1]
 
 

@@ -202,6 +202,29 @@ def guess_type(filename):
     return 'unknown'
 
 
+def particle_number(particle_name):
+    """
+    Return an integer coding the particle type
+    'gamma'=0
+    'proton'=1
+    'electron'=2
+    'muon'=3
+
+    Parameters
+    ----------
+    particle_name: str
+
+    Returns
+    -------
+    int
+    """
+    return {
+        'gamma': 0,
+        'proton': 1,
+        'electron': 2,
+        'proton': 3,
+    }[particle_name]
+
 
 def get_event_pos_in_camera(event, tel):
     """
@@ -228,7 +251,7 @@ def get_event_pos_in_camera(event, tel):
     return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
 
 
-def disp(event, telescope_id, hillas):
+def disp(source_pos, hillas):
     """
     Compute disp parameter
 
@@ -242,8 +265,6 @@ def disp(event, telescope_id, hillas):
     -------
     disp: float
     """
-    tel = event.inst.subarray.tel[telescope_id]
-    source_pos = get_event_pos_in_camera(event, tel)
     disp = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
     return disp
 
