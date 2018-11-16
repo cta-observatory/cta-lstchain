@@ -82,8 +82,5 @@ if __name__ == '__main__':
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()
-    plot_dl2.plot_importances(RFcls_GH,features)                                                             
-    plt.show()                                                                                               
-    plot_dl2.plot_ROC(RFcls_GH,dl2,features,-1)                                                             
-    plt.show()
+
     
