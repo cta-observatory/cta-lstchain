@@ -14,6 +14,10 @@ from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
+from ctapipe.utils import get_dataset_path
+from ctapipe.calib import CameraCalibrator
+from ctapipe.io import event_source
+from ctapipe.io import HDF5TableWriter
 import pyhessio
 import pandas as pd
 import astropy.units as units
@@ -21,12 +25,144 @@ import h5py
 import sys
 sys.path.insert(0, '../')
 import reco.utils as utils
+from reco.calib import lst_calibration
+from lstio.containers import DL1ParametersContainer
+
+
+
+### PARAMETERS - TODO: use a yaml config file
+
+
+allowed_tels = {1}  # select LST1 only
+max_events = None  # limit the number of events to analyse in files - None if no limit
+
+# Add option to use custom calibration
+cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_product='NeighbourPeakIntegrator')
+
+cleaning_method = tailcuts_clean
+cleaning_parameters = {'boundary_thresh': 3,
+                       'picture_thresh': 6,
+                       'keep_isolated_pixels': False,
+                       'min_number_picture_neighbors': 1
+                       }
+
+channel = 0
+
+
+def get_dl1(calibrated_event, telescope_id):
+    """
+    Return a DL1ParametersContainer of extracted features from a calibrated event
+
+    Parameters
+    ----------
+    event: ctapipe event container
+    telescope_id:
+
+    Returns
+    -------
+    DL1ParametersContainer
+    """
+    dl1_container = DL1ParametersContainer()
+
+    tel = calibrated_event.inst.subarray.tels[telescope_id]
+    dl1 = calibrated_event.dl1.tel[telescope_id]
+    camera = tel.camera
+    signal_pixels = cleaning_method(camera, dl1.image[channel],
+                                    **cleaning_parameters)
+
+    image = dl1.image[channel]
+    image[~signal_pixels] = 0
+
+    peakpos = dl1.peakpos[channel]
+
+    if image.sum() > 0:
+        try:
+            hillas = hillas_parameters(
+                camera,
+                image
+            )
+            ## Fill container ##
+            dl1_container.fill_mc(calibrated_event)
+            dl1_container.fill_hillas(hillas)
+            dl1_container.fill_event_info(calibrated_event)
+            dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
+            # dl1_container.mc_type = utils.guess_type(infile)
+            dl1_container.set_timing_features(camera, image, peakpos, hillas)
+            dl1_container.set_source_camera_position(calibrated_event, telescope_id)
+            dl1_container.set_disp([dl1_container.src_x, dl1_container.src_y], hillas)
+            return dl1_container
+
+        except:
+            print("Bad event")
+            return None
+
+    else:
+        return None
+
+
+def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), output_filename=None):
+    """
+    Chain r0 to dl1
+    Save the extracted dl1 parameters in output_filename
+
+    Parameters
+    ----------
+    input_filename: str - path to input file, default: `gamma_test_large.simtel.gz`
+    output_filename: str - path to output file, default: `./` + basename(input_filename)
+
+    Returns
+    -------
+
+    """
+    import os
+    output_filename = 'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5' if output_filename is None \
+        else output_filename
+
+    source = event_source(input_filename)
+    source.allowed_tels = allowed_tels
+    source.max_events = max_events
+
+    with HDF5TableWriter(filename=output_filename, group_name='events', overwrite=True) as writer:
+
+        for i, event in enumerate(source):
+            if i%100==0: print(i)
+            # cal.calibrate(event)
+
+            # for telescope_id, dl1 in event.dl1.tel.items():
+            for ii, telescope_id in enumerate(event.r0.tels_with_data):
+                camera = event.inst.subarray.tel[telescope_id].camera  # Camera geometry
+
+                lst_calibration(event, telescope_id)
+
+                dl1_container = get_dl1(event, telescope_id)
+                if dl1_container is not None:
+                    particle_name = utils.guess_type(input_filename)
+
+                    # Some custom def
+                    dl1_container.mc_type = utils.particle_number(particle_name)
+                    dl1_container.hadroness = 1 if dl1_container.mc_type == 1 else 0
+                    dl1_container.hadroness = dl1_container.mc_type
+                    dl1_container.impact = dl1_container.mc_core_distance
+                    dl1_container.wl = dl1_container.width/dl1_container.length
+                    dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)  # Log10(Energy) in GeV
+                    dl1_container.intensity = np.log10(dl1_container.intensity)
+                    dl1_container.gps_time = event.trig.gps_time.value
+
+                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
+                    w = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                    l = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                    dl1_container.width = w.value
+                    dl1_container.length = l.value
+
+                    writer.write(camera.cam_id, [dl1_container])
 
 
     
 def get_events(filename,storedata=False,test=False,
                concatenate=False,storeimg=False,outdir='./results/'):
     """
+    Depreciated, use r0_to_dl1.
+
     Read a Simtelarray file, extract pixels charge, calculate image 
     parameters and timing parameters and store the result in an hdf5
     file. 
@@ -52,8 +188,10 @@ def get_events(filename,storedata=False,test=False,
     --------
     pandas DataFrame: output
     """
+    from warnings import warn
+    warn("Deprecated: use r0_to_dl1")
+
     #Particle type:
-    
     particle_type = utils.guess_type(filename)
     
     #Create data frame where DL2 data will be stored:
@@ -70,7 +208,7 @@ def get_events(filename,storedata=False,test=False,
                 'gps_time',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi',
                 'r',
