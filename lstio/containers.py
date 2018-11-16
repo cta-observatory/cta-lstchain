@@ -81,8 +81,8 @@ class DL1ParametersContainer(Container):
             self.mc_h_first_int = event.mc.h_first_int
             # mcType = event.mc. # TODO: find type in event
             self.mc_x_max = event.mc.x_max
-            self.mc_alt_tel = event.mcheader.run_array_direction[0]
-            self.mc_az_tel = event.mcheader.run_array_direction[1]
+            self.mc_alt_tel = event.mcheader.run_array_direction[1]
+            self.mc_az_tel = event.mcheader.run_array_direction[0]
         except:
             print("mc information not filled")
 
