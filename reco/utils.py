@@ -12,7 +12,6 @@ Usage:
 """
 
 import numpy as np
-import ctapipe.coordinates as c
 from ctapipe.coordinates import HorizonFrame
 from ctapipe.coordinates import NominalFrame
 import astropy.units as u
