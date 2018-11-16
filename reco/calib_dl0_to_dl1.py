@@ -22,22 +22,7 @@ import sys
 sys.path.insert(0, '../')
 import reco.utils as utils
 
-def guess_type(filename):
-    """Guess the particle type from the filename
-    
-    Parameters
-    ----------
-    filename: str
 
-    Returns
-    -------
-    str: 'gamma', 'proton', 'electron' or 'unknown'
-    """
-    particles = ['gamma', 'proton', 'electron']
-    for p in particles:
-        if p in filename:
-            return p
-    return 'unknown'
     
 def get_events(filename,storedata=False,test=False,
                concatenate=False,storeimg=False,outdir='./results/'):
@@ -69,7 +54,7 @@ def get_events(filename,storedata=False,test=False,
     """
     #Particle type:
     
-    particle_type = guess_type(filename)
+    particle_type = utils.guess_type(filename)
     
     #Create data frame where DL2 data will be stored:
 
@@ -327,7 +312,7 @@ def get_spectral_w_pars(filename):
     A=0.
     Core_max=0.
 
-    particle = guess_type(filename)
+    particle = utils.guess_type(filename)
     N = pyhessio.count_mc_generated_events(filename)
     with pyhessio.open_hessio(filename) as f:
         f.fill_next_event()
