@@ -9,12 +9,9 @@ Usage:
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve
 from sklearn.externals import joblib
-import sys
-sys.path.insert(0, '../')
-import reco.utils as utils
+
+from . import utils
 
 def split_traintest(data,proportion):
     """
@@ -161,10 +158,8 @@ def buildModels(filegammas,fileprotons,features,
     """
     features_=list(features)
 
-    df_gamma = pd.read_hdf(filegammas,
-                           key='gamma_events')
-    df_proton = pd.read_hdf(fileprotons,
-                            key='proton_events')
+    df_gamma = pd.read_hdf(filegammas)
+    df_proton = pd.read_hdf(fileprotons)
 
     #Apply cuts in intensity and r
 
@@ -189,7 +184,7 @@ def buildModels(filegammas,fileprotons,features,
     test = testg.append(df_proton,
                         ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_disp_ = trainRFreco(train,features_)
+    tempRFreg_Energy, tempRFreg_disp_ = trainRFreco(train, features_)
     
     #Apply the regressors to the test set
 
@@ -213,7 +208,7 @@ def buildModels(filegammas,fileprotons,features,
     RFcls_GH = trainRFsep(train,
                           features_sep) 
     
-    if SaveModels==True:
+    if SaveModels:
         fileE = path_models+"RFreg_Energy.sav"
         fileD = path_models+"RFreg_disp_.sav"
         fileH = path_models+"RFcls_GH.sav"
@@ -221,10 +216,10 @@ def buildModels(filegammas,fileprotons,features,
         joblib.dump(RFreg_disp_, fileD)
         joblib.dump(RFcls_GH, fileH)
 
-    return RFreg_Energy,RFreg_disp_,RFcls_GH
+    return RFreg_Energy, RFreg_disp_, RFcls_GH
 
 
-def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_):
+def ApplyModels(dl1,features,RFcls_GH,RFreg_Energy,RFreg_disp_):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -246,7 +241,7 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_):
     """
     
     features_ = list(features)
-    dl2 = dl1
+    dl2 = dl1.copy()
     #Reconstruction of Energy and disp_ distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
     dl2['disp_rec'] = RFreg_disp_.predict(dl2[features_])
