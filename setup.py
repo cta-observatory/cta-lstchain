@@ -8,7 +8,7 @@ setuptools.setup(name='lstchain',
       description="DESCRIPTION",
       # these should be minimum list of what is needed to run
       install_requires=[
-          'ctapipe>0.6',
+          'ctapipe',
       ],
       packages=setuptools.find_packages(),
                  tests_require=['pytest'],
