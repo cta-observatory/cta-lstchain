@@ -3,7 +3,6 @@ language: python
 python:
     # not used directly, but this sets TRAVIS_PYTHON_VERSION so we can use it
     # in anaconda as well (we don't support python less than 3.5)
-    - 3.5
     - 3.6
 
 os:
@@ -39,14 +38,12 @@ before_install:
     - git fetch --tags
 
 install:
-    - conda create --name cta-dev python=$TRAVIS_PYTHON_VERSION
-    - conda env update -n cta-dev --file environment.yml
-    - source activate cta-dev
-    # ----- end of target_software
-    - python setup.py develop
+    - conda env create --file environment.yml
+    - conda activate cta-dev
+    - python setup.py install
 
 script:
     - pytest
 
 after_script:
-    - source deactivate
+    - conda deactivate

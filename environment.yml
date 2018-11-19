@@ -4,7 +4,9 @@ channels:
   - cta-observatory
   - conda-forge
 dependencies:
-  - ctapipe-extra=0.2.14
+  - python>3.5
+  - ctapipe
   - joblib
+  - h5py
   - pip:
       - pytest_runner
