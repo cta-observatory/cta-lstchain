@@ -1,0 +1,24 @@
+language: python
+
+python:
+    # sets TRAVIS_PYTHON_VERSION
+    - 3.6
+
+os:
+    - linux
+    # - osx   # currently osx python projects are not supported in Travis
+
+cache: pip
+
+before_install:
+    # Make sure that interactive matplotlib backends work
+    - export DISPLAY=:99.0
+    - sh -e /etc/init.d/xvfb start
+    - git fetch --tags
+
+install:
+    - pip install -r requirements.txt
+    - python setup.py install
+
+script:
+    - pytest
