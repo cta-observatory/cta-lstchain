@@ -22,12 +22,10 @@ import pyhessio
 import pandas as pd
 import astropy.units as units
 import h5py
-import sys
-sys.path.insert(0, '../')
-import reco.utils as utils
-from reco.calib import lst_calibration
-from lstio.containers import DL1ParametersContainer
 
+from . import utils
+from ..calib.calib import lst_calibration
+from ..io.containers import DL1ParametersContainer
 
 
 ### PARAMETERS - TODO: use a yaml config file

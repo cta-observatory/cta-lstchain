@@ -7,10 +7,8 @@ Usage:
 $> python lst-trainpipe arg1 arg2 ...
 
 """
-import numpy as np
-import pandas as pd
 import argparse
-import reco_dl1_to_dl2
+from lstchain.reco import reco_dl1_to_dl2
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
