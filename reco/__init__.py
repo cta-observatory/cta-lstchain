@@ -1,6 +1,7 @@
-from .disp import cal_cam_source_pos, calc_disp
+from .utils import cal_cam_source_pos, calc_disp, disp
 
 all = [
     'cal_cam_source_pos',
-    'calc_disp'
+    'calc_disp',
+    'disp',
 ]
