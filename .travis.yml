@@ -1,24 +1,52 @@
 language: python
 
 python:
-    # sets TRAVIS_PYTHON_VERSION
+    # not used directly, but this sets TRAVIS_PYTHON_VERSION so we can use it
+    # in anaconda as well (we don't support python less than 3.5)
+    - 3.5
     - 3.6
 
 os:
     - linux
     # - osx   # currently osx python projects are not supported in Travis
 
-cache: pip
 
 before_install:
+
+    # Use utf8 encoding. Should be default, but this is insurance
+    # against future changes
+    - export PYTHONIOENCODING=UTF8
+
+    # Install miniconda following instructions at
+    # http://conda.pydata.org/docs/travis.html
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+      fi
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda  # get latest conda version
+    # Useful for debugging any issues with conda
+    - conda info -a
+
     # Make sure that interactive matplotlib backends work
     - export DISPLAY=:99.0
     - sh -e /etc/init.d/xvfb start
     - git fetch --tags
 
 install:
-    - pip install -r requirements.txt
-    - python setup.py install
+    - conda create --name cta-dev python=$TRAVIS_PYTHON_VERSION
+    - conda env update -n cta-dev --file environment.yml
+    - source activate cta-dev
+    # ----- end of target_software
+    - python setup.py develop
 
 script:
     - pytest
+
+after_script:
+    - source deactivate
