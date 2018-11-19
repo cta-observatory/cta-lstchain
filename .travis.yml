@@ -39,11 +39,11 @@ before_install:
 
 install:
     - conda env create --file environment.yml
-    - conda activate cta-dev
+    - source activate cta-dev
     - python setup.py install
 
 script:
     - pytest
 
 after_script:
-    - conda deactivate
+    - source deactivate
