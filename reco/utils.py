@@ -148,7 +148,7 @@ def calc_disp(source_x,source_y,cen_x,cen_y):
                    +(source_y-cen_y)**2)
     return disp
 
-def disp__to_Pos(disp_,cen_x,cen_y,psi):
+def disp_to_pos(disp_,cen_x,cen_y,psi):
     """
     Calculates source position in camera coordinates(x,y) from "disp_"
     distance.
@@ -266,6 +266,7 @@ def disp(source_pos, hillas):
     disp: float
     """
     disp = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
+    
     return disp
 
 

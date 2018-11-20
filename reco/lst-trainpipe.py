@@ -44,7 +44,7 @@ if __name__ == '__main__':
                 'time_gradient',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi']
 

@@ -15,6 +15,8 @@ from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
 import argparse
+import pandas as pd
+import numpy as np
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -45,15 +47,18 @@ if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
 
-    data = calib_dl0_to_dl1.get_events(args.datafile,False)
+    #data = calib_dl0_to_dl1.get_events(args.datafile,True,True)
+    calib_dl0_to_dl1.r0_to_dl1(args.datafile,"./results/events.hdf5")
+    data = pd.read_hdf("./results/events.hdf5",key='events/LSTCam')
+    #data = data[np.logical_not(np.isnan(data['width']))]
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
-    fileD = args.path_models+"RFreg_disp_.sav"
+    fileD = args.path_models+"RFreg_Disp.sav"
     fileH = args.path_models+"RFcls_GH.sav"
     
     RFreg_Energy = joblib.load(fileE)
-    RFreg_disp_ = joblib.load(fileD)
+    RFreg_Disp = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
     
     #Apply the models to the data
@@ -61,11 +66,11 @@ if __name__ == '__main__':
                 'time_gradient',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi']
     dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_)
+    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
 
     if args.storeresults==True:
         #Store results
@@ -76,9 +81,9 @@ if __name__ == '__main__':
         
     plot_dl2.plot_features(dl2)
     plt.show()
-    plot_dl2.plot_E(dl2)
+    plot_dl2.plot_e(dl2)
     plt.show()
-    plot_dl2.plot_disp_(dl2)
+    plot_dl2.plot_disp(dl2)
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()

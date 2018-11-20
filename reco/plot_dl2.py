@@ -133,7 +133,7 @@ def plot_features(data,truehadroness=False):
     plt.xlabel(r"Time gradient")
 
 
-def plot_E(data,truehadroness=False):
+def plot_e(data,truehadroness=False):
     
     """Plot the performance of reconstructed Energy. 
 
@@ -189,7 +189,7 @@ def plot_E(data,truehadroness=False):
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
     
-    #fig = plt.figure()
+    
     gs = gridspec.GridSpecFromSubplotSpec(2, 1,
                                           height_ratios=[2, 1],
                                           subplot_spec=subplot)
@@ -212,7 +212,7 @@ def plot_E(data,truehadroness=False):
     plt.subplots_adjust(hspace=.0)
 
     
-def plot_disp_(data,truehadroness=False):
+def plot_disp(data,truehadroness=False):
     
     """Plot the performance of reconstructed position
 
@@ -241,7 +241,7 @@ def plot_disp_(data,truehadroness=False):
                               alpha=0.75,range=[-2,1.5])
     y = norm.pdf( bins, mu, sigma)
     l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{disp__{gammas}-disp__{rec}}{disp__{gammas}}$',
+    plt.xlabel('$\\frac{disp_{gammas}-disp_{rec}}{disp_{gammas}}$',
                fontsize=15)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
                 fontsize=12)
@@ -252,13 +252,13 @@ def plot_disp_(data,truehadroness=False):
     hD = plt.hist2d(gammas['disp'],gammas['disp_rec'],
                     bins=100,range=([0,1.1],[0,1.1]))
     plt.colorbar(hD[3])
-    plt.xlabel('$disp__{gammas}$',
+    plt.xlabel('$disp_{gammas}$',
                fontsize=15)
-    plt.ylabel('$disp__{rec}$',
+    plt.ylabel('$disp_{rec}$',
                fontsize=15)
     plt.plot(gammas['disp'],gammas['disp'],
              "-",color='red')   
- 
+    
     plt.subplot(223)
     theta2 = (gammas['src_x']-gammas['src_x_rec'])**2
     +(gammas['src_y']-gammas['src_y'])**2
@@ -361,7 +361,7 @@ def plot_importances(clf,features):
     plt.xlim([-1, 
               len(features)])
 
-def plot_ROC(clf,data,features, Energy_cut):
+def plot_roc(clf,data,features, Energy_cut):
     # Plot ROC curve:
     check = clf.predict_proba(data[features])[0:,1]
     accuracy = accuracy_score(data['hadroness'], 
