@@ -154,8 +154,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     dl1_container.width = w.value
                     dl1_container.length = l.value
                     
-                    if w>=0:
-                        writer.write(camera.cam_id, [dl1_container])
+                    writer.write(camera.cam_id, [dl1_container])
 
 
     

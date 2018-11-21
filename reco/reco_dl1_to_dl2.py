@@ -63,7 +63,6 @@ def trainRFreco(train,features):
     print("Number of events for training: ",train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
     
-    
     max_depth = 50
     regr_rf_e = RandomForestRegressor(max_depth=max_depth,
                                       min_samples_leaf=50,
@@ -107,7 +106,7 @@ def trainRFsep(train,features):
     print("Number of events for training: ",train.shape[0])
     print("Training Random Forest Classifier for",
     "Gamma/Hadron separation...")
-    
+
     clf = RandomForestClassifier(max_depth = 50,
                                  n_jobs=4,
                                  min_samples_leaf=50,
@@ -166,6 +165,9 @@ def buildModels(filegammas,fileprotons,features,
     df_proton = pd.read_hdf(fileprotons,
                             key='proton_events')
 
+    df_gamma = df_gamma.dropna() #Drop bad values of width
+    df_proton = df_proton.dropna()
+
     #Apply cuts in intensity and r
 
     df_gamma = df_gamma[abs(df_gamma['r'])<rCut]
@@ -177,7 +179,7 @@ def buildModels(filegammas,fileprotons,features,
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_disp = trainRFreco(df_gamma,
+    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
                                            features)
 
     #Train classifier for gamma/hadron separation. We need to use half
@@ -189,19 +191,19 @@ def buildModels(filegammas,fileprotons,features,
     test = testg.append(df_proton,
                         ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_disp = trainRFreco(train,features_)
+    tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features_)
     
     #Apply the regressors to the test set
 
     test['e_rec'] = tempRFreg_Energy.predict(test[features_])
-    test['disp_rec'] = tempRFreg_disp.predict(test[features_])
+    test['disp_rec'] = tempRFreg_Disp.predict(test[features_])
     
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp reconstructed.
     
     train = test[test['mc_energy']>EnergyCut]
     
-    del tempRFreg_Energy, tempRFreg_disp
+    del tempRFreg_Energy, tempRFreg_Disp
     
     #Add e_rec and disp_rec to features.
     features_sep = features_
@@ -244,8 +246,8 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RF for disp reconstruction
 
     """
-    
     features_ = list(features)
+    
     dl2 = dl1
     #Reconstruction of Energy and disp_ distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])

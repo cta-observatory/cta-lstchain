@@ -47,11 +47,10 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
-
     calib_dl0_to_dl1.r0_to_dl1(args.datafile)
     output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
     data = pd.read_hdf(output_filename,key='events/LSTCam')
-    data = data[np.logical_not(np.isnan(data['width']))]
+    data = data.dropna()
     
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
