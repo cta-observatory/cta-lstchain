@@ -8,9 +8,9 @@ Usage:
 $> python lst-recopipe arg1 arg2 ...
 
 """
-import calib_dl0_to_dl1
-import reco_dl1_to_dl2
-import plot_dl2
+from lstchain.reco import dl0_to_dl1
+from lstchain.reco import reco_dl1_to_dl2
+from lstchain.visualization import plot_dl2
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
 
-    data = calib_dl0_to_dl1.get_events(args.datafile,False)
+    data = dl0_to_dl1.get_events(args.datafile, False)
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
