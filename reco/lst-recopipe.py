@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import argparse
 import pandas as pd
 import numpy as np
+import os 
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -47,11 +48,11 @@ if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
 
-    #data = calib_dl0_to_dl1.get_events(args.datafile,True,True)
-    calib_dl0_to_dl1.r0_to_dl1(args.datafile,"./results/events.hdf5")
-    data = pd.read_hdf("./results/events.hdf5",key='events/LSTCam')
-    #data = data[np.logical_not(np.isnan(data['width']))]
-
+    calib_dl0_to_dl1.r0_to_dl1(args.datafile)
+    output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+    data = pd.read_hdf(output_filename,key='events/LSTCam')
+    data = data[np.logical_not(np.isnan(data['width']))]
+    
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
     fileD = args.path_models+"RFreg_Disp.sav"
