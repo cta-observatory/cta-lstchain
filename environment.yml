@@ -1,0 +1,12 @@
+name: cta-dev
+channels:
+  - default
+  - cta-observatory
+  - conda-forge
+dependencies:
+  - python>3.5
+  - ctapipe
+  - joblib
+  - h5py
+  - pip:
+      - pytest_runner

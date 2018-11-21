@@ -2,17 +2,12 @@
 Functions to handle custom containers for the mono reconstruction of LST1
 """
 
-
 import astropy.units as u
 from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
-
-import sys
-sys.path.insert(0, '../')
-from reco.utils import disp, get_event_pos_in_camera
-### Functions definition
+from ..reco.utils import disp, get_event_pos_in_camera
 
 
 class DL1ParametersContainer(Container):

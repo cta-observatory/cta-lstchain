@@ -1,11 +1,10 @@
-import numpy as np
-import pandas as pd
+
 import argparse
 from ctapipe.utils import get_dataset_path
-import utils
-import calib_dl0_to_dl1
-import reco_dl1_to_dl2
-import plot_dl2 
+
+from lstchain.reco import dl0_to_dl1
+from lstchain.reco import reco_dl1_to_dl2
+from lstchain.visualization import plot_dl2
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
@@ -13,11 +12,13 @@ parser = argparse.ArgumentParser(description = "Train Random Forests.")
 # Required argument
 parser.add_argument('--gammafile', '-fg', type=str,
                     dest='gammafile',
-                    help='path to the dl1 file of gamma events for training')
+                    help='path to the dl1 file of gamma events for training',
+                    )
 
 parser.add_argument('--protonfile', '-fp', type=str,
                     dest='protonfile',
-                    help='path to the dl1 file of proton events for training')
+                    help='path to the dl1 file of proton events for training',
+                    )
 
 parser.add_argument('--storerf', '-srf', action='store', type=bool,
                     dest='storerf',
@@ -67,7 +68,7 @@ if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
     
-    data = calib_dl0_to_dl1.get_events(args.datafile,False)
+    data = dl0_to_dl1.get_events(args.datafile, False)
 
     
     #Apply the models to the data
