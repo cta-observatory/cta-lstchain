@@ -1,4 +1,4 @@
-This directory is for keeping the development vesrion of analysis code for MAGIC and LST joint data analysis
+This directory is for keeping the development version of analysis code for MAGIC and LST joint data analysis
 
 In order to feed MAGIC data in ctapipe we need to convert MAGIC DL1 data to a specific format. Currently we are converting MAGIC DL1 root files to HDF5 format. The data being stored in the HDF5 files are: 1) image charge, 2) photon arraival time in each pixel, 3) stereo trigger number, 4) arrival time of the event, 5) pointing positions of the telescope
 
