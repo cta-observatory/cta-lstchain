@@ -7,10 +7,10 @@ Usage:
 $> python lst-trainpipe arg1 arg2 ...
 
 """
-import numpy as np
-import pandas as pd
+import sys                                                   
+sys.path.insert(0, '../')
 import argparse
-import reco_dl1_to_dl2
+from lstchain.reco import reco_dl1_to_dl2
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -33,7 +33,7 @@ parser.add_argument('--storerf', '-s', action='store', type=bool,
 parser.add_argument('--opath', '-o', action='store', type=str,
                      dest='path_models',
                      help='Path to store the resulting RF',
-                     default='./results/')
+                     default='../../cta-lstchain-extra/reco/models/')
 
 args = parser.parse_args()
 

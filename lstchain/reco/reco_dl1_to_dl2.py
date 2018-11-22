@@ -9,12 +9,9 @@ Usage:
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve
 from sklearn.externals import joblib
-import sys
-sys.path.insert(0, '../')
-import reco.utils as utils
+
+from . import utils
 
 def split_traintest(data,proportion):
     """
@@ -160,13 +157,8 @@ def buildModels(filegammas,fileprotons,features,
     """
     features_=list(features)
 
-    df_gamma = pd.read_hdf(filegammas,
-                           key='gamma_events')
-    df_proton = pd.read_hdf(fileprotons,
-                            key='proton_events')
-
-    df_gamma = df_gamma.dropna() #Drop bad values of width
-    df_proton = df_proton.dropna()
+    df_gamma = pd.read_hdf(filegammas)
+    df_proton = pd.read_hdf(fileprotons)
 
     #Apply cuts in intensity and r
 
@@ -183,7 +175,7 @@ def buildModels(filegammas,fileprotons,features,
                                            features)
 
     #Train classifier for gamma/hadron separation. We need to use half
-    #of the gammas for training regressors and have e_rec and disp_ rec
+    #of the gammas for training regressors and have e_rec and disp rec
     #for training the classifier.
 
     train, testg = split_traintest(df_gamma,
@@ -215,18 +207,18 @@ def buildModels(filegammas,fileprotons,features,
     RFcls_GH = trainRFsep(train,
                           features_sep) 
     
-    if SaveModels==True:
+    if SaveModels:
         fileE = path_models+"RFreg_Energy.sav"
         fileD = path_models+"RFreg_Disp.sav"
         fileH = path_models+"RFcls_GH.sav"
         joblib.dump(RFreg_Energy, fileE)
         joblib.dump(RFreg_Disp, fileD)
         joblib.dump(RFcls_GH, fileH)
-
+        
     return RFreg_Energy,RFreg_Disp,RFcls_GH
 
+def ApplyModels(dl1,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
 
-def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -247,13 +239,14 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
 
     """
     features_ = list(features)
-    
-    dl2 = dl1
+
+    dl2 = dl1.copy()
+
     #Reconstruction of Energy and disp_ distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
     dl2['disp_rec'] = RFreg_Disp.predict(dl2[features_])
    
-    #Construction of Source position in camera coordinates from disp_ distance.
+    #Construction of Source position in camera coordinates from disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
     dl2['src_x_rec'],dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
                                                                   dl2['x'],
@@ -264,4 +257,4 @@ def ApplyModels(dl1,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     features_.append('disp_rec')
     dl2['hadro_rec'] = RFcls_GH.predict(dl2[features_]).astype(int)
     
-
+    return dl2

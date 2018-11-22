@@ -4,7 +4,6 @@ Usage:
 "import plot_dl2"
 """
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
 from scipy.stats import norm
@@ -40,7 +39,7 @@ def plot_features(data,truehadroness=False):
     plt.xlabel(r"$log_{10}E$(GeV)")
     plt.legend()
 
-    #disp_ distribution
+    #disp distribution
     plt.subplot(332)
     plt.hist(data[data[hadro]<1]['disp'],
              histtype=u'step',bins=100,
@@ -49,7 +48,7 @@ def plot_features(data,truehadroness=False):
              histtype=u'step',bins=100,
              label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"disp_ (m)")
+    plt.xlabel(r"disp (m)")
 
     #Intensity distribution
     plt.subplot(333)

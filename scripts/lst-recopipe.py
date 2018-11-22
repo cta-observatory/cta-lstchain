@@ -8,9 +8,11 @@ Usage:
 $> python lst-recopipe arg1 arg2 ...
 
 """
-import calib_dl0_to_dl1
-import reco_dl1_to_dl2
-import plot_dl2
+import sys                                                   
+sys.path.insert(0, '../')
+from lstchain.reco import dl0_to_dl1
+from lstchain.reco import reco_dl1_to_dl2
+from lstchain.visualization import plot_dl2
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
@@ -18,6 +20,8 @@ import argparse
 import pandas as pd
 import numpy as np
 import os 
+import sys                                                                  
+sys.path.insert(0, '../')
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -30,7 +34,7 @@ parser.add_argument('--datafile', '-f', type=str,
 parser.add_argument('--pathmodels', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
-                     default='./results/')
+                     default='../../cta-lstchain-extra/reco/models/')
 parser.add_argument('--storeresults', '-s', action='store', type=bool,
                     dest='storeresults',
                     help='Boolean. True for storing the reco dl2 events'
@@ -40,18 +44,23 @@ parser.add_argument('--storeresults', '-s', action='store', type=bool,
 parser.add_argument('--outdir', '-o', action='store', type=str,
                      dest='outdir',
                      help='Path where to store the reco dl2 events',
-                     default='./results/')
+                     default='./')
+
+parser.add_argument('--maxevents', '-x', action='store', type=int,
+                     dest='max_events',
+                     help='Maximum number of events to analyze',
+                     default=None)
 
 args = parser.parse_args()
 
 if __name__ == '__main__':
 
+    dl0_to_dl1.max_events = args.max_events
     #Get out the data from the Simtelarray file:
-    calib_dl0_to_dl1.r0_to_dl1(args.datafile)
+    dl0_to_dl1.r0_to_dl1(args.datafile)
     output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
     data = pd.read_hdf(output_filename,key='events/LSTCam')
-    data = data.dropna()
-    
+
     #Load the trained RF for reconstruction:
     fileE = args.path_models+"RFreg_Energy.sav"
     fileD = args.path_models+"RFreg_Disp.sav"
@@ -69,8 +78,8 @@ if __name__ == '__main__':
                 'wl',
                 'phi',
                 'psi']
-    dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
+    
+    dl2 = reco_dl1_to_dl2.ApplyModels(data,features,RFcls_GH,RFreg_Energy,RFreg_Disp)
 
     if args.storeresults==True:
         #Store results

@@ -22,12 +22,10 @@ import pyhessio
 import pandas as pd
 import astropy.units as units
 import h5py
-import sys
-sys.path.insert(0, '../')
-import reco.utils as utils
-from reco.calib import lst_calibration
-from lstio.containers import DL1ParametersContainer
 
+from . import utils
+from ..calib.calib import lst_calibration
+from ..io.containers import DL1ParametersContainer
 
 
 ### PARAMETERS - TODO: use a yaml config file
@@ -154,7 +152,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     dl1_container.width = w.value
                     dl1_container.length = l.value
                     
-                    writer.write(camera.cam_id, [dl1_container])
+                    if w>=0:
+                        writer.write(camera.cam_id, [dl1_container])
 
 
     
@@ -380,7 +379,7 @@ def get_events(filename,storedata=False,test=False,
                 time_gradient = timepars['slope'].value
                 intercept = timepars['intercept']
 
-                #Calculate disp_ and Source position in camera coordinates
+                #Calculate disp and Source position in camera coordinates
                 
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value
