@@ -54,8 +54,6 @@ class DL1ParametersContainer(Container):
 
     hadroness = Field(None, "Hadroness")
     wl = Field(None, "width/length")
-    impact = Field(None, "Impact")
-
 
     def fill_hillas(self, hillas):
         """

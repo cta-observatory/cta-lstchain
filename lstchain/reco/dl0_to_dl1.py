@@ -156,8 +156,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
 
     
-def get_events(filename,storedata=False,test=False,
-               concatenate=False,storeimg=False,outdir='./results/'):
+def get_events(filename, storedata=False, test=False,
+               concatenate=False, storeimg=False, outdir='./results/'):
     """
     Depreciated, use r0_to_dl1.
 

@@ -15,6 +15,7 @@ from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -48,12 +49,12 @@ if __name__ == '__main__':
     data = dl0_to_dl1.get_events(args.datafile, False)
 
     #Load the trained RF for reconstruction:
-    fileE = args.path_models+"RFreg_Energy.sav"
-    fileD = args.path_models+"RFreg_disp_.sav"
-    fileH = args.path_models+"RFcls_GH.sav"
+    fileE = args.path_models + "/RFreg_Energy.sav"
+    fileD = args.path_models + "/RFreg_disp.sav"
+    fileH = args.path_models + "/RFcls_GH.sav"
     
     RFreg_Energy = joblib.load(fileE)
-    RFreg_disp_ = joblib.load(fileD)
+    RFreg_disp = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
     
     #Apply the models to the data
@@ -61,16 +62,18 @@ if __name__ == '__main__':
                 'time_gradient',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi']
-    dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp_)
+
+    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_disp)
 
     if args.storeresults==True:
         #Store results
-        outfile = args.outdir+"dl2_events.hdf5"
-        dl2.to_hdf(outfile,key="dl2_events",mode="w")
+        if not os.path.exists(args.outdir):
+            os.mkdir(args.outdir)
+        outfile = args.outdir+"/dl2_events.hdf5"
+        dl2.to_hdf(outfile, key="dl2_events", mode="w")
 
     #Plot some results
         
@@ -78,7 +81,7 @@ if __name__ == '__main__':
     plt.show()
     plot_dl2.plot_E(dl2)
     plt.show()
-    plot_dl2.plot_disp_(dl2)
+    plot_dl2.plot_disp(dl2)
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()
