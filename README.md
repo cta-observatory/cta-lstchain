@@ -6,8 +6,16 @@ The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ct
 
 ## Install
 
+If you have ctapipe installed in a conda environement (cta-dev in this example):
 ```
-conda env create --file environment.yml
+source activate cta-dev
+conda env update -f environment.yml
+python setup.py install
+```
+
+If you don't already have ctapipe installed:
+```
+conda env create -f environment.yml
 source activate cta-dev
 python setup.py install
 ```
