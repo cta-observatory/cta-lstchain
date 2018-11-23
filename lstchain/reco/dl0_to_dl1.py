@@ -150,8 +150,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     l = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = w.value
                     dl1_container.length = l.value
-
-                    writer.write(camera.cam_id, [dl1_container])
+                    
+                    if w>=0:
+                        writer.write(camera.cam_id, [dl1_container])
 
 
     

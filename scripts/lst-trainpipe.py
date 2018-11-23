@@ -7,6 +7,8 @@ Usage:
 $> python lst-trainpipe arg1 arg2 ...
 
 """
+import sys                                                   
+sys.path.insert(0, '../')
 import argparse
 from lstchain.reco import reco_dl1_to_dl2
 
@@ -47,7 +49,7 @@ if __name__ == '__main__':
                 'psi']
 
 
-    RFreg_Energy, RFreg_disp, RFcls_GH = reco_dl1_to_dl2.buildModels(
+    RFreg_Energy, RFreg_Disp, RFcls_GH = reco_dl1_to_dl2.buildModels(
         args.gammafile,
         args.protonfile,
         features,
