@@ -4,7 +4,11 @@ Transform AltAz coordinates into Camera coordinates (This should be
 implemented already in ctapipe but I haven't managed to find how to
 do it)
 Calculate source position from disp distance.
+<<<<<<< HEAD:lstchain/reco/utils.py
 Calculate disp distance from source position.
+=======
+Calculate disp_ distance from source position.
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/utils.py
 
 Usage:
 
@@ -157,8 +161,12 @@ def disp_to_pos(disp,cen_x,cen_y,psi):
     
     Parameters:
     -----------
+<<<<<<< HEAD:lstchain/reco/utils.py
     disp: float
     disp distance
+=======
+    disp: float - disp distance
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/utils.py
 
     cen_x = float
     Coordinate x of the center of gravity of Hillas ellipse

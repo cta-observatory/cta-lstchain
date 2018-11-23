@@ -10,6 +10,10 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
 from sklearn.externals import joblib
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
+=======
+import os
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
 
 from . import utils
 
@@ -116,9 +120,15 @@ def trainRFsep(train,features):
     return clf 
 
 
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
 def buildModels(filegammas,fileprotons,features,
                 SaveModels=True,path_models="",
                 EnergyCut=-1,IntensityCut=60,rCut=0.94):
+=======
+def buildModels(filegammas, fileprotons, features,
+                SaveModels=True, path_models="./",
+                EnergyCut=-1, IntensityCut=60, rCut=0.94):
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     """Uses MC data to train Random Forests for Energy and disp
     reconstruction and G/H separation. Returns 3 trained RF.
 
@@ -152,9 +162,16 @@ def buildModels(filegammas,fileprotons,features,
     Returns:
     --------
     RandomForestRegressor: RFreg_Energy
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     RandomForestRegressor: RFreg_Disp
+=======
+    RandomForestRegressor: RFreg_disp
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     RandomForestClassifier: RFcls_GH
     """
+    if not os.path.exists(path_models):
+        os.mkdir(path_models)
+
     features_=list(features)
 
     df_gamma = pd.read_hdf(filegammas)
@@ -171,7 +188,11 @@ def buildModels(filegammas,fileprotons,features,
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
+=======
+    RFreg_Energy, RFreg_disp = trainRFreco(df_gamma,
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
                                            features)
 
     #Train classifier for gamma/hadron separation. We need to use half
@@ -183,19 +204,31 @@ def buildModels(filegammas,fileprotons,features,
     test = testg.append(df_proton,
                         ignore_index=True)
 
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train,features_)
+=======
+    tempRFreg_Energy, tempRFreg_disp = trainRFreco(train, features_)
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     
     #Apply the regressors to the test set
 
     test['e_rec'] = tempRFreg_Energy.predict(test[features_])
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     test['disp_rec'] = tempRFreg_Disp.predict(test[features_])
+=======
+    test['disp_rec'] = tempRFreg_disp.predict(test[features_])
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp reconstructed.
     
     train = test[test['mc_energy']>EnergyCut]
     
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     del tempRFreg_Energy, tempRFreg_Disp
+=======
+    del tempRFreg_Energy, tempRFreg_disp
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     
     #Add e_rec and disp_rec to features.
     features_sep = features_
@@ -208,17 +241,32 @@ def buildModels(filegammas,fileprotons,features,
                           features_sep) 
     
     if SaveModels:
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
         fileE = path_models+"RFreg_Energy.sav"
         fileD = path_models+"RFreg_Disp.sav"
         fileH = path_models+"RFcls_GH.sav"
         joblib.dump(RFreg_Energy, fileE)
         joblib.dump(RFreg_Disp, fileD)
+=======
+        fileE = path_models + "/RFreg_Energy.sav"
+        fileD = path_models + "/RFreg_disp.sav"
+        fileH = path_models + "/RFcls_GH.sav"
+        joblib.dump(RFreg_Energy, fileE)
+        joblib.dump(RFreg_disp, fileD)
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
         joblib.dump(RFcls_GH, fileH)
         
     return RFreg_Energy,RFreg_Disp,RFcls_GH
 
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
 def ApplyModels(dl1,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
 
+=======
+    return RFreg_Energy, RFreg_disp, RFcls_GH
+
+
+def ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp):
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -234,21 +282,36 @@ def ApplyModels(dl1,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     RFreg_Energy: Random Forest Regressor
     RF for Energy reconstruction
 
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     RFreg_Disp: Random Forest Regressor
+=======
+    RFreg_disp: Random Forest Regressor
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
     RF for disp reconstruction
 
     """
     features_ = list(features)
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
 
     dl2 = dl1.copy()
 
     #Reconstruction of Energy and disp_ distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
     dl2['disp_rec'] = RFreg_Disp.predict(dl2[features_])
+=======
+    dl2 = dl1.copy()
+    #Reconstruction of Energy and disp distance
+    dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
+    dl2['disp_rec'] = RFreg_disp.predict(dl2[features_])
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
    
     #Construction of Source position in camera coordinates from disp distance.
     #WARNING: For not it only works fine for POINT SOURCE events
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     dl2['src_x_rec'],dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
+=======
+    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
                                                                   dl2['x'],
                                                                   dl2['y'],
                                                                   dl2['psi'])
@@ -256,5 +319,11 @@ def ApplyModels(dl1,features,RFcls_GH,RFreg_Energy,RFreg_Disp):
     features_.append('e_rec')
     features_.append('disp_rec')
     dl2['hadro_rec'] = RFcls_GH.predict(dl2[features_]).astype(int)
+<<<<<<< HEAD:lstchain/reco/reco_dl1_to_dl2.py
     
     return dl2
+=======
+
+    return dl2
+
+>>>>>>> a5362ab4105f2ed025c59bc34b52c059b2def3a1:lstchain/reco/reco_dl1_to_dl2.py
