@@ -132,7 +132,7 @@ def plot_features(data,truehadroness=False):
     plt.xlabel(r"Time gradient")
 
 
-def plot_E(data,truehadroness=False):
+def plot_e(data,truehadroness=False):
     
     """Plot the performance of reconstructed Energy. 
 
@@ -211,7 +211,7 @@ def plot_E(data,truehadroness=False):
     plt.subplots_adjust(hspace=.0)
 
     
-def plot_disp_(data,truehadroness=False):
+def plot_disp(data,truehadroness=False):
     
     """Plot the performance of reconstructed position
 

@@ -8,6 +8,8 @@ Usage:
 $> python lst-recopipe arg1 arg2 ...
 
 """
+import sys                                                   
+sys.path.insert(0, '../')
 from lstchain.reco import dl0_to_dl1
 from lstchain.reco import reco_dl1_to_dl2
 from lstchain.visualization import plot_dl2
@@ -16,6 +18,7 @@ from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
 import argparse
 import os
+import pandas as pd 
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -28,7 +31,7 @@ parser.add_argument('--datafile', '-f', type=str,
 parser.add_argument('--pathmodels', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
-                     default='./results/')
+                     default='./results')
 parser.add_argument('--storeresults', '-s', action='store', type=bool,
                     dest='storeresults',
                     help='Boolean. True for storing the reco dl2 events'
@@ -38,7 +41,11 @@ parser.add_argument('--storeresults', '-s', action='store', type=bool,
 parser.add_argument('--outdir', '-o', action='store', type=str,
                      dest='outdir',
                      help='Path where to store the reco dl2 events',
-                     default='./results/')
+                     default='./results')
+parser.add_argument('--maxevents', '-x', action='store', type=int,
+                     dest='max_events',
+                     help='Maximum number of events to analyze',
+                     default=None)
 
 args = parser.parse_args()
 
@@ -46,15 +53,19 @@ if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
 
-    data = dl0_to_dl1.get_events(args.datafile, False)
+    dl0_to_dl1.max_events = args.max_events
+
+    dl0_to_dl1.r0_to_dl1(args.datafile)
+    output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+    data = pd.read_hdf(output_filename,key='events/LSTCam')
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/RFreg_Energy.sav"
-    fileD = args.path_models + "/RFreg_disp.sav"
+    fileD = args.path_models + "/RFreg_Disp.sav"
     fileH = args.path_models + "/RFcls_GH.sav"
     
     RFreg_Energy = joblib.load(fileE)
-    RFreg_disp = joblib.load(fileD)
+    RFreg_Disp = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
     
     #Apply the models to the data
@@ -66,7 +77,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_disp)
+    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
 
     if args.storeresults==True:
         #Store results
@@ -79,7 +90,7 @@ if __name__ == '__main__':
         
     plot_dl2.plot_features(dl2)
     plt.show()
-    plot_dl2.plot_E(dl2)
+    plot_dl2.plot_e(dl2)
     plt.show()
     plot_dl2.plot_disp(dl2)
     plt.show()
