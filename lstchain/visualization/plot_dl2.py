@@ -240,7 +240,7 @@ def plot_disp_(data,truehadroness=False):
                               alpha=0.75,range=[-2,1.5])
     y = norm.pdf( bins, mu, sigma)
     l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{disp__{gammas}-disp__{rec}}{disp__{gammas}}$',
+    plt.xlabel('$\\frac{disp_{gammas}-disp_{rec}}{disp_{gammas}}$',
                fontsize=15)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
                 fontsize=12)
@@ -251,9 +251,9 @@ def plot_disp_(data,truehadroness=False):
     hD = plt.hist2d(gammas['disp'],gammas['disp_rec'],
                     bins=100,range=([0,1.1],[0,1.1]))
     plt.colorbar(hD[3])
-    plt.xlabel('$disp__{gammas}$',
+    plt.xlabel('$disp_{gammas}$',
                fontsize=15)
-    plt.ylabel('$disp__{rec}$',
+    plt.ylabel('$disp_{rec}$',
                fontsize=15)
     plt.plot(gammas['disp'],gammas['disp'],
              "-",color='red')   

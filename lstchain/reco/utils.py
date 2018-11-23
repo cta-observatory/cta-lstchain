@@ -3,7 +3,7 @@
 Transform AltAz coordinates into Camera coordinates (This should be
 implemented already in ctapipe but I haven't managed to find how to
 do it)
-Calculate source position from disp_ distance.
+Calculate source position from disp distance.
 Calculate disp_ distance from source position.
 
 Usage:
@@ -123,7 +123,7 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
 
 def calc_disp(source_x,source_y,cen_x,cen_y):
     """
-    Calculates "disp_" distance from source position in camera
+    Calculates "disp" distance from source position in camera
     coordinates
     
     Parameters:
@@ -148,7 +148,7 @@ def calc_disp(source_x,source_y,cen_x,cen_y):
                    +(source_y-cen_y)**2)
     return disp
 
-def disp__to_Pos(disp_,cen_x,cen_y,psi):
+def disp_to_pos(disp,cen_x,cen_y,psi):
     """
     Calculates source position in camera coordinates(x,y) from "disp_"
     distance.
@@ -157,8 +157,7 @@ def disp__to_Pos(disp_,cen_x,cen_y,psi):
     
     Parameters:
     -----------
-    disp_: float
-    disp_ distance
+    disp: float - disp distance
 
     cen_x = float
     Coordinate x of the center of gravity of Hillas ellipse
@@ -178,8 +177,8 @@ def disp__to_Pos(disp_,cen_x,cen_y,psi):
     
     """
     
-    source_x1 = cen_x - disp_*np.cos(psi)
-    source_y1 = cen_y - disp_*np.sin(psi)
+    source_x1 = cen_x - disp*np.cos(psi)
+    source_y1 = cen_y - disp*np.sin(psi)
    
     return source_x1,source_y1
 

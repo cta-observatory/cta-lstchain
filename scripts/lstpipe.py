@@ -6,6 +6,7 @@ from lstchain.reco import dl0_to_dl1
 from lstchain.reco import reco_dl1_to_dl2
 from lstchain.visualization import plot_dl2
 import matplotlib.pyplot as plt
+import os
 
 parser = argparse.ArgumentParser(description = "Train Random Forests.")
 
@@ -58,13 +59,16 @@ if __name__ == '__main__':
                 'time_gradient',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi']
 
-    RFreg_Energy,RFreg_disp,RFcls_GH = reco_dl1_to_dl2.buildModels(
-        args.gammafile,args.protonfile,
-        features,args.storerf)
+    RFreg_Energy, RFreg_disp, RFcls_GH = reco_dl1_to_dl2.buildModels(args.gammafile,
+                                                                     args.protonfile,
+                                                                     features,
+                                                                     SaveModels=args.storerf,
+                                                                     path_models=args.path_models,
+                                                                     )
 
     #Get out the data from the Simtelarray file:
     
@@ -72,13 +76,14 @@ if __name__ == '__main__':
 
     
     #Apply the models to the data
-    dl2 = data
-    reco_dl1_to_dl2.ApplyModels(data,dl2,features,RFcls_GH,RFreg_Energy,RFreg_disp)
+    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_disp)
     
     if args.storeresults==True:
         #Store results
-        outfile = args.outdir+"dl2_events.hdf5"
-        dl2.to_hdf(outfile,key="dl2_events",mode="w")
+        if not os.path.exists(args.outdir):
+            os.mkdir(args.outdir)
+        outfile = args.outdir + "/dl2_events.hdf5"
+        dl2.to_hdf(outfile, key="dl2_events", mode="w")
 
     #Plot some results
         
