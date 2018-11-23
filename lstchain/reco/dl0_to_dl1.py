@@ -140,7 +140,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     dl1_container.mc_type = utils.particle_number(particle_name)
                     dl1_container.hadroness = 1 if dl1_container.mc_type == 1 else 0
                     dl1_container.hadroness = dl1_container.mc_type
-                    dl1_container.impact = dl1_container.mc_core_distance
                     dl1_container.wl = dl1_container.width/dl1_container.length
                     dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)  # Log10(Energy) in GeV
                     dl1_container.intensity = np.log10(dl1_container.intensity)
@@ -156,8 +155,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
 
     
-def get_events(filename,storedata=False,test=False,
-               concatenate=False,storeimg=False,outdir='./results/'):
+def get_events(filename, storedata=False, test=False,
+               concatenate=False, storeimg=False, outdir='./results/'):
     """
     Depreciated, use r0_to_dl1.
 
@@ -217,7 +216,7 @@ def get_events(filename,storedata=False,test=False,
                 'kurtosis',
                 'mc_alt_tel',
                 'mc_az_tel',
-                'impact',
+                'mc_core_distance',
                 'mc_x_max',
                 'time_gradient',
                 'intercept',
@@ -367,9 +366,9 @@ def get_events(filename,storedata=False,test=False,
                 mc_x_max = event.mc.x_max.value
                 gps_time = event.trig.gps_time.value
 
-                #Calculate impact parameters
+                #Calculate mc_core_distance parameters
 
-                impact = np.sqrt((
+                mc_core_distance = np.sqrt((
                     tel_coords.x.value-event.mc.core_x.value)**2
                     +(tel_coords.y.value-event.mc.core_y.value)**2)
                 
@@ -398,7 +397,7 @@ def get_events(filename,storedata=False,test=False,
                                          mc_core_x, mc_core_y, mc_h_first_int, mc_type,
                                          gps_time, width, length, width / length, phi,
                                          psi, r, x, y, intensity, skewness, kurtosis,
-                                         mc_alt_tel, mc_az_tel, impact, mc_x_max,
+                                         mc_alt_tel, mc_az_tel, mc_core_distance, mc_x_max,
                                          time_gradient, intercept, src_x, src_y,
                                          disp, hadroness]],
                                        columns=features)

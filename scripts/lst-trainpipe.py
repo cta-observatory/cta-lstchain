@@ -42,12 +42,16 @@ if __name__ == '__main__':
                 'time_gradient',
                 'width',
                 'length',
-                'w/l',
+                'wl',
                 'phi',
                 'psi']
 
-    RFreg_Energy,RFreg_disp_,RFcls_GH = reco_dl1_to_dl2.buildModels(
-        args.gammafile,args.protonfile,
+
+    RFreg_Energy, RFreg_disp, RFcls_GH = reco_dl1_to_dl2.buildModels(
+        args.gammafile,
+        args.protonfile,
         features,
-        args.storerf,args.path_models)
+        args.storerf,
+        args.path_models,
+    )
     
