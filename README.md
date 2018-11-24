@@ -9,7 +9,6 @@ The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ct
 If you have ctapipe installed in a conda environement (cta-dev in this example):
 ```
 source activate cta-dev
-conda env update -f environment.yml
 python setup.py install
 ```
 
