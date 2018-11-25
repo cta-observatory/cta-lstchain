@@ -39,7 +39,7 @@ before_install:
 
 install:
     - conda env create --file environment.yml
-    - source activate cta-dev
+    - source activate cta
     - python setup.py install
 
 script:
