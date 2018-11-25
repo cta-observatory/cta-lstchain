@@ -221,7 +221,7 @@ def particle_number(particle_name):
         'gamma': 0,
         'proton': 1,
         'electron': 2,
-        'proton': 3,
+        'muon': 3,
     }[particle_name]
 
 
