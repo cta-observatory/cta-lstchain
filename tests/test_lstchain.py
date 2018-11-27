@@ -28,7 +28,7 @@ def test_buildModels():
         features,
         SaveModels=True)
 
-    import joblib
+    from sklearn.externals import joblib
     joblib.dump(RFreg_Energy, 'rf_energy.pkl')
     joblib.dump(RFreg_disp_, 'rf_disp.pkl')
     joblib.dump(RFcls_GH, 'rf_gh.pkl')
@@ -37,7 +37,7 @@ def test_buildModels():
 def test_ApplyModels():
     from lstchain.reco.reco_dl1_to_dl2 import ApplyModels
     import pandas as pd
-    import joblib
+    from sklearn.externals import joblib
 
     dl1_file = 'dl1_gamma_test_large.h5'
     dl1 = pd.read_hdf(dl1_file)

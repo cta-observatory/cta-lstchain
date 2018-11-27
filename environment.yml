@@ -1,4 +1,4 @@
-name: cta-dev
+name: cta
 channels:
   - default
   - cta-observatory
@@ -6,7 +6,5 @@ channels:
 dependencies:
   - python>3.5
   - ctapipe
-  - joblib
-  - h5py
   - pip:
       - pytest_runner
