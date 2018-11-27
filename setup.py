@@ -8,8 +8,7 @@ setuptools.setup(name='lstchain',
       description="DESCRIPTION",
       # these should be minimum list of what is needed to run
       packages=setuptools.find_packages(),
-      install_requires=['joblib',
-                        'h5py',
+      install_requires=['h5py'
                         ],
       tests_require=['pytest'],
       author='LST collaboration',
