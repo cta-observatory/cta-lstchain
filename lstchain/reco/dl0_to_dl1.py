@@ -9,7 +9,7 @@ Usage:
 
 """
 import numpy as np
-from ctapipe.image import hillas_parameters tailcuts_clean
+from ctapipe.image import hillas_parameters, tailcuts_clean
 from ctapipe.io.eventsourcefactory import EventSourceFactory
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.image import timing_parameters as time
