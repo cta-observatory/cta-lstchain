@@ -8,6 +8,8 @@ Usage:
 $> python lst-recopipe arg1 arg2 ...
 
 """
+import sys                                                   
+sys.path.insert(0, '../')
 from lstchain.reco import dl0_to_dl1
 from lstchain.reco import reco_dl1_to_dl2
 from lstchain.visualization import plot_dl2
