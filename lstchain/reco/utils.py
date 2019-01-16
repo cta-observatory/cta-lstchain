@@ -238,9 +238,9 @@ def get_event_pos_in_camera(event, tel):
     (x, y) (float, float): position in the camera
     """
     array_pointing = HorizonFrame(alt=event.mcheader.run_array_direction[1],
-                              az=event.mcheader.run_array_direction[0])
+                                  az=event.mcheader.run_array_direction[0])
     event_direction = HorizonFrame(alt=event.mc.alt.to(u.rad),
-                               az=event.mc.az.to(u.rad))
+                                   az=event.mc.az.to(u.rad))
 
     nom_frame = NominalFrame(array_direction=array_pointing,
                          pointing_direction=array_pointing)
@@ -282,4 +282,54 @@ def get_event_pos_in_sky(hillas, disp, tel, pointing_direction):
     return source_pos_in_camera.transform_to(horizon_frame)
 
 
+def source_side(source_pos_x, cog_x):
+    """
+    Compute on what side of the center of gravity the source is in the camera.
 
+    Parameters
+    ----------
+    source_pos_x: X coordinate of the source in the camera, float
+    cog_x: X coordinate of the center of gravity, float
+
+    Returns
+    -------
+    float: -1 or +1
+    """
+    return np.sign(source_pos_x - cog_x)
+
+
+def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
+    """
+    Compute the coordinates of the vector (dx, dy) from the center of gravity to the source position
+
+    Parameters
+    ----------
+    source_pos_x: X coordinate of the source in the camera
+    source_pos_y: Y coordinate of the source in the camera
+    cog_x: X coordinate of the center of gravity in the camera
+    cog_y: Y coordinate of the center of gravity in the camera
+
+    Returns
+    -------
+    (dx, dy)
+    """
+    return source_pos_x - cog_x, source_pos_y - cog_y
+
+
+def predict_source_position_in_camera(hillas, disp, source_side):
+    """
+    Compute the source position in camera from reconstructed parameters Hillas, disp and source_side
+    Parameters
+    ----------
+    hillas: `ctapipe.io.containers.HillasParametersContainer`
+    disp: float, disp distance
+    source_side: float,
+
+    Returns
+    -------
+
+    """
+    reco_src_x = hillas.x + disp * source_side * np.cos(hillas.psi)
+    reco_src_y = hillas.y + disp * source_side * np.sin(hillas.psi)
+
+    return reco_src_x, reco_src_y
