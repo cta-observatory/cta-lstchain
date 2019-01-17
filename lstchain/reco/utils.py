@@ -282,6 +282,30 @@ def get_event_pos_in_sky(hillas, disp, tel, pointing_direction):
     return source_pos_in_camera.transform_to(horizon_frame)
 
 
+def camera_to_sky(pos_x, pos_y, focal, pointing_direction):
+    """
+
+    Parameters
+    ----------
+    pos_x: X coordinate in camera (distance)
+    pos_y: Y coordinate in camera (distance)
+    focal: telescope focal (distance)
+    pointing_direction: telescope pointing direction
+
+    Returns
+    -------
+
+    """
+    source_pos_in_camera = NominalFrame(array_direction=pointing_direction,
+                                        pointing_direction=pointing_direction,
+                                        x=pos_x/focal * u.rad,
+                                        y=pos_y/focal * u.rad,
+                                        )
+
+    horizon_frame = HorizonFrame(alt=pointing_direction.alt, az=pointing_direction.az)
+    return source_pos_in_camera.transform_to(horizon_frame)
+
+
 def source_side(source_pos_x, cog_x):
     """
     Compute on what side of the center of gravity the source is in the camera.
