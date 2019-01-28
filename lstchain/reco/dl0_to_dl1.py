@@ -44,8 +44,6 @@ cleaning_parameters = {'boundary_thresh': 3,
                        'min_number_picture_neighbors': 1
                        }
 
-channel = 0
-
 
 def get_dl1(calibrated_event, telescope_id):
     """
@@ -65,13 +63,13 @@ def get_dl1(calibrated_event, telescope_id):
     tel = calibrated_event.inst.subarray.tels[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
     camera = tel.camera
-    signal_pixels = cleaning_method(camera, dl1.image[channel],
+    signal_pixels = cleaning_method(camera, dl1.image,
                                     **cleaning_parameters)
 
-    image = dl1.image[channel]
+    image = dl1.image
     image[~signal_pixels] = 0
 
-    peakpos = dl1.peakpos[channel]
+    peakpos = dl1.peakpos
 
     if image.sum() > 0:
         try:
@@ -456,22 +454,24 @@ def get_spectral_w_pars(filename):
         Emax = f.get_mc_E_range_Max()
         index = f.get_spectral_index()
         Cone = f.get_mc_viewcone_Max()
-        Core_max = f.get_mc_core_range_X()
+        Core_max = f.get_mc_core_range_Y()
         
     K = N*(1+index)/(Emax**(1+index)-Emin**(1+index))
     A = np.pi*Core_max**2
     Omega = 2*np.pi*(1-np.cos(Cone))
-    
-    MeVtoTeV = 1e-6 
+    if Cone==0:
+            Omega=1
+    print(A,K,Omega,Cone)
+    MeVtoGeV = 1e-3 
     if particle=="gamma":
-        K_w = 5.7e-16*MeVtoTeV
+        K_w = 5.7e-16*MeVtoGeV
         index_w = -2.48
-        E0 = 0.3e6*MeVtoTeV
+        E0 = 0.3e6*MeVtoGeV
 
     if particle=="proton":
-        K_w = 9.6e-2
+        K_w = 9.6e-9
         index_w = -2.7
-        E0 = 1
+        E0 = 1000
 
     Simu_E0 = K*E0**index
     N_ = Simu_E0*(Emax**(index_w+1)-Emin**(index_w+1))/(E0**index_w)/(index_w+1)
@@ -490,6 +490,6 @@ def get_spectral_w(w_pars,energy):
     R = w_pars[3]
     N_ = w_pars[4]
 
-    w = ((energy/E0)**(index_w-index))*R/N_
+    w = ((10**energy/E0)**(index_w-index))*R/N_
     
     return w

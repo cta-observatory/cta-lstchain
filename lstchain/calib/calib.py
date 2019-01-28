@@ -40,5 +40,12 @@ def lst_calibration(event, telescope_id):
     dc2pe = event.mc.tel[telescope_id].dc_to_pe  # numgains * numpixels
     signals *= dc2pe
 
-    event.dl1.tel[telescope_id].image = signals
-    event.dl1.tel[telescope_id].peakpos = peakpos
+    #Change to low gain when pixels have more than 100 phe. 
+    combined = signals[0].copy() 
+    peaks = peakpos[0].copy()
+    for pixel in range(0,combined.size):
+            if np.any(data[0][pixel] > 4094):
+                combined[pixel] = signals[1][pixel]
+                peaks[pixel] = peakpos[1][pixel]
+    event.dl1.tel[telescope_id].image = combined
+    event.dl1.tel[telescope_id].peakpos = peaks
