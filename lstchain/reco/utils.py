@@ -282,7 +282,7 @@ def get_event_pos_in_sky(hillas, disp, tel, pointing_direction):
     return source_pos_in_camera.transform_to(horizon_frame)
 
 
-def camera_to_sky(pos_x, pos_y, focal, pointing_direction):
+def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     """
 
     Parameters
@@ -290,21 +290,62 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_direction):
     pos_x: X coordinate in camera (distance)
     pos_y: Y coordinate in camera (distance)
     focal: telescope focal (distance)
-    pointing_direction: telescope pointing direction
+    pointing_alt: pointing altitude in angle unit
+    pointing_az: pointing altitude in angle unit
 
     Returns
     -------
+    (alt, az)
+
+    Example:
+    --------
+    import astropy.units as u
+    import numpy as np
+    x = np.array([1,0]) * u.m
+    y = np.array([1,1]) * u.m
 
     """
+    pointing_direction = HorizonFrame(alt=pointing_alt, az=pointing_az)
+
     source_pos_in_camera = NominalFrame(array_direction=pointing_direction,
                                         pointing_direction=pointing_direction,
                                         x=pos_x/focal * u.rad,
                                         y=pos_y/focal * u.rad,
                                         )
 
-    horizon_frame = HorizonFrame(alt=pointing_direction.alt, az=pointing_direction.az)
-    return source_pos_in_camera.transform_to(horizon_frame)
+    return source_pos_in_camera.transform_to(pointing_direction)
 
+
+def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
+    """
+    Coordinate transform from aky position (alt, az) (in angles) to camera coordinates (x, y) in distance
+    Parameters
+    ----------
+    alt: astropy Quantity
+    az: astropy Quantity
+    focal: astropy Quantity
+    pointing_alt: pointing altitude in angle unit
+    pointing_az: pointing altitude in angle unit
+
+    Returns
+    -------
+
+    """
+    pointing_direction = HorizonFrame(alt=pointing_alt, az=pointing_az)
+
+    event_direction = HorizonFrame(alt=alt, az=az)
+    nom_frame = NominalFrame(array_direction=pointing_direction,
+                             pointing_direction=pointing_direction)
+
+    event_dir_nom = event_direction.transform_to(nom_frame)
+
+    camera_pos = NominalFrame(pointing_direction=pointing_direction,
+                              x=event_dir_nom.x.to(u.rad).value * focal,
+                              y=event_dir_nom.y.to(u.rad).value * focal,
+                              )
+
+    # return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
+    return camera_pos
 
 def source_side(source_pos_x, cog_x):
     """
@@ -340,7 +381,26 @@ def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
     return source_pos_x - cog_x, source_pos_y - cog_y
 
 
-def predict_source_position_in_camera(hillas, disp, source_side):
+def disp_vector(disp, psi, source_side):
+    """
+    Compute disp vector from its length, angle direction and side
+
+    Parameters
+    ----------
+    disp: float
+    psi: float
+    source_side: float (-1 or 1)
+
+    Returns
+    -------
+    disp vector: (dx, dy)
+    """
+    dx = disp * source_side * np.cos(psi)
+    dy = disp * source_side * np.sin(psi)
+    return dx, dy
+
+
+def predict_source_position_in_camera(cog_x, cog_y, psi, disp, source_side):
     """
     Compute the source position in camera from reconstructed parameters Hillas, disp and source_side
     Parameters
@@ -353,7 +413,8 @@ def predict_source_position_in_camera(hillas, disp, source_side):
     -------
 
     """
-    reco_src_x = hillas.x + disp * source_side * np.cos(hillas.psi)
-    reco_src_y = hillas.y + disp * source_side * np.sin(hillas.psi)
+    dx, dy = disp_vector(disp, psi, source_side)
+    reco_src_x = cog_x + dx
+    reco_src_y = cog_y + dy
 
     return reco_src_x, reco_src_y

@@ -8,13 +8,14 @@ Usage:
 """
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.externals import joblib
+from sklearn.model_selection import train_test_split
 import os
 
 from . import utils
 
-def split_traintest(data,proportion):
+def split_traintest(data, proportion, random_state=42):
     """
     Split a dataset in "train" and "test" sets.
 
@@ -32,12 +33,160 @@ def split_traintest(data,proportion):
     pandas dataFrame: test
     
     """
-    data['is_train'] = np.random.uniform(0,1,len(data))<= proportion
-    train = data[(data['is_train']==True)]
-    test = data[(data['is_train']==False)]
-    return train,test
+    # data['is_train'] = np.random.uniform(0, 1, len(data)) <= proportion
+    # train = data[data['is_train']==True]
+    # test = data[data['is_train']==False]
+    train, test = train_test_split(data, proportion, random_state=random_state)
+    return train, test
 
-def trainRFreco(train,features):
+def train_energy(train,
+                 features,
+                 model=RandomForestRegressor,
+                 model_args={'max_depth': 50,
+                            'min_samples_leaf': 50,
+                            'n_jobs': 4,
+                            'n_estimators': 50}):
+    """
+    Train a model for the regression of the energy
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method. By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training Random Forest Regressor for Energy Reconstruction...")
+
+    reg = model(**model_args)
+    reg.fit(train[features],
+                  train['mc_energy'])
+
+    print("Model {} trained!".format(model))
+    return reg
+
+
+def train_disp_vector(train, features,
+        model=RandomForestRegressor,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_features=['disp_dx', 'disp_dy']):
+    """
+    Train a model for the regression of the disp vector coordinates dx,dy.
+    Therefore, the model must be able to be applied on a vector of features.
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method that can be applied to a vector of features.
+    By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose([train[f] for f in predict_features])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+def train_disp_norm(train, features,
+        model=RandomForestRegressor,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_feature='disp_norm'):
+    """
+    Train a model for the regression of the disp norm
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method.
+    By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose(train[predict_feature])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+def train_disp_sign(train, features,
+        model=RandomForestClassifier,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_feature='disp_sign'):
+    """
+    Train a model for the classification of the disp sign
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method.
+    By default `sklearn.ensemble.RandomForestClassifier`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose(train[predict_feature])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+
+def trainRFreco(train, features):
     """
     Trains two Random Forest regressors for Energy and disp
     reconstruction respectively. Returns the trained RF.
@@ -60,8 +209,7 @@ def trainRFreco(train,features):
     print("Given features: ",features)
     print("Number of events for training: ",train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
-    
-    
+
     max_depth = 50
     regr_rf_e = RandomForestRegressor(max_depth=max_depth,
                                       min_samples_leaf=50,
@@ -83,6 +231,7 @@ def trainRFreco(train,features):
     print("Random Forest trained!")
     print("Done!")
     return regr_rf_e, regr_rf_disp
+
 
 def trainRFsep(train,features):
     
@@ -171,22 +320,19 @@ def buildModels(filegammas, fileprotons, features,
     df_proton = df_proton[abs(df_proton['r'])<rCut]
 
     #Cut showers with low intensity
-    df_gamma = df_gamma[abs(df_gamma['intensity'])>np.log10(IntensityCut)]
-    df_proton = df_proton[abs(df_proton['intensity'])>np.log10(IntensityCut)]
+    df_gamma = df_gamma[abs(df_gamma['intensity']) > np.log10(IntensityCut)]
+    df_proton = df_proton[abs(df_proton['intensity']) > np.log10(IntensityCut)]
     
     #Train regressors for energy and disp reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
-                                           features)
+    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma, features)
 
     #Train classifier for gamma/hadron separation. We need to use half
     #of the gammas for training regressors and have e_rec and disp rec
     #for training the classifier.
 
-    train, testg = split_traintest(df_gamma,
-                                   0.5)
-    test = testg.append(df_proton,
-                        ignore_index=True)
+    train, testg = split_traintest(df_gamma, 0.5)
+    test = testg.append(df_proton, ignore_index=True)
 
     tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train, features_)
     
