@@ -12,9 +12,10 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 import os
-
 from . import utils
+from astropy.utils import deprecated
 
+@deprecated('31/10/2019', message='Will be removed in a future release')
 def split_traintest(data, proportion, random_state=42):
     """
     Split a dataset in "train" and "test" sets.
