@@ -51,7 +51,16 @@ def test_ApplyModels():
     RFreg_disp_ = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
 
-    dl2 = ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp_)
+    ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp_)
+
+    import os
+    os.remove('dl1_gamma_test_large.h5')
+    os.remove('RFcls_GH.sav')
+    os.remove('RFreg_Disp.sav')
+    os.remove('RFreg_Energy.sav')
+    os.remove('rf_disp.pkl')
+    os.remove('rf_energy.pkl')
+    os.remove('rf_gh.pkl')
 
 
 def test_disp_vector():
@@ -86,3 +95,4 @@ def test_change_frame_camera_sky():
     sky_pos = camera_to_sky(x, y, focal_length, pointing_alt, pointing_az)
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y])
+
