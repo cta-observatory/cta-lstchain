@@ -28,6 +28,11 @@ class DL1ParametersContainer(Container):
     skewness = Field(None, 'measure of the asymmetry')
     kurtosis = Field(None, 'measure of the tailedness')
     disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
+    disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
+    disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
+    disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
+    disp_sign = Field(None, 'disp_sign')
+    disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
     hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
@@ -107,7 +112,13 @@ class DL1ParametersContainer(Container):
         self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
-        self.disp_norm = utils.disp_norm(source_pos, hillas)
+        disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
+        self.disp_norm = disp.norm
+        self.disp_dx = disp.dx
+        self.disp_dy = disp.dy
+        self.disp_angle = disp.angle
+        self.disp_sign = disp.sign
+        self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peakpos, hillas):
         try:
@@ -140,4 +151,4 @@ class DispContainer(Container):
     angle = Field(nan, 'Angle between the X axis and the disp_norm vector')
     norm = Field(nan, 'Norm of the disp_norm vector')
     sign = Field(nan, 'Sign of the disp_norm')
-
+    miss = Field(nan, 'miss parameter norm')

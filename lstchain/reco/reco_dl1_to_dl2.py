@@ -36,7 +36,7 @@ def split_traintest(data, proportion, random_state=42):
     # data['is_train'] = np.random.uniform(0, 1, len(data)) <= proportion
     # train = data[data['is_train']==True]
     # test = data[data['is_train']==False]
-    train, test = train_test_split(data, proportion, random_state=random_state)
+    train, test = train_test_split(data, train_size=proportion, random_state=random_state)
     return train, test
 
 def train_energy(train,
@@ -398,10 +398,17 @@ def ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_Disp):
    
     #Construction of Source position in camera coordinates from disp_norm distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
-                                                                  dl2['x'],
-                                                                  dl2['y'],
-                                                                  dl2['psi'])
+
+    disp_norm = dl2['disp_rec']
+    disp_angle = dl2['psi']
+    disp_sign = utils.source_side(0, dl2['x'])
+    disp_dx, disp_dy = utils.disp_vector(disp_norm, disp_angle, disp_sign)
+
+    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(disp_dx,
+                                                           disp_dy,
+                                                           dl2['x'],
+                                                           dl2['y'],
+                                                           )
     
     features_.append('e_rec')
     features_.append('disp_rec')

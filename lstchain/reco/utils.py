@@ -125,34 +125,27 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     return source_x, source_y
 
 
-def disp_to_pos(disp, cog_x, cog_y):
+def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
     """
-    Calculates source position in camera coordinates(x,y) from "disp_"
-    distance.
-    For now, it only works for POINT GAMMAS, it doesn't take into
-    account the duplicity of the disp_norm method.
+    Calculates source position in camera coordinates(x,y) from the reconstructed disp
     
     Parameters:
     -----------
-    disp_norm: DispContainer
-
-    cog_x = float
+    disp: DispContainer
+    cog_x: float
     Coordinate x of the center of gravity of Hillas ellipse
-
-    cog_y = float
+    cog_y: float
     Coordinate y of the center of gravity of Hillas ellipse
 
     Returns:
     --------
     (source_pos_x, source_pos_y)
     """
-    if disp.dx is None or disp.dy is None:
-        disp = disp_vector(disp)
-
-    source_pos_x = cog_x + disp.dx
-    source_pos_y = cog_y + disp.dy
+    source_pos_x = cog_x + disp_dx
+    source_pos_y = cog_y + disp_dy
    
-    return (source_pos_x, source_pos_y)
+    return source_pos_x, source_pos_y
+
 
 
 def guess_type(filename):
@@ -241,7 +234,7 @@ def disp_norm(source_pos, hillas):
     return disp_norm
 
 
-def reco_source_position_sky(cog_x, cog_y, disp, focal_length, pointing_alt, pointing_az):
+def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az):
     """
     Compute the reconstructed source position in the sky
 
@@ -258,7 +251,7 @@ def reco_source_position_sky(cog_x, cog_y, disp, focal_length, pointing_alt, poi
     -------
 
     """
-    src_x, src_y = disp_to_pos(disp, cog_x, cog_y)
+    src_x, src_y = disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
@@ -360,43 +353,81 @@ def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
     """
     return source_pos_x - cog_x, source_pos_y - cog_y
 
-
-def disp_vector(disp):
+def disp_vector(disp_norm, disp_angle, disp_sign):
     """
     Compute `disp_norm.dx` and `disp_norm.dy` vector from `disp_norm.norm`, `disp_norm.angle` and `disp_norm.sign`
 
     Parameters
     ----------
-    disp: DispContainer
+    disp_norm: float
+    disp_angle: float
+    disp_sign: float
 
     Returns
     -------
-    DispContainer
+    disp_dx, disp_dy
     """
-    assert np.isfinite([disp.norm, disp.angle, disp.sign]).all()
-    disp.dx = disp.norm * disp.sign * np.cos(disp.angle)
-    disp.dy = disp.norm * disp.sign * np.sin(disp.angle)
-    return disp
+    return polar_to_cartesian(disp_norm, disp_angle, disp_sign)
 
-
-def predict_source_position_in_camera(cog_x, cog_y, psi, disp, source_side):
+def polar_to_cartesian(norm, angle, sign):
     """
-    Compute the source position in camera from reconstructed parameters Hillas, disp_norm and source_side
+    Polar to cartesian transformation.
+    Angle is supposed to be included in [-pi/2:pi/2].
+
     Parameters
     ----------
-    cog_x: float - x coordinate of the center of gravity (hillas.x)
-    cog_y: float - y coordinate of the center of gravity (hillas.y)
-    disp: float, disp_norm distance
-    source_side: float,
+    norm: float or `numpy.ndarray`
+    angle: float or `numpy.ndarray`
+    sign: float or `numpy.ndarray`
 
     Returns
     -------
 
     """
-    dx, dy = disp_vector(disp, psi, source_side)
-    reco_src_x = cog_x + dx
-    reco_src_y = cog_y + dy
+    assert np.isfinite([norm, angle, sign]).all()
+    x = norm * sign * np.cos(angle)
+    y = norm * sign * np.sin(angle)
+    return x, y
 
+def cartesian_to_polar(x, y):
+    """
+    Cartesian to polar transformation
+
+    Parameters
+    ----------
+    x: float or `numpy.ndarray`
+    y: float or `numpy.ndarray`
+
+    Returns
+    -------
+    norm, angle, sign
+    """
+    norm = np.sqrt(x**2 + y**2)
+    if x == 0:
+        angle = np.pi/2 * sign
+    else:
+        angle = np.arctan(np.tan(y/x))
+    sign = np.sign(x)
+    return norm, angle, sign
+
+
+def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
+    """
+    Compute the source position in the camera frame
+
+    Parameters
+    ----------
+    cog_x: float or `numpy.ndarray` - x coordinate of the center of gravity (hillas.x)
+    cog_y: float or `numpy.ndarray` - y coordinate of the center of gravity (hillas.y)
+    disp_dx: float or `numpy.ndarray`
+    disp_dy: float or `numpy.ndarray`
+
+    Returns
+    -------
+    source_pos_x, source_pos_y
+    """
+    reco_src_x = cog_x + disp_dx
+    reco_src_y = cog_y + disp_dy
     return reco_src_x, reco_src_y
 
 
@@ -419,6 +450,10 @@ def disp_parameters(hillas, source_pos_x, source_pos_y):
     disp.dx = source_pos_x - hillas.x
     disp.dy = source_pos_y - hillas.y
     disp.norm = np.sqrt(disp.dx**2 + disp.dy**2)
-    disp.angle = hillas.psi
+    if disp.dx==0:
+        disp.angle = np.pi/2. * np.sign(disp.dy)
+    else:
+        disp.angle = np.arctan(disp.dy/disp.dx)
     disp.sign = np.sign(disp.dx)
+    disp.miss = np.abs(np.sin(hillas.psi.to(u.rad).value) * disp.dx - np.cos(hillas.psi.to(u.rad).value)*disp.dy)
     return disp

@@ -25,6 +25,7 @@ def overlay_source(display, source_pos_x, source_pos_y, **kwargs):
 
 def overlay_disp_vector(display, disp, hillas, **kwargs):
     """
+    Overlay disp vector on a CameraDisplay
 
     Parameters
     ----------
@@ -32,9 +33,6 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
     disp: `DispContainer`
     hillas: `ctapipe.io.containers.HillasParametersContainer`
     kwargs: args for `matplotlib.pyplot.quiver`
-
-    Returns
-    -------
 
     """
     assert np.isfinite([hillas.x.value, hillas.y.value]).all()
@@ -46,3 +44,25 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
                         units='xy', scale=1*u.m,
                         **kwargs,
                         )
+
+
+def overlay_hillas_major_axis(display, hillas, **kwargs):
+    """
+    Overlay hillas ellipse major axis on a CameraDisplay.
+
+    Parameters
+    ----------
+    display: `ctapipe.visualization.CameraDisplay`
+    hillas: `ctapipe.io.containers.HillaParametersContainer`
+    kwargs: args for `matplotlib.pyplot.plot`
+
+    """
+    kwargs['color'] = 'black' if 'color' not in kwargs else kwargs['color']
+
+    length = hillas.length * 2
+    x = -length + 2 * length * np.arange(10) / 10
+    display.axes.plot(hillas.x + x * np.cos(hillas.psi.to(u.rad).value),
+                      hillas.y + x * np.sin(hillas.psi.to(u.rad).value),
+                      **kwargs,
+                      )
+
