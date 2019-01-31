@@ -3,7 +3,7 @@
 Transform AltAz coordinates into Camera coordinates (This should be
 implemented already in ctapipe but I haven't managed to find how to
 do it)
-Calculate source position from disp distance.
+Calculate source position from disp_norm distance.
 Calculate disp_ distance from source position.
 
 Usage:
@@ -15,6 +15,9 @@ import numpy as np
 from ctapipe.coordinates import HorizonFrame
 from ctapipe.coordinates import NominalFrame
 import astropy.units as u
+from ..io.containers import DispContainer
+from astropy.utils import deprecated
+
 
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
@@ -121,66 +124,35 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     source_y = -focal_length*res[1]/res[2]
     return source_x, source_y
 
-def calc_disp(source_x,source_y,cen_x,cen_y):
-    """
-    Calculates "disp" distance from source position in camera
-    coordinates
-    
-    Parameters:
-    -----------
-    source_x: float
-    Source coordinate X in camera frame
 
-    source_y: float
-    Source coordinate Y in camera frame
-
-    cen_x = float
-    Coordinate x of the center of gravity of Hillas ellipse
-
-    cen_y = float
-    Coordinate y of the center of gravity of Hillas ellipse
-
-    Returns:
-    --------
-    float: disp
-    """
-    disp = np.sqrt((source_x-cen_x)**2
-                   +(source_y-cen_y)**2)
-    return disp
-
-def disp_to_pos(disp,cen_x,cen_y,psi):
+def disp_to_pos(disp, cog_x, cog_y):
     """
     Calculates source position in camera coordinates(x,y) from "disp_"
     distance.
     For now, it only works for POINT GAMMAS, it doesn't take into
-    account the duplicity of the disp method.
+    account the duplicity of the disp_norm method.
     
     Parameters:
     -----------
-    disp: float - disp distance
+    disp_norm: DispContainer
 
-    cen_x = float
+    cog_x = float
     Coordinate x of the center of gravity of Hillas ellipse
 
-    cen_y = float
+    cog_y = float
     Coordinate y of the center of gravity of Hillas ellipse
-
-    psi: float
-    Angle between semimajor axis of the Hillas ellipse and the
-    horizontal plane of the camera.
 
     Returns:
     --------
-    float: source_x1
-
-    float: source_x2
-    
+    (source_pos_x, source_pos_y)
     """
-    
-    source_x1 = cen_x - disp*np.cos(psi)
-    source_y1 = cen_y - disp*np.sin(psi)
+    if disp.dx is None or disp.dy is None:
+        disp = disp_vector(disp)
+
+    source_pos_x = cog_x + disp.dx
+    source_pos_y = cog_y + disp.dy
    
-    return source_x1,source_y1
+    return (source_pos_x, source_pos_y)
 
 
 def guess_type(filename):
@@ -249,10 +221,11 @@ def get_event_pos_in_camera(event, tel):
     focal = tel.optics.equivalent_focal_length
     return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
 
-
-def disp(source_pos, hillas):
+@deprecated('31/01/2019', message='Use disp_parameters')
+def disp_norm(source_pos, hillas):
     """
-    Compute disp parameter
+    Deprecated, use disp_parameters.
+    Compute the norm of the disp_norm vector
 
     Parameters
     ----------
@@ -262,24 +235,31 @@ def disp(source_pos, hillas):
 
     Returns
     -------
-    disp: float
+    disp_norm: float
     """
-    disp = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
-    return disp
+    disp_norm = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
+    return disp_norm
 
 
-def get_event_pos_in_sky(hillas, disp, tel, pointing_direction):
-    side = 1  # TODO: method to guess side
+def reco_source_position_sky(cog_x, cog_y, disp, focal_length, pointing_alt, pointing_az):
+    """
+    Compute the reconstructed source position in the sky
 
-    focal = tel.optics.equivalent_focal_length
-    source_pos_in_camera = NominalFrame(array_direction=pointing_direction,
-                                        pointing_direction=pointing_direction,
-                                        x=(hillas.x + side * disp * np.cos(hillas.phi)) / focal * u.rad,
-                                        y=(hillas.y + side * disp * np.sin(hillas.phi)) / focal * u.rad
-                                        )
+    Parameters
+    ----------
+    cog_x: `astropy.units.Quantity`
+    cog_y: `astropy.units.Quantity`
+    disp: DispContainer
+    focal_length: `astropy.units.Quantity`
+    pointing_alt: `astropy.units.Quantity`
+    pointing_az: `astropy.units.Quantity`
 
-    horizon_frame = HorizonFrame(alt=pointing_direction.alt, az=pointing_direction.az)
-    return source_pos_in_camera.transform_to(horizon_frame)
+    Returns
+    -------
+
+    """
+    src_x, src_y = disp_to_pos(disp, cog_x, cog_y)
+    return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
 def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
@@ -381,32 +361,32 @@ def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
     return source_pos_x - cog_x, source_pos_y - cog_y
 
 
-def disp_vector(disp, psi, source_side):
+def disp_vector(disp):
     """
-    Compute disp vector from its length, angle direction and side
+    Compute `disp_norm.dx` and `disp_norm.dy` vector from `disp_norm.norm`, `disp_norm.angle` and `disp_norm.sign`
 
     Parameters
     ----------
-    disp: float
-    psi: float
-    source_side: float (-1 or 1)
+    disp: DispContainer
 
     Returns
     -------
-    disp vector: (dx, dy)
+    DispContainer
     """
-    dx = disp * source_side * np.cos(psi)
-    dy = disp * source_side * np.sin(psi)
-    return dx, dy
+    assert np.isfinite([disp.norm, disp.angle, disp.sign]).all()
+    disp.dx = disp.norm * disp.sign * np.cos(disp.angle)
+    disp.dy = disp.norm * disp.sign * np.sin(disp.angle)
+    return disp
 
 
 def predict_source_position_in_camera(cog_x, cog_y, psi, disp, source_side):
     """
-    Compute the source position in camera from reconstructed parameters Hillas, disp and source_side
+    Compute the source position in camera from reconstructed parameters Hillas, disp_norm and source_side
     Parameters
     ----------
-    hillas: `ctapipe.io.containers.HillasParametersContainer`
-    disp: float, disp distance
+    cog_x: float - x coordinate of the center of gravity (hillas.x)
+    cog_y: float - y coordinate of the center of gravity (hillas.y)
+    disp: float, disp_norm distance
     source_side: float,
 
     Returns
@@ -418,3 +398,27 @@ def predict_source_position_in_camera(cog_x, cog_y, psi, disp, source_side):
     reco_src_y = cog_y + dy
 
     return reco_src_x, reco_src_y
+
+
+def disp_parameters(hillas, source_pos_x, source_pos_y):
+    """
+    Compute the disp_norm parameters from Hillas parameters in the event position in the camera frame
+    Return a `DispContainer`
+
+    Parameters
+    ----------
+    hillas: `ctapipe.io.containers.HillasParametersContainer`
+    source_pos_x: X coordinate of the source (event) position in the camera frame
+    source_pos_y: Y coordinate of the source (event) position in the camera frame
+
+    Returns
+    -------
+    `lstchain.io.containers.DispContainer`
+    """
+    disp = DispContainer()
+    disp.dx = source_pos_x - hillas.x
+    disp.dy = source_pos_y - hillas.y
+    disp.norm = np.sqrt(disp.dx**2 + disp.dy**2)
+    disp.angle = hillas.psi
+    disp.sign = np.sign(disp.dx)
+    return disp

@@ -1,4 +1,4 @@
-"""Module with functions for Energy and disp reconstruction and G/H
+"""Module with functions for Energy and disp_norm reconstruction and G/H
 separation. There are functions for raining random forest and for
 applying them to data. The RF can be saved into a file for later use.
 
@@ -81,7 +81,7 @@ def train_disp_vector(train, features,
                     'n_estimators': 10},
         predict_features=['disp_dx', 'disp_dy']):
     """
-    Train a model for the regression of the disp vector coordinates dx,dy.
+    Train a model for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
 
     Parameters
@@ -99,7 +99,7 @@ def train_disp_vector(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp vector regression".format(model))
+    print("Training mdoel {} for disp_norm vector regression".format(model))
 
     reg = model(**model_args)
     x = train[features]
@@ -119,7 +119,7 @@ def train_disp_norm(train, features,
                     'n_estimators': 10},
         predict_feature='disp_norm'):
     """
-    Train a model for the regression of the disp norm
+    Train a model for the regression of the disp_norm norm
 
     Parameters
     ----------
@@ -136,7 +136,7 @@ def train_disp_norm(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp vector regression".format(model))
+    print("Training mdoel {} for disp_norm vector regression".format(model))
 
     reg = model(**model_args)
     x = train[features]
@@ -156,7 +156,7 @@ def train_disp_sign(train, features,
                     'n_estimators': 10},
         predict_feature='disp_sign'):
     """
-    Train a model for the classification of the disp sign
+    Train a model for the classification of the disp_norm sign
 
     Parameters
     ----------
@@ -173,7 +173,7 @@ def train_disp_sign(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp vector regression".format(model))
+    print("Training mdoel {} for disp_norm vector regression".format(model))
 
     reg = model(**model_args)
     x = train[features]
@@ -188,7 +188,7 @@ def train_disp_sign(train, features,
 
 def trainRFreco(train, features):
     """
-    Trains two Random Forest regressors for Energy and disp
+    Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
 
     Parameters:
@@ -219,14 +219,14 @@ def trainRFreco(train, features):
                   train['mc_energy'])
     
     print("Random Forest trained!")    
-    print("Training Random Forest Regressor for disp Reconstruction...")
+    print("Training Random Forest Regressor for disp_norm Reconstruction...")
     
     regr_rf_disp = RandomForestRegressor(max_depth=max_depth,
                                          min_samples_leaf=50,
                                          n_jobs=4,
                                          n_estimators=50)    
     regr_rf_disp.fit(train[features],
-                     train['disp'])
+                     train['disp_norm'])
     
     print("Random Forest trained!")
     print("Done!")
@@ -270,7 +270,7 @@ def trainRFsep(train,features):
 def buildModels(filegammas, fileprotons, features,
                 SaveModels=True, path_models="./",
                 EnergyCut=-1, IntensityCut=60, rCut=0.94):
-    """Uses MC data to train Random Forests for Energy and disp
+    """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
 
     Parameters:
@@ -323,12 +323,12 @@ def buildModels(filegammas, fileprotons, features,
     df_gamma = df_gamma[abs(df_gamma['intensity']) > np.log10(IntensityCut)]
     df_proton = df_proton[abs(df_proton['intensity']) > np.log10(IntensityCut)]
     
-    #Train regressors for energy and disp reconstruction, only with gammas
+    #Train regressors for energy and disp_norm reconstruction, only with gammas
     
     RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma, features)
 
     #Train classifier for gamma/hadron separation. We need to use half
-    #of the gammas for training regressors and have e_rec and disp rec
+    #of the gammas for training regressors and have e_rec and disp_norm rec
     #for training the classifier.
 
     train, testg = split_traintest(df_gamma, 0.5)
@@ -342,7 +342,7 @@ def buildModels(filegammas, fileprotons, features,
     test['disp_rec'] = tempRFreg_Disp.predict(test[features_])
     
     #Apply cut in reconstructed energy. New train set is the previous
-    #test with energy and disp reconstructed.
+    #test with energy and disp_norm reconstructed.
     
     train = test[test['mc_energy']>EnergyCut]
     
@@ -386,17 +386,17 @@ def ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_Disp):
     RF for Energy reconstruction
 
     RFreg_Disp: Random Forest Regressor
-    RF for disp reconstruction
+    RF for disp_norm reconstruction
 
     """
     
     features_ = list(features)
     dl2 = dl1.copy()
-    #Reconstruction of Energy and disp distance
+    #Reconstruction of Energy and disp_norm distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
     dl2['disp_rec'] = RFreg_Disp.predict(dl2[features_])
    
-    #Construction of Source position in camera coordinates from disp distance.
+    #Construction of Source position in camera coordinates from disp_norm distance.
     #WARNING: For not it only works fine for POINT SOURCE events
     dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
                                                                   dl2['x'],

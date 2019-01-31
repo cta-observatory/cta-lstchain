@@ -1,6 +1,48 @@
-def display_source(display, source_pos_xy, **kwargs):
-    ax = display.axes
+import numpy as np
+from ..reco.utils import disp_vector
+import astropy.units as u
+
+
+def overlay_source(display, source_pos_x, source_pos_y, **kwargs):
+    """
+    Display the source (event) position in the camera
+
+    Parameters
+    ----------
+    display: `ctapipe.visualization.CameraDisplay`
+    source_pos_x: `astropy.units.Quantity`
+    source_pos_y: `astropy.units.Quantity`
+    kwargs: args for `matplotlib.pyplot.scatter`
+
+    Returns
+    -------
+    `matplotlib.pyplot.axes`
+    """
     kwargs['marker'] = 'x' if 'marker' not in kwargs else kwargs['marker']
     kwargs['color'] = 'red' if 'color' not in kwargs else kwargs['color']
-    ax.scatter(src_pos.x, src_pos.y, **kwargs)
-    return ax
+    display.axes.scatter(source_pos_x, source_pos_y, **kwargs)
+
+
+def overlay_disp_vector(display, disp, hillas, **kwargs):
+    """
+
+    Parameters
+    ----------
+    display: `ctapipe.visualization.CameraDisplay`
+    disp: `DispContainer`
+    hillas: `ctapipe.io.containers.HillasParametersContainer`
+    kwargs: args for `matplotlib.pyplot.quiver`
+
+    Returns
+    -------
+
+    """
+    assert np.isfinite([hillas.x.value, hillas.y.value]).all()
+    if not np.isfinite([disp.dx.value, disp.dy.value]).all():
+        disp_vector(disp)
+
+    display.axes.quiver(hillas.x, hillas.y,
+                        disp.dx, disp.dy,
+                        units='xy', scale=1*u.m,
+                        **kwargs,
+                        )
