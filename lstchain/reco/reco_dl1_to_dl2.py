@@ -18,24 +18,18 @@ from . import utils
 def split_traintest(data, proportion, random_state=42):
     """
     Split a dataset in "train" and "test" sets.
+    Actually using `sklearn.model_selection.train_test_split`
 
     Parameters:
     -----------
     data: pandas DataFrame
-
     proportion: float
     Percentage of the total dataset that will be part of the train set.
 
     Returns:
     --------
-    pandas dataFrame: train
-    
-    pandas dataFrame: test
-    
+    train, test - `pandas.DataFrame`
     """
-    # data['is_train'] = np.random.uniform(0, 1, len(data)) <= proportion
-    # train = data[data['is_train']==True]
-    # test = data[data['is_train']==False]
     train, test = train_test_split(data, train_size=proportion, random_state=random_state)
     return train, test
 
