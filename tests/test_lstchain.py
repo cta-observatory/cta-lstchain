@@ -19,7 +19,7 @@ def test_dl0_to_dl1():
     r0_to_dl1(infile)
 
 def test_buildModels():
-    from lstchain.reco.reco_dl1_to_dl2 import build_models
+    from lstchain.reco.dl1_to_dl2 import build_models
     infile = 'dl1_gamma_test_large.h5'
     features = ['intensity', 'width', 'length']
 
@@ -35,7 +35,7 @@ def test_buildModels():
 
 
 def test_ApplyModels():
-    from lstchain.reco.reco_dl1_to_dl2 import apply_models
+    from lstchain.reco.dl1_to_dl2 import apply_models
     import pandas as pd
     from sklearn.externals import joblib
 

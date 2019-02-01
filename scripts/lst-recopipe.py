@@ -11,7 +11,7 @@ $> python lst-recopipe arg1 arg2 ...
 import sys                                                   
 sys.path.insert(0, '../')
 from lstchain.reco import dl0_to_dl1
-from lstchain.reco import reco_dl1_to_dl2
+from lstchain.reco import dl1_to_dl2
 from lstchain.visualization import plot_dl2
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    dl2 = reco_dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
+    dl2 = dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
 
     if args.storeresults==True:
         #Store results

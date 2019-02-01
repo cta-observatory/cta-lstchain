@@ -4,8 +4,9 @@ applying them to data. The RF can be saved into a file for later use.
 
 Usage:
 
-"import reco_dl1_to_dl2"
+"import dl1_to_dl2"
 """
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor

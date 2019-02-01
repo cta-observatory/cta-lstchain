@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from sklearn.externals import joblib
 import sys
 sys.path.insert(0, '../')
-from lstchain.reco import reco_dl1_to_dl2
+from lstchain.reco import dl1_to_dl2
 from lstchain.visualization import plot_dl2
 from lstchain.reco import utils 
 
@@ -60,11 +60,11 @@ if __name__ == '__main__':
     df_proton = pd.read_hdf(args.protonfile,
                             key="proton_events")
     
-    train,test = reco_dl1_to_dl2.split_traintest(df_gammas,0.5)
+    train,test = dl1_to_dl2.split_traintest(df_gammas, 0.5)
     test = test.append(df_proton,
                        ignore_index=True)
 
-    RFreg_Energy, RFreg_Disp = reco_dl1_to_dl2.train_reco(train, features)
+    RFreg_Energy, RFreg_Disp = dl1_to_dl2.train_reco(train, features)
     
     test['e_rec'] = RFreg_Energy.predict(test[features])
     test['disp_rec'] = RFreg_Disp.predict(test[features])
@@ -78,11 +78,11 @@ if __name__ == '__main__':
     features_sep.append('e_rec')
     features_sep.append('disp_rec')
     
-    train,test = reco_dl1_to_dl2.split_traintest(test,0.75)
+    train,test = dl1_to_dl2.split_traintest(test, 0.75)
     #Train the Classifier
     
-    RFcls_GH = reco_dl1_to_dl2.trainRFsep(train,
-                          features_sep)
+    RFcls_GH = dl1_to_dl2.trainRFsep(train,
+                                     features_sep)
 
     test['hadro_rec'] = RFcls_GH.predict(test[features_sep])
     
