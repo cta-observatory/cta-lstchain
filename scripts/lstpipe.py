@@ -63,12 +63,12 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    RFreg_Energy, RFreg_disp, RFcls_GH = reco_dl1_to_dl2.buildModels(args.gammafile,
-                                                                     args.protonfile,
-                                                                     features,
-                                                                     SaveModels=args.storerf,
-                                                                     path_models=args.path_models,
-                                                                     )
+    RFreg_Energy, RFreg_disp, RFcls_GH = reco_dl1_to_dl2.build_models(args.gammafile,
+                                                                      args.protonfile,
+                                                                      features,
+                                                                      save_models=args.storerf,
+                                                                      path_models=args.path_models,
+                                                                      )
 
     #Get out the data from the Simtelarray file:
     
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     
     #Apply the models to the data
-    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_disp)
+    dl2 = reco_dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_disp)
     
     if args.storeresults==True:
         #Store results

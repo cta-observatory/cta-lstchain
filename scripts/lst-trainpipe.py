@@ -49,7 +49,7 @@ if __name__ == '__main__':
                 'psi']
 
 
-    RFreg_Energy, RFreg_Disp, RFcls_GH = reco_dl1_to_dl2.buildModels(
+    RFreg_Energy, RFreg_Disp, RFcls_GH = reco_dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
         features,

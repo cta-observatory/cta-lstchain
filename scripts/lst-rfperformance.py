@@ -64,7 +64,7 @@ if __name__ == '__main__':
     test = test.append(df_proton,
                        ignore_index=True)
 
-    RFreg_Energy, RFreg_Disp = reco_dl1_to_dl2.trainRFreco(train,features)
+    RFreg_Energy, RFreg_Disp = reco_dl1_to_dl2.train_reco(train, features)
     
     test['e_rec'] = RFreg_Energy.predict(test[features])
     test['disp_rec'] = RFreg_Disp.predict(test[features])
