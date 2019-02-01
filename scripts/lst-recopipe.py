@@ -1,4 +1,4 @@
-"""Pipeline for reconstruction of Energy, disp_ and gamma/hadron
+"""Pipeline for reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
 Result is a dataframe with dl2 data.
 Already trained Random Forests are required.
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
+    dl2 = reco_dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
 
     if args.storeresults==True:
         #Store results

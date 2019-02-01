@@ -19,14 +19,14 @@ def test_dl0_to_dl1():
     r0_to_dl1(infile)
 
 def test_buildModels():
-    from lstchain.reco.reco_dl1_to_dl2 import buildModels
+    from lstchain.reco.reco_dl1_to_dl2 import build_models
     infile = 'dl1_gamma_test_large.h5'
     features = ['intensity', 'width', 'length']
 
-    RFreg_Energy, RFreg_disp_, RFcls_GH = buildModels(
+    RFreg_Energy, RFreg_disp_, RFcls_GH = build_models(
         infile, infile,
         features,
-        SaveModels=True)
+        save_models=True)
 
     from sklearn.externals import joblib
     joblib.dump(RFreg_Energy, 'rf_energy.pkl')
@@ -35,7 +35,7 @@ def test_buildModels():
 
 
 def test_ApplyModels():
-    from lstchain.reco.reco_dl1_to_dl2 import ApplyModels
+    from lstchain.reco.reco_dl1_to_dl2 import apply_models
     import pandas as pd
     from sklearn.externals import joblib
 
@@ -51,7 +51,7 @@ def test_ApplyModels():
     RFreg_disp_ = joblib.load(fileD)
     RFcls_GH = joblib.load(fileH)
 
-    ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp_)
+    apply_models(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp_)
 
     import os
     os.remove('dl1_gamma_test_large.h5')
