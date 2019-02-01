@@ -35,6 +35,12 @@ parser.add_argument('--opath', '-o', action='store', type=str,
                      help='Path to store the resulting RF',
                      default='./trained_models/')
 
+parser.add_argument('--config_file', '-conf', action='store', type=str,
+                    dest='config_file',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied',
+                    default=None
+                    )
+
 args = parser.parse_args()
 
 if __name__ == '__main__':
@@ -54,5 +60,6 @@ if __name__ == '__main__':
                             features,
                             save_models=args.storerf,
                             path_models=args.path_models,
+                            config_file=args.config_file
                             )
     

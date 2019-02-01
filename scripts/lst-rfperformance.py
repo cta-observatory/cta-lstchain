@@ -39,6 +39,14 @@ parser.add_argument('--opath', '-o', action='store', type=str,
                      dest='path_models',
                      help='Path to store the resulting RF',
                      default='./saved_models/')
+
+parser.add_argument('--config_file', '-conf', action='store', type=str,
+                    dest='config_file',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied',
+                    default=None
+                    )
+
+
 args = parser.parse_args()
 
 
