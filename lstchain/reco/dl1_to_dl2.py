@@ -6,6 +6,7 @@ Usage:
 
 "import dl1_to_dl2"
 """
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,50 @@ from sklearn.model_selection import train_test_split
 import os
 from . import utils
 from astropy.utils import deprecated
+
+
+
+# Models configurations - to be moved later in an external configuration file
+
+random_forest_regressor_args = {'max_depth': 50,
+                                'min_samples_leaf': 50,
+                                'n_jobs': 4,
+                                'n_estimators': 50,
+                                'bootstrap': True,
+                                'criterion': 'mse',
+                                'max_features': 'auto',
+                                'max_leaf_nodes': None,
+                                'min_impurity_decrease': 0.0,
+                                'min_impurity_split': None,
+                                'min_samples_split': 2,
+                                'min_weight_fraction_leaf': 0.0,
+                                'oob_score': False,
+                                'random_state': 42,
+                                'verbose': 0,
+                                'warm_start': False,
+                                }
+
+
+random_forest_classifier_args = {'max_depth': 2,
+                                 'min_samples_leaf': 10,
+                                 'n_jobs': 4,
+                                 'n_estimators': 'warn',
+                                 'criterion': 'gini',
+                                 'min_samples_split': 2,
+                                 'min_weight_fraction_leaf': 0.,
+                                 'max_features': 'auto',
+                                 'max_leaf_nodes': None,
+                                 'min_impurity_decrease': 0.0,
+                                 'min_impurity_split': None,
+                                 'bootstrap': True,
+                                 'oob_score': False,
+                                 'random_state': 42,
+                                 'verbose': 0.,
+                                 'warm_start': False,
+                                 'class_weight': None,
+                                 }
+
+
 
 @deprecated('31/10/2019', message='Will be removed in a future release')
 def split_traintest(data, proportion, random_state=42):
@@ -39,10 +84,7 @@ def split_traintest(data, proportion, random_state=42):
 def train_energy(train,
                  features,
                  model=RandomForestRegressor,
-                 model_args={'max_depth': 50,
-                            'min_samples_leaf': 50,
-                            'n_jobs': 4,
-                            'n_estimators': 50}):
+                 model_args=random_forest_regressor_args):
     """
     Train a model for the regression of the energy
 
@@ -72,10 +114,7 @@ def train_energy(train,
 
 def train_disp_vector(train, features,
         model=RandomForestRegressor,
-        model_args={'max_depth': 2,
-                    'min_samples_leaf': 50,
-                    'n_jobs': 4,
-                    'n_estimators': 10},
+        model_args=random_forest_regressor_args,
         predict_features=['disp_dx', 'disp_dy']):
     """
     Train a model for the regression of the disp_norm vector coordinates dx,dy.
@@ -110,10 +149,7 @@ def train_disp_vector(train, features,
 
 def train_disp_norm(train, features,
         model=RandomForestRegressor,
-        model_args={'max_depth': 2,
-                    'min_samples_leaf': 50,
-                    'n_jobs': 4,
-                    'n_estimators': 10},
+        model_args=random_forest_regressor_args,
         predict_feature='disp_norm'):
     """
     Train a model for the regression of the disp_norm norm
@@ -183,7 +219,7 @@ def train_disp_sign(train, features,
 
 
 
-def train_reco(train, features):
+def train_reco(train, features, regression_args=random_forest_regressor_args):
     """
     Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
@@ -204,24 +240,18 @@ def train_reco(train, features):
     """
 
     print("Given features: ",features)
-    print("Number of events for training: ",train.shape[0])
+    print("Number of events for training: ", train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
 
     max_depth = 50
-    reg_energy = RandomForestRegressor(max_depth=max_depth,
-                                      min_samples_leaf=50,
-                                      n_jobs=4,
-                                      n_estimators=50)
+    reg_energy = RandomForestRegressor(**regression_args)
     reg_energy.fit(train[features],
                   train['mc_energy'])
     
     print("Random Forest trained!")    
     print("Training Random Forest Regressor for disp_norm Reconstruction...")
     
-    reg_disp = RandomForestRegressor(max_depth=max_depth,
-                                         min_samples_leaf=50,
-                                         n_jobs=4,
-                                         n_estimators=50)    
+    reg_disp = RandomForestRegressor(**regression_args)
     reg_disp.fit(train[features],
                      train['disp_norm'])
     
@@ -230,7 +260,7 @@ def train_reco(train, features):
     return reg_energy, reg_disp
 
 
-def train_sep(train, features):
+def train_sep(train, features, classification_args=random_forest_classifier_args):
     
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
@@ -252,10 +282,7 @@ def train_sep(train, features):
     print("Training Random Forest Classifier for",
     "Gamma/Hadron separation...")
     
-    clf = RandomForestClassifier(max_depth=50,
-                                 n_jobs=4,
-                                 min_samples_leaf=50,
-                                 n_estimators=100)
+    clf = RandomForestClassifier(**classification_args)
     
     clf.fit(train[features],
             train['hadroness'])
@@ -266,7 +293,9 @@ def train_sep(train, features):
 
 def build_models(filegammas, fileprotons, features,
                 save_models=True, path_models="./",
-                energy_min=-1, intensity_min=np.log10(60), r_max=0.94):
+                energy_min=-1, intensity_min=np.log10(60), r_max=0.94,
+                regression_args=random_forest_regressor_args,
+                classification_args=random_forest_classifier_args):
     """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
 
@@ -279,15 +308,15 @@ def build_models(filegammas, fileprotons, features,
     Name of the file with MC proton events
 
     features: list of strings
-    Features for traininf the RF
+    Features for training the RF
 
-    EnergyCut: float 
+    energy_min: float
     Cut in energy for gamma/hadron separation
     
-    IntensityCut: float
+    intensity_min: float
     Cut in intensity of the showers for training RF. Default is 60 phe
 
-    rCut: float
+    r_max: float
     Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
     in the border. Default is 80% of camera radius.
 
@@ -299,34 +328,34 @@ def build_models(filegammas, fileprotons, features,
 
     Returns:
     --------
-    RandomForestRegressor: RFreg_Energy
-    RandomForestRegressor: RFreg_Disp
-    RandomForestClassifier: RFcls_GH
+    (regressor_energy, regressor_disp, classifier_gh)
+    regressor_energy: `RandomForestRegressor`
+    regressor_disp: `RandomForestRegressor`
+    classifier_gh: `RandomForestClassifier`
     """
-    if not os.path.exists(path_models):
-        os.mkdir(path_models)
 
     features_ = list(features)
 
     df_gamma = pd.read_hdf(filegammas)
     df_proton = pd.read_hdf(fileprotons)
 
-    df_gamma = filter_events(df_gamma)
-    df_proton = filter_events(df_proton)
+    df_gamma = filter_events(df_gamma, r_max=r_max, intensity_min=intensity_min)
+    df_proton = filter_events(df_proton, r_max=r_max, intensity_min=intensity_min)
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
     
-    reg_energy, reg_disp = train_reco(df_gamma, features)
+    reg_energy, reg_disp = train_reco(df_gamma, features,
+                                      regression_args=random_forest_regressor_args
+                                      )
 
-    #Train classifier for gamma/hadron separation. We need to use half
-    #of the gammas for training regressors and have e_rec and disp_norm rec
-    #for training the classifier.
+    #Train classifier for gamma/hadron separation.
 
-    # train, testg = split_traintest(df_gamma, 0.5)
     train, testg = train_test_split(df_gamma, test_size=0.2)
     test = testg.append(df_proton, ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_Disp = train_reco(train, features_)
+    tempRFreg_Energy, tempRFreg_Disp = train_reco(train, features_,
+                                                  regression_args=random_forest_regressor_args,
+                                                  )
     
     #Apply the regressors to the test set
 
@@ -336,7 +365,7 @@ def build_models(filegammas, fileprotons, features,
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp_norm reconstructed.
     
-    train = test[test['mc_energy']>EnergyCut]
+    train = test[test['mc_energy'] > energy_min]
     
     del tempRFreg_Energy, tempRFreg_Disp
     
@@ -347,18 +376,18 @@ def build_models(filegammas, fileprotons, features,
     
     #Train the Classifier
 
-    RFcls_GH = trainRFsep(train,
-                          features_sep) 
+    cls_gh = train_sep(train, features_sep, classification_args=random_forest_classifier_args)
     
     if save_models:
-        fileE = path_models + "/RFreg_Energy.sav"
-        fileD = path_models + "/RFreg_Disp.sav"
-        fileH = path_models + "/RFcls_GH.sav"
-        joblib.dump(RFreg_Energy, fileE)
-        joblib.dump(RFreg_Disp, fileD)
-        joblib.dump(RFcls_GH, fileH)
+        os.makedirs(path_models, exist_ok=True)
+        file_reg_energy = path_models + "/reg_energy.sav"
+        file_reg_disp = path_models + "/reg_disp.sav"
+        file_cls_gh = path_models + "/cls_gh.sav"
+        joblib.dump(reg_energy, file_reg_energy)
+        joblib.dump(reg_disp, file_reg_disp)
+        joblib.dump(cls_gh, file_cls_gh)
 
-    return RFreg_Energy, RFreg_Disp, RFcls_GH
+    return reg_energy, reg_disp, cls_gh
 
 
 def apply_models(dl1, features, classifier, reg_energy, reg_disp):
