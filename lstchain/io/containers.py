@@ -7,7 +7,8 @@ from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
-from ..reco.utils import disp, get_event_pos_in_camera
+from ..reco import utils
+from numpy import nan
 
 
 class DL1ParametersContainer(Container):
@@ -26,7 +27,12 @@ class DL1ParametersContainer(Container):
     psi = Field(None, 'rotation angle of ellipse', unit=u.rad)
     skewness = Field(None, 'measure of the asymmetry')
     kurtosis = Field(None, 'measure of the tailedness')
-    disp = Field(None, 'disp [m]', unit=u.m)
+    disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
+    disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
+    disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
+    disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
+    disp_sign = Field(None, 'disp_sign')
+    disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
     hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
@@ -106,7 +112,13 @@ class DL1ParametersContainer(Container):
         self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
-        self.disp = disp(source_pos, hillas)
+        disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
+        self.disp_norm = disp.norm
+        self.disp_dx = disp.dx
+        self.disp_dy = disp.dy
+        self.disp_angle = disp.angle
+        self.disp_sign = disp.sign
+        self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peakpos, hillas):
         try:
@@ -124,8 +136,19 @@ class DL1ParametersContainer(Container):
         # self.src_x = sourcepos[0]
         # self.src_y = sourcepos[1]
         tel = event.inst.subarray.tel[telescope_id]
-        source_pos = get_event_pos_in_camera(event, tel)
+        source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
 
 
+class DispContainer(Container):
+    """
+    Disp vector container
+    """
+    dx = Field(nan, 'x coordinate of the disp_norm vector')
+    dy = Field(nan, 'y coordinate of the disp_norm vector')
+
+    angle = Field(nan, 'Angle between the X axis and the disp_norm vector')
+    norm = Field(nan, 'Norm of the disp_norm vector')
+    sign = Field(nan, 'Sign of the disp_norm')
+    miss = Field(nan, 'miss parameter norm')
