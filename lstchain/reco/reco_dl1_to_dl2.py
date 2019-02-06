@@ -1,4 +1,4 @@
-"""Module with functions for Energy and disp reconstruction and G/H
+"""Module with functions for Energy and disp_norm reconstruction and G/H
 separation. There are functions for raining random forest and for
 applying them to data. The RF can be saved into a file for later use.
 
@@ -8,38 +8,182 @@ Usage:
 """
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.externals import joblib
+from sklearn.model_selection import train_test_split
 import os
-
 from . import utils
+from astropy.utils import deprecated
 
-def split_traintest(data,proportion):
+@deprecated('31/10/2019', message='Will be removed in a future release')
+def split_traintest(data, proportion, random_state=42):
     """
     Split a dataset in "train" and "test" sets.
+    Actually using `sklearn.model_selection.train_test_split`
 
     Parameters:
     -----------
     data: pandas DataFrame
-
     proportion: float
     Percentage of the total dataset that will be part of the train set.
 
     Returns:
     --------
-    pandas dataFrame: train
-    
-    pandas dataFrame: test
-    
+    train, test - `pandas.DataFrame`
     """
-    data['is_train'] = np.random.uniform(0,1,len(data))<= proportion
-    train = data[(data['is_train']==True)]
-    test = data[(data['is_train']==False)]
-    return train,test
+    train, test = train_test_split(data, train_size=proportion, random_state=random_state)
+    return train, test
 
-def trainRFreco(train,features):
+def train_energy(train,
+                 features,
+                 model=RandomForestRegressor,
+                 model_args={'max_depth': 50,
+                            'min_samples_leaf': 50,
+                            'n_jobs': 4,
+                            'n_estimators': 50}):
     """
-    Trains two Random Forest regressors for Energy and disp
+    Train a model for the regression of the energy
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method. By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training Random Forest Regressor for Energy Reconstruction...")
+
+    reg = model(**model_args)
+    reg.fit(train[features],
+                  train['mc_energy'])
+
+    print("Model {} trained!".format(model))
+    return reg
+
+
+def train_disp_vector(train, features,
+        model=RandomForestRegressor,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_features=['disp_dx', 'disp_dy']):
+    """
+    Train a model for the regression of the disp_norm vector coordinates dx,dy.
+    Therefore, the model must be able to be applied on a vector of features.
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method that can be applied to a vector of features.
+    By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp_norm vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose([train[f] for f in predict_features])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+def train_disp_norm(train, features,
+        model=RandomForestRegressor,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_feature='disp_norm'):
+    """
+    Train a model for the regression of the disp_norm norm
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method.
+    By default `sklearn.ensemble.RandomForestRegressor`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp_norm vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose(train[predict_feature])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+def train_disp_sign(train, features,
+        model=RandomForestClassifier,
+        model_args={'max_depth': 2,
+                    'min_samples_leaf': 50,
+                    'n_jobs': 4,
+                    'n_estimators': 10},
+        predict_feature='disp_sign'):
+    """
+    Train a model for the classification of the disp_norm sign
+
+    Parameters
+    ----------
+    train: `pandas.DataFrame`
+    features: list of strings, features to train the model
+    model: `scikit-learn` model with a `fit` method.
+    By default `sklearn.ensemble.RandomForestClassifier`
+    model_args: dictionnary, arguments for the model
+
+    Returns
+    -------
+    The trained model
+    """
+
+    print("Given features: ", features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training mdoel {} for disp_norm vector regression".format(model))
+
+    reg = model(**model_args)
+    x = train[features]
+    y = np.transpose(train[predict_feature])
+    reg.fit(x, y)
+
+    print("Model {} trained!".format(model))
+
+    return reg
+
+
+
+def trainRFreco(train, features):
+    """
+    Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
 
     Parameters:
@@ -60,8 +204,7 @@ def trainRFreco(train,features):
     print("Given features: ",features)
     print("Number of events for training: ",train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
-    
-    
+
     max_depth = 50
     regr_rf_e = RandomForestRegressor(max_depth=max_depth,
                                       min_samples_leaf=50,
@@ -71,18 +214,19 @@ def trainRFreco(train,features):
                   train['mc_energy'])
     
     print("Random Forest trained!")    
-    print("Training Random Forest Regressor for disp Reconstruction...")
+    print("Training Random Forest Regressor for disp_norm Reconstruction...")
     
     regr_rf_disp = RandomForestRegressor(max_depth=max_depth,
                                          min_samples_leaf=50,
                                          n_jobs=4,
                                          n_estimators=50)    
     regr_rf_disp.fit(train[features],
-                     train['disp'])
+                     train['disp_norm'])
     
     print("Random Forest trained!")
     print("Done!")
     return regr_rf_e, regr_rf_disp
+
 
 def trainRFsep(train,features):
     
@@ -121,7 +265,7 @@ def trainRFsep(train,features):
 def buildModels(filegammas, fileprotons, features,
                 SaveModels=True, path_models="./",
                 EnergyCut=-1, IntensityCut=60, rCut=0.94):
-    """Uses MC data to train Random Forests for Energy and disp
+    """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
 
     Parameters:
@@ -171,22 +315,19 @@ def buildModels(filegammas, fileprotons, features,
     df_proton = df_proton[abs(df_proton['r'])<rCut]
 
     #Cut showers with low intensity
-    df_gamma = df_gamma[abs(df_gamma['intensity'])>np.log10(IntensityCut)]
-    df_proton = df_proton[abs(df_proton['intensity'])>np.log10(IntensityCut)]
+    df_gamma = df_gamma[abs(df_gamma['intensity']) > np.log10(IntensityCut)]
+    df_proton = df_proton[abs(df_proton['intensity']) > np.log10(IntensityCut)]
     
-    #Train regressors for energy and disp reconstruction, only with gammas
+    #Train regressors for energy and disp_norm reconstruction, only with gammas
     
-    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma,
-                                           features)
+    RFreg_Energy, RFreg_Disp = trainRFreco(df_gamma, features)
 
     #Train classifier for gamma/hadron separation. We need to use half
-    #of the gammas for training regressors and have e_rec and disp rec
+    #of the gammas for training regressors and have e_rec and disp_norm rec
     #for training the classifier.
 
-    train, testg = split_traintest(df_gamma,
-                                   0.5)
-    test = testg.append(df_proton,
-                        ignore_index=True)
+    train, testg = split_traintest(df_gamma, 0.5)
+    test = testg.append(df_proton, ignore_index=True)
 
     tempRFreg_Energy, tempRFreg_Disp = trainRFreco(train, features_)
     
@@ -196,7 +337,7 @@ def buildModels(filegammas, fileprotons, features,
     test['disp_rec'] = tempRFreg_Disp.predict(test[features_])
     
     #Apply cut in reconstructed energy. New train set is the previous
-    #test with energy and disp reconstructed.
+    #test with energy and disp_norm reconstructed.
     
     train = test[test['mc_energy']>EnergyCut]
     
@@ -240,22 +381,29 @@ def ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_Disp):
     RF for Energy reconstruction
 
     RFreg_Disp: Random Forest Regressor
-    RF for disp reconstruction
+    RF for disp_norm reconstruction
 
     """
     
     features_ = list(features)
     dl2 = dl1.copy()
-    #Reconstruction of Energy and disp distance
+    #Reconstruction of Energy and disp_norm distance
     dl2['e_rec'] = RFreg_Energy.predict(dl2[features_])
     dl2['disp_rec'] = RFreg_Disp.predict(dl2[features_])
    
-    #Construction of Source position in camera coordinates from disp distance.
+    #Construction of Source position in camera coordinates from disp_norm distance.
     #WARNING: For not it only works fine for POINT SOURCE events
-    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2['disp_rec'],
-                                                                  dl2['x'],
-                                                                  dl2['y'],
-                                                                  dl2['psi'])
+
+    disp_norm = dl2['disp_rec']
+    disp_angle = dl2['psi']
+    disp_sign = utils.source_side(0, dl2['x'])
+    disp_dx, disp_dy = utils.disp_vector(disp_norm, disp_angle, disp_sign)
+
+    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(disp_dx,
+                                                           disp_dy,
+                                                           dl2['x'],
+                                                           dl2['y'],
+                                                           )
     
     features_.append('e_rec')
     features_.append('disp_rec')
