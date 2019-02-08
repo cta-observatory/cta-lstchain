@@ -221,7 +221,7 @@ def get_events(filename, storedata=False, test=False,
                 'intercept',
                 'src_x',
                 'src_y',
-                'disp',
+                'disp_norm',
                 'hadroness',
                 ]
     
@@ -385,8 +385,7 @@ def get_events(filename, storedata=False, test=False,
                                                               focal_length) 
                 src_x = sourcepos[0]
                 src_y = sourcepos[1]
-                disp = utils.calc_disp(sourcepos[0],sourcepos[1],
-                                                 x,y)
+                disp = utils.disp_norm(sourcepos[0], sourcepos[1], x, y)
                 
                 hadroness = 0
                 if particle_type=='proton':
