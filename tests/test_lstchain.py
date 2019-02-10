@@ -18,24 +18,24 @@ def test_dl0_to_dl1():
     infile = get_dataset_path('gamma_test_large.simtel.gz')
     r0_to_dl1(infile)
 
-def test_buildModels():
-    from lstchain.reco.reco_dl1_to_dl2 import buildModels
+def test_build_models():
+    from lstchain.reco.dl1_to_dl2 import build_models
     infile = 'dl1_gamma_test_large.h5'
     features = ['intensity', 'width', 'length']
 
-    RFreg_Energy, RFreg_disp_, RFcls_GH = buildModels(
+    reg_energy, reg_disp, cls_gh = build_models(
         infile, infile,
         features,
-        SaveModels=True)
+        save_models=True)
 
     from sklearn.externals import joblib
-    joblib.dump(RFreg_Energy, 'rf_energy.pkl')
-    joblib.dump(RFreg_disp_, 'rf_disp.pkl')
-    joblib.dump(RFcls_GH, 'rf_gh.pkl')
+    joblib.dump(reg_energy, 'rf_energy.pkl')
+    joblib.dump(reg_disp, 'rf_disp.pkl')
+    joblib.dump(cls_gh, 'rf_cls_gh.pkl')
 
 
-def test_ApplyModels():
-    from lstchain.reco.reco_dl1_to_dl2 import ApplyModels
+def test_apply_models():
+    from lstchain.reco.dl1_to_dl2 import apply_models
     import pandas as pd
     from sklearn.externals import joblib
 
@@ -43,24 +43,29 @@ def test_ApplyModels():
     dl1 = pd.read_hdf(dl1_file)
     features = ['intensity', 'width', 'length']
     # Load the trained RF for reconstruction:
-    fileE = 'rf_energy.pkl'
-    fileD = 'rf_disp.pkl'
-    fileH = 'rf_gh.pkl'
+    file_energy = 'rf_energy.pkl'
+    file_disp = 'rf_disp.pkl'
+    file_cls_gh = 'rf_cls_gh.pkl'
 
-    RFreg_Energy = joblib.load(fileE)
-    RFreg_disp_ = joblib.load(fileD)
-    RFcls_GH = joblib.load(fileH)
+    reg_energy = joblib.load(file_energy)
+    reg_disp = joblib.load(file_disp)
+    reg_cls_gh = joblib.load(file_cls_gh)
 
-    ApplyModels(dl1, features, RFcls_GH, RFreg_Energy, RFreg_disp_)
+    apply_models(dl1, features, reg_cls_gh, reg_energy, reg_disp)
 
+
+def test_clean_test_files():
+    """
+    Function to clean the test files created by the previous test
+    """
     import os
     os.remove('dl1_gamma_test_large.h5')
-    os.remove('RFcls_GH.sav')
-    os.remove('RFreg_Disp.sav')
-    os.remove('RFreg_Energy.sav')
+    os.remove('cls_gh.sav')
+    os.remove('reg_disp.sav')
+    os.remove('reg_energy.sav')
     os.remove('rf_disp.pkl')
     os.remove('rf_energy.pkl')
-    os.remove('rf_gh.pkl')
+    os.remove('rf_cls_gh.pkl')
 
 
 def test_disp_vector():

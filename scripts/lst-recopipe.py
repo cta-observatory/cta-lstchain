@@ -1,4 +1,4 @@
-"""Pipeline for reconstruction of Energy, disp_ and gamma/hadron
+"""Pipeline for reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
 Result is a dataframe with dl2 data.
 Already trained Random Forests are required.
@@ -8,10 +8,9 @@ Usage:
 $> python lst-recopipe arg1 arg2 ...
 
 """
-import sys                                                   
-sys.path.insert(0, '../')
+
 from lstchain.reco import dl0_to_dl1
-from lstchain.reco import reco_dl1_to_dl2
+from lstchain.reco import dl1_to_dl2
 from lstchain.visualization import plot_dl2
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
@@ -19,8 +18,9 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 import pandas as pd 
+from distutils.util import strtobool
 
-parser = argparse.ArgumentParser(description = "Train Random Forests.")
+parser = argparse.ArgumentParser(description="Reconstruct events")
 
 # Required arguments
 parser.add_argument('--datafile', '-f', type=str,
@@ -31,17 +31,18 @@ parser.add_argument('--datafile', '-f', type=str,
 parser.add_argument('--pathmodels', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
-                     default='./results')
-parser.add_argument('--storeresults', '-s', action='store', type=bool,
+                     default='./trained_models')
+
+parser.add_argument('--storeresults', '-s', action='store', type=lambda x: bool(strtobool(x)),
                     dest='storeresults',
                     help='Boolean. True for storing the reco dl2 events'
-                    'Default=False, any user input will be considered True',
-                    default=False)
+                    'Default=True, use False otherwise',
+                    default=True)
 # Optional argument
 parser.add_argument('--outdir', '-o', action='store', type=str,
                      dest='outdir',
                      help='Path where to store the reco dl2 events',
-                     default='./results')
+                     default='./dl2_results')
 parser.add_argument('--maxevents', '-x', action='store', type=int,
                      dest='max_events',
                      help='Maximum number of events to analyze',
@@ -60,9 +61,9 @@ if __name__ == '__main__':
     data = pd.read_hdf(output_filename,key='events/LSTCam')
 
     #Load the trained RF for reconstruction:
-    fileE = args.path_models + "/RFreg_Energy.sav"
-    fileD = args.path_models + "/RFreg_Disp.sav"
-    fileH = args.path_models + "/RFcls_GH.sav"
+    fileE = args.path_models + "/reg_energy.sav"
+    fileD = args.path_models + "/reg_disp.sav"
+    fileH = args.path_models + "/cls_gh.sav"
     
     RFreg_Energy = joblib.load(fileE)
     RFreg_Disp = joblib.load(fileD)
@@ -77,12 +78,11 @@ if __name__ == '__main__':
                 'phi',
                 'psi']
 
-    dl2 = reco_dl1_to_dl2.ApplyModels(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
+    dl2 = dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
 
     if args.storeresults==True:
         #Store results
-        if not os.path.exists(args.outdir):
-            os.mkdir(args.outdir)
+        os.makedirs(args.outdir, exist_ok=True)
         outfile = args.outdir+"/dl2_events.hdf5"
         dl2.to_hdf(outfile, key="dl2_events", mode="w")
 
