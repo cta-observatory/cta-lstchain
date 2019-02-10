@@ -18,7 +18,6 @@ import astropy.units as u
 from ..io.containers import DispContainer
 from astropy.utils import deprecated
 
-
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
     (angle from z-axis) for simtel array coordinate systems                                  
