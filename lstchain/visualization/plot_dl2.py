@@ -11,7 +11,7 @@ from matplotlib import gridspec
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve
 
-def plot_features(data,truehadroness=False):
+def plot_features(data, truehadroness=False):
     """Plot the distribution of different features that characterize
     events, such as hillas parameters or MC data.
 
@@ -41,94 +41,94 @@ def plot_features(data,truehadroness=False):
 
     #disp_ distribution
     plt.subplot(332)
-    plt.hist(data[data[hadro]<1]['disp'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['disp_norm'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['disp'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['disp_norm'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"disp_ (m)")
 
     #Intensity distribution
     plt.subplot(333)
-    plt.hist(data[data[hadro]<1]['intensity'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['intensity'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['intensity'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['intensity'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"$log_{10}Intensity$")
 
-    dataforwl = data[data['intensity']>np.log10(200)]
+    dataforwl = data[data['intensity'] > np.log10(200)]
     #Width distribution
     plt.subplot(334)
-    plt.hist(dataforwl[dataforwl[hadro]<1]['width'],
-             histtype=u'step',bins=100,
+    plt.hist(dataforwl[dataforwl[hadro] < 1]['width'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(dataforwl[dataforwl[hadro]>0]['width'],
-             histtype=u'step',bins=100,
+    plt.hist(dataforwl[dataforwl[hadro] > 0]['width'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"Width (º)")
 
     #Length distribution
     plt.subplot(335)
-    plt.hist(dataforwl[dataforwl[hadro]<1]['length'],
-             histtype=u'step',bins=100,
+    plt.hist(dataforwl[dataforwl[hadro] < 1]['length'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(dataforwl[dataforwl[hadro]>0]['length'],
-             histtype=u'step',bins=100,
+    plt.hist(dataforwl[dataforwl[hadro] > 0]['length'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"Length (º)")
 
     #r distribution
     plt.subplot(336)
-    plt.hist(data[data[hadro]<1]['r'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['r'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['r'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['r'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"r (m)")
 
     #psi distribution
 
     plt.subplot(337)
-    plt.hist(data[data[hadro]<1]['psi'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['psi'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['psi'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['psi'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"psi angle(rad)")
     
     #psi distribution
 
     plt.subplot(338)
-    plt.hist(data[data[hadro]<1]['phi'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['phi'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['phi'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['phi'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"phi angle(m)")
     
     #Time gradient
 
     plt.subplot(339)
-    plt.hist(data[data[hadro]<1]['time_gradient'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] < 1]['time_gradient'],
+             histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['time_gradient'],
-             histtype=u'step',bins=100,
+    plt.hist(data[data[hadro] > 0]['time_gradient'],
+             histtype=u'step', bins=100,
              label="Protons")
-    plt.ylabel(r'# of events',fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"Time gradient")
 
 
@@ -154,12 +154,12 @@ def plot_e(data,truehadroness=False):
     plt.subplot(221)
     difE = ((gammas['mc_energy']-gammas['e_rec'])*np.log(10))
     section = difE[abs(difE) < 1.5]
-    mu,sigma = norm.fit(section)
-    print(mu,sigma)
+    mu, sigma = norm.fit(section)
+    print(mu, sigma)
     n, bins, patches = plt.hist(difE,100,
                                 density=1,alpha=0.75)
     y = norm.pdf( bins, mu, sigma)
-    l = plt.plot(bins, y, 'r--', linewidth=2)
+    plt.plot(bins, y, 'r--', linewidth=2)
     plt.xlabel('$(log_{10}(E_{gammas})-log_{10}(E_{rec}))*log_{N}(10)$',
                fontsize=10)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
@@ -168,8 +168,10 @@ def plot_e(data,truehadroness=False):
                 fontsize=10)
     
     plt.subplot(222)
-    hE = plt.hist2d(gammas['mc_energy'],gammas['e_rec'],
+    hE = plt.hist2d(gammas['mc_energy'],
+                    gammas['e_rec'],
                     bins=100)
+
     plt.colorbar(hE[3])
     plt.xlabel('$log_{10}E_{gammas}$',
                fontsize=15)
@@ -232,7 +234,7 @@ def plot_disp(data,truehadroness=False):
     gammas = data[data[hadro]==0] 
 
     plt.subplot(221)
-    difD = ((gammas['disp']-gammas['disp_rec'])/gammas['disp'])
+    difD = ((gammas['disp_norm']-gammas['disp_rec'])/gammas['disp_norm'])
     section = difD[abs(difD) < 0.5]
     mu,sigma = norm.fit(section)
     print(mu,sigma)
@@ -240,7 +242,7 @@ def plot_disp(data,truehadroness=False):
                               alpha=0.75,range=[-2,1.5])
     y = norm.pdf( bins, mu, sigma)
     l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{disp_{gammas}-disp_{rec}}{disp_{gammas}}$',
+    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$',
                fontsize=15)
     plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
                 fontsize=12)
@@ -248,15 +250,16 @@ def plot_disp(data,truehadroness=False):
                 fontsize=12)
                 
     plt.subplot(222)
-    hD = plt.hist2d(gammas['disp'],gammas['disp_rec'],
-                    bins=100,range=([0,1.1],[0,1.1]))
+    hD = plt.hist2d(gammas['disp_norm'],gammas['disp_rec'],
+                    bins=100,
+                    range=([0,1.1],[0,1.1]),
+                    )
     plt.colorbar(hD[3])
-    plt.xlabel('$disp_{gammas}$',
+    plt.xlabel('$disp\_norm_{gammas}$',
                fontsize=15)
-    plt.ylabel('$disp_{rec}$',
+    plt.ylabel('$disp\_norm_{rec}$',
                fontsize=15)
-    plt.plot(gammas['disp'],gammas['disp'],
-             "-",color='red')   
+    plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
  
     plt.subplot(223)
     theta2 = (gammas['src_x']-gammas['src_x_rec'])**2
