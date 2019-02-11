@@ -34,7 +34,7 @@ from ..io.containers import DL1ParametersContainer
 allowed_tels = {1}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
 
-threshold = 4095
+threshold = 4094
 
 # Add option to use custom calibration
 
@@ -47,7 +47,6 @@ cleaning_parameters = {'boundary_thresh': 3,
                        'keep_isolated_pixels': False,
                        'min_number_picture_neighbors': 1
                        }
-
 
 def get_dl1(calibrated_event, telescope_id):
     """
@@ -72,7 +71,8 @@ def get_dl1(calibrated_event, telescope_id):
     image = dl1.image
     peakpos = dl1.peakpos
     
-    image,peakpos = gain_selection(waveform,image,peakpos,threshold)
+    image,peakpos = gain_selection(waveform,image,peakpos,
+                                   camera.cam_id,threshold)
     
     signal_pixels = cleaning_method(camera,image,
                                     **cleaning_parameters)
