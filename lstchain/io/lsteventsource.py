@@ -13,7 +13,8 @@ from ctapipe.core import Provenance
 from ctapipe.instrument import TelescopeDescription, SubarrayDescription, \
     CameraGeometry, OpticsDescription
 from ctapipe.io.eventsource import EventSource
-from .containers import LSTDataContainer
+
+from lstchain.io.containers import LSTDataContainer, PixelStatusContainer
 
 
 __all__ = ['LSTEventSource']
@@ -103,8 +104,6 @@ class LSTEventSource(EventSource):
 
         self.data.inst.subarray = subarray
 
-
-
         # loop on events
         for count, event in enumerate(self.multi_file):
 
@@ -113,10 +112,11 @@ class LSTEventSource(EventSource):
             # fill specific LST event data
             self.fill_lst_event_container_from_zfile(event)
 
+            # fill general monitoring data
+            self.fill_mon_container_from_zfile(event)
+
             # fill general R0 data
             self.fill_r0_container_from_zfile(event)
-
-
 
             yield self.data
 
@@ -151,6 +151,11 @@ class LSTEventSource(EventSource):
         return is_protobuf_zfits_file & is_lst_file
 
     def fill_lst_service_container_from_zfile(self):
+        """
+        Fill LSTServiceContainer with specific LST service data data
+        (from the CameraConfig table of zfit file)
+
+        """
 
         self.data.lst.tels_with_data = [self.camera_config.telescope_id, ]
         svc_container = self.data.lst.tel[self.camera_config.telescope_id].svc
@@ -164,7 +169,6 @@ class LSTEventSource(EventSource):
         svc_container.pixel_ids = self.camera_config.expected_pixels_id
         svc_container.data_model_version = self.camera_config.data_model_version
 
-
         svc_container.num_modules = self.camera_config.lstcam.num_modules
         svc_container.module_ids = self.camera_config.lstcam.expected_modules_id
         svc_container.idaq_version = self.camera_config.lstcam.idaq_version
@@ -172,8 +176,12 @@ class LSTEventSource(EventSource):
         svc_container.algorithms = self.camera_config.lstcam.algorithms
         svc_container.pre_proc_algorithms = self.camera_config.lstcam.pre_proc_algorithms
 
-
     def fill_lst_event_container_from_zfile(self, event):
+        """
+        Fill LSTEventContainer with specific LST service data
+        (from the Event table of zfit file)
+
+        """
 
         event_container = self.data.lst.tel[self.camera_config.telescope_id].evt
 
@@ -194,7 +202,6 @@ class LSTEventSource(EventSource):
         event_container.tib_tenMHz_counter = unpacked_tib[2]
         event_container.tib_stereo_pattern = unpacked_tib[3]
         event_container.tib_masked_trigger = unpacked_tib[4]
-
         #event_container.cdts_data = event.lstcam.cdts_data
         event_container.swat_data = event.lstcam.swat_data
 
@@ -209,7 +216,6 @@ class LSTEventSource(EventSource):
         event_container.ucts_camera_timestamp = unpacked_cdts[4]
         event_container.ucts_trigger_type = unpacked_cdts[5]
         event_container.ucts_white_rabbit_status = unpacked_cdts[6]
-
 
         # unpack Dragon counters
         rec_fmt = '=HIIIQ'
@@ -230,53 +236,56 @@ class LSTEventSource(EventSource):
         event_container.drs_tag_status = event.lstcam.drs_tag_status
         event_container.drs_tag = event.lstcam.drs_tag
 
-    def fill_r0_camera_container_from_zfile(self, container, event):
+    def fill_r0_camera_container_from_zfile(self, r0_container, event):
+        """
+        Fill with R0CameraContainer
 
-        container.num_samples = self.camera_config.num_samples
+        """
+
+        r0_container.num_samples = self.camera_config.num_samples
         #container.trigger_time = event.trigger_time_s
 
         # temporary patch to have an event time set
-        container.trigger_time = (
+        r0_container.trigger_time = (
             self.data.lst.tel[self.camera_config.telescope_id].evt.tib_pps_counter +
             self.data.lst.tel[self.camera_config.telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
-        container.trigger_type = event.trigger_type
+        r0_container.trigger_type = event.trigger_type
 
         # verify the number of gains
         if event.waveform.shape[0] == (self.camera_config.num_pixels *
-                                       container.num_samples):
+                                       r0_container.num_samples):
             n_gains = 1
         elif event.waveform.shape[0] == (self.camera_config.num_pixels *
-                                         container.num_samples * 2):
+                                         r0_container.num_samples * 2):
             n_gains = 2
         else:
             raise ValueError("Waveform matrix dimension not supported: "
                              "N_chan x N_pix x N_samples= '{}'"
                              .format(event.waveform.shape[0]))
 
-        container.pixel_status = np.zeros([self.n_camera_pixels])
-        container.pixel_status[self.camera_config.expected_pixels_id] = \
-            event.pixel_status
-
         reshaped_waveform = np.array(
             event.waveform
         ).reshape(
             n_gains,
             self.camera_config.num_pixels,
-            container.num_samples
+            r0_container.num_samples
         )
 
         # initialize the waveform container to zero
-        container.waveform = np.zeros([n_gains, self.n_camera_pixels,
-                                       container.num_samples])
+        r0_container.waveform = np.zeros([n_gains, self.n_camera_pixels,
+                                       r0_container.num_samples])
 
         # re-order the waveform following the expected_pixels_id values
         # (rank = pixel id)
-        container.waveform[:, self.camera_config.expected_pixels_id, :] =\
+        r0_container.waveform[:, self.camera_config.expected_pixels_id, :] =\
             reshaped_waveform
 
-
     def fill_r0_container_from_zfile(self, event):
+        """
+        Fill with R0Container
+
+        """
         container = self.data.r0
 
         container.obs_id = -1
@@ -288,11 +297,26 @@ class LSTEventSource(EventSource):
             r0_camera_container,
             event
         )
-        # temporary patch to have an event time set
-        #r0_camera_container.trigger_time = (
-        #    self.data.lst.tel[self.camera_config.telescope_id].evt.tib_pps_counter +
-        #    self.data.lst.tel[self.camera_config.telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
+    def fill_mon_container_from_zfile(self, event):
+        """
+        Fill with MonitoringContainer.
+        For the moment, initialize only the PixelStatusContainer
+
+        """
+        container = self.data.mon
+        container.tels_with_data = [self.camera_config.telescope_id, ]
+        mon_camera_container = container.tel[self.camera_config.telescope_id]
+
+        # reorder the array
+        pixel_status = np.zeros([self.n_camera_pixels])
+        pixel_status[self.camera_config.expected_pixels_id]  = \
+            event.pixel_status
+
+        # initalize the container
+        status_container = PixelStatusContainer()
+        status_container.hardware_mask = pixel_status > 0
+        mon_camera_container.pixel_status = status_container
 
 
 class MultiFiles:
