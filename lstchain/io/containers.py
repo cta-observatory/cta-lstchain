@@ -3,57 +3,31 @@ Container structures for data that should be read or written to disk
 """
 
 from astropy import units as u
-#from astropy.time import Time
-#from numpy import nan
-#import numpy as np
 
 from ctapipe.core import Container, Field, Map
 from ctapipe.io.containers import *
 
 __all__ = [
-    'FlatFieldCameraContainer',
     'FlatFieldContainer',
-    'PedestalCameraContainer',
     'PedestalContainer',
-    'PixelStatusCameraContainer',
     'PixelStatusContainer',
+    'MonitoringCameraContainer',
+    'MonitoringContainer',
     'LSTCameraContainer',
-    'MonitoringDataContainer',
     'LSTDataContainer'
 ]
 
 
-class R0CameraContainer(Container):
+class FlatFieldContainer(Container):
     """
-    Storage of raw data from a single telescope
-    """
-    trigger_time = Field(None, "Telescope trigger time, start of waveform "
-                               "readout, None for MCs")
-    trigger_type = Field(0o0, "camera's event trigger type if applicable")
-    num_trig_pix = Field(0, "Number of trigger groups (sectors) listed")
-    trig_pix_id = Field(None, "pixels involved in the camera trigger")
-    image = Field(None, (
-        "numpy array containing integrated ADC data "
-        "(n_channels x n_pixels) DEPRECATED"
-    ))  # to be removed, since this doesn't exist in real data and useless in mc
-    waveform = Field(None, (
-        "numpy array containing ADC samples"
-        "(n_channels x n_pixels, n_samples)"
-    ))
-    num_samples = Field(None, "number of time samples for telescope")
-    pixel_status = Field(0o0, "status of the pixels")
-
-
-class FlatFieldCameraContainer(Container):
-    """
-    Container for relative camera flat-field coefficients
-
+    Container for flat-field parameters obtained from a set of
+    [n_events] flat-field events
     """
 
-    time_mean = Field(0, 'Mean time, seconds since reference', unit=u.s)
+    time = Field(0, 'Time associated to the flat-field event set ', unit=u.s)
     time_range = Field(
         [],
-        'Range of time of the calibration data [t_min, t_max]',
+        'Range of time of the flat-field events [t_min, t_max]',
         unit=u.s
     )
     n_events = Field(0, 'Number of events used for statistics')
@@ -61,6 +35,33 @@ class FlatFieldCameraContainer(Container):
         None,
         "np array of the relative flat-field coefficient mean (n_chan X N_pix)"
     )
+    charge_mean = Field(
+        None,
+        "np array of signal charge mean (n_chan X N_pix)"
+    )
+    charge_median = Field(
+        None,
+        "np array of signal charge median (n_chan X N_pix)"
+    )
+    charge_rms = Field(
+        None,
+        "np array of signal charge rms (n_chan X N_pix)"
+    )
+    time_mean = Field(
+        None,
+        "np array of signal time mean (n_chan X N_pix)",
+        unit=u.ns,
+    )
+    time_median = Field(
+        None,
+        "np array of signal time median (n_chan X N_pix)",
+        unit=u.ns
+    )
+    time_rms = Field(
+        None,
+        "np array of signal time rms (n_chan X N_pix)"
+    )
+
     relative_gain_median = Field(
         None,
         "np array of the relative flat-field coefficient  median (n_chan X N_pix)"
@@ -80,27 +81,19 @@ class FlatFieldCameraContainer(Container):
         unit=u.ns)
 
 
-class FlatFieldContainer(Container):
+class PedestalContainer(Container):
     """
-    Container for relative flat field coefficients
+    Container for pedestal parameters obtained from a set of
+    [n_pedestal] pedestal events
     """
-    tels_with_data = Field([], "list of telescopes with data")
-    tel = Field(
-        Map(FlatFieldCameraContainer),
-        "map of tel_id to FlatFiledCameraContainer")
 
-
-class PedestalCameraContainer(Container):
-    """
-    Container for pedestals per camera
-    """
-    time_mean = Field(0, 'Mean time, seconds since reference', unit=u.s)
+    time = Field(0, 'Time associated to the pedestal event set', unit=u.s)
     time_range = Field(
         [],
-        'Range of time of the calibration data [t_min, t_max]',
+        'Range of time of the pedestal events [t_min, t_max]',
         unit=u.s
     )
-    n_events = Field(0, 'Number of events used for statistics')
+    n_event = Field(0, 'Number of events used for statistics')
     pedestal_mean = Field(
         None,
         "np array of pedestal average (n_chan X N_pix)"
@@ -113,31 +106,14 @@ class PedestalCameraContainer(Container):
         None,
         "np array of the pedestal rms (n_chan X N_pix)"
     )
-    relative_pedestal_mean = Field(
-        None,
-        "np array of relative pedestal average (n_chan X N_pix)"
-    )
-    relative_pedestal_median = Field(
-        None,
-        "np array of the relative pedestal  median (n_chan X N_pix)"
-    )
-    relative_pedestal_rms = Field(
-        None,
-        "np array of the relative pedestal rms (n_chan X N_pix)"
-    )
 
 
-class PedestalContainer(Container):
+class PixelStatusContainer(Container):
     """
-    Container for pedestal data
+    Container for pixel status information
+    It contains masks obtained by several data analysis steps
+    At r0 level only the hardware_mask is initialized
     """
-    tels_with_data = Field([], "list of telescopes with data")
-    tel = Field(
-        Map(PedestalCameraContainer),
-        "map of tel_id to PedestalCameraContainer")
-
-
-class PixelStatusCameraContainer(Container):
     hardware_mask = Field(
         None,
         "Mask from the hardware pixel status data (N_pix)"
@@ -154,24 +130,27 @@ class PixelStatusCameraContainer(Container):
     )
 
 
-class PixelStatusContainer(Container):
+class MonitoringCameraContainer(Container):
     """
-    Container for pedestal data
+    Container for camera monitoring data
     """
-    tels_with_data = Field([], "list of telescopes with data")
-    tel = Field(
-        Map(PixelStatusCameraContainer),
-        "map of tel_id to PixelStatusContainer")
 
-
-class MonitoringDataContainer(Container):
-    """
-    Root container for MON data
-    """
     flatfield = Field(FlatFieldContainer(), "Relative flat field data")
     pedestal = Field(PedestalContainer(), "Pedestal data")
     pixel_status = Field(PixelStatusContainer(), "Container of masks with pixel status")
 
+
+class MonitoringContainer(Container):
+    """
+    Root container for monitoring data (MON)
+    """
+
+    tels_with_data = Field([], "list of telescopes with data")
+
+    # create the camera container
+    tel = Field(
+        Map(MonitoringCameraContainer),
+        "map of tel_id to MonitoringCameraContainer")
 
 
 class LSTServiceContainer(Container):
@@ -265,4 +244,4 @@ class LSTDataContainer(DataContainer):
     Data container including LST and monitoring information
     """
     lst = Field(LSTContainer(), "LST specific Information")
-    mon = Field(MonitoringDataContainer(), "container for MON data")
+    mon = Field(MonitoringContainer(), "container for monitoring data (MON)")
