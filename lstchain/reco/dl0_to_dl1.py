@@ -25,7 +25,7 @@ import h5py
 
 from . import utils
 from ..calib.calib import lst_calibration
-from ..io.containers import DL1ParametersContainer
+from ..io.lstcontainers import DL1ParametersContainer
 
 
 ### PARAMETERS - TODO: use a yaml config file
