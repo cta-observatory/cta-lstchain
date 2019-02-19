@@ -80,7 +80,7 @@ class LSTEventSource(EventSource):
         # Instrument information
         for tel_id in self.data.lst.tels_with_data:
 
-            assert (tel_id == 0 or tel_id == 1) # only LST1 for the moment id = 0)
+            assert (tel_id == 0 or tel_id == 1) # only LST1 (for the moment id = 0)
 
             # optics info from standard optics.fits.gz file
             optics = OpticsDescription.from_name("LST")
@@ -221,15 +221,21 @@ class LSTEventSource(EventSource):
         rec_fmt = '=HIIIQ'
         rec_len = struct.calcsize(rec_fmt)
         rec_unpack = struct.Struct(rec_fmt).unpack_from
+
+        event_container.pps_counter = np.zeros(self.camera_config.lstcam.num_modules)
+        event_container.tenMHz_counter = np.zeros(self.camera_config.lstcam.num_modules)
+        event_container.event_counter = np.zeros(self.camera_config.lstcam.num_modules)
+        event_container.trigger_counter = np.zeros(self.camera_config.lstcam.num_modules)
+        event_container.local_clock_counter = np.zeros(self.camera_config.lstcam.num_modules)
         for mod in range(self.camera_config.lstcam.num_modules):
 
             words=event.lstcam.counters[mod*rec_len:(mod+1)*rec_len]
             unpacked_counter = rec_unpack(words)
-            event_container.pps_counter.append(unpacked_counter[0])
-            event_container.tenMHz_counter.append(unpacked_counter[1])
-            event_container.event_counter.append(unpacked_counter[2])
-            event_container.trigger_counter.append(unpacked_counter[3])
-            event_container.local_clock_counter.append(unpacked_counter[4])
+            event_container.pps_counter[mod] = unpacked_counter[0]
+            event_container.tenMHz_counter[mod] = unpacked_counter[1]
+            event_container.event_counter[mod] = unpacked_counter[2]
+            event_container.trigger_counter[mod] = unpacked_counter[3]
+            event_container.local_clock_counter[mod] = unpacked_counter[4]
 
         event_container.chips_flags = event.lstcam.chips_flags
         event_container.first_capacitor_id = event.lstcam.first_capacitor_id
