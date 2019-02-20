@@ -42,7 +42,7 @@ def lst_calibration(event, telescope_id):
     event.dl1.tel[telescope_id].image = signals
     event.dl1.tel[telescope_id].peakpos = peakpos
 
-def gain_selection(waveform,signals,peakpos,cam_id,threshold):
+def gain_selection(waveform, signals, peakpos, cam_id, threshold):
 
     """
     Custom lst calibration.
@@ -59,7 +59,7 @@ def gain_selection(waveform,signals,peakpos,cam_id,threshold):
     '''
     combined = signals[0].copy() 
     peaks = peakpos[0].copy()
-    for pixel in range(0,combined.size):
+    for pixel in range(0, combined.size):
             if np.any(waveform[0][pixel] >= threshold):
                 combined[pixel] = signals[1][pixel]
                 peaks[pixel] = peakpos[1][pixel]
@@ -68,13 +68,17 @@ def gain_selection(waveform,signals,peakpos,cam_id,threshold):
     gainsel = ThresholdGainSelector(select_by_sample=True)
     gainsel.thresholds[cam_id] = threshold
     
-    waveform,gainmask = gainsel.select_gains(cam_id,waveform)
-    signalmask = np.zeros(waveform.shape[0],dtype=bool)
+    waveform, gainmask = gainsel.select_gains(cam_id,
+                                              waveform)
+    signalmask = np.zeros(waveform.shape[0],
+                          dtype=bool)
+
     for i in range(signalmask.size):
         signalmask[i] = gainmask[i].any()==True
+
     combined = signals[0].copy()
     combined[signalmask] = signals[1][signalmask]
     peaks = peakpos[0].copy()
     peaks[signalmask] = peakpos[1][signalmask]
                 
-    return combined,peaks
+    return combined, peaks
