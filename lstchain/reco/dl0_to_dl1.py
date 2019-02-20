@@ -18,15 +18,14 @@ from ctapipe.utils import get_dataset_path
 from ctapipe.calib import CameraCalibrator
 from ctapipe.io import event_source
 from ctapipe.io import HDF5TableWriter
-import pyhessio
+from eventio.simtel.simtelfile import SimTelFile
 import pandas as pd
 import astropy.units as units
 import h5py
-
+import math 
 from . import utils
 from ..calib.calib import lst_calibration
 from ..io.lstcontainers import DL1ParametersContainer
-
 
 ### PARAMETERS - TODO: use a yaml config file
 
@@ -34,7 +33,11 @@ from ..io.lstcontainers import DL1ParametersContainer
 allowed_tels = {1}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
 
+threshold = 4094
+
 # Add option to use custom calibration
+
+custom = False
 cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_product='NeighbourPeakIntegrator')
 
 cleaning_method = tailcuts_clean
@@ -43,9 +46,6 @@ cleaning_parameters = {'boundary_thresh': 3,
                        'keep_isolated_pixels': False,
                        'min_number_picture_neighbors': 1
                        }
-
-channel = 0
-
 
 def get_dl1(calibrated_event, telescope_id):
     """
@@ -65,14 +65,18 @@ def get_dl1(calibrated_event, telescope_id):
     tel = calibrated_event.inst.subarray.tels[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
     camera = tel.camera
-    signal_pixels = cleaning_method(camera, dl1.image[channel],
+
+    waveform = calibrated_event.r0.tel[telescope_id].waveform
+    image = dl1.image
+    peakpos = dl1.peakpos
+    
+    image,peakpos = gain_selection(waveform, image, peakpos, 
+                                   camera.cam_id, threshold)
+    
+    signal_pixels = cleaning_method(camera, image, 
                                     **cleaning_parameters)
-
-    image = dl1.image[channel]
     image[~signal_pixels] = 0
-
-    peakpos = dl1.peakpos[channel]
-
+        
     if image.sum() > 0:
         try:
             hillas = hillas_parameters(
@@ -124,13 +128,14 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
         for i, event in enumerate(source):
             if i%100==0: print(i)
-            # cal.calibrate(event)
+            if not custom:
+                cal.calibrate(event)
 
             # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
                 camera = event.inst.subarray.tel[telescope_id].camera  # Camera geometry
-
-                lst_calibration(event, telescope_id)
+                if custom:
+                    lst_calibration(event, telescope_id)
 
                 dl1_container = get_dl1(event, telescope_id)
                 if dl1_container is not None:
@@ -438,51 +443,67 @@ def get_events(filename, storedata=False, test=False,
     return output
 
 def get_spectral_w_pars(filename):
-    
-    N = 0 
-    Emin=-1
-    Emax=-1
-    index=0.
-    Omega=0.
-    A=0.
-    Core_max=0.
+    """
+    Return parameters required to calculate spectral weighting of an event
 
+    Parameters
+    ----------
+    filename: string, simtelarray file
+    
+    Returns
+    -------
+    array of parameters
+    """
+    
     particle = utils.guess_type(filename)
-    N = pyhessio.count_mc_generated_events(filename)
-    with pyhessio.open_hessio(filename) as f:
-        f.fill_next_event()
-        Emin = f.get_mc_E_range_Min()
-        Emax = f.get_mc_E_range_Max()
-        index = f.get_spectral_index()
-        Cone = f.get_mc_viewcone_Max()
-        Core_max = f.get_mc_core_range_X()
-        
-    K = N*(1+index)/(Emax**(1+index)-Emin**(1+index))
-    A = np.pi*Core_max**2
-    Omega = 2*np.pi*(1-np.cos(Cone))
-    
-    MeVtoTeV = 1e-6 
-    if particle=="gamma":
-        K_w = 5.7e-16*MeVtoTeV
-        index_w = -2.48
-        E0 = 0.3e6*MeVtoTeV
 
-    if particle=="proton":
-        K_w = 9.6e-2
+    source = SimTelFile(filename)
+
+    emin,emax = source.mc_run_headers[0]['E_range']*1e3 #GeV
+    spectral_index = source.mc_run_headers[0]['spectral_index']
+    num_showers = source.mc_run_headers[0]['num_showers']
+    num_use = source.mc_run_headers[0]['num_use']
+    Simulated_Events = num_showers * num_use
+    Max_impact = source.mc_run_headers[0]['core_range'][1]*1e2 #cm
+    Area_sim = np.pi * math.pow(Max_impact,2)
+    cone = source.mc_run_headers[0]['viewcone'][1]
+
+    cone = cone * np.pi/180
+    if(cone == 0):
+        Omega = 1
+    else:
+        Omega = 2*np.pi*(1-np.cos(cone))
+
+    if particle=='proton':        
+        K_w = 9.6e-11 # GeV^-1 cm^-2 s^-1
         index_w = -2.7
-        E0 = 1
+        E0 = 1000. # GeV
+    if particle=='gamma':
+        K_w = 2.83e-11 # GeV^-1 cm^-2 s^-1
+        index_w = -2.62
+        E0 = 1000. # GeV
+        
+    K = Simulated_Events*(1+spectral_index)/(emax**(1+spectral_index)-emin**(1+spectral_index))
+    Int_e1_e2 = K*E0**spectral_index
+    N_ = Int_e1_e2*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
+    R = K_w*Area_sim*Omega*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
 
-    Simu_E0 = K*E0**index
-    N_ = Simu_E0*(Emax**(index_w+1)-Emin**(index_w+1))/(E0**index_w)/(index_w+1)
-    R = K_w*A*Omega*(Emax**(index_w+1)-Emin**(index_w+1))/(E0**index_w)/(index_w+1)
-
-    
-    w_pars = np.array([E0,index,index_w,R,N_])
-    
-    return w_pars
+    return E0,spectral_index,index_w,R,N_
     
 def get_spectral_w(w_pars,energy):
+    """
+    Return spectral weight of an event
 
+    Parameters
+    ----------
+    w_pars: parameters obtained with get_spectral_w_pars() function
+    energy: energy of the event in GeV
+
+    Returns
+    -------
+    float w
+    """
+    
     E0 = w_pars[0]
     index = w_pars[1]
     index_w = w_pars[2]
