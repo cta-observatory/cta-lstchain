@@ -15,7 +15,7 @@ import numpy as np
 from ctapipe.coordinates import HorizonFrame
 from ctapipe.coordinates import NominalFrame
 import astropy.units as u
-from ..io.containers import DispContainer
+from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 
 def alt_to_theta(alt):
