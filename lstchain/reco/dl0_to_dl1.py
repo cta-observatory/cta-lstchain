@@ -27,8 +27,6 @@ from . import utils
 from ..calib.calib import lst_calibration
 from ..io.lstcontainers import DL1ParametersContainer
 
-
-
 ### PARAMETERS - TODO: use a yaml config file
 
 
@@ -75,7 +73,7 @@ def get_dl1(calibrated_event, telescope_id):
     image,peakpos = gain_selection(waveform, image, peakpos, 
                                    camera.cam_id, threshold)
     
-    signal_pixels = cleaning_method(camera, image,
+    signal_pixels = cleaning_method(camera, image, 
                                     **cleaning_parameters)
     image[~signal_pixels] = 0
         
