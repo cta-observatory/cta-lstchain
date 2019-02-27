@@ -1,0 +1,28 @@
+{
+   "version": 1,
+   
+   "FlatFieldGenerator": {
+     "output_file":"prova.hdf5",
+     "log_level":"INFO"
+   },         
+   "EventSourceFactory": {
+      "input_url": "/astro/users/cassol/soft/python/flatfield/NectarCAM_flasher.fits.fz",
+      "max_events": 100
+   },
+    "FlatFieldFactory":{ 
+     "sample_size": 90,
+     "sample_duration":1000,
+     "tel_id":0
+   },  
+   "ChargeExtractorFactory":{
+     "product": "LocalPeakIntegrator",
+     "sig_amp_cut_HG":100,
+     "sig_amp_cut_LG":100
+    },
+    "WaveformCleanerFactory": {
+       "product": "BaselineWaveformCleaner",
+       "baseline_start":2,
+       "baseline_end":7
+     }
+
+}
