@@ -1,0 +1,23 @@
+{
+   "version": 1,
+   
+   "PedestalCalculator": {
+     "output_file":"pedestal.hdf5",
+     "log_level":"DEBUG"
+   },         
+   "EventSourceFactory": {
+      "input_url": "/astro/users/cassol/soft/python/flatfield/NectarCAM_flasher.fits.fz",
+      "max_events": 100
+   },
+    "PedestalFactory":{ 
+     "sample_size": 90,
+     "sample_duration":1000,
+     "tel_id":0
+   },  
+   "ChargeExtractorFactory":{
+     "product": "LocalPeakIntegrator",
+     "sig_amp_cut_HG":100,
+     "sig_amp_cut_LG":100
+    }
+
+}

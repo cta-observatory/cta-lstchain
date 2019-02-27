@@ -86,7 +86,7 @@ class PedestalContainer(Container):
     Container for pedestal parameters obtained from a set of
     [n_pedestal] pedestal events
     """
-
+    n_events = Field(0, 'Number of events used for statistics')
     time = Field(0, 'Time associated to the pedestal event set', unit=u.s)
     time_range = Field(
         [],
