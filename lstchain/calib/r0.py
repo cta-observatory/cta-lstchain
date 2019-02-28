@@ -121,13 +121,14 @@ class LSTR0Corrections(CameraR0Calibrator):
         event : `ctapipe` event-container
         """
         expected_pixel_id = event.lst.tel[0].svc.pixel_ids
-        EVB = event.lst.tel[0].evt.counters
+        local_clock_list = event.lst.tel[0].evt.local_clock_counter
         n_modules = event.lst.tel[0].svc.num_modules
         for nr_clus in range(0, n_modules):
             self.first_cap_time_lapse_array[nr_clus, :, :] = self._get_first_capacitor(event, nr_clus)
 
-        do_time_lapse_corr(event.r0.tel[0].waveform, expected_pixel_id, EVB,
+        do_time_lapse_corr(event.r0.tel[0].waveform, expected_pixel_id, local_clock_list,
                            self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
+        event.r0.tel[self.telid].waveform.astype(np.uint16)
 
     def interpolate_spikes(self, event):
         """
@@ -151,6 +152,7 @@ class LSTR0Corrections(CameraR0Calibrator):
                                                                   self.first_cap_array_spike,
                                                                   self.first_cap_old_array,
                                                                   n_modules)
+        event.r0.tel[self.telid].waveform.astype(np.uint16)
 
     @staticmethod
     @jit(parallel=True)
@@ -176,7 +178,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         n_modules : int
             Number of modules
         """
-
         roisize = 40
         size4drs = 4096
         n_gain = 2
@@ -202,7 +203,6 @@ class LSTR0Corrections(CameraR0Calibrator):
                     if spike_b_position < roisize - 1:
                         pixel = expected_pixel_id[nr_clus*7 + pix]
                         interpolate_spike_B(waveform, gain, spike_b_position, pixel)
-
         return waveform
 
     def _load_calib(self):
@@ -211,7 +211,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         pedestal value . If it hasn't then point calibrate to
         fake_calibrate, where nothing is done to the waveform.
         """
-
         if self.pedestal_path:
             with fits.open(self.pedestal_path) as f:
                 n_modules = f[1].header['NAXIS4']
@@ -255,10 +254,10 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
     return waveform
 
 @jit(parallel=True)
-def do_time_lapse_corr(waveform, expected_pixel_id, EVB, fc, last_time_array, number_of_modules):
+def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_time_array, number_of_modules):
     size4drs = 4096
     for nr_clus in prange(0, number_of_modules):
-        time_now = int64(EVB[14 + (nr_clus * 22): 22 + (nr_clus * 22)])
+        time_now = local_clock_list[nr_clus]
         for gain in prange(0, 2):
             for pix in prange(0, 7):
                 pixel = expected_pixel_id[nr_clus*7 + pix]
@@ -274,11 +273,6 @@ def do_time_lapse_corr(waveform, expected_pixel_id, EVB, fc, last_time_array, nu
 @jit
 def ped_time(timediff):
     return 29.3 * np.power(timediff, -0.2262) - 12.4
-
-@jit
-def int64(x):
-    return x[0] + x[1] * 256 + x[2] * 256 ** 2 + x[3] * 256 ** 3 + x[4] * 256 ** 4 + x[5] * 256 ** 5 + x[
-            6] * 256 ** 6 + x[7] * 256 ** 7
 
 @jit
 def interpolate_spike_A(waveform, gain, pos, pixel):
