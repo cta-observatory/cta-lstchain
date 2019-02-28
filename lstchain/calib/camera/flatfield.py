@@ -5,8 +5,8 @@ Factory for the estimation of the flat field coefficients
 from abc import abstractmethod
 import numpy as np
 from astropy import units as u
-from ctapipe.core import Component, Factory
-from ctapipe.image import ChargeExtractorFactory, WaveformCleanerFactory
+from ctapipe.core import Component
+from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int
 
 # for the moment in lstchain
@@ -14,8 +14,7 @@ from lstchain.io.containers import FlatFieldContainer
 
 __all__ = [
     'FlatFieldCalculator',
-    'FlasherFlatFieldCalculator',
-    'FlatFieldFactory'
+    'FlasherFlatFieldCalculator'
 ]
 
 
@@ -46,8 +45,7 @@ class FlatFieldCalculator(Component):
         self,
         config=None,
         tool=None,
-        extractor_product=None,
-        cleaner_product=None,
+        extractor_product="LocalPeakIntegrator",
         **kwargs
     ):
         """
@@ -80,22 +78,12 @@ class FlatFieldCalculator(Component):
         kwargs_ = dict()
         if extractor_product:
             kwargs_['product'] = extractor_product
-        self.extractor = ChargeExtractorFactory.produce(
+        self.extractor = ChargeExtractor.from_name(
             config=config,
-            tool=tool,
-            **kwargs_
+            tool=tool
         )
         self.log.info(f"extractor {self.extractor}")
 
-        kwargs_ = dict()
-        if cleaner_product:
-            kwargs_['product'] = cleaner_product
-        self.cleaner = WaveformCleanerFactory.produce(
-            config=config,
-            tool=tool,
-            **kwargs_
-        )
-        self.log.info(f"cleaner {self.cleaner}")
 
     @abstractmethod
     def calculate_relative_gain(self, event):
@@ -144,13 +132,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         waveforms = event.r0.tel[self.tel_id].waveform
 
-        # Clean waveforms
-        if self.cleaner:
-            cleaned = self.cleaner.apply(waveforms)
-        # do nothing
-        else:
-            cleaned = waveforms
-
         # Extract charge and time
         if self.extractor:
             if self.extractor.requires_neighbours():
@@ -161,8 +142,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # sum all the samples
         else:
-            charge = cleaned.sum(axis=2)
-            peak_pos = np.argmax(cleaned, axis=2)
+            charge = waveforms.sum(axis=2)
+            peak_pos = np.argmax(waveforms, axis=2)
 
         return charge, peak_pos
 
@@ -178,7 +159,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # initialize the np array at each cycle
         waveform = event.r0.tel[self.tel_id].waveform
-
 
         # patches for MC data
         if not event.mcheader.simtel_version:
@@ -322,11 +302,3 @@ def calculate_relative_gain_results(
         'charge_rms': np.std(trace_integral, axis=0),
     }
 
-
-class FlatFieldFactory(Factory):
-    """
-    Factory to obtain flat-field coefficients
-    """
-    base = FlatFieldCalculator
-    default = 'FlasherFlatFieldCalculator'
-    custom_product_help = ('Flat-flield method to use')
