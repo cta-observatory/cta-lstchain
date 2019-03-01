@@ -10,7 +10,7 @@ Usage:
 """
 import numpy as np
 from ctapipe.image import hillas_parameters, tailcuts_clean
-from ctapipe.io.eventsourcefactory import EventSourceFactory
+from ctapipe.io.eventsource import event_source
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
@@ -230,7 +230,7 @@ def get_events(filename, storedata=False, test=False,
     output = pd.DataFrame(columns=features)
 
     #Read LST1 events:
-    source = EventSourceFactory.produce(
+    source = event_source(
         input_url=filename, 
         allowed_tels={1}) #Open Simtelarray file
 

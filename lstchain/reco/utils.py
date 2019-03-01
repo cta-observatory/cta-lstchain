@@ -12,11 +12,11 @@ Usage:
 """
 
 import numpy as np
-from ctapipe.coordinates import HorizonFrame
-from ctapipe.coordinates import NominalFrame
+from ctapipe.coordinates import NominalFrame, CameraFrame
 import astropy.units as u
 from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
+from astropy.coordinates import AltAz, SkyCoord
 
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
@@ -201,17 +201,18 @@ def get_event_pos_in_camera(event, tel):
     -------
     (x, y) (float, float): position in the camera
     """
-    array_pointing = HorizonFrame(alt=event.mcheader.run_array_direction[1],
+    array_pointing = AltAz(alt=event.mcheader.run_array_direction[1],
                                   az=event.mcheader.run_array_direction[0])
-    event_direction = HorizonFrame(alt=event.mc.alt.to(u.rad),
+    event_direction = AltAz(alt=event.mc.alt.to(u.rad),
                                    az=event.mc.az.to(u.rad))
 
-    nom_frame = NominalFrame(array_direction=array_pointing,
-                         pointing_direction=array_pointing)
-
-    event_dir_nom = event_direction.transform_to(nom_frame)
     focal = tel.optics.equivalent_focal_length
-    return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
+
+    camera_pos = sky_to_camera(event_direction.alt, event_direction.az,
+                               focal,
+                               array_pointing.alt, array_pointing.az)
+    
+    return camera_pos.x, camera_pos.y
 
 @deprecated('31/01/2019', message='Use disp_parameters')
 def disp_norm(source_pos, hillas):
@@ -277,16 +278,17 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     y = np.array([1,1]) * u.m
 
     """
-    pointing_direction = HorizonFrame(alt=pointing_alt, az=pointing_az)
+    pointing_direction = AltAz(alt=pointing_alt, az=pointing_az)
 
-    source_pos_in_camera = NominalFrame(array_direction=pointing_direction,
-                                        pointing_direction=pointing_direction,
-                                        x=pos_x/focal * u.rad,
-                                        y=pos_y/focal * u.rad,
-                                        )
+    camera_frame = CameraFrame(focal_length=focal,
+                               telescope_pointing=pointing_direction
+    )
 
-    return source_pos_in_camera.transform_to(pointing_direction)
+    camera_coord = SkyCoord(pos_x, pos_y, frame=camera_frame)
 
+    horizon = camera_coord.transform_to(AltAz())
+        
+    return horizon
 
 def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     """
@@ -303,20 +305,18 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     -------
 
     """
-    pointing_direction = HorizonFrame(alt=pointing_alt, az=pointing_az)
+    pointing_direction = AltAz(alt=pointing_alt, az=pointing_az)
 
-    event_direction = HorizonFrame(alt=alt, az=az)
-    nom_frame = NominalFrame(array_direction=pointing_direction,
-                             pointing_direction=pointing_direction)
-
-    event_dir_nom = event_direction.transform_to(nom_frame)
-
-    camera_pos = NominalFrame(pointing_direction=pointing_direction,
-                              x=event_dir_nom.x.to(u.rad).value * focal,
-                              y=event_dir_nom.y.to(u.rad).value * focal,
-                              )
-
-    # return focal * (event_dir_nom.x.to(u.rad).value, event_dir_nom.y.to(u.rad).value)
+    camera_frame = CameraFrame(focal_length=focal,
+                               telescope_pointing=pointing_direction
+    )
+    
+    event_direction = AltAz(alt=alt, az=az)
+    nom_frame = NominalFrame(origin=pointing_direction,
+    )
+    
+    camera_pos = event_direction.transform_to(camera_frame)
+    
     return camera_pos
 
 def source_side(source_pos_x, cog_x):
