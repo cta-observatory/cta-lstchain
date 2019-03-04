@@ -9,7 +9,7 @@ from ctapipe.core import Component
 from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int, Unicode
 
-from ctapipe_io_lst.containers import FlatFieldContainer, 
+from ctapipe_io_lst.containers import FlatFieldContainer
 
 __all__ = [
     'FlatFieldCalculator',
@@ -157,11 +157,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # initialize the np array at each cycle
         waveform = event.r0.tel[self.tel_id].waveform
 
-        # patches for MC data
+        # real data
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
-            pixel_status = event.r0.tel[self.tel_id].pixel_status
-        else:
+            pixel_status = (event.mon.tel[0].pixel_status.hardware_mask and
+                            event.mon.tel[0].pixel_status.pedestal_mask)
+        else: # patches for MC data
             if event.trig.tels_with_trigger:
                 trigger_time = event.trig.gps_time.unix
             else:
