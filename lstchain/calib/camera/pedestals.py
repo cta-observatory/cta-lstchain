@@ -5,16 +5,15 @@ Factory for the estimation of the flat field coefficients
 from abc import abstractmethod
 import numpy as np
 from astropy import units as u
-from ctapipe.core import Component, Factory
+from ctapipe.core import Component
 
-from ctapipe.image import ChargeExtractorFactory
-from ctapipe.core.traits import Int
+from ctapipe.image import ChargeExtractor
+from ctapipe.core.traits import Int, Unicode
 from lstchain.io.containers import PedestalContainer
 
 __all__ = [
     'PedestalCalculator',
-    'PedestalIntegrator',
-    'PedestalFactory'
+    'PedestalIntegrator'
 ]
 
 
@@ -71,12 +70,16 @@ class PedestalCalculator(Component):
         2,
         help='number of channels to be treated'
     ).tag(config=True)
+    charge_product= Unicode(
+        'LocalPeakIntegrator',
+        help='Name of the charge extractor to be used'
+    ).tag(config=True)
+
 
     def __init__(
         self,
         config=None,
         tool=None,
-        extractor_product="FullIntegrator",
         **kwargs
     ):
         """
@@ -93,8 +96,6 @@ class PedestalCalculator(Component):
             Tool executable that is calling this component.
             Passes the correct logger to the component.
             Set to None if no Tool to pass.
-        extractor_product : str
-            The ChargeExtractor to use.
         kwargs
 
         """
@@ -104,13 +105,11 @@ class PedestalCalculator(Component):
         self.container = PedestalContainer()
 
         # load the waveform charge extractor
-        kwargs_ = dict()
-        if extractor_product:
-            kwargs_['product'] = extractor_product
-        self.extractor = ChargeExtractorFactory.produce(
+        # load the waveform charge extractor
+        self.extractor = ChargeExtractor.from_name(
+            self.charge_product,
             config=config,
-            tool=tool,
-            **kwargs_
+            tool=tool
         )
         self.log.info(f"extractor {self.extractor}")
 
@@ -184,7 +183,6 @@ class PedestalIntegrator(PedestalCalculator):
         # initialize the np array at each cycle
         waveform = event.r0.tel[self.tel_id].waveform
 
-
         # patches for MC data
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
@@ -196,7 +194,6 @@ class PedestalIntegrator(PedestalCalculator):
                 trigger_time = 0
 
             pixel_status = np.ones(waveform.shape[1])
-
 
         if self.num_events_seen == 0:
             self.time_start = trigger_time
@@ -297,18 +294,7 @@ def calculate_pedestal_results(
         'pedestal_median': np.median(masked_trace_integral, axis=0),
         'pedestal_mean': np.mean(masked_trace_integral, axis=0),
         'pedestal_rms': np.std(masked_trace_integral, axis=0)
-#        'relative_pedestal_median': np.median(relative_pedestal_event, axis=0),
-#        'relative_pedestal_mean': np.mean(relative_pedestal_event, axis=0),
-#        'relative_pedestal_rms': np.std(relative_pedestal_event, axis=0),
 
     }
 
 
-class PedestalFactory(Factory):
-    """
-    Factory to obtain pedestals values on the base
-    of pedestal events
-    """
-    base = PedestalCalculator
-    default = 'PedestalIntegrator'
-    custom_product_help = ('Pedestal method to use')

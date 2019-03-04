@@ -7,10 +7,9 @@ import numpy as np
 from astropy import units as u
 from ctapipe.core import Component
 from ctapipe.image import ChargeExtractor
-from ctapipe.core.traits import Int
+from ctapipe.core.traits import Int, Unicode
 
-# for the moment in lstchain
-from lstchain.io.containers import FlatFieldContainer
+from ctapipe_io_lst.containers import FlatFieldContainer, 
 
 __all__ = [
     'FlatFieldCalculator',
@@ -40,12 +39,15 @@ class FlatFieldCalculator(Component):
         2,
         help='number of channels to be treated'
     ).tag(config=True)
+    charge_product= Unicode(
+        'LocalPeakIntegrator',
+        help='Name of the charge extractor to be used'
+    ).tag(config=True)
 
     def __init__(
         self,
         config=None,
         tool=None,
-        extractor_product="LocalPeakIntegrator",
         **kwargs
     ):
         """
@@ -62,10 +64,6 @@ class FlatFieldCalculator(Component):
             Tool executable that is calling this component.
             Passes the correct logger to the component.
             Set to None if no Tool to pass.
-        extractor_product : str
-            The ChargeExtractor to use.
-        cleaner_product : str
-            The WaveformCleaner to use.
         kwargs
 
         """
@@ -74,14 +72,13 @@ class FlatFieldCalculator(Component):
         # initialize the output
         self.container = FlatFieldContainer()
 
-        # load the waveform charge extractor and cleaner
-        kwargs_ = dict()
-        if extractor_product:
-            kwargs_['product'] = extractor_product
+        # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
+            self.charge_product,
             config=config,
             tool=tool
         )
+
         self.log.info(f"extractor {self.extractor}")
 
 
@@ -138,7 +135,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 g = event.inst.subarray.tel[self.tel_id].camera
                 self.extractor.neighbours = g.neighbor_matrix_where
 
-            charge, peak_pos, window = self.extractor.extract_charge(cleaned)
+            charge, peak_pos, window = self.extractor.extract_charge(waveforms)
 
         # sum all the samples
         else:
@@ -169,8 +166,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 trigger_time = event.trig.gps_time.unix
             else:
                 trigger_time = 0
-
-
 
             pixel_status = np.ones(waveform.shape[1])
 

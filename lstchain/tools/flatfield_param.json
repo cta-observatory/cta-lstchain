@@ -1,28 +1,26 @@
 {
    "version": 1,
    
+   "FlatFieldHDF5Writer": {
+     "cleaner_product": "BaselineWaveformCleaner"
+   },
    "FlatFieldGenerator": {
      "output_file":"prova.hdf5",
      "log_level":"INFO"
    },         
-   "EventSourceFactory": {
-      "input_url": "/astro/users/cassol/soft/python/flatfield/NectarCAM_flasher.fits.fz",
+   "EventSource": {
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
       "max_events": 100
    },
-    "FlatFieldFactory":{ 
+    "FlatFieldCalculator":{
      "sample_size": 90,
      "sample_duration":1000,
-     "tel_id":0
+     "tel_id":0,
+      "charge_product":"LocalPeakIntegrator"
    },  
-   "ChargeExtractorFactory":{
-     "product": "LocalPeakIntegrator",
-     "sig_amp_cut_HG":100,
-     "sig_amp_cut_LG":100
-    },
-    "WaveformCleanerFactory": {
-       "product": "BaselineWaveformCleaner",
-       "baseline_start":2,
-       "baseline_end":7
-     }
+   "BaselineWaveformCleaner":{
+     "baseline_start": 2,
+     "baseline_end":7
+    }
 
 }
