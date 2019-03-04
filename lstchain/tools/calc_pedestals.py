@@ -2,14 +2,14 @@
 Extract pedestals from pedestal events
 """
 from traitlets import Dict, List, Unicode
-
+import ctapipe.utils.tools as tool_utils
 from ctapipe.core import Provenance
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
-from ctapipe.io import EventSourceFactory
-from ctapipe.image import ChargeExtractorFactory
+from ctapipe.io import EventSource
+from ctapipe.image import ChargeExtractor
 
-from lstchain.calib.camera.pedestals import PedestalFactory
+from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.containers import PedestalContainer
 
 
@@ -23,29 +23,31 @@ class PedestalHDF5Writer(Tool):
     ).tag(config=True)
 
     aliases = Dict(dict(
-        input_file='EventSourceFactory.input_url',
-        max_events='EventSourceFactory.max_events',
-        allowed_tels='EventSourceFactory.allowed_tels',
-        charge_extractor='ChargeExtractorFactory.product',
-        window_width='ChargeExtractorFactory.window_width',
-        t0='ChargeExtractorFactory.t0',
-        window_shift='ChargeExtractorFactory.window_shift',
-        sig_amp_cut_HG='ChargeExtractorFactory.sig_amp_cut_HG',
-        sig_amp_cut_LG='ChargeExtractorFactory.sig_amp_cut_LG',
-        lwt='ChargeExtractorFactory.lwt',
-        generator='PedestalFactory.product',
-        tel_id='PedestalFactory.tel_id',
-        sample_duration='PedestalFactory.sample_duration',
-        sample_size='PedestalFactory.sample_size',
-        n_channels='PedestalFactory.n_channels',
+        pedestal_calculator='PedestalHDF5Writer.calculator_product',
+        cleaner='PedestaldHDF5Writer.cleaner_product',
+        input_file='EventSource.input_url',
+        max_events='EventSource.max_events',
+        window_width='WindowIntegrator.window_width',
+        window_shift='WindowIntegrator.window_shift',
+        sig_amp_cut_HG='PeakFindingIntegrator.sig_amp_cut_HG',
+        sig_amp_cut_LG='PeakFindingIntegrator.sig_amp_cut_LG',
+        t0='SimpleIntegrator.t0',
+        lwt='NeighbourPeakIntegrator.lwt',
+        baseline_start='BaselineWaveformCleaner.baseline_start',
+        baseline_end='BaselineWaveformCleaner.baseline_end',
+        charge_extractor='.FlatFieldCalculator.extractor_product',
+        tel_id='FlatFieldCalculator.tel_id',
+        sample_duration='FlatFieldCalculator.sample_duration',
+        sample_size='FlatFieldCalculator.sample_size',
+        n_channels='FlatFieldCalculator.n_channels',
     ))
 
-    classes = List([EventSourceFactory,
-                    ChargeExtractorFactory,
-                    PedestalFactory,
+    classes = List([EventSource,
+                    ChargeExtractor,
+                    PedestalCalculator,
                     PedestalContainer,
                     HDF5TableWriter
-                    ])
+                    ])+ tool_utils.classes_with_traits(PedestalCalculator)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,7 +60,7 @@ class PedestalHDF5Writer(Tool):
         kwargs = dict(config=self.config, tool=self)
         self.eventsource = EventSourceFactory.produce(**kwargs)
         self.pedestal = PedestalFactory.produce(**kwargs)
-        #self.container = PedestalContainer()
+
         self.writer = HDF5TableWriter(
             filename=self.output_file, group_name='pedestals', overwrite=True
         )
