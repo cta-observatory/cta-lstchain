@@ -9,7 +9,7 @@ from ctapipe.core import Component
 
 from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int, Unicode
-from lstchain.io.containers import PedestalContainer
+from ctapipe_io_lst.containers import PedestalContainer
 
 __all__ = [
     'PedestalCalculator',
@@ -74,7 +74,6 @@ class PedestalCalculator(Component):
         'LocalPeakIntegrator',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
-
 
     def __init__(
         self,
@@ -183,11 +182,12 @@ class PedestalIntegrator(PedestalCalculator):
         # initialize the np array at each cycle
         waveform = event.r0.tel[self.tel_id].waveform
 
-        # patches for MC data
+        # real data
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
-            pixel_status = event.r0.tel[self.tel_id].pixel_status
-        else:
+            pixel_status = (event.mon.tel[0].pixel_status.hardware_mask and
+                            event.mon.tel[0].pixel_status.pedestal_mask)
+        else: # patches for MC data
             if event.trig.tels_with_trigger:
                 trigger_time = event.trig.gps_time.unix
             else:
