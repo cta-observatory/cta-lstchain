@@ -104,7 +104,6 @@ class PedestalCalculator(Component):
         self.container = PedestalContainer()
 
         # load the waveform charge extractor
-        # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
             config=config,

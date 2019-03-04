@@ -8,7 +8,6 @@ from astropy import units as u
 from ctapipe.core import Component
 from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int, Unicode
-
 from ctapipe_io_lst.containers import FlatFieldContainer
 
 __all__ = [

@@ -1,28 +1,23 @@
 from ctapipe.utils import get_dataset_path
-from ctapipe.io.nectarcameventsource import NectarCAMEventSource
-from lstchain.calib.camera.pedestals import PedestalIntegrator
-from .. import pedestals
 
 import numpy as np
+from ctapipe.io import event_source
+from .. import PedestalIntegrator
+from .. import pedestals
+
+input_reader = event_source("/ctadata/franca/LST/LST-1.4.Run00167.0001.fits.fz", max_events=10)
+
 
 def test_pedestal_calculator():
 
-    example_file_path = get_dataset_path("NectarCAM.Run0890.10events.fits.fz")
+    ped_calculator = PedestalIntegrator(charge_product="LocalPeakIntegrator",sample_size=10, tel_id=0)
 
-    inputfile_reader = NectarCAMEventSource(
-        input_url=example_file_path,
-        max_events=10
-    )
-
-    ped_calculator = PedestalIntegrator(sample_size=3, tel_id=0)
-
-    for event in inputfile_reader:
+    for event in input_reader:
 
         ped_data = ped_calculator.calculate_pedestals(event)
 
         if ped_calculator.num_events_seen == ped_calculator.sample_size:
             assert ped_data
-
 
 
 def test_calc_pedestals_from_traces():
