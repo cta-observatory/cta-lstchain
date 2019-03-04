@@ -10,6 +10,9 @@ from ctapipe.image import timing_parameters as time
 from ..reco import utils
 from numpy import nan
 
+all = [
+    'DL1ParametersContainer',
+]
 
 class DL1ParametersContainer(Container):
     """
