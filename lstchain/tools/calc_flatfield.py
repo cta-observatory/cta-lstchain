@@ -8,11 +8,12 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 
-from ctapipe.image import WaveformCleaner
+from ctapipe.image import WaveformCleaner, ChargeExtractor
 
-# to be changed for ctapipe
 from lstchain.calib.camera import FlatFieldCalculator
 from ctapipe_io_lst.containers import FlatFieldContainer
+
+__all__=['FlatFieldHDF5Writer']
 
 
 class FlatFieldHDF5Writer(Tool):
@@ -34,24 +35,17 @@ class FlatFieldHDF5Writer(Tool):
     )
 
     aliases = Dict(dict(
-        flatfield_calculator='FlatFieldHDF5Writer.calculator_product',
-        cleaner='FlatFieldHDF5Writer.cleaner_product',
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
-        window_width='WindowIntegrator.window_width',
-        window_shift='WindowIntegrator.window_shift',
-        sig_amp_cut_HG='PeakFindingIntegrator.sig_amp_cut_HG',
-        sig_amp_cut_LG='PeakFindingIntegrator.sig_amp_cut_LG',
-        t0='SimpleIntegrator.t0',
-        lwt='NeighbourPeakIntegrator.lwt',
-        baseline_start='BaselineWaveformCleaner.baseline_start',
-        baseline_end='BaselineWaveformCleaner.baseline_end',
-        charge_extractor='.FlatFieldCalculator.extractor_product',
+        flatfield_calculator='FlatFieldHDF5Writer.calculator_product',
         tel_id='FlatFieldCalculator.tel_id',
         sample_duration='FlatFieldCalculator.sample_duration',
         sample_size='FlatFieldCalculator.sample_size',
         n_channels='FlatFieldCalculator.n_channels',
-        charge_product='FlatFieldCalculator.charge_product'
+        charge_product='FlatFieldCalculator.charge_product',
+        cleaner='FlatFieldHDF5Writer.cleaner_product',
+        baseline_start='BaselineWaveformCleaner.baseline_start',
+        baseline_end='BaselineWaveformCleaner.baseline_end'
     ))
 
     classes = List([EventSource,
@@ -60,6 +54,7 @@ class FlatFieldHDF5Writer(Tool):
                     FlatFieldContainer,
                     HDF5TableWriter
                     ] + tool_utils.classes_with_traits(WaveformCleaner)
+                   + tool_utils.classes_with_traits(ChargeExtractor)
                    + tool_utils.classes_with_traits(FlatFieldCalculator)
                    )
 
