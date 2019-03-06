@@ -5,5 +5,4 @@ Camera calibration module.
 
 from .flatfield import *
 from .pedestals import *
-from .r0 import *
 from .calib import *
