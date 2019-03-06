@@ -392,7 +392,7 @@ def disp_vector(disp_norm, disp_angle, disp_sign):
 def polar_to_cartesian(norm, angle, sign):
     """
     Polar to cartesian transformation.
-    Angle is supposed to be included in [-pi/2:pi/2].
+    As a convention, angle should be in [-pi/2:pi/2].
 
     Parameters
     ----------
@@ -412,6 +412,8 @@ def polar_to_cartesian(norm, angle, sign):
 def cartesian_to_polar(x, y):
     """
     Cartesian to polar transformation
+    As a convention, angle is always included in [-pi/2:pi/2].
+    When the angle should be in [pi/2:3*pi/2], angle = -1
 
     Parameters
     ----------
@@ -424,9 +426,9 @@ def cartesian_to_polar(x, y):
     """
     norm = np.sqrt(x**2 + y**2)
     if x == 0:
-        angle = np.pi/2 * sign
+        angle = np.pi/2. * np.sign(y)
     else:
-        angle = np.arctan(np.tan(y/x))
+        angle = np.arctan(y/x)
     sign = np.sign(x)
     return norm, angle, sign
 
