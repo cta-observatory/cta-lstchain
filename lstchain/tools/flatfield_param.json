@@ -5,7 +5,7 @@
      "cleaner_product": "BaselineWaveformCleaner",
      "calculator_product": "FlasherFlatFieldCalculator",
      "output_file":"flatfield.hdf5",
-     "log_level":"INFO"
+     "log_level":"DEBUG"
    },         
    "EventSource": {
       "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
@@ -16,7 +16,11 @@
      "sample_duration":1000,
      "tel_id":0,
       "charge_product":"LocalPeakIntegrator"
-   },  
+   },
+    "LocalPeakIntegrator":{
+     "window_shift": 4,
+     "window_width":10
+    },
    "BaselineWaveformCleaner":{
      "baseline_start": 2,
      "baseline_end":7

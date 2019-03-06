@@ -29,18 +29,8 @@ class PedestalHDF5Writer(Tool):
 
     aliases = Dict(dict(
         pedestal_calculator='PedestalHDF5Writer.calculator_product',
-        cleaner='PedestaldHDF5Writer.cleaner_product',
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
-        window_width='WindowIntegrator.window_width',
-        window_shift='WindowIntegrator.window_shift',
-        sig_amp_cut_HG='PeakFindingIntegrator.sig_amp_cut_HG',
-        sig_amp_cut_LG='PeakFindingIntegrator.sig_amp_cut_LG',
-        t0='SimpleIntegrator.t0',
-        lwt='NeighbourPeakIntegrator.lwt',
-        baseline_start='BaselineWaveformCleaner.baseline_start',
-        baseline_end='BaselineWaveformCleaner.baseline_end',
-        charge_extractor='.FlatFieldCalculator.extractor_product',
         tel_id='PedestalCalculator.tel_id',
         sample_duration='PedestalCalculator.sample_duration',
         sample_size='PedestalCalculator.sample_size',
@@ -52,7 +42,7 @@ class PedestalHDF5Writer(Tool):
                     PedestalCalculator,
                     PedestalContainer,
                     HDF5TableWriter
-                    ]+ tool_utils.classes_with_traits(PedestalCalculator))
+                    ] + tool_utils.classes_with_traits(PedestalCalculator))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
