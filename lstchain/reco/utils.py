@@ -422,12 +422,13 @@ def cartesian_to_polar(x, y):
     -------
     norm, angle, sign
     """
+    sign = np.sign(x)
     norm = np.sqrt(x**2 + y**2)
     if x == 0:
         angle = np.pi/2 * sign
     else:
         angle = np.arctan(np.tan(y/x))
-    sign = np.sign(x)
+
     return norm, angle, sign
 
 
