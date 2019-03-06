@@ -10,7 +10,6 @@ Usage:
 """
 import numpy as np
 from ctapipe.image import hillas_parameters, tailcuts_clean
-from ctapipe.io.eventsource import event_source
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
