@@ -2,9 +2,8 @@
    "version": 1,
    
    "FlatFieldHDF5Writer": {
-     "cleaner_product": "BaselineWaveformCleaner"
-   },
-   "FlatFieldGenerator": {
+     "cleaner_product": "BaselineWaveformCleaner",
+     "calculator_product": "FlasherFlatFieldCalculator",
      "output_file":"prova.hdf5",
      "log_level":"INFO"
    },         

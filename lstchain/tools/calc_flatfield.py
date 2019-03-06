@@ -51,6 +51,7 @@ class FlatFieldHDF5Writer(Tool):
         sample_duration='FlatFieldCalculator.sample_duration',
         sample_size='FlatFieldCalculator.sample_size',
         n_channels='FlatFieldCalculator.n_channels',
+        charge_product='FlatFieldCalculator.charge_product'
     ))
 
     classes = List([EventSource,
@@ -89,7 +90,7 @@ class FlatFieldHDF5Writer(Tool):
         '''Flat field coefficient calculator'''
 
         for count, event in enumerate(self.eventsource):
-
+            # one should add hier the pedestal subtraction and/or cleaner
             ff_data = self.flatfield.calculate_relative_gain(event)
 
             if ff_data:

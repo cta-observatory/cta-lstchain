@@ -7,10 +7,10 @@ from ctapipe.core import Provenance
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
-from ctapipe.image import ChargeExtractor
+
 
 from lstchain.calib.camera.pedestals import PedestalCalculator
-from lstchain.io.containers import PedestalContainer
+from ctapipe_io_lst.containers import PedestalContainer
 
 
 class PedestalHDF5Writer(Tool):
@@ -21,6 +21,11 @@ class PedestalHDF5Writer(Tool):
         'pedestal.hdf5',
         help='Name of the output file'
     ).tag(config=True)
+
+    calculator_product = tool_utils.enum_trait(
+        PedestalCalculator,
+        default='PedestalIntegrator'
+    )
 
     aliases = Dict(dict(
         pedestal_calculator='PedestalHDF5Writer.calculator_product',
@@ -36,18 +41,18 @@ class PedestalHDF5Writer(Tool):
         baseline_start='BaselineWaveformCleaner.baseline_start',
         baseline_end='BaselineWaveformCleaner.baseline_end',
         charge_extractor='.FlatFieldCalculator.extractor_product',
-        tel_id='FlatFieldCalculator.tel_id',
-        sample_duration='FlatFieldCalculator.sample_duration',
-        sample_size='FlatFieldCalculator.sample_size',
-        n_channels='FlatFieldCalculator.n_channels',
+        tel_id='PedestalCalculator.tel_id',
+        sample_duration='PedestalCalculator.sample_duration',
+        sample_size='PedestalCalculator.sample_size',
+        n_channels='PedestalCalculator.n_channels',
+        charge_product = 'PedestalCalculator.charge_product'
     ))
 
     classes = List([EventSource,
-                    ChargeExtractor,
                     PedestalCalculator,
                     PedestalContainer,
                     HDF5TableWriter
-                    ])+ tool_utils.classes_with_traits(PedestalCalculator)
+                    ]+ tool_utils.classes_with_traits(PedestalCalculator))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,8 +63,11 @@ class PedestalHDF5Writer(Tool):
 
     def setup(self):
         kwargs = dict(config=self.config, tool=self)
-        self.eventsource = EventSourceFactory.produce(**kwargs)
-        self.pedestal = PedestalFactory.produce(**kwargs)
+        self.eventsource = EventSource.from_config(**kwargs)
+        self.pedestal = PedestalCalculator.from_name(
+            self.calculator_product,
+            **kwargs
+        )
 
         self.writer = HDF5TableWriter(
             filename=self.output_file, group_name='pedestals', overwrite=True
