@@ -101,3 +101,12 @@ def test_change_frame_camera_sky():
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y])
 
+
+def test_polar_cartesian():
+    from lstchain.reco.utils import polar_to_cartesian, cartesian_to_polar
+    X = [-0.5, 0.5]
+    Y = [-0.5, 0.5]
+    for x in X:
+        for y in Y:
+            p = cartesian_to_polar(x, y)
+            np.testing.assert_almost_equal((x, y), polar_to_cartesian(*p))
