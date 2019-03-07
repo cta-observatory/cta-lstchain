@@ -81,7 +81,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         self.high_gain = 0
         self.low_gain = 1
 
-        self.pedestal_value_array = None
+        self.pedestal_value_array = np.zeros((self.n_gain, self.n_pix*self.n_module, self.size4drs+40), dtype=np.int16)
         self.first_cap_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
 
         self.first_cap_time_lapse_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
@@ -219,12 +219,10 @@ class LSTR0Corrections(CameraR0Calibrator):
         """
         if self.pedestal_path:
             with fits.open(self.pedestal_path) as f:
-                n_modules = f[1].header['NAXIS4']
-                self.pedestal_value_array = np.zeros((n_modules, 2, 7, 4136), dtype=np.int16)
                 pedestal_data = np.int16(f[1].data)
-                self.pedestal_value_array[:, :, :, :self.size4drs] = pedestal_data - self.offset
-                self.pedestal_value_array[:, :, :, self.size4drs:self.size4drs + 40] \
-                    = pedestal_data[:, :, :, 0:40] - self.offset
+                self.pedestal_value_array[:, :, :self.size4drs] = pedestal_data - self.offset
+                self.pedestal_value_array[:, :, self.size4drs:self.size4drs + 40] \
+                    = pedestal_data[:, :, 0:40] - self.offset
 
     def _get_first_capacitor(self, event, nr_module):
         """
@@ -262,7 +260,7 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
                 position = int((fc_cap[nr, gain, pix]) % size4drs)
                 waveform[gain, pixel, :] = \
                     (event_waveform[gain, pixel, :] -
-                    pedestal_value_array[nr, gain, pix, position:position + 40])
+                    pedestal_value_array[gain, pixel, position:position + 40])
     return waveform
 
 @jit(parallel=True)
