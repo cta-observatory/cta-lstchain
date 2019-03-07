@@ -94,7 +94,9 @@ class LSTR0Corrections(CameraR0Calibrator):
 
     def subtract_pedestal(self, event):
         """
-        Subtracts cell offset using pedestal file.
+        Subtract cell offset using pedestal file.
+        Change the R0 container.
+
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -115,7 +117,9 @@ class LSTR0Corrections(CameraR0Calibrator):
 
     def time_lapse_corr(self, event):
         """
-        Perform time lapse corrections.
+        Perform time lapse baseline corrections.
+        Change the R0 container.
+
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -132,7 +136,8 @@ class LSTR0Corrections(CameraR0Calibrator):
 
     def interpolate_spikes(self, event):
         """
-        Interpolates spike A & B and change the R0 container.
+        Interpolates spike A & B.
+        Change the R0 container.
 
         Parameters
         ----------
@@ -158,7 +163,8 @@ class LSTR0Corrections(CameraR0Calibrator):
     @jit(parallel=True)
     def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules):
         """
-        Interpolate Spike A & B and change the R0 container.
+        Interpolate Spike A & B.
+        Change waveform array.
 
         Parameters
         ----------
@@ -192,12 +198,14 @@ class LSTR0Corrections(CameraR0Calibrator):
                         if (spike_A_position > 2 and spike_A_position < 38):
                             pixel = expected_pixel_id[nr_clus*7 + pix]
                             interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                        # looking for spike A second case
                         abspos = int(roisize - 2 + fc_old[nr_clus, gain, pix] + k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_clus, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
                             pixel = expected_pixel_id[nr_clus*7 + pix]
                             interpolate_spike_A(waveform, gain, spike_A_position, pixel)
 
+                    # looking for spike B
                     spike_b_position = int(
                         (fc_old[nr_clus, gain, pix] - 1 - fc[nr_clus, gain, pix] + 2 * size4drs) % size4drs)
                     if spike_b_position < roisize - 1:
@@ -206,10 +214,8 @@ class LSTR0Corrections(CameraR0Calibrator):
         return waveform
 
     def _load_calib(self):
-        """event.r0.tel[0].waveform
-        If a pedestal file has been supplied, create a array with
-        pedestal value . If it hasn't then point calibrate to
-        fake_calibrate, where nothing is done to the waveform.
+        """
+        Function to load pedestal file.
         """
         if self.pedestal_path:
             with fits.open(self.pedestal_path) as f:
@@ -231,6 +237,8 @@ class LSTR0Corrections(CameraR0Calibrator):
         fc = np.zeros((2, 7))
         first_cap = event.lst.tel[0].evt.first_capacitor_id[nr_module * 8:
                                                             (nr_module + 1) * 8]
+
+        # First capacitor order according Dragon v5 board data format
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
             fc[self.high_gain, i] = first_cap[j]
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
@@ -239,6 +247,10 @@ class LSTR0Corrections(CameraR0Calibrator):
 
 @jit(parallel=True)
 def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_value_array, n_modules):
+    """
+    Numba function for subtract pedestal.
+    Change waveform array.
+    """
     waveform = np.zeros(event_waveform.shape)
     size4drs = 4096
     n_gain = 2
@@ -255,6 +267,10 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
 
 @jit(parallel=True)
 def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_time_array, number_of_modules):
+    """
+    Numba function for time lapse baseline correction.
+    Change waveform array.
+    """
     size4drs = 4096
     for nr_clus in prange(0, number_of_modules):
         time_now = local_clock_list[nr_clus]
@@ -272,17 +288,26 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
 
 @jit
 def ped_time(timediff):
+    #Power law for time lapse baseline correction, coefficients comes from Julian test in Japan
     return 29.3 * np.power(timediff, -0.2262) - 12.4
 
 @jit
-def interpolate_spike_A(waveform, gain, pos, pixel):
+def interpolate_spike_A(waveform, gain, position, pixel):
+    """
+    Numba function for interpolation spike type A.
+    Change waveform array.
+    """
     samples = waveform[gain, pixel, :]
-    a = int(samples[pos - 1])
-    b = int(samples[pos + 2])
-    waveform[gain, pixel, pos] = (samples[pos - 1]) + (0.33 * (b - a))
-    waveform[gain, pixel, pos + 1] = (samples[pos - 1]) + (0.66 * (b - a))
+    a = int(samples[position - 1])
+    b = int(samples[position + 2])
+    waveform[gain, pixel, position] = (samples[position - 1]) + (0.33 * (b - a))
+    waveform[gain, pixel, position + 1] = (samples[position - 1]) + (0.66 * (b - a))
 
 @jit
-def interpolate_spike_B(waveform, gain, pos, pixel):
+def interpolate_spike_B(waveform, gain, position, pixel):
+    """
+    Numba function for interpolation spike type B.
+    Change waveform array.
+    """
     samples = waveform[gain, pixel, :]
-    waveform[gain, pixel, pos] = 0.5 * (samples[pos - 1] + samples[pos + 1])
+    waveform[gain, pixel, position] = 0.5 * (samples[position - 1] + samples[position + 1])
