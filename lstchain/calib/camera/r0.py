@@ -288,7 +288,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
 
 @jit
 def ped_time(timediff):
-    #Power law for time lapse baseline correction, coefficients comes from Julian test in Japan
+    """
+    Power law function for time lapse baseline correction.
+    Coefficients from curve fitting.
+    """
     return 29.3 * np.power(timediff, -0.2262) - 12.4
 
 @jit
