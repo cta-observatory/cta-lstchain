@@ -281,7 +281,13 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                         time_diff = time_now - last_time_array[nr_clus, gain, pix, posads]
                         val = waveform[gain, pixel, k] - ped_time(time_diff / (133.e3))
                         waveform[gain, pixel, k] = val
-                    if (k < 39):
+
+                posads0 = int((0 + fc[nr_clus, gain, pix]) % size4drs)
+                if posads0+40 < 4096:
+                    last_time_array[nr_clus, gain, pix, posads0:(posads0+39)] = time_now
+                else:
+                    for k in prange(0, 39):
+                        posads = int((k + fc[nr_clus, gain, pix]) % size4drs)
                         last_time_array[nr_clus, gain, pix, posads] = time_now
 
 @jit
