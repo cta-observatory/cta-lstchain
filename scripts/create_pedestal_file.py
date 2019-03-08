@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # re-order offset values according to expected pixel id
     expected_pixel_id = ev.lst.tel[0].svc.pixel_ids
-    ped_array = np.zeros((2, 1855, 4096))
+    ped_array = np.zeros((2, 1855, 4096), dtype=np.uint16)
     for nr in range(0, n_modules):
         for gain in range(0, 2):
             for pix in range(0, 7):
