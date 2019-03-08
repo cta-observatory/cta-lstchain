@@ -24,6 +24,6 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
         y0 = tot_num_events / np.log(emax / emin)
         y = y0 * np.log(bins[1:] / bins[:-1])
     else:
-        y0 = tot_num_events / (emax ** (spectral_index + 1) - emin ** (spectral_index + 1)) / (spectral_index + 1)
+        y0 = tot_num_events / (emax ** (spectral_index + 1) - emin ** (spectral_index + 1)) * (spectral_index + 1)
         y = y0 * (bins[1:] ** (spectral_index + 1) - bins[:-1] ** (spectral_index + 1)) / (spectral_index + 1)
     return bins, y
