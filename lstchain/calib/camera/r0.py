@@ -5,6 +5,7 @@ from ctapipe.core.traits import Unicode
 
 from numba import jit, prange
 
+
 class CameraR0Calibrator(Component):
     """
     The base R0-level calibrator. Change the r0 container.
@@ -40,7 +41,6 @@ class CameraR0Calibrator(Component):
         kwargs
         """
         super().__init__(config=config, parent=tool, **kwargs)
-
 
 
 class LSTR0Corrections(CameraR0Calibrator):
@@ -127,8 +127,8 @@ class LSTR0Corrections(CameraR0Calibrator):
         expected_pixel_id = event.lst.tel[0].svc.pixel_ids
         local_clock_list = event.lst.tel[0].evt.local_clock_counter
         n_modules = event.lst.tel[0].svc.num_modules
-        for nr_clus in range(0, n_modules):
-            self.first_cap_time_lapse_array[nr_clus, :, :] = self._get_first_capacitor(event, nr_clus)
+        for nr_module in range(0, n_modules):
+            self.first_cap_time_lapse_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
         do_time_lapse_corr(event.r0.tel[0].waveform, expected_pixel_id, local_clock_list,
                            self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
@@ -188,28 +188,28 @@ class LSTR0Corrections(CameraR0Calibrator):
         size4drs = 4096
         n_gain = 2
         n_pix = 7
-        for nr_clus in prange(0, n_modules):
+        for nr_module in prange(0, n_modules):
             for gain in prange(0, n_gain):
                 for pix in prange(0, n_pix):
                     for k in prange(0, 4):
                         # looking for spike A first case
-                        abspos = int(1024 - roisize - 2 - fc_old[nr_clus, gain, pix] + k * 1024 + size4drs)
-                        spike_A_position = int((abspos - fc[nr_clus, gain, pix] + size4drs) % size4drs)
+                        abspos = int(1024 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
+                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
-                            pixel = expected_pixel_id[nr_clus*7 + pix]
+                            pixel = expected_pixel_id[nr_module*7 + pix]
                             interpolate_spike_A(waveform, gain, spike_A_position, pixel)
                         # looking for spike A second case
-                        abspos = int(roisize - 2 + fc_old[nr_clus, gain, pix] + k * 1024 + size4drs)
-                        spike_A_position = int((abspos - fc[nr_clus, gain, pix] + size4drs) % size4drs)
+                        abspos = int(roisize - 2 + fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
+                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
-                            pixel = expected_pixel_id[nr_clus*7 + pix]
+                            pixel = expected_pixel_id[nr_module*7 + pix]
                             interpolate_spike_A(waveform, gain, spike_A_position, pixel)
 
                     # looking for spike B
                     spike_b_position = int(
-                        (fc_old[nr_clus, gain, pix] - 1 - fc[nr_clus, gain, pix] + 2 * size4drs) % size4drs)
+                        (fc_old[nr_module, gain, pix] - 1 - fc[nr_module, gain, pix] + 2 * size4drs) % size4drs)
                     if spike_b_position < roisize - 1:
-                        pixel = expected_pixel_id[nr_clus*7 + pix]
+                        pixel = expected_pixel_id[nr_module*7 + pix]
                         interpolate_spike_B(waveform, gain, spike_b_position, pixel)
         return waveform
 
@@ -253,11 +253,11 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
     size4drs = 4096
     n_gain = 2
     n_pix = 7
-    for nr in prange(0, n_modules):
+    for nr_module in prange(0, n_modules):
         for gain in prange(0, n_gain):
             for pix in prange(0, n_pix):
-                pixel = expected_pixel_id[nr*7 + pix]
-                position = int((fc_cap[nr, gain, pix]) % size4drs)
+                pixel = expected_pixel_id[nr_module*7 + pix]
+                position = int((fc_cap[nr_module, gain, pix]) % size4drs)
                 waveform[gain, pixel, :] = \
                     (event_waveform[gain, pixel, :] -
                     pedestal_value_array[gain, pixel, position:position + 40])
@@ -270,25 +270,25 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
     Change waveform array.
     """
     size4drs = 4096
-    for nr_clus in prange(0, number_of_modules):
-        time_now = local_clock_list[nr_clus]
+    for nr_module in prange(0, number_of_modules):
+        time_now = local_clock_list[nr_module]
         for gain in prange(0, 2):
             for pix in prange(0, 7):
-                pixel = expected_pixel_id[nr_clus*7 + pix]
+                pixel = expected_pixel_id[nr_module*7 + pix]
                 for k in prange(0, 40):
-                    posads = int((k + fc[nr_clus, gain, pix]) % size4drs)
-                    if last_time_array[nr_clus, gain, pix, posads] > 0:
-                        time_diff = time_now - last_time_array[nr_clus, gain, pix, posads]
+                    posads = int((k + fc[nr_module, gain, pix]) % size4drs)
+                    if last_time_array[nr_module, gain, pix, posads] > 0:
+                        time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
                         val = waveform[gain, pixel, k] - ped_time(time_diff / (133.e3))
                         waveform[gain, pixel, k] = val
 
-                posads0 = int((0 + fc[nr_clus, gain, pix]) % size4drs)
+                posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
-                    last_time_array[nr_clus, gain, pix, posads0:(posads0+39)] = time_now
+                    last_time_array[nr_module, gain, pix, posads0:(posads0+39)] = time_now
                 else:
                     for k in prange(0, 39):
-                        posads = int((k + fc[nr_clus, gain, pix]) % size4drs)
-                        last_time_array[nr_clus, gain, pix, posads] = time_now
+                        posads = int((k + fc[nr_module, gain, pix]) % size4drs)
+                        last_time_array[nr_module, gain, pix, posads] = time_now
 
 @jit
 def ped_time(timediff):

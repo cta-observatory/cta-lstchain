@@ -62,6 +62,7 @@ def get_first_capacitor(event, nr):
     lg = 1
     fc = np.zeros((2, 8))
     first_cap = event.lst.tel[0].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
+    # First capacitor order according Dragon v5 board data format
     for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
         fc[hg, i] = first_cap[j]
     for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
