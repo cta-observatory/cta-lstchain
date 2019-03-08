@@ -40,7 +40,7 @@ def test_apply_models():
     from sklearn.externals import joblib
 
     dl1_file = 'dl1_gamma_test_large.h5'
-    dl1 = pd.read_hdf(dl1_file)
+    dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
     features = ['intensity', 'width', 'length']
     # Load the trained RF for reconstruction:
     file_energy = 'rf_energy.pkl'
