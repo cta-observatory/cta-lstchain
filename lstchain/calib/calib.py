@@ -6,6 +6,7 @@ import numpy as np
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.calib.camera.gainselection import ThresholdGainSelector
 
+
 def lst_calibration(event, telescope_id):
     """
     Custom lst calibration.
@@ -41,6 +42,7 @@ def lst_calibration(event, telescope_id):
 
     event.dl1.tel[telescope_id].image = signals
     event.dl1.tel[telescope_id].peakpos = peakpos
+
 
 def gain_selection(waveform, signals, peakpos, cam_id, threshold):
 
