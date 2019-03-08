@@ -428,16 +428,16 @@ def get_events(filename, storedata=False, test=False,
                 del f['images']
                 images = np.vstack([images,imagedata])
                 f.close()
-                saved = pd.read_hdf(outfile,key=particle_type+'_events')
-                output = saved.append(output,ignore_index=True)
+                saved = pd.read_hdf(outfile, key=particle_type+'_events')
+                output = saved.append(output, ignore_index=True)
                 output.to_hdf(outfile,key=particle_type+"_events",mode="w")
                 f = h5py.File(outfile,'r+')
                 f.create_dataset('images',data=images)
                 f.close()
             else:
-                saved = pd.read_hdf(outfile,key=particle_type+'_events')
-                output = saved.append(output,ignore_index=True)
-                output.to_hdf(outfile,key=particle_type+"_events",mode="w")
+                saved = pd.read_hdf(outfile, key=particle_type+'_events')
+                output = saved.append(output, ignore_index=True)
+                output.to_hdf(outfile, key=particle_type+"_events",mode="w")
     del source
     return output
 
