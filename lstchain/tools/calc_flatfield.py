@@ -78,22 +78,27 @@ class FlatFieldHDF5Writer(Tool):
             **kwargs
         )
         self.writer = HDF5TableWriter(
+
             filename=self.output_file, group_name='flatfield', overwrite=True
         )
 
+
     def start(self):
         '''Flat field coefficient calculator'''
+
+        table_name = 'tel_' + str(self.flatfield.tel_id)
+        self.log.info("write events in table: /flatfield/%s",
+                      table_name)
 
         for count, event in enumerate(self.eventsource):
             # one should add hier the pedestal subtraction and/or cleaner
             ff_data = self.flatfield.calculate_relative_gain(event)
 
             if ff_data:
+                # save the config, to be retrieved as data.meta['config']
+                if count == 0:
+                    ff_data.meta['config']=self.config
 
-                table_name = 'tel_' + str(self.flatfield.tel_id)
-
-                self.log.info("write event in table: /flatfield/%s",
-                              table_name)
                 self.writer.write(table_name, ff_data)
 
     def finish(self):
