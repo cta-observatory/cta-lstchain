@@ -8,6 +8,11 @@ from lstchain.io.lsteventsource import LSTEventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
+''' 
+Script to create pedestal file for low level calibration. 
+To run script in console:
+python create_pedestal_file.py --input_file LST-1.\*.Run00097.0000.fits.fz --output_file pedestal.fits --max_events 900
+'''
 
 parser = argparse.ArgumentParser()
 
@@ -54,6 +59,7 @@ if __name__ == '__main__':
         PedList[i].meanped[np.isnan(PedList[i].meanped)] = 300  # fill 300 where occurs NaN
         pedestal_value_array[i, :, :, :] = PedList[i].meanped
 
+    # re-order offset values according to expected pixel id
     expected_pixel_id = ev.lst.tel[0].svc.pixel_ids
     ped_array = np.zeros((2, 1855, 4096))
     for nr in range(0, n_modules):
