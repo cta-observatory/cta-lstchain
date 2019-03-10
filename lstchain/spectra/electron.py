@@ -1,8 +1,8 @@
 import astropy.units as u
 import numpy as np
 
-def Proton_BESS(E):
-    """ From http://adsabs.harvard.edu/abs/2000ApJ...545.1135S
+def Electron_HESS_Fermi(E):
+    """
     For each energy point, return the Proton flux
 
     Parameters
@@ -15,9 +15,13 @@ def Proton_BESS(E):
           astropy units: 1 / u.TeV / u.cm**2 / u.s / u.sr
     """
 
-    f0 = 9.6e-9 / u.GeV / u.cm**2 / u.s / u.sr
-    alpha = -2.70
+    f0 = 104.9e-13 / u.GeV / u.cm**2 / u.s / u.sr
+    Gamma1 = 3.04
+    Gamma2 = 3.78
+    Eb = 0.94 * u.TeV
+    alpha = 0.12
     E0 = 1 * u.TeV
-    dFdEdO = f0 * np.power(E/E0, alpha)
+    dFdEdO = f0 * np.power(E / E0, Gamma1) * \
+        np.power(1 + np.power(E / Eb, 1 / alpha), (Gamma2-Gamma1) * alpha)
 
     return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr) 

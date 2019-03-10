@@ -14,8 +14,11 @@ def Crab_MAGIC(E):
     dFdE: differential energy spectrum. 
           astropy units: 1/u.TeV / u.cm**2 / u.s
     """
-    MAGIC_par=[3.23e-11 / u.TeV / u.cm**2 / u.s, -2.47, -0.24]
+
+    f0 = 3.23e-11 / u.TeV / u.cm**2 / u.s
+    alpha = -2.47
+    beta = -0.24
     E0 = 1 * u.TeV
-    dFdE = MAGIC_par[0]*np.power(E/E0,MAGIC_par[1]+MAGIC_par[2]*np.log10(E/E0))
+    dFdE = f0 * np.power(E / E0, alpha + beta * np.log10(E/E0))
 
     return dFdE.to(1/u.TeV / u.cm**2 / u.s) 
