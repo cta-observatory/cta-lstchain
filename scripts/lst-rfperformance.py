@@ -62,8 +62,8 @@ if __name__ == '__main__':
                 'psi']
 
     #Split data in train and test events:
-    df_gammas = pd.read_hdf(args.gammafile)
-    df_proton = pd.read_hdf(args.protonfile)
+    df_gammas = pd.read_hdf(args.gammafile, key='events/LSTCam')
+    df_proton = pd.read_hdf(args.protonfile, key='events/LSTCam')
 
     train, test = train_test_split(df_gammas, test_size=0.2)
     test = test.append(df_proton,
