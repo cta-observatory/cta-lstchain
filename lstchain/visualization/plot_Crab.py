@@ -9,13 +9,13 @@ def plot_Crab(ax, emin, emax, binsE, unitE, percentage = 100, SED = True, **kwar
     ax: matplotlib axis object
     emin: `float` astropy units. Minimum energy
     emax: `float` astropy units. Maximum energy 
-    binsE = `int` number of energy bins
-    unitE = Astropy unit of energy
-    percentage = `float` percentage of the Crab Nebula spectrum for the plot
-    SED = `bool` if True, plot the SED, if False, plot dFdE
+    binsE: `int` number of energy bins
+    unitE: Astropy unit of energy
+    percentage: `float` percentage of the Crab Nebula spectrum for the plot
+    SED: `bool` if True, plot the SED, if False, plot dFdE
     kwargs for the plot
 
-    Output:
+    Returns:
     ------
     ax: matplotlib axis object
     """
