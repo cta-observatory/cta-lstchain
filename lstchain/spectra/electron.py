@@ -16,8 +16,8 @@ def Electron_HESS_Fermi(E):
     """
 
     f0 = 104.9e-13 / u.GeV / u.cm**2 / u.s / u.sr
-    Gamma1 = 3.04
-    Gamma2 = 3.78
+    Gamma1 = -3.04
+    Gamma2 = -3.78
     Eb = 0.94 * u.TeV
     alpha = 0.12
     E0 = 1 * u.TeV
