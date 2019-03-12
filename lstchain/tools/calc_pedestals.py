@@ -72,6 +72,9 @@ class PedestalHDF5Writer(Tool):
                 ped_data = self.pedestal.calculate_pedestals(event)
 
             if ped_data:
+                
+                if count == 0:
+                    ped_data.meta['config']=self.config
 
                 table_name = 'tel_' + str(self.pedestal.tel_id)
 
