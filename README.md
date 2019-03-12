@@ -20,7 +20,7 @@ master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta
 > ```
 
 Current `lstchain` build uses `ctapipe` master version.   
-Here is how you you install:
+Here is how you should install:
 ```
 git clone https://github.com/cta-observatory/ctapipe
 cd ctapipe
