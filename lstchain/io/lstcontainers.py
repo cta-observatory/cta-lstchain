@@ -72,7 +72,7 @@ class DL1ParametersContainer(Container):
         for k in hillas.keys():
             try:
                 self[k] = hillas[k]
-            except:
+            except StopIteration:
                 print("{} cannot be copied in container".format(k))
                 pass
 
@@ -91,7 +91,7 @@ class DL1ParametersContainer(Container):
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
-        except:
+        except ValueError:
             print("mc information not filled")
 
     def fill_event_info(self, event):
@@ -99,7 +99,7 @@ class DL1ParametersContainer(Container):
             self.gps_time = event.trig.gps_time
             self.obs_id = event.r0.obs_id
             self.event_id = event.r0.event_id
-        except:
+        except ValueError:
             print("event information not filled")
 
     def get_features(self, features_names):
@@ -126,7 +126,7 @@ class DL1ParametersContainer(Container):
             timepars = time.timing_parameters(geom, image, peak_time, hillas)
             self.time_gradient = timepars['slope'].value
             self.intercept = timepars['intercept']
-        except:
+        except ValueError:
             pass
 
     def set_source_camera_position(self, event, telescope_id):
