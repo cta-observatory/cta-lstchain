@@ -66,7 +66,7 @@ class FlatFieldCalculator(Component):
         kwargs
 
         """
-        super().__init__(config=config, tool=tool, **kwargs)
+        super().__init__(config=config, parent=tool, **kwargs)
 
         # initialize the output
         self.container = FlatFieldContainer()
@@ -74,8 +74,7 @@ class FlatFieldCalculator(Component):
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
-            config=config,
-            tool=tool
+            config=config
         )
 
         self.log.info(f"extractor {self.extractor}")
