@@ -40,7 +40,7 @@ def test_apply_models():
     from sklearn.externals import joblib
 
     dl1_file = 'dl1_gamma_test_large.h5'
-    dl1 = pd.read_hdf(dl1_file)
+    dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
     features = ['intensity', 'width', 'length']
     # Load the trained RF for reconstruction:
     file_energy = 'rf_energy.pkl'
@@ -101,3 +101,12 @@ def test_change_frame_camera_sky():
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y])
 
+
+def test_polar_cartesian():
+    from lstchain.reco.utils import polar_to_cartesian, cartesian_to_polar
+    X = [-0.5, 0.5]
+    Y = [-0.5, 0.5]
+    for x in X:
+        for y in Y:
+            p = cartesian_to_polar(x, y)
+            np.testing.assert_almost_equal((x, y), polar_to_cartesian(*p))
