@@ -38,13 +38,13 @@ before_install:
     - git fetch --tags
 
 install:
-    - conda env create --file environment.yml
-    - source activate cta
-    - python setup.py install
     - git clone https://github.com/cta-observatory/ctapipe /tmp/ctapipe
     - cd /tmp/ctapipe
+    - conda env create -n cta-dev --file environment.yml
+    - source activate cta-dev
     - pip install -e .
-
+    - cd -
+    - python setup.py install
 
 script:
     - pytest
