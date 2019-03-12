@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     dl0_to_dl1.r0_to_dl1(args.datafile)
     output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
-    data = pd.read_hdf(output_filename,key='events/LSTCam')
+    data = pd.read_hdf(output_filename, key='events/LSTCam')
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
