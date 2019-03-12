@@ -106,7 +106,7 @@ def train_energy(train,
             config = read_configuration_file(config_file)
             regression_args = config['random_forest_regressor_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
     print("Given features: ", features)
@@ -148,7 +148,7 @@ def train_disp_vector(train, features,
             config = read_configuration_file(config_file)
             regression_args = config['random_forest_regressor_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
     print("Given features: ", features)
@@ -191,7 +191,7 @@ def train_disp_norm(train, features,
             config = read_configuration_file(config_file)
             regression_args = config['random_forest_regressor_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -233,7 +233,7 @@ def train_disp_sign(train, features,
             config = read_configuration_file(config_file)
             classification_args = config['random_forest_classifier_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
     print("Given features: ", features)
@@ -275,7 +275,7 @@ def train_reco(train, features, regression_args=random_forest_regressor_args, co
             config = read_configuration_file(config_file)
             regression_args = config['random_forest_regressor_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
 
@@ -322,7 +322,7 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
             config = read_configuration_file(config_file)
             classification_args = config['random_forest_classifier_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
     print("Given features: ", features)
@@ -393,7 +393,7 @@ def build_models(filegammas, fileprotons, features,
             regression_args = config['random_forest_regressor_args']
             classification_args = config['random_forest_classifier_args']
             print("Configuration loaded from {}".format(config_file))
-        except:
+        except OSError:
             print("Configuration could not be loaded from file. Standard configuration applies")
 
     features_ = list(features)

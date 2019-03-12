@@ -93,7 +93,7 @@ def get_dl1(calibrated_event, telescope_id):
             dl1_container.set_disp([dl1_container.src_x, dl1_container.src_y], hillas)
             return dl1_container
 
-        except:
+        except RuntimeError:
             print("Bad event")
             return None
 
