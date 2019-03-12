@@ -290,9 +290,9 @@ def calculate_pedestal_results(
 
 
     return {
-        'pedestal_median': np.median(masked_trace_integral, axis=0),
-        'pedestal_mean': np.mean(masked_trace_integral, axis=0),
-        'pedestal_rms': np.std(masked_trace_integral, axis=0)
+        'charge_median': np.median(masked_trace_integral, axis=0),
+        'charge_mean': np.mean(masked_trace_integral, axis=0),
+        'charge_rms': np.std(masked_trace_integral, axis=0)
 
     }
 
