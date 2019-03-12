@@ -43,6 +43,7 @@ install:
     - conda env create -n cta-dev --file environment.yml
     - source activate cta-dev
     - pip install -e .
+    - pip install https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
     - git clone https://github.com/cta-observatory/ctapipe_io_lst /tmp/ctapipe_io_lst
     - cd /tmp/ctapipe_io_lst
     - python setup.py install
