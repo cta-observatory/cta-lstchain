@@ -202,8 +202,8 @@ class PedestalIntegrator(PedestalCalculator):
         charge, time, window = self._extract_charge(event)
 
         # divide by the width of the integration window
-        event_pedestal = charge/np.sum(window, axis=2)
-
+       # event_pedestal = charge/np.sum(window, axis=2)
+        event_pedestal = charge
         self.collect_sample(event_pedestal, pixel_status)
 
         sample_age = trigger_time - self.time_start
@@ -283,15 +283,18 @@ def calculate_pedestal_results(
         trace_integral,
         mask=bad_pixels_of_sample
     )
+    trace_integral = np.ma.getdata(
+        masked_trace_integral
+    )
     relative_pedestal_event = np.ma.getdata(
         masked_trace_integral / event_median[:, :, np.newaxis]
     )
 
 
     return {
-        'charge_median': np.median(masked_trace_integral, axis=0),
-        'charge_mean': np.mean(masked_trace_integral, axis=0),
-        'charge_rms': np.std(masked_trace_integral, axis=0)
+        'charge_median': np.median(trace_integral, axis=0),
+        'charge_mean': np.mean(trace_integral, axis=0),
+        'charge_rms': np.std(trace_integral, axis=0)
 
     }
 
