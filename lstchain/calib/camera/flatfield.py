@@ -255,7 +255,7 @@ def calculate_time_results(
     camera_time_mean = np.ma.mean(masked_trace_time)
     pixel_time_median = np.ma.median(masked_trace_time, axis=0)
     pixel_time_mean = np.ma.mean(masked_trace_time, axis=0)
-    pixel_time_rms = np.ma.std(masked_trace_time, axis=0)
+    pixel_time_std = np.ma.std(masked_trace_time, axis=0)
 
     return {
         'time_mean': (trigger_time - time_start) / 2 * u.s,
@@ -268,8 +268,8 @@ def calculate_time_results(
             pixel_time_mean),
         'time_median': np.ma.getdata(
             pixel_time_median),
-        'time_rms': np.ma.getdata(
-            pixel_time_rms),
+        'time_std': np.ma.getdata(
+            pixel_time_std),
     }
 
 
@@ -291,9 +291,9 @@ def calculate_relative_gain_results(
     return {
         'relative_gain_median': np.median(relative_gain_event, axis=0),
         'relative_gain_mean': np.mean(relative_gain_event, axis=0),
-        'relative_gain_rms': np.std(relative_gain_event, axis=0),
+        'relative_gain_std': np.std(relative_gain_event, axis=0),
         'charge_median': np.median(trace_integral, axis=0),
         'charge_mean': np.mean(trace_integral, axis=0),
-        'charge_rms': np.std(trace_integral, axis=0),
+        'charge_std': np.std(trace_integral, axis=0),
     }
 
