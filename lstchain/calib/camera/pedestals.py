@@ -294,7 +294,7 @@ def calculate_pedestal_results(
     return {
         'charge_median': np.median(trace_integral, axis=0),
         'charge_mean': np.mean(trace_integral, axis=0),
-        'charge_rms': np.std(trace_integral, axis=0)
+        'charge_std': np.std(trace_integral, axis=0)
 
     }
 
