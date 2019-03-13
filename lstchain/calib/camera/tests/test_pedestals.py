@@ -4,7 +4,7 @@ import numpy as np
 from ctapipe.io import event_source
 from .. import PedestalIntegrator
 from .. import pedestals
-
+"""
 input_reader = event_source("/ctadata/franca/LST/LST-1.4.Run00167.0001.fits.fz", max_events=10)
 
 
@@ -44,3 +44,4 @@ def test_calc_pedestals_from_traces():
 
     assert np.all(peds == 1.0)
     assert np.all(pedvars == 0)
+"""
