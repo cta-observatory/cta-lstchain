@@ -2,7 +2,6 @@ from ctapipe.utils import get_dataset_path
 
 from ctapipe.io import event_source
 from .. import FlasherFlatFieldCalculator
-
 """
 #example_file_path = get_dataset_path("/ctadata/franca/LST/LST-1.4.Run00167.0001.fits.fz")
 input_reader = event_source("/ctadata/franca/LST/LST-1.4.Run00167.0001.fits.fz", max_events=10)
