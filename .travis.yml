@@ -1,14 +1,13 @@
 language: python
 
-python:
-    # not used directly, but this sets TRAVIS_PYTHON_VERSION so we can use it
-    # in anaconda as well (we don't support python less than 3.5)
-    - 3.6
-
-os:
-    - linux
-    # - osx   # currently osx python projects are not supported in Travis
-
+matrix:
+    include:
+        python: 3.6
+        os: linux
+        env:
+            - CTAPIPE_VERSION=master
+            - PROTOZFITS_VERSION=v.1.4.2
+            - CTAPIPE_IO_LST_VERSION=master
 
 before_install:
 
@@ -38,21 +37,15 @@ before_install:
     - git fetch --tags
 
 install:
-    - git clone https://github.com/cta-observatory/ctapipe /tmp/ctapipe
-    - cd /tmp/ctapipe
-    - conda env create -n cta-dev --file environment.yml
-    - source activate cta-dev
-    - pip install -e .
-    - pip install https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
-    - cd -
-    - git clone https://github.com/cta-observatory/ctapipe_io_lst /tmp/ctapipe_io_lst
-    - cd /tmp/ctapipe_io_lst
+    - conda create --name travis
+    - conda activate travis
+    - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
+    - pip install https://github.com/cta-sst-1m/protozfitsreader/archive/$PROTOZFITS_VERSION.tar.gz
+    - pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
     - python setup.py install
-    - cd -
-    - python setup.py install
+
 
 script:
     - pytest
 
-after_script:
-    - source deactivate
+
