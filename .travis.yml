@@ -6,7 +6,7 @@ matrix:
         os: linux
         env:
             - CTAPIPE_VERSION=master
-            - PROTOZFITS_VERSION=v.1.4.2
+            - PROTOZFITS_VERSION=v1.4.2
             - CTAPIPE_IO_LST_VERSION=master
 
 
