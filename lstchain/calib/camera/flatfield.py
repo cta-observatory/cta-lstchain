@@ -79,7 +79,6 @@ class FlatFieldCalculator(Component):
 
         self.log.info(f"extractor {self.extractor}")
 
-
     @abstractmethod
     def calculate_relative_gain(self, event):
         """calculate relative gain from event
@@ -158,16 +157,18 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # real data
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
-            pixel_status = (event.mon.tel[0].pixel_status.hardware_mask and
-                            event.mon.tel[0].pixel_status.pedestal_mask and
-                            event.mon.tel[0].pixel_status.flatfield_mask)
+            hardware_pedestal_status = np.logical_or(event.mon.tel[self.tel_id].pixel_status.hardware_mask,
+                                            event.mon.tel[self.tel_id].pixel_status.pedestal_mask)
+            pixel_status = np.logical_or(hardware_pedestal_status,
+                                         event.mon.tel[self.tel_id].pixel_status.flatfield_mask)
+
         else: # patches for MC data
             if event.trig.tels_with_trigger:
                 trigger_time = event.trig.gps_time.unix
             else:
                 trigger_time = 0
 
-            pixel_status = np.ones(waveform.shape[1])
+            pixel_status = np.zeros(waveform.shape[1], dtype=bool)
 
         if self.num_events_seen == 0:
             self.time_start = trigger_time
