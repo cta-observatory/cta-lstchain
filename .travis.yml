@@ -26,7 +26,7 @@ before_install:
     - conda info -a # Useful for debugging any issues with conda
 
 install:
-    - conda create --name cta --file environment.yml
+    - conda env create --file environment.yml
     - conda activate travis
     - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
     - pip install https://github.com/cta-sst-1m/protozfitsreader/archive/$PROTOZFITS_VERSION.tar.gz
