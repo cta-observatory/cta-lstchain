@@ -159,7 +159,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
             pixel_status = (event.mon.tel[0].pixel_status.hardware_mask and
-                            event.mon.tel[0].pixel_status.pedestal_mask)
+                            event.mon.tel[0].pixel_status.pedestal_mask and
+                            event.mon.tel[0].pixel_status.flatfield_mask)
         else: # patches for MC data
             if event.trig.tels_with_trigger:
                 trigger_time = event.trig.gps_time.unix
