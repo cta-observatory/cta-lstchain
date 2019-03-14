@@ -183,8 +183,8 @@ class PedestalIntegrator(PedestalCalculator):
         # real data
         if not event.mcheader.simtel_version:
             trigger_time = event.r0.tel[self.tel_id].trigger_time
-            pixel_status = (event.mon.tel[0].pixel_status.hardware_mask and
-                            event.mon.tel[0].pixel_status.pedestal_mask)
+            pixel_status = event.mon.tel[self.tel_id].pixel_status.hardware_mask
+
         else: # patches for MC data
             if event.trig.tels_with_trigger:
                 trigger_time = event.trig.gps_time.unix
@@ -202,7 +202,7 @@ class PedestalIntegrator(PedestalCalculator):
         charge, time, window = self._extract_charge(event)
 
         # divide by the width of the integration window
-       # event_pedestal = charge/np.sum(window, axis=2)
+        # event_pedestal = charge/np.sum(window, axis=2)
         event_pedestal = charge
         self.collect_sample(event_pedestal, pixel_status)
 
