@@ -8,3 +8,4 @@ dependencies:
   - ctapipe
   - pip:
       - pytest_runner
+      - https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
