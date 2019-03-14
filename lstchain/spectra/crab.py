@@ -2,7 +2,7 @@ import astropy.units as u
 import numpy as np
 
 def Crab_MAGIC(E):
-    """ From http://adsabs.harvard.edu/abs/2015JHEAp...5...30A                                                                                                                         
+    """ From http://adsabs.harvard.edu/abs/2015JHEAp...5...30A
     For each energy point, return the Crab Nebula flux
 
     Parameters
