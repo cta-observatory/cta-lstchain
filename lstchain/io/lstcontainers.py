@@ -121,13 +121,10 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peakpos, hillas):
-        try:
-            peak_time = Quantity(peakpos) * u.Unit("ns")
-            timepars = time.timing_parameters(geom, image, peak_time, hillas)
-            self.time_gradient = timepars['slope'].value
-            self.intercept = timepars['intercept']
-        except:
-            pass
+        peak_time = Quantity(peakpos) * u.Unit("ns")
+        timepars = time.timing_parameters(geom, image, peak_time, hillas)
+        self.time_gradient = timepars.slope.value
+        self.intercept = timepars.intercept
 
     def set_source_camera_position(self, event, telescope_id):
         # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
