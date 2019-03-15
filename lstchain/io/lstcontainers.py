@@ -65,15 +65,15 @@ class DL1ParametersContainer(Container):
         """
         fill Hillas parameters
 
-        hillas: HillasContainer
+        hillas: HillasParametersContainer
         # TODO : parameters should not be simply copied but inherited
         (e.g. conserving unit definition)
         """
-        for k in hillas.keys():
+        for key in hillas.keys():
             try:
-                self[k] = hillas[k]
-            except:
-                print("{} cannot be copied in container".format(k))
+                self[key] = hillas[key]
+            except AttributeError:
+                print("{} cannot be copied in container".format(key))
                 pass
 
     def fill_mc(self, event):
