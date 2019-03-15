@@ -91,12 +91,9 @@ class DL1ParametersContainer(Container):
             print("mc information not filled")
 
     def fill_event_info(self, event):
-        try:
-            self.gps_time = event.trig.gps_time
-            self.obs_id = event.r0.obs_id
-            self.event_id = event.r0.event_id
-        except:
-            print("event information not filled")
+        self.gps_time = event.trig.gps_time
+        self.obs_id = event.r0.obs_id
+        self.event_id = event.r0.event_id
 
     def get_features(self, features_names):
         return np.array([self[k].value if isinstance(self[k], Quantity) else self[k]
