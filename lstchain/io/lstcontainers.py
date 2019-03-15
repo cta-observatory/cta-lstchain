@@ -96,12 +96,19 @@ class DL1ParametersContainer(Container):
         self.event_id = event.r0.event_id
 
     def get_features(self, features_names):
-        return np.array([self[k].value if isinstance(self[k], Quantity) else self[k]
-                         for k in features_names])
+        return np.array([
+            self[k].value
+            if isinstance(self[k], Quantity)
+            else self[k]
+            for k in features_names
+        ])
 
     def set_mc_core_distance(self, event, telescope_id):
         tel_pos = event.inst.subarray.positions[telescope_id]
-        distance = np.sqrt((event.mc.core_x - tel_pos[0]) ** 2 + (event.mc.core_y - tel_pos[1]) ** 2)
+        distance = np.sqrt(
+            (event.mc.core_x - tel_pos[0]) ** 2 +
+            (event.mc.core_y - tel_pos[1]) ** 2
+        )
         self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
