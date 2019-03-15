@@ -70,11 +70,7 @@ class DL1ParametersContainer(Container):
         (e.g. conserving unit definition)
         """
         for key in hillas.keys():
-            try:
-                self[key] = hillas[key]
-            except AttributeError:
-                print("{} cannot be copied in container".format(key))
-                pass
+            self[key] = hillas[key]
 
     def fill_mc(self, event):
         """
