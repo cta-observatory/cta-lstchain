@@ -8,12 +8,12 @@ def Electron_HESS(E):
 
     Parameters
     -----------
-    E: `numpy.ndarray` of floats with astropy units of energy
+    E: `numpy.ndarray` of astropy.units.quantity.Quantity (energy units) 
 
     Returns
     -------
     dFdEdO: `numpy.ndarray` differential energy spectrum. 
-          astropy units: 1 / u.TeV / u.cm**2 / u.s / u.sr
+          astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s / u.sr
     """
 
     f0 = 104.9e-13 / u.GeV / u.cm**2 / u.s / u.sr

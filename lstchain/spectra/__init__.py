@@ -1,1 +1,3 @@
-from .spectra import *
+from .crab import *
+from .proton import *
+from .electron import *
