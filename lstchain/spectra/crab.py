@@ -7,12 +7,12 @@ def crab_MAGIC(E):
 
     Parameters
     -----------
-    E: `numpy.ndarray` of floats with astropy units of energy
+    E: `numpy.ndarray` of astropy.units.quantity.Quantity (energy units)
 
     Returns
     -------
     dFdE: `numpy.ndarray` differential energy spectrum. 
-          astropy units: 1/u.TeV / u.cm**2 / u.s
+          astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s
     par: `dict` with spectral parameters
     """
 
@@ -35,12 +35,12 @@ def crab_HEGRA(E):
 
     Parameters
     -----------
-    E: `numpy.ndarray` of floats with astropy units of energy
+    E: `numpy.ndarray` of astropy.units.quantity.Quantity (energy units)
 
     Returns
     -------
     dFdE: `numpy.ndarray` differential energy spectrum. 
-          astropy units: 1/u.TeV / u.cm**2 / u.s
+          astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s
     par: `dict` with spectral parameters
     """
 
