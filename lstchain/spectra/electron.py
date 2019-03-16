@@ -12,7 +12,7 @@ def Electron_HESS(E):
 
     Returns
     -------
-    dFdEdO: differential energy spectrum. 
+    dFdEdO: `numpy.ndarray` differential energy spectrum. 
           astropy units: 1 / u.TeV / u.cm**2 / u.s / u.sr
     """
 
@@ -22,7 +22,12 @@ def Electron_HESS(E):
     Eb = 0.94 * u.TeV
     alpha = 0.12
     E0 = 1 * u.TeV
+
+    par_var = [f0, Gamma1, Gamma2, Eb, alpha, E0]
+    par_dic = ['f0', 'Gamma1', 'Gamma2', 'Eb', 'alpha', 'E0']
+    par = dict(zip(par_dic, par_var))
+
     dFdEdO = f0 * np.power(E / E0, Gamma1) * \
         np.power(1 + np.power(E / Eb, 1 / alpha), (Gamma2-Gamma1) * alpha)
 
-    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr) 
+    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr), par 
