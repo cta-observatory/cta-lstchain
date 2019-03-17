@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
 import astropy.units as u
-from .plot_utils import sensitivity_plots
-from .mc import rate, weight
 
 from eventio.simtel.simtelfile import SimTelFile
+
+from .plot_utils import sensitivity_plots
+from .mc import rate, weight
+from lstchain.spectra.crab import crab_HEGRA, proton_BESS
+
 
 def read_sim_par(source):
     """
@@ -167,8 +170,14 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
             
                 final_gamma[i][g][t] = eg_w_sum * obstime
                 final_hadrons[i][g][t] = ep_w_sum * obstime
-
                     
     sens = calculate_sensititity(final_gamma, final_hadrons, 1/noff)
-    sensitivity_plots(eb)
     
+    # Calculate the minimum sensitivity per energy bin
+    sensitivity = np.ndarray(shape=eb)
+    for i in range(0,eb):
+        ind = np.unravel_index(np.argmin(sens[i], axis=None), sens[i].shape)
+        sensitivity[i] = sens[i][ind]
+
+    sens_minimization_plot(eb, gb, tb, E, sens)
+    sens_plot(eb, E, sensitivity)
