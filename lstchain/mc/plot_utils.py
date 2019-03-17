@@ -1,0 +1,164 @@
+import matplotlib.pyplot as plt
+from lstchain.spectra.crab import crab_HEGRA
+
+def fill_bin_content(ax,energy_bin):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    for i in range(0,gammaness_bins):
+        for j in range(0,theta2_bins):
+            text = ax.text((j+0.5)*0.05, (i+0.5)*0.1, "%.2f %%" % sens[energy_bin][i][j],
+                       ha="center", va="center", color="w")
+    return ax
+
+
+def format_axes(ax,pl):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    ax.set_aspect(0.5)
+
+    ax.set_ylabel(r'Gammaness',fontsize=15)
+    ax.set_xlabel(r'$\theta^2$ (deg$^2$)',fontsize=15)
+    
+    starty, endy = ax.get_ylim()
+    ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
+    startx, endx = ax.get_xlim()
+    ax.xaxis.set_ticks(np.arange(startx, endx, 0.1))
+
+    cbaxes = fig.add_axes([0.9, 0.125, 0.03, 0.755])
+    cbar = fig.colorbar(pl,cax=cbaxes)
+    cbar.set_label('Sensitivity (% Crab)',fontsize=15)
+
+
+def format_axes_array(ax, arr_i,arr_j, plot):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    ax.set_aspect(0.5)
+    if ((arr_i == 0) and (arr_j == 0)):
+        ax.set_ylabel(r'Gammaness',fontsize=15)
+    if ((arr_i == 3) and (arr_j == 2)):
+        ax.set_xlabel(r'$\theta^2$ (deg$^2$)',fontsize=15)
+
+    starty, endy = ax.get_ylim()
+    ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
+    startx, endx = ax.get_xlim()
+    ax.xaxis.set_ticks(np.arange(startx, endx, 0.1))
+    
+    cbaxes = fig.add_axes([0.91, 0.125, 0.03, 0.755])
+    cbar = fig.colorbar(plot,cax=cbaxes)
+    cbar.set_label('Sensitivity (% Crab)',fontsize=15) 
+
+def format_axes_sensitivity(ax):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+
+    ax.set_xscale("log", nonposx='clip')
+    ax.set_yscale("log", nonposy='clip')
+    ax.set_xlim(5e1,9.e4)
+    ax.set_ylim(1.e-14,5.e-10)
+    ax.set_xlabel("Energy [GeV]")
+    ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
+    ax.grid(ls='--',alpha=.5)
+
+def plot_Crab_SED(ax, emin, emax, percentage=100, **kwargs):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV  
+
+    dFdE = percentage / 100. * crab_HEGRA(En)
+    ax.loglog(En,dFdE * En/1.e3 * En/1.e3, color='gray', **kwargs)
+    
+    return ax
+
+def plot_sensitivity(ax, e):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    dFdE = crab_HEGRA(e)
+    ax.loglog(e, sensitivity / 100 * dFdE * Emed/1.e3 * Emed/1.e3, \
+              label = 'Sensitivity')
+    
+
+def sensitivity_plots(ebins):
+    """
+
+    Parameters
+    --------
+
+    Returns
+    --------
+    """
+    if (ebins == 12):
+        figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
+
+    indices=[]
+    sensitivity = np.ndarray(shape=ebins)
+    
+    for ebin in range(0,ebins):
+        if (figarr):
+            arr_i = int(ebin/3)
+            arr_j = ebin-int(ebin/3)*3
+            plot = axarr[arr_i,arr_j].imshow(sens[ebin], cmap='viridis_r', \
+                   extent=[0., 0.5, 1., 0.], norm=LogNorm(vmin=sens.min(), \
+                   vmax=sens.max()))
+
+        fig, ax = plt.subplots(figsize=(8,8))
+
+        pl = ax.imshow(sens[ebin], cmap='viridis', extent=[0., 0.5, 1., 0.])
+        fill_bin_content(ax, ebin)
+        format_axes(ax, pl)
+
+        # Calculate what is the minimum sensitivity per energy bin
+        ind = np.unravel_index(np.argmin(sens[ebin], axis=None), sens[ebin].shape)
+        indices.append(ind)
+        sensitivity[ebin] = sens[ebin][ind]
+
+    if (figarr):
+        figarr.subplots_adjust(hspace = 0, wspace = 0)
+        format_axes_array(axarr[arr_i,arr_j],arr_i,arr_j, plot)
+
+    # Final sensitivity plot
+    fig, ax = plt.subplots()
+    plot_sensitivity(ax)
+
+    plot_Crab(ax, 100, 100 * u.GeV, 30 * u.TeV, label=r'Crab')
+    plot_Crab(ax, 1, 100 * u.GeV, 30 * u.TeV, ls='dotted',label='1% Crab')
+
+    format_axes_sensitivity(ax)
+    ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')
+
+
