@@ -1,7 +1,7 @@
 import astropy.units as u
 import numpy as np
 
-def Proton_BESS(E):
+def proton_BESS(E):
     """ From http://adsabs.harvard.edu/abs/2000ApJ...545.1135S
     For each energy point, return the Proton flux
 

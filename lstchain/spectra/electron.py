@@ -1,7 +1,7 @@
 import astropy.units as u
 import numpy as np
 
-def Electron_HESS(E):
+def electron_HESS(E):
     """From https://indico.in2p3.fr/event/15018/
     Broken power-law from HESS:
     For each energy point, return the Proton flux
