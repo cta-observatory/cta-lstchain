@@ -68,7 +68,7 @@ class FlatFieldHDF5Writer(Tool):
 
     def setup(self):
 
-        kwargs = dict(config=self.config, parent=self)
+        kwargs = dict(parent=self)
 
         self.eventsource = EventSource.from_config(**kwargs)
         self.flatfield = FlatFieldCalculator.from_name(
