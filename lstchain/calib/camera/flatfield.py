@@ -46,7 +46,6 @@ class FlatFieldCalculator(Component):
         [10,30],
         help='Interval (in samples) of accepted time values'
     ).tag(config=True)
-
     charge_product= Unicode(
         'LocalPeakIntegrator',
         help='Name of the charge extractor to be used'
@@ -54,8 +53,6 @@ class FlatFieldCalculator(Component):
 
     def __init__(
         self,
-        config=None,
-        tool=None,
         **kwargs
     ):
         """
@@ -75,7 +72,7 @@ class FlatFieldCalculator(Component):
         kwargs
 
         """
-        super().__init__(config=config, parent=tool, **kwargs)
+        super().__init__(**kwargs)
 
         # initialize the output
         self.container = FlatFieldContainer()
@@ -83,7 +80,7 @@ class FlatFieldCalculator(Component):
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
-            config=config
+            config=self.config
         )
 
         self.log.info(f"extractor {self.extractor}")
@@ -104,14 +101,14 @@ class FlatFieldCalculator(Component):
 
 class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
-    def __init__(self, config=None, tool=None, **kwargs):
+    def __init__(self, **kwargs):
         """Calculates flat field coefficients from flasher data
 
         based on the best algorithm described by S. Fegan in MST-CAM-TN-0060
 
         Parameters: see base class FlatFieldCalculator
         """
-        super().__init__(config=config, tool=tool, **kwargs)
+        super().__init__(**kwargs)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 
@@ -280,10 +277,8 @@ def calculate_time_results(
     # median of the std over the camera
     median_of_pixel_median = np.median(pixel_std, axis=1)
 
-    # outliers from median
+    # time outliers from median
     relative_median = pixel_median - median_of_pixel_median[:, np.newaxis]
-#    time_median_outliers = np.logical_or(relative_median < - self.low_time_cut * std_of_pixel_median[:,np.newaxis],
-#                                         relative_median > self.high_time_cut * std_of_pixel_median[:,np.newaxis])
     time_median_outliers = np.logical_or(pixel_median < self.time_cut_outliers[0],
                                          pixel_median > self.time_cut_outliers[1])
 

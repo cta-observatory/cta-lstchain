@@ -52,7 +52,7 @@ class PedestalHDF5Writer(Tool):
         self.writer = None
 
     def setup(self):
-        kwargs = dict(config=self.config, tool=self)
+        kwargs = dict(config=self.config, parent=self)
         self.eventsource = EventSource.from_config(**kwargs)
         self.pedestal = PedestalCalculator.from_name(
             self.calculator_product,
