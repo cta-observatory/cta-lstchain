@@ -82,10 +82,9 @@ class PedestalCalculator(Component):
         'LocalPeakIntegrator',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
+
     def __init__(
         self,
-        config=None,
-        tool=None,
         **kwargs
     ):
         """
@@ -105,7 +104,7 @@ class PedestalCalculator(Component):
         kwargs
 
         """
-        super().__init__(config=config, parent=tool, **kwargs)
+        super().__init__(**kwargs)
 
         # initialize the output
         self.container = PedestalContainer()
@@ -113,10 +112,9 @@ class PedestalCalculator(Component):
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
-            config=config
+            config=self.config
         )
         self.log.info(f"extractor {self.extractor}")
-
 
     @abstractmethod
     def calculate_pedestals(self, event):
@@ -134,13 +132,13 @@ class PedestalCalculator(Component):
 
 class PedestalIntegrator(PedestalCalculator):
 
-    def __init__(self, config=None, tool=None, **kwargs):
+    def __init__(self, **kwargs):
         """Calculates pedestal parameters from pedestal events
 
 
         Parameters: see base class PedestalCalculator
         """
-        super().__init__(config=config, tool=tool, **kwargs)
+        super().__init__(**kwargs)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 
@@ -170,7 +168,6 @@ class PedestalIntegrator(PedestalCalculator):
                 self.extractor.neighbours = g.neighbor_matrix_where
 
             charge, time, window = self.extractor.extract_charge(waveform)
-
 
         return charge, time, window
 
@@ -276,8 +273,8 @@ def calculate_time_results(
 ):
 
     return {
-        'time': (trigger_time - time_start) / 2 * u.s,
-        'time_range': [time_start, trigger_time] * u.s,
+        'sample_time': (trigger_time - time_start) / 2 * u.s,
+        'sample_time_range': [time_start, trigger_time] * u.s,
     }
 
 
@@ -295,7 +292,6 @@ def calculate_pedestal_results(self,
     # mean over the sample per pixel
     pixel_mean = np.mean(masked_trace_integral, axis=0)
 
-
     # std over the sample per pixel
     pixel_std = np.std(masked_trace_integral, axis=0)
 
@@ -312,7 +308,7 @@ def calculate_pedestal_results(self,
     std_of_pixel_std = np.std(pixel_std, axis=1)
 
     # outliers from standard deviation
-    deviation = pixel_std - median_of_pixel_std[:,np.newaxis]
+    deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
     charge_std_outliers = np.logical_or(deviation < - self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
                                         deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis])
 

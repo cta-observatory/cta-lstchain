@@ -67,7 +67,9 @@ class FlatFieldHDF5Writer(Tool):
         self.cleaner = None
 
     def setup(self):
-        kwargs = dict(config=self.config, tool=self)
+
+        kwargs = dict(config=self.config, parent=self)
+
         self.eventsource = EventSource.from_config(**kwargs)
         self.flatfield = FlatFieldCalculator.from_name(
             self.calculator_product,
