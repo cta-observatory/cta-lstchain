@@ -6,7 +6,8 @@ from eventio.simtel.simtelfile import SimTelFile
 
 from .plot_utils import sens_plot, sens_minimization_plot
 from .mc import rate, weight
-from lstchain.spectra.crab import crab_HEGRA, proton_BESS
+from lstchain.spectra.crab import crab_HEGRA
+from lstchain.spectra.proton import proton_BESS
 
 
 def read_sim_par(source):
