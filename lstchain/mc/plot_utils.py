@@ -148,7 +148,7 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
         format_axes_array(axarr[arr_i,arr_j],arr_i,arr_j, plot)
 
 
-def sens_plot(eb, e, sensitivity)
+def sens_plot(eb, e, sensitivity):
     # Final sensitivity plot
     fig_sens, ax = plt.subplots()
     plot_sensitivity(ax, e, sensitivity)
