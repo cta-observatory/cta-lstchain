@@ -90,7 +90,7 @@ class LSTEventSource(EventSource):
             geometry_version = 2
             camera = CameraGeometry.from_name("LSTCam", geometry_version)
 
-            tel_descr = TelescopeDescription(optics, camera)
+            tel_descr = TelescopeDescription("LST", "LST", optics, camera)
 
             self.n_camera_pixels = tel_descr.camera.n_pixels
             tels = {tel_id: tel_descr}
