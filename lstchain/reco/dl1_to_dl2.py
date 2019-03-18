@@ -398,8 +398,8 @@ def build_models(filegammas, fileprotons, features,
 
     features_ = list(features)
 
-    df_gamma = pd.read_hdf(filegammas)
-    df_proton = pd.read_hdf(fileprotons)
+    df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
+    df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
     df_gamma = filter_events(df_gamma, r_max=r_max, intensity_min=intensity_min)
     df_proton = filter_events(df_proton, r_max=r_max, intensity_min=intensity_min)
