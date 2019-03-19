@@ -287,25 +287,25 @@ def calculate_pedestal_results(self,
         mask=bad_pixels_of_sample
     )
     # median over the sample per pixel
-    pixel_median = np.median(masked_trace_integral, axis=0)
+    pixel_median = np.ma.median(masked_trace_integral, axis=0)
 
     # mean over the sample per pixel
-    pixel_mean = np.mean(masked_trace_integral, axis=0)
+    pixel_mean = np.ma.mean(masked_trace_integral, axis=0)
 
     # std over the sample per pixel
-    pixel_std = np.std(masked_trace_integral, axis=0)
+    pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
     # median over the camera
-    median_of_pixel_median = np.median(pixel_median, axis=1)
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
     # median of the std over the camera
-    median_of_pixel_std = np.median(pixel_std, axis=1)
+    median_of_pixel_std = np.ma.median(pixel_std, axis=1)
 
     # std of the std over camera
-    std_of_pixel_std = np.std(pixel_std, axis=1)
+    std_of_pixel_std = np.ma.std(pixel_std, axis=1)
 
     # outliers from standard deviation
     deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
