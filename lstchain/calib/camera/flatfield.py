@@ -77,6 +77,7 @@ class FlatFieldCalculator(Component):
         # initialize the output
         self.container = FlatFieldContainer()
 
+
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
@@ -130,7 +131,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         """
 
-        waveforms = event.r0.tel[self.tel_id].waveform
+        waveforms = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
         if self.extractor:
@@ -158,11 +159,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
 
         # initialize the np array at each cycle
-        waveform = event.r0.tel[self.tel_id].waveform
+        waveform = event.r1.tel[self.tel_id].waveform
+        container = event.mon.tel[self.tel_id].flatfield
 
         # real data
         if not event.mcheader.simtel_version:
-            trigger_time = event.r0.tel[self.tel_id].trigger_time
+            trigger_time = event.r1.tel[self.tel_id].trigger_time
             hardware_or_pedestal_mask = np.logical_or(
                 event.mon.tel[self.tel_id].pixel_status.hardware_mask,
                 event.mon.tel[self.tel_id].pixel_status.pedestal_mask)
@@ -214,14 +216,14 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 **time_results,
             }
             for key, value in result.items():
-                setattr(self.container, key, value)
+                setattr(container, key, value)
 
             self.num_events_seen = 0
-            return self.container
+            return True
 
         else:
 
-            return None
+            return False
 
     def setup_sample_buffers(self, waveform, sample_size):
         n_channels = waveform.shape[0]
@@ -272,10 +274,10 @@ def calculate_time_results(
     pixel_std = np.ma.std(masked_trace_time, axis=0)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    #std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
-    # median of the std over the camera
-    median_of_pixel_median = np.median(pixel_std, axis=1)
+    # median of the median over the camera
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
     # time outliers from median
     relative_median = pixel_median - median_of_pixel_median[:, np.newaxis]
@@ -315,10 +317,10 @@ def calculate_relative_gain_results(
     pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
     # median of the std over the camera
-    median_of_pixel_median = np.median(pixel_median, axis=1)
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
     # relative gain
     relative_gain_event = masked_trace_integral / event_median[:, :, np.newaxis]
@@ -332,9 +334,9 @@ def calculate_relative_gain_results(
 
 
     return {
-        'relative_gain_median': np.ma.getdata(np.median(relative_gain_event, axis=0)),
-        'relative_gain_mean': np.ma.getdata(np.mean(relative_gain_event, axis=0)),
-        'relative_gain_std': np.ma.getdata(np.std(relative_gain_event, axis=0)),
+        'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
+        'relative_gain_mean': np.ma.getdata(np.ma.mean(relative_gain_event, axis=0)),
+        'relative_gain_std': np.ma.getdata(np.ma.std(relative_gain_event, axis=0)),
         'charge_median': np.ma.getdata(pixel_median),
         'charge_mean': np.ma.getdata(pixel_mean),
         'charge_std': np.ma.getdata(pixel_std),

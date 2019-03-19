@@ -8,7 +8,7 @@ from astropy import units as u
 from ctapipe.core import Component
 
 from ctapipe.image import ChargeExtractor
-from ctapipe.core.traits import Int, Unicode, Float, List
+from ctapipe.core.traits import Int, Unicode, List
 from ctapipe_io_lst.containers import PedestalContainer
 
 __all__ = [
@@ -107,7 +107,7 @@ class PedestalCalculator(Component):
         super().__init__(**kwargs)
 
         # initialize the output
-        self.container = PedestalContainer()
+        #self.container = PedestalContainer()
 
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
@@ -159,7 +159,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         """
 
-        waveform = event.r0.tel[self.tel_id].waveform
+        waveform = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
         if self.extractor:
@@ -182,11 +182,12 @@ class PedestalIntegrator(PedestalCalculator):
         """
 
         # initialize the np array at each cycle
-        waveform = event.r0.tel[self.tel_id].waveform
+        waveform = event.r1.tel[self.tel_id].waveform
+        container = event.mon.tel[self.tel_id].pedestal
 
         # real data
         if not event.mcheader.simtel_version:
-            trigger_time = event.r0.tel[self.tel_id].trigger_time
+            trigger_time = event.r1.tel[self.tel_id].trigger_time
             pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_mask
 
         else: # patches for MC data
@@ -233,14 +234,14 @@ class PedestalIntegrator(PedestalCalculator):
                 **time_results,
             }
             for key, value in result.items():
-                setattr(self.container, key, value)
+                setattr(container, key, value)
 
             self.num_events_seen = 0
-            return self.container
+            return True
 
         else:
 
-            return None
+            return False
 
     def setup_sample_buffers(self, waveform, sample_size):
         n_channels = waveform.shape[0]
@@ -287,25 +288,25 @@ def calculate_pedestal_results(self,
         mask=bad_pixels_of_sample
     )
     # median over the sample per pixel
-    pixel_median = np.median(masked_trace_integral, axis=0)
+    pixel_median = np.ma.median(masked_trace_integral, axis=0)
 
     # mean over the sample per pixel
-    pixel_mean = np.mean(masked_trace_integral, axis=0)
+    pixel_mean = np.ma.mean(masked_trace_integral, axis=0)
 
     # std over the sample per pixel
-    pixel_std = np.std(masked_trace_integral, axis=0)
+    pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
     # median over the camera
-    median_of_pixel_median = np.median(pixel_median, axis=1)
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
     # median of the std over the camera
-    median_of_pixel_std = np.median(pixel_std, axis=1)
+    median_of_pixel_std = np.ma.median(pixel_std, axis=1)
 
     # std of the std over camera
-    std_of_pixel_std = np.std(pixel_std, axis=1)
+    std_of_pixel_std = np.ma.std(pixel_std, axis=1)
 
     # outliers from standard deviation
     deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
