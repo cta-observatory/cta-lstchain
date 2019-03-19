@@ -5,6 +5,12 @@ from ctapipe.core.traits import Unicode, Int
 from abc import abstractmethod
 from numba import jit, prange
 
+__all__ = [
+    'CameraR0Calibrator',
+    'LSTR0Corrections',
+    'NullR0Calibrator',
+]
+
 
 class CameraR0Calibrator(Component):
     """
@@ -25,7 +31,7 @@ class CameraR0Calibrator(Component):
     kwargs
     """
 
-    def __init__(self, config=None, tool=None, **kwargs):
+    def __init__(self, **kwargs):
         """
         Parent class for the r0 calibrators. Change the r0 container.
         Parameters
@@ -40,7 +46,7 @@ class CameraR0Calibrator(Component):
             Set to None if no Tool to pass.
         kwargs
         """
-        super().__init__(config=config, parent=tool, **kwargs)
+        super().__init__(**kwargs)
 
 
     @abstractmethod
@@ -72,7 +78,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         help='id of the telescope to calibrate'
     ).tag(config=True)
 
-    def __init__(self, config=None, tool=None, offset=300, **kwargs):
+    def __init__(self,  offset=300, **kwargs):
         """
         The R0 calibrator for LST data.
         Change the r0 container.
@@ -88,7 +94,7 @@ class LSTR0Corrections(CameraR0Calibrator):
             Set to None if no Tool to pass.
         kwargs
         """
-        super().__init__(config=config, tool=tool, **kwargs)
+        super().__init__( **kwargs)
 
         self.n_module = 265
         self.n_gain = 2
@@ -350,7 +356,7 @@ def interpolate_spike_B(waveform, gain, position, pixel):
 
 class NullR0Calibrator(CameraR0Calibrator):
     """
-    A dummy R1 calibrator that simply fills the r1 container with the samples
+    A dummy R0 calibrator that simply fills the r1 container with the samples
     from the r0 container.
 
     Parameters
@@ -366,8 +372,8 @@ class NullR0Calibrator(CameraR0Calibrator):
     kwargs
     """
 
-    def __init__(self, config=None, parent=None, **kwargs):
-        super().__init__(config, parent, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.log.info("Using NullR0Calibrator, if event source is at "
                       "the R0 level, then r1 samples will equal r0 samples")
 

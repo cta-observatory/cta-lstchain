@@ -4,6 +4,7 @@
    "FlatFieldHDF5Writer": {
      "cleaner_product": "BaselineWaveformCleaner",
      "calculator_product": "FlasherFlatFieldCalculator",
+     "r0calibrator_product": "LSTR0Corrections",
      "output_file":"flatfield.hdf5",
      "log_level":"DEBUG"
    },         
@@ -16,6 +17,10 @@
      "sample_duration":1000,
      "tel_id":0,
       "charge_product":"LocalPeakIntegrator"
+   },
+     "LSTR0Corrections": {
+      "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
+      "telid": 0
    },
     "LocalPeakIntegrator":{
      "window_shift": 4,
