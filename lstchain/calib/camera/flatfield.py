@@ -272,10 +272,10 @@ def calculate_time_results(
     pixel_std = np.ma.std(masked_trace_time, axis=0)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
     # median of the std over the camera
-    median_of_pixel_median = np.median(pixel_std, axis=1)
+    median_of_pixel_median = np.ma.median(pixel_std, axis=1)
 
     # time outliers from median
     relative_median = pixel_median - median_of_pixel_median[:, np.newaxis]
@@ -315,10 +315,10 @@ def calculate_relative_gain_results(
     pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
     # std of median over the camera
-    std_of_pixel_median = np.std(pixel_median, axis=1)
+    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
 
     # median of the std over the camera
-    median_of_pixel_median = np.median(pixel_median, axis=1)
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
     # relative gain
     relative_gain_event = masked_trace_integral / event_median[:, :, np.newaxis]
@@ -332,9 +332,9 @@ def calculate_relative_gain_results(
 
 
     return {
-        'relative_gain_median': np.ma.getdata(np.median(relative_gain_event, axis=0)),
-        'relative_gain_mean': np.ma.getdata(np.mean(relative_gain_event, axis=0)),
-        'relative_gain_std': np.ma.getdata(np.std(relative_gain_event, axis=0)),
+        'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
+        'relative_gain_mean': np.ma.getdata(np.ma.mean(relative_gain_event, axis=0)),
+        'relative_gain_std': np.ma.getdata(np.ma.std(relative_gain_event, axis=0)),
         'charge_median': np.ma.getdata(pixel_median),
         'charge_mean': np.ma.getdata(pixel_mean),
         'charge_std': np.ma.getdata(pixel_std),
