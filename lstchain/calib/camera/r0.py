@@ -1,8 +1,8 @@
 import numpy as np
 from astropy.io import fits
 from ctapipe.core import Component
-from ctapipe.core.traits import Unicode
-
+from ctapipe.core.traits import Unicode, Int
+from abc import abstractmethod
 from numba import jit, prange
 
 
@@ -43,6 +43,20 @@ class CameraR0Calibrator(Component):
         super().__init__(config=config, parent=tool, **kwargs)
 
 
+    @abstractmethod
+    def calibrate(self, event):
+        """
+        Abstract method to be defined in child class.
+
+        Perform the conversion from raw R0 data to R1 data
+        (ADC Samples -> PE Samples), and fill the r1 container.
+
+        Parameters
+        ----------
+        event : container
+            A `ctapipe` event container
+        """
+
 class LSTR0Corrections(CameraR0Calibrator):
     """
     The R0 calibrator class for LST Camera.
@@ -52,6 +66,10 @@ class LSTR0Corrections(CameraR0Calibrator):
         '',
         allow_none=True,
         help='Path to the LST pedestal binary file'
+    ).tag(config=True)
+    telid = Int(
+        0,
+        help='id of the telescope to calibrate'
     ).tag(config=True)
 
     def __init__(self, config=None, tool=None, offset=300, **kwargs):
@@ -71,7 +89,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         kwargs
         """
         super().__init__(config=config, tool=tool, **kwargs)
-        self.telid = 0
+
         self.n_module = 265
         self.n_gain = 2
         self.n_pix = 7
@@ -91,6 +109,16 @@ class LSTR0Corrections(CameraR0Calibrator):
         self.first_cap_old_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
 
         self._load_calib()
+
+    def calibrate(self, event):
+        for telid in event.r0.tels_with_data:
+            self.subtract_pedestal(event)
+            self.time_lapse_corr(event)
+            self.interpolate_spikes(event)
+
+            samples = event.r0.tel[telid].waveform[:,:,2:38]
+            event.r1.tel[telid].waveform = samples.astype('float32')
+
 
     def subtract_pedestal(self, event):
         """
@@ -318,3 +346,33 @@ def interpolate_spike_B(waveform, gain, position, pixel):
     """
     samples = waveform[gain, pixel, :]
     waveform[gain, pixel, position] = 0.5 * (samples[position - 1] + samples[position + 1])
+
+
+class NullR0Calibrator(CameraR0Calibrator):
+    """
+    A dummy R1 calibrator that simply fills the r1 container with the samples
+    from the r0 container.
+
+    Parameters
+    ----------
+    config : traitlets.loader.Config
+        Configuration specified by config file or cmdline arguments.
+        Used to set traitlet values.
+        Set to None if no configuration to pass.
+    tool : ctapipe.core.Tool or None
+        Tool executable that is calling this component.
+        Passes the correct logger to the component.
+        Set to None if no Tool to pass.
+    kwargs
+    """
+
+    def __init__(self, config=None, parent=None, **kwargs):
+        super().__init__(config, parent, **kwargs)
+        self.log.info("Using NullR0Calibrator, if event source is at "
+                      "the R0 level, then r1 samples will equal r0 samples")
+
+    def calibrate(self, event):
+        for telid in event.r0.tels_with_data:
+            samples = event.r0.tel[telid].waveform[:,:,2:38]
+            event.r1.tel[telid].waveform = samples.astype('float32')
+
