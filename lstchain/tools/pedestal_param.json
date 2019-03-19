@@ -3,12 +3,17 @@
 
    "PedestalHDF5Writer": {
      "calculator_product": "PedestalIntegrator",
+     "r0calibrator_product": "LSTR0Corrections",
      "output_file":"pedestal.hdf5",
      "log_level":"DEBUG"
    },         
    "EventSource": {
-      "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00249.0000.fits.fz",
       "max_events": 100
+   },
+   "LSTR0Corrections": {
+      "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
+      "telid": 0
    },
    "PedestalCalculator":{
      "sample_size": 90,

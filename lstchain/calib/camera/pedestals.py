@@ -107,7 +107,7 @@ class PedestalCalculator(Component):
         super().__init__(**kwargs)
 
         # initialize the output
-        #self.container = PedestalContainer()
+        self.container = PedestalContainer()
 
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
@@ -187,7 +187,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         # real data
         if not event.mcheader.simtel_version:
-            trigger_time = event.r1.tel[self.tel_id].trigger_time
+            trigger_time = event.r0.tel[self.tel_id].trigger_time
             pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_mask
 
         else: # patches for MC data

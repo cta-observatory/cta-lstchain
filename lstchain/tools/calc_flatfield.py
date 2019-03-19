@@ -12,6 +12,7 @@ from ctapipe.image import WaveformCleaner, ChargeExtractor
 
 from lstchain.calib.camera import FlatFieldCalculator
 from ctapipe_io_lst.containers import FlatFieldContainer
+from lstchain.calib.camera.r0 import CameraR0Calibrator
 
 __all__=['FlatFieldHDF5Writer']
 
@@ -33,7 +34,10 @@ class FlatFieldHDF5Writer(Tool):
         FlatFieldCalculator,
         default='FlasherFlatFieldCalculator'
     )
-
+    r0calibrator_product = tool_utils.enum_trait(
+        CameraR0Calibrator,
+        default='NullR0Calibrator'
+    )
     aliases = Dict(dict(
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
@@ -56,6 +60,7 @@ class FlatFieldHDF5Writer(Tool):
                     ] + tool_utils.classes_with_traits(WaveformCleaner)
                    + tool_utils.classes_with_traits(ChargeExtractor)
                    + tool_utils.classes_with_traits(FlatFieldCalculator)
+                   + tool_utils.classes_with_traits(CameraR0Calibrator)
                    )
 
     def __init__(self, **kwargs):
@@ -65,6 +70,7 @@ class FlatFieldHDF5Writer(Tool):
         self.container = None
         self.writer = None
         self.cleaner = None
+        self.r0calibrator = None
 
     def setup(self):
 
@@ -79,6 +85,10 @@ class FlatFieldHDF5Writer(Tool):
             self.cleaner_product,
             **kwargs
         )
+        self.r0calibrator = CameraR0Calibrator.from_name(
+            self.r0calibrator_product,
+            **kwargs
+        )
         self.writer = HDF5TableWriter(
 
             filename=self.output_file, group_name='flatfield', overwrite=True
@@ -91,15 +101,21 @@ class FlatFieldHDF5Writer(Tool):
         table_name = 'tel_' + str(self.flatfield.tel_id)
         self.log.info("write events in table: /flatfield/%s",
                       table_name)
-
+        
+        write_config = False
         for count, event in enumerate(self.eventsource):
-            # one should add hier the pedestal subtraction and/or cleaner
-            ff_data = self.flatfield.calculate_relative_gain(event)
+            # perform R0->R1
+            self.r0calibrator.calibrate(event)
 
-            if ff_data:
+            # one should add hier the pedestal subtraction and/or cleaner
+            if self.flatfield.calculate_relative_gain(event):
+
+                ff_data = event.mon.tel[self.flatfield.tel_id].flatfield
+
                 # save the config, to be retrieved as data.meta['config']
-                if count == 0:
+                if not write_config:
                     ff_data.meta['config']=self.config
+                    write_config = True
 
                 self.writer.write(table_name, ff_data)
 
