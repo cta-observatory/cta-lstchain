@@ -31,6 +31,10 @@ class CameraR0Calibrator(Component):
     kwargs
     """
 
+    r1_sample_start = Int(0, help='Start sample for r1 waveform').tag(config=True)
+
+    r1_sample_end = Int(0, help='End sample for r1 waveform').tag(config=True)
+
     def __init__(self, **kwargs):
         """
         Parent class for the r0 calibrators. Change the r0 container.
@@ -46,17 +50,18 @@ class CameraR0Calibrator(Component):
             Set to None if no Tool to pass.
         kwargs
         """
-        super().__init__(**kwargs)
 
+        # zero length change if the interval is not initialized
+
+
+        super().__init__(**kwargs)
 
     @abstractmethod
     def calibrate(self, event):
         """
         Abstract method to be defined in child class.
-
         Perform the conversion from raw R0 data to R1 data
         (ADC Samples -> PE Samples), and fill the r1 container.
-
         Parameters
         ----------
         event : container
@@ -73,15 +78,21 @@ class LSTR0Corrections(CameraR0Calibrator):
         allow_none=True,
         help='Path to the LST pedestal binary file'
     ).tag(config=True)
+
+    offset = Int(
+        300,
+        help='Define the offset of the baseline'
+    ).tag(config=True)
+
     telid = Int(
         0,
         help='id of the telescope to calibrate'
     ).tag(config=True)
 
-    def __init__(self,  offset=300, **kwargs):
+    def __init__(self, **kwargs):
         """
         The R0 calibrator for LST data.
-        Change the r0 container.
+        Fill the r1 container.
         Parameters
         ----------
         config : traitlets.loader.Config
@@ -94,14 +105,12 @@ class LSTR0Corrections(CameraR0Calibrator):
             Set to None if no Tool to pass.
         kwargs
         """
-        super().__init__( **kwargs)
-
+        super().__init__(**kwargs)
         self.n_module = 265
         self.n_gain = 2
         self.n_pix = 7
         self.size4drs = 4 * 1024
         self.roisize = 40
-        self.offset = offset
         self.high_gain = 0
         self.low_gain = 1
 
@@ -122,15 +131,13 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.time_lapse_corr(event)
             self.interpolate_spikes(event)
 
-            samples = event.r0.tel[telid].waveform[:,:,2:38]
+            samples = event.r1.tel[telid].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
             event.r1.tel[telid].waveform = samples.astype('float32')
-
 
     def subtract_pedestal(self, event):
         """
         Subtract cell offset using pedestal file.
-        Change the R0 container.
-
+        Fill the R1 container.
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -141,19 +148,19 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
         expected_pixel_id = event.lst.tel[0].svc.pixel_ids
-        event.r0.tel[self.telid].waveform[:, :, :] = subtract_pedestal_jit(
+        samples = subtract_pedestal_jit(
             event.r0.tel[self.telid].waveform,
             expected_pixel_id,
             self.first_cap_array,
             self.pedestal_value_array,
             n_modules)
-        event.r0.tel[self.telid].waveform.astype(np.uint16)
+        event.r1.tel[self.telid].waveform = samples[:, :, :]
 
     def time_lapse_corr(self, event):
         """
         Perform time lapse baseline corrections.
-        Change the R0 container.
-
+        Fill the R1 container or
+        modifies R0 container
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -164,15 +171,22 @@ class LSTR0Corrections(CameraR0Calibrator):
         for nr_module in range(0, n_modules):
             self.first_cap_time_lapse_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
-        do_time_lapse_corr(event.r0.tel[0].waveform, expected_pixel_id, local_clock_list,
-                           self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
-        event.r0.tel[self.telid].waveform.astype(np.uint16)
+        #If R1 container exist modifies it
+        if isinstance(event.r1.tel[0].waveform, np.ndarray):
+            samples = event.r1.tel[0].waveform
+            do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
+                               self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
+            event.r1.tel[self.telid].waveform = samples[:, :, :]
+        else: # Modifies R0 container. This is for create pedestal file.
+            samples = event.r0.tel[0].waveform
+            do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
+                               self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
+            event.r0.tel[self.telid].waveform = samples[:, :, :]
 
     def interpolate_spikes(self, event):
         """
         Interpolates spike A & B.
-        Change the R0 container.
-
+        Fill the R1 container.
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -182,16 +196,17 @@ class LSTR0Corrections(CameraR0Calibrator):
         for nr_module in range(0, n_modules):
             self.first_cap_array_spike[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
-        waveform = event.r0.tel[0].waveform[:, :, :]
-        expected_pixel_id = event.lst.tel[0].svc.pixel_ids
-        wf = waveform.copy()
-        wf = wf.astype('int16')
-        event.r0.tel[0].waveform = self.interpolate_pseudo_pulses(wf,
-                                                                  expected_pixel_id,
-                                                                  self.first_cap_array_spike,
-                                                                  self.first_cap_old_array,
-                                                                  n_modules)
-        event.r0.tel[self.telid].waveform.astype(np.uint16)
+        # Interpolate spikes should be done after pedestal subtraction and time lapse correction.
+        if isinstance(event.r1.tel[0].waveform, np.ndarray):
+            waveform = event.r1.tel[0].waveform[:, :, :]
+            expected_pixel_id = event.lst.tel[0].svc.pixel_ids
+            samples = waveform.copy()
+            samples = samples.astype('int16')
+            event.r1.tel[self.telid].waveform = self.interpolate_pseudo_pulses(samples,
+                                                                      expected_pixel_id,
+                                                                      self.first_cap_array_spike,
+                                                                      self.first_cap_old_array,
+                                                                      n_modules)
 
     @staticmethod
     @jit(parallel=True)
@@ -199,7 +214,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         """
         Interpolate Spike A & B.
         Change waveform array.
-
         Parameters
         ----------
         waveform : ndarray
@@ -328,9 +342,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
 def ped_time(timediff):
     """
     Power law function for time lapse baseline correction.
-    Coefficients from curve fitting.
+    Coefficients from curve fitting to dragon test data
+    at temperature 30 degC
     """
-    return 29.3 * np.power(timediff, -0.2262) - 12.4
+    return 27.33 * np.power(timediff, -0.24) - 10.4
 
 @jit
 def interpolate_spike_A(waveform, gain, position, pixel):
@@ -358,7 +373,6 @@ class NullR0Calibrator(CameraR0Calibrator):
     """
     A dummy R0 calibrator that simply fills the r1 container with the samples
     from the r0 container.
-
     Parameters
     ----------
     config : traitlets.loader.Config
@@ -379,6 +393,7 @@ class NullR0Calibrator(CameraR0Calibrator):
 
     def calibrate(self, event):
         for telid in event.r0.tels_with_data:
-            samples = event.r0.tel[telid].waveform[:,:,2:38]
+            samples = event.r0.tel[telid].waveform[:,:,self.r1_sample_start:self.r1_sample_end]
             event.r1.tel[telid].waveform = samples.astype('float32')
+
 
