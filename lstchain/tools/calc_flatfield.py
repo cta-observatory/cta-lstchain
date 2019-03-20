@@ -101,7 +101,7 @@ class FlatFieldHDF5Writer(Tool):
         table_name = 'tel_' + str(self.flatfield.tel_id)
         self.log.info("write events in table: /flatfield/%s",
                       table_name)
-        
+
         write_config = False
         for count, event in enumerate(self.eventsource):
             # perform R0->R1

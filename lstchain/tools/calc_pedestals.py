@@ -86,11 +86,13 @@ class PedestalHDF5Writer(Tool):
             # perform R0->R1
             self.r0calibrator.calibrate(event)
 
+
             # fill pedestal monitoring container
             if self.pedestal.calculate_pedestals(event):
 
                 ped_data = event.mon.tel[self.pedestal.tel_id].pedestal
-
+                self.log.debug(f" r0 {event.r0.tel[0].waveform.shape}")
+                self.log.debug(f" r1 {event.r1.tel[0].waveform.shape}")
                 if not write_config:
                     ped_data.meta['config']=self.config
                     write_config = True
