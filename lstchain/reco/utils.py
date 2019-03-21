@@ -227,7 +227,7 @@ def get_event_pos_in_camera(event, tel):
                                focal,
                                array_pointing.alt, array_pointing.az)
     '''
-    camera_pos = array_pointing.transform_to(camera_frame)
+    camera_pos = event_direction.transform_to(camera_frame)
     return camera_pos.x, camera_pos.y
 
 @deprecated('31/01/2019', message='Use disp_parameters')
