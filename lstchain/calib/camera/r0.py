@@ -31,9 +31,10 @@ class CameraR0Calibrator(Component):
     kwargs
     """
 
-    r1_sample_start = Int(0, help='Start sample for r1 waveform').tag(config=True)
 
-    r1_sample_end = Int(0, help='End sample for r1 waveform').tag(config=True)
+    r1_sample_start = Int(default_value=None, help='Start sample for r1 waveform',allow_none=True).tag(config=True)
+
+    r1_sample_end = Int(default_value=None, help='End sample for r1 waveform',allow_none=True).tag(config=True)
 
     def __init__(self, **kwargs):
         """

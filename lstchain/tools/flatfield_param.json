@@ -20,7 +20,9 @@
    },
      "LSTR0Corrections": {
       "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
-      "telid": 0
+      "telid": 0,
+       "r1_sample_start": 2,
+      "r1_sample_end": 38
    },
     "LocalPeakIntegrator":{
      "window_shift": 4,
