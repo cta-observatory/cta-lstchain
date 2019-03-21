@@ -4,7 +4,7 @@
    "PedestalHDF5Writer": {
      "calculator_product": "PedestalIntegrator",
      "r0calibrator_product": "LSTR0Corrections",
-     "output_file":"pedestal.hdf5",
+     "output_file":"/astro/users/cassol/soft/python/lstchain-test/pedestal.hdf5",
      "log_level":"DEBUG"
    },         
    "EventSource": {
@@ -13,15 +13,15 @@
    },
    "LSTR0Corrections": {
       "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
-      "telid": 0,
-      "r1_sample_start": 2,
-      "r1_sample_end": 38
+      "telid": 0
    },
    "PedestalCalculator":{
      "sample_size": 90,
      "sample_duration":1000,
      "tel_id":0,
-      "charge_product":"LocalPeakIntegrator"
+     "charge_median_cut_outliers": [3,3],
+     "charge_std_cut_outliers": [3,3],
+     "charge_product":"LocalPeakIntegrator"
    },
     "LocalPeakIntegrator":{
      "window_shift": 4,

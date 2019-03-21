@@ -70,7 +70,7 @@ class PedestalCalculator(Component):
         2,
         help='number of channels to be treated'
     ).tag(config=True)
-    charge_cut_outliers = List(
+    charge_median_cut_outliers = List(
         [3,3],
         help='Interval (number of std) of accepted charge values'
     ).tag(config=True)
@@ -315,8 +315,8 @@ def calculate_pedestal_results(self,
 
     # outliers from median
     deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-    charge_median_outliers = np.logical_or(deviation < - self.charge_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
-                                           deviation > self.charge_cut_outliers[1] * std_of_pixel_median[:,np.newaxis])
+    charge_median_outliers = np.logical_or(deviation < - self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
+                                           deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis])
 
     return {
         'charge_median': np.ma.getdata(pixel_median),
