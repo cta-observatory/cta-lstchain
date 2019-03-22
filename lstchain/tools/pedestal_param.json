@@ -8,7 +8,7 @@
      "log_level":"DEBUG"
    },         
    "EventSource": {
-      "input_url": "/ctadata/franca/LST/LST-1.1.Run00249.0000.fits.fz",
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00251.0000.fits.fz",
       "max_events": 100
    },
    "LSTR0Corrections": {
