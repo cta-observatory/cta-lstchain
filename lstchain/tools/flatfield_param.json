@@ -1,0 +1,29 @@
+{
+   "version": 1,
+   
+   "FlatFieldHDF5Writer": {
+     "cleaner_product": "BaselineWaveformCleaner",
+     "calculator_product": "FlasherFlatFieldCalculator",
+     "output_file":"/astro/users/cassol/soft/python/cta-lstchain/lstchain/tools/flatfield.hdf5",
+     "log_level":"DEBUG"
+   },         
+   "EventSource": {
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
+      "max_events": 100
+   },
+    "FlatFieldCalculator":{
+     "sample_size": 90,
+     "sample_duration":1000,
+     "tel_id":0,
+      "charge_product":"LocalPeakIntegrator"
+   },
+    "LocalPeakIntegrator":{
+     "window_shift": 4,
+     "window_width":10
+    },
+   "BaselineWaveformCleaner":{
+     "baseline_start": 2,
+     "baseline_end":7
+    }
+
+}
