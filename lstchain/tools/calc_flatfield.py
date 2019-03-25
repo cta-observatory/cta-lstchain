@@ -96,11 +96,11 @@ class FlatFieldHDF5Writer(Tool):
             # one should add hier the pedestal subtraction and/or cleaner
             ff_data = self.flatfield.calculate_relative_gain(event)
 
-            if ff_data:
-                # save the config, to be retrieved as data.meta['config']
-                if count == 0:
-                    ff_data.meta['config']=self.config
+            # save the config, to be retrieved as data.meta['config']
+            if count == 0:
+                ff_data.meta['config'] = self.config
 
+            if ff_data:
                 self.writer.write(table_name, ff_data)
 
     def finish(self):

@@ -4,7 +4,7 @@
    "FlatFieldHDF5Writer": {
      "cleaner_product": "BaselineWaveformCleaner",
      "calculator_product": "FlasherFlatFieldCalculator",
-     "output_file":"flatfield.hdf5",
+     "output_file":"/astro/users/cassol/soft/python/cta-lstchain/lstchain/tools/flatfield.hdf5",
      "log_level":"DEBUG"
    },         
    "EventSource": {
