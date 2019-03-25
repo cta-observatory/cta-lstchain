@@ -92,15 +92,18 @@ class FlatFieldHDF5Writer(Tool):
         self.log.info("write events in table: /flatfield/%s",
                       table_name)
 
+        write_config = False
         for count, event in enumerate(self.eventsource):
             # one should add hier the pedestal subtraction and/or cleaner
             ff_data = self.flatfield.calculate_relative_gain(event)
 
-            # save the config, to be retrieved as data.meta['config']
-            if count == 0:
-                ff_data.meta['config'] = self.config
 
             if ff_data:
+                # save the config, to be retrieved as data.meta['config']
+                if not write_config:
+                    ff_data.meta['config'] = self.config
+                    write_config = True
+
                 self.writer.write(table_name, ff_data)
 
     def finish(self):
