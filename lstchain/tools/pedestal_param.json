@@ -1,0 +1,23 @@
+{
+   "version": 1,
+
+   "PedestalHDF5Writer": {
+     "calculator_product": "PedestalIntegrator",
+     "output_file":"pedestal.hdf5",
+     "log_level":"DEBUG"
+   },         
+   "EventSource": {
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
+      "max_events": 100
+   },
+   "PedestalCalculator":{
+     "sample_size": 90,
+     "sample_duration":1000,
+     "tel_id":0,
+      "charge_product":"LocalPeakIntegrator"
+   },
+    "LocalPeakIntegrator":{
+     "window_shift": 4,
+     "window_width":10
+    }
+}
