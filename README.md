@@ -24,9 +24,16 @@ Here is how you should install:
 ```
 conda env create --name cta --file environment.yml
 conda activate cta
+CTAPIPE_VERSION=master
+PROTOZFITS_VERSION=v1.4.2
+CTAPIPE_IO_LST_VERSION=master
 pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
 pip install https://github.com/cta-sst-1m/protozfitsreader/archive/$PROTOZFITS_VERSION.tar.gz
 pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
+```
+
+If you made local changes to `lstchain` that you want to install, run
+```
 python setup.py install
 ```
 
