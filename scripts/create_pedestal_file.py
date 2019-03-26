@@ -1,12 +1,16 @@
+import sys
+sys.path.insert(0,'/home/pawel1/Pulpit/Astrophysics/CTA/soft/ctapipe_io_lst')
+from ctapipe_io_lst import LSTEventSource
+
 import argparse
 import numpy as np
 from astropy.io import fits
 from ctapipe.io import EventSeeker
-
-from lstchain.io.lsteventsource import LSTEventSource
+from traitlets.config.loader import Config
 
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
+
 
 ''' 
 Script to create pedestal file for low level calibration. 
@@ -34,13 +38,19 @@ if __name__ == '__main__':
     reader = LSTEventSource(input_url=args.input_file, max_events=args.max_events)
     print("---> Number of files", reader.multi_file.num_inputs())
 
-    lst_r0 = LSTR0Corrections()
-
     seeker = EventSeeker(reader)
     ev = seeker[0]
     n_modules = ev.lst.tel[0].svc.num_modules
+    telid = ev.r0.tels_with_data[0]
 
-    ped = DragonPedestal()
+    config = Config({
+        "LSTR0Corrections": {
+            "telid": telid
+        }
+    })
+    lst_r0 = LSTR0Corrections(config=config)
+
+    ped = DragonPedestal(telid=telid)
     PedList = []
     pedestal_value_array = np.zeros((n_modules, 2, 7, 4096), dtype=np.uint16)
 
@@ -60,7 +70,7 @@ if __name__ == '__main__':
         pedestal_value_array[i, :, :, :] = PedList[i].meanped
 
     # re-order offset values according to expected pixel id
-    expected_pixel_id = ev.lst.tel[0].svc.pixel_ids
+    expected_pixel_id = ev.lst.tel[telid].svc.pixel_ids
     ped_array = np.zeros((2, 1855, 4096), dtype=np.uint16)
     for nr in range(0, n_modules):
         for gain in range(0, 2):
@@ -68,7 +78,7 @@ if __name__ == '__main__':
                 pixel = expected_pixel_id[nr * 7 + pix]
                 ped_array[:, pixel, :] = pedestal_value_array[nr, :, pix, :]
 
-    primaryhdu = fits.PrimaryHDU(ev.lst.tel[0].svc.pixel_ids)
+    primaryhdu = fits.PrimaryHDU(ev.lst.tel[telid].svc.pixel_ids)
     secondhdu = fits.ImageHDU(ped_array)
 
     hdulist = fits.HDUList([primaryhdu, secondhdu])
