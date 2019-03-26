@@ -22,19 +22,11 @@ master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta
 Current `lstchain` build uses `ctapipe` master version.   
 Here is how you should install:
 ```
-git clone https://github.com/cta-observatory/ctapipe
-cd ctapipe
-conda env create -n cta-dev --file environment.yml
-source activate cta-dev
-pip install -e .
-pip install https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
-cd ..
-git clone https://github.com/cta-observatory/ctapipe_io_lst
-cd ctapipe_io_lst
-python setup.py install
-cd ..
-git clone https://github.com/cta-observatory/cta-lstchain.git
-cd cta-lstchain
+conda env create --name cta --file environment.yml
+conda activate cta
+pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
+pip install https://github.com/cta-sst-1m/protozfitsreader/archive/$PROTOZFITS_VERSION.tar.gz
+pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
 python setup.py install
 ```
 
