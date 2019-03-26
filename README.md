@@ -7,6 +7,7 @@ master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta
 
 ## Install
 
+> Old install procedure:
 > If you are a user and don't already have ctapipe installed:
 > ```
 > conda env create -f environment.yml
@@ -22,6 +23,8 @@ master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta
 Current `lstchain` build uses `ctapipe` master version.   
 Here is how you should install:
 ```
+git clone https://github.com/cta-observatory/cta-lstchain.git
+cd cta-lstchain
 conda env create --name cta --file environment.yml
 conda activate cta
 CTAPIPE_VERSION=master
