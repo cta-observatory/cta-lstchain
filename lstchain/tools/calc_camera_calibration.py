@@ -140,7 +140,7 @@ class CameraCalibrator(Tool):
                     else:
                         self.log.debug(f"write pedestal data")
                         # write only after a first event (used to initaliazed the mask)
-                        self.writer.write("pedestal", ped_data)
+                        self.writer.write('pedestal', ped_data)
 
             # consider flat field events only after first pedestal event
             elif event.r0.tel[self.tel_id].trigger_type == 1 and ped_initialized:
@@ -154,9 +154,7 @@ class CameraCalibrator(Tool):
 
                     status_data.calibration_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
 
-                    charge = ff_data.charge_median - ped_data.charge_median
-
-                    masked_charge = np.ma.array(charge, mask=status_data.calibration_mask)
+                    masked_charge = np.ma.array(ff_data.charge_median , mask=status_data.calibration_mask)
                     masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
                                                     mask=status_data.calibration_mask)
                     masked_time = np.ma.array(ff_data.relative_time_median, mask=status_data.calibration_mask)
