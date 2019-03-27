@@ -52,69 +52,51 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
     #Train the models
+    features = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 
+                'skewness', 'kurtosis','r', 'intercept', 'time_gradient']
 
-    features = ['intensity',
-                'time_gradient',
-                'width',
-                'length',
-                'wl',
-                'phi',
-                'psi']
-
-    #Split data in train and test events:
-    df_gammas = pd.read_hdf(args.gammafile, key='events/LSTCam')
-    df_proton = pd.read_hdf(args.protonfile, key='events/LSTCam')
-
-    train, test = train_test_split(df_gammas, test_size=0.2)
-    test = test.append(df_proton,
-                       ignore_index=True)
-
-    reg_energy, reg_disp = dl1_to_dl2.train_reco(train, features)
+    intensity_min = np.log10(100)
+    r_max = 0.8
     
-    test['e_rec'] = reg_energy.predict(test[features])
-    test['disp_rec'] = reg_disp.predict(test[features])
+    reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
+        args.gammafile,
+        args.protonfile,
+        features,
+        intensity_min = intensity_min, 
+        r_max = r_max, 
+        save_models=args.storerf,
+        path_models=args.path_models,
+        config_file=args.config_file
+    )
 
-    test['src_x_rec'], test['src_y_rec'] = utils.disp_to_pos(test['disp_rec'],
-                                                             test['x'],
-                                                             test['y'],
-                                                             test['psi'])
-    
-    features_sep = list(features)
-    features_sep.append('e_rec')
-    features_sep.append('disp_rec')
+    gammas = dl1_to_dl2.filter_events(pd.read_hdf(args.gammafile), 
+                                      r_max=r_max, intensity_min=intensity_min)
+    proton = dl1_to_dl2.filter_events(pd.read_hdf(args.protonfile), 
+                                      r_max=r_max, intensity_min=intensity_min)
+    data = pd.concat([gammas,proton], ignore_index=True)
 
-    train, test = train_test_split(test, test_size=0.25)
-    #Train the Classifier
+    dl2 = dl1_to_dl2.apply_models(data, features, 
+                                  cls_gh, reg_energy, reg_disp_vector)
     
-    cls_gh = dl1_to_dl2.train_sep(train,
-                                  features_sep)
 
-    test['hadro_rec'] = cls_gh.predict(test[features_sep])
-    
-    if args.storerf==True:
-        os.makedirs(args.path_models, exist_ok=True)
-        file_energy = args.path_models + "/reg_energy.sav"
-        file_disp = args.path_models + "/reg_disp.sav"
-        file_cls_gh = args.path_models + "/cls_gh.sav"
-        joblib.dump(reg_energy, file_energy)
-        joblib.dump(reg_disp, file_disp)
-        joblib.dump(cls_gh, file_cls_gh)
+    plot_dl2.plot_features(dl2)
+    plt.show()
+    plot_dl2.plot_e(dl2)
+    plt.show()
+    #plot_dl2.plot_disp(dl2)
+    #plt.show()
+    fig, axes = plt.subplots(1, 2, figsize=(15,6))
 
+    axes[0].hist2d(dl2.disp_dx, dl2.disp_dx_rec, bins=60);
+    axes[0].set_xlabel('mc_disp')
+    axes[0].set_ylabel('reco_disp')
+    axes[0].set_title('disp_dx')
     
-    #Plot some results
-    e_cuts = [-1, np.log10(500), np.log10(1000)]
+    axes[1].hist2d(dl2.disp_dy, dl2.disp_dy_rec, bins=60);
+    axes[1].set_xlabel('mc_disp')
+    axes[1].set_ylabel('reco_disp')
+    axes[1].set_title('disp_dy');
     
-    for e_cut in e_cuts:
-        test = test[test['e_rec']>e_cut]
-        plot_dl2.plot_features(test)
-        plt.show()
-        plot_dl2.plot_e(test)
-        plt.show()
-        plot_dl2.plot_disp(test)
-        plt.show()
-        plot_dl2.plot_pos(test)
-        plt.show()
-        plot_dl2.plot_importances(cls_gh, features_sep)
-        plt.show()
-        plot_dl2.plot_ROC(cls_gh, test, features_sep, e_cut)
-        plt.show()
+    plt.show()
+    plot_dl2.plot_pos(dl2)
+    plt.show()
