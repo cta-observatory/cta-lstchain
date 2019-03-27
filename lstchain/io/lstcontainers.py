@@ -10,6 +10,9 @@ from ctapipe.image import timing_parameters as time
 from ..reco import utils
 from numpy import nan
 
+all = [
+    'DL1ParametersContainer',
+]
 
 class DL1ParametersContainer(Container):
     """
@@ -65,16 +68,12 @@ class DL1ParametersContainer(Container):
         """
         fill Hillas parameters
 
-        hillas: HillasContainer
+        hillas: HillasParametersContainer
         # TODO : parameters should not be simply copied but inherited
         (e.g. conserving unit definition)
         """
-        for k in hillas.keys():
-            try:
-                self[k] = hillas[k]
-            except:
-                print("{} cannot be copied in container".format(k))
-                pass
+        for key in hillas.keys():
+            self[key] = hillas[key]
 
     def fill_mc(self, event):
         """
@@ -91,24 +90,28 @@ class DL1ParametersContainer(Container):
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
-        except:
+        except IndexError:
             print("mc information not filled")
 
     def fill_event_info(self, event):
-        try:
-            self.gps_time = event.trig.gps_time
-            self.obs_id = event.r0.obs_id
-            self.event_id = event.r0.event_id
-        except:
-            print("event information not filled")
+        self.gps_time = event.trig.gps_time
+        self.obs_id = event.r0.obs_id
+        self.event_id = event.r0.event_id
 
     def get_features(self, features_names):
-        return np.array([self[k].value if isinstance(self[k], Quantity) else self[k]
-                         for k in features_names])
+        return np.array([
+            self[k].value
+            if isinstance(self[k], Quantity)
+            else self[k]
+            for k in features_names
+        ])
 
     def set_mc_core_distance(self, event, telescope_id):
         tel_pos = event.inst.subarray.positions[telescope_id]
-        distance = np.sqrt((event.mc.core_x - tel_pos[0]) ** 2 + (event.mc.core_y - tel_pos[1]) ** 2)
+        distance = np.sqrt(
+            (event.mc.core_x - tel_pos[0]) ** 2 +
+            (event.mc.core_y - tel_pos[1]) ** 2
+        )
         self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
@@ -121,13 +124,10 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peakpos, hillas):
-        try:
-            peak_time = Quantity(peakpos) * u.Unit("ns")
-            timepars = time.timing_parameters(geom, image, peak_time, hillas)
-            self.time_gradient = timepars['slope'].value
-            self.intercept = timepars['intercept']
-        except:
-            pass
+        peak_time = Quantity(peakpos) * u.Unit("ns")
+        timepars = time.timing_parameters(geom, image, peak_time, hillas)
+        self.time_gradient = timepars.slope.value
+        self.intercept = timepars.intercept
 
     def set_source_camera_position(self, event, telescope_id):
         # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,

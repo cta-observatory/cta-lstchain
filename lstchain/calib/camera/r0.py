@@ -1,6 +1,6 @@
 import numpy as np
 from astropy.io import fits
-from ctapipe.core import Component, Factory
+from ctapipe.core import Component
 from ctapipe.core.traits import Unicode
 
 from numba import jit, prange
