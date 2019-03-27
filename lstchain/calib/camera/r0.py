@@ -30,7 +30,10 @@ class CameraR0Calibrator(Component):
         Set to None if no Tool to pass.
     kwargs
     """
-
+    tel_id = Int(
+        0,
+        help='id of the telescope to calibrate'
+    ).tag(config=True)
 
     r1_sample_start = Int(default_value=None, help='Start sample for r1 waveform',allow_none=True).tag(config=True)
 

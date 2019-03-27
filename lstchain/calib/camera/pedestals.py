@@ -72,11 +72,11 @@ class PedestalCalculator(Component):
     ).tag(config=True)
     charge_median_cut_outliers = List(
         [3,3],
-        help='Interval (number of std) of accepted charge values'
+        help='Interval (number of std) of accepted charge values around camera median value'
     ).tag(config=True)
     charge_std_cut_outliers = List(
         [3,3],
-        help='Interval (number of std) of accepted charge standard deviation values'
+        help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
     charge_product= Unicode(
         'LocalPeakIntegrator',
@@ -310,12 +310,12 @@ def calculate_pedestal_results(self,
 
     # outliers from standard deviation
     deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
-    charge_std_outliers = np.logical_or(deviation < - self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
+    charge_std_outliers = np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
                                         deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis])
 
     # outliers from median
     deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-    charge_median_outliers = np.logical_or(deviation < - self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
+    charge_median_outliers = np.logical_or(deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
                                            deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis])
 
     return {
