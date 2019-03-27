@@ -1,6 +1,6 @@
-"""This is a module for extracting data from simtelarray files and 
-calculate image parameters of the events: Hillas parameters, timing 
-parameters. They can be stored in HDF5 file. The option of saving the 
+"""This is a module for extracting data from simtelarray files and
+calculate image parameters of the events: Hillas parameters, timing
+parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
 Usage:
@@ -8,8 +8,14 @@ Usage:
 "import calib_dl0_to_dl1"
 
 """
+import os
+import logging
 import numpy as np
-from ctapipe.image import hillas_parameters, tailcuts_clean
+from ctapipe.image import (
+    hillas_parameters,
+    tailcuts_clean,
+    HillasParameterizationError,
+)
 from ctapipe.image.charge_extractors import LocalPeakIntegrator
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
@@ -21,9 +27,9 @@ from eventio.simtel.simtelfile import SimTelFile
 import pandas as pd
 import astropy.units as units
 import h5py
-import math 
+import math
 from . import utils
-from ..calib.calib import lst_calibration, gain_selection
+from ..calib.camera import lst_calibration, gain_selection
 from ..io.lstcontainers import DL1ParametersContainer
 
 ### PARAMETERS - TODO: use a yaml config file
@@ -45,6 +51,7 @@ cleaning_parameters = {'boundary_thresh': 3,
                        'keep_isolated_pixels': False,
                        'min_number_picture_neighbors': 1
                        }
+
 
 def get_dl1(calibrated_event, telescope_id):
     """
@@ -68,107 +75,120 @@ def get_dl1(calibrated_event, telescope_id):
     waveform = calibrated_event.r0.tel[telescope_id].waveform
     image = dl1.image
     peakpos = dl1.peakpos
-    
-    image,peakpos = gain_selection(waveform, image, peakpos, 
-                                   camera.cam_id, threshold)
-    
-    signal_pixels = cleaning_method(camera, image, 
+
+    image, peakpos = gain_selection(
+        waveform, image, peakpos, camera.cam_id, threshold
+    )
+
+    signal_pixels = cleaning_method(camera, image,
                                     **cleaning_parameters)
     image[~signal_pixels] = 0
-        
-    if image.sum() > 0:
-        try:
-            hillas = hillas_parameters(
-                camera,
-                image
-            )
-            ## Fill container ##
-            dl1_container.fill_mc(calibrated_event)
-            dl1_container.fill_hillas(hillas)
-            dl1_container.fill_event_info(calibrated_event)
-            dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
-            # dl1_container.mc_type = utils.guess_type(infile)
-            dl1_container.set_timing_features(camera, image, peakpos, hillas)
-            dl1_container.set_source_camera_position(calibrated_event, telescope_id)
-            dl1_container.set_disp([dl1_container.src_x, dl1_container.src_y], hillas)
-            return dl1_container
 
-        except:
-            print("Bad event")
-            return None
-
-    else:
-        return None
+    hillas = hillas_parameters(camera, image)
+    # Fill container
+    dl1_container.fill_mc(calibrated_event)
+    dl1_container.fill_hillas(hillas)
+    dl1_container.fill_event_info(calibrated_event)
+    dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
+    # dl1_container.mc_type = utils.guess_type(infile)
+    dl1_container.set_timing_features(camera, image, peakpos, hillas)
+    dl1_container.set_source_camera_position(
+        calibrated_event, telescope_id)
+    dl1_container.set_disp(
+        [dl1_container.src_x, dl1_container.src_y],
+        hillas
+    )
+    return dl1_container
 
 
-def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), output_filename=None):
+def r0_to_dl1(
+    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    output_filename=None
+):
     """
     Chain r0 to dl1
     Save the extracted dl1 parameters in output_filename
 
     Parameters
     ----------
-    input_filename: str - path to input file, default: `gamma_test_large.simtel.gz`
-    output_filename: str - path to output file, default: `./` + basename(input_filename)
+    input_filename: str
+        path to input file, default: `gamma_test_large.simtel.gz`
+    output_filename: str
+        path to output file, default: `./` + basename(input_filename)
 
     Returns
     -------
 
     """
-    import os
-    output_filename = 'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5' if output_filename is None \
-        else output_filename
+    if output_filename is None:
+        output_filename = (
+            'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
+        )
 
     source = event_source(input_filename)
     source.allowed_tels = allowed_tels
     source.max_events = max_events
 
-    with HDF5TableWriter(filename=output_filename, group_name='events', overwrite=True) as writer:
+    with HDF5TableWriter(
+        filename=output_filename,
+        group_name='events',
+        overwrite=True
+    ) as writer:
 
         for i, event in enumerate(source):
-            if i%100==0: print(i)
+            if i % 100 == 0:
+                print(i)
             if not custom:
                 cal.calibrate(event)
 
             # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
-                camera = event.inst.subarray.tel[telescope_id].camera  # Camera geometry
                 if custom:
                     lst_calibration(event, telescope_id)
 
-                dl1_container = get_dl1(event, telescope_id)
-                if dl1_container is not None:
-                    particle_name = utils.guess_type(input_filename)
+                try:
+                    dl1_container = get_dl1(event, telescope_id)
+                except HillasParameterizationError:
+                    logging.exception(
+                        'HillasParameterizationError in get_dl1()'
+                    )
+                    continue
 
-                    # Some custom def
-                    dl1_container.mc_type = utils.particle_number(particle_name)
-                    dl1_container.hadroness = 1 if dl1_container.mc_type == 1 else 0
-                    dl1_container.hadroness = dl1_container.mc_type
-                    dl1_container.wl = dl1_container.width/dl1_container.length
-                    dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)  # Log10(Energy) in GeV
-                    dl1_container.intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trig.gps_time.value
+                particle_name = utils.guess_type(input_filename)
 
-                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
-                    w = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                    l = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = w.value
-                    dl1_container.length = l.value
-                    
-                    if w>=0:
-                        writer.write(camera.cam_id, [dl1_container])
+                # Some custom def
+                dl1_container.mc_type = utils.particle_number(particle_name)
+                dl1_container.hadroness = dl1_container.mc_type
+                dl1_container.wl = dl1_container.width / dl1_container.length
+                # Log10(Energy) in GeV
+                dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)
+                dl1_container.intensity = np.log10(dl1_container.intensity)
+                dl1_container.gps_time = event.trig.gps_time.value
+
+                foclen = (
+                    event.inst.subarray.tel[telescope_id]
+                    .optics.equivalent_focal_length
+                )
+                width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                dl1_container.width = width.value
+                dl1_container.length = length.value
+
+                if width >= 0:
+                    # Camera geometry
+                    camera = event.inst.subarray.tel[telescope_id].camera
+                    writer.write(camera.cam_id, [dl1_container])
 
 
-    
 def get_events(filename, storedata=False, test=False,
                concatenate=False, storeimg=False, outdir='./results/'):
     """
     Depreciated, use r0_to_dl1.
 
-    Read a Simtelarray file, extract pixels charge, calculate image 
+    Read a Simtelarray file, extract pixels charge, calculate image
     parameters and timing parameters and store the result in an hdf5
-    file. 
-    
+    file.
+
     Parameters:
     -----------
     filename: str
@@ -182,10 +202,10 @@ def get_events(filename, storedata=False, test=False,
 
     storeimg: boolean
     True: store also pixel data
-    
+
     outdir: srt
     Output directory
-    
+
     Returns:
     --------
     pandas DataFrame: output
@@ -195,7 +215,7 @@ def get_events(filename, storedata=False, test=False,
 
     #Particle type:
     particle_type = utils.guess_type(filename)
-    
+
     #Create data frame where DL2 data will be stored:
 
     features = ['obs_id',
@@ -230,29 +250,29 @@ def get_events(filename, storedata=False, test=False,
                 'disp_norm',
                 'hadroness',
                 ]
-    
+
     output = pd.DataFrame(columns=features)
 
     #Read LST1 events:
     source = event_source(
-        input_url=filename, 
+        input_url=filename,
         allowed_tels={1}) #Open Simtelarray file
 
     #Cleaning levels:
-        
+
     level1 = {'LSTCam' : 6.}
     level2 = level1.copy()
     # We use as second cleaning level just half of the first cleaning level
-    
+
     for key in level2:
         level2[key] *= 0.5
-    
-    
+
+
     log10pixelHGsignal = {}
     survived = {}
 
     imagedata = np.array([])
-    
+
     for key in level1:
 
         log10pixelHGsignal[key] = []
@@ -268,33 +288,33 @@ def get_events(filename, storedata=False, test=False,
 
         ntels = len(event.r0.tels_with_data)
 
-        
+
         if test==True and i > 1000:   # for quick tests
             break
-        
+
         for ii, tel_id in enumerate(event.r0.tels_with_data):
-            
+
             geom = event.inst.subarray.tel[tel_id].camera     #Camera geometry
             tel_coords = event.inst.subarray.tel_coords[
                 event.inst.subarray.tel_indices[tel_id]
             ]
-            
+
             data = event.r0.tel[tel_id].waveform
-            
-            ped = event.mc.tel[tel_id].pedestal    # the pedestal is the 
+
+            ped = event.mc.tel[tel_id].pedestal    # the pedestal is the
             #average (for pedestal events) of the *sum* of all samples,
             #from sim_telarray
 
             nsamples = data.shape[2]  # total number of samples
-            
+
             # Subtract pedestal baseline. atleast_3d converts 2D to 3D matrix
-            
-            pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples    
-            
+
+            pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples
+
             integrator = LocalPeakIntegrator(None, None)
             integration, peakpos, window = integrator.extract_charge(
                 pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
-            
+
             chan = 0  # high gain used for now...
             signals = integration[chan].astype(float)
 
@@ -303,46 +323,46 @@ def get_events(filename, storedata=False, test=False,
 
             # Add all individual pixel signals to the numpy array of the
             # corresponding camera inside the log10pixelsignal dictionary
-            
-            log10pixelHGsignal[str(geom)].extend(np.log10(signals))  
-            
+
+            log10pixelHGsignal[str(geom)].extend(np.log10(signals))
+
             # Apply image cleaning
-        
-            cleanmask = tailcuts_clean(geom, signals, 
+
+            cleanmask = tailcuts_clean(geom, signals,
                                        picture_thresh=level1[str(geom)],
-                                       boundary_thresh=level2[str(geom)], 
-                                       keep_isolated_pixels=False, 
+                                       boundary_thresh=level2[str(geom)],
+                                       keep_isolated_pixels=False,
                                        min_number_picture_neighbors=1)
-           
-            survived[str(geom)].extend(cleanmask)  
-           
+
+            survived[str(geom)].extend(cleanmask)
+
             clean = signals.copy()
-            clean[~cleanmask] = 0.0   # set to 0 pixels which did not 
+            clean[~cleanmask] = 0.0   # set to 0 pixels which did not
             # survive cleaning
-            
+
             if np.max(clean) < 1.e-6:  # skip images with no pixels
                 continue
-                
+
             # Calculate image parameters
-        
-            hillas = hillas_parameters(geom, clean)  
+
+            hillas = hillas_parameters(geom, clean)
             foclen = event.inst.subarray.tel[tel_id].optics.equivalent_focal_length
 
             w = np.rad2deg(np.arctan2(hillas.width, foclen))
             l = np.rad2deg(np.arctan2(hillas.length, foclen))
 
             #Calculate Timing parameters
-        
+
             peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
             timepars = time.timing_parameters(geom,clean,peak_time,hillas)
-            
+
             if w >= 0:
                 if storeimg==True:
                     if imagedata.size == 0:
                         imagedata = clean
                     else:
                         imagedata = np.vstack([imagedata,clean]) #Pixel content
-                
+
                 #Hillas parameters
                 width = w.value
                 length = l.value
@@ -354,7 +374,7 @@ def get_events(filename, storedata=False, test=False,
                 intensity = np.log10(hillas.intensity)
                 skewness = hillas.skewness
                 kurtosis = hillas.kurtosis
-                
+
                 #MC data:
                 obs_id = event.r0.obs_id
                 event_id = event.r0.event_id
@@ -376,23 +396,23 @@ def get_events(filename, storedata=False, test=False,
                 mc_core_distance = np.sqrt((
                     tel_coords.x.value-event.mc.core_x.value)**2
                     +(tel_coords.y.value-event.mc.core_y.value)**2)
-                
+
                 #Timing parameters
 
                 time_gradient = timepars['slope'].value
                 intercept = timepars['intercept']
 
                 #Calculate disp_ and Source position in camera coordinates
-                
+
                 tel = OpticsDescription.from_name('LST') #Telescope description
                 focal_length = tel.equivalent_focal_length.value
                 sourcepos = utils.cal_cam_source_pos(mc_alt,mc_az,
                                                               mc_alt_tel,mc_az_tel,
-                                                              focal_length) 
+                                                              focal_length)
                 src_x = sourcepos[0]
                 src_y = sourcepos[1]
                 disp = utils.disp_norm(sourcepos[0], sourcepos[1], x, y)
-                
+
                 hadroness = 0
                 if particle_type=='proton':
                     hadroness = 1
@@ -405,15 +425,15 @@ def get_events(filename, storedata=False, test=False,
                                          time_gradient, intercept, src_x, src_y,
                                          disp, hadroness]],
                                        columns=features)
-                
+
                 output = output.append(eventdf,
                                        ignore_index=True)
 
     outfile = outdir + particle_type + '_events.hdf5'
-    
+
     if storedata==True:
-        if (concatenate==False or 
-            (concatenate==True and 
+        if (concatenate==False or
+            (concatenate==True and
              np.DataSource().exists(outfile)==False)):
             output.to_hdf(outfile,
                           key=particle_type+"_events",mode="w")
@@ -448,12 +468,12 @@ def get_spectral_w_pars(filename):
     Parameters
     ----------
     filename: string, simtelarray file
-    
+
     Returns
     -------
     array of parameters
     """
-    
+
     particle = utils.guess_type(filename)
 
     source = SimTelFile(filename)
@@ -473,7 +493,7 @@ def get_spectral_w_pars(filename):
     else:
         Omega = 2*np.pi*(1-np.cos(cone))
 
-    if particle=='proton':        
+    if particle=='proton':
         K_w = 9.6e-11 # GeV^-1 cm^-2 s^-1
         index_w = -2.7
         E0 = 1000. # GeV
@@ -481,14 +501,14 @@ def get_spectral_w_pars(filename):
         K_w = 2.83e-11 # GeV^-1 cm^-2 s^-1
         index_w = -2.62
         E0 = 1000. # GeV
-        
+
     K = Simulated_Events*(1+spectral_index)/(emax**(1+spectral_index)-emin**(1+spectral_index))
     Int_e1_e2 = K*E0**spectral_index
     N_ = Int_e1_e2*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
     R = K_w*Area_sim*Omega*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
 
     return E0,spectral_index,index_w,R,N_
-    
+
 def get_spectral_w(w_pars,energy):
     """
     Return spectral weight of an event
@@ -502,7 +522,7 @@ def get_spectral_w(w_pars,energy):
     -------
     float w
     """
-    
+
     E0 = w_pars[0]
     index = w_pars[1]
     index_w = w_pars[2]
@@ -510,5 +530,5 @@ def get_spectral_w(w_pars,energy):
     N_ = w_pars[4]
 
     w = ((energy/E0)**(index_w-index))*R/N_
-    
+
     return w
