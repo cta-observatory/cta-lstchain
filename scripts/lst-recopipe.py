@@ -54,12 +54,14 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
-
+    
     dl0_to_dl1.max_events = args.max_events
-
+    dl0_to_dl1.allowed_tels={1}
     dl0_to_dl1.r0_to_dl1(args.datafile)
     dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
-
+    
+    #dl1_file=args.datafile
+    #data = pd.read_hdf(args.datafile, key='events/LSTCam')
     intensity_min = np.log10(100)
     r_max = 0.8
 
@@ -87,7 +89,7 @@ if __name__ == '__main__':
         os.makedirs(args.outdir, exist_ok=True)
         outfile = args.outdir+'/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
         dl2.to_hdf(outfile, key="dl2_events", mode="w")
-
+    
     #Plot some results
         
     plot_dl2.plot_features(dl2)
@@ -107,3 +109,8 @@ if __name__ == '__main__':
     axes[1].set_title('disp_dy');
     plot_dl2.plot_pos(dl2)
     plt.show()
+    plot_dl2.calc_resolution(dl2)
+    plt.show()
+    plot_dl2.plot_e_resolution(dl2,15)
+    plt.show()
+    

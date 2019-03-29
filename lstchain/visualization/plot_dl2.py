@@ -380,3 +380,76 @@ def plot_ROC(clf,data,features, Energy_cut):
     plt.ylabel('True positive rate',
                fontsize=15)
     plt.legend(loc='best')
+
+def plot_e_resolution(dl2,Nbins):
+    data = dl2[dl2['hadro_rec']<1]
+    plt.rcParams['figure.figsize'] = (30, 10)
+    plt.rcParams['font.size'] = 14
+
+    #difE = ((data['mc_energy']-data['e_rec'])*np.log(10))
+    difE = np.log(10**data['e_rec']/10**data['mc_energy'])
+    means_result = scipy.stats.binned_statistic(                                                                                                        
+            data['mc_energy'],[difE,difE**2],                                                                                                             
+            bins=Nbins,range=(1,3.5),statistic='mean')                                                                                                           
+    means, means2 = means_result.statistic                                                                                                              
+    standard_deviations = np.sqrt(means2 - means**2)                                                                                                    
+    bin_edges = means_result.bin_edges                                                                                                                  
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+
+    gs0 = gridspec.GridSpec(1,2,width_ratios=[1,2])
+    subplot = plt.subplot(gs0[0])
+    gs = gridspec.GridSpecFromSubplotSpec(2, 1,height_ratios=[1, 1],subplot_spec=subplot)
+
+    ax0 = plt.subplot(gs[0])                                                                                                                            
+    plot0 = ax0.errorbar(x=bin_centers, y=means, yerr=standard_deviations,linestyle='none', marker='.')
+
+    plt.ylabel('Bias',fontsize=24)
+    plt.grid()
+    ax1 = plt.subplot(gs[1],sharex = ax0)                                                                                                              
+    plot1 = ax1.plot(bin_centers,standard_deviations,                                                                                                   
+                     marker='+',linestyle='None')
+    plt.ylabel('STD',fontsize=24)
+    plt.xlabel('$log_{10}E_{true}(GeV)$',fontsize=24)
+    plt.grid()
+
+    subplot2 = plt.subplot(gs0[1])
+    
+    #Lines for setting the configuration of the subplots depending on Nbins
+    import math
+    sqrtNbins = np.sqrt(Nbins)
+    a = int(math.ceil(sqrtNbins))
+    dif = a - sqrtNbins
+    b=a
+    if dif > 0.5:
+        b=a-1
+        
+    gs2 = gridspec.GridSpecFromSubplotSpec(a, b,subplot_spec=subplot2)
+    for nbin in range(0,Nbins):
+        ax = plt.subplot(gs2[nbin])
+        plt.hist(difE[means_result.binnumber==nbin+1],50,label='$logE_{center}$ '+'%.2f' % bin_centers[nbin])
+        plt.legend()
+    plt.subplots_adjust(hspace=.25)
+    plt.subplots_adjust(wspace=.5)
+
+def calc_resolution(dl2):
+    data = dl2[dl2['hadro_rec']<1]
+    difE = np.log(10**data['e_rec']/10**data['mc_energy'])
+    n , bins, _ = plt.hist(difE,bins=500)
+    mu,sigma = scipy.stats.norm.fit(difE)
+    print(mu,sigma)
+    bin_width = bins[1] - bins[0]
+    total = bin_width*sum(n)*0.68
+    idx = np.abs(bins - mu).argmin()
+    x = 0
+    mindif = 1e10
+    xpos=0
+    integral=0
+    while integral <= total: 
+        integral = bin_width*sum(n[idx-x:idx+x])
+        x = x+1
+    print(x,integral,total)
+    sigma = bins[idx+x-1]
+    plt.plot(bins,integral*scipy.stats.norm.pdf(bins, mu, sigma),linewidth=4,color='red',linestyle='--')
+    plt.xlabel("$log(E_{rec}/E_{true})$")
+    print(mu,sigma)
+    return mu,sigma
