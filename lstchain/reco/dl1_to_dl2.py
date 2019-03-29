@@ -22,9 +22,9 @@ from ..io import read_configuration_file
 # Standard models configurations - to be moved later in a default configuration file
 
 random_forest_regressor_args = {'max_depth': 50,
-                                'min_samples_leaf': 50,
+                                'min_samples_leaf': 5,
                                 'n_jobs': 4,
-                                'n_estimators': 50,
+                                'n_estimators': 100,
                                 'bootstrap': True,
                                 'criterion': 'mse',
                                 'max_features': 'auto',
@@ -41,9 +41,9 @@ random_forest_regressor_args = {'max_depth': 50,
 
 
 random_forest_classifier_args = {'max_depth': 50,
-                                 'min_samples_leaf': 10,
+                                 'min_samples_leaf': 2,
                                  'n_jobs': 4,
-                                 'n_estimators': 50,
+                                 'n_estimators': 100,
                                  'criterion': 'gini',
                                  'min_samples_split': 2,
                                  'min_weight_fraction_leaf': 0.,
@@ -145,7 +145,7 @@ def train_disp_vector(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp vector regression".format(model))
+    print("Training model {} for disp vector regression".format(model))
 
     reg = model(**regression_args)
     x = train[features]
@@ -184,7 +184,7 @@ def train_disp_norm(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp norm regression".format(model))
+    print("Training model {} for disp norm regression".format(model))
 
     reg = model(**regression_args)
     x = train[features]
@@ -223,7 +223,7 @@ def train_disp_sign(train, features,
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp sign regression".format(model))
+    print("Training model {} for disp sign regression".format(model))
 
     reg = model(**classification_args)
     x = train[features]
@@ -477,7 +477,8 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     features_.append('disp_dx_rec')
     features_.append('disp_dy_rec')
     dl2['hadro_rec'] = classifier.predict(dl2[features_]).astype(int)
-    dl2['hadroness'] = classifier.predict_proba(dl2[features_])
+    probs = classifier.predict_proba(dl2[features_])[0:,1]
+    dl2['gammaness'] = 1-probs
     return dl2
 
 

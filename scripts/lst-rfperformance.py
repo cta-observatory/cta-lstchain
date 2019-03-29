@@ -97,6 +97,12 @@ if __name__ == '__main__':
     axes[1].set_ylabel('reco_disp')
     axes[1].set_title('disp_dy');
     
+    features_ = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 
+                 'skewness', 'kurtosis','r', 'intercept', 'time_gradient', 'e_rec',
+                 'disp_dx_rec', 'disp_dy_rec']
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()
+    plot_dl2.plot_ROC(cls_gh, dl2, features_, -1)
+    plt.show()
+    
