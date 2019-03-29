@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     config = Config({
         "LSTR0Corrections": {
-            "telid": telid
+            "tel_id": telid
         }
     })
     lst_r0 = LSTR0Corrections(config=config)

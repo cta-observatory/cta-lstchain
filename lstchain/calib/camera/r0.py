@@ -35,7 +35,7 @@ class CameraR0Calibrator(Component):
 
     r1_sample_end = Int(default_value=None, help='End sample for r1 waveform', allow_none=True).tag(config=True)
 
-    def __init__(self, config=None, tool=None, **kwargs):
+    def __init__(self, **kwargs):
         """
         Parent class for the r0 calibrators. Change the r0 container.
         Parameters
@@ -50,7 +50,7 @@ class CameraR0Calibrator(Component):
             Set to None if no Tool to pass.
         kwargs
         """
-        super().__init__(config=config, parent=tool, **kwargs)
+        super().__init__(**kwargs)
 
     @abstractmethod
     def calibrate(self, event):
@@ -81,7 +81,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         help='Define the offset of the baseline'
     ).tag(config=True)
 
-    telid = Int(
+    tel_id = Int(
         0,
         help='id of the telescope to calibrate'
     ).tag(config=True)
@@ -123,13 +123,14 @@ class LSTR0Corrections(CameraR0Calibrator):
         self._load_calib()
 
     def calibrate(self, event):
-        for telid in event.r0.tels_with_data:
+        for tel_id in event.r0.tels_with_data:
             self.subtract_pedestal(event)
             self.time_lapse_corr(event)
             self.interpolate_spikes(event)
 
-            samples = event.r1.tel[telid].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
-            event.r1.tel[telid].waveform = samples.astype('float32')
+            event.r1 = event.r0
+            samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
+            event.r1.tel[tel_id].waveform = samples.astype('float32')
 
     def subtract_pedestal(self, event):
         """
@@ -139,19 +140,21 @@ class LSTR0Corrections(CameraR0Calibrator):
         ----------
         event : `ctapipe` event-container
         """
-        n_modules = event.lst.tel[self.telid].svc.num_modules
+        n_modules = event.lst.tel[self.tel_id].svc.num_modules
 
         for nr_module in range(0, n_modules):
             self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
-        expected_pixel_id = event.lst.tel[self.telid].svc.pixel_ids
+        expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
         samples = subtract_pedestal_jit(
-            event.r0.tel[self.telid].waveform,
+            event.r0.tel[self.tel_id].waveform,
             expected_pixel_id,
             self.first_cap_array,
             self.pedestal_value_array,
             n_modules)
-        event.r1.tel[self.telid].waveform = samples[:, :, :]
+        event.r1 = event.r0
+        event.r1.tel[self.tel_id].waveform = samples[:, :, :]
+
 
     def time_lapse_corr(self, event):
         """
@@ -162,23 +165,25 @@ class LSTR0Corrections(CameraR0Calibrator):
         ----------
         event : `ctapipe` event-container
         """
-        expected_pixel_id = event.lst.tel[self.telid].svc.pixel_ids
-        local_clock_list = event.lst.tel[self.telid].evt.local_clock_counter
-        n_modules = event.lst.tel[self.telid].svc.num_modules
+        expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
+        local_clock_list = event.lst.tel[self.tel_id].evt.local_clock_counter
+        n_modules = event.lst.tel[self.tel_id].svc.num_modules
         for nr_module in range(0, n_modules):
             self.first_cap_time_lapse_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
         #If R1 container exist modifies it
-        if isinstance(event.r1.tel[self.telid].waveform, np.ndarray):
-            samples = event.r1.tel[self.telid].waveform
+        if isinstance(event.r1.tel[self.tel_id].waveform, np.ndarray):
+            samples = event.r1.tel[self.tel_id].waveform
             do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
                                self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
-            event.r1.tel[self.telid].waveform = samples[:, :, :]
+            event.r1 = event.r0
+            event.r1.tel[self.tel_id].waveform = samples[:, :, :]
         else: # Modifies R0 container. This is for create pedestal file.
-            samples = event.r0.tel[self.telid].waveform
+            samples = event.r0.tel[self.tel_id].waveform
             do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
                                self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
-            event.r0.tel[self.telid].waveform = samples[:, :, :]
+            event.r1 = event.r0
+            event.r0.tel[self.tel_id].waveform = samples[:, :, :]
 
     def interpolate_spikes(self, event):
         """
@@ -189,21 +194,22 @@ class LSTR0Corrections(CameraR0Calibrator):
         event : `ctapipe` event-container
         """
         self.first_cap_old_array[:, :, :] = self.first_cap_array_spike[:, :, :]
-        n_modules = event.lst.tel[self.telid].svc.num_modules
+        n_modules = event.lst.tel[self.tel_id].svc.num_modules
         for nr_module in range(0, n_modules):
             self.first_cap_array_spike[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
         # Interpolate spikes should be done after pedestal subtraction and time lapse correction.
-        if isinstance(event.r1.tel[self.telid].waveform, np.ndarray):
-            waveform = event.r1.tel[self.telid].waveform[:, :, :]
-            expected_pixel_id = event.lst.tel[self.telid].svc.pixel_ids
+        if isinstance(event.r1.tel[self.tel_id].waveform, np.ndarray):
+            waveform = event.r1.tel[self.tel_id].waveform[:, :, :]
+            expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
             samples = waveform.copy()
             samples = samples.astype('int16')
-            event.r1.tel[self.telid].waveform = self.interpolate_pseudo_pulses(samples,
-                                                                      expected_pixel_id,
-                                                                      self.first_cap_array_spike,
-                                                                      self.first_cap_old_array,
-                                                                      n_modules)
+            event.r1 = event.r0
+            event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses(samples,
+                                                                                expected_pixel_id,
+                                                                                self.first_cap_array_spike,
+                                                                                self.first_cap_old_array,
+                                                                                n_modules)
 
     @staticmethod
     @jit(parallel=True)
@@ -278,7 +284,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         nr_module : number of module
         """
         fc = np.zeros((2, 7))
-        first_cap = event.lst.tel[self.telid].evt.first_capacitor_id[nr_module * 8:
+        first_cap = event.lst.tel[self.tel_id].evt.first_capacitor_id[nr_module * 8:
                                                             (nr_module + 1) * 8]
 
         # First capacitor order according Dragon v5 board data format
