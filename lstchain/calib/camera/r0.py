@@ -146,13 +146,17 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
 
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
+        samples = np.copy(event.r0.tel[self.tel_id].waveform)
+        samples.astype('int16')
         samples = subtract_pedestal_jit(
-            event.r0.tel[self.tel_id].waveform,
+            samples,
             expected_pixel_id,
             self.first_cap_array,
             self.pedestal_value_array,
             n_modules)
-        event.r1 = event.r0
+        event.r1.event_id = event.r0.event_id
+        event.r1.tel[self.tel_id].trigger_type
+        event.r1.tel[self.tel_id].trigger_time
         event.r1.tel[self.tel_id].waveform = samples[:, :, :]
 
 
@@ -176,13 +180,17 @@ class LSTR0Corrections(CameraR0Calibrator):
             samples = event.r1.tel[self.tel_id].waveform
             do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
                                self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
-            event.r1 = event.r0
+            event.r1.event_id = event.r0.event_id
+            event.r1.tel[self.tel_id].trigger_type
+            event.r1.tel[self.tel_id].trigger_time
             event.r1.tel[self.tel_id].waveform = samples[:, :, :]
         else: # Modifies R0 container. This is for create pedestal file.
-            samples = event.r0.tel[self.tel_id].waveform
+            samples = np.copy(event.r0.tel[self.tel_id].waveform)
             do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
                                self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
-            event.r1 = event.r0
+            event.r1.event_id = event.r0.event_id
+            event.r1.tel[self.tel_id].trigger_type
+            event.r1.tel[self.tel_id].trigger_time
             event.r0.tel[self.tel_id].waveform = samples[:, :, :]
 
     def interpolate_spikes(self, event):
@@ -204,12 +212,14 @@ class LSTR0Corrections(CameraR0Calibrator):
             expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
             samples = waveform.copy()
             samples = samples.astype('int16')
-            event.r1 = event.r0
             event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses(samples,
                                                                                 expected_pixel_id,
                                                                                 self.first_cap_array_spike,
                                                                                 self.first_cap_old_array,
                                                                                 n_modules)
+            event.r1.event_id = event.r0.event_id
+            event.r1.tel[self.tel_id].trigger_type
+            event.r1.tel[self.tel_id].trigger_time
 
     @staticmethod
     @jit(parallel=True)
