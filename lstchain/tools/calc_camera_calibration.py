@@ -148,13 +148,14 @@ class CalibrationHDF5Writer(Tool):
                     status_data.flatfield_mask = np.logical_or(ff_data.charge_median_outliers,
                                                                 ff_data.time_median_outliers)
 
-                    calib_data.pixel_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
+                    calib_data.pixel_status_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
 
-                    masked_charge = np.ma.array(ff_data.charge_median - ped_data.charge_median, mask=status_data.calibration_mask)
+                    masked_charge = np.ma.array(ff_data.charge_median -
+                                                ped_data.charge_median, mask=calib_data.pixel_status_mask)
 
                     masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
                                                     mask=status_data.calibration_mask)
-                    masked_time = np.ma.array(ff_data.relative_time_median, mask=status_data.calibration_mask)
+                    masked_time = np.ma.array(ff_data.relative_time_median, mask=calib_data.pixel_status_mask)
 
                     masked_n_phe = 1.2 * masked_charge ** 2 / masked_std_square
                     masked_n_phe_median = np.ma.median(masked_n_phe)
@@ -170,7 +171,7 @@ class CalibrationHDF5Writer(Tool):
                         calib_data.meta['config'] = self.config
                         ff_initialized = True
                     else:
-                        # write only after a first event (used to initialiaze the mask)
+                        # write only after a first event (used to initialize the mask)
                         self.log.debug(f"write flatfield data")
                         self.writer.write('flatfield', ff_data)
                         self.log.debug(f"write pixel_status data")
