@@ -265,6 +265,7 @@ def calculate_time_results(
     # median of the median over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
+
     # time outliers from median
     relative_median = pixel_median - median_of_pixel_median[:, np.newaxis]
     time_median_outliers = np.logical_or(pixel_median < self.time_cut_outliers[0],
