@@ -55,7 +55,7 @@ def load_model(experiments_path, experiment_name, checkpoint, camera_parameters_
     net_parameters = exp_info['network'][net_name]
     net = model_net(net_parameters, camera_parameters)
 
-    net.load_state_dict(saved_model)
+    net.load_state_dict(saved_model, strict=False)
     net.eval()
 
     return net

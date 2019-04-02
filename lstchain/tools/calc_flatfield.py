@@ -112,6 +112,7 @@ class FlatFieldHDF5Writer(Tool):
 
                 ff_data = event.mon.tel[self.flatfield.tel_id].flatfield
 
+
                 # save the config, to be retrieved as data.meta['config']
                 if not write_config:
                     ff_data.meta['config']=self.config
