@@ -16,11 +16,8 @@ from lstchain.calib.camera import FlatFieldCalculator, PedestalCalculator, Camer
 from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
 
 
-__all__=['CameraCalibrator']
-
-
-class CameraCalibrator(Tool):
-    name = "CameraCalibrator"
+class CalibrationHDF5Writer(Tool):
+    name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
     output_file = Unicode(
@@ -47,11 +44,9 @@ class CameraCalibrator(Tool):
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
         pedestal_file= 'LSTR0Corrections.pedestal_path',
-        flatfield_product='CameraCalibrator.flatfield_product',
-        pedestal_product='CameraCalibrator.pedestal_product',
-        charge_product='CameraCalibrator.charge_product',
-        r0calibrator_product='CameraCalibrator.r0calibrator_product',
-
+        flatfield_product='CalibrationHDF5Writer.flatfield_product',
+        pedestal_product='CalibrationHDF5Writer.pedestal_product',
+        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product'
     ))
 
     classes = List([EventSource,
@@ -61,6 +56,7 @@ class CameraCalibrator(Tool):
                     PedestalContainer,
                     WaveformCalibrationContainer
                     ]
+                   + tool_utils.classes_with_traits(CameraR0Calibrator)
                    + tool_utils.classes_with_traits(ChargeExtractor)
                    + tool_utils.classes_with_traits(FlatFieldCalculator)
                    + tool_utils.classes_with_traits(PedestalCalculator)
@@ -139,7 +135,7 @@ class CameraCalibrator(Tool):
                         ped_initialized = True
                     else:
                         self.log.debug(f"write pedestal data")
-                        # write only after a first event (used to initaliazed the mask)
+                        # write only after a first event (used to initialize the mask)
                         self.writer.write('pedestal', ped_data)
 
             # consider flat field events only after first pedestal event
@@ -152,9 +148,10 @@ class CameraCalibrator(Tool):
                     status_data.flatfield_mask = np.logical_or(ff_data.charge_median_outliers,
                                                                 ff_data.time_median_outliers)
 
-                    status_data.calibration_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
+                    calib_data.pixel_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
 
-                    masked_charge = np.ma.array(ff_data.charge_median , mask=status_data.calibration_mask)
+                    masked_charge = np.ma.array(ff_data.charge_median - ped_data.charge_median, mask=status_data.calibration_mask)
+
                     masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
                                                     mask=status_data.calibration_mask)
                     masked_time = np.ma.array(ff_data.relative_time_median, mask=status_data.calibration_mask)
@@ -165,7 +162,7 @@ class CameraCalibrator(Tool):
                     # calculate the calibration data
                     calib_data.n_phe = np.ma.getdata(masked_n_phe)
                     calib_data.dc_to_phe = np.ma.getdata(masked_n_phe_median/masked_charge)
-                    calib_data.delta_time = - np.ma.getdata(masked_time)
+                    calib_data.time_correction = - np.ma.getdata(masked_time)
 
                     # save the config, to be retrieved as data.meta['config']
                     if not ff_initialized:
@@ -181,7 +178,6 @@ class CameraCalibrator(Tool):
                         self.log.debug(f"write calibration data")
                         self.writer.write('calibration', calib_data)
 
-
     def finish(self):
         Provenance().add_output_file(
             self.output_file,
@@ -191,7 +187,8 @@ class CameraCalibrator(Tool):
 
 
 def main():
-    exe = CameraCalibrator()
+    exe = CalibrationHDF5Writer()
+
     exe.run()
 
 
