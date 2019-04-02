@@ -107,7 +107,7 @@ class FlatFieldHDF5Writer(Tool):
             # perform R0->R1
             self.r0calibrator.calibrate(event)
 
-            # one should add hier the pedestal subtraction and/or cleaner
+            # one should add here the pedestal subtraction
             if self.flatfield.calculate_relative_gain(event):
 
                 ff_data = event.mon.tel[self.flatfield.tel_id].flatfield

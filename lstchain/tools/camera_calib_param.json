@@ -1,7 +1,7 @@
 {
    "version": 1,
    
-   "CameraCalibrator": {
+   "CalibrationHDF5Writer": {
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
      "r0calibrator_product": "LSTR0Corrections",
@@ -18,7 +18,7 @@
      "tel_id":0,
      "charge_median_cut_outliers": [-3,3],
      "charge_std_cut_outliers": [-3,3],
-     "charge_product":"LocalPeakIntegrator"
+     "charge_product":"SimpleIntegrator"
    },
     "FlatFieldCalculator":{
      "sample_size": 100,
@@ -37,6 +37,9 @@
     "LocalPeakIntegrator":{
      "window_shift": 5,
      "window_width":12
+    },
+    "SimpleIntegrator":{
+     "window_start": 12,
+     "window_width":12
     }
-
 }

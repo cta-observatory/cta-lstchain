@@ -9,7 +9,7 @@ from ctapipe.core import Component
 
 from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int, Unicode, List
-from ctapipe_io_lst.containers import PedestalContainer
+
 
 __all__ = [
     'PedestalCalculator',
@@ -71,11 +71,11 @@ class PedestalCalculator(Component):
         help='number of channels to be treated'
     ).tag(config=True)
     charge_median_cut_outliers = List(
-        [3,3],
+        [-3,3],
         help='Interval (number of std) of accepted charge values around camera median value'
     ).tag(config=True)
     charge_std_cut_outliers = List(
-        [3,3],
+        [-3,3],
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
     charge_product= Unicode(
@@ -105,9 +105,6 @@ class PedestalCalculator(Component):
 
         """
         super().__init__(**kwargs)
-
-        # initialize the output
-        self.container = PedestalContainer()
 
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
@@ -325,6 +322,6 @@ def calculate_pedestal_results(self,
         'charge_std_outliers': np.ma.getdata(charge_std_outliers),
         'charge_median_outliers': np.ma.getdata(charge_median_outliers)
 
-}
+    }
 
 

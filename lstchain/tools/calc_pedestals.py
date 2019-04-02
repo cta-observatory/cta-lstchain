@@ -57,6 +57,7 @@ class PedestalHDF5Writer(Tool):
         self.pedestal = None
         self.container = None
         self.writer = None
+        self.group_name = None
         self.r0calibrator = None
 
     def setup(self):
@@ -70,15 +71,17 @@ class PedestalHDF5Writer(Tool):
             self.r0calibrator_product,
             **kwargs
         )
+        self.group_name = 'tel_' + str(self.pedestal.tel_id)
+
         self.writer = HDF5TableWriter(
-            filename=self.output_file, group_name='pedestals', overwrite=True
+            filename=self.output_file, group_name=self.group_name, overwrite=True
         )
+
 
     def start(self):
         '''Pedestal calculator'''
 
-        table_name = 'tel_' + str(self.pedestal.tel_id)
-        write_config = False
+        write_config = True
 
         # loop on events
         for count, event in enumerate(self.eventsource):
@@ -86,21 +89,20 @@ class PedestalHDF5Writer(Tool):
             # perform R0->R1
             self.r0calibrator.calibrate(event)
 
-
             # fill pedestal monitoring container
             if self.pedestal.calculate_pedestals(event):
 
                 ped_data = event.mon.tel[self.pedestal.tel_id].pedestal
                 self.log.debug(f" r0 {event.r0.tel[0].waveform.shape}")
                 self.log.debug(f" r1 {event.r1.tel[0].waveform.shape}")
-                if not write_config:
+                if write_config:
                     ped_data.meta['config']=self.config
-                    write_config = True
+                    write_config = False
 
-                self.log.debug("write event in table: /pedestals/%s", table_name)
+                self.log.debug(f"write event in table: {self.group_name}/pedestal")
 
                 # write data to file
-                self.writer.write(table_name, ped_data)
+                self.writer.write('pedestal', ped_data)
 
     def finish(self):
         Provenance().add_output_file(

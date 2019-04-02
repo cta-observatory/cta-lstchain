@@ -8,7 +8,7 @@ from astropy import units as u
 from ctapipe.core import Component
 from ctapipe.image import ChargeExtractor
 from ctapipe.core.traits import Int, Unicode, Float, List
-from ctapipe_io_lst.containers import FlatFieldContainer
+
 
 __all__ = [
     'FlatFieldCalculator',
@@ -73,11 +73,6 @@ class FlatFieldCalculator(Component):
 
         """
         super().__init__(**kwargs)
-
-        # initialize the output
-        self.container = FlatFieldContainer()
-
-
         # load the waveform charge extractor
         self.extractor = ChargeExtractor.from_name(
             self.charge_product,
@@ -134,17 +129,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         waveforms = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
-
         if self.extractor.requires_neighbours():
             g = event.inst.subarray.tel[self.tel_id].camera
             self.extractor.neighbours = g.neighbor_matrix_where
 
         charge, peak_pos, window = self.extractor.extract_charge(waveforms)
-
-        # subtract the pedestal value
-        if event.mon.tel[self.tel_id].pedestal:
-            charge = charge - event.mon.tel[self.tel_id].pedestal.charge_median
-
 
         return charge, peak_pos
 
@@ -273,9 +262,6 @@ def calculate_time_results(
     # std over the sample per pixel
     pixel_std = np.ma.std(masked_trace_time, axis=0)
 
-    # std of median over the camera
-    #std_of_pixel_median = np.ma.std(pixel_median, axis=1)
-
     # median of the median over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
@@ -316,9 +302,6 @@ def calculate_relative_gain_results(
     # std over the sample per pixel
     pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
-    # std of median over the camera
-    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
-
     # median of the std over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
@@ -327,8 +310,6 @@ def calculate_relative_gain_results(
 
     # outliers from median
     charge_deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-#   charge_median_outliers = np.logical_or(charge_deviation < - self.charge_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
-#                                           charge_deviation > self.charge_cut_outliers[1] * std_of_pixel_median[:,np.newaxis])
 
     charge_median_outliers = np.logical_or(charge_deviation < self.charge_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
                                            charge_deviation > self.charge_cut_outliers[1] * median_of_pixel_median[:,np.newaxis])
