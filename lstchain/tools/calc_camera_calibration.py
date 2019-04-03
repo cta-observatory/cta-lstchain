@@ -154,7 +154,7 @@ class CalibrationHDF5Writer(Tool):
                                                 ped_data.charge_median, mask=calib_data.pixel_status_mask)
 
                     masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
-                                                    mask=status_data.calibration_mask)
+                                                    mask=calib_data.pixel_status_mask)
                     masked_time = np.ma.array(ff_data.relative_time_median, mask=calib_data.pixel_status_mask)
 
                     masked_n_phe = 1.2 * masked_charge ** 2 / masked_std_square
