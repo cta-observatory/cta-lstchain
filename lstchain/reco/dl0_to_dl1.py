@@ -16,7 +16,7 @@ from ctapipe.image import (
     tailcuts_clean,
     HillasParameterizationError,
 )
-from ctapipe.image.charge_extractors import LocalPeakIntegrator
+from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
 from ctapipe.utils import get_dataset_path
@@ -43,7 +43,9 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_product='NeighbourPeakIntegrator')
+# cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_name="LocalPeakWindowSum")
+cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_name="NeighborPeakWindowSum")
+
 
 cleaning_method = tailcuts_clean
 cleaning_parameters = {'boundary_thresh': 3,
@@ -311,8 +313,8 @@ def get_events(filename, storedata=False, test=False,
 
             pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples
 
-            integrator = LocalPeakIntegrator(None, None)
-            integration, peakpos, window = integrator.extract_charge(
+            integrator = LocalPeakWindowSum()
+            integration, peakpos = integrator.extract_charge(
                 pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
 
             chan = 0  # high gain used for now...

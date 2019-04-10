@@ -3,7 +3,7 @@ Calibration functions
 """
 
 import numpy as np
-from ctapipe.image.charge_extractors import LocalPeakIntegrator
+from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.calib.camera.gainselection import ThresholdGainSelector
 
 
@@ -31,8 +31,8 @@ def lst_calibration(event, telescope_id):
 
     pedcorrectedsamples = data - np.atleast_3d(ped) / nsamples
 
-    integrator = LocalPeakIntegrator(None, None)
-    integration, peakpos, window = integrator.extract_charge(
+    integrator = LocalPeakWindowSum()
+    integration, peakpos = integrator.extract_charge(
         pedcorrectedsamples)  # these are 2D matrices num_gains * num_pixels
 
     signals = integration.astype(float)

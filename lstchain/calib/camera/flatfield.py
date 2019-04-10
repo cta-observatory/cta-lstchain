@@ -6,7 +6,7 @@ from abc import abstractmethod
 import numpy as np
 from astropy import units as u
 from ctapipe.core import Component
-from ctapipe.image import ChargeExtractor
+from ctapipe.image.extractor import ImageExtractor
 from ctapipe.core.traits import Int, Unicode, Float, List
 from ctapipe_io_lst.containers import FlatFieldContainer
 
@@ -78,7 +78,7 @@ class FlatFieldCalculator(Component):
         self.container = FlatFieldContainer()
 
         # load the waveform charge extractor
-        self.extractor = ChargeExtractor.from_name(
+        self.extractor = ImageExtractor.from_name(
             self.charge_product,
             config=self.config
         )
