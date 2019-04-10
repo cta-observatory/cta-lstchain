@@ -62,8 +62,8 @@ if __name__ == '__main__':
     
     #dl1_file=args.datafile
     #data = pd.read_hdf(args.datafile, key='events/LSTCam')
-    intensity_min = np.log10(100)
-    r_max = 0.8
+    intensity_min = np.log10(50)
+    r_max = 10#0.8
 
     data = dl1_to_dl2.filter_events(pd.read_hdf(dl1_file, key='events/LSTCam'), 
                              r_max=r_max, intensity_min=intensity_min)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         dl2.to_hdf(outfile, key="dl2_events", mode="w")
     
     #Plot some results
-        
+    '''
     plot_dl2.plot_features(dl2)
     plt.show()
     plot_dl2.plot_e(dl2)
@@ -113,4 +113,4 @@ if __name__ == '__main__':
     plt.show()
     plot_dl2.plot_e_resolution(dl2,15)
     plt.show()
-    
+    '''

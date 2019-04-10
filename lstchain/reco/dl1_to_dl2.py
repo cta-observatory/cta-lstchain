@@ -317,7 +317,7 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
 
 def build_models(filegammas, fileprotons, features,
                 save_models=True, path_models="./",
-                energy_min=-1, intensity_min=np.log10(60), r_max=0.94,
+                energy_min=-1, intensity_min=np.log10(60), leakage_cut=0.2,
                 regression_args=random_forest_regressor_args,
                 classification_args=random_forest_classifier_args,
                 config_file=None):
@@ -374,8 +374,8 @@ def build_models(filegammas, fileprotons, features,
     df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
     df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
-    df_gamma = filter_events(df_gamma, r_max=r_max, intensity_min=intensity_min)
-    df_proton = filter_events(df_proton, r_max=r_max, intensity_min=intensity_min)
+    df_gamma = filter_events(df_gamma, leakage_cut=leakage_cut, intensity_min=intensity_min)
+    df_proton = filter_events(df_proton, leakage_cut=leakage_cut, intensity_min=intensity_min)
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
@@ -385,7 +385,7 @@ def build_models(filegammas, fileprotons, features,
     reg_disp_vector = train_disp_vector(df_gamma, features,
                             regression_args=regression_args
                           )
-    
+
     #Train classifier for gamma/hadron separation.
 
     train, testg = train_test_split(df_gamma, test_size=0.2)
@@ -466,7 +466,7 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     #Construction of Source position in camera coordinates from disp_norm distance.
     #WARNING: For not it only works fine for POINT SOURCE events
 
-    
+
     dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2.disp_dx_rec,
                                                            dl2.disp_dy_rec,
                                                            dl2.x,
@@ -482,7 +482,7 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     return dl2
 
 
-def filter_events(data, r_max = 1.0, intensity_min = 10):
+def filter_events(data, leakage_cut = 1.0, intensity_min = 10):
     """
     Filter events based on extracted features.
 
@@ -495,5 +495,5 @@ def filter_events(data, r_max = 1.0, intensity_min = 10):
     `pandas.DataFrame`
     """
 
-    filter = (data['r'] < r_max) & (data['intensity'] > intensity_min)
+    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min)
     return data[filter]
