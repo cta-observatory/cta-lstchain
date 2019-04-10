@@ -109,7 +109,7 @@ if __name__ == '__main__':
                                                   gammas.mc_az_tel.values * u.rad)
 
 
-    plt.plot_features(dl2)
+    plot_dl2.plot_features(dl2)
     plt.show()
 
     plot_dl2.plot_e(gammas)
