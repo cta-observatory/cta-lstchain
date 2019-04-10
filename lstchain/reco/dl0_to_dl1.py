@@ -35,7 +35,7 @@ from ..io.lstcontainers import DL1ParametersContainer
 ### PARAMETERS - TODO: use a yaml config file
 
 
-allowed_tels = {1}  # select LST1 only
+allowed_tels = {1, 2, 3, 4}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
 
 threshold = 4094
@@ -92,12 +92,16 @@ def get_dl1(calibrated_event, telescope_id):
     dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
     # dl1_container.mc_type = utils.guess_type(infile)
     dl1_container.set_timing_features(camera, image, peakpos, hillas)
+    dl1_container.set_leakage(camera, image, signal_pixels)
+    dl1_container.set_n_islands(camera, signal_pixels)
     dl1_container.set_source_camera_position(
         calibrated_event, telescope_id)
     dl1_container.set_disp(
         [dl1_container.src_x, dl1_container.src_y],
         hillas
     )
+    dl1_container.set_telescope_info(calibrated_event, telescope_id)
+
     return dl1_container
 
 
@@ -140,9 +144,10 @@ def r0_to_dl1(
                 print(i)
             if not custom:
                 cal.calibrate(event)
-
+            print(event.r0.tels_with_data)
             # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
+                print(event.r0.tels_with_data, telescope_id)
                 if custom:
                     lst_calibration(event, telescope_id)
 

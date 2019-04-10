@@ -18,9 +18,9 @@ def plot_features(data, truehadroness=False):
     Parameters:
     -----------
     data: pandas DataFrame
-    
+
     truehadroness:
-    True: True gammas and proton events are plotted (they are separated using true hadroness). 
+    True: True gammas and proton events are plotted (they are separated using true hadroness).
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     """
     hadro = "hadro_rec"
@@ -106,7 +106,7 @@ def plot_features(data, truehadroness=False):
              label="Protons")
     plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"psi angle(rad)")
-    
+
     #psi distribution
 
     plt.subplot(338)
@@ -118,7 +118,7 @@ def plot_features(data, truehadroness=False):
              label="Protons")
     plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"phi angle(m)")
-    
+
     #Time gradient
 
     plt.subplot(339)
@@ -133,24 +133,24 @@ def plot_features(data, truehadroness=False):
 
 
 def plot_e(data,truehadroness=False):
-    
-    """Plot the performance of reconstructed Energy. 
+
+    """Plot the performance of reconstructed Energy.
 
     Parameters:
     -----------
     data: pandas DataFrame
-    
+
     truehadroness:
-    True: True gammas and proton events are plotted (they are separated using true hadroness). 
+    True: True gammas and proton events are plotted (they are separated using true hadroness).
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
-    
+
     """
     hadro = "hadro_rec"
     if truehadroness:
         hadro = "hadroness"
-    
-    gammas = data[data[hadro]==0] 
-    
+
+    gammas = data[data[hadro]==0]
+
     plt.subplot(221)
     difE = ((gammas['mc_energy']-gammas['e_rec'])*np.log(10))
     section = difE[abs(difE) < 1.5]
@@ -166,7 +166,7 @@ def plot_e(data,truehadroness=False):
                 fontsize=10)
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),
                 fontsize=10)
-    
+
     plt.subplot(222)
     hE = plt.hist2d(gammas['mc_energy'],
                     gammas['e_rec'],
@@ -189,21 +189,21 @@ def plot_e(data,truehadroness=False):
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    
+
     #fig = plt.figure()
     gs = gridspec.GridSpecFromSubplotSpec(2, 1,
                                           height_ratios=[2, 1],
                                           subplot_spec=subplot)
     ax0 = plt.subplot(gs[0])
-    plot0 = ax0.errorbar(x=bin_centers, y=means, yerr=standard_deviations, 
+    plot0 = ax0.errorbar(x=bin_centers, y=means, yerr=standard_deviations,
                          linestyle='none', marker='.')
     plt.ylabel('$(log_{10}(E_{true})-log_{10}(E_{rec}))*log_{N}(10)$',
                fontsize=10)
-    
+
     ax1 = plt.subplot(gs[1], sharex = ax0)
     plot1 = ax1.plot(bin_centers,standard_deviations,
                      marker='+',linestyle='None')
-    plt.setp(ax0.get_xticklabels(), 
+    plt.setp(ax0.get_xticklabels(),
              visible=False)
     yticks = ax1.yaxis.get_major_ticks()
     yticks[-1].label1.set_visible(False)
@@ -212,18 +212,18 @@ def plot_e(data,truehadroness=False):
                fontsize=10)
     plt.subplots_adjust(hspace=.0)
 
-    
+
 def plot_disp(data,truehadroness=False):
-    
+
     """Plot the performance of reconstructed position
 
     Parameters:
     -----------
     data: pandas DataFrame
-    
+
     truehadroness: boolean
     True: True gammas and proton events are plotted (they are separated
-    using true hadroness). 
+    using true hadroness).
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
@@ -231,7 +231,7 @@ def plot_disp(data,truehadroness=False):
     if truehadroness:
         hadro = "hadroness"
 
-    gammas = data[data[hadro]==0] 
+    gammas = data[data[hadro]==0]
 
     plt.subplot(221)
     difD = ((gammas['disp_norm']-gammas['disp_rec'])/gammas['disp_norm'])
@@ -248,7 +248,7 @@ def plot_disp(data,truehadroness=False):
                 fontsize=12)
     plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),
                 fontsize=12)
-                
+
     plt.subplot(222)
     hD = plt.hist2d(gammas['disp_norm'],gammas['disp_rec'],
                     bins=100,
@@ -260,7 +260,7 @@ def plot_disp(data,truehadroness=False):
     plt.ylabel('$disp\_norm_{rec}$',
                fontsize=15)
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
- 
+
     plt.subplot(223)
     theta2 = (gammas['src_x']-gammas['src_x_rec'])**2
     +(gammas['src_y']-gammas['src_y'])**2
@@ -270,18 +270,31 @@ def plot_disp(data,truehadroness=False):
                fontsize=15)
     plt.ylabel(r'# of events',
                fontsize=15)
-    
+
+def plot_disp_vector(data):
+    fig, axes = plt.subplots(1, 2, figsize=(15,6))
+
+    axes[0].hist2d(data.disp_dx, data.disp_dx_rec, bins=60);
+    axes[0].set_xlabel('mc_disp')
+    axes[0].set_ylabel('reco_disp')
+    axes[0].set_title('disp_dx')
+
+    axes[1].hist2d(data.disp_dy, data.disp_dy_rec, bins=60);
+    axes[1].set_xlabel('mc_disp')
+    axes[1].set_ylabel('reco_disp')
+    axes[1].set_title('disp_dy');
+
 
 def plot_pos(data,truehadroness=False):
-    
+
     """Plot the performance of reconstructed position
 
     Parameters:
     data: pandas DataFrame
-    
+
     truehadroness: boolean
     True: True gammas and proton events are plotted (they are separated
-    using true hadroness). 
+    using true hadroness).
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
@@ -345,35 +358,35 @@ def plot_importances(clf,features):
 
     print("Feature importances (gini index)")
     for f in range(len(features)):
-        print("%d. %s (%f)" % (f + 1, 
-                               features[indices[f]], 
+        print("%d. %s (%f)" % (f + 1,
+                               features[indices[f]],
                                importances[indices[f]]))
 
     ordered_features=[]
     for index in indices:
         ordered_features=ordered_features+[features[index]]
-    
-    plt.title("Feature importances for G/H separation",
+
+    plt.title("Feature importances",
               fontsize=15)
-    plt.bar(range(len(features)), 
+    plt.bar(range(len(features)),
             importances[indices],
             color="r", yerr=std[indices], align="center")
-    plt.xticks(range(len(features)), 
+    plt.xticks(range(len(features)),
                ordered_features)
-    plt.xlim([-1, 
+    plt.xlim([-1,
               len(features)])
 
 def plot_ROC(clf,data,features, Energy_cut):
     # Plot ROC curve:
     check = clf.predict_proba(data[features])[0:,1]
-    accuracy = accuracy_score(data['hadroness'], 
+    accuracy = accuracy_score(data['hadroness'],
                               data['hadro_rec'])
     print(accuracy)
-    
+
     fpr_rf, tpr_rf, _ = roc_curve(data['hadroness'],
                                   check)
-    
-    plt.plot(fpr_rf, tpr_rf, 
+
+    plt.plot(fpr_rf, tpr_rf,
              label='Energy Cut: '+'%.3f'%(pow(10,Energy_cut)/1000)+' TeV')
     plt.xlabel('False positive rate',
                fontsize=15)
@@ -381,39 +394,39 @@ def plot_ROC(clf,data,features, Energy_cut):
                fontsize=15)
     plt.legend(loc='best')
 
-def plot_e_resolution(dl2,Nbins):
-    data = dl2[dl2['hadro_rec']<1]
+def plot_e_resolution(data,Nbins):
+
     plt.rcParams['figure.figsize'] = (30, 10)
     plt.rcParams['font.size'] = 14
 
     #difE = ((data['mc_energy']-data['e_rec'])*np.log(10))
     difE = np.log(10**data['e_rec']/10**data['mc_energy'])
-    means_result = scipy.stats.binned_statistic(                                                                                                        
-            data['mc_energy'],[difE,difE**2],                                                                                                             
-            bins=Nbins,range=(1,3.5),statistic='mean')                                                                                                           
-    means, means2 = means_result.statistic                                                                                                              
-    standard_deviations = np.sqrt(means2 - means**2)                                                                                                    
-    bin_edges = means_result.bin_edges                                                                                                                  
+    means_result = scipy.stats.binned_statistic(
+            data['mc_energy'],[difE,difE**2],
+            bins=Nbins,range=(1,3.5),statistic='mean')
+    means, means2 = means_result.statistic
+    standard_deviations = np.sqrt(means2 - means**2)
+    bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
 
     gs0 = gridspec.GridSpec(1,2,width_ratios=[1,2])
     subplot = plt.subplot(gs0[0])
     gs = gridspec.GridSpecFromSubplotSpec(2, 1,height_ratios=[1, 1],subplot_spec=subplot)
 
-    ax0 = plt.subplot(gs[0])                                                                                                                            
+    ax0 = plt.subplot(gs[0])
     plot0 = ax0.errorbar(x=bin_centers, y=means, yerr=standard_deviations,linestyle='none', marker='.')
 
     plt.ylabel('Bias',fontsize=24)
     plt.grid()
-    ax1 = plt.subplot(gs[1],sharex = ax0)                                                                                                              
-    plot1 = ax1.plot(bin_centers,standard_deviations,                                                                                                   
+    ax1 = plt.subplot(gs[1],sharex = ax0)
+    plot1 = ax1.plot(bin_centers,standard_deviations,
                      marker='+',linestyle='None')
     plt.ylabel('STD',fontsize=24)
     plt.xlabel('$log_{10}E_{true}(GeV)$',fontsize=24)
     plt.grid()
 
     subplot2 = plt.subplot(gs0[1])
-    
+
     #Lines for setting the configuration of the subplots depending on Nbins
     import math
     sqrtNbins = np.sqrt(Nbins)
@@ -422,7 +435,7 @@ def plot_e_resolution(dl2,Nbins):
     b=a
     if dif > 0.5:
         b=a-1
-        
+
     gs2 = gridspec.GridSpecFromSubplotSpec(a, b,subplot_spec=subplot2)
     for nbin in range(0,Nbins):
         ax = plt.subplot(gs2[nbin])
@@ -431,8 +444,8 @@ def plot_e_resolution(dl2,Nbins):
     plt.subplots_adjust(hspace=.25)
     plt.subplots_adjust(wspace=.5)
 
-def calc_resolution(dl2):
-    data = dl2[dl2['hadro_rec']<1]
+def calc_resolution(data):
+
     difE = np.log(10**data['e_rec']/10**data['mc_energy'])
     n , bins, _ = plt.hist(difE,bins=500)
     mu,sigma = scipy.stats.norm.fit(difE)
@@ -444,7 +457,7 @@ def calc_resolution(dl2):
     mindif = 1e10
     xpos=0
     integral=0
-    while integral <= total: 
+    while integral <= total:
         integral = bin_width*sum(n[idx-x:idx+x])
         x = x+1
     print(x,integral,total)
