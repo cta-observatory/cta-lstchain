@@ -32,8 +32,7 @@ def lst_calibration(event, telescope_id):
     pedcorrectedsamples = data - np.atleast_3d(ped) / nsamples
 
     integrator = LocalPeakWindowSum()
-    integration, peakpos = integrator.extract_charge(
-        pedcorrectedsamples)  # these are 2D matrices num_gains * num_pixels
+    integration, pulse_time = integrator(pedcorrectedsamples)  # these are 2D matrices num_gains * num_pixels
 
     signals = integration.astype(float)
 
@@ -41,10 +40,10 @@ def lst_calibration(event, telescope_id):
     signals *= dc2pe
 
     event.dl1.tel[telescope_id].image = signals
-    event.dl1.tel[telescope_id].peakpos = peakpos
+    event.dl1.tel[telescope_id].pulse_time = pulse_time
 
 
-def gain_selection(waveform, signals, peakpos, cam_id, threshold):
+def gain_selection(waveform, signals, pulse_time, cam_id, threshold):
 
     """
     Custom lst calibration.
@@ -54,7 +53,7 @@ def gain_selection(waveform, signals, peakpos, cam_id, threshold):
     ----------
     waveform: array of waveforms of the events
     signals: array of calibrated pixel charges
-    peakpos: array of pixel peak positions
+    pulse_time: array of pixel peak positions
     cam_id: str
     threshold: int threshold to change form high gain to low gain
     """
@@ -80,7 +79,7 @@ def gain_selection(waveform, signals, peakpos, cam_id, threshold):
 
     combined = signals[0].copy()
     combined[signalmask] = signals[1][signalmask]
-    peaks = peakpos[0].copy()
-    peaks[signalmask] = peakpos[1][signalmask]
+    peaks = pulse_time[0].copy()
+    peaks[signalmask] = pulse_time[1][signalmask]
                 
     return combined, peaks
