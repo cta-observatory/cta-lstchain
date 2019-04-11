@@ -123,8 +123,8 @@ class DL1ParametersContainer(Container):
         self.disp_sign = disp.sign
         self.disp_miss = disp.miss
 
-    def set_timing_features(self, geom, image, peakpos, hillas):
-        peak_time = Quantity(peakpos) * u.Unit("ns")
+    def set_timing_features(self, geom, image, pulse_time, hillas):
+        peak_time = Quantity(pulse_time) * u.Unit("ns")
         timepars = time.timing_parameters(geom, image, peak_time, hillas)
         self.time_gradient = timepars.slope.value
         self.intercept = timepars.intercept
