@@ -138,7 +138,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 g = event.inst.subarray.tel[self.tel_id].camera
                 self.extractor.neighbours = g.neighbor_matrix_where
 
-            charge, peak_pos, window = self.extractor.extract_charge(waveforms)
+            charge, peak_pos = self.extractor(waveforms)
 
         # sum all the samples
         else:
