@@ -482,7 +482,7 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     return dl2
 
 
-def filter_events(data, leakage_cut = 1.0, intensity_min = 10):
+def filter_events(data, leakage_cut = 1.0, intensity_min = 10, r_min = 0.15):
     """
     Filter events based on extracted features.
 
@@ -495,5 +495,5 @@ def filter_events(data, leakage_cut = 1.0, intensity_min = 10):
     `pandas.DataFrame`
     """
 
-    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min)
+    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min) & (data['r'] > r_min)
     return data[filter]
