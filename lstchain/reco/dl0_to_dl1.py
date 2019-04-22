@@ -93,6 +93,8 @@ def get_dl1(calibrated_event, telescope_id):
     dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
     # dl1_container.mc_type = utils.guess_type(infile)
     dl1_container.set_timing_features(camera, image, peakpos, hillas)
+    dl1_container.set_leakage(camera, image, signal_pixels)
+    dl1_container.set_n_islands(camera, signal_pixels)
     dl1_container.set_source_camera_position(
         calibrated_event, telescope_id)
     dl1_container.set_disp(
