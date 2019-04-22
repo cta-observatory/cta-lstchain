@@ -484,8 +484,8 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     features_.append('disp_dx_rec')
     features_.append('disp_dy_rec')
     dl2['hadro_rec'] = classifier.predict(dl2[features_]).astype(int)
-    probs = classifier.predict_proba(dl2[features_])[0:,1]
-    dl2['gammaness'] = 1-probs
+    probs = classifier.predict_proba(dl2[features_])[0:,0]
+    dl2['gammaness'] = probs
     return dl2
 
 
