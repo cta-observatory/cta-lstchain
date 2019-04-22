@@ -16,7 +16,7 @@ from ctapipe.image import (
     tailcuts_clean,
     HillasParameterizationError,
 )
-from ctapipe.image.charge_extractors import LocalPeakIntegrator
+from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.image import timing_parameters as time
 from ctapipe.instrument import OpticsDescription
 from ctapipe.utils import get_dataset_path
@@ -43,7 +43,8 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_product='NeighbourPeakIntegrator')
+cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_name="NeighborPeakWindowSum")
+
 
 cleaning_method = tailcuts_clean
 cleaning_parameters = {'boundary_thresh': 3,
@@ -74,10 +75,10 @@ def get_dl1(calibrated_event, telescope_id):
 
     waveform = calibrated_event.r0.tel[telescope_id].waveform
     image = dl1.image
-    peakpos = dl1.peakpos
+    pulse_time = dl1.pulse_time
 
-    image, peakpos = gain_selection(
-        waveform, image, peakpos, camera.cam_id, threshold
+    image, pulse_time = gain_selection(
+        waveform, image, pulse_time, camera.cam_id, threshold
     )
 
     signal_pixels = cleaning_method(camera, image,
@@ -94,6 +95,7 @@ def get_dl1(calibrated_event, telescope_id):
     dl1_container.set_timing_features(camera, image, peakpos, hillas)
     dl1_container.set_leakage(camera, image, signal_pixels)
     dl1_container.set_n_islands(camera, signal_pixels)
+
     dl1_container.set_source_camera_position(
         calibrated_event, telescope_id)
     dl1_container.set_disp(
@@ -316,9 +318,8 @@ def get_events(filename, storedata=False, test=False,
 
             pedcorrectedsamples = data - np.atleast_3d(ped)/nsamples
 
-            integrator = LocalPeakIntegrator(None, None)
-            integration, peakpos, window = integrator.extract_charge(
-                pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
+            integrator = LocalPeakWindowSum()
+            integration, pulse_time = integrator(pedcorrectedsamples) # these are 2D matrices num_gains * num_pixels
 
             chan = 0  # high gain used for now...
             signals = integration[chan].astype(float)
@@ -358,7 +359,7 @@ def get_events(filename, storedata=False, test=False,
 
             #Calculate Timing parameters
 
-            peak_time = units.Quantity(peakpos[chan])*units.Unit("ns")
+            peak_time = units.Quantity(pulse_time[chan])*units.Unit("ns")
             timepars = time.timing_parameters(geom,clean,peak_time,hillas)
 
             if w >= 0:

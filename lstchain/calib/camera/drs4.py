@@ -1,6 +1,4 @@
-import argparse
 import numpy as np
-from astropy.io import fits
 from numba import jit
 
 
@@ -11,7 +9,8 @@ class DragonPedestal:
     high_gain = 0
     low_gain = 1
 
-    def __init__(self):
+    def __init__(self, telid=0):
+        self.telid = telid
         self.first_capacitor = np.zeros((2, 8))
         self.meanped = np.zeros((2, self.n_pixels, self.size4drs))
         self.numped = np.zeros((2, self.n_pixels, self.size4drs))
@@ -26,7 +25,7 @@ class DragonPedestal:
             self.first_capacitor[self.low_gain, i] = first_cap[j]
 
         waveform = event.r0.tel[0].waveform[:, :, :]
-        expected_pixel_id = event.lst.tel[0].svc.pixel_ids
+        expected_pixel_id = event.lst.tel[self.telid].svc.pixel_ids
         self._fill_pedestal_event_jit(nr, waveform, expected_pixel_id, self.first_capacitor, self.meanped, self.numped)
 
     @staticmethod
@@ -56,15 +55,12 @@ class DragonPedestal:
             print("Not enough events to coverage all capacitor. Please use more events to create pedestal file.")
             print(err)
 
-
-def get_first_capacitor(event, nr):
-    hg = 0
-    lg = 1
-    fc = np.zeros((2, 8))
-    first_cap = event.lst.tel[0].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
-    # First capacitor order according Dragon v5 board data format
-    for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
-        fc[hg, i] = first_cap[j]
-    for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
-        fc[lg, i] = first_cap[j]
-    return fc
+    def get_first_capacitor(self, event, nr):
+        fc = np.zeros((2, 8))
+        first_cap = event.lst.tel[self.telid].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
+        # First capacitor order according Dragon v5 board data format
+        for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
+            fc[self.high_gain, i] = first_cap[j]
+        for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
+            fc[self.low_gain, i] = first_cap[j]
+        return fc
