@@ -144,10 +144,8 @@ def r0_to_dl1(
                 print(i)
             if not custom:
                 cal.calibrate(event)
-            print(event.r0.tels_with_data)
-            # for telescope_id, dl1 in event.dl1.tel.items():
+                # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
-                print(event.r0.tels_with_data, telescope_id)
                 if custom:
                     lst_calibration(event, telescope_id)
 

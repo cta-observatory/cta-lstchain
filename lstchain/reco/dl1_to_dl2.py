@@ -318,6 +318,7 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
 def build_models(filegammas, fileprotons, features,
                 save_models=True, path_models="./",
                 energy_min=-1, intensity_min=np.log10(60), leakage_cut=0.2,
+                r_min=0.15,
                 regression_args=random_forest_regressor_args,
                 classification_args=random_forest_classifier_args,
                 config_file=None):
@@ -374,8 +375,14 @@ def build_models(filegammas, fileprotons, features,
     df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
     df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
-    df_gamma = filter_events(df_gamma, leakage_cut=leakage_cut, intensity_min=intensity_min)
-    df_proton = filter_events(df_proton, leakage_cut=leakage_cut, intensity_min=intensity_min)
+    df_gamma = filter_events(df_gamma,
+                             leakage_cut=leakage_cut,
+                             intensity_min=intensity_min,
+                             r_min=r_min)
+    df_proton = filter_events(df_proton,
+                              leakage_cut=leakage_cut,
+                              intensity_min=intensity_min,
+                              r_min=r_min)
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
