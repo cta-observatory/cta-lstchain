@@ -8,7 +8,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 
-from ctapipe.image import WaveformCleaner, ChargeExtractor
+from ctapipe.image import ImageExtractor
 
 from lstchain.calib.camera import FlatFieldCalculator
 from ctapipe_io_lst.containers import FlatFieldContainer
@@ -25,10 +25,6 @@ class FlatFieldHDF5Writer(Tool):
         help='Name of the output flat field file file'
     ).tag(config=True)
 
-    cleaner_product = tool_utils.enum_trait(
-        WaveformCleaner,
-        default='NullWaveformCleaner'
-    )
     calculator_product = tool_utils.enum_trait(
         FlatFieldCalculator,
         default='FlasherFlatFieldCalculator'
@@ -44,17 +40,13 @@ class FlatFieldHDF5Writer(Tool):
         n_channels='FlatFieldCalculator.n_channels',
         charge_product='FlatFieldCalculator.charge_product',
         cleaner='FlatFieldHDF5Writer.cleaner_product',
-        baseline_start='BaselineWaveformCleaner.baseline_start',
-        baseline_end='BaselineWaveformCleaner.baseline_end'
     ))
 
     classes = List([EventSource,
-                    WaveformCleaner,
                     FlatFieldCalculator,
                     FlatFieldContainer,
                     HDF5TableWriter
-                    ] + tool_utils.classes_with_traits(WaveformCleaner)
-                   + tool_utils.classes_with_traits(ChargeExtractor)
+                    ] + tool_utils.classes_with_traits(ImageExtractor)
                    + tool_utils.classes_with_traits(FlatFieldCalculator)
                    )
 
@@ -75,10 +67,7 @@ class FlatFieldHDF5Writer(Tool):
             self.calculator_product,
             **kwargs
         )
-        self.cleaner = WaveformCleaner.from_name(
-            self.cleaner_product,
-            **kwargs
-        )
+
         self.writer = HDF5TableWriter(
 
             filename=self.output_file, group_name='flatfield', overwrite=True
