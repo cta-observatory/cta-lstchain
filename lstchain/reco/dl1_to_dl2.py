@@ -370,8 +370,6 @@ def build_models(filegammas, fileprotons, features,
         regression_args = config['random_forest_regressor_args']
         classification_args = config['random_forest_classifier_args']
 
-    features_ = list(features)
-
     df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
     df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
@@ -407,20 +405,20 @@ def build_models(filegammas, fileprotons, features,
 
     #Apply the regressors to the test set
 
-    test['e_rec'] = temp_reg_energy.predict(test[features_])
-    disp_vector = temp_reg_disp_vector.predict(test[features_])
+    test['e_rec'] = temp_reg_energy.predict(test[features])
+    disp_vector = temp_reg_disp_vector.predict(test[features])
     test['disp_dx_rec'] = disp_vector[:,0]
     test['disp_dy_rec'] = disp_vector[:,1]
 
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp_norm reconstructed.
 
-    train = test[test['mc_energy'] > energy_min]
+    train = test[test['e_rec'] > energy_min]
 
     del temp_reg_energy, temp_reg_disp_vector
 
     #Add e_rec and disp_rec to features.
-    features_sep = features_
+    features_sep = features.copy()
     features_sep.append('e_rec')
     features_sep.append('disp_dx_rec')
     features_sep.append('disp_dy_rec')

@@ -19,12 +19,12 @@ def plot_features(data, truehadroness=False):
     -----------
     data: pandas DataFrame
 
-truehadroness:
+true_hadroness:
     True: True gammas and proton events are plotted (they are separated using true hadroness).
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     """
     hadro = "hadro_rec"
-    if truehadroness:
+    if true_hadroness:
         hadro = "hadroness"
 
     #Energy distribution
@@ -132,7 +132,7 @@ truehadroness:
     plt.xlabel(r"Time gradient")
 
 
-def plot_e(data, Nbins, emin, emax, truehadroness=False):
+def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     """Plot the performance of reconstructed Energy.
 
@@ -140,24 +140,24 @@ def plot_e(data, Nbins, emin, emax, truehadroness=False):
     -----------
     data: pandas DataFrame
 
-    truehadroness:
+    true_hadroness:
     True: True gammas and proton events are plotted
     (they are separated using true hadroness).
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
 
     """
     hadro = "hadro_rec"
-    if truehadroness:
+    if true_hadroness:
         hadro = "hadroness"
 
     gammas = data[data[hadro]==0]
 
     plt.subplot(221)
 
-    difE = np.log(10**data['e_rec']/10**data['mc_energy'])
+    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
-        data['mc_energy'],[difE,difE**2],
-        bins=Nbins,range=(emin, emax),statistic='mean')
+        data['mc_energy'],[delta_e,delta_e**2],
+        bins=n_bins,range=(emin, emax),statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
@@ -192,7 +192,7 @@ def plot_e(data, Nbins, emin, emax, truehadroness=False):
 
     plt.subplots_adjust(hspace=.0)
 
-def plot_disp(data,truehadroness=False):
+def plot_disp(data,true_hadroness=False):
 
     """Plot the performance of reconstructed position
 
@@ -200,14 +200,14 @@ def plot_disp(data,truehadroness=False):
     -----------
     data: pandas DataFrame
 
-    truehadroness: boolean
+    true_hadroness: boolean
     True: True gammas and proton events are plotted (they are separated
     using true hadroness).
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
     hadro = "hadro_rec"
-    if truehadroness:
+    if true_hadroness:
         hadro = "hadroness"
 
     gammas = data[data[hadro]==0]
@@ -264,21 +264,21 @@ def plot_disp_vector(data):
     axes[1].set_title('disp_dy');
 
 
-def plot_pos(data,truehadroness=False):
+def plot_pos(data,true_hadroness=False):
 
     """Plot the performance of reconstructed position
 
     Parameters:
     data: pandas DataFrame
 
-    truehadroness: boolean
+    true_hadroness: boolean
     True: True gammas and proton events are plotted (they are separated
     using true hadroness).
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
     hadro = "hadro_rec"
-    if truehadroness:
+    if true_hadroness:
         hadro = "hadroness"
 
     #True position
@@ -373,16 +373,16 @@ def plot_ROC(clf,data,features, Energy_cut):
                fontsize=15)
     plt.legend(loc='best')
 
-def plot_e_resolution(data, Nbins, emin, emax):
+def plot_e_resolution(data, n_bins, emin, emax):
 
     plt.rcParams['figure.figsize'] = (30, 10)
     plt.rcParams['font.size'] = 14
 
-    #difE = ((data['mc_energy']-data['e_rec'])*np.log(10))
-    difE = np.log(10**data['e_rec']/10**data['mc_energy'])
+    #delta_e = ((data['mc_energy']-data['e_rec'])*np.log(10))
+    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
-        data['mc_energy'],[difE,difE**2],
-        bins=Nbins,range=(emin, emax),statistic='mean')
+        data['mc_energy'],[delta_e,delta_e**2],
+        bins=n_bins,range=(emin, emax),statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
@@ -410,19 +410,19 @@ def plot_e_resolution(data, Nbins, emin, emax):
 
     subplot2 = plt.subplot(gs0[1])
 
-    #Lines for setting the configuration of the subplots depending on Nbins
-    import math
-    sqrtNbins = np.sqrt(Nbins)
-    a = int(math.ceil(sqrtNbins))
-    dif = a - sqrtNbins
+    #Lines for setting the configuration of the subplots depending on n_bins
+
+    sqrtn_bins = np.sqrt(n_bins)
+    a = int(np.ceil(sqrtn_bins))
+    dif = a - sqrtn_bins
     b=a
     if dif > 0.5:
         b=a-1
 
     gs2 = gridspec.GridSpecFromSubplotSpec(a, b,subplot_spec=subplot2)
-    for nbin in range(0,Nbins):
+    for nbin in range(0,n_bins):
         ax = plt.subplot(gs2[nbin])
-        plt.hist(difE[means_result.binnumber==nbin+1], 50,
+        plt.hist(delta_e[means_result.binnumber==nbin+1], 50,
                  label='$logE_{center}$ '+'%.2f' % bin_centers[nbin])
     plt.legend()
     plt.subplots_adjust(hspace=.25)
@@ -430,9 +430,9 @@ def plot_e_resolution(data, Nbins, emin, emax):
 
 def calc_resolution(data):
 
-    difE = np.log(10**data['e_rec']/10**data['mc_energy'])
-    n , bins, _ = plt.hist(difE,bins=500)
-    mu,sigma = scipy.stats.norm.fit(difE)
+    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    n , bins, _ = plt.hist(delta_e,bins=500)
+    mu,sigma = scipy.stats.norm.fit(delta_e)
     print(mu,sigma)
     bin_width = bins[1] - bins[0]
     total = bin_width*sum(n)*0.68
