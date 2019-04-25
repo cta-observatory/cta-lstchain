@@ -37,6 +37,7 @@ from ..io.lstcontainers import DL1ParametersContainer
 
 allowed_tels = {1}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
+serialize_meta = False  # should be true to keep all metadata, but it adds some extra tables
 
 threshold = 4094
 
@@ -130,10 +131,40 @@ def r0_to_dl1(
     source.allowed_tels = allowed_tels
     source.max_events = max_events
 
+    event = next(iter(source))
+
+    sub = event.inst.subarray
+    sub.to_table().write(
+        output_filename,
+        path="/instrument/subarray/layout",
+        serialize_meta=serialize_meta,
+        overwrite=True
+    )
+
+    sub.to_table(kind='optics').write(
+        output_filename,
+        path='/instrument/telescope/optics',
+        append=True,
+        serialize_meta=serialize_meta
+    )
+    for telescope_type in sub.telescope_types:
+        ids = set(sub.get_tel_ids_for_type(telescope_type)).intersection(allowed_tels)
+        if len(ids) > 0:  # only write if there is a telescope with this camera
+            tel_id = list(ids)[0]
+            camera = sub.tel[tel_id].camera
+            camera.to_table().write(
+                output_filename,
+                path=f'/instrument/telescope/camera/{camera}',
+                append=True,
+                serialize_meta=serialize_meta,
+            )
+
+
     with HDF5TableWriter(
         filename=output_filename,
         group_name='events',
-        overwrite=True
+        mode='a',
+        overwrite=True,
     ) as writer:
 
         for i, event in enumerate(source):
