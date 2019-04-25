@@ -6,7 +6,7 @@ from abc import abstractmethod
 import numpy as np
 from astropy import units as u
 from ctapipe.core import Component
-from ctapipe.image import ChargeExtractor
+from ctapipe.image.extractor import ImageExtractor
 from ctapipe.core.traits import Int, Unicode, Float, List
 
 
@@ -47,7 +47,7 @@ class FlatFieldCalculator(Component):
         help='Interval (in samples) of accepted time values'
     ).tag(config=True)
     charge_product= Unicode(
-        'LocalPeakIntegrator',
+        'LocalPeakWindowSum',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
 
@@ -74,7 +74,7 @@ class FlatFieldCalculator(Component):
         """
         super().__init__(**kwargs)
         # load the waveform charge extractor
-        self.extractor = ChargeExtractor.from_name(
+        self.extractor = ImageExtractor.from_name(
             self.charge_product,
             config=self.config
         )
@@ -129,11 +129,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         waveforms = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
-        if self.extractor.requires_neighbours():
-            g = event.inst.subarray.tel[self.tel_id].camera
-            self.extractor.neighbours = g.neighbor_matrix_where
 
-        charge, peak_pos, window = self.extractor.extract_charge(waveforms)
+        if self.extractor:
+            if self.extractor.requires_neighbors():
+                g = event.inst.subarray.tel[self.tel_id].camera
+                self.extractor.neighbours = g.neighbor_matrix_where
+
+            charge, peak_pos = self.extractor(waveforms)
 
         return charge, peak_pos
 

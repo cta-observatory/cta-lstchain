@@ -10,7 +10,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 
-from ctapipe.image import ChargeExtractor
+from ctapipe.image import ImageExtractor
 
 from lstchain.calib.camera import FlatFieldCalculator, PedestalCalculator, CameraR0Calibrator
 from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
@@ -57,7 +57,7 @@ class CalibrationHDF5Writer(Tool):
                     WaveformCalibrationContainer
                     ]
                    + tool_utils.classes_with_traits(CameraR0Calibrator)
-                   + tool_utils.classes_with_traits(ChargeExtractor)
+                   + tool_utils.classes_with_traits(ImageExtractor)
                    + tool_utils.classes_with_traits(FlatFieldCalculator)
                    + tool_utils.classes_with_traits(PedestalCalculator)
                    )

@@ -7,9 +7,9 @@ import numpy as np
 from astropy import units as u
 from ctapipe.core import Component
 
-from ctapipe.image import ChargeExtractor
-from ctapipe.core.traits import Int, Unicode, List
 
+from ctapipe.image.extractor import ImageExtractor
+from ctapipe.core.traits import Int, Unicode, List
 
 __all__ = [
     'PedestalCalculator',
@@ -79,7 +79,7 @@ class PedestalCalculator(Component):
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
     charge_product= Unicode(
-        'LocalPeakIntegrator',
+        'FixedWindowSum',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
 
@@ -107,7 +107,7 @@ class PedestalCalculator(Component):
         super().__init__(**kwargs)
 
         # load the waveform charge extractor
-        self.extractor = ChargeExtractor.from_name(
+        self.extractor = ImageExtractor.from_name(
             self.charge_product,
             config=self.config
         )
@@ -152,21 +152,22 @@ class PedestalIntegrator(PedestalCalculator):
 
         Parameters
         ----------
+
         event : general event container
 
         """
 
-        waveform = event.r1.tel[self.tel_id].waveform
+        waveforms = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
         if self.extractor:
-            if self.extractor.requires_neighbours():
+            if self.extractor.requires_neighbors():
                 g = event.inst.subarray.tel[self.tel_id].camera
                 self.extractor.neighbours = g.neighbor_matrix_where
 
-            charge, time, window = self.extractor.extract_charge(waveform)
+            charge, peak_pos = self.extractor(waveforms)
 
-        return charge, time, window
+        return charge, peak_pos
 
     def calculate_pedestals(self, event):
         """
@@ -177,7 +178,6 @@ class PedestalIntegrator(PedestalCalculator):
         event : general event container
 
         """
-
         # initialize the np array at each cycle
         waveform = event.r1.tel[self.tel_id].waveform
         container = event.mon.tel[self.tel_id].pedestal
@@ -201,12 +201,8 @@ class PedestalIntegrator(PedestalCalculator):
 
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
-        charge, time, window = self._extract_charge(event)
-
-        # divide by the width of the integration window
-        # event_pedestal = charge/np.sum(window, axis=2)
-        event_pedestal = charge
-        self.collect_sample(event_pedestal, pixel_mask)
+        charge, arrival_time = self._extract_charge(event)
+        self.collect_sample(charge, pixel_mask)
 
         sample_age = trigger_time - self.time_start
 
