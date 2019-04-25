@@ -44,7 +44,7 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(r1_product='HESSIOR1Calibrator', extractor_name="NeighborPeakWindowSum")
+cal = CameraCalibrator(extractor_name="NeighborPeakWindowSum")
 
 
 cleaning_method = tailcuts_clean
