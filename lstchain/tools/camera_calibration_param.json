@@ -18,13 +18,13 @@
      "tel_id":0,
      "charge_median_cut_outliers": [-3,3],
      "charge_std_cut_outliers": [-3,3],
-     "charge_product":"SimpleIntegrator"
+     "charge_product":"FixedWindowSum"
    },
     "FlatFieldCalculator":{
      "sample_size": 100,
      "sample_duration":1000,
      "tel_id":0,
-      "charge_product":"LocalPeakIntegrator",
+      "charge_product":"LocalPeakWindowSum",
       "charge_cut_outliers": [-0.3,0.3],
      "time_cut_outliers": [10,30]
    },
