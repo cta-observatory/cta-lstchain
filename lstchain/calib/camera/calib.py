@@ -7,6 +7,9 @@ from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.calib.camera.gainselection import ThresholdGainSelector
 
 
+gain_selector = ThresholdGainSelector(select_by_sample=True)
+
+
 def lst_calibration(event, telescope_id):
     """
     Custom lst calibration.
@@ -43,7 +46,7 @@ def lst_calibration(event, telescope_id):
     event.dl1.tel[telescope_id].pulse_time = pulse_time
 
 
-def gain_selection(waveform, signals, pulse_time, cam_id, threshold):
+def gain_selection(waveform, charges, pulse_time, cam_id, threshold):
 
     """
     Custom lst calibration.
@@ -52,34 +55,47 @@ def gain_selection(waveform, signals, pulse_time, cam_id, threshold):
     Parameters
     ----------
     waveform: array of waveforms of the events
-    signals: array of calibrated pixel charges
+    charges: array of calibrated pixel charges
     pulse_time: array of pixel peak positions
     cam_id: str
     threshold: int threshold to change form high gain to low gain
     """
-    '''
-    combined = signals[0].copy() 
-    peaks = peakpos[0].copy()
-    for pixel in range(0, combined.size):
-            if np.any(waveform[0][pixel] >= threshold):
-                combined[pixel] = signals[1][pixel]
-                peaks[pixel] = peakpos[1][pixel]
-    '''
-    ###Gain Selection using ctapipe GainSelector###
-    gainsel = ThresholdGainSelector(select_by_sample=True)
-    gainsel.thresholds[cam_id] = threshold
-    
-    waveform, gainmask = gainsel.select_gains(cam_id,
-                                              waveform)
-    signalmask = np.zeros(waveform.shape[0],
-                          dtype=bool)
+    assert charges.shape[0] == 2
 
-    for i in range(signalmask.size):
-        signalmask[i] = gainmask[i].any()==True
+    gain_selector.thresholds[cam_id] = threshold
 
-    combined = signals[0].copy()
-    combined[signalmask] = signals[1][signalmask]
-    peaks = pulse_time[0].copy()
-    peaks[signalmask] = pulse_time[1][signalmask]
-                
-    return combined, peaks
+    waveform, gain_mask = gain_selector.select_gains(cam_id, waveform)
+    signal_mask = gain_mask.max(axis=1)
+
+    combined_image = charges[0].copy()
+    combined_image[signal_mask] = charges[1][signal_mask].copy()
+    combined_pulse_time = pulse_time[0].copy()
+    combined_pulse_time[signal_mask] = pulse_time[1][signal_mask].copy()
+
+    return combined_image, combined_pulse_time
+
+
+
+def combine_channels(event, tel_id, threshold):
+    """
+    Combine the channels for the image and peakpos arrays in the event.dl1 containers
+    The `event.dl1.tel[tel_id].image` and `event.dl1.tel[tel_id].peakpos` are replaced by their combined versions
+
+    Parameters
+    ----------
+    event: `ctapipe.io.containers.DataContainer`
+    tel_id: int
+        id of the telescope
+    threshold: float
+        threshold value to consider a pixel as saturated in the waveform
+    """
+
+    cam_id = event.inst.subarray.tel[tel_id].camera.cam_id
+
+    waveform = event.r0.tel[tel_id].waveform
+    charges = event.dl1.tel[tel_id].image
+    pulse_time = event.dl1.tel[tel_id].pulse_time
+
+    combined_image, combined_pulse_time = gain_selection(waveform, charges, pulse_time, cam_id, threshold)
+    event.dl1.tel[tel_id].image = combined_image
+    event.dl1.tel[tel_id].pulse_time = combined_pulse_time
