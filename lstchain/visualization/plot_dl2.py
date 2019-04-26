@@ -251,7 +251,7 @@ def plot_disp(data,true_hadroness=False):
                fontsize=15)
 
 def plot_disp_vector(data):
-    fig, axes = plt.subplots(1, 2, figsize=(15,6))
+    fig, axes = plt.subplots(1, 2)
 
     axes[0].hist2d(data.disp_dx, data.disp_dx_rec, bins=60);
     axes[0].set_xlabel('mc_disp')
@@ -375,8 +375,6 @@ def plot_ROC(clf,data,features, Energy_cut):
 
 def plot_e_resolution(data, n_bins, emin, emax):
 
-    plt.rcParams['figure.figsize'] = (30, 10)
-    plt.rcParams['font.size'] = 14
 
     #delta_e = ((data['mc_energy']-data['e_rec'])*np.log(10))
     delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
