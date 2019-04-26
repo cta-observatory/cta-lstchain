@@ -61,7 +61,7 @@ def test_clean_test_files():
     import os
     os.remove('dl1_gamma_test_large.h5')
     os.remove('cls_gh.sav')
-    os.remove('reg_disp.sav')
+    os.remove('reg_disp_vector.sav')
     os.remove('reg_energy.sav')
     os.remove('rf_disp.pkl')
     os.remove('rf_energy.pkl')
