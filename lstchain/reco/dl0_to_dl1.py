@@ -166,6 +166,14 @@ def r0_to_dl1(
 
     with HDF5TableWriter(
         filename=output_filename,
+        group_name='header',
+        mode='a',
+        overwrite=True,
+    ) as writer:
+        writer.write('mc', event.mcheader)
+
+    with HDF5TableWriter(
+        filename=output_filename,
         group_name='events',
         mode='a',
         overwrite=True,
