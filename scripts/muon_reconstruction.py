@@ -56,11 +56,7 @@ class MuonDisplayerTool(Tool):
 
 
     def setup(self):
-        self.calib = CameraCalibrator(
-            config=self.config,
-            tool=self,
-            r1_product="HESSIOR1Calibrator"
-        )
+        self.calib = CameraCalibrator()
 
     def start(self):
 
