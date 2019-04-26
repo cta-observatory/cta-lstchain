@@ -318,6 +318,7 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
 def build_models(filegammas, fileprotons, features,
                 save_models=True, path_models="./",
                 energy_min=-1, intensity_min=np.log10(60), leakage_cut=0.2,
+                r_min=0.15,
                 regression_args=random_forest_regressor_args,
                 classification_args=random_forest_classifier_args,
                 config_file=None):
@@ -369,13 +370,17 @@ def build_models(filegammas, fileprotons, features,
         regression_args = config['random_forest_regressor_args']
         classification_args = config['random_forest_classifier_args']
 
-    features_ = list(features)
-
     df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
     df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
-    df_gamma = filter_events(df_gamma, leakage_cut=leakage_cut, intensity_min=intensity_min)
-    df_proton = filter_events(df_proton, leakage_cut=leakage_cut, intensity_min=intensity_min)
+    df_gamma = filter_events(df_gamma,
+                             leakage_cut=leakage_cut,
+                             intensity_min=intensity_min,
+                             r_min=r_min)
+    df_proton = filter_events(df_proton,
+                              leakage_cut=leakage_cut,
+                              intensity_min=intensity_min,
+                              r_min=r_min)
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
@@ -400,20 +405,20 @@ def build_models(filegammas, fileprotons, features,
 
     #Apply the regressors to the test set
 
-    test['e_rec'] = temp_reg_energy.predict(test[features_])
-    disp_vector = temp_reg_disp_vector.predict(test[features_])
+    test['e_rec'] = temp_reg_energy.predict(test[features])
+    disp_vector = temp_reg_disp_vector.predict(test[features])
     test['disp_dx_rec'] = disp_vector[:,0]
     test['disp_dy_rec'] = disp_vector[:,1]
 
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp_norm reconstructed.
 
-    train = test[test['mc_energy'] > energy_min]
+    train = test[test['e_rec'] > energy_min]
 
     del temp_reg_energy, temp_reg_disp_vector
 
     #Add e_rec and disp_rec to features.
-    features_sep = features_
+    features_sep = features.copy()
     features_sep.append('e_rec')
     features_sep.append('disp_dx_rec')
     features_sep.append('disp_dy_rec')
@@ -477,12 +482,12 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     features_.append('disp_dx_rec')
     features_.append('disp_dy_rec')
     dl2['hadro_rec'] = classifier.predict(dl2[features_]).astype(int)
-    probs = classifier.predict_proba(dl2[features_])[0:,1]
-    dl2['gammaness'] = 1-probs
+    probs = classifier.predict_proba(dl2[features_])[0:,0]
+    dl2['gammaness'] = probs
     return dl2
 
 
-def filter_events(data, leakage_cut = 1.0, intensity_min = 10):
+def filter_events(data, leakage_cut = 1.0, intensity_min = 10, r_min = 0.15):
     """
     Filter events based on extracted features.
 
@@ -495,5 +500,5 @@ def filter_events(data, leakage_cut = 1.0, intensity_min = 10):
     `pandas.DataFrame`
     """
 
-    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min)
+    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min) & (data['r'] > r_min)
     return data[filter]

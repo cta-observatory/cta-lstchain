@@ -66,8 +66,9 @@ if __name__ == '__main__':
                 'skewness', 'kurtosis','r', 'time_gradient', 'intercept',
                 'leakage', 'n_islands' ]
 
-    intensity_min = np.log10(100)
+    intensity_min = np.log10(200)
     leakage_cut = 0.2
+    r_min = 0.15
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
@@ -82,10 +83,12 @@ if __name__ == '__main__':
 
     gammas = dl1_to_dl2.filter_events(pd.read_hdf(args.gammatest, key='events/LSTCam'),
                                       leakage_cut = leakage_cut,
-                                      intensity_min=intensity_min)
+                                      intensity_min=intensity_min,
+                                      r_min=r_min)
     proton = dl1_to_dl2.filter_events(pd.read_hdf(args.protontest, key='events/LSTCam'),
                                       leakage_cut = leakage_cut,
-                                      intensity_min=intensity_min)
+                                      intensity_min=intensity_min,
+                                      r_min=r_min)
 
     data = pd.concat([gammas,proton], ignore_index=True)
 
@@ -112,13 +115,13 @@ if __name__ == '__main__':
     plot_dl2.plot_features(dl2)
     plt.show()
 
-    plot_dl2.plot_e(gammas)
+    plot_dl2.plot_e(gammas, 10, 1.5, 3.5)
     plt.show()
 
     plot_dl2.calc_resolution(gammas)
     plt.show()
 
-    plot_dl2.plot_e_resolution(gammas, 10)
+    plot_dl2.plot_e_resolution(gammas, 10, 1.5, 3.5)
     plt.show()
 
     plot_dl2.plot_disp_vector(gammas)
@@ -161,6 +164,6 @@ if __name__ == '__main__':
     plot_dl2.plot_importances(reg_disp_vector, features)
     plt.show()
 
-    plt.hist(dl2[dl2['hadroness']==1]['gammaness'])
-    plt.hist(dl2[dl2['hadroness']==0]['gammaness'])
+    plt.hist(dl2[dl2['hadroness']==1]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['hadroness']==0]['gammaness'], bins=100)
     plt.show()
