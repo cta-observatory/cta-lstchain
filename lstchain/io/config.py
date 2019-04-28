@@ -1,7 +1,7 @@
 import json
 import os
 
-all = [
+__all__ = [
     'read_configuration_file',
 ]
 

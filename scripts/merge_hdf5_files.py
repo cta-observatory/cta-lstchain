@@ -1,13 +1,18 @@
-import pandas as pd
 import argparse
 import os
-import h5py
+from lstchain.io import merge_events_tables
 
 parser = argparse.ArgumentParser(description="Merge all HDF5 files resulting from parallel reconstructions \
- present in a directory. Every dataset in the files must be readable with pandas.")
+ present in a directory.\n"
+                                 "By default, every dataset in the files will be merged, in this case, "
+                                             "all datasets must be readable with pandas.\n"
+                                 "If you want to merge a single dataset, use the --table-name option.\n"
+                                 ">>> python merged_hdf5_files.py source-directory -o merged_files.h5 -t events/LSTCam",
+                                 formatter_class=argparse.RawTextHelpFormatter,
+                                 )
 
 
-parser.add_argument('--source-dir', '-d', type=str,
+parser.add_argument('--source-dir', '-s', action='store', type=str,
                     dest='srcdir',
                     help='path to the source directory of files',
                     )
@@ -15,48 +20,23 @@ parser.add_argument('--source-dir', '-d', type=str,
 parser.add_argument('--outfile', '-o', action='store', type=str,
                     dest='outfile',
                     help='Path of the resulting merged file',
-                    default='merge.h5')
+                    default='merge.h5',
+                    )
+
+parser.add_argument('--events-table', '-e', action='store', type=str,
+                    dest='table_name',
+                    help='Name of a single table to be considered for the merging',
+                    default='events',
+                    )
 
 args = parser.parse_args()
 
-
-def get_dataset_keys(filename):
-    """
-    Return a list of all dataset keys in a HDF5 file
-
-    Parameters
-    ----------
-    filename: str - path to the HDF5 file
-
-    Returns
-    -------
-    list of keys
-    """
-    dataset_keys = []
-    def walk(name, obj):
-        if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
-
-    with h5py.File(filename,'r') as file:
-        file.visititems(walk)
-
-    return dataset_keys
 
 
 if __name__ == '__main__':
 
     file_list = [args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')]
 
-    dataframes = {}
+    print("Merging events in table {} from files:\n {}".format(args.table_name, file_list))
 
-    for file in file_list:
-        keys = get_dataset_keys(file)
-        for k in keys:
-            if k in dataframes:
-                dataframes[k] = pd.concat([dataframes[k], pd.read_hdf(file, key=k)])
-            else:
-                dataframes[k] = pd.read_hdf(file, key=k)
-
-    for k, df in dataframes.items():
-        df.to_hdf(args.outfile, key=k)
-
+    merge_events_tables(file_list, args.outfile, args.table_name)
