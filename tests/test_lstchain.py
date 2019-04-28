@@ -1,5 +1,16 @@
 from ctapipe.utils import get_dataset_path
 import numpy as np
+import os
+from astropy.coordinates import EarthLocation
+EarthLocation._get_site_registry(force_download=True)
+
+
+test_dir = 'testfiles'
+
+os.makedirs(test_dir, exist_ok=True)
+
+testfile = 'gamma_test_large.simtel.gz'
+dl1_file = os.path.join(test_dir, 'gamma_test_large.simtel.h5')
 
 def test_import_calib():
     from lstchain import calib
@@ -15,23 +26,24 @@ def test_import_lstio():
 
 def test_dl0_to_dl1():
     from lstchain.reco.dl0_to_dl1 import r0_to_dl1
-    infile = get_dataset_path('gamma_test_large.simtel.gz')
-    r0_to_dl1(infile)
+    infile = get_dataset_path(testfile)
+    r0_to_dl1(infile, output_filename=dl1_file)
 
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
-    infile = 'dl1_gamma_test_large.h5'
+    infile = dl1_file
     features = ['intensity', 'width', 'length']
 
     reg_energy, reg_disp, cls_gh = build_models(
         infile, infile,
         features,
+        path_models=test_dir,
         save_models=True)
 
     from sklearn.externals import joblib
-    joblib.dump(reg_energy, 'rf_energy.pkl')
-    joblib.dump(reg_disp, 'rf_disp.pkl')
-    joblib.dump(cls_gh, 'rf_cls_gh.pkl')
+    joblib.dump(reg_energy, os.path.join(test_dir, 'rf_energy.pkl'))
+    joblib.dump(reg_disp, os.path.join(test_dir, 'rf_disp.pkl'))
+    joblib.dump(cls_gh, os.path.join(test_dir, 'rf_cls_gh.pkl'))
 
 
 def test_apply_models():
@@ -39,13 +51,13 @@ def test_apply_models():
     import pandas as pd
     from sklearn.externals import joblib
 
-    dl1_file = 'dl1_gamma_test_large.h5'
+    # dl1_file = 'dl1_gamma_test_large.h5'
     dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
     features = ['intensity', 'width', 'length']
     # Load the trained RF for reconstruction:
-    file_energy = 'rf_energy.pkl'
-    file_disp = 'rf_disp.pkl'
-    file_cls_gh = 'rf_cls_gh.pkl'
+    file_energy = os.path.join(test_dir, 'rf_energy.pkl')
+    file_disp = os.path.join(test_dir, 'rf_disp.pkl')
+    file_cls_gh = os.path.join(test_dir, 'rf_cls_gh.pkl')
 
     reg_energy = joblib.load(file_energy)
     reg_disp = joblib.load(file_disp)
@@ -54,19 +66,31 @@ def test_apply_models():
     apply_models(dl1, features, reg_cls_gh, reg_energy, reg_disp)
 
 
+def test_merge_events_tables():
+    from lstchain.io import merge_events_tables
+    from shutil import copyfile
+    import os
+    import pandas as pd
+
+    dl1_copy = dl1_file.replace('.h5', '_copy.h5')
+    merged_file = os.path.join(test_dir, 'merged.h5')
+    copyfile(dl1_file, dl1_copy)
+    files = [os.path.join(test_dir, f) for f in os.listdir(test_dir) if f.endswith('.h5')]
+    merge_events_tables(files, merged_file, events_table='events')
+    assert os.path.exists(merged_file)
+    df = pd.read_hdf(dl1_file, key='events/LSTCam')
+    df_merged = pd.read_hdf(merged_file, key='events/LSTCam')
+    assert len(df_merged) == 2 * len(df)
+    os.remove(dl1_copy)
+    os.remove(merged_file)
+
+
 def test_clean_test_files():
     """
     Function to clean the test files created by the previous test
     """
-    import os
-    os.remove('dl1_gamma_test_large.h5')
-    os.remove('cls_gh.sav')
-    os.remove('reg_disp_vector.sav')
-    os.remove('reg_energy.sav')
-    os.remove('rf_disp.pkl')
-    os.remove('rf_energy.pkl')
-    os.remove('rf_cls_gh.pkl')
-
+    import shutil
+    shutil.rmtree(test_dir)
 
 def test_disp_vector():
     from lstchain.reco.utils import disp_vector
