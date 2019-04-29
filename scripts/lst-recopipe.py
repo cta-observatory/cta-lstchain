@@ -19,6 +19,7 @@ import argparse
 import os
 import pandas as pd 
 from distutils.util import strtobool
+import numpy as np
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -53,48 +54,63 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     #Get out the data from the Simtelarray file:
-
+    
     dl0_to_dl1.max_events = args.max_events
-
+    dl0_to_dl1.allowed_tels={1}
     dl0_to_dl1.r0_to_dl1(args.datafile)
-    output_filename = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
-    data = pd.read_hdf(output_filename, key='events/LSTCam')
+    dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+    
+    #dl1_file=args.datafile
+    #data = pd.read_hdf(args.datafile, key='events/LSTCam')
+    intensity_min = np.log10(50)
+    r_max = 10#0.8
+
+    data = dl1_to_dl2.filter_events(pd.read_hdf(dl1_file, key='events/LSTCam'), 
+                             r_max=r_max, intensity_min=intensity_min)
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
-    fileD = args.path_models + "/reg_disp.sav"
+    fileD = args.path_models + "/reg_disp_vector.sav"
     fileH = args.path_models + "/cls_gh.sav"
     
-    RFreg_Energy = joblib.load(fileE)
-    RFreg_Disp = joblib.load(fileD)
-    RFcls_GH = joblib.load(fileH)
+    reg_energy = joblib.load(fileE)
+    reg_disp_vector = joblib.load(fileD)
+    cls_gh = joblib.load(fileH)
     
     #Apply the models to the data
-    features = ['intensity',
-                'time_gradient',
-                'width',
-                'length',
-                'wl',
-                'phi',
-                'psi']
 
-    dl2 = dl1_to_dl2.apply_models(data, features, RFcls_GH, RFreg_Energy, RFreg_Disp)
+    features = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 
+                'skewness', 'kurtosis','r', 'intercept', 'time_gradient']
+
+    dl2 = dl1_to_dl2.apply_models(data, features, cls_gh, reg_energy, reg_disp_vector)
 
     if args.storeresults==True:
         #Store results
         os.makedirs(args.outdir, exist_ok=True)
-        outfile = args.outdir+"/dl2_events.hdf5"
+        outfile = args.outdir+'/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
         dl2.to_hdf(outfile, key="dl2_events", mode="w")
-
+    
     #Plot some results
-        
+    '''
     plot_dl2.plot_features(dl2)
     plt.show()
     plot_dl2.plot_e(dl2)
     plt.show()
-    plot_dl2.plot_disp(dl2)
-    plt.show()
+    fig, axes = plt.subplots(1, 2, figsize=(15,6))
+
+    axes[0].hist2d(dl2.disp_dx, dl2.disp_dx_rec, bins=60);
+    axes[0].set_xlabel('mc_disp')
+    axes[0].set_ylabel('reco_disp')
+    axes[0].set_title('disp_dx')
+    
+    axes[1].hist2d(dl2.disp_dy, dl2.disp_dy_rec, bins=60);
+    axes[1].set_xlabel('mc_disp')
+    axes[1].set_ylabel('reco_disp')
+    axes[1].set_title('disp_dy');
     plot_dl2.plot_pos(dl2)
     plt.show()
-
-    
+    plot_dl2.calc_resolution(dl2)
+    plt.show()
+    plot_dl2.plot_e_resolution(dl2,15)
+    plt.show()
+    '''

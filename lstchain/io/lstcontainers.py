@@ -7,6 +7,8 @@ from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
+from ctapipe.image import leakage
+from ctapipe.image.cleaning import number_of_islands
 from ..reco import utils
 from numpy import nan
 
@@ -41,6 +43,8 @@ class DL1ParametersContainer(Container):
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
+    leakage = Field(None, 'Leakage')
+    n_islands = Field(None, 'Number of Islands')
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
@@ -63,6 +67,11 @@ class DL1ParametersContainer(Container):
 
     hadroness = Field(None, "Hadroness")
     wl = Field(None, "width/length")
+
+    tel_id = Field(None, "Telescope Id")
+    tel_pos_x = Field(None, "Telescope x position in the ground")
+    tel_pos_y = Field(None, "Telescope y position in the ground")
+    tel_pos_z = Field(None, "Telescope z position in the ground")
 
     def fill_hillas(self, hillas):
         """
@@ -128,6 +137,20 @@ class DL1ParametersContainer(Container):
         timepars = time.timing_parameters(geom, image, peak_time, hillas)
         self.time_gradient = timepars.slope.value
         self.intercept = timepars.intercept
+    def set_leakage(self, geom, image, clean):
+        leakage_c = leakage(geom, image, clean)
+        self.leakage = leakage_c.leakage2_intensity
+
+    def set_n_islands(self, geom, clean): 
+        n_islands, islands_mask = number_of_islands(geom, clean)
+        self.n_islands = n_islands
+
+    def set_telescope_info(self, event, telescope_id):
+        self.tel_id = telescope_id
+        tel_pos = event.inst.subarray.positions[telescope_id]
+        self.tel_pos_x = tel_pos[0] 
+        self.tel_pos_y = tel_pos[1] 
+        self.tel_pos_z = tel_pos[2] 
 
     def set_source_camera_position(self, event, telescope_id):
         # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
