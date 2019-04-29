@@ -402,6 +402,6 @@ class NullR0Calibrator(CameraR0Calibrator):
     def calibrate(self, event):
         for telid in event.r0.tels_with_data:
             event.r1.tel[telid].trigger_type = event.r0.tel[telid].trigger_type
-            event.r1.tel[telid].trigger_time = event.r1.tel[telid].trigger_time
+            event.r1.tel[telid].trigger_time = event.r0.tel[telid].trigger_time
             samples = event.r0.tel[telid].waveform[:,:,self.r1_sample_start:self.r1_sample_end]
             event.r1.tel[telid].waveform = samples.astype('float32')
