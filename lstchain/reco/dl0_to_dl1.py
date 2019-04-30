@@ -31,6 +31,7 @@ import math
 from . import utils
 from ..calib.camera import lst_calibration, gain_selection
 from ..io.lstcontainers import DL1ParametersContainer
+from ctapipe.image.extractor import NeighborPeakWindowSum
 
 ### PARAMETERS - TODO: use a yaml config file
 
@@ -44,7 +45,7 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(extractor_name="NeighborPeakWindowSum")
+cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
 
 
 cleaning_method = tailcuts_clean
@@ -183,7 +184,7 @@ def r0_to_dl1(
             if i % 100 == 0:
                 print(i)
             if not custom:
-                cal.calibrate(event)
+                cal(event)
                 # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
                 if custom:
