@@ -20,7 +20,7 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 
 
-location = EarthLocation.of_site('Roque de los Muchachos')
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m) # position of the LST1
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 
