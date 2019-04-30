@@ -1,9 +1,6 @@
 from ctapipe.utils import get_dataset_path
 import numpy as np
 import os
-from astropy.coordinates import EarthLocation
-EarthLocation._get_site_registry(force_download=True)
-
 
 test_dir = 'testfiles'
 
