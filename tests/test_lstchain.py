@@ -1,7 +1,5 @@
 from ctapipe.utils import get_dataset_path
 import numpy as np
-from astropy.coordinates import EarthLocation
-EarthLocation._get_site_registry(force_download=True)
 
 def test_import_calib():
     from lstchain import calib
