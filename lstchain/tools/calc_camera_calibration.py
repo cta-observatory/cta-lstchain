@@ -17,6 +17,15 @@ from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, Wav
 
 
 class CalibrationHDF5Writer(Tool):
+    """
+     Tool that generates a HDF5 file with camera calibration coefficients.
+     Input file must contain interleaved pedestal and flat-field events
+
+     For getting help run:
+     python calc_camera_calibration.py --help
+
+     """
+
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
@@ -64,6 +73,14 @@ class CalibrationHDF5Writer(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        """
+         Tool that generates a HDF5 file with camera calibration coefficients.
+         Input file must contain interleaved pedestal and flat-field events  
+
+         For getting help run:
+         python calc_camera_calibration.py --help
+         
+         """
         self.eventsource = None
         self.flatfield = None
         self.pedestal = None

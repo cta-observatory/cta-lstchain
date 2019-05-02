@@ -31,11 +31,12 @@ import math
 from . import utils
 from ..calib.camera import lst_calibration, gain_selection
 from ..io.lstcontainers import DL1ParametersContainer
+from ctapipe.image.extractor import NeighborPeakWindowSum
 
 ### PARAMETERS - TODO: use a yaml config file
 
 
-allowed_tels = {1}  # select LST1 only
+allowed_tels = {1, 2, 3, 4}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
 
 threshold = 4094
@@ -43,7 +44,9 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(extractor_name="NeighborPeakWindowSum")
+
+cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
+
 
 
 cleaning_method = tailcuts_clean
@@ -93,12 +96,16 @@ def get_dl1(calibrated_event, telescope_id):
     dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
     # dl1_container.mc_type = utils.guess_type(infile)
     dl1_container.set_timing_features(camera, image, pulse_time, hillas)
+    dl1_container.set_leakage(camera, image, signal_pixels)
+    dl1_container.set_n_islands(camera, signal_pixels)
     dl1_container.set_source_camera_position(
         calibrated_event, telescope_id)
     dl1_container.set_disp(
         [dl1_container.src_x, dl1_container.src_y],
         hillas
     )
+    dl1_container.set_telescope_info(calibrated_event, telescope_id)
+
     return dl1_container
 
 
@@ -140,9 +147,8 @@ def r0_to_dl1(
             if i % 100 == 0:
                 print(i)
             if not custom:
-                cal.calibrate(event)
-
-            # for telescope_id, dl1 in event.dl1.tel.items():
+                cal(event)
+                # for telescope_id, dl1 in event.dl1.tel.items():
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
                 if custom:
                     lst_calibration(event, telescope_id)

@@ -45,19 +45,19 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
     #Train the models
+        
+    features = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 
+                'skewness', 'kurtosis','r', 'intercept', 'time_gradient']
 
-    features = ['intensity',
-                'time_gradient',
-                'width',
-                'length',
-                'wl',
-                'phi',
-                'psi']
+    intensity_min = np.log10(100)
+    r_max = 0.8
 
 
     dl1_to_dl2.build_models(args.gammafile,
                             args.protonfile,
                             features,
+                            intensity_min = intensity_min,
+                            r_max = r_max, 
                             save_models=args.storerf,
                             path_models=args.path_models,
                             config_file=args.config_file
