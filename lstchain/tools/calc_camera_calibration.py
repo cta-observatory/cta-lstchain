@@ -80,7 +80,7 @@ class CalibrationHDF5Writer(Tool):
          For getting help run:
          python calc_camera_calibration.py --help
          
-         """
+        """
         self.eventsource = None
         self.flatfield = None
         self.pedestal = None
