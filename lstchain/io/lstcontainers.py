@@ -163,6 +163,9 @@ class DL1ParametersContainer(Container):
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
 
+    def set_mc_type(self, event):
+        self.mc_type = event.mc.shower_primary_id
+
 
 class DispContainer(Container):
     """
