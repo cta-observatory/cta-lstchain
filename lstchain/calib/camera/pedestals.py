@@ -144,7 +144,7 @@ class PedestalIntegrator(PedestalCalculator):
         self.time_start = None  # trigger time of first event in sample
         self.charge_medians = None  # med. charge in camera per event in sample
         self.charges = None  # charge per event in sample
-        self.sample_bad_pixels = None  # bad pixels per event in sample
+        self.sample_masked_pixels = None  # pixels tp be masked per event in sample
 
     def _extract_charge(self, event):
         """
@@ -184,7 +184,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         # real data
         if not event.mcheader.simtel_version:
-            trigger_time = event.r0.tel[self.tel_id].trigger_time
+            trigger_time = event.r1.tel[self.tel_id].trigger_time
             pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_mask
 
         else: # patches for MC data
@@ -214,7 +214,7 @@ class PedestalIntegrator(PedestalCalculator):
             pedestal_results = calculate_pedestal_results(
                 self,
                 self.charges,
-                self.sample_bad_pixels,
+                self.sample_masked_pixels,
             )
             time_results = calculate_time_results(
                 self.time_start,
@@ -243,20 +243,20 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
-        self.sample_bad_pixels = np.zeros(shape)
+        self.sample_masked_pixels = np.zeros(shape)
 
     def collect_sample(self, charge, pixel_mask):
 
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
-        bad_pixels = np.zeros(charge.shape, dtype=np.bool)
-        bad_pixels[:] = pixel_mask == 1
+        masked_pixels = np.zeros(charge.shape, dtype=np.bool)
+        masked_pixels[:] = pixel_mask == 1
 
-        good_charge = np.ma.array(charge, mask=bad_pixels)
+        good_charge = np.ma.array(charge, mask=masked_pixels)
         charge_median = np.ma.median(good_charge, axis=1)
 
         self.charges[self.num_events_seen] = charge
-        self.sample_bad_pixels[self.num_events_seen] = bad_pixels
+        self.sample_masked_pixels[self.num_events_seen] = masked_pixels
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
@@ -274,11 +274,11 @@ def calculate_time_results(
 
 def calculate_pedestal_results(self,
     trace_integral,
-    bad_pixels_of_sample,
+    masked_pixels_of_sample,
 ):
     masked_trace_integral = np.ma.array(
         trace_integral,
-        mask=bad_pixels_of_sample
+        mask=masked_pixels_of_sample
     )
     # median over the sample per pixel
     pixel_median = np.ma.median(masked_trace_integral, axis=0)
