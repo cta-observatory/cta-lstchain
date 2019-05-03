@@ -169,10 +169,8 @@ def r0_to_dl1(
                     continue
 
                 if dl1_filled is not None:
-                    # particle_name = utils.guess_type(input_filename)
 
                     # Some custom def
-                    # dl1_container.mc_type = utils.particle_number(particle_name)
                     dl1_container.hadroness = dl1_container.mc_type
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     # Log10(Energy) in GeV
