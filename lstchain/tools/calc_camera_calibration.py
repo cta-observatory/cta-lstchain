@@ -19,7 +19,9 @@ from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, Wav
 class CalibrationHDF5Writer(Tool):
     """
      Tool that generates a HDF5 file with camera calibration coefficients.
-     Input file must contain interleaved pedestal and flat-field events
+     This is just an example on how the monitoring containers can be filled using
+     the calibration Components in calib/camera.
+     This example is based on an input file with interleaved pedestal and flat-field events
 
      For getting help run:
      python calc_camera_calibration.py --help
