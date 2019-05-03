@@ -1,5 +1,5 @@
 """
-Extract pedestals from pedestal events
+Extract pedestals from pedestal file
 """
 from traitlets import Dict, List, Unicode
 import ctapipe.utils.tools as tool_utils
@@ -15,6 +15,11 @@ from lstchain.calib.camera.r0 import CameraR0Calibrator
 
 
 class PedestalHDF5Writer(Tool):
+    '''
+    Example of tool that extract the pedestal value per pixel and write the pedestal
+    container to disk in a hdf5 file
+    '''
+
     name = "PedestalHDF5Writer"
     description = "Generate a HDF5 file with pedestal values"
 
@@ -51,6 +56,10 @@ class PedestalHDF5Writer(Tool):
                       + tool_utils.classes_with_traits(CameraR0Calibrator))
 
     def __init__(self, **kwargs):
+        '''
+        Example of tool that extract the pedestal value per pixel and write the pedestal
+        container to disk
+        '''
 
         super().__init__(**kwargs)
         self.eventsource = None
@@ -77,9 +86,11 @@ class PedestalHDF5Writer(Tool):
             filename=self.output_file, group_name=self.group_name, overwrite=True
         )
 
-
     def start(self):
-        '''Pedestal calculator'''
+        '''
+        Example of tool that extract the pedestal value per pixel and write the pedestal
+        container to disk
+        '''
 
         write_config = True
 
