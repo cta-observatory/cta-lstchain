@@ -335,8 +335,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                     posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                     if last_time_array[nr_module, gain, pix, posads] > 0:
                         time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
-                        val = waveform[gain, pixel, k] - ped_time(time_diff / (133.e3))
-                        waveform[gain, pixel, k] = val
+                        time_diff_ms = time_diff / (133.e3)
+                        if time_diff_ms < 100:
+                            val = waveform[gain, pixel, k] - ped_time(time_diff_ms)
+                            waveform[gain, pixel, k] = val
 
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
@@ -345,6 +347,21 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                     for k in prange(0, 39):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
+
+                # now the magic of Dragon,
+                # if the ROI is in the last quarter of each DRS4
+                # for even channel numbers extra 12 slices are read in a different place
+                # code from Takayuki & Julian
+                if pix % 2 == 0:
+                    first_cap = fc[nr_module, gain, pix]
+                    if first_cap % 1024 > 766 and first_cap % 1024 < 1012:
+                        start = int(first_cap) + 1024 - 1
+                        end = int(first_cap) + 1024 + 11
+                        last_time_array[nr_module, gain, pix, start%4096:end%4096] = time_now
+                    elif first_cap % 1024 >= 1012:
+                        channel = int(first_cap / 1024)
+                        for kk in range(first_cap + 1024, (channel + 2) * 1024):
+                            last_time_array[nr_module, gain, pix, int(kk) % 4096] = time_now
 
 @jit
 def ped_time(timediff):
