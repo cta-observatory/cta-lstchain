@@ -63,10 +63,8 @@ if __name__ == '__main__':
     #dl1_file=args.datafile
     #data = pd.read_hdf(args.datafile, key='events/LSTCam')
     intensity_min = np.log10(50)
-    r_max = 10#0.8
 
-    data = dl1_to_dl2.filter_events(pd.read_hdf(dl1_file, key='events/LSTCam'), 
-                             r_max=r_max, intensity_min=intensity_min)
+    data = dl1_to_dl2.filter_events(pd.read_hdf(dl1_file, key='events/LSTCam'), intensity_min=intensity_min)
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
