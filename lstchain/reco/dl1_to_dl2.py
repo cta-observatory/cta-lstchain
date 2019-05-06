@@ -310,7 +310,7 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
     clf = RandomForestClassifier(**classification_args)
 
     clf.fit(train[features],
-            train['hadroness'])
+            train['mc_type'])
     print("Random Forest trained!")
     return clf
 
@@ -342,7 +342,7 @@ def build_models(filegammas, fileprotons, features,
     intensity_min: float
     Cut in intensity of the showers for training RF. Default is 60 phe
 
-    r_max: float
+    r_min: float
     Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
     in the border. Default is 80% of camera radius.
 
