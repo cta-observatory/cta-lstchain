@@ -171,7 +171,6 @@ def r0_to_dl1(
                 if dl1_filled is not None:
 
                     # Some custom def
-                    dl1_container.hadroness = dl1_container.mc_type
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     # Log10(Energy) in GeV
                     dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)
@@ -261,7 +260,6 @@ def get_events(filename, storedata=False, test=False,
                 'src_x',
                 'src_y',
                 'disp_norm',
-                'hadroness',
                 ]
 
     output = pd.DataFrame(columns=features)
@@ -425,17 +423,13 @@ def get_events(filename, storedata=False, test=False,
                 src_y = sourcepos[1]
                 disp = utils.disp_norm(sourcepos[0], sourcepos[1], x, y)
 
-                hadroness = 0
-                if particle_type=='proton':
-                    hadroness = 1
-
                 eventdf = pd.DataFrame([[obs_id, event_id, mc_energy, mc_alt, mc_az,
                                          mc_core_x, mc_core_y, mc_h_first_int, mc_type,
                                          gps_time, width, length, width / length, phi,
                                          psi, r, x, y, intensity, skewness, kurtosis,
                                          mc_alt_tel, mc_az_tel, mc_core_distance, mc_x_max,
                                          time_gradient, intercept, src_x, src_y,
-                                         disp, hadroness]],
+                                         disp, mc_type]],
                                        columns=features)
 
                 output = output.append(eventdf,
