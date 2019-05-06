@@ -38,7 +38,6 @@ class DL1ParametersContainer(Container):
     disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
     disp_sign = Field(None, 'disp_sign')
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
