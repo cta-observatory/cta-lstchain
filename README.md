@@ -5,6 +5,17 @@ The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ct
 
 master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain)
 
+
+### Important message to lstchain users (May 4th 2019):
+*ctapipe* and *lstchain* are currently undergoing heavy and rapid changes.    
+The core developer team is trying to stay up-to-date with the master version of *ctapipe* before reaching *ctapipe v0.7* release.
+You might experience some issues if changes have been merged in *ctapipe* master before we could integrate these changes in *lstchain*. We are sorry for that. Do not hesitate to submit an issue or propose a patch through a pull request.
+
+- The basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) are unit tested and should be working as long as the build status is passing.    
+- However, the notebooks are not and might not be up-to-date before stable release. Do not rely on them for now.
+
+
+
 ## Install
 
 > Old install procedure:
