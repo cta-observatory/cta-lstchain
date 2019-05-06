@@ -44,8 +44,8 @@ threshold = 4094
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
 
+cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
 
 cleaning_method = tailcuts_clean
 cleaning_parameters = {'boundary_thresh': 3,

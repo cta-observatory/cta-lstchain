@@ -3,21 +3,30 @@
 
    "PedestalHDF5Writer": {
      "calculator_product": "PedestalIntegrator",
-     "output_file":"pedestal.hdf5",
+     "r0calibrator_product": "LSTR0Corrections",
+     "output_file":"/astro/users/cassol/soft/python/lstchain-test/pedestal.hdf5",
      "log_level":"DEBUG"
    },         
    "EventSource": {
-      "input_url": "/ctadata/franca/LST/LST-1.1.Run00168.0000.fits.fz",
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00251.0000.fits.fz",
       "max_events": 100
+   },
+   "LSTR0Corrections": {
+      "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
+      "r1_sample_start": 2,
+      "r1_sample_end": 38,
+      "tel_id": 0
    },
    "PedestalCalculator":{
      "sample_size": 90,
      "sample_duration":1000,
      "tel_id":0,
-      "charge_product":"LocalPeakIntegrator"
+     "charge_median_cut_outliers": [-3,3],
+     "charge_std_cut_outliers": [-3,3],
+     "charge_product":"FixedWindowSum"
    },
-    "LocalPeakIntegrator":{
-     "window_shift": 4,
-     "window_width":10
+    "SimpleIntegrator":{
+     "window_start": 12,
+     "window_width":12
     }
 }
