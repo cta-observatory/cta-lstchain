@@ -8,7 +8,7 @@ from astropy import units as u
 from ctapipe.core import Component
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.core.traits import Int, Unicode, Float, List
-from ctapipe_io_lst.containers import FlatFieldContainer
+
 
 __all__ = [
     'FlatFieldCalculator',
@@ -39,15 +39,15 @@ class FlatFieldCalculator(Component):
         help='number of channels to be treated'
     ).tag(config=True)
     charge_cut_outliers = List(
-        [3,3],
-        help='Interval of accepted charge values (number of std)'
+        [-0.3,0.3],
+        help='Interval of accepted charge values (fraction with respect to camera median value)'
     ).tag(config=True)
     time_cut_outliers = List(
         [10,30],
         help='Interval (in samples) of accepted time values'
     ).tag(config=True)
     charge_product= Unicode(
-        'LocalPeakIntegrator',
+        'LocalPeakWindowSum',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
 
@@ -73,10 +73,6 @@ class FlatFieldCalculator(Component):
 
         """
         super().__init__(**kwargs)
-
-        # initialize the output
-        self.container = FlatFieldContainer()
-
         # load the waveform charge extractor
         self.extractor = ImageExtractor.from_name(
             self.charge_product,
@@ -118,7 +114,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.charge_medians = None  # med. charge in camera per event in sample
         self.charges = None  # charge per event in sample
         self.arrival_times = None  # arrival time per event in sample
-        self.sample_bad_pixels = None  # bad pixels per event in sample
+        self.sample_masked_pixels = None  # masked pixels per event in sample
 
     def _extract_charge(self, event):
         """
@@ -130,20 +126,16 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         """
 
-        waveforms = event.r0.tel[self.tel_id].waveform
+        waveforms = event.r1.tel[self.tel_id].waveform
 
         # Extract charge and time
+
         if self.extractor:
-            if self.extractor.requires_neighbours():
+            if self.extractor.requires_neighbors():
                 g = event.inst.subarray.tel[self.tel_id].camera
                 self.extractor.neighbours = g.neighbor_matrix_where
 
             charge, peak_pos = self.extractor(waveforms)
-
-        # sum all the samples
-        else:
-            charge = waveforms.sum(axis=2)
-            peak_pos = np.argmax(waveforms, axis=2)
 
         return charge, peak_pos
 
@@ -158,11 +150,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
 
         # initialize the np array at each cycle
-        waveform = event.r0.tel[self.tel_id].waveform
+        waveform = event.r1.tel[self.tel_id].waveform
+        container = event.mon.tel[self.tel_id].flatfield
 
         # real data
         if not event.mcheader.simtel_version:
-            trigger_time = event.r0.tel[self.tel_id].trigger_time
+            trigger_time = event.r1.tel[self.tel_id].trigger_time
             hardware_or_pedestal_mask = np.logical_or(
                 event.mon.tel[self.tel_id].pixel_status.hardware_mask,
                 event.mon.tel[self.tel_id].pixel_status.pedestal_mask)
@@ -198,12 +191,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 self,
                 self.charge_medians,
                 self.charges,
-                self.sample_bad_pixels,
+                self.sample_masked_pixels,
             )
             time_results = calculate_time_results(
                 self,
                 self.arrival_times,
-                self.sample_bad_pixels,
+                self.sample_masked_pixels,
                 self.time_start,
                 trigger_time,
             )
@@ -214,14 +207,14 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 **time_results,
             }
             for key, value in result.items():
-                setattr(self.container, key, value)
+                setattr(container, key, value)
 
             self.num_events_seen = 0
-            return self.container
+            return True
 
         else:
 
-            return None
+            return False
 
     def setup_sample_buffers(self, waveform, sample_size):
         n_channels = waveform.shape[0]
@@ -231,21 +224,21 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
         self.arrival_times = np.zeros(shape)
-        self.sample_bad_pixels = np.zeros(shape)
+        self.sample_masked_pixels = np.zeros(shape)
 
     def collect_sample(self, charge, pixel_mask, arrival_time):
 
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
-        bad_pixels = np.zeros(charge.shape, dtype=np.bool)
-        bad_pixels[:] = pixel_mask == 1
+        masked_pixels = np.zeros(charge.shape, dtype=np.bool)
+        masked_pixels[:] = pixel_mask == 1
 
-        good_charge = np.ma.array(charge, mask=bad_pixels)
+        good_charge = np.ma.array(charge, mask=masked_pixels)
         charge_median = np.ma.median(good_charge, axis=1)
 
         self.charges[self.num_events_seen] = charge
         self.arrival_times[self.num_events_seen] = arrival_time
-        self.sample_bad_pixels[self.num_events_seen] = bad_pixels
+        self.sample_masked_pixels[self.num_events_seen] = masked_pixels
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
@@ -253,13 +246,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 def calculate_time_results(
     self,
     trace_time,
-    bad_pixels_of_sample,
+    masked_pixels_of_sample,
     time_start,
     trigger_time,
 ):
     masked_trace_time = np.ma.array(
         trace_time,
-        mask=bad_pixels_of_sample
+        mask=masked_pixels_of_sample
     )
 
     # median over the sample per pixel
@@ -271,11 +264,9 @@ def calculate_time_results(
     # std over the sample per pixel
     pixel_std = np.ma.std(masked_trace_time, axis=0)
 
-    # std of median over the camera
-    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
+    # median of the median over the camera
+    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
-    # median of the std over the camera
-    median_of_pixel_median = np.ma.median(pixel_std, axis=1)
 
     # time outliers from median
     relative_median = pixel_median - median_of_pixel_median[:, np.newaxis]
@@ -298,11 +289,11 @@ def calculate_relative_gain_results(
     self,
     event_median,
     trace_integral,
-    bad_pixels_of_sample,
+    masked_pixels_of_sample,
 ):
     masked_trace_integral = np.ma.array(
         trace_integral,
-        mask=bad_pixels_of_sample
+        mask=masked_pixels_of_sample
     )
 
     # median over the sample per pixel
@@ -314,9 +305,6 @@ def calculate_relative_gain_results(
     # std over the sample per pixel
     pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
-    # std of median over the camera
-    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
-
     # median of the std over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
@@ -325,9 +313,9 @@ def calculate_relative_gain_results(
 
     # outliers from median
     charge_deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-    charge_median_outliers = np.logical_or(charge_deviation < - self.charge_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
-                                           charge_deviation > self.charge_cut_outliers[1] * std_of_pixel_median[:,np.newaxis])
 
+    charge_median_outliers = np.logical_or(charge_deviation < self.charge_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
+                                           charge_deviation > self.charge_cut_outliers[1] * median_of_pixel_median[:,np.newaxis])
 
 
 
