@@ -11,6 +11,7 @@ $> python lst-trainpipe arg1 arg2 ...
 import argparse
 from lstchain.reco import dl1_to_dl2
 from distutils.util import strtobool
+import numpy as np
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
@@ -57,7 +58,6 @@ if __name__ == '__main__':
                             args.protonfile,
                             features,
                             intensity_min = intensity_min,
-                            r_max = r_max, 
                             save_models=args.storerf,
                             path_models=args.path_models,
                             config_file=args.config_file
