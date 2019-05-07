@@ -38,7 +38,6 @@ class DL1ParametersContainer(Container):
     disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
     disp_sign = Field(None, 'disp_sign')
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
@@ -162,6 +161,9 @@ class DL1ParametersContainer(Container):
         source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
+
+    def set_mc_type(self, event):
+        self.mc_type = event.mc.shower_primary_id
 
 
 class DispContainer(Container):

@@ -153,48 +153,6 @@ def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
 
 
 
-def guess_type(filename):
-    """Guess the particle type from the filename
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    str: 'gamma', 'proton', 'electron' or 'unknown'
-    """
-    particles = ['gamma', 'proton', 'electron']
-    for p in particles:
-        if p in filename:
-            return p
-    return 'unknown'
-
-
-def particle_number(particle_name):
-    """
-    Return an integer coding the particle type
-    'gamma'=0
-    'proton'=1
-    'electron'=2
-    'muon'=3
-
-    Parameters
-    ----------
-    particle_name: str
-
-    Returns
-    -------
-    int
-    """
-    return {
-        'gamma': 0,
-        'proton': 1,
-        'electron': 2,
-        'muon': 3,
-    }[particle_name]
-
-
 def get_event_pos_in_camera(event, tel):
     """
     Return the position of the source in the camera frame

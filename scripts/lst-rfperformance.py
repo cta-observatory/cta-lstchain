@@ -10,12 +10,9 @@ import numpy as np
 import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
-from sklearn.externals import joblib
 from lstchain.reco import dl1_to_dl2
 from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
-from sklearn.model_selection import train_test_split
-import os
 import ctaplot
 import astropy.units as u
 
@@ -99,8 +96,8 @@ if __name__ == '__main__':
 
     gammas = dl2[dl2.gammaness>=0.5]
     protons = dl2[dl2.gammaness<0.5]
-    gammas.hadro_rec = 0
-    protons.hadro_rec = 1
+    gammas.reco_type = 0
+    protons.reco_type = 1
 
     focal_length = 28 * u.m
     src_pos_reco = utils.reco_source_position_sky(gammas.x.values * u.m,
@@ -164,6 +161,6 @@ if __name__ == '__main__':
     plot_dl2.plot_importances(reg_disp_vector, features)
     plt.show()
 
-    plt.hist(dl2[dl2['hadroness']==1]['gammaness'], bins=100)
-    plt.hist(dl2[dl2['hadroness']==0]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['mc_type']==0]['gammaness'], bins=100)
     plt.show()

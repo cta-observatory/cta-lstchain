@@ -23,9 +23,9 @@ true_hadroness:
     True: True gammas and proton events are plotted (they are separated using true hadroness).
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
     """
-    hadro = "hadro_rec"
+    hadro = "reco_type"
     if true_hadroness:
-        hadro = "hadroness"
+        hadro = "mc_type"
 
     #Energy distribution
     plt.subplot(331)
@@ -146,9 +146,9 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
     False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
 
     """
-    hadro = "hadro_rec"
+    hadro = "reco_type"
     if true_hadroness:
-        hadro = "hadroness"
+        hadro = "mc_type"
 
     gammas = data[data[hadro]==0]
 
@@ -206,9 +206,9 @@ def plot_disp(data,true_hadroness=False):
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
-    hadro = "hadro_rec"
+    hadro = "reco_type"
     if true_hadroness:
-        hadro = "hadroness"
+        hadro = "mc_type"
 
     gammas = data[data[hadro]==0]
 
@@ -277,9 +277,9 @@ def plot_pos(data,true_hadroness=False):
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
-    hadro = "hadro_rec"
+    hadro = "reco_type"
     if true_hadroness:
-        hadro = "hadroness"
+        hadro = "mc_type"
 
     #True position
 
@@ -358,11 +358,11 @@ def plot_importances(clf,features):
 def plot_ROC(clf,data,features, Energy_cut):
     # Plot ROC curve:
     check = clf.predict_proba(data[features])[0:,1]
-    accuracy = accuracy_score(data['hadroness'],
-                              data['hadro_rec'])
+    accuracy = accuracy_score(data['mc_type'],
+                              data['reco_type'])
     print(accuracy)
 
-    fpr_rf, tpr_rf, _ = roc_curve(data['hadroness'],
+    fpr_rf, tpr_rf, _ = roc_curve(1-data['gammaness'],
                                   check)
 
     plt.plot(fpr_rf, tpr_rf,
