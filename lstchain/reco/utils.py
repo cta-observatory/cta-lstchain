@@ -20,7 +20,7 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 
 
-location = EarthLocation.of_site('Roque de los Muchachos')
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m) # position of the LST1
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 
@@ -153,48 +153,6 @@ def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
 
 
 
-def guess_type(filename):
-    """Guess the particle type from the filename
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    str: 'gamma', 'proton', 'electron' or 'unknown'
-    """
-    particles = ['gamma', 'proton', 'electron']
-    for p in particles:
-        if p in filename:
-            return p
-    return 'unknown'
-
-
-def particle_number(particle_name):
-    """
-    Return an integer coding the particle type
-    'gamma'=0
-    'proton'=1
-    'electron'=2
-    'muon'=3
-
-    Parameters
-    ----------
-    particle_name: str
-
-    Returns
-    -------
-    int
-    """
-    return {
-        'gamma': 0,
-        'proton': 1,
-        'electron': 2,
-        'muon': 3,
-    }[particle_name]
-
-
 def get_event_pos_in_camera(event, tel):
     """
     Return the position of the source in the camera frame
@@ -227,7 +185,7 @@ def get_event_pos_in_camera(event, tel):
                                focal,
                                array_pointing.alt, array_pointing.az)
     '''
-    camera_pos = array_pointing.transform_to(camera_frame)
+    camera_pos = event_direction.transform_to(camera_frame)
     return camera_pos.x, camera_pos.y
 
 @deprecated('31/01/2019', message='Use disp_parameters')

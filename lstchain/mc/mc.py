@@ -26,13 +26,14 @@ def power_law_integrated_distribution(emin, emax, nev, spectral_index, bin_numbe
         y0 = nev / np.log(emax / emin)
         y = y0 * np.log(bins[1:] / bins[:-1])
     else:
+
         y0 = nev / (emax**(spectral_index + 1) - emin**(spectral_index + 1)) / (spectral_index + 1)
         y = y0 * (bins[1:]**(spectral_index + 1) - bins[:-1]**(spectral_index + 1)) / (spectral_index + 1)
     return bins, y
 
 def int_diff_sp(emin, emax, sp_idx, e0):
     """
-    
+
     TODO: Introduce any spectral form
     """
 
@@ -46,18 +47,18 @@ def int_diff_sp(emin, emax, sp_idx, e0):
 
 def rate(emin, emax, sp_idx, cone, area, norm, e0):
     """
-    Calculates the rate of events for a power-law distribution, 
+    Calculates the rate of events for a power-law distribution,
     in a given energy range, collection area and solid angle
 
-    Parameters      
+    Parameters
     ----------
     emin:  `float`  minimum energy
     emax:  `float`  maximum energy
     sp_idx:`float`  spectral index of the power-law distribution
     cone:  `float`  angle [deg] for the solid angle cone
     area:  `float`  collection area [cm**2]
-    norm:  `float`  normalization of the differential energy spectrum at e0 
-    e0:    `float`  normalization energy 
+    norm:  `float`  normalization of the differential energy spectrum at e0
+    e0:    `float`  normalization energy
 
     Returns
     ----------
@@ -73,7 +74,7 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
 
     int_diff_sp(emin, emax, sp_idx, e0)
 
-    rate = norm * area * omega * integral 
+    rate = norm * area * omega * integral
 
     return rate
 
