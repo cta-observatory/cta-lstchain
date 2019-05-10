@@ -145,7 +145,7 @@ class CalibrationHDF5Writer(Tool):
                     self.log.debug(f"new pedestal at event n. {count+1}, id {event.r0.event_id}")
 
                     # update pedestal mask
-                    status_data.pedestal_mask = np.logical_or(ped_data.charge_median_outliers,
+                    status_data.pedestal_failing_pixels = np.logical_or(ped_data.charge_median_outliers,
                                                               ped_data.charge_std_outliers)
 
                     if not ped_initialized:
@@ -164,25 +164,29 @@ class CalibrationHDF5Writer(Tool):
                     self.log.debug(f"new flatfield at event n. {count+1}, id {event.r0.event_id}")
 
                     # update the flatfield mask
-                    status_data.flatfield_mask = np.logical_or(ff_data.charge_median_outliers,
-                                                                ff_data.time_median_outliers)
+                    status_data.flatfield_failing_pixels = np.logical_or(ff_data.charge_median_outliers,
+                                                                         ff_data.time_median_outliers)
 
-                    calib_data.pixel_status_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
+                    monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,status_data.flatfield_failing_pixels)
+                    calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,status_data.hardware_failing_pixels)
 
                     masked_charge = np.ma.array(ff_data.charge_median -
-                                                ped_data.charge_median, mask=calib_data.pixel_status_mask)
+                                                ped_data.charge_median, mask=calib_data.pixel_status_failing_pixels)
 
                     masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
-                                                    mask=calib_data.pixel_status_mask)
-                    masked_time = np.ma.array(ff_data.relative_time_median, mask=calib_data.pixel_status_mask)
+                                                    mask=calib_data.pixel_status_failing_pixels)
+                    masked_time = np.ma.array(ff_data.relative_time_median, mask=calib_data.pixel_status_failing_pixels)
 
-                    masked_n_phe = 1.2 * masked_charge ** 2 / masked_std_square
-                    masked_n_phe_median = np.ma.median(masked_n_phe)
+                    # we assume an average excess noise factor od 1.2
+                    ENF = 1.2
+                    masked_n_pe = ENF * masked_charge ** 2 / masked_std_square
+                    masked_n_pe_median = np.ma.median(masked_n_pe)
 
                     # calculate the calibration data
-                    calib_data.n_phe = np.ma.getdata(masked_n_phe)
-                    calib_data.dc_to_phe = np.ma.getdata(masked_n_phe_median/masked_charge)
+                    calib_data.n_pe = np.ma.getdata(masked_n_pe)
+                    calib_data.dc_to_pe = np.ma.getdata(masked_n_pe_median/masked_charge)
                     calib_data.time_correction = - np.ma.getdata(masked_time)
+
 
                     # save the config, to be retrieved as data.meta['config']
                     if not ff_initialized:
