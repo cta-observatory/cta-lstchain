@@ -7,6 +7,12 @@ from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.calib.camera.gainselection import ThresholdGainSelector
 
 
+__all__ = [
+    'lst_calibration'
+    'gain_selection',
+    'combine_channels',
+]
+
 gain_selector = ThresholdGainSelector(select_by_sample=True)
 
 
