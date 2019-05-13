@@ -8,7 +8,7 @@ from ctapipe.calib.camera.gainselection import ThresholdGainSelector
 
 
 __all__ = [
-    'lst_calibration'
+    'lst_calibration',
     'gain_selection',
     'combine_channels',
 ]
