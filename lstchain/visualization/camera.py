@@ -2,6 +2,11 @@ import numpy as np
 from ..reco.utils import disp_vector
 import astropy.units as u
 
+__all__ = [
+    'overlay_disp_vector',
+    'overlay_hillas_major_axis',
+    'overlay_source',
+]
 
 def overlay_source(display, source_pos_x, source_pos_y, **kwargs):
     """

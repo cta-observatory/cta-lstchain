@@ -11,6 +11,19 @@ from matplotlib import gridspec
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_curve
 
+
+__all__ = [
+    'plot_features',
+    'plot_e',
+    'plot_disp',
+    'plot_disp_vector',
+    'plot_pos',
+    'plot_ROC',
+    'plot_importances',
+    'plot_e_resolution',
+    'calc_resolution'
+]
+
 def plot_features(data, true_hadroness=False):
     """Plot the distribution of different features that characterize
     events, such as hillas parameters or MC data.
