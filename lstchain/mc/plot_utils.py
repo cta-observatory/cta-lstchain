@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 from lstchain.spectra.crab import crab_HEGRA
+import numpy as np
+import astropy.units as u
 
-def fill_bin_content(ax, energy_bin, gb, tb):
+def fill_bin_content(ax, sens, energy_bin, gb, tb):
     """
 
     Parameters
@@ -83,7 +85,7 @@ def format_axes_sensitivity(ax):
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha=.5)
 
-def plot_Crab_SED(ax, emin, emax, percentage=100, **kwargs):
+def plot_Crab_SED(ax, percentage=100, emin, emax, **kwargs):
     """
 
     Parameters
@@ -95,7 +97,7 @@ def plot_Crab_SED(ax, emin, emax, percentage=100, **kwargs):
     En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV  
 
     dFdE = percentage / 100. * crab_HEGRA(En)
-    ax.loglog(En, dFdE * En * En, color='gray', **kwargs)
+    ax.loglog(En, dFdE[0] * En * En, color='gray', **kwargs)
     
     return ax
 
@@ -110,7 +112,7 @@ def plot_sensitivity(ax, e, sensitivity):
     """
     emed = np.sqrt(e[1:] * e[:-1])
     dFdE = crab_HEGRA(emed)
-    ax.loglog(e, sensitivity / 100 * dFdE * emed * emed, \
+    ax.loglog(emed, sensitivity / 100 * dFdE * emed * emed, \
               label = 'Sensitivity')
     
 
@@ -126,8 +128,11 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     if (eb == 12):
         figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
+    # To be changed!!!
+    figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
+
     # The minimum sensitivity per energy bin
-    sensitivity = np.ndarray(shape=eb)
+    sens = np.ndarray(shape=eb)
     
     for ebin in range(0,eb):
         if (figarr):
@@ -140,7 +145,7 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
         fig, ax = plt.subplots(figsize=(8,8))
 
         pl = ax.imshow(sens[ebin], cmap='viridis', extent=[0., 0.5, 1., 0.])
-        fill_bin_content(ax, ebin, gb, tb)
+        fill_bin_content(ax, sens, ebin, gb, tb)
         format_axes(ax, pl)
 
     if (figarr):
