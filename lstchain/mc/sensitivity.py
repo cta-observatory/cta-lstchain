@@ -6,7 +6,7 @@ from eventio.simtel.simtelfile import SimTelFile
 
 from .plot_utils import sens_plot, sens_minimization_plot
 from .mc import rate, weight
-from lstchain.spectra.crab import crab_HEGRA
+from lstchain.spectra.crab import crab_HEGRA, crab_MAGIC
 from lstchain.spectra.proton import proton_BESS
 
 
@@ -25,10 +25,10 @@ def read_sim_par(source):
     """
     emin, emax = source.mc_run_headers[0]['E_range'] * u.TeV
     sp_idx = source.mc_run_headers[0]['spectral_index']
-    n_showers = source.mc_run_headers[0]['num_showers']
-    n_use = source.mc_run_headers[0]['num_use']
+    n_showers = source.mc_run_headers[0]['n_showers']
+    n_use = source.mc_run_headers[0]['n_use']
     sim_ev= n_showers * n_use
-    max_impact = source.mc_run_headers[0]['core_range'][1] * u.m 
+    max_impact = source.mc_run_headers[0]['core_range'][1] * u.m
     area_sim = np.pi * np.power(max_impact,2)
     cone = source.mc_run_headers[0]['viewcone'][1] * u.deg
 
@@ -50,8 +50,8 @@ def process_mc(simtelfile, dl2_file):
 
     Returns
     ---------
-    gammaness: `numpy.ndarray` 
-    theta2:    `numpy.ndarray` 
+    gammaness: `numpy.ndarray`
+    theta2:    `numpy.ndarray`
     e_trig:    `numpy.ndarray` triggered energies
     n_trig:    `int` number of triggered events
     mc_par:    `dict` with simulated parameters
@@ -65,7 +65,7 @@ def process_mc(simtelfile, dl2_file):
     n_trig = e_trig.shape[0]
     gammaness = events.gammaness
     theta2 = (events.src_x - events.src_x_rec)**2 + \
-        (events.src_y - events.src_y)**2 * u.deg**2
+        (events.src_y - events.src_y_rec)**2 * u.deg**2
 
     return gammaness, theta2, e_trig, sim_par
 
@@ -73,12 +73,12 @@ def process_mc(simtelfile, dl2_file):
 def calculate_sensitivity(nex, nbg, alpha):
     """
     Sensitivity calculation using nex/sqrt(nbg)
-    
+
     Parameters
     ---------
     nex:   `float` number of excess events in the signal region
     nbg:   `float` number of events in the background region
-    alpha: `float` inverse of the number of off positions 
+    alpha: `float` inverse of the number of off positions
 
     Returns
     ---------
@@ -86,11 +86,11 @@ def calculate_sensitivity(nex, nbg, alpha):
     """
     significance = nex / np.sqrt(nbg * alpha)
     sens = 5 / significance * 100  # percentage of Crab
-    
+
     return sens
 
 def bin_definition(gb, tb):
-    max_gam = 1
+    max_gam = 0.99
     max_th2 = 0.5
     min_th2 = 0.05
 
@@ -99,7 +99,7 @@ def bin_definition(gb, tb):
 
     return g, t
 
-def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.s):
+def sens(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.s):
     """
     Main function to calculate the sensitivity given a MC dataset
 
@@ -115,16 +115,16 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     ---------
 
     """
-   
+
     # Read files
     simtelfile_gammas = "/home/queenmab/DATA/LST1/Gamma/gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz"
     simtelfile_protons = "/home/queenmab/DATA/LST1/Proton/proton_20deg_0deg_run194___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz"
     PATH_EVENTS = "../../cta-lstchain-extra/reco/sample_data/dl2/"
-    dl2_file_g = PATH_EVENTS+"/reco_gammas.h5" 
+    dl2_file_g = PATH_EVENTS+"/reco_gammas.h5"
     dl2_file_p = PATH_EVENTS+"/reco_protons.h5"
 
     # Extract spectral parameters
-    E = np.logspace(np.log10(emin_sens.to_value()), 
+    E = np.logspace(np.log10(emin_sens.to_value()),
                      np.log10(emax_sens.to_value()), eb + 1) * u.GeV
 
     dFdE, crab_par = crab_MAGIC(E)
@@ -136,17 +136,17 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
 
     # Rates and weights
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \
-                  mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['e0'])
+                  mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['E0'])
 
     rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], \
-                  mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['e0'])
+                  mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['E0'])
 
 
     w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'])
+                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['E0'])
 
     w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'])
+                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['E0'])
 
 
     e_trig_gw = ((e_trig_g / crab_par['E0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
@@ -163,17 +163,17 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_trig_w[(e_trig_g < E[i+1]) & (e_trig_g > E[i]) \
+                eg_w_sum = np.sum(e_trig_gw[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
                                          & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(ep_trig_w[(e_trig_p < E_trig[i+1]) & (e_trig_p > E_trig[i]) \
+                ep_w_sum = np.sum(e_trig_pw[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
                                          & (gammaness_p > g[j]) & (theta2_p < t[k])])
-            
-                final_gamma[i][g][t] = eg_w_sum * obstime
-                final_hadrons[i][g][t] = ep_w_sum * obstime
-                    
+
+                final_gamma[i][j][k] = eg_w_sum * obstime
+                final_hadrons[i][j][k] = ep_w_sum * obstime
+
     sens = calculate_sensititity(final_gamma, final_hadrons, 1/noff)
-    
+
     # Calculate the minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
     for i in range(0,eb):

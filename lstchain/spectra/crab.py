@@ -11,15 +11,15 @@ def crab_MAGIC(E):
 
     Returns
     -------
-    dFdE: `numpy.ndarray` differential energy spectrum. 
+    dFdE: `numpy.ndarray` differential energy spectrum.
           astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s
     par: `dict` with spectral parameters
     """
 
-    f0    = 3.23e-11 / u.TeV / u.cm**2 / u.s
+    f0    = 3.23e-14 / u.GeV / u.cm**2 / u.s
     alpha = -2.47
     beta  = -0.24
-    E0    = 1 * u.TeV
+    E0    = 1000 * u.GeV
 
     par_var = [f0, alpha, beta, E0]
     par_dic = ['f0', 'alpha', 'beta', 'E0']
@@ -27,7 +27,7 @@ def crab_MAGIC(E):
 
     dFdE  = f0 * np.power(E / E0, alpha + beta * np.log10(E/E0))
 
-    return dFdE.to(1/u.TeV / u.cm**2 / u.s), par
+    return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
 
 def crab_HEGRA(E):
     """ From http://adsabs.harvard.edu/abs/2004ApJ...614..897A
@@ -39,14 +39,14 @@ def crab_HEGRA(E):
 
     Returns
     -------
-    dFdE: `numpy.ndarray` differential energy spectrum. 
+    dFdE: `numpy.ndarray` differential energy spectrum.
           astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s
     par: `dict` with spectral parameters
     """
 
-    f0    = 2.83e-11 / u.TeV / u.cm**2 / u.s
+    f0    = 2.83e-14 / u.GeV / u.cm**2 / u.s
     alpha = -2.62
-    E0    = 1 * u.TeV
+    E0    = 1000 * u.GeV
 
     par_var = [f0, alpha, E0]
     par_dic = ['f0', 'alpha', 'E0']
@@ -54,4 +54,4 @@ def crab_HEGRA(E):
 
     dFdE  = f0 * np.power(E / E0, alpha)
 
-    return dFdE.to(1/u.TeV / u.cm**2 / u.s), par
+    return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
