@@ -91,8 +91,8 @@ def calculate_sensitivity(nex, nbg, alpha):
 
 def bin_definition(gb, tb):
     max_gam = 1
-    max_th2 = 0.5
-    min_th2 = 0.05
+    max_th2 = 0.05
+    min_th2 = 0.005
 
     g = np.linspace(0, max_gam, gb)
     t = np.linspace(min_th2, max_th2, tb)
