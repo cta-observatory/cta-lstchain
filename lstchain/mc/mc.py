@@ -26,7 +26,7 @@ def power_law_integrated_distribution(emin, emax, nev, sp_idx, bin_number=30):
         y0 = nev / np.log(emax / emin)
         y = y0 * np.log(bins[1:] / bins[:-1])
     else:
-        y0 = nev / (emax**(sp_idx + 1) - emin**(sp_idx + 1)) / (sp_idx + 1)
+        y0 = nev / (emax**(sp_idx + 1) - emin**(sp_idx + 1)) * (sp_idx + 1)
         y = y0 * (bins[1:]**(sp_idx + 1) - bins[:-1]**(sp_idx + 1)) / (sp_idx + 1)
     return bins, y
 
