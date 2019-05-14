@@ -7,9 +7,14 @@ from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
+from ctapipe.image import leakage
+from ctapipe.image.cleaning import number_of_islands
 from ..reco import utils
 from numpy import nan
 
+all = [
+    'DL1ParametersContainer',
+]
 
 class DL1ParametersContainer(Container):
     """
@@ -33,11 +38,12 @@ class DL1ParametersContainer(Container):
     disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
     disp_sign = Field(None, 'disp_sign')
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
+    leakage = Field(None, 'Leakage')
+    n_islands = Field(None, 'Number of Islands')
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
@@ -61,20 +67,21 @@ class DL1ParametersContainer(Container):
     hadroness = Field(None, "Hadroness")
     wl = Field(None, "width/length")
 
+    tel_id = Field(None, "Telescope Id")
+    tel_pos_x = Field(None, "Telescope x position in the ground")
+    tel_pos_y = Field(None, "Telescope y position in the ground")
+    tel_pos_z = Field(None, "Telescope z position in the ground")
+
     def fill_hillas(self, hillas):
         """
         fill Hillas parameters
 
-        hillas: HillasContainer
+        hillas: HillasParametersContainer
         # TODO : parameters should not be simply copied but inherited
         (e.g. conserving unit definition)
         """
-        for k in hillas.keys():
-            try:
-                self[k] = hillas[k]
-            except:
-                print("{} cannot be copied in container".format(k))
-                pass
+        for key in hillas.keys():
+            self[key] = hillas[key]
 
     def fill_mc(self, event):
         """
@@ -91,24 +98,28 @@ class DL1ParametersContainer(Container):
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
-        except:
+        except IndexError:
             print("mc information not filled")
 
     def fill_event_info(self, event):
-        try:
-            self.gps_time = event.trig.gps_time
-            self.obs_id = event.r0.obs_id
-            self.event_id = event.r0.event_id
-        except:
-            print("event information not filled")
+        self.gps_time = event.trig.gps_time
+        self.obs_id = event.r0.obs_id
+        self.event_id = event.r0.event_id
 
     def get_features(self, features_names):
-        return np.array([self[k].value if isinstance(self[k], Quantity) else self[k]
-                         for k in features_names])
+        return np.array([
+            self[k].value
+            if isinstance(self[k], Quantity)
+            else self[k]
+            for k in features_names
+        ])
 
     def set_mc_core_distance(self, event, telescope_id):
         tel_pos = event.inst.subarray.positions[telescope_id]
-        distance = np.sqrt((event.mc.core_x - tel_pos[0]) ** 2 + (event.mc.core_y - tel_pos[1]) ** 2)
+        distance = np.sqrt(
+            (event.mc.core_x - tel_pos[0]) ** 2 +
+            (event.mc.core_y - tel_pos[1]) ** 2
+        )
         self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
@@ -120,14 +131,25 @@ class DL1ParametersContainer(Container):
         self.disp_sign = disp.sign
         self.disp_miss = disp.miss
 
-    def set_timing_features(self, geom, image, peakpos, hillas):
-        try:
-            peak_time = Quantity(peakpos) * u.Unit("ns")
-            timepars = time.timing_parameters(geom, image, peak_time, hillas)
-            self.time_gradient = timepars['slope'].value
-            self.intercept = timepars['intercept']
-        except:
-            pass
+    def set_timing_features(self, geom, image, pulse_time, hillas):
+        peak_time = Quantity(pulse_time) * u.Unit("ns")
+        timepars = time.timing_parameters(geom, image, peak_time, hillas)
+        self.time_gradient = timepars.slope.value
+        self.intercept = timepars.intercept
+    def set_leakage(self, geom, image, clean):
+        leakage_c = leakage(geom, image, clean)
+        self.leakage = leakage_c.leakage2_intensity
+
+    def set_n_islands(self, geom, clean): 
+        n_islands, islands_mask = number_of_islands(geom, clean)
+        self.n_islands = n_islands
+
+    def set_telescope_info(self, event, telescope_id):
+        self.tel_id = telescope_id
+        tel_pos = event.inst.subarray.positions[telescope_id]
+        self.tel_pos_x = tel_pos[0] 
+        self.tel_pos_y = tel_pos[1] 
+        self.tel_pos_z = tel_pos[2] 
 
     def set_source_camera_position(self, event, telescope_id):
         # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
@@ -139,6 +161,9 @@ class DL1ParametersContainer(Container):
         source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
+
+    def set_mc_type(self, event):
+        self.mc_type = event.mc.shower_primary_id
 
 
 class DispContainer(Container):

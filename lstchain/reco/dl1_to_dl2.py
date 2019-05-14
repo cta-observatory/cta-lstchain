@@ -22,9 +22,9 @@ from ..io import read_configuration_file
 # Standard models configurations - to be moved later in a default configuration file
 
 random_forest_regressor_args = {'max_depth': 50,
-                                'min_samples_leaf': 50,
+                                'min_samples_leaf': 5,
                                 'n_jobs': 4,
-                                'n_estimators': 50,
+                                'n_estimators': 100,
                                 'bootstrap': True,
                                 'criterion': 'mse',
                                 'max_features': 'auto',
@@ -40,10 +40,10 @@ random_forest_regressor_args = {'max_depth': 50,
                                 }
 
 
-random_forest_classifier_args = {'max_depth': 2,
-                                 'min_samples_leaf': 10,
+random_forest_classifier_args = {'max_depth': 50,
+                                 'min_samples_leaf': 2,
                                  'n_jobs': 4,
-                                 'n_estimators': 50,
+                                 'n_estimators': 100,
                                  'criterion': 'gini',
                                  'min_samples_split': 2,
                                  'min_weight_fraction_leaf': 0.,
@@ -102,12 +102,8 @@ def train_energy(train,
     The trained model
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            regression_args = config['random_forest_regressor_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        regression_args = config['random_forest_regressor_args']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -144,16 +140,12 @@ def train_disp_vector(train, features,
     The trained model
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            regression_args = config['random_forest_regressor_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        regression_args = config['random_forest_regressor_args']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp_norm vector regression".format(model))
+    print("Training model {} for disp vector regression".format(model))
 
     reg = model(**regression_args)
     x = train[features]
@@ -187,15 +179,12 @@ def train_disp_norm(train, features,
     The trained model
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            regression_args = config['random_forest_regressor_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        regression_args = config['random_forest_regressor_args']
+
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp_norm vector regression".format(model))
+    print("Training model {} for disp norm regression".format(model))
 
     reg = model(**regression_args)
     x = train[features]
@@ -229,16 +218,12 @@ def train_disp_sign(train, features,
     The trained model
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            classification_args = config['random_forest_classifier_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        classification_args = config['random_forest_classifier_args']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training mdoel {} for disp_norm vector regression".format(model))
+    print("Training model {} for disp sign regression".format(model))
 
     reg = model(**classification_args)
     x = train[features]
@@ -264,19 +249,15 @@ def train_reco(train, features, regression_args=random_forest_regressor_args, co
     List of features to train the RF
     regression_args: dictionnary
     config_file: str - path to a configuration file. If given, overwrite `regression_args`.
-    
+
     Returns:
     --------
     RandomForestRegressor: reg_energy
     RandomForestRegressor: reg_disp
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            regression_args = config['random_forest_regressor_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        regression_args = config['random_forest_regressor_args']
 
 
     print("Given features: ", features)
@@ -286,21 +267,21 @@ def train_reco(train, features, regression_args=random_forest_regressor_args, co
     reg_energy = RandomForestRegressor(**regression_args)
     reg_energy.fit(train[features],
                   train['mc_energy'])
-    
-    print("Random Forest trained!")    
+
+    print("Random Forest trained!")
     print("Training Random Forest Regressor for disp_norm Reconstruction...")
-    
+
     reg_disp = RandomForestRegressor(**regression_args)
     reg_disp.fit(train[features],
                      train['disp_norm'])
-    
+
     print("Random Forest trained!")
     print("Done!")
     return reg_energy, reg_disp
 
 
 def train_sep(train, features, classification_args=random_forest_classifier_args, config_file=None):
-    
+
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
 
@@ -318,29 +299,26 @@ def train_sep(train, features, classification_args=random_forest_classifier_args
     `RandomForestClassifier`
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            classification_args = config['random_forest_classifier_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
+        config = read_configuration_file(config_file)
+        classification_args = config['random_forest_classifier_args']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
     print("Training Random Forest Classifier for",
     "Gamma/Hadron separation...")
-    
+
     clf = RandomForestClassifier(**classification_args)
-    
+
     clf.fit(train[features],
-            train['hadroness'])
+            train['mc_type'])
     print("Random Forest trained!")
-    return clf 
+    return clf
 
 
 def build_models(filegammas, fileprotons, features,
                 save_models=True, path_models="./",
-                energy_min=-1, intensity_min=np.log10(60), r_max=0.94,
+                energy_min=-1, intensity_min=np.log10(60), leakage_cut=0.2,
+                r_min=0.15,
                 regression_args=random_forest_regressor_args,
                 classification_args=random_forest_classifier_args,
                 config_file=None):
@@ -351,7 +329,7 @@ def build_models(filegammas, fileprotons, features,
     -----------
     filegammas: string
     Name of the file with MC gamma events
-    
+
     fileprotons: string
     Name of the file with MC proton events
 
@@ -360,17 +338,17 @@ def build_models(filegammas, fileprotons, features,
 
     energy_min: float
     Cut in energy for gamma/hadron separation
-    
+
     intensity_min: float
     Cut in intensity of the showers for training RF. Default is 60 phe
 
-    r_max: float
+    r_min: float
     Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
     in the border. Default is 80% of camera radius.
 
     save_models: boolean
-    Save the trained RF in a file to use them anytime. 
-    
+    Save the trained RF in a file to use them anytime.
+
     path_models: string
     path to store the trained RF
 
@@ -388,78 +366,87 @@ def build_models(filegammas, fileprotons, features,
     classifier_gh: `RandomForestClassifier`
     """
     if config_file is not None:
-        try:
-            config = read_configuration_file(config_file)
-            regression_args = config['random_forest_regressor_args']
-            classification_args = config['random_forest_classifier_args']
-            print("Configuration loaded from {}".format(config_file))
-        except:
-            print("Configuration could not be loaded from file. Standard configuration applies")
-
-    features_ = list(features)
+        config = read_configuration_file(config_file)
+        regression_args = config['random_forest_regressor_args']
+        classification_args = config['random_forest_classifier_args']
 
     df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
     df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
 
-    df_gamma = filter_events(df_gamma, r_max=r_max, intensity_min=intensity_min)
-    df_proton = filter_events(df_proton, r_max=r_max, intensity_min=intensity_min)
+    df_gamma = filter_events(df_gamma,
+                             leakage_cut=leakage_cut,
+                             intensity_min=intensity_min,
+                             r_min=r_min)
+    df_proton = filter_events(df_proton,
+                              leakage_cut=leakage_cut,
+                              intensity_min=intensity_min,
+                              r_min=r_min)
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
-    
-    reg_energy, reg_disp = train_reco(df_gamma, features,
-                                      regression_args=regression_args
-                                      )
+
+    reg_energy = train_energy(df_gamma, features,
+                            regression_args=regression_args
+                          )
+    reg_disp_vector = train_disp_vector(df_gamma, features,
+                            regression_args=regression_args
+                          )
 
     #Train classifier for gamma/hadron separation.
 
     train, testg = train_test_split(df_gamma, test_size=0.2)
     test = testg.append(df_proton, ignore_index=True)
 
-    tempRFreg_Energy, tempRFreg_Disp = train_reco(train, features_,
-                                                  regression_args=regression_args,
-                                                  )
-    
+    temp_reg_energy = train_energy(train, features,
+                            regression_args=regression_args
+                          )
+    temp_reg_disp_vector = train_disp_vector(train, features,
+                            regression_args=regression_args
+                          )
+
     #Apply the regressors to the test set
 
-    test['e_rec'] = tempRFreg_Energy.predict(test[features_])
-    test['disp_rec'] = tempRFreg_Disp.predict(test[features_])
-    
+    test['e_rec'] = temp_reg_energy.predict(test[features])
+    disp_vector = temp_reg_disp_vector.predict(test[features])
+    test['disp_dx_rec'] = disp_vector[:,0]
+    test['disp_dy_rec'] = disp_vector[:,1]
+
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp_norm reconstructed.
-    
-    train = test[test['mc_energy'] > energy_min]
-    
-    del tempRFreg_Energy, tempRFreg_Disp
-    
+
+    train = test[test['e_rec'] > energy_min]
+
+    del temp_reg_energy, temp_reg_disp_vector
+
     #Add e_rec and disp_rec to features.
-    features_sep = features_
+    features_sep = features.copy()
     features_sep.append('e_rec')
-    features_sep.append('disp_rec')
-    
+    features_sep.append('disp_dx_rec')
+    features_sep.append('disp_dy_rec')
+
     #Train the Classifier
 
     cls_gh = train_sep(train, features_sep, classification_args=classification_args)
-    
+
     if save_models:
         os.makedirs(path_models, exist_ok=True)
         file_reg_energy = path_models + "/reg_energy.sav"
-        file_reg_disp = path_models + "/reg_disp.sav"
+        file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
         file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(reg_energy, file_reg_energy)
-        joblib.dump(reg_disp, file_reg_disp)
+        joblib.dump(reg_disp_vector, file_reg_disp_vector)
         joblib.dump(cls_gh, file_cls_gh)
 
-    return reg_energy, reg_disp, cls_gh
+    return reg_energy, reg_disp_vector, cls_gh
 
 
-def apply_models(dl1, features, classifier, reg_energy, reg_disp):
+def apply_models(dl1, features, classifier, reg_energy, reg_disp_vector):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
     Parameters:
     -----------
     data: Pandas DataFrame
-    
+
     features: list
 
     classifier: Random Forest Classifier
@@ -472,35 +459,35 @@ def apply_models(dl1, features, classifier, reg_energy, reg_disp):
     RF for disp_norm reconstruction
 
     """
-    
+
     features_ = list(features)
     dl2 = dl1.copy()
     #Reconstruction of Energy and disp_norm distance
     dl2['e_rec'] = reg_energy.predict(dl2[features_])
-    dl2['disp_rec'] = reg_disp.predict(dl2[features_])
-   
+    disp_vector = reg_disp_vector.predict(dl2[features_])
+    dl2['disp_dx_rec'] = disp_vector[:,0]
+    dl2['disp_dy_rec'] = disp_vector[:,1]
+
     #Construction of Source position in camera coordinates from disp_norm distance.
     #WARNING: For not it only works fine for POINT SOURCE events
 
-    disp_norm = dl2['disp_rec']
-    disp_angle = dl2['psi']
-    disp_sign = utils.source_side(0, dl2['x'])
-    disp_dx, disp_dy = utils.disp_vector(disp_norm, disp_angle, disp_sign)
 
-    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(disp_dx,
-                                                           disp_dy,
-                                                           dl2['x'],
-                                                           dl2['y'],
+    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2.disp_dx_rec,
+                                                           dl2.disp_dy_rec,
+                                                           dl2.x,
+                                                           dl2.y,
                                                            )
-    
-    features_.append('e_rec')
-    features_.append('disp_rec')
-    dl2['hadro_rec'] = classifier.predict(dl2[features_]).astype(int)
 
+    features_.append('e_rec')
+    features_.append('disp_dx_rec')
+    features_.append('disp_dy_rec')
+    dl2['reco_type'] = classifier.predict(dl2[features_]).astype(int)
+    probs = classifier.predict_proba(dl2[features_])[0:,0]
+    dl2['gammaness'] = probs
     return dl2
 
 
-def filter_events(data, r_max = 1.0, intensity_min = 10):
+def filter_events(data, leakage_cut = 1.0, intensity_min = 10, r_min = 0.15):
     """
     Filter events based on extracted features.
 
@@ -513,5 +500,5 @@ def filter_events(data, r_max = 1.0, intensity_min = 10):
     `pandas.DataFrame`
     """
 
-    filter = (data['r'] < r_max) & (data['intensity'] > intensity_min)
+    filter = (data['leakage'] < leakage_cut) & (data['intensity'] > intensity_min) & (data['r'] > r_min)
     return data[filter]

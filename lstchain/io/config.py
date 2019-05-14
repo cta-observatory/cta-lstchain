@@ -1,6 +1,9 @@
 import json
 import os
 
+all = [
+    'read_configuration_file',
+]
 
 def read_configuration_file(config_filename):
     """
