@@ -91,8 +91,3 @@ def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
     weight = rate / norm_sim
 
     return weight
-=======
-        y0 = tot_num_events / (emax ** (spectral_index + 1) - emin ** (spectral_index + 1)) * (spectral_index + 1)
-        y = y0 * (bins[1:] ** (spectral_index + 1) - bins[:-1] ** (spectral_index + 1)) / (spectral_index + 1)
-    return bins, y
->>>>>>> upstream/master
