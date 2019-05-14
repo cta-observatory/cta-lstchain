@@ -37,12 +37,12 @@ def int_diff_sp(emin, emax, sp_idx, e0):
     """
 
     if sp_idx == -1:
-        integral_E = np.log(emax / emin) / e0**sp_idx
+        integral_e = np.log(emax / emin) / e0**sp_idx
     else:
-        integral_E = (emax**(sp_idx + 1) - emin**(sp_idx + 1)) \
+        integral_e = (emax**(sp_idx + 1) - emin**(sp_idx + 1)) \
             / (sp_idx + 1) / e0**sp_idx
 
-    return integral_E
+    return integral_e
 
 def rate(emin, emax, sp_idx, cone, area, norm, e0):
     """

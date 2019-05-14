@@ -1,7 +1,7 @@
 import astropy.units as u
 import numpy as np
 
-def crab_MAGIC(E):
+def crab_magic(E):
     """ From http://adsabs.harvard.edu/abs/2015JHEAp...5...30A
     For each energy point, return the Crab Nebula flux
 
@@ -29,7 +29,7 @@ def crab_MAGIC(E):
 
     return dFdE.to(1/u.TeV / u.cm**2 / u.s), par
 
-def crab_HEGRA(E):
+def crab_hegra(E):
     """ From http://adsabs.harvard.edu/abs/2004ApJ...614..897A
     For each energy point, return the Crab Nebula flux
 

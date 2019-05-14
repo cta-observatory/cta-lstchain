@@ -6,8 +6,8 @@ from eventio.simtel.simtelfile import SimTelFile
 
 from .plot_utils import sens_plot, sens_minimization_plot
 from .mc import rate, weight
-from lstchain.spectra.crab import crab_HEGRA
-from lstchain.spectra.proton import proton_BESS
+from lstchain.spectra.crab import crab_hegra
+from lstchain.spectra.proton import proton_bess
 
 
 def read_sim_par(source):
@@ -127,8 +127,8 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     E = np.logspace(np.log10(emin_sens.to_value()), 
                      np.log10(emax_sens.to_value()), eb + 1) * u.GeV
 
-    dFdE, crab_par = crab_HEGRA(E)
-    dFdEd0, proton_par = proton_BESS(E)
+    dFdE, crab_par = crab_hegra(E)
+    dFdEd0, proton_par = proton_bess(E)
 
     # Read simulated and triggered values
     gammaness_g, theta2_g, e_trig_g, mc_par_g = process_mc(simtelfile_gammas, dl2_file_g)
