@@ -65,7 +65,7 @@ def process_mc(simtelfile, dl2_file):
     n_trig = e_trig.shape[0]
     gammaness = events.gammaness
     theta2 = (events.src_x - events.src_x_rec)**2 + \
-        (events.src_y - events.src_y)**2 * u.deg**2
+        (events.src_y - events.src_y_rec)**2 * u.deg**2
 
     return gammaness, theta2, e_trig, sim_par
 
@@ -127,7 +127,7 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     E = np.logspace(np.log10(emin_sens.to_value()), 
                      np.log10(emax_sens.to_value()), eb + 1) * u.GeV
 
-    dFdE, crab_par = crab_MAGIC(E)
+    dFdE, crab_par = crab_HEGRA(E)
     dFdEd0, proton_par = proton_BESS(E)
 
     # Read simulated and triggered values
@@ -143,15 +143,15 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
 
 
     w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'])
+                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['e0'])
 
     w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'])
+                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
 
 
-    e_trig_gw = ((e_trig_g / crab_par['E0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    e_trig_gw = ((e_trig_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_g
-    e_trig_pw = ((e_trig_p / proton_par['E0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
+    e_trig_pw = ((e_trig_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_p
 
     # Arrays to contain the number of gammas and hadrons for different cuts
@@ -163,16 +163,16 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_trig_w[(e_trig_g < E[i+1]) & (e_trig_g > E[i]) \
+                eg_w_sum = np.sum(e_trig_gw[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
                                          & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(ep_trig_w[(e_trig_p < E_trig[i+1]) & (e_trig_p > E_trig[i]) \
+                ep_w_sum = np.sum(ep_trig_pw[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
                                          & (gammaness_p > g[j]) & (theta2_p < t[k])])
             
-                final_gamma[i][g][t] = eg_w_sum * obstime
-                final_hadrons[i][g][t] = ep_w_sum * obstime
+                final_gamma[i][j][k] = eg_w_sum * obstime
+                final_hadrons[i][j][k] = ep_w_sum * obstime
                     
-    sens = calculate_sensititity(final_gamma, final_hadrons, 1/noff)
+    sens = calculate_sensititity(final_gamma.to_value(), final_hadrons.to_value(), 1/noff)
     
     # Calculate the minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
