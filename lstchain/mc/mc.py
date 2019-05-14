@@ -37,11 +37,11 @@ def int_diff_sp(emin, emax, sp_idx, e0):
     TODO: Introduce any spectral form
     """
 
-    if spectral_index == -1:
+    if sp_idx == -1:
         integral_E = np.log(emax / emin) / e0**sp_idx
     else:
-        integral_E = (emax**(spectral_index + 1) - emin**(spectral_index + 1)) \
-            / (spectral_index + 1) / e0**sp_idx
+        integral_E = (emax**(sp_idx + 1) - emin**(sp_idx + 1)) \
+            / (sp_idx + 1) / e0**sp_idx
 
     return integral_E
 
@@ -72,14 +72,14 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
     else:
         omega = 2 * np.pi * (1-np.cos(cone))
 
-    int_diff_sp(emin, emax, sp_idx, e0)
+    integral = int_diff_sp(emin, emax, sp_idx, e0)
 
     rate = norm * area * omega * integral
 
     return rate
 
 
-def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev):
+def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
     """
 
 

@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 from lstchain.spectra.crab import crab_HEGRA
+import numpy as np
+import astropy.units as u
+from matplotlib.colors import LogNorm
 
-def fill_bin_content(ax, energy_bin, gb, tb):
+def fill_bin_content(ax, energy_bin, gb, tb, sens):
     """
 
     Parameters
@@ -17,7 +20,7 @@ def fill_bin_content(ax, energy_bin, gb, tb):
     return ax
 
 
-def format_axes(ax,pl):
+def format_axes(ax, pl, fig):
     """
 
     Parameters
@@ -30,7 +33,7 @@ def format_axes(ax,pl):
 
     ax.set_ylabel(r'Gammaness', fontsize=15)
     ax.set_xlabel(r'$\theta^2$ (deg$^2$)', fontsize=15)
-    
+
     starty, endy = ax.get_ylim()
     ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
     startx, endx = ax.get_xlim()
@@ -41,7 +44,7 @@ def format_axes(ax,pl):
     cbar.set_label('Sensitivity (% Crab)', fontsize=15)
 
 
-def format_axes_array(ax, arr_i,arr_j, plot):
+def format_axes_array(ax, arr_i,arr_j, plot, fig):
     """
 
     Parameters
@@ -60,10 +63,10 @@ def format_axes_array(ax, arr_i,arr_j, plot):
     ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
     startx, endx = ax.get_xlim()
     ax.xaxis.set_ticks(np.arange(startx, endx, 0.1))
-    
+
     cbaxes = fig.add_axes([0.91, 0.125, 0.03, 0.755])
     cbar = fig.colorbar(plot, cax=cbaxes)
-    cbar.set_label('Sensitivity (% Crab)', fontsize=15) 
+    cbar.set_label('Sensitivity (% Crab)', fontsize=15)
 
 def format_axes_sensitivity(ax):
     """
@@ -77,8 +80,8 @@ def format_axes_sensitivity(ax):
 
     ax.set_xscale("log", nonposx='clip')
     ax.set_yscale("log", nonposy='clip')
-    ax.set_xlim(5e1, 9.e4)
-    ax.set_ylim(1.e-14, 5.e-10)
+    #ax.set_xlim(5e1, 9.e4)
+    #ax.set_ylim(1.e-14, 5.e-10)
     ax.set_xlabel("Energy [GeV]")
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha=.5)
@@ -92,11 +95,11 @@ def plot_Crab_SED(ax, emin, emax, percentage=100, **kwargs):
     Returns
     --------
     """
-    En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV  
+    En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV
 
-    dFdE = percentage / 100. * crab_HEGRA(En)
-    ax.loglog(En, dFdE * En * En, color='gray', **kwargs)
-    
+    dFdE = percentage / 100. * crab_HEGRA(En)[0]
+    ax.loglog(En, (dFdE * En * En).to(u.TeV / (u.cm * u.cm * u.s)), color='gray', **kwargs)
+
     return ax
 
 def plot_sensitivity(ax, e, sensitivity):
@@ -110,9 +113,9 @@ def plot_sensitivity(ax, e, sensitivity):
     """
     emed = np.sqrt(e[1:] * e[:-1])
     dFdE = crab_HEGRA(emed)
-    ax.loglog(e, sensitivity / 100 * dFdE * emed * emed, \
+    ax.loglog(emed, sensitivity / 100 * (dFdE[0] * emed * emed).to(u.TeV / (u.cm * u.cm * u.s)), \
               label = 'Sensitivity')
-    
+
 
 def sens_minimization_plot(eb, gb, tb, e, sens):
     """
@@ -123,12 +126,12 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     Returns
     --------
     """
-    if (eb == 12):
-        figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
+    #    if (eb == 12):
+    figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
     # The minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
-    
+
     for ebin in range(0,eb):
         if (figarr):
             arr_i = int(ebin/3)
@@ -140,12 +143,12 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
         fig, ax = plt.subplots(figsize=(8,8))
 
         pl = ax.imshow(sens[ebin], cmap='viridis', extent=[0., 0.5, 1., 0.])
-        fill_bin_content(ax, ebin, gb, tb)
-        format_axes(ax, pl)
+        fill_bin_content(ax, ebin, gb, tb, sens)
+        format_axes(ax, pl, fig)
 
     if (figarr):
         figarr.subplots_adjust(hspace = 0, wspace = 0)
-        format_axes_array(axarr[arr_i,arr_j],arr_i,arr_j, plot)
+        format_axes_array(axarr[arr_i,arr_j],arr_i,arr_j, plot, fig)
 
 
 def sens_plot(eb, e, sensitivity):
@@ -153,10 +156,8 @@ def sens_plot(eb, e, sensitivity):
     fig_sens, ax = plt.subplots()
     plot_sensitivity(ax, e, sensitivity)
 
-    plot_Crab_SED(ax, 100, 100 * u.GeV, 30 * u.TeV, label=r'Crab')
-    plot_Crab_SED(ax, 1, 100 * u.GeV, 30 * u.TeV, ls='dotted',label='1% Crab')
+    plot_Crab_SED(ax, 10**1.5 * u.GeV, 10**4.5 * u.GeV, 100, label=r'Crab')
+    plot_Crab_SED(ax, 10**1.5 * u.GeV, 10**4.5 * u.GeV, 1, ls='dotted',label='1% Crab')
 
     format_axes_sensitivity(ax)
     ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')
-
-
