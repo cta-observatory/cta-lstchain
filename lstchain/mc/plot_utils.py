@@ -85,7 +85,7 @@ def format_axes_sensitivity(ax):
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha=.5)
 
-def plot_Crab_SED(ax, percentage=100, emin, emax, **kwargs):
+def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
     """
 
     Parameters
