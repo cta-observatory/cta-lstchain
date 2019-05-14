@@ -1,0 +1,45 @@
+{
+   "version": 1,
+   
+   "CalibrationHDF5Writer": {
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "r0calibrator_product": "LSTR0Corrections",
+     "output_file":"calibration.hdf5",
+     "log_level":"DEBUG"
+   },         
+   "EventSource": {
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00251.0000.fits.fz",
+      "max_events": 1000
+   },
+  "PedestalCalculator":{
+     "sample_size": 100,
+     "sample_duration":1000,
+     "tel_id":0,
+     "charge_median_cut_outliers": [-3,3],
+     "charge_std_cut_outliers": [-3,3],
+     "charge_product":"FixedWindowSum"
+   },
+    "FlatFieldCalculator":{
+     "sample_size": 100,
+     "sample_duration":1000,
+     "tel_id":0,
+      "charge_product":"LocalPeakWindowSum",
+      "charge_cut_outliers": [-0.3,0.3],
+     "time_cut_outliers": [10,30]
+   },
+     "LSTR0Corrections": {
+      "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
+      "tel_id": 0,
+       "r1_sample_start": 2,
+      "r1_sample_end": 38
+   },
+    "LocalPeakIntegrator":{
+     "window_shift": 5,
+     "window_width":12
+    },
+    "SimpleIntegrator":{
+     "window_start": 12,
+     "window_width":12
+    }
+}
