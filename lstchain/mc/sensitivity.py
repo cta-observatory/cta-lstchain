@@ -40,7 +40,7 @@ def read_sim_par(source):
 
 def process_mc(simtelfile, dl2_file):
     """
-    Process the MC simulated and triggered to extract the relevant
+    Process the MC simulated and reconstructed to extract the relevant
     parameters to compute the sensitivity
 
     Paramenters
@@ -52,8 +52,8 @@ def process_mc(simtelfile, dl2_file):
     ---------
     gammaness: `numpy.ndarray` 
     theta2:    `numpy.ndarray` 
-    e_trig:    `numpy.ndarray` triggered energies
-    n_trig:    `int` number of triggered events
+    e_reco:    `numpy.ndarray` reconstructed energies
+    n_reco:    `int` number of reconstructed events
     mc_par:    `dict` with simulated parameters
 
     """
@@ -61,13 +61,13 @@ def process_mc(simtelfile, dl2_file):
     sim_par = read_sim_par(source)
     events = pd.read_hdf(dl2_file)
 
-    e_trig = 10**events.mc_energy * u.GeV
-    n_trig = e_trig.shape[0]
+    e_reco = 10**events.mc_energy * u.GeV
+    n_reco = e_reco.shape[0]
     gammaness = events.gammaness
     theta2 = (events.src_x - events.src_x_rec)**2 + \
         (events.src_y - events.src_y_rec)**2 * u.deg**2
 
-    return gammaness, theta2, e_trig, sim_par
+    return gammaness, theta2, e_reco, sim_par
 
 
 def calculate_sensitivity(nex, nbg, alpha):
@@ -130,9 +130,9 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     dFdE, crab_par = crab_hegra(E)
     dFdEd0, proton_par = proton_bess(E)
 
-    # Read simulated and triggered values
-    gammaness_g, theta2_g, e_trig_g, mc_par_g = process_mc(simtelfile_gammas, dl2_file_g)
-    gammaness_p, theta2_p, e_trig_p, mc_par_p = process_mc(simtelfile_protons, dl2_file_p)
+    # Read simulated and reconstructed values
+    gammaness_g, theta2_g, e_reco_g, mc_par_g = process_mc(simtelfile_gammas, dl2_file_g)
+    gammaness_p, theta2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons, dl2_file_p)
 
     # Rates and weights
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \
@@ -149,9 +149,9 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
                  proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
 
 
-    e_trig_gw = ((e_trig_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_g
-    e_trig_pw = ((e_trig_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
+    e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_p
 
     # Arrays to contain the number of gammas and hadrons for different cuts
@@ -163,10 +163,10 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_trig_gw[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
+                eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
                                          & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(ep_trig_pw[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
+                ep_w_sum = np.sum(ep_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
                                          & (gammaness_p > g[j]) & (theta2_p < t[k])])
             
                 final_gamma[i][j][k] = eg_w_sum * obstime
