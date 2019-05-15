@@ -12,8 +12,9 @@ from ctapipe.image.cleaning import number_of_islands
 from ..reco import utils
 from numpy import nan
 
-all = [
+__all__ = [
     'DL1ParametersContainer',
+    'DispContainer',
 ]
 
 class DL1ParametersContainer(Container):

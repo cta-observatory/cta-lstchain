@@ -10,6 +10,13 @@ from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 
 
+__all__ = ['read_sim_par',
+           'process_mc',
+           'calculate_sensitivity',
+           'bin_definition',
+           'sensitivity',
+           ]
+
 def read_sim_par(source):
     """
     Read MC simulated parameters
