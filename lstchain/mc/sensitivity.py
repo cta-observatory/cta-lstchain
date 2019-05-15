@@ -69,7 +69,7 @@ def process_mc(simtelfile, dl2_file):
     events = pd.read_hdf(dl2_file)
 
     e_reco = 10**events.mc_energy * u.GeV
-    n_reco = e_reco.shape[0]
+    # n_reco = e_reco.shape[0]
     gammaness = events.gammaness
     theta2 = (events.src_x - events.src_x_rec)**2 + \
         (events.src_y - events.src_y_rec)**2 * u.deg**2
@@ -173,13 +173,13 @@ def sensitivity(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.
                 eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
                                          & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(ep_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
+                ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
                                          & (gammaness_p > g[j]) & (theta2_p < t[k])])
             
                 final_gamma[i][j][k] = eg_w_sum * obstime
                 final_hadrons[i][j][k] = ep_w_sum * obstime
                     
-    sens = calculate_sensititity(final_gamma.to_value(), final_hadrons.to_value(), 1/noff)
+    sens = calculate_sensitivity(final_gamma.to_value(), final_hadrons.to_value(), 1/noff)
     
     # Calculate the minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
