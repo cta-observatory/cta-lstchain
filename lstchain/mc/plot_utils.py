@@ -130,10 +130,12 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     Returns
     --------
     """
+
+    #TODO : To be changed!!!
+
     # if (eb == 12):
     #     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
-    # To be changed!!!
     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
     # The minimum sensitivity per energy bin
