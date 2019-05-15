@@ -1,6 +1,9 @@
 import astropy.units as u
 import numpy as np
 
+
+__all__ = ['electron_HESS']
+
 def electron_HESS(E):
     """From https://indico.in2p3.fr/event/15018/
     Broken power-law from HESS:
