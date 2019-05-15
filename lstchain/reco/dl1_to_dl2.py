@@ -19,6 +19,19 @@ from astropy.utils import deprecated
 from ..io import read_configuration_file
 
 
+__all__ = [
+    'train_energy',
+    'train_disp_norm',
+    'train_disp_sign',
+    'train_disp_vector',
+    'train_reco',
+    'train_sep',
+    'build_models',
+    'apply_models',
+    'filter_events',
+]
+
+
 # Standard models configurations - to be moved later in a default configuration file
 
 random_forest_regressor_args = {'max_depth': 50,

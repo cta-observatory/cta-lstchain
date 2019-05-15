@@ -3,6 +3,8 @@ from lstchain.spectra.crab import crab_hegra
 import numpy as np
 import astropy.units as u
 
+
+
 def fill_bin_content(ax, sens, energy_bin, gb, tb):
     """
 

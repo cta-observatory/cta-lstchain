@@ -1,6 +1,13 @@
 import astropy.units as u
 import numpy as np
 
+
+__all__ = [
+    'crab_hegra',
+    'crab_magic',
+]
+
+
 def crab_magic(E):
     """ From http://adsabs.harvard.edu/abs/2015JHEAp...5...30A
     For each energy point, return the Crab Nebula flux
