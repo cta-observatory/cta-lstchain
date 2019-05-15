@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from lstchain.spectra.crab import crab_hegra
 import numpy as np
 import astropy.units as u
@@ -19,7 +20,7 @@ def fill_bin_content(ax, sens, energy_bin, gb, tb):
     return ax
 
 
-def format_axes(ax,pl):
+def format_axes(ax, pl):
     """
 
     Parameters
@@ -38,12 +39,14 @@ def format_axes(ax,pl):
     startx, endx = ax.get_xlim()
     ax.xaxis.set_ticks(np.arange(startx, endx, 0.1))
 
+    fig = ax.get_figure()
     cbaxes = fig.add_axes([0.9, 0.125, 0.03, 0.755])
     cbar = fig.colorbar(pl, cax=cbaxes)
     cbar.set_label('Sensitivity (% Crab)', fontsize=15)
 
 
-def format_axes_array(ax, arr_i,arr_j, plot):
+
+def format_axes_array(ax, arr_i, arr_j, plot):
     """
 
     Parameters
@@ -62,10 +65,12 @@ def format_axes_array(ax, arr_i,arr_j, plot):
     ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
     startx, endx = ax.get_xlim()
     ax.xaxis.set_ticks(np.arange(startx, endx, 0.1))
-    
+
+    fig = ax.get_figure()
     cbaxes = fig.add_axes([0.91, 0.125, 0.03, 0.755])
     cbar = fig.colorbar(plot, cax=cbaxes)
     cbar.set_label('Sensitivity (% Crab)', fontsize=15) 
+
 
 def format_axes_sensitivity(ax):
     """
@@ -125,8 +130,8 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     Returns
     --------
     """
-    if (eb == 12):
-        figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
+    # if (eb == 12):
+    #     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
     # To be changed!!!
     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
@@ -150,7 +155,7 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
 
     if (figarr):
         figarr.subplots_adjust(hspace = 0, wspace = 0)
-        format_axes_array(axarr[arr_i,arr_j],arr_i,arr_j, plot)
+        format_axes_array(axarr[arr_i, arr_j], arr_i, arr_j, plot)
 
 
 def sens_plot(eb, e, sensitivity):
