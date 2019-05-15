@@ -2,6 +2,8 @@ import numpy as np
 
 __all__ = [
     'power_law_integrated_distribution',
+    'int_diff_sp',
+    'weight'
 ]
 
 def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index, bin_number=30):
