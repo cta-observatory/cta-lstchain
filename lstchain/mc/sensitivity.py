@@ -179,10 +179,10 @@ def sens(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.s):
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_trig_gw[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
+                eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
                                          & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(e_trig_pw[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
+                ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
                                          & (gammaness_p > g[j]) & (theta2_p < t[k])])
 
                 final_gamma[i][j][k] = eg_w_sum * obstime
