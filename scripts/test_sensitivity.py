@@ -8,7 +8,7 @@ from lstchain.spectra.proton import proton_bess
 import matplotlib.pyplot as plt
 
 # Read files
-"""
+
 ##########DIFFUSE GAMMAS###########################
 
 simtelfile_gammas = "/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018-11-07/LST4_monotrigger/prod3/gamma-diffuse/gamma-diffuse_20190415/South_pointing/Data/gamma-diffuse_20deg_180deg_run98___cta-prod3-demo-2147m-LaPalma-baseline-mono.simtel.gz"
@@ -18,16 +18,15 @@ simtelfile_protons = "/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018
 dl2_file_p = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_protons_South.h5"
 dl2_file_g = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_diffuse_gammas_only_South.h5"
 
-
-##########POINT GAMMAS############################
 """
+##########POINT GAMMAS############################
 simtelfile_gammas = '/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018-11-07/LST4_monotrigger/prod3/gamma/gamma_offaxis0.4deg_20190415/South_pointing/Data/gamma_20deg_180deg_run52___cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4.simtel.gz'
 
 simtelfile_protons = "/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018-11-07/LST4_monotrigger/prod3/proton/proton_20190415/South_pointing/Data/proton_20deg_180deg_run1031___cta-prod3-demo-2147m-LaPalma-baseline-mono.simtel.gz"
 
 dl2_file_p = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_protons_forpoint_only_South.h5"
 dl2_file_g = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_point_gammas_only_South.h5"
-
+"""
 #################################################
 
 emin_sens = 10**1.5 * u.GeV
@@ -56,9 +55,18 @@ noff=mc_par_p['area_sim']/mc_par_g['area_sim']
 #sim_ev: number of simulated events, it will be the number of simulated events in 1 simtel file *
 # nº of files used for test (total of files * % of files used for test).
 
-#mc_par_g['sim_ev'] = mc_par_g['sim_ev']*1000*0.2 #Diffuse gammas
-mc_par_g['sim_ev'] = mc_par_g['sim_ev']*100*0.2 #Pointlike gammas
+mc_par_g['sim_ev'] = mc_par_g['sim_ev']*1000*0.2 #Diffuse gammas
+#mc_par_g['sim_ev'] = mc_par_g['sim_ev']*100*0.2 #Pointlike gammas
 mc_par_p['sim_ev'] = mc_par_p['sim_ev']*5000*0.2
+
+mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
+mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
+
+mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
+mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
+
+mc_par_g['area_sim'] = mc_par_g['area_sim'].to( u.cm * u.cm)
+mc_par_p['area_sim'] = mc_par_p['area_sim'].to( u.cm * u.cm)
 
 # Rates and weights
 rate_g = mc.rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \

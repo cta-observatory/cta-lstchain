@@ -435,7 +435,7 @@ def plot_e_resolution(data, n_bins, emin, emax):
         ax = plt.subplot(gs2[nbin])
         plt.hist(delta_e[means_result.binnumber==nbin+1], 50,
                  label='$logE_{center}$ '+'%.2f' % bin_centers[nbin])
-    plt.legend()
+        plt.legend()
     plt.subplots_adjust(hspace=.25)
     plt.subplots_adjust(wspace=.5)
 
