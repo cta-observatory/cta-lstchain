@@ -16,7 +16,7 @@ __all__ = ['read_sim_par',
            'process_mc',
            'calculate_sensitivity',
            'bin_definition',
-           'sensitivity',
+           'sens',
            ]
 
 def read_sim_par(source):
@@ -73,8 +73,14 @@ def process_mc(simtelfile, dl2_file):
     e_reco = 10**events.mc_energy * u.GeV
     # n_reco = e_reco.shape[0]
     gammaness = events.gammaness
-    theta2 = (events.src_x - events.src_x_rec)**2 + \
-        (events.src_y - events.src_y_rec)**2 * u.deg**2
+
+    if events.iloc[0].mc_type==0:
+
+        theta2 = (events.src_x - events.src_x_rec)**2 + \
+                 (events.src_y - events.src_y_rec)**2 * u.deg**2
+    else:
+        theta2 = (events.src_x_rec)**2 + \
+                 (events.src_y_rec)**2 * u.deg**2
 
     return gammaness, theta2, e_reco, sim_par
 
@@ -101,7 +107,7 @@ def calculate_sensitivity(nex, nbg, alpha):
 def bin_definition(gb, tb):
 
     max_gam = 1
-    max_th2 = 0.05
+    max_th2 = 0.1
     min_th2 = 0.005
 
     g = np.linspace(0, max_gam, gb)
@@ -146,17 +152,17 @@ def sens(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.s):
 
     # Rates and weights
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \
-                  mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['E0'])
+                  mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['e0'])
 
     rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], \
-                  mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['E0'])
+                  mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['e0'])
 
 
     w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['E0'])
+                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['e0'])
 
     w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['E0'])
+                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
 
 
     e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \

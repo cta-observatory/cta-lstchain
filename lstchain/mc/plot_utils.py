@@ -16,7 +16,7 @@ def fill_bin_content(ax, sens, energy_bin, gb, tb):
     for i in range(0,gb):
         for j in range(0,tb):
             text = ax.text((j+0.5)*0.05, (i+0.5)*0.1, "%.2f %%" % sens[energy_bin][i][j],
-                       ha="center", va="center", color="w")
+                       ha="ceter", va="center", color="w")
     return ax
 
 def format_axes(ax, pl):
@@ -99,11 +99,8 @@ def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
     """
     En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV
 
-    dFdE = percentage / 100. * crab_HEGRA(En)[0]
+    dFdE = percentage / 100. * crab_hegra(En)[0]
     ax.loglog(En, (dFdE * En * En).to(u.TeV / (u.cm * u.cm * u.s)), color='gray', **kwargs)
-
-    dFdE = percentage / 100. * crab_hegra(En)
-    ax.loglog(En, dFdE[0] * En * En, color='gray', **kwargs)
 
     return ax
 
@@ -116,10 +113,12 @@ def plot_sensitivity(ax, e, sensitivity):
     Returns
     --------
     """
+    mask = sensitivity<1e100
     emed = np.sqrt(e[1:] * e[:-1])
 
-    dFdE = crab_hegra(emed)
-    ax.loglog(emed, sensitivity / 100 * (dFdE[0] * emed * emed).to(u.TeV / (u.cm * u.cm * u.s)),
+    dFdE = crab_hegra(emed[mask])
+    ax.loglog(emed[mask],
+              sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s)),
               label = 'Sensitivity')
 
 
@@ -167,8 +166,8 @@ def sens_plot(eb, e, sensitivity):
     fig_sens, ax = plt.subplots()
     plot_sensitivity(ax, e, sensitivity)
 
-    plot_Crab_SED(ax, 10**1.5 * u.GeV, 10**4.5 * u.GeV, 100, label=r'Crab')
-    plot_Crab_SED(ax, 10**1.5 * u.GeV, 10**4.5 * u.GeV, 1, ls='dotted',label='1% Crab')
+    plot_Crab_SED(ax, 100, 10**1.5 * u.GeV, 10**4.5 * u.GeV, label=r'Crab')
+    plot_Crab_SED(ax, 1, 10**1.5 * u.GeV, 10**4.5 * u.GeV, ls='dotted',label='1% Crab')
 
     format_axes_sensitivity(ax)
     ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')
