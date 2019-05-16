@@ -1,7 +1,12 @@
 import numpy as np
 
+__all__ = [
+    'power_law_integrated_distribution',
+    'int_diff_sp',
+    'weight'
+]
 
-def power_law_integrated_distribution(emin, emax, nev, spectral_index, bin_number=30):
+def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index, bin_number=30):
     """
     For each bin, return the expected number of events for a power-law distribution.
     bins: `numpy.ndarray`, e.g. `np.logspace(np.log10(emin), np.logspace(emax))`
@@ -9,8 +14,8 @@ def power_law_integrated_distribution(emin, emax, nev, spectral_index, bin_numbe
     ----------
     emin:   `float` minimum energy
     emax:   `float` maximum energy
-    nev:    `int`   total number of events simulated
-    sp_idx: `float` spectral index of the power-law distribution
+    tot_num_events:    `int`   total number of events simulated
+    spectral_index: `float` spectral index of the power-law distribution
 
     Returns
     -------
@@ -23,11 +28,12 @@ def power_law_integrated_distribution(emin, emax, nev, spectral_index, bin_numbe
     bins = np.logspace(np.log10(emin), np.log10(emax), bin_number)
 
     if spectral_index == -1:
-        y0 = nev / np.log(emax / emin)
+        y0 = tot_num_events / np.log(emax / emin)
         y = y0 * np.log(bins[1:] / bins[:-1])
     else:
 
-        y0 = nev / (emax**(spectral_index + 1) - emin**(spectral_index + 1)) / (spectral_index + 1)
+        y0 = tot_num_events / (emax**(spectral_index + 1) - emin**(spectral_index + 1)) * (spectral_index + 1)
+
         y = y0 * (bins[1:]**(spectral_index + 1) - bins[:-1]**(spectral_index + 1)) / (spectral_index + 1)
     return bins, y
 
@@ -38,12 +44,12 @@ def int_diff_sp(emin, emax, sp_idx, e0):
     """
 
     if sp_idx == -1:
-        integral_E = np.log(emax / emin) / e0**sp_idx
+        integral_e = np.log(emax / emin) / e0**sp_idx
     else:
-        integral_E = (emax**(sp_idx + 1) - emin**(sp_idx + 1)) \
+        integral_e = (emax**(sp_idx + 1) - emin**(sp_idx + 1)) \
             / (sp_idx + 1) / e0**sp_idx
 
-    return integral_E
+    return integral_e
 
 def rate(emin, emax, sp_idx, cone, area, norm, e0):
     """

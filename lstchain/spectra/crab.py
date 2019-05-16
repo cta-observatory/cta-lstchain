@@ -1,7 +1,14 @@
 import astropy.units as u
 import numpy as np
 
-def crab_MAGIC(E):
+
+__all__ = [
+    'crab_hegra',
+    'crab_magic',
+]
+
+
+def crab_magic(E):
     """ From http://adsabs.harvard.edu/abs/2015JHEAp...5...30A
     For each energy point, return the Crab Nebula flux
 
@@ -19,17 +26,17 @@ def crab_MAGIC(E):
     f0    = 3.23e-14 / u.GeV / u.cm**2 / u.s
     alpha = -2.47
     beta  = -0.24
-    E0    = 1000 * u.GeV
+    e0    = 1000 * u.GeV
 
-    par_var = [f0, alpha, beta, E0]
-    par_dic = ['f0', 'alpha', 'beta', 'E0']
+    par_var = [f0, alpha, beta, e0]
+    par_dic = ['f0', 'alpha', 'beta', 'e0']
     par = dict(zip(par_dic, par_var))
 
-    dFdE  = f0 * np.power(E / E0, alpha + beta * np.log10(E/E0))
+    dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
 
-def crab_HEGRA(E):
+def crab_hegra(E):
     """ From http://adsabs.harvard.edu/abs/2004ApJ...614..897A
     For each energy point, return the Crab Nebula flux
 
@@ -46,12 +53,12 @@ def crab_HEGRA(E):
 
     f0    = 2.83e-14 / u.GeV / u.cm**2 / u.s
     alpha = -2.62
-    E0    = 1000 * u.GeV
+    e0    = 1000 * u.GeV
 
-    par_var = [f0, alpha, E0]
-    par_dic = ['f0', 'alpha', 'E0']
+    par_var = [f0, alpha, e0]
+    par_dic = ['f0', 'alpha', 'e0']
     par = dict(zip(par_dic, par_var))
 
-    dFdE  = f0 * np.power(E / E0, alpha)
+    dFdE  = f0 * np.power(E / e0, alpha)
 
     return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
