@@ -1,7 +1,11 @@
 import astropy.units as u
 import numpy as np
 
-def proton_BESS(E):
+
+__all__ = ['proton_bess']
+
+
+def proton_bess(E):
     """ From http://adsabs.harvard.edu/abs/2000ApJ...545.1135S
     For each energy point, return the Proton flux
 
@@ -18,12 +22,12 @@ def proton_BESS(E):
 
     f0 = 9.6e-9 / u.GeV / u.cm**2 / u.s / u.sr
     alpha = -2.70
-    E0 = 1000. * u.GeV
+    e0 = 1000. * u.GeV
 
-    par_var = [f0, alpha, E0]
-    par_dic = ['f0', 'alpha', 'E0']
+    par_var = [f0, alpha, e0]
+    par_dic = ['f0', 'alpha', 'e0']
     par = dict(zip(par_dic, par_var))
 
-    dFdEdO = f0 * np.power(E/E0, alpha)
+    dFdEdO = f0 * np.power(E/e0, alpha)
 
     return dFdEdO.to(1 / u.GeV / u.cm**2 / u.s / u.sr), par

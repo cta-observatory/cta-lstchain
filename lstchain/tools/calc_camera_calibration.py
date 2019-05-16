@@ -15,6 +15,9 @@ from ctapipe.image import ImageExtractor
 from lstchain.calib.camera import FlatFieldCalculator, PedestalCalculator, CameraR0Calibrator
 from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
 
+__all__ = [
+    'CalibrationHDF5Writer'
+]
 
 class CalibrationHDF5Writer(Tool):
     """
