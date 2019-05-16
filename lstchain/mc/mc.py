@@ -1,5 +1,5 @@
 import numpy as np
-
+import astropy.units as u
 __all__ = [
     'power_law_integrated_distribution',
     'int_diff_sp',
@@ -76,7 +76,7 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
     if(cone == 0):
         omega = 1
     else:
-        omega = 2 * np.pi * (1-np.cos(cone))
+        omega = 2 * np.pi * (1-np.cos(cone)) * u.sr
 
     integral = int_diff_sp(emin, emax, sp_idx, e0)
 
