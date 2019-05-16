@@ -2,6 +2,8 @@ import numpy as np
 from numba import jit
 
 
+__all__ = ['DragonPedestal']
+
 class DragonPedestal:
     n_pixels = 7
     roisize = 40
