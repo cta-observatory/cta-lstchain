@@ -8,7 +8,7 @@ from lstchain.spectra.proton import proton_bess
 import matplotlib.pyplot as plt
 
 # Read files
-
+"""
 ##########DIFFUSE GAMMAS###########################
 
 simtelfile_gammas = "/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018-11-07/LST4_monotrigger/prod3/gamma-diffuse/gamma-diffuse_20190415/South_pointing/Data/gamma-diffuse_20deg_180deg_run98___cta-prod3-demo-2147m-LaPalma-baseline-mono.simtel.gz"
@@ -26,11 +26,11 @@ simtelfile_protons = "/fefs/aswg/workspace/MC_common/corsika6.9_simtelarray_2018
 
 dl2_file_p = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_protons_forpoint_only_South.h5"
 dl2_file_g = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_point_gammas_only_South.h5"
-"""
+
 #################################################
 
-emin_sens = 10**1.5 * u.GeV
-emax_sens = 10**4.5 * u.GeV
+emin_sens = 10**1. * u.GeV
+emax_sens = 10**5. * u.GeV
 eb = 12
 gb = 10
 tb = 10
@@ -55,8 +55,8 @@ noff=mc_par_p['area_sim']/mc_par_g['area_sim']
 #sim_ev: number of simulated events, it will be the number of simulated events in 1 simtel file *
 # nº of files used for test (total of files * % of files used for test).
 
-mc_par_g['sim_ev'] = mc_par_g['sim_ev']*1000*0.2 #Diffuse gammas
-#mc_par_g['sim_ev'] = mc_par_g['sim_ev']*100*0.2 #Pointlike gammas
+#mc_par_g['sim_ev'] = mc_par_g['sim_ev']*1000*0.2 #Diffuse gammas
+mc_par_g['sim_ev'] = mc_par_g['sim_ev']*100*0.2 #Pointlike gammas
 mc_par_p['sim_ev'] = mc_par_p['sim_ev']*5000*0.2
 
 mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
@@ -70,22 +70,22 @@ mc_par_p['area_sim'] = mc_par_p['area_sim'].to( u.cm * u.cm)
 
 # Rates and weights
 rate_g = mc.rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \
-              mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['E0'])
+              mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['e0'])
 
 rate_p = mc.rate(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], \
-              mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['E0'])
+              mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['e0'])
 
 
 w_g = mc.weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['E0'])
+                crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['e0'])
 
 w_p = mc.weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['E0'])
+                proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
 
 
-e_trig_gw = ((e_trig_g / crab_par['E0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+e_trig_gw = ((e_trig_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
             * w_g
-e_trig_pw = ((e_trig_p / proton_par['E0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
+e_trig_pw = ((e_trig_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_p
 
 # Arrays to contain the number of gammas and hadrons for different cuts
@@ -132,5 +132,7 @@ for i in range(0,eb):
     sensitivity[i] = sens[i][ind]
 
 #plot_utils.sens_minimization_plot(eb, gb, tb, E, sens)
+mask = sensitivity<1e100
+
 plot_utils.sens_plot(eb, E, sensitivity)
 plt.show()
