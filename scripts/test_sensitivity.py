@@ -1,10 +1,10 @@
-from lstchain.mc import sensitivity
 from lstchain.mc import mc
 from lstchain.mc import plot_utils
+from lstchain.mc import sensitivity
 import numpy as np
 import astropy.units as u
-from lstchain.spectra.crab import crab_HEGRA
-from lstchain.spectra.proton import proton_BESS
+from lstchain.spectra.crab import crab_hegra
+from lstchain.spectra.proton import proton_bess
 import matplotlib.pyplot as plt
 
 # Read files
@@ -44,8 +44,8 @@ E = np.logspace(np.log10(emin_sens.to_value()),
 
 
 
-dFdE, crab_par = crab_HEGRA(E)
-dFdEd0, proton_par = proton_BESS(E)
+dFdE, crab_par = crab_hegra(E)
+dFdEd0, proton_par = proton_bess(E)
 
 # Read simulated and triggered values
 gammaness_g, theta2_g, e_trig_g, mc_par_g = sensitivity.process_mc(simtelfile_gammas, dl2_file_g)
