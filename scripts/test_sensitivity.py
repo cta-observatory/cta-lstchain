@@ -35,9 +35,9 @@ dl2_file_g = "/fefs/aswg/workspace/maria.bernardos/h5files/dl2/20190415/dl2_poin
 
 #################################################
 
-# Read simulated and triggered values
-gammaness_g, theta2_g, e_trig_g, mc_par_g = sensitivity.process_mc(simtelfile_gammas, dl2_file_g)
-gammaness_p, theta2_p, e_trig_p, mc_par_p = sensitivity.process_mc(simtelfile_protons, dl2_file_p)
+# Read simulated and reconstructed values
+gammaness_g, theta2_g, e_reco_g, mc_par_g = sensitivity.process_mc(simtelfile_gammas, dl2_file_g)
+gammaness_p, theta2_p, e_reco_p, mc_par_p = sensitivity.process_mc(simtelfile_protons, dl2_file_p)
 
 """
 !!NOTE:
@@ -105,9 +105,9 @@ w_p = mc.weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
 
 
-e_trig_gw = ((e_trig_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
             * w_g
-e_trig_pw = ((e_trig_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
+e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
         * w_p
 
 # Arrays to contain the number of gammas and hadrons for different cuts
@@ -126,16 +126,16 @@ final_hadrons = np.ndarray(shape=(eb, gb, tb))
 for i in range(0,eb):  # binning in energy
     for j in range(0,gb):  # cut in gammaness
         for k in range(0,tb):  # cut in theta2
-            eg_w_sum = np.sum(e_trig_gw[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
+            eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
                                        & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-            ep_w_sum = np.sum(e_trig_pw[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
+            ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
                                         & (gammaness_p > g[j]) & (theta2_p < t[k])])
 
-            pre_gamma[i][j][k] = e_trig_g[(e_trig_g < E[i+1].to_value()) & (e_trig_g > E[i].to_value()) \
+            pre_gamma[i][j][k] = e_reco_g[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
                                           & (gammaness_g > g[j]) & (theta2_g < t[k])].shape[0]
 
-            pre_hadron[i][j][k] = e_trig_p[(e_trig_p < E[i+1].to_value()) & (e_trig_p > E[i].to_value()) \
+            pre_hadron[i][j][k] = e_reco_p[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
                                           & (gammaness_p > g[j]) & (theta2_p < t[k])].shape[0]
 
             final_gamma[i][j][k] = eg_w_sum * obstime.to_value()
