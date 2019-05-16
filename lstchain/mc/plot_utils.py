@@ -16,7 +16,7 @@ def fill_bin_content(ax, sens, energy_bin, gb, tb):
     for i in range(0,gb):
         for j in range(0,tb):
             text = ax.text((j+0.5)*0.05, (i+0.5)*0.1, "%.2f %%" % sens[energy_bin][i][j],
-                       ha="ceter", va="center", color="w")
+                       ha="center", va="center", color="w")
     return ax
 
 def format_axes(ax, pl):
