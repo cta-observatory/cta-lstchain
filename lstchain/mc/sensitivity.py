@@ -72,6 +72,8 @@ def process_mc(simtelfile, dl2_file):
 
     gammaness = events.gammaness
 
+    gevents = events[events.mc_type==0]
+
     if events.iloc[0].mc_type==0:
 
         theta2 = (events.src_x - events.src_x_rec)**2 + \
@@ -228,14 +230,12 @@ def sens(simtelfile_gammas, simtelfile_protons,
     for i in range(0, eb):
         for j in range(0, gb):
             for k in range(0, tb):
-                if np.isnan(sens[i][j][k]) or np.isinf(sens[i][j][k]) \
-                or sens[i][j][k]==0:
-                    sens[i][j][k] = 1e100
-                if final_gamma[i][j][k] < min_num_events or \
-                final_hadrons[i][j][k] < min_num_events:
-                    sens[i][j][k] = 1e100
-                if not final_gamma[i][j][k] > final_hadrons[i][j][k] * 0.05:
-                    sens[i][j][k] = 1e100
+                conditions = (not np.isfinite(sens[i,j,k])) or (sens[i,j,k]<=0) \
+                             or (final_gamma[i,j,k] < min_num_events) \
+                             or (final_hadrons[i,j,k] < min_num_events) \
+                             or (not final_gamma[i,j,k] > final_hadrons[i,j,k] * 0.05)
+                if conditions:
+                    sens[i][j][k] = np.nan
 
     # Calculate the minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
