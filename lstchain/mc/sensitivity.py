@@ -70,8 +70,8 @@ def process_mc(simtelfile, dl2_file):
     sim_par = read_sim_par(source)
     events = pd.read_hdf(dl2_file)
 
-    e_reco = 10**events.mc_energy * u.GeV
-    # n_reco = e_reco.shape[0]
+    e_reco = 10**events.mc_energy.to_numpy() * u.GeV
+
     gammaness = events.gammaness
 
     if events.iloc[0].mc_type==0:
@@ -107,7 +107,7 @@ def calculate_sensitivity(nex, nbg, alpha):
 def bin_definition(gb, tb):
 
     max_gam = 1
-    max_th2 = 0.1
+    max_th2 = 0.05
     min_th2 = 0.005
 
     g = np.linspace(0, max_gam, gb)
@@ -115,86 +115,138 @@ def bin_definition(gb, tb):
 
     return g, t
 
-def sens(emin_sens, emax_sens, eb, gb, tb, noff, obstime = 50 * 3600 * u.s):
+def sens(simtelfile_gammas, simtelfile_protons,
+         dl2_file_g, dl2_file_p,
+         nfiles_gammas, nfiles_protons,
+         eb, gb, tb, noff,
+         obstime = 50 * 3600 * u.s):
     """
     Main function to calculate the sensitivity given a MC dataset
 
     Parameters
     ---------
+    simtelfile_gammas: `string` path to simtelfile of gammas with mc info
+    simtelfile_protons: `string` path to simtelfile of protons with mc info
+    dl2_file_g: `string` path to h5 file of reconstructed gammas
+    dl2_file_p: `string' path to h5 file of reconstructed protons
+    nfiles_gammas: `int` number of simtel gamma files reconstructed
+    nfiles_protons: `int` number of simtel proton files reconstructed
     eb: `int` number of bins in energy
     gb: `int` number of bins in gammaness
     tb: `int` number of bins in theta2
     noff: `float` ratio between the background and the signal region
+    obstime: `Quantity` Observation time in seconds
 
     TODO: Give files as input in a configuration file!
     Returns
+    E: `array` center of energy bins
+    sensitivity: `array` sensitivity per energy bin
     ---------
-
     """
 
-    # Read files
-    simtelfile_gammas = "/home/queenmab/DATA/LST1/Gamma/gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz"
-    simtelfile_protons = "/home/queenmab/DATA/LST1/Proton/proton_20deg_0deg_run194___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz"
-    PATH_EVENTS = "../../cta-lstchain-extra/reco/sample_data/dl2/"
-    dl2_file_g = PATH_EVENTS+"/reco_gammas.h5"
-    dl2_file_p = PATH_EVENTS+"/reco_protons.h5"
+    # Read simulated and reconstructed values
+    gammaness_g, theta2_g, e_reco_g, mc_par_g = process_mc(simtelfile_gammas,
+                                                                       dl2_file_g)
+    gammaness_p, theta2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons,
+                                                                       dl2_file_p)
+
+    mc_par_g['sim_ev'] = mc_par_g['sim_ev']*nfiles_gammas
+    mc_par_p['sim_ev'] = mc_par_p['sim_ev']*nfiles_protons
+
+    #Pass units to GeV and cm2
+    mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
+    mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
+
+    mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
+    mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
+
+    mc_par_g['area_sim'] = mc_par_g['area_sim'].to( u.cm * u.cm)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to( u.cm * u.cm)
+
+    #Set binning for sensitivity calculation
+    emin_sens = mc_par_g['emin']
+    emax_sens = mc_par_g['emax']
+
+    E = np.logspace(np.log10(emin_sens.to_value()),
+                np.log10(emax_sens.to_value()), eb + 1) * u.GeV
+
+    g, t = bin_definition(gb, tb)
 
     # Extract spectral parameters
-    E = np.logspace(np.log10(emin_sens.to_value()),
-                     np.log10(emax_sens.to_value()), eb + 1) * u.GeV
-
     dFdE, crab_par = crab_hegra(E)
     dFdEd0, proton_par = proton_bess(E)
 
-    # Read simulated and reconstructed values
-    gammaness_g, theta2_g, e_reco_g, mc_par_g = process_mc(simtelfile_gammas, dl2_file_g)
-    gammaness_p, theta2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons, dl2_file_p)
-
     # Rates and weights
-    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], \
-                  mc_par_g['cone'], mc_par_g['area_sim'], crab_par['f0'], crab_par['e0'])
+    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
+                     mc_par_g['cone'], mc_par_g['area_sim'],
+                     crab_par['f0'], crab_par['e0'])
 
-    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], \
-                  mc_par_p['cone'], mc_par_p['area_sim'], proton_par['f0'], proton_par['e0'])
+    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
+                     mc_par_p['cone'], mc_par_p['area_sim'],
+                     proton_par['f0'], proton_par['e0'])
 
 
     w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g, mc_par_g['sim_ev'], crab_par['e0'])
+                    crab_par['alpha'], rate_g,
+                    mc_par_g['sim_ev'], crab_par['e0'])
 
     w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p, mc_par_p['sim_ev'], proton_par['e0'])
+                    proton_par['alpha'], rate_p,
+                    mc_par_p['sim_ev'], proton_par['e0'])
 
 
     e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
-        * w_g
+                * w_g
     e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
-        * w_p
+                * w_p
 
     # Arrays to contain the number of gammas and hadrons for different cuts
+
     final_gamma = np.ndarray(shape=(eb, gb, tb))
     final_hadrons = np.ndarray(shape=(eb, gb, tb))
 
-    g, t = bin_definition(gb, tb)
+
+    #Weight events and count nº of events per bin:
 
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1].to_value()) & (e_reco_g > E[i].to_value()) \
-                                         & (gammaness_g > g[j]) & (theta2_g < t[k])])
+                eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
+                                            & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1].to_value()) & (e_reco_p > E[i].to_value()) \
-                                         & (gammaness_p > g[j]) & (theta2_p < t[k])])
+                ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
+                                            & (gammaness_p > g[j]) & (theta2_p < t[k])])
 
                 final_gamma[i][j][k] = eg_w_sum * obstime
                 final_hadrons[i][j][k] = ep_w_sum * obstime
 
-    sens = calculate_sensititity(final_gamma, final_hadrons, 1/noff)
+    sens = calculate_sensitivity(final_gamma, final_hadrons, 1/noff)
+
+    #Avoid bins which are empty or have too few events:
+
+    min_num_events = 10 #Minimum number of gamma and proton events in a bin to be taken into
+    #account for minimization
+
+    for i in range(0, eb):
+        for j in range(0, gb):
+            for k in range(0, tb):
+                if np.isnan(sens[i][j][k]) or np.isinf(sens[i][j][k]) \
+                or sens[i][j][k]==0:
+                    sens[i][j][k] = 1e100
+                if final_gamma[i][j][k] < min_num_events or \
+                final_hadrons[i][j][k] < min_num_events:
+                    sens[i][j][k] = 1e100
+                if not final_gamma[i][j][k] > final_hadrons[i][j][k] * 0.05:
+                    sens[i][j][k] = 1e100
 
     # Calculate the minimum sensitivity per energy bin
     sensitivity = np.ndarray(shape=eb)
+
+    print("BEST CUTS: ")
+    print("Energy bin(GeV) Gammaness Theta2(deg)")
     for i in range(0,eb):
         ind = np.unravel_index(np.argmin(sens[i], axis=None), sens[i].shape)
+        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]])
         sensitivity[i] = sens[i][ind]
 
-    sens_minimization_plot(eb, gb, tb, E, sens)
-    sens_plot(eb, E, sensitivity)
+    return E, sensitivity
