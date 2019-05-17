@@ -139,7 +139,7 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
     # The minimum sensitivity per energy bin
-    sens = np.ndarray(shape=eb)
+    sensitivity = np.ndarray(shape=eb)
 
     for ebin in range(0,eb):
         if (figarr):
