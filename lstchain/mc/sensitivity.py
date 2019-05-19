@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import astropy.units as u
+import math
 from eventio.simtel.simtelfile import SimTelFile
 from .plot_utils import sens_plot, sens_minimization_plot
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
-
-
+from gammapy.stats.poisson import excess_matching_significance_on_off
 
 
 __all__ = ['read_sim_par',
@@ -103,7 +103,7 @@ def calculate_sensitivity(nex, nbg, alpha):
 
     Returns
     ---------
-    sensitivity: `float` in percentage of Crab units
+    sens: `float` in percentage of Crab units
     """
     significance = nex / np.sqrt(nbg * alpha)
     sens = 5 / significance * 100  # percentage of Crab
@@ -127,10 +127,11 @@ def calculate_sensitivity_lima(nex, nbg, alpha):
 
     Returns
     ---------
-    sensitivity: `float` in percentage of Crab units
+    sens: `float` in percentage of Crab units
     """
-    significance = gammapy.sensitivity(nex, nbg, alpha)
-    sens = 5 / significance * 100  # percentage of Crab
+    nex_5sigma = excess_matching_significance_on_off(\
+        n_off=nbg,alpha=alpha,significance=5,method='lima')
+    sens = nex_5sigma / nex * 100  # percentage of Crab
 
     return sens
 
@@ -274,10 +275,16 @@ def sens(simtelfile_gammas, simtelfile_protons,
     e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
                 * w_p
 
-    p_contained = ring_containment(angdist2_p, 0.4, 0.1)
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4, 0.1) 
+    # FIX: ring_radius and ring_halfwidth should have units of deg
+    # FIX: hardcoded at the moment, but ring_radius should be read from
+    # the gamma file (point-like) or given as input (diffuse).
+    # FIX: ring_halfwidth should be given as input
+    area_ratio_p = math.pi * t / ang_area_p
+    # ratio between the area where we search for protons ang_area_p
+    # and the area where we search for gammas math.pi * t
 
     # Arrays to contain the number of gammas and hadrons for different cuts
-
     final_gamma = np.ndarray(shape=(eb, gb, tb))
     final_hadrons = np.ndarray(shape=(eb, gb, tb))
 
@@ -290,15 +297,14 @@ def sens(simtelfile_gammas, simtelfile_protons,
                                             & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
                 ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
-                                            & (gammaness_p > g[j]) & (theta2_p < t[k])])
+                                            & (gammaness_p > g[j]) & p_contained])
 
                 final_gamma[i][j][k] = eg_w_sum * obstime
-                final_hadrons[i][j][k] = ep_w_sum * obstime
+                final_hadrons[i][j][k] = ep_w_sum * obstime * area_ratio_p[k]
 
-    sens = calculate_sensitivity(final_gamma, final_hadrons, 1/noff)
+    sens = calculate_sensitivity(final_gamma, final_hadrons * noff, 1/noff)
 
     # Avoid bins which are empty or have too few events:
-
     min_num_events = 10 
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
 
