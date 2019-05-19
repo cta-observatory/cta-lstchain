@@ -2,6 +2,7 @@ import numpy as np
 from lstchain.mc import (power_law_integrated_distribution,
                   int_diff_sp,
                   rate,
+                  weight
 )
 
 def test_integrated_distribution():
