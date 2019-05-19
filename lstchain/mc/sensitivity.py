@@ -15,6 +15,7 @@ __all__ = ['read_sim_par',
            'calculate_sensitivity',
            'calculate_sensitivity_lima',
            'bin_definition',
+           'ring_containment',
            'sens',
            ]
 
@@ -59,7 +60,7 @@ def process_mc(simtelfile, dl2_file):
     Returns
     ---------
     gammaness: `numpy.ndarray`
-    theta2:    `numpy.ndarray`
+    angdist2:  `numpy.ndarray` angular distance squared
     e_reco:    `numpy.ndarray` reconstructed energies
     n_reco:    `int` number of reconstructed events
     mc_par:    `dict` with simulated parameters
@@ -75,15 +76,19 @@ def process_mc(simtelfile, dl2_file):
 
     gevents = events[events.mc_type==0]
 
+    # If the particle is a gamma ray, it returns the squared angular distance
+    # from the reconstructed gamma-ray position and the simulated incoming position
     if events.iloc[0].mc_type==0:
-
-        theta2 = (events.src_x - events.src_x_rec)**2 + \
+        angdist2 = (events.src_x - events.src_x_rec)**2 + \
                  (events.src_y - events.src_y_rec)**2 * u.deg**2
+    # If the particles is not a gamma-ray (diffuse protons/electrons), it returns
+    # the squared angular distance of the reconstructed position w.r.t. the 
+    # center of the camera
     else:
-        theta2 = (events.src_x_rec)**2 + \
+        angdist2 = (events.src_x_rec)**2 + \
                  (events.src_y_rec)**2 * u.deg**2
 
-    return gammaness, theta2, e_reco, sim_par
+    return gammaness, angdist2, e_reco, sim_par
 
 
 def calculate_sensitivity(nex, nbg, alpha):
@@ -132,6 +137,9 @@ def calculate_sensitivity_lima(nex, nbg, alpha):
 
 def bin_definition(gb, tb):
     """
+    Define binning in gammaness and theta2 for the
+    optimization of the sensitivity
+
     Parameters
     ---------
     gb:   `int` number of bins in gammaness
@@ -150,6 +158,36 @@ def bin_definition(gb, tb):
 
     return g, t
 
+def ring_containment(angdist2, ring_radius, ring_halfwidth):
+    """ 
+    Calculate containment of cosmic ray particles with reconstructed positions
+    within a ring of radius=ring_radius and half width=ring_halfwidth
+    Parameters
+    ---------
+    angdist2:       `numpy.ndarray` angular distance squared w.r.t. 
+                    the center of the camera
+    ring_radius:    `float` ring radius
+    ring_halfwidth: `float` halfwidth of the ring
+
+    Returns
+    ---------
+    contained: `numpy.ndarray` bool array 
+    area: angular area of the ring
+    """
+    ring_lower_limit = ring_radius - ring_halfwidth
+    ring_upper_limit = (2 * (ring_radius**2) - (ring_radius - ring_halfwidth)**2) \
+                       (2 * ring_radius)
+    area = math.pi * (ring_upper_limit**2 - ring_lower_limit**2)
+    # For the two halfwidths to cover the same area, compute the area of
+    # the internal and external rings: 
+    # A_internal = pi * ((ring_radius**2) - (ring_radius - ring_halfwidth)**2)
+    # A_external = pi * ((ring_upper_limit**2) - (ring_upper_limit - ring_radius)**2)
+    # They should be equal, so we can extract the ring_upper_limit
+    # 2 * ring_radius * ring_upper_limit - ring_radius**2 = (ring_radius**2) - (ring_radius - ring_halfwidth)**2
+
+    contained = np.where((angdist2 < ring_upper_limit) and (angdist2 > ring_lower_limit))
+    
+    return contained, area
 
 def sens(simtelfile_gammas, simtelfile_protons,
          dl2_file_g, dl2_file_p,
@@ -183,7 +221,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
     # Read simulated and reconstructed values
     gammaness_g, theta2_g, e_reco_g, mc_par_g = process_mc(simtelfile_gammas,
                                                                        dl2_file_g)
-    gammaness_p, theta2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons,
+    gammaness_p, angdist2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons,
                                                                        dl2_file_p)
 
     mc_par_g['sim_ev'] = mc_par_g['sim_ev']*nfiles_gammas
@@ -236,14 +274,15 @@ def sens(simtelfile_gammas, simtelfile_protons,
     e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
                 * w_p
 
+    p_contained = ring_containment(angdist2_p, 0.4, 0.1)
+
     # Arrays to contain the number of gammas and hadrons for different cuts
 
     final_gamma = np.ndarray(shape=(eb, gb, tb))
     final_hadrons = np.ndarray(shape=(eb, gb, tb))
 
 
-    #Weight events and count nº of events per bin:
-
+    # Weight events and count number of events per bin:
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
@@ -258,10 +297,10 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
     sens = calculate_sensitivity(final_gamma, final_hadrons, 1/noff)
 
-    #Avoid bins which are empty or have too few events:
+    # Avoid bins which are empty or have too few events:
 
-    min_num_events = 10 #Minimum number of gamma and proton events in a bin to be taken into
-    #account for minimization
+    min_num_events = 10 
+    # Minimum number of gamma and proton events in a bin to be taken into account for minimization
 
     for i in range(0, eb):
         for j in range(0, gb):
