@@ -35,10 +35,23 @@ def test_rate():
     spectral_index = -3.
     e0 = 300.     # u.GeV
     area = 1.e9
-    omega = 1.
+    cone = 0
     norm = 1.e-11
 
-    integral_e = int_diff_sp(emin, emax, spectral_index, e0)
-    rate = norm * area * omega * integral_e
+    np.testing.assert_allclose(rate(emin, emax, spectral_index, 
+                                    cone, area, norm, e0), 
+                               337.5, rtol=1e-3)
 
-    np.testing.assert_allclose(rate, 337.5, rtol=1e-3)
+def test_weight():
+    
+    emin = 10.     # u.GeV
+    emax = 50.e3  # u.GeV
+    sim_sp_idx = -2.
+    w_sp_idx = -2.6
+    e0 = 1000.     # u.GeV
+    rate = 8.
+    nev = 1.e6
+
+    np.testing.assert_allclose(weight(emin, emax, sim_sp_idx, 
+                                      w_sp_idx, rate, nev, e0), 
+                               8.07e-7, rtol=1e-3)
