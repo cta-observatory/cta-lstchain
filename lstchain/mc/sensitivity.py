@@ -13,6 +13,7 @@ from lstchain.spectra.proton import proton_bess
 __all__ = ['read_sim_par',
            'process_mc',
            'calculate_sensitivity',
+           'calculate_sensitivity_lima',
            'bin_definition',
            'sens',
            ]
