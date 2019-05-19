@@ -104,6 +104,31 @@ def calculate_sensitivity(nex, nbg, alpha):
 
     return sens
 
+def calculate_sensitivity_lima(nex, nbg, alpha):
+    """
+    Sensitivity calculation using the Li & Ma formula
+    eq. 17 of Li & Ma (1983).
+    TODO: Caculation of the significance is INCORRECT
+    by only doing a sens = 5 / significance * 100
+    for the time being we leave it until implementing an
+    optimized search for the 5 sigma
+
+    Parameters
+    ---------
+    nex:   `float` number of excess events in the signal region
+    nbg:   `float` number of events in the background region
+    alpha: `float` inverse of the number of off positions
+
+    Returns
+    ---------
+    sensitivity: `float` in percentage of Crab units
+    """
+    significance = gammapy.sensitivity(nex, nbg, alpha)
+    sens = 5 / significance * 100  # percentage of Crab
+
+    return sens
+
+
 def bin_definition(gb, tb):
 
     max_gam = 1
@@ -114,6 +139,7 @@ def bin_definition(gb, tb):
     t = np.linspace(min_th2, max_th2, tb)
 
     return g, t
+
 
 def sens(simtelfile_gammas, simtelfile_protons,
          dl2_file_g, dl2_file_p,
