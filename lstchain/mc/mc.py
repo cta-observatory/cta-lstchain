@@ -3,6 +3,7 @@ import astropy.units as u
 __all__ = [
     'power_law_integrated_distribution',
     'int_diff_sp',
+    'rate'
     'weight'
 ]
 
@@ -87,10 +88,23 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
 
 def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
     """
+    Calculates the weight of events to transform a power-law distribution
+    with spectral index sim_sp_idx to a power-law distribution with 
+    spectral index w_sp_idx
 
+    Parameters
+    ----------
+    emin:       `float` minimum energy
+    emax:       `float` maximum energy
+    sim_sp_idx: `float` simulated spectral index of the power-law distribution
+    w_sp_idx:   `float` weighted spectral index of the power-law distribution
+    rate:       `float` rate of simulated events
+    nev:        `int`   number of simulated events 
+    e0:         `float` normalization energy
 
-
-
+    Returns
+    ----------
+    weight: `float` rate of events
     """
     sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, e0)
     norm_sim = sim_integral * int_diff_sp(emin, emax, w_sp_idx, e0)
