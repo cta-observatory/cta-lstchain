@@ -114,10 +114,7 @@ def calculate_sensitivity_lima(nex, nbg, alpha):
     """
     Sensitivity calculation using the Li & Ma formula
     eq. 17 of Li & Ma (1983).
-    TODO: Caculation of the significance is INCORRECT
-    by only doing a sens = 5 / significance * 100
-    for the time being we leave it until implementing an
-    optimized search for the 5 sigma
+    https://ui.adsabs.harvard.edu/abs/1983ApJ...272..317L/abstract
 
     Parameters
     ---------
