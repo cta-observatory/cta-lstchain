@@ -130,7 +130,16 @@ def calculate_sensitivity_lima(nex, nbg, alpha):
 
 
 def bin_definition(gb, tb):
+    """
+    Parameters
+    ---------
+    gb:   `int` number of bins in gammaness
+    tb:   `int` number of bins in theta2
 
+    Returns
+    ---------
+    g, t: `numpy.ndarray` binning of gammaness and theta2
+    """
     max_gam = 1
     max_th2 = 0.05
     min_th2 = 0.005
