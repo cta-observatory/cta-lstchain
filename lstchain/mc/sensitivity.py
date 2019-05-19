@@ -173,17 +173,17 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     area: angular area of the ring
     """
     ring_lower_limit = ring_radius - ring_halfwidth
-    ring_upper_limit = (2 * (ring_radius**2) - (ring_radius - ring_halfwidth)**2) \
-                       (2 * ring_radius)
+    ring_upper_limit = math.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
+
     area = math.pi * (ring_upper_limit**2 - ring_lower_limit**2)
     # For the two halfwidths to cover the same area, compute the area of
     # the internal and external rings: 
-    # A_internal = pi * ((ring_radius**2) - (ring_radius - ring_halfwidth)**2)
-    # A_external = pi * ((ring_upper_limit**2) - (ring_upper_limit - ring_radius)**2)
-    # They should be equal, so we can extract the ring_upper_limit
-    # 2 * ring_radius * ring_upper_limit - ring_radius**2 = (ring_radius**2) - (ring_radius - ring_halfwidth)**2
+    # A_internal = pi * ((ring_radius**2) - (ring_lower_limit)**2)
+    # A_external = pi * ((ring_upper_limit**2) - (ring_radius)**2)
+    # The areas should be equal, so we can extract the ring_upper_limit
+    # ring_upper_limit = math.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
 
-    contained = np.where((angdist2 < ring_upper_limit) and (angdist2 > ring_lower_limit))
+    contained = np.where((angdist2 < ring_upper_limit) & (angdist2 > ring_lower_limit), True, False) 
     
     return contained, area
 
