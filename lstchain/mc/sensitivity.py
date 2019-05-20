@@ -8,7 +8,8 @@ from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
-
+from ctaplot.ana import theta2
+from lstchain.reco.utils import reco_source_position_sky
 
 __all__ = ['read_sim_par',
            'process_mc',
@@ -71,22 +72,37 @@ def process_mc(simtelfile, dl2_file):
     events = pd.read_hdf(dl2_file)
 
     e_reco = 10**events.mc_energy.to_numpy() * u.GeV
-
     gammaness = events.gammaness
+
+    #Get source position in radians
+
+    focal_length = source.telescope_descriptions[1]['camera_settings']['focal_length'] * u.m
+    src_pos_reco = reco_source_position_sky(events.x.values * u.m,
+                                                  events.y.values * u.m,
+                                                  events.disp_dx_rec.values * u.m,
+                                                  events.disp_dy_rec.values * u.m,
+                                                  focal_length,
+                                                  events.mc_alt_tel.values * u.rad,
+                                                  events.mc_az_tel.values * u.rad)
 
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
     if events.iloc[0].mc_type==0:
-        angdist2 = (events.src_x - events.src_x_rec)**2 + \
-                 (events.src_y - events.src_y_rec)**2 * u.deg**2
+        angdist2 = theta2(src_pos_reco.alt.rad,
+                          np.arctan(np.tan(src_pos_reco.az.rad)),
+                          events.mc_alt,
+                          np.arctan(np.tan(events.mc_az))).to_numpy() * u.rad * u.rad
+
     # If the particle is not a gamma-ray (diffuse protons/electrons), it returns
     # the squared angular distance of the reconstructed position w.r.t. the
     # center of the camera
     else:
-        angdist2 = (events.src_x_rec)**2 + \
-                 (events.src_y_rec)**2 * u.deg**2
+        angdist2 = theta2(src_pos_reco.alt.rad,
+                          np.arctan(np.tan(src_pos_reco.az.rad)),
+                          events.mc_alt_tel,
+                          np.arctan(np.tan(events.mc_az_tel))).to_numpy() * u.rad * u.rad
 
-    return gammaness, angdist2, e_reco, sim_par
+    return gammaness, angdist2.to(u.deg * u.deg), e_reco, sim_par
 
 
 def calculate_sensitivity(nex, nbg, alpha):
@@ -146,8 +162,8 @@ def bin_definition(gb, tb):
     g, t: `numpy.ndarray` binning of gammaness and theta2
     """
     max_gam = 1
-    max_th2 = 0.05
-    min_th2 = 0.005
+    max_th2 = 0.05 * u.deg * u.deg
+    min_th2 = 0.005 * u.deg * u.deg
 
     g = np.linspace(0, max_gam, gb)
     t = np.linspace(min_th2, max_th2, tb)
@@ -171,9 +187,9 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     area: angular area of the ring
     """
     ring_lower_limit = ring_radius - ring_halfwidth
-    ring_upper_limit = math.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
+    ring_upper_limit = np.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
 
-    area = math.pi * (ring_upper_limit**2 - ring_lower_limit**2)
+    area = np.pi * (ring_upper_limit**2 - ring_lower_limit**2)
     # For the two halfwidths to cover the same area, compute the area of
     # the internal and external rings:
     # A_internal = pi * ((ring_radius**2) - (ring_lower_limit)**2)
@@ -181,7 +197,7 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     # The areas should be equal, so we can extract the ring_upper_limit
     # ring_upper_limit = math.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
 
-    contained = np.where((angdist2 < ring_upper_limit) & (angdist2 > ring_lower_limit), True, False)
+    contained = np.where((np.sqrt(angdist2) < ring_upper_limit) & (np.sqrt(angdist2) > ring_lower_limit), True, False)
 
     return contained, area
 
@@ -270,12 +286,12 @@ def sens(simtelfile_gammas, simtelfile_protons,
     e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_g['sp_idx'])) \
                 * w_p
 
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4, 0.1)
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.1 * u.deg)
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
     # FIX: ring_halfwidth should be given as input
-    area_ratio_p = math.pi * t / ang_area_p
+    area_ratio_p = np.pi * t / ang_area_p
     # ratio between the area where we search for protons ang_area_p
     # and the area where we search for gammas math.pi * t
 
@@ -317,10 +333,10 @@ def sens(simtelfile_gammas, simtelfile_protons,
     sensitivity = np.ndarray(shape=eb)
 
     print("BEST CUTS: ")
-    print("Energy bin(GeV) Gammaness Theta2(deg)")
+    print("Energy bin(GeV) Gammaness Theta2(deg2)")
     for i in range(0,eb):
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
-        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]])
+        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]].to_value())
         sensitivity[i] = sens[i][ind]
 
     return E, sensitivity
