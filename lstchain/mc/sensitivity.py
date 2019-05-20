@@ -8,7 +8,6 @@ from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
-from ctaplot.ana import theta2
 from lstchain.reco.utils import reco_source_position_sky
 
 __all__ = ['read_sim_par',
@@ -48,7 +47,7 @@ def read_sim_par(source):
 
     return par
 
-def process_mc(simtelfile, dl2_file):
+def process_mc(simtelfile, dl2_file, mc_type):
     """
     Process the MC simulated and reconstructed to extract the relevant
     parameters to compute the sensitivity
@@ -57,6 +56,7 @@ def process_mc(simtelfile, dl2_file):
     ---------
     simtel: simtelarray file
     dl2_file: `pandas.DataFrame` dl2 parameters
+    mc_type: 'string' type of particle
 
     Returns
     ---------
@@ -77,32 +77,42 @@ def process_mc(simtelfile, dl2_file):
     #Get source position in radians
 
     focal_length = source.telescope_descriptions[1]['camera_settings']['focal_length'] * u.m
-    src_pos_reco = reco_source_position_sky(events.x.values * u.m,
-                                                  events.y.values * u.m,
-                                                  events.disp_dx_rec.values * u.m,
-                                                  events.disp_dy_rec.values * u.m,
-                                                  focal_length,
-                                                  events.mc_alt_tel.values * u.rad,
-                                                  events.mc_az_tel.values * u.rad)
+
 
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
-    if events.iloc[0].mc_type==0:
-        angdist2 = theta2(src_pos_reco.alt.rad,
-                          np.arctan(np.tan(src_pos_reco.az.rad)),
-                          events.mc_alt,
-                          np.arctan(np.tan(events.mc_az))).to_numpy() * u.rad * u.rad
+    if mc_type=='gamma':
+        events = events[events.mc_type==0]
+        alt2 = events.mc_alt
+        az2 = np.arctan(np.tan(events.mc_az))
 
     # If the particle is not a gamma-ray (diffuse protons/electrons), it returns
     # the squared angular distance of the reconstructed position w.r.t. the
     # center of the camera
     else:
-        angdist2 = theta2(src_pos_reco.alt.rad,
-                          np.arctan(np.tan(src_pos_reco.az.rad)),
-                          events.mc_alt_tel,
-                          np.arctan(np.tan(events.mc_az_tel))).to_numpy() * u.rad * u.rad
+        events = events[events.mc_type!=0]
+        alt2 = events.mc_alt_tel
+        az2 = np.arctan(np.tan(events.mc_az_tel))
 
-    return gammaness, angdist2.to(u.deg * u.deg), e_reco, sim_par
+    src_pos_reco = reco_source_position_sky(events.x.values * u.m,
+                                            events.y.values * u.m,
+                                            events.disp_dx_rec.values * u.m,
+                                            events.disp_dy_rec.values * u.m,
+                                            focal_length,
+                                            events.mc_alt_tel.values * u.rad,
+                                            events.mc_az_tel.values * u.rad)
+
+    alt1 = src_pos_reco.alt.rad
+    az1 = np.arctan(np.tan(src_pos_reco.az.rad))
+
+    cosdelta = np.cos(alt1) * np.cos(alt2) * np.cos(az1-az2) \
+               + np.sin(alt1) * np.sin(alt2)
+    cosdelta[cosdelta > 1] = 1.
+    cosdelta[cosdelta < -1] = -1.
+
+    angdist2 = (np.arccos(cosdelta.to_numpy()) * u.rad)**2
+
+    return gammaness, angdist2.to(u.deg**2), e_reco, sim_par
 
 
 def calculate_sensitivity(nex, nbg, alpha):
@@ -232,9 +242,9 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
     # Read simulated and reconstructed values
     gammaness_g, theta2_g, e_reco_g, mc_par_g = process_mc(simtelfile_gammas,
-                                                                       dl2_file_g)
+                                                           dl2_file_g, 'gamma')
     gammaness_p, angdist2_p, e_reco_p, mc_par_p = process_mc(simtelfile_protons,
-                                                                       dl2_file_p)
+                                                             dl2_file_p, 'proton')
 
     mc_par_g['sim_ev'] = mc_par_g['sim_ev']*nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev']*nfiles_protons
