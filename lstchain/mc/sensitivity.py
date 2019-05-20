@@ -322,7 +322,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
     sens = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff)
 
     # Avoid bins which are empty or have too few events:
-    min_num_events = 5
+    min_num_events = 10
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
 
     for i in range(0, eb):
