@@ -322,7 +322,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
     sens = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff)
 
     # Avoid bins which are empty or have too few events:
-    min_num_events = 10
+    min_num_events = 5
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
 
     for i in range(0, eb):
@@ -339,10 +339,11 @@ def sens(simtelfile_gammas, simtelfile_protons,
     sensitivity = np.ndarray(shape=eb)
 
     print("BEST CUTS: ")
-    print("Energy bin(GeV) Gammaness Theta2(deg2)")
+    print("Energy bin(GeV) Gammaness Theta2(deg2) #Gammas #Protons")
     for i in range(0,eb):
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
-        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]].to_value())
+        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]].to_value(),
+              final_gamma[i][ind], final_hadrons[i][ind])
         sensitivity[i] = sens[i][ind]
 
     return E, sensitivity
