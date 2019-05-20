@@ -69,6 +69,27 @@ def test_ring_containment():
     # Testing an array
     ring_containment(np.linspace(0.1,1,10), 0.6, 0.2)
 
+def test_ring_containment():
+
+    # Event contained
+    contained, area = ring_containment(0.4**2, 0.5, 0.101)
+    np.testing.assert_allclose(area, 0.57, rtol=1.e-3)
+    np.testing.assert_equal(contained, True)
+
+    # Event not contained
+    contained, area = ring_containment(0.1**2, 0.4, 0.1)
+    np.testing.assert_allclose(area, 0.44, rtol=1.e-3)
+    np.testing.assert_equal(contained, False)
+
+    # Testing an array
+    contained, area = ring_containment(np.linspace(0.1,1,10), 0.6, 0.2)
+    np.testing.assert_allclose(area, 1.256, rtol=1.e-3)
+    np.testing.assert_equal(contained, [False,  True,  True,  True, True, 
+                                        False, False, False, False, False])
+
+
+#def test_sens():
+    # need to define a dl2 test_dataset
 
 
 
