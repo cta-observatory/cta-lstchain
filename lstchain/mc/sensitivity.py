@@ -9,6 +9,8 @@ from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
 from lstchain.reco.utils import reco_source_position_sky
+from  astropy.coordinates.angle_utilities import angular_separation
+from astropy.coordinates import SkyCoord
 
 __all__ = ['read_sim_par',
            'process_mc',
@@ -105,13 +107,7 @@ def process_mc(simtelfile, dl2_file, mc_type):
     alt1 = src_pos_reco.alt.rad
     az1 = np.arctan(np.tan(src_pos_reco.az.rad))
 
-    cosdelta = np.cos(alt1) * np.cos(alt2) * np.cos(az1-az2) \
-               + np.sin(alt1) * np.sin(alt2)
-    cosdelta[cosdelta > 1] = 1.
-    cosdelta[cosdelta < -1] = -1.
-
-    angdist2 = (np.arccos(cosdelta.to_numpy()) * u.rad)**2
-
+    angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad)**2
     return gammaness, angdist2.to(u.deg**2), e_reco, sim_par
 
 
