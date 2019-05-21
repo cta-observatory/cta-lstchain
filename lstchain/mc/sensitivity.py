@@ -344,8 +344,8 @@ def sens(simtelfile_gammas, simtelfile_protons,
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
         print("%.2f" % E[i].to_value(),"-","%.2f" % E[i+1].to_value(),"%.2f" % g[ind[0]],
               "%.2f" % t[ind[1]].to_value(), "%.2f" % final_gamma[i][ind],
-              "%.2f" % final_hadrons[i][ind], "%.2f" % (final_gamma[i][ind]/60),
-              "%.2f" % (final_hadrons[i][ind]/60))
+              "%.2f" % final_hadrons[i][ind], "%.2f" % (final_gamma[i][ind]/(60*50)),
+              "%.2f" % (final_hadrons[i][ind]/(60*50)))
         sensitivity[i] = sens[i][ind]
 
     return E, sensitivity
