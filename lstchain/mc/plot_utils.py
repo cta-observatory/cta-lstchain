@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from lstchain.spectra.crab import crab_hegra
+from lstchain.spectra.crab import crab_magic
 import numpy as np
 import astropy.units as u
 
@@ -99,7 +99,7 @@ def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
     """
     En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV
 
-    dFdE = percentage / 100. * crab_hegra(En)[0]
+    dFdE = percentage / 100. * crab_magic(En)[0]
     ax.loglog(En, (dFdE * En * En).to(u.TeV / (u.cm * u.cm * u.s)), color='gray', **kwargs)
 
     return ax
@@ -116,7 +116,7 @@ def plot_sensitivity(ax, e, sensitivity):
     mask = sensitivity<1e100
     emed = np.sqrt(e[1:] * e[:-1])
 
-    dFdE = crab_hegra(emed[mask])
+    dFdE = crab_magic(emed[mask])
     ax.loglog(emed[mask],
               sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s)),
               label = 'Sensitivity')
