@@ -256,8 +256,8 @@ def sens(simtelfile_gammas, simtelfile_protons,
     mc_par_p['area_sim'] = mc_par_p['area_sim'].to( u.cm * u.cm)
 
     #Set binning for sensitivity calculation
-    emin_sens = mc_par_g['emin']
-    emax_sens = mc_par_g['emax']
+    emin_sens = 10**1 * u.GeV #mc_par_g['emin']
+    emax_sens = 10**5 * u.GeV #mc_par_g['emax']
 
     E = np.logspace(np.log10(emin_sens.to_value()),
                 np.log10(emax_sens.to_value()), eb + 1) * u.GeV
@@ -339,11 +339,13 @@ def sens(simtelfile_gammas, simtelfile_protons,
     sensitivity = np.ndarray(shape=eb)
 
     print("BEST CUTS: ")
-    print("Energy bin(GeV) Gammaness Theta2(deg2) #Gammas #Protons")
+    print("Energy bin(GeV) Gammaness Theta2(deg2) Ngamma Nbkg Ngamma/min Nbkg/min")
     for i in range(0,eb):
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
-        print("%.2f" % E[i].to_value(), "%.2f" % g[ind[0]], "%.2f" % t[ind[1]].to_value(),
-              "%.2f" % final_gamma[i][ind], "%.2f" % final_hadrons[i][ind])
+        print("%.2f" % E[i].to_value(),"-","%.2f" % E[i+1].to_value(),"%.2f" % g[ind[0]],
+              "%.2f" % t[ind[1]].to_value(), "%.2f" % final_gamma[i][ind],
+              "%.2f" % final_hadrons[i][ind], "%.2f" % (final_gamma[i][ind]/60),
+              "%.2f" % (final_hadrons[i][ind]/60))
         sensitivity[i] = sens[i][ind]
 
     return E, sensitivity
