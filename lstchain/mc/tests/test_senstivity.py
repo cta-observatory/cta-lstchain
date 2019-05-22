@@ -1,12 +1,13 @@
 import numpy as np
 from ctapipe.utils import get_dataset_path 
-from lstchain.mc import read_sim_par,
-           process_mc,
-           calculate_sensitivity,
-           calculate_sensitivity_lima,
-           bin_definition,
-           ring_containment,
-           sens
+from lstchain.mc import (
+    read_sim_par,
+    process_mc,
+    calculate_sensitivity,
+    calculate_sensitivity_lima,
+    bin_definition,
+    ring_containment,
+    sens
 )
 
 
