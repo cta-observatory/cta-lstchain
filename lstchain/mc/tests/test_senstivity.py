@@ -32,30 +32,30 @@ def test_read_sim_par():
 
 def test_calculate_sensitivity():
 
-    np.testing.assert_allclose(calculate_sensitivity(\
+    np.testing.assert_allclose(calculate_sensitivity(
         50, 10, 0.2), 14.14, rtol = 1.e-3) 
-    np.testing.assert_allclose(calculate_sensitivity(\
+    np.testing.assert_allclose(calculate_sensitivity(
         200, 50, 1), 17.67, rtol = 1.e-3)
     # Testing an array
-    np.testing.assert_allclose(calculate_sensitivity(\
+    np.testing.assert_allclose(calculate_sensitivity(
         [10, 100], [50,100], 1), [353.55,  50.], rtol = 1.e-3)
 
 def test_calculate_sensitivity_lima():
 
-    np.testing.assert_allclose(calculate_sensitivity(\
+    np.testing.assert_allclose(calculate_sensitivity(
                 50, 10, 0.2), 26.97, rtol = 1.e-3)
-    np.testing.assert_allclose(calculate_sensitivity(\
+    np.testing.assert_allclose(calculate_sensitivity(
         200, 50, 1), 31.5, rtol = 1.e-3)
     # Testing an array
-    np.testing.assert_allclose(calculate_sensitivity_lima(\
+    np.testing.assert_allclose(calculate_sensitivity_lima(
         [10, 100], [50,100], 1), [630.07,  83.57], rtol = 1.e-3) 
 
 def test_bin_definition():
 
     gb, tb = bin_definition(11,10)
-    gbin = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
-    tbin = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04,\ 
-           0.045, 0.05]
+    gbin = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    tbin = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
+            0.045, 0.05]
     np.testing.assert_allclose(gb, gbin) 
     np.testing.assert_allclose(tb, tbin) 
 
