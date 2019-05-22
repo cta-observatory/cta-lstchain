@@ -57,7 +57,7 @@ def test_bin_definition():
     tbin = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
             0.045, 0.05]
     np.testing.assert_allclose(gb, gbin) 
-    np.testing.assert_allclose(tb, tbin.to_value()) 
+    np.testing.assert_allclose(tb.to_value(), tbin) 
 
 def test_ring_containment():
 
