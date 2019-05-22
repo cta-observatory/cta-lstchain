@@ -21,7 +21,7 @@ def test_read_sim_par():
     assert np.isclose(par['emin'].to_value(), 0.003)
     assert np.isclose(par['emax'].to_value(), 330.0)
     assert np.isclose(par['sp_idx'], -2.0)
-    assert np.isclose(par['sim_ev'], 100000)
+    assert np.isclose(par['sim_ev'], 1000000)
     assert np.isclose(par['area_sim'].to_value(), 19634954.08)
     assert np.isclose(par['cone'].to_value(), 0.0)
 
