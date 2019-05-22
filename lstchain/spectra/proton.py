@@ -15,14 +15,14 @@ def proton_bess(E):
 
     Returns
     -------
-    dFdEdO: `numpy.ndarray` differential energy spectrum. 
+    dFdEdO: `numpy.ndarray` differential energy spectrum.
           astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s / u.sr
     par: `dict` with spectral parameters
     """
 
     f0 = 9.6e-9 / u.GeV / u.cm**2 / u.s / u.sr
     alpha = -2.70
-    e0 = 1 * u.TeV
+    e0 = 1000. * u.GeV
 
     par_var = [f0, alpha, e0]
     par_dic = ['f0', 'alpha', 'e0']
@@ -30,4 +30,4 @@ def proton_bess(E):
 
     dFdEdO = f0 * np.power(E/e0, alpha)
 
-    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr), par 
+    return dFdEdO.to(1 / u.GeV / u.cm**2 / u.s / u.sr), par
