@@ -28,11 +28,11 @@ eb = 12 # Number of energy bins
 gb = 10 #Number of gammaness bins
 tb = 10 #Number of theta2 bins
 obstime = 50 * 3600 *u.s
-noff = 1
+noff = 5
 
 E, best_sens = sensitivity.sens(args.simtelfile_gammas, args.simtelfile_protons,
                  args.dl2_file_g, args.dl2_file_p,
-                 100*0.2, 5000 * 0.2,
+                 nfiles_gammas, nfiles_protons,
                  eb, gb, tb, noff,
                  obstime)
 
