@@ -3,7 +3,7 @@ import astropy.units as u
 __all__ = [
     'power_law_integrated_distribution',
     'int_diff_sp',
-    'rate'
+    'rate',
     'weight'
 ]
 
