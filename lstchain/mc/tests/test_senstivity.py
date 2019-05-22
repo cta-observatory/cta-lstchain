@@ -9,7 +9,7 @@ from lstchain.mc import (
     ring_containment,
     sens
 )
-
+from eventio.simtel.simtelfile import SimTelFile
 
 
 def test_read_sim_par():
@@ -42,13 +42,13 @@ def test_calculate_sensitivity():
 
 def test_calculate_sensitivity_lima():
 
-    np.testing.assert_allclose(calculate_sensitivity(
-                50, 10, 0.2), 26.97, rtol = 1.e-3)
-    np.testing.assert_allclose(calculate_sensitivity(
-        200, 50, 1), 31.5, rtol = 1.e-3)
+    np.testing.assert_allclose(calculate_sensitivity_lima(
+            50, 10, 0.2), 26.97, rtol = 1.e-3)
+    np.testing.assert_allclose(calculate_sensitivity_lima(
+            200, 50, 1), 31.5, rtol = 1.e-3)
     # Testing an array
     np.testing.assert_allclose(calculate_sensitivity_lima(
-        [10, 100], [50,100], 1), [630.07,  83.57], rtol = 1.e-3) 
+            [10, 100], [50,100], 1), [630.07,  83.57], rtol = 1.e-3) 
 
 def test_bin_definition():
 
