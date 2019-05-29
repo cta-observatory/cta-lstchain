@@ -17,6 +17,9 @@ from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.io.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
 from lstchain.calib.camera import CameraR0Calibrator
 
+__all__ = [
+    'CalibrationHDF5Writer'
+]
 
 class CalibrationHDF5Writer(Tool):
     """
