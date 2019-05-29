@@ -30,6 +30,10 @@ class CameraR0Calibrator(Component):
         Set to None if no Tool to pass.
     kwargs
     """
+    offset = Int(
+        300,
+        help='Define the offset of the baseline'
+    ).tag(config=True)
 
     r1_sample_start = Int(default_value=None, help='Start sample for r1 waveform', allow_none=True).tag(config=True)
 
@@ -74,11 +78,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         '',
         allow_none=True,
         help='Path to the LST pedestal binary file'
-    ).tag(config=True)
-
-    offset = Int(
-        300,
-        help='Define the offset of the baseline'
     ).tag(config=True)
 
     tel_id = Int(
