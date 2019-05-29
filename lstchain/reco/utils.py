@@ -20,6 +20,25 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 
 
+__all__ = [
+    'alt_to_theta',
+    'az_to_phi',
+    'cal_cam_source_pos',
+    'disp_to_pos',
+    'get_event_pos_in_camera',
+    'reco_source_position_sky',
+    'camera_to_sky',
+    'sky_to_camera',
+    'source_side',
+    'source_dx_dy',
+    'disp_vector',
+    'polar_to_cartesian',
+    'cartesian_to_polar',
+    'predict_source_position_in_camera',
+    'disp_parameters',
+]
+
+
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m) # position of the LST1
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
@@ -151,48 +170,6 @@ def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
    
     return source_pos_x, source_pos_y
 
-
-
-def guess_type(filename):
-    """Guess the particle type from the filename
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    str: 'gamma', 'proton', 'electron' or 'unknown'
-    """
-    particles = ['gamma', 'proton', 'electron']
-    for p in particles:
-        if p in filename:
-            return p
-    return 'unknown'
-
-
-def particle_number(particle_name):
-    """
-    Return an integer coding the particle type
-    'gamma'=0
-    'proton'=1
-    'electron'=2
-    'muon'=3
-
-    Parameters
-    ----------
-    particle_name: str
-
-    Returns
-    -------
-    int
-    """
-    return {
-        'gamma': 0,
-        'proton': 1,
-        'electron': 2,
-        'muon': 3,
-    }[particle_name]
 
 
 def get_event_pos_in_camera(event, tel):
