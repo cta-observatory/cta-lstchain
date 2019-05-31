@@ -2,18 +2,20 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Int
-import ctapipe.utils.tools as tool_utils
+from traitlets import Dict, List, Unicode
 
-from ctapipe.core import Provenance
+
+from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 
 from ctapipe.image import ImageExtractor
 
-from lstchain.calib.camera import FlatFieldCalculator, PedestalCalculator, CameraR0Calibrator
-from ctapipe_io_lst.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
+from ctapipe.calib.camera.flatfield import FlatFieldCalculator
+from ctapipe.calib.camera.pedestals import PedestalCalculator
+from ctapipe.io.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
+from lstchain.calib.camera import CameraR0Calibrator
 
 __all__ = [
     'CalibrationHDF5Writer'
@@ -39,17 +41,17 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
-    pedestal_product = tool_utils.enum_trait(
+    pedestal_product = traits.enum_trait(
         PedestalCalculator,
         default='PedestalIntegrator'
     )
 
-    flatfield_product = tool_utils.enum_trait(
+    flatfield_product = traits.enum_trait(
         FlatFieldCalculator,
         default='FlasherFlatFieldCalculator'
     )
 
-    r0calibrator_product = tool_utils.enum_trait(
+    r0calibrator_product =traits.enum_trait(
         CameraR0Calibrator,
         default='NullR0Calibrator'
     )
@@ -70,10 +72,10 @@ class CalibrationHDF5Writer(Tool):
                     PedestalContainer,
                     WaveformCalibrationContainer
                     ]
-                   + tool_utils.classes_with_traits(CameraR0Calibrator)
-                   + tool_utils.classes_with_traits(ImageExtractor)
-                   + tool_utils.classes_with_traits(FlatFieldCalculator)
-                   + tool_utils.classes_with_traits(PedestalCalculator)
+                   + traits.classes_with_traits(CameraR0Calibrator)
+                   + traits.classes_with_traits(ImageExtractor)
+                   + traits.classes_with_traits(FlatFieldCalculator)
+                   + traits.classes_with_traits(PedestalCalculator)
                    )
 
     def __init__(self, **kwargs):
@@ -142,14 +144,14 @@ class CalibrationHDF5Writer(Tool):
             self.r0calibrator.calibrate(event)
 
             # if pedestal
-            if event.r0.tel[self.tel_id].trigger_type == 32:
+            if event.r1.tel[self.tel_id].trigger_type == 32:
                 if self.pedestal.calculate_pedestals(event):
 
                     self.log.debug(f"new pedestal at event n. {count+1}, id {event.r0.event_id}")
 
                     # update pedestal mask
-                    status_data.pedestal_mask = np.logical_or(ped_data.charge_median_outliers,
-                                                              ped_data.charge_std_outliers)
+                    status_data.pedestal_failing_pixels = np.logical_or(ped_data.charge_median_outliers,
+                                                                        ped_data.charge_std_outliers)
 
                     if not ped_initialized:
                         # save the config, to be retrieved as data.meta['config']
@@ -165,27 +167,33 @@ class CalibrationHDF5Writer(Tool):
                 if self.flatfield.calculate_relative_gain(event):
 
                     self.log.debug(f"new flatfield at event n. {count+1}, id {event.r0.event_id}")
-
                     # update the flatfield mask
-                    status_data.flatfield_mask = np.logical_or(ff_data.charge_median_outliers,
-                                                                ff_data.time_median_outliers)
+                    status_data.flatfield_failing_pixels = np.logical_or(ff_data.charge_median_outliers,
+                                                                         ff_data.time_median_outliers)
 
-                    calib_data.pixel_status_mask = np.logical_or(status_data.pedestal_mask,status_data.flatfield_mask)
+                    # mask from pedestal and flat-fleid data
+                    monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
+                                                               status_data.flatfield_failing_pixels)
 
-                    masked_charge = np.ma.array(ff_data.charge_median -
-                                                ped_data.charge_median, mask=calib_data.pixel_status_mask)
+                    # calibration unusable pixels are an OR of all maskes
+                    calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
+                                                               status_data.hardware_failing_pixels)
 
-                    masked_std_square = np.ma.array(ff_data.charge_std ** 2 - ped_data.charge_std ** 2,
-                                                    mask=calib_data.pixel_status_mask)
-                    masked_time = np.ma.array(ff_data.relative_time_median, mask=calib_data.pixel_status_mask)
+                    # Extract calibration coefficients with F-factor method
+                    # Assume fix F2 factor, F2=1+Var(gain)/Mean(Gain)**2 must be known from elsewhere
+                    F2 = 1.2
 
-                    masked_n_phe = 1.2 * masked_charge ** 2 / masked_std_square
-                    masked_n_phe_median = np.ma.median(masked_n_phe)
+                    # calculate photon-electrons
+                    n_pe = F2 * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
+                                 ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
 
-                    # calculate the calibration data
-                    calib_data.n_phe = np.ma.getdata(masked_n_phe)
-                    calib_data.dc_to_phe = np.ma.getdata(masked_n_phe_median/masked_charge)
-                    calib_data.time_correction = - np.ma.getdata(masked_time)
+                    # fill WaveformCalibrationContainer (this is an example)
+                    calib_data.time = ff_data.sample_time
+                    calib_data.time_range = ff_data.sample_time_range
+                    calib_data.n_pe = n_pe
+                    calib_data.dc_to_pe = n_pe/ff_data.charge_median
+                    calib_data.time_correction = -ff_data.relative_time_median
+
 
                     # save the config, to be retrieved as data.meta['config']
                     if not ff_initialized:
