@@ -2,15 +2,15 @@
 Extract pedestals from pedestal file
 """
 from traitlets import Dict, List, Unicode
-import ctapipe.utils.tools as tool_utils
+
 from ctapipe.core import Provenance
 from ctapipe.io import HDF5TableWriter
-from ctapipe.core import Tool
+from ctapipe.core import Tool, traits
 from ctapipe.io import EventSource
 
 
-from lstchain.calib.camera.pedestals import PedestalCalculator
-from ctapipe_io_lst.containers import PedestalContainer
+from ctapipe.calib.camera.pedestals import PedestalCalculator
+from ctapipe.io.containers import PedestalContainer
 from lstchain.calib.camera.r0 import CameraR0Calibrator
 
 __all__ = ['PedestalCalculator',
@@ -32,11 +32,11 @@ class PedestalHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
-    calculator_product = tool_utils.enum_trait(
+    calculator_product = traits.enum_trait(
         PedestalCalculator,
         default='PedestalIntegrator'
     )
-    r0calibrator_product = tool_utils.enum_trait(
+    r0calibrator_product = traits.enum_trait(
         CameraR0Calibrator,
         default='NullR0Calibrator'
     )
@@ -56,8 +56,8 @@ class PedestalHDF5Writer(Tool):
                     PedestalContainer,
                     CameraR0Calibrator,
                     HDF5TableWriter
-                    ] + tool_utils.classes_with_traits(PedestalCalculator)
-                      + tool_utils.classes_with_traits(CameraR0Calibrator))
+                    ] + traits.classes_with_traits(PedestalCalculator)
+                      + traits.classes_with_traits(CameraR0Calibrator))
 
     def __init__(self, **kwargs):
         '''
@@ -74,6 +74,7 @@ class PedestalHDF5Writer(Tool):
         self.r0calibrator = None
 
     def setup(self):
+
         kwargs = dict(parent=self)
         self.eventsource = EventSource.from_config(**kwargs)
         self.pedestal = PedestalCalculator.from_name(
@@ -96,10 +97,15 @@ class PedestalHDF5Writer(Tool):
         container to disk
         '''
 
+
         write_config = True
 
         # loop on events
         for count, event in enumerate(self.eventsource):
+            # select only pedestal events
+
+            if event.r0.tel[self.pedestal.tel_id].trigger_type != 32:
+                continue
 
             # perform R0->R1
             self.r0calibrator.calibrate(event)
@@ -111,10 +117,10 @@ class PedestalHDF5Writer(Tool):
                 self.log.debug(f" r0 {event.r0.tel[0].waveform.shape}")
                 self.log.debug(f" r1 {event.r1.tel[0].waveform.shape}")
                 if write_config:
-                    ped_data.meta['config']=self.config
+                    ped_data.meta['config']= self.config
                     write_config = False
 
-                self.log.debug(f"write event in table: {self.group_name}/pedestal")
+                self.log.debug(f"write event in table: /{self.group_name}/pedestal")
 
                 # write data to file
                 self.writer.write('pedestal', ped_data)
