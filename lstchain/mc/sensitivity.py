@@ -166,8 +166,8 @@ def calculate_sensitivity_lima(nex, nbg, alpha, eb, gb, tb):
             for k in range(0, tb):
                 if nex_5sigma[i][j][k] < 10:
                     nex_5sigma[i][j][k] = 10
-                if nex_5sigma[i,j,k] < 0.05 * nbg[i][j][k]:
-                    nex_5sigma[i,j,k] = 0.05 * nbg[i][j][k]
+                if nex_5sigma[i,j,k] < 0.05 * nbg[i][j][k]/5:
+                    nex_5sigma[i,j,k] = 0.05 * nbg[i][j][k]/5
 
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
@@ -300,8 +300,8 @@ def sens(simtelfile_gammas, simtelfile_protons,
     dFdEd0, proton_par = proton_bess(E)
 
     bins = np.logspace(np.log10(emin_sens.to_value()), np.log10(emax_sens.to_value()), eb+1)
-    y0 = mc_par_g['sim_ev'] / (emax_sens.to_value()**(mc_par_g['sp_idx'] + 1) \
-        - emin_sens.to_value()**(mc_par_g['sp_idx'] + 1)) \
+    y0 = mc_par_g['sim_ev'] / (mc_par_g['emax'].to_value()**(mc_par_g['sp_idx'] + 1) \
+                               - mc_par_g['emin'].to_value()**(mc_par_g['sp_idx'] + 1)) \
         * (mc_par_g['sp_idx'] + 1)
     y = y0 * (bins[1:]**(crab_par['alpha'] + 1) - bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
 
@@ -455,13 +455,13 @@ def sens(simtelfile_gammas, simtelfile_protons,
     units = [E.unit, E.unit,"", t.unit,"", "",
              obstime.to(u.min).unit, obstime.to(u.min).unit, "",
              sens_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
-
+    """
     sens_minimization_plot(eb, gb, tb, E, sens)
 
     plot_positions_survived_events(events_g,
                                    events_p,
                                    gammaness_g, gammaness_p,
                                    theta2_g, p_contained, sens, E, eb, g, t)
+    """
 
-
-    return E, sensitivity, result, units, rate_g, rate_p, w_g, w_p
+    return E, sensitivity, result, units, rate_g, rate_p, w_g, w_p, nex_5sigma, final_hadrons

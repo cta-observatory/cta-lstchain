@@ -31,7 +31,7 @@ tb = 10 #Number of theta2 bins
 obstime = 50 * 3600 * u.s
 noff = 5
 
-E, best_sens, result, units, rate_g, rate_p, w_g, w_p = sensitivity.sens(args.simtelfile_gammas, args.simtelfile_protons,
+E, best_sens, result, units, rate_g, rate_p, w_g, w_p, nex_5sigma, final_hadrons = sensitivity.sens(args.simtelfile_gammas, args.simtelfile_protons,
                  args.dl2_file_g, args.dl2_file_p,
                  nfiles_gammas, nfiles_protons,
                  eb, gb, tb, noff,
