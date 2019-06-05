@@ -133,10 +133,10 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, pulse_time, hillas):
-        peak_time = Quantity(pulse_time) * u.Unit("ns")
-        timepars = time.timing_parameters(geom, image, peak_time, hillas)
+        timepars = time.timing_parameters(geom, image, pulse_time, hillas)
         self.time_gradient = timepars.slope.value
         self.intercept = timepars.intercept
+
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
         self.leakage = leakage_c.leakage2_intensity
