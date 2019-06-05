@@ -1,14 +1,15 @@
 import numpy as np
+import pytest
+import pandas as pd
 from ctapipe.utils import get_dataset_path 
 from lstchain.mc import (
     read_sim_par,
-    process_mc,
     calculate_sensitivity,
     calculate_sensitivity_lima,
     bin_definition,
     ring_containment,
-    sens
 )
+
 from eventio.simtel.simtelfile import SimTelFile
 
 
@@ -26,8 +27,11 @@ def test_read_sim_par():
     assert np.isclose(par['cone'].to_value(), 0.0)
 
 
-#def test_process_mc():
+@pytest.mark.run(after='test_apply_models')
+def test_process_mc():
     # need to define a dl2 test_dataset
+    pd.read_hdf('dl2_gamma_test_large.h5', key='events/LSTCam')
+
 
 def test_calculate_sensitivity():
 
@@ -88,8 +92,9 @@ def test_ring_containment():
                                         False, False, False, False, False])
 
 
-#def test_sens():
-    # need to define a dl2 test_dataset
+@pytest.mark.run(after='test_apply_models')
+def test_sens():
+    dl2 = pd.read_hdf('dl2_gamma_test_large.h5', key='events/LSTCam')
 
 
 
