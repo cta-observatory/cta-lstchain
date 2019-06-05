@@ -5,7 +5,7 @@
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
      "r0calibrator_product": "LSTR0Corrections",
-     "output_file":"calibration.hdf5",
+     "output_file":"/astro/users/cassol/soft/python/lstchain-test/calibration.hdf5",
      "log_level":"DEBUG"
    },         
    "EventSource": {
@@ -34,11 +34,11 @@
        "r1_sample_start": 2,
       "r1_sample_end": 38
    },
-    "LocalPeakIntegrator":{
+    "LocalPeakWindowSum":{
      "window_shift": 5,
      "window_width":12
     },
-    "SimpleIntegrator":{
+    "FixedWindowSum":{
      "window_start": 12,
      "window_width":12
     }
