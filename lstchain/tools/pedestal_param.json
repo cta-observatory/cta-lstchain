@@ -9,7 +9,7 @@
    },         
    "EventSource": {
       "input_url": "/ctadata/franca/LST/LST-1.1.Run00251.0000.fits.fz",
-      "max_events": 100
+      "max_events": 1000
    },
    "LSTR0Corrections": {
       "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
@@ -18,14 +18,14 @@
       "tel_id": 0
    },
    "PedestalCalculator":{
-     "sample_size": 90,
+     "sample_size": 100,
      "sample_duration":1000,
      "tel_id":0,
      "charge_median_cut_outliers": [-3,3],
      "charge_std_cut_outliers": [-3,3],
      "charge_product":"FixedWindowSum"
    },
-    "SimpleIntegrator":{
+    "FixedWindowSum":{
      "window_start": 12,
      "window_width":12
     }
