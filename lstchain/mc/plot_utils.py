@@ -179,6 +179,7 @@ def sens_plot(eb, e, sensitivity):
 
     plot_Crab_SED(ax, 100, 10**1.5 * u.GeV, 10**4.5 * u.GeV, label=r'Crab')
     plot_Crab_SED(ax, 1, 10**1.5 * u.GeV, 10**4.5 * u.GeV, ls='dotted',label='1% Crab')
+    plot_Crab_SED(ax, 10, 10**1.5 * u.GeV, 10**4.5 * u.GeV, ls='-.',label='10% Crab')
 
     format_axes_sensitivity(ax)
     ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')

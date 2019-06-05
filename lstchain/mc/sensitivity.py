@@ -453,7 +453,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
                                     'nevents_g', 'nevents_p'])
 
     units = [E.unit, E.unit,"", t.unit,"", "",
-             obstime.to(u.min).unit, obstime.to(u.min).unit, "",
+             u.min**-1, u.min**-1, "",
              sens_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
     """
     sens_minimization_plot(eb, gb, tb, E, sens)
@@ -464,4 +464,4 @@ def sens(simtelfile_gammas, simtelfile_protons,
                                    theta2_g, p_contained, sens, E, eb, g, t)
     """
 
-    return E, sensitivity, result, units, rate_g, rate_p, w_g, w_p, nex_5sigma, final_hadrons
+    return E, sensitivity, result, units

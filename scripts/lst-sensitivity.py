@@ -3,6 +3,7 @@ from lstchain.mc import plot_utils
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
+import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser(description="Compute Sensitivity Curve.")
@@ -31,11 +32,11 @@ tb = 10 #Number of theta2 bins
 obstime = 50 * 3600 * u.s
 noff = 5
 
-E, best_sens, result, units, rate_g, rate_p, w_g, w_p, nex_5sigma, final_hadrons = sensitivity.sens(args.simtelfile_gammas, args.simtelfile_protons,
-                 args.dl2_file_g, args.dl2_file_p,
-                 nfiles_gammas, nfiles_protons,
-                 eb, gb, tb, noff,
-                 obstime)
+E, best_sens, result, units = sensitivity.sens(args.simtelfile_gammas, args.simtelfile_protons,
+                                               args.dl2_file_g, args.dl2_file_p,
+                                               nfiles_gammas, nfiles_protons,
+                                               eb, gb, tb, noff,
+                                               obstime)
 #plt.show()
 plot_utils.sens_plot(eb, E, best_sens)
 plt.show()
@@ -47,3 +48,15 @@ for i, key in enumerate(tab.columns.keys()):
     if key=='sensitivity':
         continue
     tab[key].format = '8f'
+emed = np.sqrt(E[1:] * E[:-1])
+plt.loglog(emed[:-1], tab['eff_area'])
+plt.xlabel('Energy (GeV)')
+plt.ylabel('Effective Area (m2)')
+plt.show()
+plt.plot(emed[:-1], tab['hadron_rate'], label='Hadron rate', marker='o')
+plt.plot(emed[:-1], tab['gamma_rate'], label='Gamma rate', marker='o')
+plt.legend()
+plt.xscale('log')
+plt.xlabel('Energy (GeV)')
+plt.ylabel('events / min')
+plt.show()
