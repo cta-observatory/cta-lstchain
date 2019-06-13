@@ -33,20 +33,26 @@ from ..calib.camera import lst_calibration, gain_selection
 from ..io.lstcontainers import DL1ParametersContainer
 from ctapipe.image.extractor import NeighborPeakWindowSum
 
+__all__ = [
+    'get_dl1',
+    'r0_to_dl1',
+    'get_events',
+]
+
+
 ### PARAMETERS - TODO: use a yaml config file
 
 
 allowed_tels = {1, 2, 3, 4}  # select LST1 only
 max_events = None  # limit the number of events to analyse in files - None if no limit
-serialize_meta = False  # should be true to keep all metadata, but it adds some extra tables
 
 threshold = 4094
 
 # Add option to use custom calibration
 
 custom = False
-cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
 
+cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
 
 cleaning_method = tailcuts_clean
 cleaning_parameters = {'boundary_thresh': 3,
@@ -56,20 +62,23 @@ cleaning_parameters = {'boundary_thresh': 3,
                        }
 
 
-def get_dl1(calibrated_event, telescope_id):
+def get_dl1(calibrated_event, telescope_id, dl1_container=None):
     """
-    Return a DL1ParametersContainer of extracted features from a calibrated event
+    Return a DL1ParametersContainer of extracted features from a calibrated event.
+    The DL1ParametersContainer can be passed to be filled if created outside the function
+    (faster for multiple event processing)
 
     Parameters
     ----------
     event: ctapipe event container
-    telescope_id:
+    telescope_id: int
+    dl1_container: DL1ParametersContainer
 
     Returns
     -------
     DL1ParametersContainer
     """
-    dl1_container = DL1ParametersContainer()
+    dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     tel = calibrated_event.inst.subarray.tels[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
@@ -87,25 +96,29 @@ def get_dl1(calibrated_event, telescope_id):
                                     **cleaning_parameters)
     image[~signal_pixels] = 0
 
-    hillas = hillas_parameters(camera, image)
-    # Fill container
-    dl1_container.fill_mc(calibrated_event)
-    dl1_container.fill_hillas(hillas)
-    dl1_container.fill_event_info(calibrated_event)
-    dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
-    # dl1_container.mc_type = utils.guess_type(infile)
-    dl1_container.set_timing_features(camera, image, pulse_time, hillas)
-    dl1_container.set_leakage(camera, image, signal_pixels)
-    dl1_container.set_n_islands(camera, signal_pixels)
-    dl1_container.set_source_camera_position(
-        calibrated_event, telescope_id)
-    dl1_container.set_disp(
-        [dl1_container.src_x, dl1_container.src_y],
-        hillas
-    )
-    dl1_container.set_telescope_info(calibrated_event, telescope_id)
+    if image.sum() > 0:
+        hillas = hillas_parameters(camera, image)
+        # Fill container
+        dl1_container.fill_mc(calibrated_event)
+        dl1_container.fill_hillas(hillas)
+        dl1_container.fill_event_info(calibrated_event)
+        dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
+        dl1_container.set_mc_type(calibrated_event)
+        dl1_container.set_timing_features(camera, image, pulse_time, hillas)
+        dl1_container.set_leakage(camera, image, signal_pixels)
+        dl1_container.set_n_islands(camera, signal_pixels)
+        dl1_container.set_source_camera_position(
+            calibrated_event, telescope_id)
+        dl1_container.set_disp(
+            [dl1_container.src_x, dl1_container.src_y],
+            hillas
+        )
+        dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
-    return dl1_container
+        return dl1_container
+
+    else:
+        return None
 
 
 def r0_to_dl1(
@@ -136,48 +149,12 @@ def r0_to_dl1(
     source.allowed_tels = allowed_tels
     source.max_events = max_events
 
-    event = next(iter(source))
-
-    sub = event.inst.subarray
-    sub.to_table().write(
-        output_filename,
-        path="/instrument/subarray/layout",
-        serialize_meta=serialize_meta,
-        overwrite=True
-    )
-
-    sub.to_table(kind='optics').write(
-        output_filename,
-        path='/instrument/telescope/optics',
-        append=True,
-        serialize_meta=serialize_meta
-    )
-    for telescope_type in sub.telescope_types:
-        ids = set(sub.get_tel_ids_for_type(telescope_type)).intersection(allowed_tels)
-        if len(ids) > 0:  # only write if there is a telescope with this camera
-            tel_id = list(ids)[0]
-            camera = sub.tel[tel_id].camera
-            camera.to_table().write(
-                output_filename,
-                path=f'/instrument/telescope/camera/{camera}',
-                append=True,
-                serialize_meta=serialize_meta,
-            )
-
-
-    with HDF5TableWriter(
-        filename=output_filename,
-        group_name='header',
-        mode='a',
-        overwrite=True,
-    ) as writer:
-        writer.write('mc', event.mcheader)
+    dl1_container = DL1ParametersContainer()
 
     with HDF5TableWriter(
         filename=output_filename,
         group_name='events',
-        mode='a',
-        overwrite=True,
+        overwrite=True
     ) as writer:
 
         for i, event in enumerate(source):
@@ -191,37 +168,35 @@ def r0_to_dl1(
                     lst_calibration(event, telescope_id)
 
                 try:
-                    dl1_container = get_dl1(event, telescope_id)
+                    dl1_filled = get_dl1(event, telescope_id, dl1_container=dl1_container)
                 except HillasParameterizationError:
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
                     continue
 
-                particle_name = utils.guess_type(input_filename)
+                if dl1_filled is not None:
 
-                # Some custom def
-                dl1_container.mc_type = utils.particle_number(particle_name)
-                dl1_container.hadroness = dl1_container.mc_type
-                dl1_container.wl = dl1_container.width / dl1_container.length
-                # Log10(Energy) in GeV
-                dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)
-                dl1_container.intensity = np.log10(dl1_container.intensity)
-                dl1_container.gps_time = event.trig.gps_time.value
+                    # Some custom def
+                    dl1_container.wl = dl1_container.width / dl1_container.length
+                    # Log10(Energy) in GeV
+                    dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)
+                    dl1_container.intensity = np.log10(dl1_container.intensity)
+                    dl1_container.gps_time = event.trig.gps_time.value
 
-                foclen = (
-                    event.inst.subarray.tel[telescope_id]
-                    .optics.equivalent_focal_length
-                )
-                width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                dl1_container.width = width.value
-                dl1_container.length = length.value
+                    foclen = (
+                        event.inst.subarray.tel[telescope_id]
+                        .optics.equivalent_focal_length
+                    )
+                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                    dl1_container.width = width.value
+                    dl1_container.length = length.value
 
-                if width >= 0:
-                    # Camera geometry
-                    camera = event.inst.subarray.tel[telescope_id].camera
-                    writer.write(camera.cam_id, [dl1_container])
+                    if width >= 0:
+                        # Camera geometry
+                        camera = event.inst.subarray.tel[telescope_id].camera
+                        writer.write(camera.cam_id, [dl1_container])
 
 
 def get_events(filename, storedata=False, test=False,
@@ -292,7 +267,6 @@ def get_events(filename, storedata=False, test=False,
                 'src_x',
                 'src_y',
                 'disp_norm',
-                'hadroness',
                 ]
 
     output = pd.DataFrame(columns=features)
@@ -456,17 +430,13 @@ def get_events(filename, storedata=False, test=False,
                 src_y = sourcepos[1]
                 disp = utils.disp_norm(sourcepos[0], sourcepos[1], x, y)
 
-                hadroness = 0
-                if particle_type=='proton':
-                    hadroness = 1
-
                 eventdf = pd.DataFrame([[obs_id, event_id, mc_energy, mc_alt, mc_az,
                                          mc_core_x, mc_core_y, mc_h_first_int, mc_type,
                                          gps_time, width, length, width / length, phi,
                                          psi, r, x, y, intensity, skewness, kurtosis,
                                          mc_alt_tel, mc_az_tel, mc_core_distance, mc_x_max,
                                          time_gradient, intercept, src_x, src_y,
-                                         disp, hadroness]],
+                                         disp, mc_type]],
                                        columns=features)
 
                 output = output.append(eventdf,
