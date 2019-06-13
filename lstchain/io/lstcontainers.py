@@ -14,6 +14,7 @@ from numpy import nan
 
 __all__ = [
     'DL1ParametersContainer',
+    'DispContainer',
 ]
 
 class DL1ParametersContainer(Container):
@@ -38,7 +39,6 @@ class DL1ParametersContainer(Container):
     disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
     disp_sign = Field(None, 'disp_sign')
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    hadroness = Field(None, 'hadroness')
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
@@ -133,10 +133,10 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, pulse_time, hillas):
-        peak_time = Quantity(pulse_time) * u.Unit("ns")
-        timepars = time.timing_parameters(geom, image, peak_time, hillas)
+        timepars = time.timing_parameters(geom, image, pulse_time, hillas)
         self.time_gradient = timepars.slope.value
         self.intercept = timepars.intercept
+
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
         self.leakage = leakage_c.leakage2_intensity
@@ -162,6 +162,9 @@ class DL1ParametersContainer(Container):
         source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
+
+    def set_mc_type(self, event):
+        self.mc_type = event.mc.shower_primary_id
 
 
 class DispContainer(Container):
