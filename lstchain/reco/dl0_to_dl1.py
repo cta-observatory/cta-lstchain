@@ -198,6 +198,9 @@ def r0_to_dl1(
                         camera = event.inst.subarray.tel[telescope_id].camera
                         writer.write(camera.cam_id, [dl1_container])
 
+    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+        writer.write("run_config", [event.mcheader])
+
 
 def get_events(filename, storedata=False, test=False,
                concatenate=False, storeimg=False, outdir='./results/'):
