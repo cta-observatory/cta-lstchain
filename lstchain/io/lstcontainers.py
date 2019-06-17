@@ -178,3 +178,7 @@ class DispContainer(Container):
     norm = Field(nan, 'Norm of the disp_norm vector')
     sign = Field(nan, 'Sign of the disp_norm')
     miss = Field(nan, 'miss parameter norm')
+
+
+class ExtraMCInfo(Container):
+    obs_id = Field(0, "MC Run Identifier")

@@ -30,8 +30,10 @@ import h5py
 import math
 from . import utils
 from ..calib.camera import lst_calibration, gain_selection
-from ..io.lstcontainers import DL1ParametersContainer
+from ..io.lstcontainers import DL1ParametersContainer, ExtraMCInfo
 from ctapipe.image.extractor import NeighborPeakWindowSum
+import tables
+from functools import partial
 
 __all__ = [
     'get_dl1',
@@ -61,6 +63,15 @@ cleaning_parameters = {'boundary_thresh': 3,
                        'min_number_picture_neighbors': 1
                        }
 
+serialize_meta = True
+
+filters = tables.Filters(
+    complevel=5,    # enable compression, with level 0=disabled, 9=max
+    complib='blosc:zstd',   #  compression using blosc
+    fletcher32=True,    # attach a checksum to each chunk for error correction
+    bitshuffle=False,   # for BLOSC, shuffle bits for better compression
+)
+
 
 def get_dl1(calibrated_event, telescope_id, dl1_container=None):
     """
@@ -70,7 +81,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None):
 
     Parameters
     ----------
-    event: ctapipe event container
+    calibrated_event: ctapipe event container
     telescope_id: int
     dl1_container: DL1ParametersContainer
 
@@ -151,19 +162,94 @@ def r0_to_dl1(
 
     dl1_container = DL1ParametersContainer()
 
+    ### Extra information
+    event = next(iter(source))
+    sub = event.inst.subarray
+    sub.to_table().write(
+        output_filename,
+        path="/instrument/subarray/layout",
+        serialize_meta=serialize_meta,
+        append=True
+    )
+    sub.to_table(kind='optics').write(
+        output_filename,
+        path='/instrument/telescope/optics',
+        append=True,
+        serialize_meta=serialize_meta
+    )
+    for telescope_type in sub.telescope_types:
+        ids = set(sub.get_tel_ids_for_type(telescope_type))
+        # print(f"{telescope_type}: {len(ids)}")
+        if len(ids) > 0:  # only write if there is a telescope with this camera
+            tel_id = list(ids)[0]
+            camera = sub.tel[tel_id].camera
+            camera.to_table().write(
+                output_filename,
+                path=f'/instrument/telescope/camera/{camera}',
+                append=True,
+                serialize_meta=serialize_meta,
+            )
+
+    extramc = ExtraMCInfo()
+
+    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
+        for ii in range(5):  # simulate a few merged runs
+            extramc.obs_id = event.dl0.obs_id + ii
+            writer.write("run_config", [extramc, event.mcheader])
+
+    source = event_source(input_filename)
+    source.allowed_tels = allowed_tels
+    source.max_events = max_events
+
     with HDF5TableWriter(
         filename=output_filename,
-        group_name='events',
-        overwrite=True
+        group_name='dl1/events',
+        mode='a',
+        filters=filters,
+        add_prefix=True,
+        # overwrite=True
     ) as writer:
+
+        print("USING FILTERS: ", writer._h5file.filters)
+
+        # build a mapping of tel_id back to tel_index:
+        # (note this should be part of SubarrayDescription)
+        idx = np.zeros(max(sub.tel_indices) + 1)
+        for key, val in sub.tel_indices.items():
+            idx[key] = val
+
+        # the final transform then needs the mapping and the number of telescopes
+        tel_list_transform = partial(utils.expand_tel_list,
+                                     max_tels=len(event.inst.subarray.tel) + 1,
+                                     )
+
+        writer.add_column_transform(
+            table_name='subarray/trigger',
+            col_name='tels_with_trigger',
+            transform=tel_list_transform
+        )
 
         for i, event in enumerate(source):
             if i % 100 == 0:
                 print(i)
+
+            event.dl0.prefix = ''
+            event.mc.prefix = 'mc'
+            event.trig.prefix = ''
+
+            # write sub tables
+            writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
+            writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
+
             if not custom:
                 cal(event)
-                # for telescope_id, dl1 in event.dl1.tel.items():
+
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
+
+                tel = event.dl1.tel[telescope_id]
+                tel.prefix = ''  # don't really need one
+                tel_name = str(event.inst.subarray.tel[tel_id]).replace(":", "_")
+
                 if custom:
                     lst_calibration(event, telescope_id)
 
@@ -193,10 +279,14 @@ def r0_to_dl1(
                     dl1_container.width = width.value
                     dl1_container.length = length.value
 
+                    dl1_container.prefix = tel.prefix
+
                     if width >= 0:
                         # Camera geometry
                         camera = event.inst.subarray.tel[telescope_id].camera
-                        writer.write(camera.cam_id, [dl1_container])
+                        # writer.write(camera.cam_id, [dl1_container])
+                        writer.write(table_name=f'telescope/image/{tel_name}',
+                                     containers=[event.dl0, tel, dl1_container])
 
 
 def get_events(filename, storedata=False, test=False,
