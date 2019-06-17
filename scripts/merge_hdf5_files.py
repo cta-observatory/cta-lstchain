@@ -1,7 +1,7 @@
-import pandas as pd
 import argparse
 import os
 import h5py
+import tables
 
 parser = argparse.ArgumentParser(description="Merge all HDF5 files resulting from parallel reconstructions \
  present in a directory. Every dataset in the files must be readable with pandas.")
@@ -43,20 +43,29 @@ def get_dataset_keys(filename):
     return dataset_keys
 
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     file_list = [args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')]
 
-    dataframes = {}
+    keys = get_dataset_keys(file_list[0])
+    groups = set([k.split('/')[0] for k in keys])
 
-    for file in file_list:
-        keys = get_dataset_keys(file)
-        for k in keys:
-            if k in dataframes:
-                dataframes[k] = pd.concat([dataframes[k], pd.read_hdf(file, key=k)])
-            else:
-                dataframes[k] = pd.read_hdf(file, key=k)
+    f1 = tables.open_file(file_list[0])
+    merge_file = tables.open_file(args.outfile, 'w')
 
-    for k, df in dataframes.items():
-        df.to_hdf(args.outfile, key=k)
+    nodes = {}
+    for g in groups:
+        nodes[g] = f1.copy_node('/', name=g, newparent=merge_file.root, newname=g, recursive=True)
 
+
+    for filename in file_list[1:]:
+        file = tables.open_file(filename)
+
+        for ii, node in nodes.items():
+            for children in node:
+                print(ii)
+                print(type(ii))
+                print(node)
+                print(type(node))
+                p = os.path.join(ii, children.name)
+                node[children.name].append(file.root[p].read())
