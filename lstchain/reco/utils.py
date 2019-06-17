@@ -456,3 +456,14 @@ def disp_parameters(hillas, source_pos_x, source_pos_y):
     disp.sign = np.sign(disp.dx)
     disp.miss = np.abs(np.sin(hillas.psi.to(u.rad).value) * disp.dx - np.cos(hillas.psi.to(u.rad).value)*disp.dy)
     return disp
+
+
+def expand_tel_list(tel_list, max_tels):
+    """
+    transform for the telescope list (to turn it into a telescope pattern)
+    un-pack var-length list of tel_ids into
+    fixed-width bit pattern by tel_index
+    """
+    pattern = np.zeros(max_tels).astype(bool)
+    pattern[tel_list] = 1
+    return pattern
