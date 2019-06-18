@@ -21,12 +21,13 @@ def test_dl0_to_dl1():
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = 'dl1_gamma_test_large.h5'
-    features = ['intensity', 'width', 'length']
+    config = dict(regression_features=['intensity', 'width', 'length'],
+                  classification_features=['intensity', 'width', 'length',
+                                           'reco_energy', 'reco_disp_dx', 'reco_disp_dy']
+                  )
+    config = {}
 
-    reg_energy, reg_disp, cls_gh = build_models(
-        infile, infile,
-        features,
-        save_models=True)
+    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=config, save_models=True)
 
     from sklearn.externals import joblib
     joblib.dump(reg_energy, 'rf_energy.pkl')
@@ -41,7 +42,13 @@ def test_apply_models():
 
     dl1_file = 'dl1_gamma_test_large.h5'
     dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
-    features = ['intensity', 'width', 'length']
+
+    config = dict(regression_features=['intensity', 'width', 'length'],
+                  classification_features=['intensity', 'width', 'length',
+                                           'reco_energy', 'reco_disp_dx', 'reco_disp_dy']
+                  )
+    config = {}
+
     # Load the trained RF for reconstruction:
     file_energy = 'rf_energy.pkl'
     file_disp = 'rf_disp.pkl'
@@ -51,7 +58,7 @@ def test_apply_models():
     reg_disp = joblib.load(file_disp)
     reg_cls_gh = joblib.load(file_cls_gh)
 
-    apply_models(dl1, features, reg_cls_gh, reg_energy, reg_disp)
+    apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=config)
 
 
 def test_clean_test_files():
