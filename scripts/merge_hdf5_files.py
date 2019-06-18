@@ -63,9 +63,5 @@ if __name__ == '__main__':
 
         for ii, node in nodes.items():
             for children in node:
-                print(ii)
-                print(type(ii))
-                print(node)
-                print(type(node))
                 p = os.path.join(ii, children.name)
                 node[children.name].append(file.root[p].read())
