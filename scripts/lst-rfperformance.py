@@ -11,10 +11,12 @@ import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
 from lstchain.reco import dl1_to_dl2
+from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
 import ctaplot
 import astropy.units as u
+from lstchain.io import standard_config, replace_config, read_configuration_file
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
@@ -35,13 +37,14 @@ parser.add_argument('--protontest', '-pt', type=str,
                     dest='protontest',
                     help='path to the dl1 file of proton events for test')
 
+# Optional arguments
+
 parser.add_argument('--storerf', '-s', action='store', type=bool,
                     dest='storerf',
                     help='Boolean. True for storing trained RF in 3 files'
                     'Deafult=False, any user input will be considered True',
                     default=True)
 
-# Optional arguments
 parser.add_argument('--opath', '-o', action='store', type=str,
                      dest='path_models',
                      help='Path to store the resulting RF',
@@ -58,39 +61,35 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    #Train the models
-    features = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl',
-                'skewness', 'kurtosis','r', 'time_gradient', 'intercept',
-                'leakage', 'n_islands' ]
 
-    intensity_min = np.log10(200)
-    leakage_cut = 0.2
-    r_min = 0.15
+    custom_config = {}
+    if args.config_file is not None:
+        try:
+            custom_config = read_configuration_file(args.config_file)
+        except("Custom configuration could not be loaded !!!"):
+            pass
+
+    config = replace_config(standard_config, custom_config)
+
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
-        features,
-        intensity_min = intensity_min,
-        leakage_cut = leakage_cut,
         save_models=args.storerf,
         path_models=args.path_models,
-        config_file=args.config_file
+        custom_config=config,
     )
 
-    gammas = dl1_to_dl2.filter_events(pd.read_hdf(args.gammatest, key='events/LSTCam'),
-                                      leakage_cut = leakage_cut,
-                                      intensity_min=intensity_min,
-                                      r_min=r_min)
-    proton = dl1_to_dl2.filter_events(pd.read_hdf(args.protontest, key='events/LSTCam'),
-                                      leakage_cut = leakage_cut,
-                                      intensity_min=intensity_min,
-                                      r_min=r_min)
+    gammas = filter_events(pd.read_hdf(args.gammatest, key='events/LSTCam'),
+                                      config["events_filters"]
+                                      )
+    proton = filter_events(pd.read_hdf(args.protontest, key='events/LSTCam'),
+                                      config["events_filters"],
+                                      )
 
-    data = pd.concat([gammas,proton], ignore_index=True)
+    data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, features,
-                                  cls_gh, reg_energy, reg_disp_vector)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     ####PLOT SOME RESULTS#####
 
@@ -102,8 +101,8 @@ if __name__ == '__main__':
     focal_length = 28 * u.m
     src_pos_reco = utils.reco_source_position_sky(gammas.x.values * u.m,
                                                   gammas.y.values * u.m,
-                                                  gammas.disp_dx_rec.values * u.m,
-                                                  gammas.disp_dy_rec.values * u.m,
+                                                  gammas.reco_disp_dx.values * u.m,
+                                                  gammas.reco_disp_dy.values * u.m,
                                                   focal_length,
                                                   gammas.mc_alt_tel.values * u.rad,
                                                   gammas.mc_az_tel.values * u.rad)
@@ -143,22 +142,20 @@ if __name__ == '__main__':
     plt.show()
 
 
-    features_ = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl',
-                 'skewness', 'kurtosis','r', 'time_gradient', 'intercept',
-                 'leakage', 'n_islands',
-                 'e_rec', 'disp_dx_rec', 'disp_dy_rec']
+    regression_features = config["regression_features"]
+    classification_features = config["classification_features"]
 
 
     plt.show()
     plot_dl2.plot_pos(dl2)
     plt.show()
-    plot_dl2.plot_ROC(cls_gh, dl2, features_, -1)
+    plot_dl2.plot_ROC(cls_gh, dl2, classification_features, -1)
     plt.show()
-    plot_dl2.plot_importances(cls_gh, features_)
+    plot_dl2.plot_importances(cls_gh, classification_features)
     plt.show()
-    plot_dl2.plot_importances(reg_energy, features)
+    plot_dl2.plot_importances(reg_energy, regression_features)
     plt.show()
-    plot_dl2.plot_importances(reg_disp_vector, features)
+    plot_dl2.plot_importances(reg_disp_vector, regression_features)
     plt.show()
 
     plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
