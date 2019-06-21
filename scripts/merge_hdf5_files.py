@@ -37,7 +37,10 @@ if __name__ == '__main__':
 
     for filename in file_list[1:]:
         with tables.open_file(filename) as file:
-            for ii, node in nodes.items():
-                for children in node:
-                    p = os.path.join(ii, children.name)
-                    node[children.name].append(file.root[p].read())
+            try:
+                for ii, node in nodes.items():
+                    for children in node:
+                        p = os.path.join(ii, children.name)
+                        node[children.name].append(file.root[p].read())
+            except:
+                print("Can't merge {}".format(filename))
