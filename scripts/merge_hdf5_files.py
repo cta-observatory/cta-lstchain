@@ -36,9 +36,8 @@ if __name__ == '__main__':
 
 
     for filename in file_list[1:]:
-        file = tables.open_file(filename)
-
-        for ii, node in nodes.items():
-            for children in node:
-                p = os.path.join(ii, children.name)
-                node[children.name].append(file.root[p].read())
+        with tables.open_file(filename) as file:
+            for ii, node in nodes.items():
+                for children in node:
+                    p = os.path.join(ii, children.name)
+                    node[children.name].append(file.root[p].read())
