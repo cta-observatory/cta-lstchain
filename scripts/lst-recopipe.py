@@ -12,6 +12,7 @@ $> python lst-recopipe arg1 arg2 ...
 from lstchain.reco import dl0_to_dl1
 from lstchain.reco import dl1_to_dl2
 from lstchain.visualization import plot_dl2
+from lstchain.io import get_dataset_keys
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import matplotlib.pyplot as plt 
@@ -20,6 +21,7 @@ import os
 import pandas as pd 
 from distutils.util import strtobool
 import numpy as np
+import tables
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -86,8 +88,18 @@ if __name__ == '__main__':
         #Store results
         os.makedirs(args.outdir, exist_ok=True)
         outfile = args.outdir+'/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
-        dl2.to_hdf(outfile, key="dl2_events", mode="w")
-    
+        dl2.to_hdf(outfile, key="events/LSTCam", mode="w")
+
+        keys = get_dataset_keys(dl1_file)
+        groups = set([k.split('/')[0] for k in keys])
+        groups.remove('events') # we don't want to copy DL1 events
+
+        f1 = tables.open_file(dl1_file)
+        with tables.open_file(outfile, mode='a') as dl2_file:
+            nodes = {}
+            for g in groups:
+                nodes[g] = f1.copy_node('/', name=g, newparent=dl2_file.root, newname=g, recursive=True)
+
     #Plot some results
     '''
     plot_dl2.plot_features(dl2)
