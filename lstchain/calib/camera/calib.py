@@ -13,7 +13,7 @@ __all__ = [
     'combine_channels',
 ]
 
-gain_selector = ThresholdGainSelector(select_by_sample=True)
+gain_selector = ThresholdGainSelector()
 
 
 def lst_calibration(event, telescope_id):
@@ -52,7 +52,7 @@ def lst_calibration(event, telescope_id):
     event.dl1.tel[telescope_id].pulse_time = pulse_time
 
 
-def gain_selection(waveform, charges, pulse_time, cam_id, threshold):
+def gain_selection(waveform, charges, pulse_time, threshold):
 
     """
     Custom lst calibration.
@@ -68,15 +68,12 @@ def gain_selection(waveform, charges, pulse_time, cam_id, threshold):
     """
     assert charges.shape[0] == 2
 
-    gain_selector.thresholds[cam_id] = threshold
+    gain_selector = ThresholdGainSelector(threshold=threshold)
 
-    waveform, gain_mask = gain_selector.select_gains(cam_id, waveform)
-    signal_mask = gain_mask.max(axis=1)
+    waveform, gain_mask = gain_selector(waveform)
 
-    combined_image = charges[0].copy()
-    combined_image[signal_mask] = charges[1][signal_mask].copy()
-    combined_pulse_time = pulse_time[0].copy()
-    combined_pulse_time[signal_mask] = pulse_time[1][signal_mask].copy()
+    combined_image = charges[gain_mask, np.arange(charges.shape[1])]
+    combined_pulse_time = pulse_time[gain_mask, np.arange(pulse_time.shape[1])]
 
     return combined_image, combined_pulse_time
 
@@ -96,12 +93,10 @@ def combine_channels(event, tel_id, threshold):
         threshold value to consider a pixel as saturated in the waveform
     """
 
-    cam_id = event.inst.subarray.tel[tel_id].camera.cam_id
-
     waveform = event.r0.tel[tel_id].waveform
     charges = event.dl1.tel[tel_id].image
     pulse_time = event.dl1.tel[tel_id].pulse_time
 
-    combined_image, combined_pulse_time = gain_selection(waveform, charges, pulse_time, cam_id, threshold)
+    combined_image, combined_pulse_time = gain_selection(waveform, charges, pulse_time, threshold)
     event.dl1.tel[tel_id].image = combined_image
     event.dl1.tel[tel_id].pulse_time = combined_pulse_time

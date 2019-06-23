@@ -88,9 +88,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None):
     image = dl1.image
     pulse_time = dl1.pulse_time
 
-    image, pulse_time = gain_selection(
-        waveform, image, pulse_time, camera.cam_id, threshold
-    )
+    image, pulse_time = gain_selection(waveform, image, pulse_time, threshold)
 
     signal_pixels = cleaning_method(camera, image,
                                     **cleaning_parameters)
