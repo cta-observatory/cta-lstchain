@@ -369,9 +369,9 @@ def ped_time(timediff):
     """
     Power law function for time lapse baseline correction.
     Coefficients from curve fitting to dragon test data
-    at temperature 40 degC
+    at temperature 30 degC
     """
-    return 23.03 * np.power(timediff, -0.25) - 9.73
+    return 27.33 * np.power(timediff, -0.24) - 10.4
 
 @jit
 def interpolate_spike_A(waveform, gain, position, pixel):
