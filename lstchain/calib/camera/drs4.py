@@ -1,8 +1,9 @@
 import numpy as np
-from numba import jit
+from numba import jit, prange
 
 
 __all__ = ['DragonPedestal']
+
 
 class DragonPedestal:
     n_pixels = 7
@@ -35,8 +36,8 @@ class DragonPedestal:
     def _fill_pedestal_event_jit(nr, waveform, expected_pixel_id, first_cap, meanped, numped):
         size4drs = 4096
         roisize = 40
-        for i in range(0, 2):
-            for j in range(0, 7):
+        for i in prange(0, 2):
+            for j in prange(0, 7):
                 fc = int(first_cap[i, j])
                 pixel =  expected_pixel_id[nr*7 + j]
                 posads0 = int((2+fc)%size4drs)
@@ -44,18 +45,20 @@ class DragonPedestal:
                     meanped[i, j, posads0:(posads0+36)] += waveform[i, pixel, 2:38]
                     numped[i, j, posads0:(posads0 + 36)] += 1
                 else:
-                    for k in range(2, roisize-2):
+                    for k in prange(2, roisize-2):
                         posads = int((k+fc)%size4drs)
                         val = waveform[i, pixel, k]
                         meanped[i, j, posads] += val
                         numped[i, j, posads] += 1
 
     def finalize_pedestal(self):
-        try:
-            self.meanped = self.meanped/self.numped
-        except Exception as err:
-            print("Not enough events to coverage all capacitor. Please use more events to create pedestal file.")
-            print(err)
+        #Print error message when not every capacitor in pixel is coverage
+        with np.errstate(all='raise'):
+            try:
+                self.meanped = self.meanped / self.numped
+            except FloatingPointError:
+                print("Not enough events to coverage all capacitor."
+                      " Please use more events to create pedestal file.")
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 8))
