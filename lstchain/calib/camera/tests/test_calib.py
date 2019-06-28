@@ -1,7 +1,9 @@
 import numpy as np
 from lstchain.calib import camera
+from astropy.utils import deprecated
 
 
+@deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
 def test_gain_selection():
     """
     test gain selection
