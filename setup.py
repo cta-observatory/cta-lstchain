@@ -10,7 +10,7 @@ setuptools.setup(name='lstchain',
       packages=setuptools.find_packages(),
       install_requires=['h5py', 'seaborn'
                         ],
-      tests_require=['pytest'],
+      tests_require=['pytest', 'pytest-ordering'],
       author='LST collaboration',
       author_email='',
       license='',
