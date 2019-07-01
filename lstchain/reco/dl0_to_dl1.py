@@ -88,9 +88,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None):
     image = dl1.image
     pulse_time = dl1.pulse_time
 
-    image, pulse_time = gain_selection(
-        waveform, image, pulse_time, camera.cam_id, threshold
-    )
+    image, pulse_time = gain_selection(waveform, image, pulse_time, threshold)
 
     signal_pixels = cleaning_method(camera, image,
                                     **cleaning_parameters)
@@ -197,6 +195,9 @@ def r0_to_dl1(
                         # Camera geometry
                         camera = event.inst.subarray.tel[telescope_id].camera
                         writer.write(camera.cam_id, [dl1_container])
+
+    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+        writer.write("run_config", [event.mcheader])
 
 
 def get_events(filename, storedata=False, test=False,
