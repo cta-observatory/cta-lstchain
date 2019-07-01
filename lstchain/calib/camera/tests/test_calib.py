@@ -16,7 +16,7 @@ def test_gain_selection():
     image = waveform.mean(axis=2)
 
     threshold = 2
-    combined_image, combined_peakpos = gain_selection(waveform, image, image, threshold)
+    combined_image, _ = gain_selection(waveform, image, image, threshold)
 
     # with a threshold of 2, the 5 first pixels should be selected in the first channel and 5 others in the second \
     # channel
