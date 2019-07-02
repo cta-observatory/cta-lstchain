@@ -74,12 +74,9 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     image = dl1.image
     pulse_time = dl1.pulse_time
 
-    image, pulse_time = gain_selection(
-        waveform, image, pulse_time, camera.cam_id, high_gain_threshold
-    )
+    image, pulse_time = gain_selection(waveform, image, pulse_time, high_gain_threshold)
 
-    signal_pixels = cleaning_method(camera, image,
-                                    **cleaning_parameters)
+    signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
     image[~signal_pixels] = 0
 
     if image.sum() > 0:
@@ -186,6 +183,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                         # Camera geometry
                         camera = event.inst.subarray.tel[telescope_id].camera
                         writer.write(camera.cam_id, [dl1_container])
+
+    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+        writer.write("run_config", [event.mcheader])
 
 
 

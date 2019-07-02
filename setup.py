@@ -3,16 +3,16 @@
 # import sys
 import setuptools
 
+
 setuptools.setup(name='lstchain',
                  version=0.1,
-                 description="DESCRIPTION",
-                 # these should be minimum list of what is needed to run
+                 description="DESCRIPTION",  # these should be minimum list of what is needed to run
                  packages=setuptools.find_packages(),
                  install_requires=['h5py',
-                                   'seaborn',
+                                   'seaborn'
                                    ],
                  package_data={'lstchain': ['data/lstchain_standard_config.json']},
-                 tests_require=['pytest'],
+                 tests_require=['pytest', 'pytest-ordering'],
                  author='LST collaboration',
                  author_email='',
                  license='',
