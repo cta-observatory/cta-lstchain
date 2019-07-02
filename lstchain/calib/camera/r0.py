@@ -133,6 +133,7 @@ class LSTR0Corrections(CameraR0Calibrator):
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
             event.r1.tel[tel_id].waveform = samples.astype('float32') - self.offset
 
+
     def subtract_pedestal(self, event):
         """
         Subtract cell offset using pedestal file.
@@ -158,7 +159,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
         event.r1.tel[self.tel_id].trigger_time = event.r1.tel[self.tel_id].trigger_time
         event.r1.tel[self.tel_id].waveform = samples[:, :, :]
-
 
     def time_lapse_corr(self, event):
         """
