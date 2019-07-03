@@ -91,7 +91,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None):
     signal_pixels = cleaning_method(camera, image,
                                     **cleaning_parameters)
 
-    if image.sum() > 0:
+    if image[signal_pixels].sum() > 0:
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
         # Fill container
         dl1_container.fill_mc(calibrated_event)
