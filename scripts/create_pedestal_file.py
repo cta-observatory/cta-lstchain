@@ -1,8 +1,3 @@
-import sys
-sys.path.insert(0,'/home/pawel1/Pulpit/Astrophysics/CTA/soft/ctapipe_io_lst')
-sys.path.insert(0, '/home/pawel1/Pulpit/Astrophysics/CTA/cta-lstchain')
-from ctapipe_io_lst import LSTEventSource
-
 import argparse
 import numpy as np
 from astropy.io import fits
@@ -12,6 +7,7 @@ from numba import prange
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
+from ctapipe_io_lst import LSTEventSource
 
 ''' 
 Script to create pedestal file for low level calibration. 
@@ -61,7 +57,7 @@ if __name__ == '__main__':
     for i, event in enumerate(reader):
         if i%500 == 0:
             print("i = {}, ev id = {}".format(i, event.r0.event_id))
-        lst_r0.time_lapse_corr(ev)
+        lst_r0.time_lapse_corr(event)
         for nr_module in prange(0, n_modules):
             PedList[nr_module].fill_pedestal_event(event, nr=nr_module)
 
