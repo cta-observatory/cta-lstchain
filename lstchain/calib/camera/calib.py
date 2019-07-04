@@ -5,12 +5,10 @@ Calibration functions
 import numpy as np
 from ctapipe.image.extractor import LocalPeakWindowSum
 from ctapipe.calib.camera.gainselection import ThresholdGainSelector
-
+from astropy.utils import deprecated
 
 __all__ = [
     'lst_calibration',
-    'gain_selection',
-    'combine_channels',
 ]
 
 gain_selector = ThresholdGainSelector()
@@ -48,10 +46,14 @@ def lst_calibration(event, telescope_id):
     dc2pe = event.mc.tel[telescope_id].dc_to_pe  # numgains * numpixels
     signals *= dc2pe
 
-    event.dl1.tel[telescope_id].image = signals
+    threshold = 4094
+    image, pulse_time = gain_selection(data, signals, pulse_time, threshold)
+
+    event.dl1.tel[telescope_id].image = image
     event.dl1.tel[telescope_id].pulse_time = pulse_time
 
 
+@deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
 def gain_selection(waveform, charges, pulse_time, threshold):
 
     """
@@ -78,7 +80,7 @@ def gain_selection(waveform, charges, pulse_time, threshold):
     return combined_image, combined_pulse_time
 
 
-
+@deprecated('28/06/2019', message='channel selection is now performed at <= R1 calibration level')
 def combine_channels(event, tel_id, threshold):
     """
     Combine the channels for the image and peakpos arrays in the event.dl1 containers
