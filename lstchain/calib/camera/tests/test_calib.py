@@ -1,6 +1,7 @@
 import numpy as np
 from lstchain.calib.camera.calib import gain_selection
 from astropy.utils import deprecated
+from lstchain.calib import load_calibrator_from_config
 
 
 @deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
@@ -22,3 +23,16 @@ def test_gain_selection():
     # channel
 
     np.testing.assert_array_equal(combined_image, np.array([1, 1, 1, 1, 1, 10, 10, 10, 10, 10]))
+
+
+def test_load_calibrator_from_config():
+    from lstchain.io.config import get_standard_config
+    from ctapipe.calib import CameraCalibrator
+    from ctapipe.image import NeighborPeakWindowSum
+    from ctapipe.calib.camera.gainselection import ThresholdGainSelector
+    config = get_standard_config()
+    cal = load_calibrator_from_config(config)
+
+    assert isinstance(cal.image_extractor, NeighborPeakWindowSum)
+    assert isinstance(cal.gain_selector, ThresholdGainSelector)
+    assert isinstance(cal, CameraCalibrator)
