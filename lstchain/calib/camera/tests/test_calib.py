@@ -1,7 +1,9 @@
 import numpy as np
-from lstchain.calib import camera
+from lstchain.calib.camera.calib import gain_selection
+from astropy.utils import deprecated
 
 
+@deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
 def test_gain_selection():
     """
     test gain selection
@@ -14,7 +16,7 @@ def test_gain_selection():
     image = waveform.mean(axis=2)
 
     threshold = 2
-    combined_image, combined_peakpos = camera.gain_selection(waveform, image, image, threshold)
+    combined_image, _ = gain_selection(waveform, image, image, threshold)
 
     # with a threshold of 2, the 5 first pixels should be selected in the first channel and 5 others in the second \
     # channel
