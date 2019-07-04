@@ -1,21 +1,37 @@
 {
   "events_filters": {
-    "intensity": [2, Infinity],
-    "width": [0.01, Infinity],
-    "length": [0, Infinity],
-    "wl": [0, 1],
-    "r": [0, 1],
-    "leakage": [0, 0.4]
+    "intensity": [
+      2,
+      Infinity
+    ],
+    "width": [
+      0.01,
+      Infinity
+    ],
+    "length": [
+      0,
+      Infinity
+    ],
+    "wl": [
+      0,
+      1
+    ],
+    "r": [
+      0,
+      1
+    ],
+    "leakage": [
+      0,
+      0.4
+    ]
   },
-
   "tailcut": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "picture_thresh": 6,
+    "boundary_thresh": 3,
+    "keep_isolated_pixels": false,
+    "min_number_picture_neighbors": 1
   },
-
-    "random_forest_regressor_args": {
+  "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
     "n_jobs": 4,
@@ -33,7 +49,6 @@
     "verbose": 0,
     "warm_start": false
   },
-
   "random_forest_classifier_args": {
     "max_depth": 100,
     "min_samples_leaf": 2,
@@ -53,7 +68,6 @@
     "warm_start": false,
     "class_weight": null
   },
-
   "regression_features": [
     "intensity",
     "width",
@@ -71,7 +85,6 @@
     "leakage",
     "n_islands"
   ],
-
   "classification_features": [
     "intensity",
     "width",
@@ -92,9 +105,20 @@
     "reco_disp_dx",
     "reco_disp_dy"
   ],
-
   "high_gain_threshold": 4094,
-  "allowed_tels": [1, 2, 3, 4],
+  "allowed_tels": [
+    1,
+    2,
+    3,
+    4
+  ],
   "max_events": null,
-  "custom_calibration": false
+  "custom_calibration": false,
+
+  "image_extractor": "NeighborPeakWindowSum",
+  "image_extractor_config": {},
+  "gain_selector": "ThresholdGainSelector",
+  "gain_selector_config": {
+    "threshold":  4094
+  }
 }
