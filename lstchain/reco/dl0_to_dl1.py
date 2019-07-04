@@ -18,16 +18,15 @@ from ctapipe.image import (
 )
 
 from ctapipe.utils import get_dataset_path
-from ctapipe.calib import CameraCalibrator
 from ctapipe.io import event_source
 from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
 
-from ..calib.camera import lst_calibration
+from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
-from ctapipe.image.extractor import NeighborPeakWindowSum
+
 
 
 __all__ = [
@@ -36,7 +35,12 @@ __all__ = [
 ]
 
 
-cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum())
+# high_gain_threshold = 4094
+# gain_selector = ThresholdGainSelector(threshold=high_gain_threshold)
+
+# cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum(),
+#                        gain_selector=gain_selector,
+#                        )
 
 cleaning_method = tailcuts_clean
 
@@ -63,8 +67,6 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
     config = replace_config(standard_config, custom_config)
     cleaning_parameters = config["tailcut"]
-    high_gain_threshold = config["high_gain_threshold"]
-
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -132,6 +134,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
     source = event_source(input_filename)
     source.allowed_tels = config["allowed_tels"]
     source.max_events = config["max_events"]
+
+    cal = load_calibrator_from_config(config)
 
     dl1_container = DL1ParametersContainer()
 
