@@ -9,10 +9,10 @@
   },
 
   "tailcut": {
-    "picture_thresh":7,
-    "boundary_thresh":5,
+    "picture_thresh":6,
+    "boundary_thresh":3,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":0
+    "min_number_picture_neighbors":1
   },
 
     "random_forest_regressor_args": {
