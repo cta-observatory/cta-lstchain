@@ -24,9 +24,11 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from ..calib.camera import lst_calibration, gain_selection
+
+from ..calib.camera import lst_calibration
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ctapipe.image.extractor import NeighborPeakWindowSum
+
 
 __all__ = [
     'get_dl1',
@@ -70,17 +72,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     dl1 = calibrated_event.dl1.tel[telescope_id]
     camera = tel.camera
 
-    waveform = calibrated_event.r0.tel[telescope_id].waveform
     image = dl1.image
     pulse_time = dl1.pulse_time
 
-    image, pulse_time = gain_selection(waveform, image, pulse_time, high_gain_threshold)
-
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
-    image[~signal_pixels] = 0
 
-    if image.sum() > 0:
-        hillas = hillas_parameters(camera, image)
+    if image[signal_pixels].sum() > 0:
+        hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
         # Fill container
         dl1_container.fill_mc(calibrated_event)
         dl1_container.fill_hillas(hillas)
