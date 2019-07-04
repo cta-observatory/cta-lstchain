@@ -63,9 +63,9 @@ if __name__ == '__main__':
                 'skewness', 'kurtosis','r', 'time_gradient', 'intercept',
                 'leakage', 'n_islands' ]
 
-    intensity_min = np.log10(200)
-    leakage_cut = 0.2
-    r_min = 0.15
+    intensity_min = 0 #np.log10(500)
+    leakage_cut = 2 #0.2
+    r_min = 0.0
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
