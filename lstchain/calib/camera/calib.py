@@ -3,18 +3,46 @@ Calibration functions
 """
 
 import numpy as np
-from ctapipe.image.extractor import LocalPeakWindowSum
-from ctapipe.calib.camera.gainselection import ThresholdGainSelector
+from ctapipe.image import extractor
+from ctapipe.calib.camera import gainselection
+from ctapipe.calib import CameraCalibrator
 from astropy.utils import deprecated
+from traitlets.config import Config
 
 __all__ = [
     'lst_calibration',
+    'load_calibrator_from_config'
 ]
 
-gain_selector = ThresholdGainSelector()
+
+def load_calibrator_from_config(config):
+    """
+    Return a CameraCalibrator class corresponding to the given config loaded
+
+    Parameters
+    ----------
+    config: dict. Must include:
+            - high_gain_threshold"]
+            - config["extractor"] : from `ctapipe.image.extractor`
+            - config["gain_selector"] : from `ctapipe.calib.camera.gainselection`
+            - config["gain_selector"]["config"] : dict of args for the gain selector
+
+    Returns
+    -------
+
+    """
+
+    image_extractor = getattr(extractor, config["image_extractor"])
+    gain_selector = getattr(gainselection, config["gain_selector"])
+
+    cal = CameraCalibrator(image_extractor=image_extractor(Config(config["image_extractor_config"])),
+                           gain_selector=gain_selector(Config(config["gain_selector_config"])),
+                           )
+
+    return cal
 
 
-def lst_calibration(event, telescope_id):
+def lst_calibration(event, telescope_id, high_gain_threshold):
     """
     Custom lst calibration.
     Update event.dl1.tel[telescope_id] with calibrated image and peakpos
@@ -23,6 +51,7 @@ def lst_calibration(event, telescope_id):
     ----------
     event: ctapipe event container
     telescope_id: int
+    high_gain_threshold: ADC threshold to select low-gain channel
     """
 
     data = event.r0.tel[telescope_id].waveform
@@ -38,7 +67,7 @@ def lst_calibration(event, telescope_id):
 
     pedcorrectedsamples = data - np.atleast_3d(ped) / nsamples
 
-    integrator = LocalPeakWindowSum()
+    integrator = extractor.LocalPeakWindowSum()
     integration, pulse_time = integrator(pedcorrectedsamples)  # these are 2D matrices num_gains * num_pixels
 
     signals = integration.astype(float)
@@ -46,8 +75,8 @@ def lst_calibration(event, telescope_id):
     dc2pe = event.mc.tel[telescope_id].dc_to_pe  # numgains * numpixels
     signals *= dc2pe
 
-    threshold = 4094
-    image, pulse_time = gain_selection(data, signals, pulse_time, threshold)
+    # threshold = 4094
+    image, pulse_time = gain_selection(data, signals, pulse_time, high_gain_threshold)
 
     event.dl1.tel[telescope_id].image = image
     event.dl1.tel[telescope_id].pulse_time = pulse_time
@@ -70,7 +99,7 @@ def gain_selection(waveform, charges, pulse_time, threshold):
     """
     assert charges.shape[0] == 2
 
-    gain_selector = ThresholdGainSelector(threshold=threshold)
+    gain_selector = gainselection.ThresholdGainSelector(threshold=threshold)
 
     waveform, gain_mask = gain_selector(waveform)
 
