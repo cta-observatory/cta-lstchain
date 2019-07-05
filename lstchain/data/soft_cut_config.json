@@ -105,7 +105,7 @@
     "reco_disp_dx",
     "reco_disp_dy"
   ],
-  "high_gain_threshold": 4094,
+
   "allowed_tels": [
     1,
     2,
