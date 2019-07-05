@@ -8,35 +8,81 @@ from ctapipe.calib.camera import gainselection
 from ctapipe.calib import CameraCalibrator
 from astropy.utils import deprecated
 from traitlets.config import Config
+from ...io.config import get_standard_config, replace_config
 
 __all__ = [
     'lst_calibration',
-    'load_calibrator_from_config'
+    'load_calibrator_from_config',
+    'load_image_extractor_from_config',
+    'load_gain_selector_from_config'
 ]
 
 
-def load_calibrator_from_config(config):
+def load_gain_selector_from_config(custom_config):
     """
-    Return a CameraCalibrator class corresponding to the given config loaded
+    Return a gain selector from a custom config.
+    The passed custom_config superseeds the standard config.
+    Parameters
+    ----------
+    custom_config: dictionnary. Should contain:
+        - gain_selector
+        - gain_selector_config
+
+    Returns
+    -------
+
+    """
+    config = replace_config(get_standard_config(), custom_config)
+    conf = Config({config['gain_selector']: config['gain_selector_config']})
+    gain_selector = getattr(gainselection, config['gain_selector'])
+    return gain_selector(conf)
+
+
+def load_image_extractor_from_config(custom_config):
+    """
+    Return an image extractor from a custom config.
+    The passed custom_config superseeds the standard config.
+    Parameters
+    ----------
+    config: dictionnary. Should contains:
+        - image_extractor
+        - image_extractor_config
+
+    Returns
+    -------
+
+    """
+    config = replace_config(get_standard_config(), custom_config)
+    conf = Config({config['image_extractor']: config['image_extractor_config']})
+    image_extractor = getattr(extractor, config['image_extractor'])
+    return image_extractor(conf)
+
+
+def load_calibrator_from_config(custom_config):
+    """
+    Return a CameraCalibrator class corresponding to the given configuration.
+    The passed custom_config superseeds the standard config.
 
     Parameters
     ----------
-    config: dict. Must include:
-            - high_gain_threshold"]
-            - config["extractor"] : from `ctapipe.image.extractor`
-            - config["gain_selector"] : from `ctapipe.calib.camera.gainselection`
-            - config["gain_selector"]["config"] : dict of args for the gain selector
+    custom_config: dictionnary. Should contain:
+        - image_extractor
+        - image_extractor_config
+        - gain_selector
+        - gain_selector_config
 
     Returns
     -------
 
     """
 
-    image_extractor = getattr(extractor, config["image_extractor"])
-    gain_selector = getattr(gainselection, config["gain_selector"])
+    config = replace_config(get_standard_config(), custom_config)
 
-    cal = CameraCalibrator(image_extractor=image_extractor(Config(config["image_extractor_config"])),
-                           gain_selector=gain_selector(Config(config["gain_selector_config"])),
+    gain_selector = load_gain_selector_from_config(config)
+    image_extractor = load_image_extractor_from_config(config)
+
+    cal = CameraCalibrator(image_extractor=image_extractor,
+                           gain_selector=gain_selector,
                            )
 
     return cal
