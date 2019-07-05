@@ -98,8 +98,8 @@ def process_mc(simtelfile, dl2_file, mc_type):
 
     src_pos_reco = reco_source_position_sky(events.x.values * u.m,
                                             events.y.values * u.m,
-                                            events.disp_dx_rec.values * u.m,
-                                            events.disp_dy_rec.values * u.m,
+                                            events.reco_disp_dx.values * u.m,
+                                            events.reco_disp_dy.values * u.m,
                                             focal_length,
                                             events.mc_alt_tel.values * u.rad,
                                             events.mc_az_tel.values * u.rad)
