@@ -35,12 +35,6 @@ __all__ = [
 ]
 
 
-# high_gain_threshold = 4094
-# gain_selector = ThresholdGainSelector(threshold=high_gain_threshold)
-
-# cal = CameraCalibrator(image_extractor=NeighborPeakWindowSum(),
-#                        gain_selector=gain_selector,
-#                        )
 
 cleaning_method = tailcuts_clean
 
