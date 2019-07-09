@@ -153,11 +153,6 @@ class DL1ParametersContainer(Container):
         self.tel_pos_z = tel_pos[2] 
 
     def set_source_camera_position(self, event, telescope_id):
-        # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
-        #                                      mc_alt_tel, mc_az_tel,
-        #                                      focal_length)
-        # self.src_x = sourcepos[0]
-        # self.src_y = sourcepos[1]
         tel = event.inst.subarray.tel[telescope_id]
         source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]
