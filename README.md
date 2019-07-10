@@ -41,8 +41,7 @@ conda activate cta
 pip install https://github.com/cta-observatory/ctapipe/archive/master.tar.gz
 pip install https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
 pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/master.tar.gz
-git clone https://github.com/cta-observatory/cta-lstchain.git
-pip install -e cta-lstchain
+pip install -e .
 ```
 
 
