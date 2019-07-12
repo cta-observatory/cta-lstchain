@@ -80,19 +80,12 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     #Filters:
 
-<<<<<<< HEAD
     filter_good_events =  (events.leakage < 0.2) & \
                           (events.intensity > np.log10(200)) & \
                           (events.wl > 0.1) & \
                           (events.tel_id==1)
 
     events = events[filter_good_events]
-
-=======
-    events = dl1_to_dl2.filter_events(events, leakage_cut=0.2,
-                                      intensity_min=np.log10(100))
-    events = events[events.tel_id==1]
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
 
     e_reco = 10**events.mc_energy.to_numpy() * u.GeV
     e_true = 10**events.mc_energy.to_numpy() * u.GeV
@@ -131,10 +124,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
     az1 = np.arctan(np.tan(src_pos_reco.az.rad))
 
     angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad)**2
-<<<<<<< HEAD
     events['theta2'] = angdist2
-=======
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
 
     return gammaness, angdist2.to(u.deg**2), e_reco, e_true, sim_par, events
 
@@ -218,9 +208,6 @@ def calculate_sensitivity_lima_1d(nex, nbg, alpha, eb):
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
     return nex_5sigma, sens
-=======
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
-
 
 def bin_definition(gb, tb):
     """
@@ -281,12 +268,7 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
 
     return contained, area
 
-
-<<<<<<< HEAD
 def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
-=======
-def sens(simtelfile_gammas, simtelfile_protons,
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
          dl2_file_g, dl2_file_p,
          nfiles_gammas, nfiles_protons,
          eb, gb, tb, noff,
@@ -422,17 +404,10 @@ def sens(simtelfile_gammas, simtelfile_protons,
                                             & (gammaness_g > g[j]) & (theta2_g < t[k])].shape[0]
                 pre_hadrons[i][j][k] = e_reco_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                             & (gammaness_p > g[j]) & p_contained].shape[0]
-<<<<<<< HEAD
 
                 ngamma_per_ebin[i] = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
                 nhadron_per_ebin[i] = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
 
-=======
-
-                ngamma_per_ebin[i] = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
-                nhadron_per_ebin[i] = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
-
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
     nex_5sigma, sens = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff,
                                                   eb, gb, tb)
     # Avoid bins which are empty or have too few events:
@@ -516,7 +491,6 @@ def sens(simtelfile_gammas, simtelfile_protons,
                                     'nevents_g', 'nevents_p'])
 
     units = [E.unit, E.unit,"", t.unit,"", "",
-<<<<<<< HEAD
              u.min**-1, u.min**-1, "",
              sens_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
     """
@@ -762,17 +736,4 @@ def sens(simtelfile_gammas, simtelfile_protons,
         dl2 = pd.concat((dl2, df_bin))
 
     return E, sensitivity, result, units, dl2
-=======
-             obstime.to(u.min).unit, obstime.to(u.min).unit, "",
-             sens_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
-    """
-    sens_minimization_plot(eb, gb, tb, E, sens)
 
-    plot_positions_survived_events(events_g,
-                                   events_p,
-                                   gammaness_g, gammaness_p,
-                                   theta2_g, p_contained, sens, E, eb, g, t)
-    """
-
-    return E, sensitivity, result, units, rate_g, rate_p, w_g, w_p, nex_5sigma, final_hadrons
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c

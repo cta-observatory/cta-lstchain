@@ -195,10 +195,7 @@ def plot_positions_survived_events(df_gammas,
     e_reco_g = 10**df_gammas.mc_energy
     e_reco_p = 10**df_protons.mc_energy
     for i in range(0,eb):
-<<<<<<< HEAD
         print(E[i], E[i+1])
-=======
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
         events_g = df_gammas[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                       & (gammaness_g > g[ind[0]]) & (theta2_g < t[ind[1]])]

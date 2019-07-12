@@ -296,7 +296,7 @@ def plot_pos(data,true_hadroness=False):
 
     #True position
 
-<<<<<<< HEAD
+
     trueX = data[data[hadro]==0]['src_x']
     trueY = data[data[hadro]==0]['src_y']
     trueXprot = data[data[hadro]==101]['src_x']
@@ -308,22 +308,8 @@ def plot_pos(data,true_hadroness=False):
     recY = data[data[hadro]==0]['src_y_rec']
     recXprot = data[data[hadro]==101]['src_x_rec']
     recYprot = data[data[hadro]==101]['src_y_rec']
-=======
-    trueX = data[data[hadro]==0]['src_x'].to_numpy()
-    trueY = data[data[hadro]==0]['src_y'].to_numpy()
-    trueXprot = data[data[hadro]==101]['src_x'].to_numpy()
-    trueYprot = data[data[hadro]==101]['src_y'].to_numpy()
-
-    #Reconstructed position
-
-    recX = data[data[hadro]==0]['src_x_rec'].to_numpy()
-    recY = data[data[hadro]==0]['src_y_rec'].to_numpy()
-    recXprot = data[data[hadro]==101]['src_x_rec'].to_numpy()
-    recYprot = data[data[hadro]==101]['src_y_rec'].to_numpy()
-
     ran = np.array([(-0.3, 0.3), (-0.4, 0.4)])
     nbins=50
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
 
     plt.subplot(221)
     plt.hist2d(trueXprot, trueYprot,

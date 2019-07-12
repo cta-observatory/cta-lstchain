@@ -43,7 +43,6 @@ tb = 10 #Number of theta2 bins
 obstime = 50 * 3600 * u.s
 noff = 5
 
-<<<<<<< HEAD
 E, best_sens, result, units, gcut, tcut = sensitivity.find_best_cuts_sens(args.dl1file_gammas,
                                                 args.dl1file_protons,
                                                args.dl2_file_g_cuts, args.dl2_file_p_cuts,
@@ -67,7 +66,6 @@ for i, key in enumerate(tab.columns.keys()):
     if key=='sensitivity':
         continue
     tab[key].format = '8f'
-<<<<<<< HEAD
 
 print(tab)
 emed = np.sqrt(E[1:] * E[:-1])
@@ -140,5 +138,4 @@ ctaplot.plot_effective_area_cta_requirements('north', color='black')
 plt.legend();
 plt.tight_layout()
 plt.show()
-=======
->>>>>>> 644645b887f59f1aecfdc927f6a083bb58106a7c
+
