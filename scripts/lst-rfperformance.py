@@ -61,7 +61,6 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -70,7 +69,6 @@ if __name__ == '__main__':
             pass
 
     config = replace_config(standard_config, custom_config)
-
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
