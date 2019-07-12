@@ -298,15 +298,15 @@ def plot_pos(data,true_hadroness=False):
 
     trueX = data[data[hadro]==0]['src_x']
     trueY = data[data[hadro]==0]['src_y']
-    trueXprot = data[data[hadro]==1]['src_x']
-    trueYprot = data[data[hadro]==1]['src_y']
+    trueXprot = data[data[hadro]==101]['src_x']
+    trueYprot = data[data[hadro]==101]['src_y']
 
     #Reconstructed position
 
     recX = data[data[hadro]==0]['src_x_rec']
     recY = data[data[hadro]==0]['src_y_rec']
-    recXprot = data[data[hadro]==1]['src_x_rec']
-    recYprot = data[data[hadro]==1]['src_y_rec']
+    recXprot = data[data[hadro]==101]['src_x_rec']
+    recYprot = data[data[hadro]==101]['src_y_rec']
 
     plt.subplot(221)
     plt.hist2d(trueXprot,trueYprot,
