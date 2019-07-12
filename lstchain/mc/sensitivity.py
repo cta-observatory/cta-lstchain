@@ -178,7 +178,6 @@ def calculate_sensitivity_lima(nex, nbg, alpha, eb, gb, tb):
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
     return nex_5sigma, sens
-<<<<<<< HEAD
 
 def calculate_sensitivity_lima_1d(nex, nbg, alpha, eb):
     """
