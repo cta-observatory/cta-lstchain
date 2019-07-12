@@ -1,18 +1,20 @@
 import argparse
 import numpy as np
 from astropy.io import fits
+from numba import prange
+from ctapipe_io_lst import LSTEventSource
 from ctapipe.io import EventSeeker
 from traitlets.config.loader import Config
-from numba import prange
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
-from ctapipe_io_lst import LSTEventSource
 
 ''' 
 Script to create pedestal file for low level calibration. 
 To run script in console:
-python create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits --max_events 9000
+python create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits 
+--max_events 9000
+not to use deltaT correction add --deltaT no
 '''
 
 parser = argparse.ArgumentParser()
@@ -27,6 +29,9 @@ parser.add_argument("--output_file", help="Path where script create pedestal fil
 parser.add_argument("--max_events", help="Maximum numbers of events to read",
                     type=int, default=5000)
 
+parser.add_argument("--deltaT", help="Use deltaT correction",
+                    type=str, default='yes')
+
 args = parser.parse_args()
 
 if __name__ == '__main__':
@@ -37,8 +42,8 @@ if __name__ == '__main__':
 
     seeker = EventSeeker(reader)
     ev = seeker[0]
-    n_modules = ev.lst.tel[0].svc.num_modules
     telid = ev.r0.tels_with_data[0]
+    n_modules = ev.lst.tel[telid].svc.num_modules
 
     config = Config({
         "LSTR0Corrections": {
@@ -47,37 +52,29 @@ if __name__ == '__main__':
     })
     lst_r0 = LSTR0Corrections(config=config)
 
-    ped = DragonPedestal(telid=telid)
-    PedList = []
-    pedestal_value_array = np.zeros((n_modules, 2, 7, 4096), dtype=np.uint16)
+    pedestal = DragonPedestal(tel_id=telid, n_module=n_modules)
 
-    for i in range(0, n_modules):
-        PedList.append(DragonPedestal())
+    if args.deltaT == 'yes':
+        print("DeltaT correction active")
+        for i, event in enumerate(reader):
+            lst_r0.time_lapse_corr(event)
+            pedestal.fill_pedestal_event(event)
+            if i%500 == 0:
+                print("i = {}, ev id = {}".format(i, event.r0.event_id))
 
-    for i, event in enumerate(reader):
-        if i%500 == 0:
-            print("i = {}, ev id = {}".format(i, event.r0.event_id))
-        lst_r0.time_lapse_corr(event)
-        for nr_module in prange(0, n_modules):
-            PedList[nr_module].fill_pedestal_event(event, nr=nr_module)
+    if args.deltaT == 'no':
+        print("DeltaT correction no active")
+        for i, event in enumerate(reader):
+            pedestal.fill_pedestal_event(event)
+            if i%500 == 0:
+                print("i = {}, ev id = {}".format(i, event.r0.event_id))
 
     # Finalize pedestal and write to fits file
-    for i in range(0, n_modules):
-        PedList[i].finalize_pedestal()
-        PedList[i].meanped[np.isnan(PedList[i].meanped)] = 300  # fill 300 where occurs NaN
-        pedestal_value_array[i, :, :, :] = PedList[i].meanped
-
-    # re-order offset values according to expected pixel id
-    expected_pixel_id = ev.lst.tel[telid].svc.pixel_ids
-    ped_array = np.zeros((2, 1855, 4096), dtype=np.uint16)
-    for nr in range(0, n_modules):
-        for gain in range(0, 2):
-            for pix in range(0, 7):
-                pixel = expected_pixel_id[nr * 7 + pix]
-                ped_array[:, pixel, :] = pedestal_value_array[nr, :, pix, :]
+    pedestal.finalize_pedestal()
+    pedestal.meanped[np.isnan(pedestal.meanped)] = 300  # fill 300 where occurs NaN
 
     primaryhdu = fits.PrimaryHDU(ev.lst.tel[telid].svc.pixel_ids)
-    secondhdu = fits.ImageHDU(ped_array)
+    secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
 
     hdulist = fits.HDUList([primaryhdu, secondhdu])
     hdulist.writeto(args.output_file)
