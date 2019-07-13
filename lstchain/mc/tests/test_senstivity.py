@@ -10,21 +10,18 @@ from lstchain.mc import (
     ring_containment,
 )
 
-from eventio.simtel.simtelfile import SimTelFile
 
-
+@pytest.mark.run(after='test_dl0_to_dl1')
 def test_read_sim_par():
-    gamma_test_path = get_dataset_path("gamma_test.simtel.gz") 
-    source = SimTelFile(gamma_test_path)
-
-    par = read_sim_par(source)
+    dl1_file = 'dl1_gamma_test_large.h5'
+    par = read_sim_par(dl1_file)
 
     assert np.isclose(par['emin'].to_value(), 0.003)
     assert np.isclose(par['emax'].to_value(), 330.0)
     assert np.isclose(par['sp_idx'], -2.0)
-    assert np.isclose(par['sim_ev'], 1000000)
-    assert np.isclose(par['area_sim'].to_value(), 19634954.08)
-    assert np.isclose(par['cone'].to_value(), 0.0)
+    assert np.isclose(par['sim_ev'], 400000)
+    assert np.isclose(par['area_sim'].to_value(), 28274333.88)
+    assert np.isclose(par['cone'].to_value(), 10.0)
 
 
 @pytest.mark.run(after='test_apply_models')
@@ -44,14 +41,17 @@ def test_calculate_sensitivity():
         [10, 100], [50,100], 1), [353.55,  50.], rtol = 1.e-3)
 
 def test_calculate_sensitivity_lima():
-
+    
     np.testing.assert_allclose(calculate_sensitivity_lima(
-            50, 10, 0.2), 26.97, rtol = 1.e-3)
+            50, 10, 0.2, 1, 0, 0),
+                               ([13.48],[26.97]), rtol = 1.e-3)
     np.testing.assert_allclose(calculate_sensitivity_lima(
-            200, 50, 1), 31.5, rtol = 1.e-3)
+            200, 50, 1, 0, 1, 0),
+                               ([63.00],[31.5]), rtol = 1.e-3)
     # Testing an array
     np.testing.assert_allclose(calculate_sensitivity_lima(
-            [10, 100], [50,100], 1), [630.07,  83.57], rtol = 1.e-3) 
+            [10, 100], [50,100], 1, 1, 1, 0),
+                               ([63.00, 83.57],[630.07,  83.57]), rtol = 1.e-3)
 
 def test_bin_definition():
 
