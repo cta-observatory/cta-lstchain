@@ -54,11 +54,11 @@ class DragonPedestal:
                             numped[gain, pixel, posads] += 1
 
     def finalize_pedestal(self):
-        try:
+        if np.sum(self.numped==0) > 0:
+            raise RuntimeError("Not enough events to coverage all capacitor. "
+                               "Please use more events to create pedestal file.")
+        else:
             self.meanped = self.meanped / self.numped
-        except Exception as err:
-             print("Not enough events to coverage all capacitor. Please use more events to create pedestal file.")
-             print(err)
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 7))
