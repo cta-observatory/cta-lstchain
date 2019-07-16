@@ -7,14 +7,18 @@ __all__ = ['DragonPedestal']
 
 class DragonPedestal:
     size4drs = 4096
+    high_gain = 0
+    low_gain = 1
+    n_gain = 2
+    n_channel = 7
 
     def __init__(self, tel_id, n_module):
         self.tel_id = tel_id
         self.n_module = n_module
-        self.n_pixels = n_module*7
-        self.meanped = np.zeros((2, self.n_pixels, self.size4drs))
-        self.numped = np.zeros((2, self.n_pixels, self.size4drs))
-        self.first_cap_array = np.zeros((self.n_module, 2, 7))
+        self.n_pixels = n_module*self.n_channel # Each module has 7 channels (pixels)
+        self.meanped = np.zeros((self.n_gain, self.n_pixels, self.size4drs))
+        self.numped = np.zeros((self.n_gain, self.n_pixels, self.size4drs))
+        self.first_cap_array = np.zeros((self.n_module, self.n_gain, self.n_channel))
 
     def fill_pedestal_event(self, event):
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
@@ -26,15 +30,16 @@ class DragonPedestal:
                                       expected_pixel_id,
                                       self.first_cap_array,
                                       self.meanped,
-                                      self.numped)
+                                      self.numped,
+                                      self.n_module)
 
     @staticmethod
     @jit(parallel=True)
     def _fill_pedestal_event_jit(waveform, expected_pixel_id, first_cap_array,
-                                 meanped, numped):
+                                 meanped, numped, n_module):
         size4drs = 4096
         roisize = 40
-        for nr_module in prange(0, 265):
+        for nr_module in prange(0, n_module):
             first_cap = first_cap_array[nr_module, :, :]
             for gain in prange(0, 2):
                 for pix in prange(0, 7):
@@ -42,7 +47,7 @@ class DragonPedestal:
                     pixel = expected_pixel_id[nr_module * 7 + pix]
 
                     posads0 = int((2 + fc) % size4drs)
-                    if posads0 + 40 < 4096:
+                    if posads0 + 40 < size4drs:
                         meanped[gain, pixel, posads0:(posads0 + 36)] += waveform[gain, pixel, 2:38]
                         numped[gain, pixel, posads0:(posads0 + 36)] += 1
 
@@ -65,7 +70,7 @@ class DragonPedestal:
         first_cap = event.lst.tel[self.tel_id].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
         # First capacitor order according Dragon v5 board data format
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
-            fc[0, i] = first_cap[j] # high gain
+            fc[self.high_gain, i] = first_cap[j]
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
-            fc[1, i] = first_cap[j] # low gain
+            fc[self.low_gain, i] = first_cap[j]
         return fc
