@@ -456,3 +456,36 @@ def disp_parameters(hillas, source_pos_x, source_pos_y):
     disp.sign = np.sign(disp.dx)
     disp.miss = np.abs(np.sin(hillas.psi.to(u.rad).value) * disp.dx - np.cos(hillas.psi.to(u.rad).value)*disp.dy)
     return disp
+
+
+def filter_events(events,
+                  filters=dict(intensity=[0, np.inf],
+                                 width=[0, np.inf],
+                                 length=[0, np.inf],
+                                 wl=[0, np.inf],
+                                 r=[0, np.inf],
+                                 leakage=[0, 1],
+                                 )):
+    """
+    Apply data filtering to a pandas dataframe.
+    Each filtering range is applied if the column name exists in the DataFrame so that
+    `(events >= range[0]) & (events <= range[1])`
+    If the column name does not exist, the filtering is simply not applied
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    filters: dict containing events features names and their filtering range
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+
+    filter = np.ones(len(events), dtype=bool)
+
+    for k in filters.keys():
+        if k in events.columns:
+            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+
+    return events[filter]

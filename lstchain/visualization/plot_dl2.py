@@ -167,7 +167,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplot(221)
 
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
         data['mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
@@ -183,7 +183,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplot(222)
     hE = plt.hist2d(gammas['mc_energy'],
-                gammas['e_rec'],
+                gammas['reco_energy'],
                     bins=100)
 
     plt.colorbar(hE[3])
@@ -266,12 +266,12 @@ def plot_disp(data,true_hadroness=False):
 def plot_disp_vector(data):
     fig, axes = plt.subplots(1, 2)
 
-    axes[0].hist2d(data.disp_dx, data.disp_dx_rec, bins=60);
+    axes[0].hist2d(data.disp_dx, data.reco_disp_dx, bins=60);
     axes[0].set_xlabel('mc_disp')
     axes[0].set_ylabel('reco_disp')
     axes[0].set_title('disp_dx')
 
-    axes[1].hist2d(data.disp_dy, data.disp_dy_rec, bins=60);
+    axes[1].hist2d(data.disp_dy, data.reco_disp_dy, bins=60);
     axes[1].set_xlabel('mc_disp')
     axes[1].set_ylabel('reco_disp')
     axes[1].set_title('disp_dy');
@@ -296,45 +296,52 @@ def plot_pos(data,true_hadroness=False):
 
     #True position
 
+
     trueX = data[data[hadro]==0]['src_x']
     trueY = data[data[hadro]==0]['src_y']
-    trueXprot = data[data[hadro]==1]['src_x']
-    trueYprot = data[data[hadro]==1]['src_y']
+    trueXprot = data[data[hadro]==101]['src_x']
+    trueYprot = data[data[hadro]==101]['src_y']
 
     #Reconstructed position
 
     recX = data[data[hadro]==0]['src_x_rec']
     recY = data[data[hadro]==0]['src_y_rec']
-    recXprot = data[data[hadro]==1]['src_x_rec']
-    recYprot = data[data[hadro]==1]['src_y_rec']
+    recXprot = data[data[hadro]==101]['src_x_rec']
+    recYprot = data[data[hadro]==101]['src_y_rec']
+    ran = np.array([(-0.3, 0.3), (-0.4, 0.4)])
+    nbins=50
 
     plt.subplot(221)
-    plt.hist2d(trueXprot,trueYprot,
-               bins=100,label="Protons")
+    plt.hist2d(trueXprot, trueYprot,
+               bins=nbins,label="Protons",
+               range=ran)
     plt.colorbar()
     plt.title("True position Protons")
     plt.xlabel("x(m)")
     plt.ylabel("y (m)")
+
     plt.subplot(222)
     plt.hist2d(trueX,trueY,
-               bins=100,label="Gammas",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Gammas",
+               range=ran)
     plt.colorbar()
     plt.title("True position Gammas")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
+
     plt.subplot(223)
     plt.hist2d(recXprot,recYprot,
-               bins=100,label="Protons",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Protons",
+               range=ran)
     plt.colorbar()
     plt.title("Reconstructed position Protons")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
+
     plt.subplot(224)
     plt.hist2d(recX,recY,
-               bins=100,label="Gammas",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Gammas",
+               range=ran)
     plt.colorbar()
     plt.title("Reconstructed position Gammas ")
     plt.xlabel("x (m)")
@@ -370,7 +377,7 @@ def plot_importances(clf,features):
 
 def plot_ROC(clf,data,features, Energy_cut):
     # Plot ROC curve:
-    check = clf.predict_proba(data[features])[0:,1]
+    check = clf.predict_proba(data[features])[:, 0]
     accuracy = accuracy_score(data['mc_type'],
                               data['reco_type'])
     print(accuracy)
@@ -389,8 +396,8 @@ def plot_ROC(clf,data,features, Energy_cut):
 def plot_e_resolution(data, n_bins, emin, emax):
 
 
-    #delta_e = ((data['mc_energy']-data['e_rec'])*np.log(10))
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    #delta_e = ((data['mc_energy']-data['reco_energy'])*np.log(10))
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
         data['mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
@@ -441,7 +448,7 @@ def plot_e_resolution(data, n_bins, emin, emax):
 
 def calc_resolution(data):
 
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     n , bins, _ = plt.hist(delta_e,bins=500)
     mu,sigma = scipy.stats.norm.fit(delta_e)
     print(mu,sigma)
