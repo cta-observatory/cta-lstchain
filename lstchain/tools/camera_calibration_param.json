@@ -16,8 +16,8 @@
      "sample_size": 100,
      "sample_duration":1000,
      "tel_id":0,
-     "charge_median_cut_outliers": [-3,3],
-     "charge_std_cut_outliers": [-3,3],
+     "charge_median_cut_outliers": [-5,5],
+     "charge_std_cut_outliers": [-5,5],
      "charge_product":"FixedWindowSum"
    },
     "FlatFieldCalculator":{
@@ -25,8 +25,8 @@
      "sample_duration":1000,
      "tel_id":0,
       "charge_product":"LocalPeakWindowSum",
-      "charge_cut_outliers": [-0.3,0.3],
-     "time_cut_outliers": [10,30]
+      "charge_cut_outliers": [-0.5,0.5],
+     "time_cut_outliers": [0,38]
    },
      "LSTR0Corrections": {
       "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
@@ -36,7 +36,7 @@
    },
     "LocalPeakWindowSum":{
      "window_shift": 5,
-     "window_width":12
+     "window_width":9
     },
     "FixedWindowSum":{
      "window_start": 12,

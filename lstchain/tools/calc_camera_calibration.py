@@ -2,6 +2,8 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
+import sys
+import logging
 from traitlets import Dict, List, Unicode
 
 
@@ -14,7 +16,6 @@ from ctapipe.image import ImageExtractor
 
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.io.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
 from lstchain.calib.camera import CameraR0Calibrator
 
 __all__ = [
@@ -41,6 +42,11 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
+    log_file = Unicode(
+        'None',
+        help='Name of the log file'
+    ).tag(config=True)
+
     pedestal_product = traits.enum_trait(
         PedestalCalculator,
         default='PedestalIntegrator'
@@ -58,19 +64,18 @@ class CalibrationHDF5Writer(Tool):
 
     aliases = Dict(dict(
         input_file='EventSource.input_url',
+        output_file='CalibrationHDF5Writer.output_file',
+        log_file='CalibrationHDF5Writer.log_file',
         max_events='EventSource.max_events',
         pedestal_file= 'LSTR0Corrections.pedestal_path',
         flatfield_product='CalibrationHDF5Writer.flatfield_product',
         pedestal_product='CalibrationHDF5Writer.pedestal_product',
-        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product'
+        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product',
     ))
 
     classes = List([EventSource,
                     FlatFieldCalculator,
-                    FlatFieldContainer,
-                    PedestalCalculator,
-                    PedestalContainer,
-                    WaveformCalibrationContainer
+                    PedestalCalculator
                     ]
                    + traits.classes_with_traits(CameraR0Calibrator)
                    + traits.classes_with_traits(ImageExtractor)
@@ -98,6 +103,16 @@ class CalibrationHDF5Writer(Tool):
 
     def setup(self):
         kwargs = dict(parent=self)
+        '''
+        if self.log_file is not 'None':
+            log = logging.getLogger('CalibrationHDF5Writer')
+            logfile = logging.FileHandler(self.log_file)
+            log.addHandler(logfile)
+
+            h = logging.StreamHandler()
+            h.setLevel(logging.FATAL + 1)
+            log.addHandler(h)
+        '''
         self.eventsource = EventSource.from_config(**kwargs)
 
         self.flatfield = FlatFieldCalculator.from_name(
@@ -126,13 +141,17 @@ class CalibrationHDF5Writer(Tool):
             filename=self.output_file, group_name=group_name, overwrite=True
         )
 
+
     def start(self):
         '''Calibration coefficient calculator'''
 
         ped_initialized = False
         ff_initialized = False
+
         for count, event in enumerate(self.eventsource):
 
+            if count % 1000 == 0:
+                self.log.debug(f"event {count}")
             #
             if count == 0:
                 ped_data = event.mon.tel[self.tel_id].pedestal
@@ -163,7 +182,8 @@ class CalibrationHDF5Writer(Tool):
                         self.writer.write('pedestal', ped_data)
 
             # consider flat field events only after first pedestal event
-            elif event.r0.tel[self.tel_id].trigger_type == 1 and ped_initialized:
+            elif event.r0.tel[self.tel_id].trigger_type == 1 and ped_initialized and \
+                    np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))>800:
                 if self.flatfield.calculate_relative_gain(event):
 
                     self.log.debug(f"new flatfield at event n. {count+1}, id {event.r0.event_id}")
@@ -191,7 +211,7 @@ class CalibrationHDF5Writer(Tool):
                     calib_data.time = ff_data.sample_time
                     calib_data.time_range = ff_data.sample_time_range
                     calib_data.n_pe = n_pe
-                    calib_data.dc_to_pe = n_pe/ff_data.charge_median
+                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)
                     calib_data.time_correction = -ff_data.relative_time_median
 
 
@@ -208,6 +228,7 @@ class CalibrationHDF5Writer(Tool):
                         self.writer.write('pixel_status',status_data)
                         self.log.debug(f"write calibration data")
                         self.writer.write('calibration', calib_data)
+                        return
 
     def finish(self):
         Provenance().add_output_file(
