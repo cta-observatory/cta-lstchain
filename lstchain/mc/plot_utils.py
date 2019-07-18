@@ -118,12 +118,15 @@ def plot_sensitivity(ax, e, sensitivity):
     """
     mask = sensitivity<1e100
     emed = np.sqrt(e[1:] * e[:-1])
+    binsize = (e[1:]-e[:-1])/2
 
     dFdE = crab_magic(emed[mask])
-    ax.loglog(emed[mask],
-              sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s)),
-              label = 'Sensitivity')
+    #ax.loglog(emed[mask],
+    #          sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s)), label = 'Sensitivity', marker)
 
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.errorbar(emed[mask].to_value(), (sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), xerr=binsize[mask].to_value(), marker='o')
 
 def sens_minimization_plot(eb, gb, tb, e, sens):
     """
@@ -177,9 +180,9 @@ def sens_plot(eb, e, sensitivity):
     fig_sens, ax = plt.subplots()
     plot_sensitivity(ax, e, sensitivity)
 
-    plot_Crab_SED(ax, 100, 10**1.5 * u.GeV, 10**4.5 * u.GeV, label=r'Crab')
-    plot_Crab_SED(ax, 1, 10**1.5 * u.GeV, 10**4.5 * u.GeV, ls='dotted',label='1% Crab')
-    plot_Crab_SED(ax, 10, 10**1.5 * u.GeV, 10**4.5 * u.GeV, ls='-.',label='10% Crab')
+    plot_Crab_SED(ax, 100, 10**1. * u.GeV, 10**5 * u.GeV, label=r'Crab')
+    plot_Crab_SED(ax, 1, 10**1. * u.GeV, 10**5 * u.GeV, ls='dotted',label='1% Crab')
+    plot_Crab_SED(ax, 10, 10**1. * u.GeV, 10**5 * u.GeV, ls='-.',label='10% Crab')
 
     format_axes_sensitivity(ax)
     ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')
@@ -192,6 +195,7 @@ def plot_positions_survived_events(df_gammas,
     e_reco_g = 10**df_gammas.mc_energy
     e_reco_p = 10**df_protons.mc_energy
     for i in range(0,eb):
+        print(E[i], E[i+1])
         ind = np.unravel_index(np.nanargmin(sens[i], axis=None), sens[i].shape)
         events_g = df_gammas[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                       & (gammaness_g > g[ind[0]]) & (theta2_g < t[ind[1]])]

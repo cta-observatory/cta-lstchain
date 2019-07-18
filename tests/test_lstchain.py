@@ -2,6 +2,64 @@ from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
 
+custom_config = {
+    "events_filters": {
+        "intensity": [0.3, np.inf],
+        "width": [0, 10],
+        "length": [0, 10],
+        "wl": [0, 1],
+        "r": [0, 1],
+        "leakage": [0, 1]
+    },
+    "tailcut": {
+        "picture_thresh":6,
+        "boundary_thresh":2,
+        "keep_isolated_pixels": True,
+        "min_number_picture_neighbors": 1
+    },
+
+    "random_forest_regressor_args": {
+        "max_depth": 5,
+        "min_samples_leaf": 2,
+        "n_jobs": 4,
+        "n_estimators": 15,
+    },
+    "random_forest_classifier_args": {
+        "max_depth": 5,
+        "min_samples_leaf": 2,
+        "n_jobs": 4,
+        "n_estimators": 10,
+    },
+    "regression_features": [
+        "intensity",
+        "width",
+        "length",
+        "x",
+        "y",
+        "wl",
+        "skewness",
+        "kurtosis",
+    ],
+    "classification_features": [
+        "intensity",
+        "width",
+        "length",
+        "x",
+        "y",
+        "reco_energy",
+        "reco_disp_dx",
+        "reco_disp_dy"
+    ],
+
+  "allowed_tels": [1, 2, 3, 4],
+  "image_extractor": "GlobalPeakWindowSum",
+  "image_extractor_config": {},
+  "gain_selector": "ThresholdGainSelector",
+  "gain_selector_config": {
+    "threshold":  4094
+  }
+}
+
 def test_import_calib():
     from lstchain import calib
 
@@ -18,18 +76,14 @@ def test_import_lstio():
 def test_dl0_to_dl1():
     from lstchain.reco.dl0_to_dl1 import r0_to_dl1
     infile = get_dataset_path('gamma_test_large.simtel.gz')
-    r0_to_dl1(infile)
+    r0_to_dl1(infile, custom_config=custom_config)
 
 @pytest.mark.run(order=2)
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = 'dl1_gamma_test_large.h5'
-    features = ['intensity', 'width', 'length']
 
-    reg_energy, reg_disp, cls_gh = build_models(
-        infile, infile,
-        features,
-        save_models=True)
+    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=True)
 
     from sklearn.externals import joblib
     joblib.dump(reg_energy, 'rf_energy.pkl')
@@ -44,7 +98,7 @@ def test_apply_models():
 
     dl1_file = 'dl1_gamma_test_large.h5'
     dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
-    features = ['intensity', 'width', 'length']
+
     # Load the trained RF for reconstruction:
     file_energy = 'rf_energy.pkl'
     file_disp = 'rf_disp.pkl'
@@ -54,7 +108,8 @@ def test_apply_models():
     reg_disp = joblib.load(file_disp)
     reg_cls_gh = joblib.load(file_cls_gh)
 
-    dl2 = apply_models(dl1, features, reg_cls_gh, reg_energy, reg_disp)
+
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf('dl2_gamma_test_large.h5', key='events/LSTCam')
 
 

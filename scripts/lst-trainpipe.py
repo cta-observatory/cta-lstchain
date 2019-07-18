@@ -11,7 +11,7 @@ $> python lst-trainpipe arg1 arg2 ...
 import argparse
 from lstchain.reco import dl1_to_dl2
 from distutils.util import strtobool
-import numpy as np
+from lstchain.io.config import read_configuration_file
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
@@ -47,19 +47,17 @@ args = parser.parse_args()
 if __name__ == '__main__':
     #Train the models
         
-    features = ['intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 
-                'skewness', 'kurtosis','r', 'intercept', 'time_gradient']
-
-    intensity_min = np.log10(100)
-    r_max = 0.8
-
+    config = {}
+    if args.config_file is not None:
+        try:
+            config = read_configuration_file(args.config_file)
+        except("Custom configuration could not be loaded !!!"):
+            pass
 
     dl1_to_dl2.build_models(args.gammafile,
                             args.protonfile,
-                            features,
-                            intensity_min = intensity_min,
                             save_models=args.storerf,
                             path_models=args.path_models,
-                            config_file=args.config_file
+                            custom_config=config,
                             )
     
