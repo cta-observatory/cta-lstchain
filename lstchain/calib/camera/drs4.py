@@ -4,9 +4,14 @@ from numba import jit, prange
 
 __all__ = ['DragonPedestal']
 
+# `size4drs` is number of capacitors in each pixel which using DRS4.
+# "The sampler has 1024 capacitors per channel (pixel).
+# Four channels of a chip are cascaded to obtain deeper sampling depth with 4096 capacitors.
+# (https://arxiv.org/abs/1509.00548)
+size4drs = 4096
+
 
 class DragonPedestal:
-    size4drs = 4096
     high_gain = 0
     low_gain = 1
     n_gain = 2
@@ -37,7 +42,6 @@ class DragonPedestal:
     @jit(parallel=True)
     def _fill_pedestal_event_jit(waveform, expected_pixel_id, first_cap_array,
                                  meanped, numped, n_module):
-        size4drs = 4096
         roisize = 40
         for nr_module in prange(0, n_module):
             first_cap = first_cap_array[nr_module, :, :]
