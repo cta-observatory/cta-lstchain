@@ -5,7 +5,7 @@ from numba import jit, prange
 __all__ = ['DragonPedestal']
 
 # `size4drs` is number of capacitors in each pixel which using DRS4.
-# "The sampler has 1024 capacitors per channel (pixel).
+# "The sampler has 1024 capacitors per channel.
 # Four channels of a chip are cascaded to obtain deeper sampling depth with 4096 capacitors.
 # (https://arxiv.org/abs/1509.00548)
 size4drs = 4096
