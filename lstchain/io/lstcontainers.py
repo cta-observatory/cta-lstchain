@@ -178,3 +178,18 @@ class DispContainer(Container):
     norm = Field(nan, 'Norm of the disp_norm vector')
     sign = Field(nan, 'Sign of the disp_norm')
     miss = Field(nan, 'miss parameter norm')
+
+class drivereport(Container):
+      date= Field("", "observation date")
+    data1=StringCol(16)
+    time_stamp = Field(-1, "timestamp")
+    epoch      = Field(-1,"Epoch")
+    time       = Field(-1,"time")
+    Az_avg = Field(-1, "Azimuth")
+    Az_min = Field(-1," Azimuth min")
+    Az_max = Field(-1," Azimuth max")
+    Az_rms = Field(-1,"Azimuth RMS")
+    El_avg = Field(-1,"Elevation")
+    El_min = Field(-1,"Elevation min")
+    El_max = Field(-1,"Elevation max")
+    El_rms = Field(-1,"Elevation RMS")    
