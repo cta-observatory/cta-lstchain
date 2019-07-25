@@ -15,6 +15,7 @@ from numpy import nan
 __all__ = [
     'DL1ParametersContainer',
     'DispContainer',
+    'DriveReport'
 ]
 
 class DL1ParametersContainer(Container):
@@ -179,7 +180,10 @@ class DispContainer(Container):
     sign = Field(nan, 'Sign of the disp_norm')
     miss = Field(nan, 'miss parameter norm')
 
-class drivereport(Container):
+class DriveReport(Container):
+      """
+      Drive report container 
+      """
       date= Field("", "observation date")
       time_stamp = Field(-1, "timestamp")
       epoch      = Field(-1,"Epoch")
