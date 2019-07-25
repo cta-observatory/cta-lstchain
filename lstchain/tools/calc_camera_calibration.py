@@ -213,7 +213,7 @@ class CalibrationHDF5Writer(Tool):
                         self.flatfield.store_results(event)
 
                     self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.r0.event_id} "
-                                   f"stat = {ff_data.n_events} event")
+                                   f"stat = {ff_data.n_events} events")
 
                     # write on file
                     self.writer.write('flatfield', ff_data)
