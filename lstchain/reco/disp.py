@@ -1,7 +1,7 @@
 import numpy as np
 from ..io.lstcontainers import DispContainer
 from .utils import sky_to_camera, polar_to_cartesian
-
+import astropy.units as u
 
 __all__ = ['disp',
            'miss',
@@ -92,8 +92,10 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     Parameters
     ----------
     hillas_parameters: `ctapipe.io.containers.HillasParametersContainer`
-    source_pos_x: X coordinate of the source (event) position in the camera frame
-    source_pos_y: Y coordinate of the source (event) position in the camera frame
+    source_pos_x: `astropy.units.quantity.Quantity`
+        X coordinate of the source (event) position in the camera frame
+    source_pos_y: `astropy.units.quantity.Quantity`
+        Y coordinate of the source (event) position in the camera frame
 
     Returns
     -------
@@ -101,14 +103,20 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     """
     disp_container = DispContainer()
 
-    d = disp(hillas_parameters.x.value, hillas_parameters.y.value, source_pos_x, source_pos_y)
+    d = disp(hillas_parameters.x.to(u.m).value,
+             hillas_parameters.y.to(u.m).value,
+             source_pos_x.to(u.m).value,
+             source_pos_y.to(u.m).value,
+             )
 
-    disp_container.dx = d[0]
-    disp_container.dy = d[1]
-    disp_container.norm = d[2]
-    disp_container.angle = d[3]
+    disp_container.dx = d[0] * u.m
+    disp_container.dy = d[1] * u.m
+    disp_container.norm = d[2] * u.m
+    disp_container.angle = d[3] * u.rad
     disp_container.sign = d[4]
-    disp_container.miss = miss(disp_container.dx, disp_container.dy, hillas_parameters.psi.value)
+    disp_container.miss = miss(disp_container.dx.value,
+                               disp_container.dy.value,
+                               hillas_parameters.psi.to(u.rad).value) * u.m
     return disp_container
 
 
