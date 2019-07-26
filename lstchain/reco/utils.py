@@ -300,19 +300,14 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     -------
 
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az,
-                               frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal,
                                telescope_pointing=pointing_direction
     )
     
-    event_direction = SkyCoord(alt=alt, az=az,
-                            frame=horizon_frame)
-    
-    nom_frame = NominalFrame(origin=pointing_direction,
-    )
-    
+    event_direction = SkyCoord(alt=alt, az=az, frame=horizon_frame)
+
     camera_pos = event_direction.transform_to(camera_frame)
     
     return camera_pos
@@ -458,6 +453,7 @@ def disp_parameters(hillas, source_pos_x, source_pos_y):
     return disp
 
 
+
 def expand_tel_list(tel_list, max_tels):
     """
     transform for the telescope list (to turn it into a telescope pattern)
@@ -467,3 +463,36 @@ def expand_tel_list(tel_list, max_tels):
     pattern = np.zeros(max_tels).astype(bool)
     pattern[tel_list] = 1
     return pattern
+
+
+def filter_events(events,
+                  filters=dict(intensity=[0, np.inf],
+                                 width=[0, np.inf],
+                                 length=[0, np.inf],
+                                 wl=[0, np.inf],
+                                 r=[0, np.inf],
+                                 leakage=[0, 1],
+                                 )):
+    """
+    Apply data filtering to a pandas dataframe.
+    Each filtering range is applied if the column name exists in the DataFrame so that
+    `(events >= range[0]) & (events <= range[1])`
+    If the column name does not exist, the filtering is simply not applied
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    filters: dict containing events features names and their filtering range
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+
+    filter = np.ones(len(events), dtype=bool)
+
+    for k in filters.keys():
+        if k in events.columns:
+            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+
+    return events[filter]
