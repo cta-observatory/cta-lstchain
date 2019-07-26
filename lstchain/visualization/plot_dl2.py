@@ -167,7 +167,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplot(221)
 
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
         data['mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
@@ -183,7 +183,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplot(222)
     hE = plt.hist2d(gammas['mc_energy'],
-                gammas['e_rec'],
+                gammas['reco_energy'],
                     bins=100)
 
     plt.colorbar(hE[3])
@@ -205,8 +205,8 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplots_adjust(hspace=.0)
 
-def plot_disp(data,true_hadroness=False):
 
+def plot_disp(data, true_hadroness=False):
     """Plot the performance of reconstructed position
 
     Parameters:
@@ -223,55 +223,64 @@ def plot_disp(data,true_hadroness=False):
     if true_hadroness:
         hadro = "mc_type"
 
-    gammas = data[data[hadro]==0]
+    gammas = data[data[hadro] == 0]
 
     plt.subplot(221)
-    difD = ((gammas['disp_norm']-gammas['disp_rec'])/gammas['disp_norm'])
-    section = difD[abs(difD) < 0.5]
+
+    reco_disp_norm = np.sqrt(gammas['reco_disp_dx']**2 + gammas['reco_disp_dy']**2)
+    disp_res = ((gammas['disp_norm'] - reco_disp_norm) / gammas['disp_norm'])
+
+    section = disp_res[abs(disp_res) < 0.5]
     mu,sigma = norm.fit(section)
-    print(mu,sigma)
-    n,bins,patches = plt.hist(difD,100,density=1,
-                              alpha=0.75,range=[-2,1.5])
+    print("mu = {}\n sigma = {}".format(mu, sigma))
+
+    n, bins, patches = plt.hist(disp_res,
+                                bins=100,
+                                density=1,
+                                alpha=0.75,
+                                range=[-2, 1.5],
+                                )
+
     y = norm.pdf( bins, mu, sigma)
-    l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$',
-    fontsize=15)
-    plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
-                fontsize=12)
-    plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),
-                fontsize=12)
+
+    plt.plot(bins, y, 'r--', linewidth=2)
+
+    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
+
+    plt.figtext(0.15, 0.7, 'Mean: ' + str(round(mu, 4)), fontsize=12)
+    plt.figtext(0.15, 0.65, 'Std: ' + str(round(sigma, 4)), fontsize=12)
 
     plt.subplot(222)
-    hD = plt.hist2d(gammas['disp_norm'],gammas['disp_rec'],
+
+    hD = plt.hist2d(gammas['disp_norm'], reco_disp_norm,
                     bins=100,
-                    range=([0,1.1],[0,1.1]),
+                    range=([0, 1.1], [0, 1.1]),
                 )
+
     plt.colorbar(hD[3])
-    plt.xlabel('$disp\_norm_{gammas}$',
-            fontsize=15)
-    plt.ylabel('$disp\_norm_{rec}$',
-               fontsize=15)
+    plt.xlabel('$disp\_norm_{gammas}$', fontsize=15)
+
+    plt.ylabel('$disp\_norm_{rec}$', fontsize=15)
+
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
 
     plt.subplot(223)
-    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2
-    +(gammas['src_y']-gammas['src_y'])**2
-    plt.hist(theta2,bins=100,
-            range=[0,0.1],histtype=u'step')
-    plt.xlabel(r'$\theta^{2}(º)$',
-               fontsize=15)
-    plt.ylabel(r'# of events',
-               fontsize=15)
+    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2 + (gammas['src_y']-gammas['src_y'])**2
+
+    plt.hist(theta2, bins=100, range=[0, 0.1], histtype=u'step')
+    plt.xlabel(r'$\theta^{2}(º)$', fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
+
 
 def plot_disp_vector(data):
     fig, axes = plt.subplots(1, 2)
 
-    axes[0].hist2d(data.disp_dx, data.disp_dx_rec, bins=60);
+    axes[0].hist2d(data.disp_dx, data.reco_disp_dx, bins=60);
     axes[0].set_xlabel('mc_disp')
     axes[0].set_ylabel('reco_disp')
     axes[0].set_title('disp_dx')
 
-    axes[1].hist2d(data.disp_dy, data.disp_dy_rec, bins=60);
+    axes[1].hist2d(data.disp_dy, data.reco_disp_dy, bins=60);
     axes[1].set_xlabel('mc_disp')
     axes[1].set_ylabel('reco_disp')
     axes[1].set_title('disp_dy');
@@ -296,45 +305,52 @@ def plot_pos(data,true_hadroness=False):
 
     #True position
 
+
     trueX = data[data[hadro]==0]['src_x']
     trueY = data[data[hadro]==0]['src_y']
-    trueXprot = data[data[hadro]==1]['src_x']
-    trueYprot = data[data[hadro]==1]['src_y']
+    trueXprot = data[data[hadro]==101]['src_x']
+    trueYprot = data[data[hadro]==101]['src_y']
 
     #Reconstructed position
 
     recX = data[data[hadro]==0]['src_x_rec']
     recY = data[data[hadro]==0]['src_y_rec']
-    recXprot = data[data[hadro]==1]['src_x_rec']
-    recYprot = data[data[hadro]==1]['src_y_rec']
+    recXprot = data[data[hadro]==101]['src_x_rec']
+    recYprot = data[data[hadro]==101]['src_y_rec']
+    ran = np.array([(-0.3, 0.3), (-0.4, 0.4)])
+    nbins=50
 
     plt.subplot(221)
-    plt.hist2d(trueXprot,trueYprot,
-               bins=100,label="Protons")
+    plt.hist2d(trueXprot, trueYprot,
+               bins=nbins,label="Protons",
+               range=ran)
     plt.colorbar()
     plt.title("True position Protons")
     plt.xlabel("x(m)")
     plt.ylabel("y (m)")
+
     plt.subplot(222)
     plt.hist2d(trueX,trueY,
-               bins=100,label="Gammas",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Gammas",
+               range=ran)
     plt.colorbar()
     plt.title("True position Gammas")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
+
     plt.subplot(223)
     plt.hist2d(recXprot,recYprot,
-               bins=100,label="Protons",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Protons",
+               range=ran)
     plt.colorbar()
     plt.title("Reconstructed position Protons")
     plt.xlabel("x (m)")
     plt.ylabel("y (m)")
+
     plt.subplot(224)
     plt.hist2d(recX,recY,
-               bins=100,label="Gammas",
-               range=np.array([(-1, 1), (-1, 1)]))
+               bins=nbins,label="Gammas",
+               range=ran)
     plt.colorbar()
     plt.title("Reconstructed position Gammas ")
     plt.xlabel("x (m)")
@@ -370,7 +386,7 @@ def plot_importances(clf,features):
 
 def plot_ROC(clf,data,features, Energy_cut):
     # Plot ROC curve:
-    check = clf.predict_proba(data[features])[0:,1]
+    check = clf.predict_proba(data[features])[:, 0]
     accuracy = accuracy_score(data['mc_type'],
                               data['reco_type'])
     print(accuracy)
@@ -389,8 +405,8 @@ def plot_ROC(clf,data,features, Energy_cut):
 def plot_e_resolution(data, n_bins, emin, emax):
 
 
-    #delta_e = ((data['mc_energy']-data['e_rec'])*np.log(10))
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    #delta_e = ((data['mc_energy']-data['reco_energy'])*np.log(10))
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     means_result = scipy.stats.binned_statistic(
         data['mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
@@ -441,7 +457,7 @@ def plot_e_resolution(data, n_bins, emin, emax):
 
 def calc_resolution(data):
 
-    delta_e = np.log(10**data['e_rec']/10**data['mc_energy'])
+    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
     n , bins, _ = plt.hist(delta_e,bins=500)
     mu,sigma = scipy.stats.norm.fit(delta_e)
     print(mu,sigma)

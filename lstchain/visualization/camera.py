@@ -47,8 +47,11 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
     display.axes.quiver(hillas.x, hillas.y,
                         disp.dx, disp.dy,
                         units='xy', scale=1*u.m,
+                        angles='xy',
                         **kwargs,
                         )
+
+    display.axes.quiver(hillas.x.value, hillas.y.value, disp.dx.value, disp.dy.value, units='xy', scale=1)
 
 
 def overlay_hillas_major_axis(display, hillas, **kwargs):
