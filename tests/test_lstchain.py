@@ -1,6 +1,17 @@
 from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
+import os
+
+test_dir = 'testfiles'
+
+os.makedirs(test_dir, exist_ok=True)
+
+testfile = 'gamma_test_large.simtel.gz'
+lstcam_key = 'events/LSTCam'
+dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
+dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
+
 
 custom_config = {
     "events_filters": {
@@ -75,20 +86,21 @@ def test_import_lstio():
 @pytest.mark.run(order=1)
 def test_dl0_to_dl1():
     from lstchain.reco.dl0_to_dl1 import r0_to_dl1
-    infile = get_dataset_path('gamma_test_large.simtel.gz')
-    r0_to_dl1(infile, custom_config=custom_config)
+    infile = get_dataset_path(testfile)
+    r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
 
 @pytest.mark.run(order=2)
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
-    infile = 'dl1_gamma_test_large.h5'
+    infile = dl1_file
 
     reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=True)
 
     from sklearn.externals import joblib
-    joblib.dump(reg_energy, 'rf_energy.pkl')
-    joblib.dump(reg_disp, 'rf_disp.pkl')
-    joblib.dump(cls_gh, 'rf_cls_gh.pkl')
+    joblib.dump(reg_energy, os.path.join(test_dir, 'rf_energy.pkl'))
+    joblib.dump(reg_disp, os.path.join(test_dir, 'rf_disp.pkl'))
+    joblib.dump(cls_gh, os.path.join(test_dir, 'rf_cls_gh.pkl'))
+
 
 @pytest.mark.run(order=3)
 def test_apply_models():
@@ -96,13 +108,12 @@ def test_apply_models():
     import pandas as pd
     from sklearn.externals import joblib
 
-    dl1_file = 'dl1_gamma_test_large.h5'
-    dl1 = pd.read_hdf(dl1_file, key='events/LSTCam')
+    dl1 = pd.read_hdf(dl1_file, key=lstcam_key)
 
     # Load the trained RF for reconstruction:
-    file_energy = 'rf_energy.pkl'
-    file_disp = 'rf_disp.pkl'
-    file_cls_gh = 'rf_cls_gh.pkl'
+    file_energy = os.path.join(test_dir, 'rf_energy.pkl')
+    file_disp = os.path.join(test_dir, 'rf_disp.pkl')
+    file_cls_gh = os.path.join(test_dir, 'rf_cls_gh.pkl')
 
     reg_energy = joblib.load(file_energy)
     reg_disp = joblib.load(file_disp)
@@ -110,7 +121,7 @@ def test_apply_models():
 
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
-    dl2.to_hdf('dl2_gamma_test_large.h5', key='events/LSTCam')
+    dl2.to_hdf(dl2_file, key=lstcam_key)
 
 
 @pytest.mark.last
@@ -118,15 +129,8 @@ def test_clean_test_files():
     """
     Function to clean the test files created by the previous test
     """
-    import os
-    os.remove('dl1_gamma_test_large.h5')
-    os.remove('cls_gh.sav')
-    os.remove('reg_disp_vector.sav')
-    os.remove('reg_energy.sav')
-    os.remove('rf_disp.pkl')
-    os.remove('rf_energy.pkl')
-    os.remove('rf_cls_gh.pkl')
-    os.remove('dl2_gamma_test_large.h5')
+    import shutil
+    shutil.rmtree(test_dir)
 
 
 def test_disp_vector():
