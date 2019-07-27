@@ -182,3 +182,30 @@ class DispContainer(Container):
 
 class ExtraMCInfo(Container):
     obs_id = Field(0, "MC Run Identifier")
+
+class ExtraImageInfo(Container):
+    """ attach the tel_id """
+    tel_id = Field(0, "Telescope ID")
+
+
+class ThrownEventsHistogram(Container):
+    """ 2D histogram from SimTel files """
+    obs_id = Field(-1, 'MC run ID')
+    hist_id = Field(-1, 'Histogram ID')
+    num_entries = Field(-1, 'Number of entries in the histogram')
+    bins_energy = Field(None, 'array of energy bin lower edges, as in np.histogram')
+    bins_core_dist = Field(None, 'array of core-distance bin lower edges, as in np.histogram')
+    histogram = Field(None, "array of histogram entries, size (n_bins_x, n_bins_y)")
+
+    def fill_from_simtel(self, hist):
+        """ fill from a SimTel Histogram entry"""
+        self.hist_id = hist['id']
+        self.num_entries = hist['entries']
+        xbins = np.linspace(hist['lower_x'], hist['upper_x'], hist['n_bins_x'] + 1)
+        ybins = np.linspace(hist['lower_y'], hist['upper_y'], hist['n_bins_y'] + 1)
+        self.bins_core_dist = xbins
+        self.bins_energy = 10 ** ybins
+        self.histogram = hist['data']
+        self.meta['hist_title'] = hist['title']
+        self.meta['x_label'] = 'Log10 E (TeV)'
+        self.meta['y_label'] = '3D Core Distance (m)'
