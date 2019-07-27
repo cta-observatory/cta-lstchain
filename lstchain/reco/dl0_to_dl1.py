@@ -23,14 +23,14 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from ..io.lstcontainers import ExtraMCInfo
+from ..io.lstcontainers import ExtraMCInfo, ExtraImageInfo, ThrownEventsHistogram
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 
-
 import tables
 from functools import partial
-
+from eventio import Histograms
+from eventio.search_utils import yield_toplevel_of_type
 
 
 
@@ -177,6 +177,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
             )
 
     extramc = ExtraMCInfo()
+    extra_im = ExtraImageInfo()
+    extra_im.prefix = ''  # get rid of the prefix
 
     with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
         for ii in range(5):  # simulate a few merged runs
@@ -186,7 +188,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
     with HDF5TableWriter(
         filename=output_filename,
-        group_name='dl1/events',
+        group_name='dl1/event',
         mode='a',
         filters=filters,
         add_prefix=True,
@@ -232,7 +234,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
-                tel_name = str(event.inst.subarray.tel[tel_id]).replace(":", "_")
+                tel_name = str(event.inst.subarray.tel[tel_id])[4:]
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -266,14 +268,33 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     dl1_container.prefix = tel.prefix
 
                     if width >= 0:
+                        extra_im.tel_id = tel_id
                         # Camera geometry
-                        camera = event.inst.subarray.tel[telescope_id].camera
+                        # camera = event.inst.subarray.tel[telescope_id].camera
                         # writer.write(camera.cam_id, [dl1_container])
                         writer.write(table_name=f'telescope/image/{tel_name}',
-                                     containers=[event.dl0, tel, dl1_container])
+                                     containers=[event.dl0, tel, extra_im])
+                        writer.write(table_name=f'telescope/params/{tel_name}',
+                                     containers=[dl1_container])
 
-    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
-        writer.write("run_config", [event.mcheader])
+        # Writing histograms
+        with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+            for hist in yield_toplevel_of_type(source.file_, Histograms):
+                pass
+            # find histogram id 6 (thrown energy)
+            thrown = None
+            for hist in source.file_.histograms:
+                if hist['id'] == 6:
+                    thrown = hist
+
+            thrown_hist = ThrownEventsHistogram()
+            thrown_hist.fill_from_simtel(thrown)
+            thrown_hist.obs_id = event.dl0.obs_id + ii
+            writer.write('thrown_event_distribution', thrown_hist)
+
+
+    # with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+    #     writer.write("run_config", [event.mcheader])
 
 
 
