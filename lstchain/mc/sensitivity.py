@@ -79,15 +79,16 @@ def process_mc(dl1_file, dl2_file, mc_type):
     events = pd.read_hdf(dl2_file)
 
     #Filters:
-
+    print("number of events before cuts", len(events))
     filter_good_events =  (events.leakage < 0.2) & \
-                          (events.intensity > np.log10(200)) & \
-                          (events.wl > 0.1) & \
-                          (events.tel_id==1)
+                          (events.intensity > np.log10(50))
+                          #(events.tel_id==1)
+                          #(events.wl > 0.1) 
+
 
     events = events[filter_good_events]
-
-    e_reco = 10**events.mc_energy.to_numpy() * u.GeV
+    print("number of events after quality cuts", len(events))
+    e_reco = 10**events.reco_energy.to_numpy() * u.GeV
     e_true = 10**events.mc_energy.to_numpy() * u.GeV
 
     gammaness = events.gammaness
@@ -108,6 +109,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
     # the squared angular distance of the reconstructed position w.r.t. the
     # center of the camera
     else:
+        print("the particle is not a gamma")
         events = events[events.mc_type!=0]
         alt2 = events.mc_alt_tel
         az2 = np.arctan(np.tan(events.mc_az_tel))
@@ -125,6 +127,10 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad)**2
     events['theta2'] = angdist2
+    m_to_deg = 2.046
+    #print("angdist2",angdist2.to(u.deg**2))
+    #print("np.power(events['src_x_rec'] - events['src_x'],2) + np.power(events['src_y_rec'] - events['src_y'],2)", \
+    #          np.power(events['src_x_rec']*m_to_deg - events['src_x']*m_to_deg,2) + np.power(events['src_y_rec']*m_to_deg - events['src_y'] * m_to_deg,2))
 
     return gammaness, angdist2.to(u.deg**2), e_reco, e_true, sim_par, events
 
@@ -201,8 +207,8 @@ def calculate_sensitivity_lima_1d(nex, nbg, alpha, eb):
     for i in range(0, eb):
                 if nex_5sigma[i] < 10:
                     nex_5sigma[i] = 10
-                if nex_5sigma[i] < 0.05 * nbg[i]/5:
-                    nex_5sigma[i] = 0.05 * nbg[i]/5
+                if nex_5sigma[i] < 0.05 * nbg[i] * alpha:
+                    nex_5sigma[i] = 0.05 * nbg[i] * alpha
 
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
@@ -264,6 +270,7 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     # ring_upper_limit = math.sqrt(2 * (ring_radius**2) - (ring_lower_limit)**2)
 
     contained = np.where((np.sqrt(angdist2) < ring_upper_limit) & (np.sqrt(angdist2) > ring_lower_limit), True, False)
+    print("ring_lower_limit, ring_upper_limit", ring_lower_limit, ring_upper_limit)
 
     return contained, area
 
@@ -302,8 +309,16 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(simtelfile_protons,
                                                              dl2_file_p, 'proton')
 
+    print("simulated events ", mc_par_g['sim_ev'])
+    print("simulated events ", mc_par_p['sim_ev'])
+
     mc_par_g['sim_ev'] = mc_par_g['sim_ev']*nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev']*nfiles_protons
+
+    print("nfiles_gammas ", nfiles_gammas)
+    print("nfiles_protons ", nfiles_protons)
+    print("simulated events ", mc_par_g['sim_ev'])
+    print("simulated events ", mc_par_p['sim_ev'])
 
     #Pass units to GeV and cm2
     mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
@@ -323,6 +338,22 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
                 np.log10(emax_sens.to_value()), eb + 1) * u.GeV
 
     g, t = bin_definition(gb, tb)
+
+    src_rec2 = np.power(events_p['src_x_rec'],2) + np.power(events_p['src_y_rec'],2)
+    print("np.min(angdist2) ", np.min(angdist2_p))
+    print("np.max(angdist2) ", np.max(angdist2_p))
+    print("np.min(np.power(events_p['src_x_rec'],2) + np.power(events_p['src_y_rec'],2) ", np.min(src_rec2))
+    print("np.max(np.power(events_p['src_x_rec'],2) + np.power(events_p['src_y_rec'],2) ", np.max(src_rec2))
+
+    #print("angdist2_p ", angdist2_p)
+    #print("np.power(events['src_x_rec'],2) + np.power(events['src_y_rec'],2) ", np.power(events_p['src_x_rec'],2) + np.power(events_p['src_y_rec'],2))
+
+    #fig, ax = plt.subplots()
+    #ax.set_yscale("log")
+    #ax.hist(angdist2_p.to_value(),bins=100, range=(0,5), label='(angdist2_p')
+    #ax.hist(np.power(events_p['src_x_rec'],2) + np.power(events_p['src_y_rec'],2), bins=100, range=(0,5), alpha=0.5, label='src_rec')
+    #ax.legend()
+    #plt.show()
 
     #Number of simulated events per energy bin
     """
@@ -350,10 +381,24 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
                      mc_par_g['cone'], mc_par_g['area_sim'],
                      crab_par['f0'], crab_par['e0'])
+    #print("mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
+    #                 mc_par_g['cone'], mc_par_g['area_sim'],
+    #                 crab_par['f0'], crab_par['e0']",
+    #      mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
+    #                 mc_par_g['cone'], mc_par_g['area_sim'],
+    #                 crab_par['f0'], crab_par['e0'])
+
 
     rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
                      mc_par_p['cone'], mc_par_p['area_sim'],
                      proton_par['f0'], proton_par['e0'])
+    #print("mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
+    #                 mc_par_p['cone'], mc_par_p['area_sim'],
+    #                 proton_par['f0'], proton_par['e0']",
+    #      mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
+    #                 mc_par_p['cone'], mc_par_p['area_sim'],
+    #                 proton_par['f0'], proton_par['e0'])
+
 
     w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
                     crab_par['alpha'], rate_g,
@@ -364,12 +409,19 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
                     mc_par_p['sim_ev'], proton_par['e0'])
 
 
-    e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
-                * w_g
-    e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_p['sp_idx'])) \
-                * w_p
+    print("w_g, w_p", w_g, w_p)
 
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.2 * u.deg)
+
+    e_true_gw = ((e_true_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+                * w_g
+    e_true_pw = ((e_true_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_p['sp_idx'])) \
+                * w_p
+    print(proton_par['alpha'])
+    print(mc_par_p['sp_idx'])
+    print(e_true_p, e_true_pw)
+
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
+    print("p_contained, angdist2_p", p_contained[angdist2_p.to_value() < 0.3], angdist2_p[angdist2_p.to_value() < 0.3])
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
@@ -377,7 +429,9 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     area_ratio_p = np.pi * t / ang_area_p
     # ratio between the area where we search for protons ang_area_p
     # and the area where we search for gammas math.pi * t
-
+    print("t ",t)
+    print("ang_area_p", ang_area_p)
+    print("area_ratio_p", area_ratio_p)
     # Arrays to contain the number of gammas and hadrons for different cuts
     final_gamma = np.ndarray(shape=(eb, gb, tb))
     final_hadrons = np.ndarray(shape=(eb, gb, tb))
@@ -387,14 +441,28 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     ngamma_per_ebin = np.ndarray(eb)
     nhadron_per_ebin = np.ndarray(eb)
 
+    total_rate_proton = np.sum(e_true_pw)
+    total_rate_gamma = np.sum(e_true_gw)
+    print("Total rate triggered proton [Hz]", total_rate_proton)
+    print("Total rate triggered gamma [Hz]", total_rate_gamma)
+
     # Weight events and count number of events per bin:
     for i in range(0,eb):  # binning in energy
+        total_rate_proton_ebin = np.sum(e_true_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])])
+        total_rate_gamma_ebin = np.sum(e_true_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])])
+
+        print("********Energy bin [GeV]*****")
+        print(E[i], E[i+1])
+        print("**************")
+        print("Total rate triggered proton in this bin [Hz]", total_rate_proton_ebin)
+        print("Total rate triggered gamma in this bin [Hz]", total_rate_gamma_ebin)
+
         for j in range(0,gb):  # cut in gammaness
-            for k in range(0,tb):  # cut in theta2
-                eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
+            for k in range(0,tb):  # cut in theta2                
+                eg_w_sum = np.sum(e_true_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                                             & (gammaness_g > g[j]) & (theta2_g < t[k])])
 
-                ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
+                ep_w_sum = np.sum(e_true_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                             & (gammaness_p > g[j]) & p_contained])
                 final_gamma[i][j][k] = eg_w_sum * obstime
                 final_hadrons[i][j][k] = ep_w_sum * obstime * area_ratio_p[k]
@@ -404,14 +472,14 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
                 pre_hadrons[i][j][k] = e_reco_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                             & (gammaness_p > g[j]) & p_contained].shape[0]
 
-                ngamma_per_ebin[i] = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
-                nhadron_per_ebin[i] = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
+                ngamma_per_ebin[i] = np.sum(e_true_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
+                nhadron_per_ebin[i] = np.sum(e_true_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
 
     nex_5sigma, sens = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff,
                                                   eb, gb, tb)
     # Avoid bins which are empty or have too few events:
-    min_num_events = 10
-    min_pre_events = 10
+    min_num_events = 5
+    min_pre_events = 5
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
     for i in range(0, eb):
         for j in range(0, gb):
@@ -450,17 +518,27 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
         nex_min[i] =  nex_5sigma[i][ind]
         sensitivity[i] = sens[i][ind]
         eff_g[i] = final_gamma[i][ind]/ngamma_per_ebin[i]
+        print("final_gamma[i][ind] ", final_gamma[i][ind])
+        print("ngamma_per_ebin[i] ", ngamma_per_ebin[i])
         eff_p[i] = final_hadrons[i][ind]/nhadron_per_ebin[i]
 
-        e_aftercuts = e_true_g[(e_true_g < E[i+1]) & (e_true_g > E[i]) \
+        e_aftercuts = e_true_g[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                                & (gammaness_g > g[ind[0]]) & (theta2_g < t[ind[1]])]
 
+        #e_aftercuts_p = e_true_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
+        #                         & (gammaness_p > g[ind[0]]) & p_contained]
+
         e_aftercuts_p = e_true_p[(e_true_p < E[i+1]) & (e_true_p > E[i]) \
-                                 & (gammaness_p > g[ind[0]]) & p_contained]
+                                 & p_contained]
+        print("len(e_aftercuts_p) ", len(e_aftercuts_p))
+        print("len(e_true_p[(e_true_p < E[i+1]) & (e_true_p > E[i])]) ", len(e_true_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]))
+        print("e_aftercuts_p.shape[0] ", e_aftercuts_p.shape[0])
+        print("len(e_true_p) ", len(e_true_p))
+        print(" ")
 
         e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha']-mc_par_g['sp_idx']))
 
-        e_w = np.sum(np.power(e_true_g[(e_true_g < E[i+1]) & (e_true_g > E[i])],
+        e_w = np.sum(np.power(e_true_g[(e_reco_g < E[i+1]) & (e_reco_g > E[i])],
                               crab_par['alpha']-mc_par_g['sp_idx']))
 
         #eff_area[i] = e_true_g[(e_true_g < E[i+1]) & (e_true_g > E[i]) & (gammaness_g > g[ind[0]]) & (theta2_g < t[ind[1]])].shape[0] / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m**2).to_value()
@@ -473,7 +551,7 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     #Compute sensitivity  in flux units
 
     emed = np.sqrt(E[1:] * E[:-1])
-    dFdE, par = crab_magic(emed)
+    dFdE, par = crab_hegra(emed)
     sens_flux = sensitivity / 100 * (dFdE * emed * emed).to(u.erg / (u.cm**2 * u.s))
 
     list_of_tuples = list(zip(E[:E.shape[0]-2].to_value(), E[1:].to_value(), gcut, tcut,
@@ -598,18 +676,18 @@ def sens(simtelfile_gammas, simtelfile_protons,
                     proton_par['alpha'], rate_p,
                     mc_par_p['sim_ev'], proton_par['e0'])
 
-
-    e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    e_true_gw = ((e_true_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
                 * w_g
-    e_reco_pw = ((e_reco_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_p['sp_idx'])) \
+    e_true_pw = ((e_true_p / proton_par['e0'])**(proton_par['alpha'] - mc_par_p['sp_idx'])) \
                 * w_p
 
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.2 * u.deg)
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
     # FIX: ring_halfwidth should be given as input
     area_ratio_p = np.pi * tcut / ang_area_p
+    print("ang_area_p, area_ratio_p", ang_area_p, area_ratio_p)
     # ratio between the area where we search for protons ang_area_p
     # and the area where we search for gammas math.pi * t
 
@@ -624,10 +702,11 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
     # Weight events and count number of events per bin:
     for i in range(0,eb):  # binning in energy
-        eg_w_sum = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
+        print("i,E[i] ",i,E[i])
+        eg_w_sum = np.sum(e_true_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                                     & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])])
 
-        ep_w_sum = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
+        ep_w_sum = np.sum(e_true_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                     & (gammaness_p > gcut[i]) & p_contained])
         final_gamma[i] = eg_w_sum * obstime
         final_hadrons[i] = ep_w_sum * obstime * area_ratio_p[i]
@@ -637,14 +716,14 @@ def sens(simtelfile_gammas, simtelfile_protons,
         pre_hadrons[i] = e_reco_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                   & (gammaness_p > gcut[i]) & p_contained].shape[0]
 
-        ngamma_per_ebin[i] = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
-        nhadron_per_ebin[i] = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
+        ngamma_per_ebin[i] = np.sum(e_true_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
+        nhadron_per_ebin[i] = np.sum(e_true_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
 
     nex_5sigma, sens = calculate_sensitivity_lima_1d(final_gamma, final_hadrons * noff, 1/noff,
                                                   eb)
     # Avoid bins which are empty or have too few events:
-    min_num_events = 10
-    min_pre_events = 10
+    min_num_events = 5
+    min_pre_events = 5
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
     for i in range(0, eb):
         conditions = (not np.isfinite(sens[i])) or (sens[i]<=0) \
@@ -678,15 +757,26 @@ def sens(simtelfile_gammas, simtelfile_protons,
         eff_g[i] = final_gamma[i]/ngamma_per_ebin[i]
         eff_p[i] = final_hadrons[i]/nhadron_per_ebin[i]
 
-        e_aftercuts = e_true_g[(e_true_g < E[i+1]) & (e_true_g > E[i]) \
+        e_aftercuts = e_true_g[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                                & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])]
+        #print("( gammaness_g, gcut[i],theta2_g,tcut[i] ", gammaness_g, gcut[i], theta2_g , tcut[i])
+        #print("e_true_g,e_reco_g,E[i+1],e_reco_g,E[i] ", e_true_g, e_reco_g, E[i+1], e_reco_g, E[i])
 
-        e_aftercuts_p = e_true_p[(e_true_p < E[i+1]) & (e_true_p > E[i]) \
+        e_aftercuts_p = e_true_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
                                  & (gammaness_p > gcut[i]) & p_contained]
+
+       # e_aftercuts_p = e_true_p[(e_true_p < E[i+1]) & (e_true_p > E[i]) \
+       #                          & (gammaness_p > gcut[i])]
+        print("len(e_aftercuts_p) ", len(e_aftercuts_p))
+        print("len(e_reco_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) ", len(e_true_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]))
+        print("e_aftercuts_p.shape[0] ", e_aftercuts_p.shape[0])
+        print("len(e_reco_p) ", len(e_reco_p))
+        print(" ")
+
 
         e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha']-mc_par_g['sp_idx']))
 
-        e_w = np.sum(np.power(e_true_g[(e_true_g < E[i+1]) & (e_true_g > E[i])],
+        e_w = np.sum(np.power(e_true_g[(e_reco_g < E[i+1]) & (e_reco_g > E[i])],
                               crab_par['alpha']-mc_par_g['sp_idx']))
 
         eff_area[i] = e_aftercuts_w.to_value() / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m**2).to_value()
@@ -697,9 +787,11 @@ def sens(simtelfile_gammas, simtelfile_protons,
     #Compute sensitivity  in flux units
 
     emed = np.sqrt(E[1:] * E[:-1])
-    dFdE, par = crab_magic(emed)
-    sens_flux = sensitivity / 100 * (dFdE * emed * emed).to(u.erg / (u.cm**2 * u.s))
-
+    dFdE, par = crab_hegra(emed)
+    sens_flux = sensitivity / 100 * (dFdE * emed * emed).to(u.TeV / (u.cm**2 * u.s))
+    print("Emed ", emed)
+    print("sensitivity ", sens_flux)
+    print("sensitivity [%]", sens)
     list_of_tuples = list(zip(E[:E.shape[0]-2].to_value(), E[1:].to_value(), gcut, tcut,
                             ngammas, nhadrons,
                             gammarate, hadronrate,

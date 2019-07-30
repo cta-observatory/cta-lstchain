@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from lstchain.spectra.crab import crab_magic
+from lstchain.spectra.crab import crab_magic, crab_hegra
 from lstchain.visualization.plot_dl2 import plot_pos
 import numpy as np
 import astropy.units as u
@@ -91,6 +91,12 @@ def format_axes_sensitivity(ax):
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha=.5)
 
+def plot_MAGIC_sensitivity(ax):
+    s=np.loadtxt('/Users/rlopezcoto/Code/ctasoft/fork/cta-lstchain/lstchain/mc/data/magic_sensitivity.txt')   
+    ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/1.e3,2), color='C0', label='MAGIC (Aleksic et al. 2014)')
+    
+    return ax
+
 def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
     """
 
@@ -120,13 +126,13 @@ def plot_sensitivity(ax, e, sensitivity):
     emed = np.sqrt(e[1:] * e[:-1])
     binsize = (e[1:]-e[:-1])/2
 
-    dFdE = crab_magic(emed[mask])
+    dFdE = crab_hegra(emed[mask])
     #ax.loglog(emed[mask],
     #          sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s)), label = 'Sensitivity', marker)
 
     ax.set_yscale("log")
     ax.set_xscale("log")
-    ax.errorbar(emed[mask].to_value(), (sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), xerr=binsize[mask].to_value(), marker='o')
+    ax.errorbar(emed[mask].to_value(), (sensitivity[mask] / 100 * (dFdE[0] * emed[mask] * emed[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), xerr=binsize[mask].to_value(), marker='o', color='C3', label='Sensitivity')
 
 def sens_minimization_plot(eb, gb, tb, e, sens):
     """
@@ -184,6 +190,7 @@ def sens_plot(eb, e, sensitivity):
     plot_Crab_SED(ax, 1, 10**1. * u.GeV, 10**5 * u.GeV, ls='dotted',label='1% Crab')
     plot_Crab_SED(ax, 10, 10**1. * u.GeV, 10**5 * u.GeV, ls='-.',label='10% Crab')
 
+    plot_MAGIC_sensitivity(ax)
     format_axes_sensitivity(ax)
     ax.legend(numpoints=1,prop={'size':9},ncol=2,loc='upper right')
 
