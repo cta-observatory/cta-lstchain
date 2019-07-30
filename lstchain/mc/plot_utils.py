@@ -200,8 +200,8 @@ def plot_sensitivity(ax, e, sensitivity):
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.errorbar(egeom[mask].to_value(), 
-                (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] *\ 
-                                            egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
+                (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
+                                                * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
                 xerr=binsize[mask].to_value(), marker = 'o', color = 'C3', label = 'Sensitivity')
 
 def sens_minimization_plot(eb, gb, tb, e, sens):
