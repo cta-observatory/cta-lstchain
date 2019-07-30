@@ -92,7 +92,7 @@ def format_axes_sensitivity(ax):
     ax.grid(ls='--', alpha=.5)
 
 def plot_MAGIC_sensitivity(ax):
-    s=np.loadtxt('/Users/rlopezcoto/Code/ctasoft/fork/cta-lstchain/lstchain/mc/data/magic_sensitivity.txt')   
+    s=np.loadtxt('../spectra/data/magic_sensitivity.txt', skiprows=1)   
     ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/1.e3,2), color='C0', label='MAGIC (Aleksic et al. 2014)')
     
     return ax
