@@ -78,13 +78,16 @@ def process_mc(dl1_file, dl2_file, mc_type):
     sim_par = read_sim_par(dl1_file)
     events = pd.read_hdf(dl2_file)
 
-    #Filters:
-    print("number of events before cuts", len(events))
+    # Filters:
+    # TO DO: These cuts must be given in a configuration file
+    # By now: only cut in leakage and intensity
+    # we use all telescopes (number of events needs to be multiplied 
+    # by the number of LSTs in the simulation)
     filter_good_events =  (events.leakage < 0.2) & \
                           (events.intensity > np.log10(50))
                           #(events.tel_id==1)
                           #(events.wl > 0.1) 
-
+    
 
     events = events[filter_good_events]
     print("number of events after quality cuts", len(events))
