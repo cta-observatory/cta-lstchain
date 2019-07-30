@@ -644,7 +644,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
     # Weight events and count number of events per bin:
     for i in range(0,eb):  # binning in energy
-        eg_w_sum = np.sum(rate_weighted_gammas[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
+        eg_w_sum = np.sum(rate_weighted_g[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
                                     & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])])
 
         ep_w_sum = np.sum(rate_weighted_p[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
