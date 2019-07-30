@@ -76,10 +76,10 @@ for i, key in enumerate(tab.columns.keys()):
 plot_utils.sens_plot(eb, E, best_sens)
 plt.show()
 
-emed = np.sqrt(E[1:] * E[:-1])
+egeom = np.sqrt(E[1:] * E[:-1])
 
-plt.plot(emed[:-1], tab['hadron_rate'], label = 'Hadron rate', marker = 'o')
-plt.plot(emed[:-1], tab['gamma_rate'], label = 'Gamma rate', marker = 'o')
+plt.plot(egeom[:-1], tab['hadron_rate'], label = 'Hadron rate', marker = 'o')
+plt.plot(egeom[:-1], tab['gamma_rate'], label = 'Gamma rate', marker = 'o')
 plt.legend()
 plt.xscale('log')
 plt.xlabel('Energy (GeV)')
