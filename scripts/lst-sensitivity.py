@@ -73,7 +73,7 @@ for i, key in enumerate(tab.columns.keys()):
 
 #tab.to_csv("table.txt")
 
-plot_utils.sens_plot(eb, E, best_sens)
+plot_utils.sensitivity_plot_comparison(eb, E, best_sens)
 plt.show()
 
 egeom = np.sqrt(E[1:] * E[:-1])
