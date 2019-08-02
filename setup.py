@@ -2,10 +2,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # import sys
 import setuptools
-
+import lstchain
 
 setuptools.setup(name='lstchain',
-                 version=0.1,
+                 version=lstchain.__version__,
                  description="DESCRIPTION",  # these should be minimum list of what is needed to run
                  packages=setuptools.find_packages(),
                  install_requires=['h5py',
