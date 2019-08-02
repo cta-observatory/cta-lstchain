@@ -29,7 +29,7 @@ from ..io import DL1ParametersContainer, standard_config, replace_config
 
 import tables
 from functools import partial
-from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info
+from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, write_metadata
 
 
 
@@ -147,8 +147,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
     ### Write extra information to the DL1 file
     event = next(iter(source))
-    write_array_info(event=event, output_filename=output_filename)
-    write_mcheader(event=event, output_filename=output_filename, filters=filters)
+    write_array_info(event, output_filename)
+    write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters)
 
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
@@ -246,8 +246,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                         writer.write(table_name=f'telescope/params/{tel_name}',
                                      containers=[dl1_container])
 
-    # Write energy histogram from simtel file
+    # Write energy histogram from simtel file and extra metadata
     write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id)
+    write_metadata(source, output_filename, obs_id=event.dl0.obs_id)
 
 
 
