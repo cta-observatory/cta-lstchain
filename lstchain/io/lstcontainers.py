@@ -15,6 +15,8 @@ from numpy import nan
 __all__ = [
     'DL1ParametersContainer',
     'DispContainer',
+    'MetaData',
+    'ThrownEventsHistogram'
 ]
 
 class DL1ParametersContainer(Container):
@@ -209,3 +211,13 @@ class ThrownEventsHistogram(Container):
         self.meta['hist_title'] = hist['title']
         self.meta['x_label'] = 'Log10 E (TeV)'
         self.meta['y_label'] = '3D Core Distance (m)'
+
+
+class MetaData(Container):
+    """
+    Some metadata
+    """
+    filename = Field(str, "filename of the source file")
+    lstchain_version = Field(str, "version of lstchain")
+    ctapipe_version = Field(str, "version of ctapipe")
+    obs_id = Field(-1, 'MC run ID')
