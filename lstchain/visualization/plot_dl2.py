@@ -205,8 +205,8 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplots_adjust(hspace=.0)
 
-def plot_disp(data,true_hadroness=False):
 
+def plot_disp(data, true_hadroness=False):
     """Plot the performance of reconstructed position
 
     Parameters:
@@ -223,45 +223,54 @@ def plot_disp(data,true_hadroness=False):
     if true_hadroness:
         hadro = "mc_type"
 
-    gammas = data[data[hadro]==0]
+    gammas = data[data[hadro] == 0]
 
     plt.subplot(221)
-    difD = ((gammas['disp_norm']-gammas['disp_rec'])/gammas['disp_norm'])
-    section = difD[abs(difD) < 0.5]
+
+    reco_disp_norm = np.sqrt(gammas['reco_disp_dx']**2 + gammas['reco_disp_dy']**2)
+    disp_res = ((gammas['disp_norm'] - reco_disp_norm) / gammas['disp_norm'])
+
+    section = disp_res[abs(disp_res) < 0.5]
     mu,sigma = norm.fit(section)
-    print(mu,sigma)
-    n,bins,patches = plt.hist(difD,100,density=1,
-                              alpha=0.75,range=[-2,1.5])
+    print("mu = {}\n sigma = {}".format(mu, sigma))
+
+    n, bins, patches = plt.hist(disp_res,
+                                bins=100,
+                                density=1,
+                                alpha=0.75,
+                                range=[-2, 1.5],
+                                )
+
     y = norm.pdf( bins, mu, sigma)
-    l = plt.plot(bins, y, 'r--', linewidth=2)
-    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$',
-    fontsize=15)
-    plt.figtext(0.15,0.7,'Mean: '+str(round(mu,4)),
-                fontsize=12)
-    plt.figtext(0.15,0.65,'Std: '+str(round(sigma,4)),
-                fontsize=12)
+
+    plt.plot(bins, y, 'r--', linewidth=2)
+
+    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
+
+    plt.figtext(0.15, 0.7, 'Mean: ' + str(round(mu, 4)), fontsize=12)
+    plt.figtext(0.15, 0.65, 'Std: ' + str(round(sigma, 4)), fontsize=12)
 
     plt.subplot(222)
-    hD = plt.hist2d(gammas['disp_norm'],gammas['disp_rec'],
+
+    hD = plt.hist2d(gammas['disp_norm'], reco_disp_norm,
                     bins=100,
-                    range=([0,1.1],[0,1.1]),
+                    range=([0, 1.1], [0, 1.1]),
                 )
+
     plt.colorbar(hD[3])
-    plt.xlabel('$disp\_norm_{gammas}$',
-            fontsize=15)
-    plt.ylabel('$disp\_norm_{rec}$',
-               fontsize=15)
+    plt.xlabel('$disp\_norm_{gammas}$', fontsize=15)
+
+    plt.ylabel('$disp\_norm_{rec}$', fontsize=15)
+
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
 
     plt.subplot(223)
-    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2
-    +(gammas['src_y']-gammas['src_y'])**2
-    plt.hist(theta2,bins=100,
-            range=[0,0.1],histtype=u'step')
-    plt.xlabel(r'$\theta^{2}(º)$',
-               fontsize=15)
-    plt.ylabel(r'# of events',
-               fontsize=15)
+    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2 + (gammas['src_y']-gammas['src_y'])**2
+
+    plt.hist(theta2, bins=100, range=[0, 0.1], histtype=u'step')
+    plt.xlabel(r'$\theta^{2}(º)$', fontsize=15)
+    plt.ylabel(r'# of events', fontsize=15)
+
 
 def plot_disp_vector(data):
     fig, axes = plt.subplots(1, 2)
