@@ -23,13 +23,13 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from ..io.lstcontainers import ExtraImageInfo
+from ..io.lstcontainers import ExtraImageInfo, MetaData
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 
 import tables
 from functools import partial
-from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, write_metadata
+from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata, add_global_metadata, write_metadata, write_subarray_tables
 
 
 
@@ -141,6 +141,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
     source.allowed_tels = config["allowed_tels"]
     source.max_events = config["max_events"]
 
+    metadata = global_metadata(source)
+    write_metadata(metadata, output_filename)
+
     cal = load_calibrator_from_config(config)
 
     dl1_container = DL1ParametersContainer()
@@ -148,11 +151,12 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
     ### Write extra information to the DL1 file
     event = next(iter(source))
     write_array_info(event, output_filename)
-    write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters)
+    write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters, metadata=metadata)
 
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
     subarray = event.inst.subarray
+
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -192,8 +196,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
             event.trig.prefix = ''
 
             # write sub tables
-            writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-            writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
+            write_subarray_tables(writer, event, metadata)
 
             if not custom_calibration:
                 cal(event)
@@ -236,19 +239,18 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
                     dl1_container.prefix = tel.prefix
 
-                    if width >= 0:
-                        extra_im.tel_id = telescope_id
-                        # Camera geometry
-                        # camera = event.inst.subarray.tel[telescope_id].camera
-                        # writer.write(camera.cam_id, [dl1_container])
-                        writer.write(table_name=f'telescope/image/{tel_name}',
-                                     containers=[event.dl0, tel, extra_im])
-                        writer.write(table_name=f'telescope/params/{tel_name}',
-                                     containers=[dl1_container])
+
+                    extra_im.tel_id = telescope_id
+                    for container in [extra_im, dl1_container, event.dl0, tel]:
+                        add_global_metadata(container, metadata)
+
+                    writer.write(table_name=f'telescope/image/{tel_name}',
+                                 containers=[event.dl0, tel, extra_im])
+                    writer.write(table_name=f'telescope/params/{tel_name}',
+                                 containers=[dl1_container])
 
     # Write energy histogram from simtel file and extra metadata
-    write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id)
-    write_metadata(source, output_filename, obs_id=event.dl0.obs_id)
+    write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
 
 
 
