@@ -11,7 +11,9 @@ testfile = 'gamma_test_large.simtel.gz'
 lstcam_key = 'events/LSTCam'
 dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
 dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
-
+file_model_energy = os.path.join(test_dir, 'rf_energy.pkl')
+file_model_disp = os.path.join(test_dir, 'rf_disp.pkl')
+file_model_gh_sep = os.path.join(test_dir, 'rf_gh_sep.pkl')
 
 custom_config = {
     "events_filters": {
@@ -97,9 +99,9 @@ def test_build_models():
     reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=True)
 
     from sklearn.externals import joblib
-    joblib.dump(reg_energy, os.path.join(test_dir, 'rf_energy.pkl'))
-    joblib.dump(reg_disp, os.path.join(test_dir, 'rf_disp.pkl'))
-    joblib.dump(cls_gh, os.path.join(test_dir, 'rf_cls_gh.pkl'))
+    joblib.dump(reg_energy, file_model_energy)
+    joblib.dump(reg_disp, file_model_disp)
+    joblib.dump(cls_gh, file_model_gh_sep)
 
 
 @pytest.mark.run(order=3)
@@ -110,14 +112,9 @@ def test_apply_models():
 
     dl1 = pd.read_hdf(dl1_file, key=lstcam_key)
 
-    # Load the trained RF for reconstruction:
-    file_energy = os.path.join(test_dir, 'rf_energy.pkl')
-    file_disp = os.path.join(test_dir, 'rf_disp.pkl')
-    file_cls_gh = os.path.join(test_dir, 'rf_cls_gh.pkl')
-
-    reg_energy = joblib.load(file_energy)
-    reg_disp = joblib.load(file_disp)
-    reg_cls_gh = joblib.load(file_cls_gh)
+    reg_energy = joblib.load(file_model_energy)
+    reg_disp = joblib.load(file_model_disp)
+    reg_cls_gh = joblib.load(file_model_gh_sep)
 
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
