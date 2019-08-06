@@ -29,6 +29,9 @@ __all__ = [
 ]
 
 
+params_lstcam = 'dl1/event/telescope/params/LST_LSTCam'
+
+
 def train_energy(train, custom_config={}):
     """
     Train a Random Forest Regressor for the regression of the energy
@@ -293,8 +296,8 @@ def build_models(filegammas, fileprotons,
     events_filters = config["events_filters"]
     regression_features = config["regression_features"]
 
-    df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
-    df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
+    df_gamma = pd.read_hdf(filegammas, key=params_lstcam)
+    df_proton = pd.read_hdf(fileprotons, key=params_lstcam)
 
     df_gamma = utils.filter_events(df_gamma, filters=events_filters)
     df_proton = utils.filter_events(df_proton, filters=events_filters)
@@ -378,11 +381,11 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     #Construction of Source position in camera coordinates from disp_norm distance.
 
-    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2.reco_disp_dx,
-                                                           dl2.reco_disp_dy,
-                                                           dl2.x,
-                                                           dl2.y,
-                                                           )
+    dl2['reco_src_x'], dl2['reco_src_y'] = utils.disp_to_pos(dl2.reco_disp_dx,
+                                                             dl2.reco_disp_dy,
+                                                             dl2.x,
+                                                             dl2.y,
+                                                             )
 
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
