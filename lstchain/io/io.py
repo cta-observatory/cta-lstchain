@@ -21,11 +21,16 @@ __all__ = ['read_simu_info_hdf5',
            'write_simtel_energy_histogram',
            'write_mcheader',
            'write_array_info',
-           'write_metadata',
            'check_thrown_events_histogram',
            'check_mcheader',
            'check_metadata',
-           'read_metadata'
+           'read_metadata',
+           'auto_merge_h5files',
+           'smart_merge_h5files',
+           'global_metadata',
+           'add_global_metadata',
+           'write_subarray_tables',
+           'write_metadata'
            ]
 
 def read_simu_info_hdf5(filename):
@@ -156,7 +161,8 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None):
     nodes_keys: list of path
     """
 
-    keys = get_dataset_keys(file_list[0]) if nodes_keys is None else nodes_keys
+    if nodes_keys is None:
+        keys = get_dataset_keys(file_list[0]) if nodes_keys is None else nodes_keys
     groups = set([k.split('/')[0] for k in keys])
 
     f1 = open_file(file_list[0])
@@ -178,52 +184,61 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None):
     merge_file.close()
 
 
-# def smart_merge_h5files(file_list, output_filename='merged.h5'):
-#     """
-#     Merge HDF5 DL1 or DL2 files in a smart way.
-#         - stack events tables
-#         - check that extra information are the same in all files
-#         - update simulation information such as number of simulated events for you
-#
-#     Parameters
-#     ----------
-#     file_list: list of paths
-#     output_filename: path
-#     """
-#     assert len(file_list)>1, "The file list is not long enough (len = {})".format(len(file_list))
-#
-#     events_tables_keys = [k for k in get_dataset_keys(file_list[0]) if 'events' in k]
-#     auto_merge_h5files(file_list, output_filename=output_filename, nodes_keys=events_tables_keys)
-#     # TODO:
-#     #  - check that extra info is coherent in all files.
-#     #  - copy extra info
-#     #  - update extra info number of simulated shower
-#
-#     filename0 = file_list[0]
-#     array_info0 = read_array_info(filename0)
-#     mcheader0 = read_mcheader(filename0)
-#     thrown_events_hist0 = read_simtel_energy_histogram(filename0)
-#     metadata0 = read_metadata(filename0)
-#     for filename in file_list[1:]:
-#         mcheader = read_mcheader(filename)
-#         check_mcheader(mcheader0, mcheader)
-#         mcheader0.num_showers += mcheader.num_showers
-#
-#         thrown_events_hist = read_simtel_energy_histogram(filename)
-#         check_thrown_events_histogram(thrown_events_hist0, read_simtel_energy_histogram(filename))
-#         thrown_events_hist0.histogram += thrown_events_hist.histogram
-#
-#         metadata = read_metadata(filename)
-#         check_metadata(metadata0, metadata)
-#
-#         for ii, table in read_array_info(filename).items():
-#             assert (table == array_info0[ii]).all()
-#
-#     write_mcheader(mcheader0, output_filename)
+def merging_check(file_list):
+    """
+    Check that a list of hdf5 files are compatible for merging regarding:
+     - array info
+     - MC simu info
+     - MC histograms
+     - metadata
+
+    Parameters
+    ----------
+    file_list: list of paths to hdf5 files
+    """
+    assert len(file_list) > 1, "The list of files is too short"
+
+    filename0 = file_list[0]
+    array_info0 = read_array_info(filename0)
+    mcheader0 = read_simu_info_hdf5(filename0)
+    thrown_events_hist0 = read_simtel_energy_histogram(filename0)
+    metadata0 = read_metadata(filename0)
+    for filename in file_list[1:]:
+        mcheader = read_simu_info_hdf5(filename)
+        thrown_events_hist = read_simtel_energy_histogram(filename)
+        metadata = read_metadata(filename)
+        check_metadata(metadata0, metadata)
+        check_mcheader(mcheader0, mcheader)
+        check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
+        for ii, table in read_array_info(filename).items():
+            assert (table == array_info0[ii]).all()
+
+
+def smart_merge_h5files(file_list, output_filename='merged.h5'):
+    """
+    Check that HDF5 files are compatible for merging and merge them
+
+    Parameters
+    ----------
+    file_list: list of paths to hdf5 files
+    output_filename: path to the merged file
+    """
+    merging_check(file_list)
+    auto_merge_h5files(file_list, output_filename)
+
+    # Merge metadata
+    metadata0 = read_metadata(file_list[0])
+    for file in file_list[1:]:
+        metadata = read_metadata(file)
+        check_metadata(metadata0, metadata)
+        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+    write_metadata(metadata0, output_filename)
 
 
 
-def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=None):
+
+
+def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=None, metadata={}):
     """
     Write the energy histogram from a simtel source to a HDF5 file
 
@@ -235,6 +250,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
     """
     # Writing histograms
     with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
+        writer.meta = metadata
         for hist in yield_toplevel_of_type(source.file_, Histograms):
             pass
         # find histogram id 6 (thrown energy)
@@ -246,7 +262,9 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
         thrown_hist = ThrownEventsHistogram()
         thrown_hist.fill_from_simtel(thrown)
         thrown_hist.obs_id = obs_id
-        writer.write('thrown_event_distribution', thrown_hist)
+        if metadata is not None:
+            add_global_metadata(thrown_hist, metadata)
+        writer.write('thrown_event_distribution', [thrown_hist])
 
 
 def read_simtel_energy_histogram(filename):
@@ -267,7 +285,7 @@ def read_simtel_energy_histogram(filename):
     return hist
 
 
-def write_mcheader(mcheader, output_filename, obs_id=None, filters=None):
+def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadata={}):
     """
     Write the mcheader from an event container to a HDF5 file
 
@@ -279,6 +297,9 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None):
 
     extramc = ExtraMCInfo()
     extramc.prefix = ''  # get rid of the prefix
+    if metadata is not None:
+        add_global_metadata(mcheader, metadata)
+        add_global_metadata(extramc, metadata)
 
     with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
         extramc.obs_id = obs_id
@@ -363,10 +384,13 @@ def check_mcheader(mcheader1, mcheader2):
     """
     assert mcheader1.keys() == mcheader2.keys()
     # It does not matter that the number of simulated showers is the same
-    keys = list(mcheader1.keys()).remove('num_showers')
+    keys = list(mcheader1.keys())
+    keys.remove('num_showers') #should not be checked
+    keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
         assert mcheader1[k] == mcheader2[k]
+    assert (mcheader1['run_array_direction'] == mcheader2['run_array_direction']).all()
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -385,7 +409,7 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
         assert (thrown_events_hist1[k] == thrown_events_hist2[k]).all()
 
 
-def write_metadata(source, output_filename, obs_id=None):
+def write_metadata(metadata, output_filename):
     """
     Write metadata to a HDF5 file
 
@@ -394,26 +418,16 @@ def write_metadata(source, output_filename, obs_id=None):
     source: `ctapipe.io.event_source`
     output_filename: path
     """
-    metadata = MetaData()
-    metadata.filename = os.path.basename(source.input_url)
-    metadata.obs_id = obs_id
-    metadata.ctapipe_version = ctapipe.__version__
-    metadata.lstchain_version = lstchain.__version__
     # One cannot write strings with ctapipe HDF5Writer and Tables can write only fixed length string
     # So this metadata is written in the file attributes
     with open_file(output_filename, mode='a') as file:
         for k, item in metadata.as_dict().items():
-            if k in file.root._v_attrs:
-                if type(file.root._v_attrs[k]) is list:
-                    attribute = file.root._v_attrs[k]
-                    attribute.append(metadata[k])
-                    file.root._v_attrs[k] = attribute
-                else:
-                    attribute = [file.root._v_attrs[k]]
-                    attribute.append(metadata[k])
-                    file.root._v_attrs[k] = attribute
+            if k in file.root._v_attrs and type(item) is list:
+                attribute = file.root._v_attrs[k].extend(metadata[k])
+                file.root._v_attrs[k] = attribute
             else:
                 file.root._v_attrs[k] = metadata[k]
+
 
 
 def read_metadata(filename):
@@ -424,10 +438,14 @@ def read_metadata(filename):
     ----------
     filename: path
     """
-    with HDF5TableReader(filename) as reader:
-        metatab = reader.read('/metadata', MetaData())
-        metadata = next(metatab)
-
+    metadata = MetaData()
+    with open_file(filename) as file:
+        for k in metadata.keys():
+            try:
+                metadata[k] = file.root._v_attrs[k]
+            except:
+                # this ensures retro and forward reading compatibility
+                print("Metadata {} does not exist in file {}".format(k, filename))
     return metadata
 
 
@@ -441,9 +459,57 @@ def check_metadata(metadata1, metadata2):
     metadata2: `lstchain.io.MetaData`
     """
     assert metadata1.keys() == metadata2.keys()
-    keys = ['ctapipe_version', 'lstchain_version']
+    keys = ['LSTCHAIN_VERSION']
     for k in keys:
         assert metadata1[k] == metadata2[k]
 
 
+def global_metadata(source):
+    """
+    Get global metadata container
+
+    Returns
+    -------
+    `lstchain.io.lstcontainers.MetaData`
+    """
+    metadata = MetaData()
+    metadata.LSTCHAIN_VERSION = lstchain.__version__
+    metadata.CTAPIPE_VERSION = ctapipe.__version__
+    metadata.CONTACT = 'LST Consortium'
+    metadata.SOURCE_FILENAMES.append(os.path.basename(source.input_url))
+
+    return metadata
+
+
+def add_global_metadata(container, metadata):
+    """
+    Add global metadata to a container in container.meta
+
+    Parameters
+    ----------
+    container: `ctapipe.io.containers.Container`
+    metadata: `lstchain.io.lstchainers.MetaData`
+    """
+    meta_dict = metadata.as_dict()
+    for k, item in meta_dict.items():
+        container.meta[k] = item
+
+
+def write_subarray_tables(writer, event, metadata=None):
+    """
+    Write subarray tables info to a HDF5 file
+
+    Parameters
+    ----------
+    writer: `ctapipe.io.HDF5Writer`
+    event: `ctapipe.io.containers.DataContainer`
+    metadata: `lstchain.io.lstcontainers.MetaData`
+    """
+    if metadata is not None:
+        add_global_metadata(event.dl0, metadata)
+        add_global_metadata(event.mc, metadata)
+        add_global_metadata(event.trig, metadata)
+
+    writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
+    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
 
