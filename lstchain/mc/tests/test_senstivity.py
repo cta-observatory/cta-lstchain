@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-import pandas as pd
+# import pandas as pd # uncomment when the tests loading dl2_file are written
 from lstchain.mc import (
     read_sim_par,
     calculate_sensitivity,
@@ -9,7 +9,8 @@ from lstchain.mc import (
     ring_containment,
 )
 
-from lstchain.tests.test_lstchain import dl1_file, dl2_file, lstcam_key
+from lstchain.tests.test_lstchain import dl1_file
+# from lstchain.tests.test_lstchain import dl2_file, lstcam_key # uncomment when the tests loading dl2_file are written
 
 
 @pytest.mark.run(after='test_dl0_to_dl1')
@@ -26,8 +27,8 @@ def test_read_sim_par():
 
 @pytest.mark.run(after='test_apply_models')
 def test_process_mc():
-    # TODO: define a dl2 test_dataset
-    # pd.read_hdf(dl2_file, key=lstcam_key)
+    # TODO: write a test for `test_process_mc` using `dl2` dataframe
+    # dl2 = pd.read_hdf(dl2_file, key=lstcam_key)
     pass
 
 def test_calculate_sensitivity():
