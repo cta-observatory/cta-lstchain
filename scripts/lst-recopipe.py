@@ -16,6 +16,7 @@ from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import argparse
 import os
+import shutil
 import pandas as pd 
 from distutils.util import strtobool
 from lstchain.reco.utils import filter_events
@@ -78,7 +79,8 @@ if __name__ == '__main__':
     dl0_to_dl1.r0_to_dl1(args.datafile)
     dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-    data = pd.read_hdf(dl1_file, key='events/LSTCam')
+    dl1_params_lstcam = 'dl1/event/telescope/params/LST_LSTCam'
+    data = pd.read_hdf(dl1_file, key=dl1_params_lstcam)
     data = filter_events(data, filters=config["events_filters"])
 
     #Load the trained RF for reconstruction:
@@ -95,18 +97,12 @@ if __name__ == '__main__':
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     if args.storeresults==True:
-        #Store results
         os.makedirs(args.outdir, exist_ok=True)
-        outfile = args.outdir+'/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+        outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-        dl2.to_hdf(outfile, key="events/LSTCam", mode="w")
+        shutil.move(dl1_file, outfile)
+        dl2_params_lstcam = 'dl2/event/telescope/params/LST_LSTCam'
+        dl2.to_hdf(outfile, key=dl2_params_lstcam, mode="a", format='table')
+        # TODO: improve writing of DL2 params so they can appear as Table when opening the file with pytable
 
-        keys = get_dataset_keys(dl1_file)
-        groups = set([k.split('/')[0] for k in keys])
-        groups.remove('events') # we don't want to copy DL1 events
 
-        f1 = tables.open_file(dl1_file)
-        with tables.open_file(outfile, mode='a') as dl2_file:
-            nodes = {}
-            for g in groups:
-                nodes[g] = f1.copy_node('/', name=g, newparent=dl2_file.root, newname=g, recursive=True)
