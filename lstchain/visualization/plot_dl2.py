@@ -265,7 +265,7 @@ def plot_disp(data, true_hadroness=False):
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
 
     plt.subplot(223)
-    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2 + (gammas['src_y']-gammas['src_y'])**2
+    theta2 = (gammas['src_x']-gammas['reco_src_x'])**2 + (gammas['src_y']-gammas['src_y'])**2
 
     plt.hist(theta2, bins=100, range=[0, 0.1], histtype=u'step')
     plt.xlabel(r'$\theta^{2}(º)$', fontsize=15)
@@ -313,10 +313,10 @@ def plot_pos(data,true_hadroness=False):
 
     #Reconstructed position
 
-    recX = data[data[hadro]==0]['src_x_rec']
-    recY = data[data[hadro]==0]['src_y_rec']
-    recXprot = data[data[hadro]==101]['src_x_rec']
-    recYprot = data[data[hadro]==101]['src_y_rec']
+    recX = data[data[hadro]==0]['reco_src_x']
+    recY = data[data[hadro]==0]['reco_src_y']
+    recXprot = data[data[hadro]==101]['reco_src_x']
+    recYprot = data[data[hadro]==101]['reco_src_y']
     ran = np.array([(-0.3, 0.3), (-0.4, 0.4)])
     nbins=50
 
