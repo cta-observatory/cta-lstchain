@@ -217,7 +217,9 @@ class MetaData(Container):
     """
     Some metadata
     """
-    filename = Field(str, "filename of the source file")
-    lstchain_version = Field(str, "version of lstchain")
-    ctapipe_version = Field(str, "version of ctapipe")
-    obs_id = Field(-1, 'MC run ID')
+    SOURCE_FILENAMES = Field([], "filename of the source file")
+    LSTCHAIN_VERSION = Field(None, "version of lstchain")
+    CTAPIPE_VERSION = Field(None, "version of ctapipe")
+    CONTACT = Field(None, "Person or institution responsible for this data product")
+
+
