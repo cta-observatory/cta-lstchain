@@ -4,6 +4,7 @@ from astropy.table import Table, vstack
 import tables
 from tables import open_file
 import os
+import pandas as pd
 
 import ctapipe
 import lstchain
@@ -512,4 +513,20 @@ def write_subarray_tables(writer, event, metadata=None):
 
     writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
     writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
+
+
+def write_dataframe(dataframe, outfile, table_path):
+    """
+    Write a pandas dataframe to a HDF5 file using pytables formatting.
+
+    Parameters
+    ----------
+    dataframe: `pandas.DataFrame`
+    outfile: path
+    key: str
+    """
+    with pd.HDFStore(outfile, mode='a') as store:
+        path, table_name = table_path.rsplit('/', maxsplit=1)
+        store.put(path, dataframe, format='table', data_columns=True)
+        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
 
