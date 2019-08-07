@@ -31,7 +31,9 @@ __all__ = ['read_simu_info_hdf5',
            'global_metadata',
            'add_global_metadata',
            'write_subarray_tables',
-           'write_metadata'
+           'write_metadata',
+           'write_dataframe',
+           'write_dl2_dataframe'
            ]
 
 def read_simu_info_hdf5(filename):
@@ -234,9 +236,6 @@ def smart_merge_h5files(file_list, output_filename='merged.h5'):
         check_metadata(metadata0, metadata)
         metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
     write_metadata(metadata0, output_filename)
-
-
-
 
 
 def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=None, metadata={}):
@@ -529,4 +528,17 @@ def write_dataframe(dataframe, outfile, table_path):
         path, table_name = table_path.rsplit('/', maxsplit=1)
         store.put(path, dataframe, format='table', data_columns=True)
         store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+
+def write_dl2_dataframe(dataframe, outfile):
+    """
+    Write DL2 dataframe to a HDF5 file
+
+    Parameters
+    ----------
+    dataframe: `pandas.DataFrame`
+    outfile: path
+    """
+    dl2_params_lstcam = 'dl2/event/telescope/params/LST_LSTCam'
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam)
 
