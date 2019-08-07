@@ -21,6 +21,7 @@ import pandas as pd
 from distutils.util import strtobool
 from lstchain.reco.utils import filter_events
 from lstchain.io import read_configuration_file, standard_config, replace_config
+from lstchain.io import write_dl2_dataframe
 import tables
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
@@ -101,8 +102,5 @@ if __name__ == '__main__':
         outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
         shutil.move(dl1_file, outfile)
-        dl2_params_lstcam = 'dl2/event/telescope/params/LST_LSTCam'
-        dl2.to_hdf(outfile, key=dl2_params_lstcam, mode="a", format='table')
-        # TODO: improve writing of DL2 params so they can appear as Table when opening the file with pytable
-
+        write_dl2_dataframe(dl2, outfile)
 
