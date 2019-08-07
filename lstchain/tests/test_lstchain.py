@@ -7,8 +7,9 @@ test_dir = 'testfiles'
 
 os.makedirs(test_dir, exist_ok=True)
 
-testfile = 'gamma_test_large.simtel.gz'
-lstcam_key = 'events/LSTCam'
+mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
+dl1_params_lstcam_key = 'dl1/event/telescope/params/LST_LSTCam'
+dl2_params_lstcam_key = 'dl2/event/telescope/params/LST_LSTCam'
 dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
 dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'rf_energy.pkl')
@@ -88,7 +89,7 @@ def test_import_lstio():
 @pytest.mark.run(order=1)
 def test_dl0_to_dl1():
     from lstchain.reco.dl0_to_dl1 import r0_to_dl1
-    infile = get_dataset_path(testfile)
+    infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
 
 @pytest.mark.run(order=2)
@@ -110,7 +111,7 @@ def test_apply_models():
     import pandas as pd
     from sklearn.externals import joblib
 
-    dl1 = pd.read_hdf(dl1_file, key=lstcam_key)
+    dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
@@ -118,7 +119,7 @@ def test_apply_models():
 
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
-    dl2.to_hdf(dl2_file, key=lstcam_key)
+    dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
 
 @pytest.mark.last
