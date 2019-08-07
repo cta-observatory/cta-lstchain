@@ -523,7 +523,7 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    key: str
+    table_path: str - path to the table to write in the HDF5 file
     """
     with pd.HDFStore(outfile, mode='a') as store:
         path, table_name = table_path.rsplit('/', maxsplit=1)
