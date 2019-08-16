@@ -14,7 +14,7 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 import os
 from . import utils
-from ..io import get_standard_config, standard_config, replace_config
+from ..io import standard_config, replace_config
 
 
 __all__ = [
