@@ -4,10 +4,10 @@ channels:
   - cta-observatory
   - conda-forge
 dependencies:
-  - python>3.5
   - ctapipe
   - gammapy
   - pip:
       - pytest_runner
       - pytest-ordering
       - https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
+      - https://github.com/cta-observatory/ctapipe_io_lst/archive/v0.1.tar.gz
