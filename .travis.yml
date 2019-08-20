@@ -2,20 +2,20 @@ language: python
 
 matrix:
   include:
+    python: 3.7
+    os: linux
+    env:
+      - CTAPIPE_VERSION=v0.7.0
+      - PROTOZFITS_VERSION=v1.4.2
+      - CTAPIPE_IO_LST_VERSION=v0.1
 
-    - python: 3.7
-      os: linux
-      env:
-          - CTAPIPE_VERSION=v0.7.0
-          - PROTOZFITS_VERSION=v1.4.2
-          - CTAPIPE_IO_LST_VERSION=v0.1
-
-    - python: 3.7
-      os: linux
-      env:
-          - CTAPIPE_VERSION=master
-          - PROTOZFITS_VERSION=v1.4.2
-          - CTAPIPE_IO_LST_VERSION=master
+  allow_failures:
+    python: 3.7
+    os: linux
+    env:
+      - CTAPIPE_VERSION=master
+      - PROTOZFITS_VERSION=v1.4.2
+      - CTAPIPE_IO_LST_VERSION=master
 
 
 before_install:
