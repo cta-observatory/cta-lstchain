@@ -253,21 +253,16 @@ class LSTR0Corrections(CameraR0Calibrator):
                         abspos = int(1024 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
-                            pixel = expected_pixel_id[nr_module*7 + pix]
-                            interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                            if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
+                                pixel = expected_pixel_id[nr_module*7 + pix]
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
                         # looking for spike A second case
                         abspos = int(roisize - 2 + fc_old[nr_module, gain, pix] + k * 1024)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
-                            pixel = expected_pixel_id[nr_module*7 + pix]
-                            interpolate_spike_A(waveform, gain, spike_A_position, pixel)
-
-                    # looking for spike B
-                    spike_b_position = int(
-                        (fc_old[nr_module, gain, pix] - 1 - fc[nr_module, gain, pix] + 2 * size4drs) % size4drs)
-                    if spike_b_position < roisize - 1:
-                        pixel = expected_pixel_id[nr_module*7 + pix]
-                        interpolate_spike_B(waveform, gain, spike_b_position, pixel)
+                            if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
+                                pixel = expected_pixel_id[nr_module*7 + pix]
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
         return waveform
 
     def _load_calib(self):
@@ -343,9 +338,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
 
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
-                    last_time_array[nr_module, gain, pix, posads0:(posads0+39)] = time_now
+
+                    last_time_array[nr_module, gain, pix, (posads0+4096-1)%4096:(posads0+39)] = time_now # (posads0:posads0+39)
                 else:
-                    for k in prange(0, 39):
+                    for k in prange(-1, 39): # (0, 39)
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
