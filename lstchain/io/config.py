@@ -2,7 +2,7 @@ import json
 import os
 from copy import copy
 
-all = [
+__all__ = [
     'read_configuration_file',
     'get_standard_config',
     'replace_config'
