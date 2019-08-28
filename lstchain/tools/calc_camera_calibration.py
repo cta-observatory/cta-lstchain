@@ -4,7 +4,7 @@ Extract flat field coefficients from flasher data files.
 import numpy as np
 import sys
 import logging
-from traitlets import Dict, List, Unicode, Float, Int
+from traitlets import Dict, List, Unicode, Float, Bool
 
 
 from ctapipe.core import Provenance, traits
@@ -19,6 +19,7 @@ from lstchain.calib.camera import CameraR0Calibrator
 __all__ = [
     'CalibrationHDF5Writer'
 ]
+
 
 class CalibrationHDF5Writer(Tool):
     """
@@ -38,6 +39,11 @@ class CalibrationHDF5Writer(Tool):
     minimum_charge = Float(
         800,
         help='Temporary cut on charge till the calibox TIB do not work'
+    ).tag(config=True)
+
+    one_event = Bool(
+        False,
+        help='Stop after first calibration event'
     ).tag(config=True)
 
     output_file = Unicode(
@@ -256,11 +262,12 @@ class CalibrationHDF5Writer(Tool):
 
                     self.log.debug(f"Write calibration data")
                     self.writer.write('calibration', calib_data)
+                    if self.one_event:
+                        break
 
                     #self.writer.write('mon', event.mon.tel[self.tel_id])
         except ValueError as e:
             self.log.error(e)
-
 
     def finish(self):
         Provenance().add_output_file(
