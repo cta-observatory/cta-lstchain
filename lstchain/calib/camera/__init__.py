@@ -6,3 +6,4 @@ Camera calibration module.
 
 from .calib import *
 from .r0 import *
+from .drs4 import *

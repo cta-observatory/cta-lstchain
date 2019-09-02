@@ -15,8 +15,7 @@ from sklearn.model_selection import train_test_split
 import os
 from . import utils
 from . import disp
-from ..io import get_standard_config, standard_config, replace_config
-
+from ..io import standard_config, replace_config
 
 __all__ = [
     'train_energy',
@@ -146,8 +145,8 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
     config = replace_config(standard_config, custom_config)
     classification_args = config['random_forest_classifier_args']
-    features = config["regression_features"]
-    model = RandomForestRegressor
+    features = config["classification_features"]
+    model = RandomForestClassifier
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
