@@ -2,6 +2,14 @@
 Calibration functions
 """
 
+__all__ = [
+    'lst_calibration',
+    'load_calibrator_from_config',
+    'load_image_extractor_from_config',
+    'load_gain_selector_from_config'
+]
+
+
 import numpy as np
 from ctapipe.image import extractor
 from ctapipe.calib.camera import gainselection
@@ -9,13 +17,6 @@ from ctapipe.calib import CameraCalibrator
 from astropy.utils import deprecated
 from traitlets.config import Config
 from ...io.config import get_standard_config, replace_config
-
-__all__ = [
-    'lst_calibration',
-    'load_calibrator_from_config',
-    'load_image_extractor_from_config',
-    'load_gain_selector_from_config'
-]
 
 
 def load_gain_selector_from_config(custom_config):
