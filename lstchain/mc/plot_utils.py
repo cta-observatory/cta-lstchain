@@ -6,6 +6,13 @@ import numpy as np
 import astropy.units as u
 import pandas as pd
 
+
+__all__ = ['fill_bin_content',
+           'format_axes',
+           'format_axes_array',
+           'format_axes_sensitivity'
+           ]
+
 def fill_bin_content(ax, sens, energy_bin, gb, tb):
     """
 
