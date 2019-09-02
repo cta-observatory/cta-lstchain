@@ -85,7 +85,10 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
         dl1_container.set_mc_type(calibrated_event)
-        dl1_container.set_timing_features(camera, image, pulse_time, hillas)
+        dl1_container.set_timing_features(camera[signal_pixels],
+                                          image[signal_pixels],
+                                          pulse_time[signal_pixels],
+                                          hillas)
         dl1_container.set_leakage(camera, image, signal_pixels)
         dl1_container.set_n_islands(camera, signal_pixels)
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
