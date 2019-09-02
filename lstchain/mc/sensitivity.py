@@ -1,21 +1,14 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import astropy.units as u
-import math
-from eventio.simtel.simtelfile import SimTelFile
-from .plot_utils import sens_plot, sens_minimization_plot, plot_positions_survived_events
-from .mc import rate, weight, power_law_integrated_distribution
+from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra, crab_magic
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
 from lstchain.reco.utils import reco_source_position_sky
 from  astropy.coordinates.angle_utilities import angular_separation
-from astropy.coordinates import SkyCoord
 from lstchain.io import read_simu_info_merged_hdf5
-from lstchain.reco import dl1_to_dl2
 
-from lstchain.reco import dl1_to_dl2
 
 __all__ = ['read_sim_par',
            'process_mc',
