@@ -19,6 +19,12 @@ def test_write_dataframe():
         with tables.open_file(f.name) as file:
             np.testing.assert_array_equal(file.root.data.awesome_table[:]['a'], a)
 
+@pytest.mark.run(after='test_apply_models')
+def test_write_dl2_dataframe():
+    from lstchain.tests.test_lstchain import dl2_file, dl2_params_lstcam_key, test_dir
+    dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
+    from lstchain.io import write_dl2_dataframe
+    write_dl2_dataframe(dl2, os.path.join(test_dir, 'dl2_test.h5'))
 
 @pytest.mark.run(after='test_dl0_to_dl1')
 def test_merging_check():
