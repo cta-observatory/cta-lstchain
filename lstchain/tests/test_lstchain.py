@@ -2,6 +2,7 @@ from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
 import os
+import pandas as pd
 
 test_dir = 'testfiles'
 
@@ -97,7 +98,7 @@ def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = dl1_file
 
-    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=True)
+    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=False)
 
     from sklearn.externals import joblib
     joblib.dump(reg_energy, file_model_energy)
@@ -108,7 +109,6 @@ def test_build_models():
 @pytest.mark.run(order=3)
 def test_apply_models():
     from lstchain.reco.dl1_to_dl2 import apply_models
-    import pandas as pd
     from sklearn.externals import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
@@ -116,7 +116,6 @@ def test_apply_models():
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
     reg_cls_gh = joblib.load(file_model_gh_sep)
-
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
