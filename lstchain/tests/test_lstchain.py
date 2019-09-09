@@ -131,7 +131,7 @@ def test_clean_test_files():
 
 
 def test_disp_vector():
-    from lstchain.reco.utils import disp_vector
+    from lstchain.reco.disp import disp_vector
     dx = np.cos(np.pi/3 * np.ones(3))
     dy = np.sin(np.pi/3 * np.ones(3))
     disp_angle = np.pi/3 * np.ones(3)
@@ -142,7 +142,7 @@ def test_disp_vector():
 
 
 def test_disp_to_pos():
-    from lstchain.reco.utils import disp_to_pos
+    from lstchain.reco.disp import disp_to_pos
     x = np.random.rand(3)
     y = np.random.rand(3)
     cog_x = np.random.rand(3)
