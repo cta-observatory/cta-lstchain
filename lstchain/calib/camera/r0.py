@@ -253,6 +253,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                         abspos = int(1024 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
+                            # The correction is only needed for even last capacitor (lc) in the
+                            # first half of the DRS4 ring
                             if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
                                 pixel = expected_pixel_id[nr_module*7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
@@ -260,6 +262,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                         abspos = int(roisize - 2 + fc_old[nr_module, gain, pix] + k * 1024)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
+                            # The correction is only needed for even last capacitor (lc) in the
+                            # first half of the DRS4 ring
                             if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
                                 pixel = expected_pixel_id[nr_module*7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
@@ -336,9 +340,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                             val = waveform[gain, pixel, k] - ped_time(time_diff_ms)
                             waveform[gain, pixel, k] = val
 
+                # updating times from slices -1 to 38 remove spike b (small jump of signal)
+                # without interpolation (Seiya Nozaki idea)
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
-
                     last_time_array[nr_module, gain, pix, (posads0+4096-1)%4096:(posads0+39)] = time_now # (posads0:posads0+39)
                 else:
                     for k in prange(-1, 39): # (0, 39)
@@ -346,6 +351,7 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
                 # now the magic of Dragon,
+                # extra conditions on the number of capacitor times being updated
                 # if the ROI is in the last quarter of each DRS4
                 # for even channel numbers extra 12 slices are read in a different place
                 # code from Takayuki & Julian
@@ -380,15 +386,6 @@ def interpolate_spike_A(waveform, gain, position, pixel):
     b = int(samples[position + 2])
     waveform[gain, pixel, position] = (samples[position - 1]) + (0.33 * (b - a))
     waveform[gain, pixel, position + 1] = (samples[position - 1]) + (0.66 * (b - a))
-
-@jit
-def interpolate_spike_B(waveform, gain, position, pixel):
-    """
-    Numba function for interpolation spike type B.
-    Change waveform array.
-    """
-    samples = waveform[gain, pixel, :]
-    waveform[gain, pixel, position] = 0.5 * (samples[position - 1] + samples[position + 1])
 
 
 class NullR0Calibrator(CameraR0Calibrator):
