@@ -346,7 +346,7 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                 if posads0+40 < 4096:
                     last_time_array[nr_module, gain, pix, (posads0+4096-1)%4096:(posads0+39)] = time_now # (posads0:posads0+39)
                 else:
-                    for k in prange(-1, 39): # (0, 39)
+                    for k in prange(-1, 39):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
