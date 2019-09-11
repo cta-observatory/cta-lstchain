@@ -14,8 +14,8 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 import os
 from . import utils
-from ..io import get_standard_config, standard_config, replace_config
-
+from . import disp
+from ..io import standard_config, replace_config
 
 __all__ = [
     'train_energy',
@@ -145,8 +145,8 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
     config = replace_config(standard_config, custom_config)
     classification_args = config['random_forest_classifier_args']
-    features = config["regression_features"]
-    model = RandomForestRegressor
+    features = config["classification_features"]
+    model = RandomForestClassifier
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -378,7 +378,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     #Construction of Source position in camera coordinates from disp_norm distance.
 
-    dl2['src_x_rec'], dl2['src_y_rec'] = utils.disp_to_pos(dl2.reco_disp_dx,
+    dl2['src_x_rec'], dl2['src_y_rec'] = disp.disp_to_pos(dl2.reco_disp_dx,
                                                            dl2.reco_disp_dy,
                                                            dl2.x,
                                                            dl2.y,
