@@ -7,6 +7,10 @@ __all__ = ['DragonPedestal']
 
 class DragonPedestal:
     size4drs = 4096
+    # `size4drs` is number of capacitors in each pixel which using DRS4.
+    # "The sampler has 1024 capacitors per channel.
+    # Four channels of a chip are cascaded to obtain deeper sampling depth with 4096 capacitors.
+    # (https://arxiv.org/abs/1509.00548)
     high_gain = 0
     low_gain = 1
     n_gain = 2
