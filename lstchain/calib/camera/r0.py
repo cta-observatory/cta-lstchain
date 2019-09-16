@@ -363,7 +363,7 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                         last_time_array[nr_module, gain, pix, start%4096:end%4096] = time_now
                     elif first_cap % 1024 >= 1012:
                         channel = int(first_cap / 1024)
-                        for kk in range(first_cap + 1024, (channel + 2) * 1024):
+                        for kk in range(first_cap + 1024 - 1, (channel + 2) * 1024):
                             last_time_array[nr_module, gain, pix, int(kk) % 4096] = time_now
 
 @jit
