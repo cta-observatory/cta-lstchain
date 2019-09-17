@@ -23,14 +23,21 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from ..io.lstcontainers import ExtraImageInfo, MetaData
+from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 
 import tables
 from functools import partial
-from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata, add_global_metadata, write_metadata, write_subarray_tables
+from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
+from ..io import add_global_metadata, write_metadata, write_subarray_tables
 
+
+import pandas as pd
+from . import disp
+import astropy.units as u
+from .utils import sky_to_camera
+from ctapipe.instrument import OpticsDescription
 
 
 __all__ = [
@@ -99,12 +106,6 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
                                           hillas)
         dl1_container.set_leakage(camera, image, signal_pixels)
         dl1_container.set_n_islands(camera, signal_pixels)
-        dl1_container.set_source_camera_position(
-            calibrated_event, telescope_id)
-        dl1_container.set_disp(
-            [dl1_container.src_x, dl1_container.src_y],
-            hillas
-        )
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
         return dl1_container
@@ -252,8 +253,38 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     writer.write(table_name=f'telescope/params/{tel_name}',
                                  containers=[dl1_container])
 
+    ### Reconstruct source position from disp for all events and write the result in the output file
+    lst_focal = OpticsDescription.from_name('LST').equivalent_focal_length
+
+    with pd.HDFStore(output_filename) as store:
+
+        df = store['events/LSTCam']
+
+        source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
+                                             df.mc_az.values * u.rad,
+                                             lst_focal,
+                                             df.mc_alt_tel.values * u.rad,
+                                             df.mc_az_tel.values * u.rad,
+                                             )
+        disp_parameters = disp.disp(df.x.values * u.m,
+                                    df.y.values * u.m,
+                                    source_pos_in_camera.x,
+                                    source_pos_in_camera.y)
+
+        disp_df = pd.DataFrame(np.transpose(disp_parameters),
+                               columns=['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'])
+        disp_df['src_x'] = source_pos_in_camera.x.value
+        disp_df['src_y'] = source_pos_in_camera.y.value
+
+        store['events/LSTCam'] = pd.concat([store['events/LSTCam'], disp_df], axis=1)
+
+
     # Write energy histogram from simtel file and extra metadata
     write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
+
+    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
+        writer.write("run_config", [event.mcheader])
+
 
 
 
