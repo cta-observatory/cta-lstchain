@@ -1,6 +1,6 @@
 import numpy as np
 from ..io.lstcontainers import DispContainer
-from .utils import sky_to_camera, polar_to_cartesian
+from . import utils
 import astropy.units as u
 
 __all__ = ['disp',
@@ -79,7 +79,7 @@ def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
     -------
     (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign) : `numpy.ndarray` or float
     """
-    source_pos_in_camera = sky_to_camera(mc_alt, mc_az, focal, mc_alt_tel, mc_az_tel)
+    source_pos_in_camera = utils.sky_to_camera(mc_alt, mc_az, focal, mc_alt_tel, mc_az_tel)
     return disp(cog_x, cog_y, source_pos_in_camera.x, source_pos_in_camera.y)
 
 
@@ -135,7 +135,7 @@ def disp_vector(disp_norm, disp_angle, disp_sign):
     -------
     disp_dx, disp_dy
     """
-    return polar_to_cartesian(disp_norm, disp_angle, disp_sign)
+    return utils.polar_to_cartesian(disp_norm, disp_angle, disp_sign)
 
 
 def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):

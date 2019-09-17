@@ -12,12 +12,13 @@ Usage:
 """
 
 import numpy as np
-from ctapipe.coordinates import NominalFrame, CameraFrame
+from ctapipe.coordinates import CameraFrame
 import astropy.units as u
 from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
+from . import disp
 
 
 __all__ = [
@@ -178,8 +179,6 @@ def get_event_pos_in_camera(event, tel):
     return camera_pos.x, camera_pos.y
 
 
-
-
 def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az):
     """
     Compute the reconstructed source position in the sky
@@ -197,7 +196,7 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     -------
 
     """
-    src_x, src_y = disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
+    src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
