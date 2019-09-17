@@ -254,36 +254,36 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                                  containers=[dl1_container])
 
     ### Reconstruct source position from disp for all events and write the result in the output file
-    lst_focal = OpticsDescription.from_name('LST').equivalent_focal_length
 
-    with pd.HDFStore(output_filename) as store:
+    for tel_name in ['LST_LSTCam']:
+        focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
 
-        df = store['events/LSTCam']
+        with pd.HDFStore(output_filename) as store:
+            dl1_params_key = f'dl1/event/telescope/params/{tel_name}'
+            df = store[dl1_params_key]
 
-        source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
-                                             df.mc_az.values * u.rad,
-                                             lst_focal,
-                                             df.mc_alt_tel.values * u.rad,
-                                             df.mc_az_tel.values * u.rad,
-                                             )
-        disp_parameters = disp.disp(df.x.values * u.m,
-                                    df.y.values * u.m,
-                                    source_pos_in_camera.x,
-                                    source_pos_in_camera.y)
+            source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
+                                                 df.mc_az.values * u.rad,
+                                                 focal,
+                                                 df.mc_alt_tel.values * u.rad,
+                                                 df.mc_az_tel.values * u.rad,
+                                                 )
+            disp_parameters = disp.disp(df.x.values * u.m,
+                                        df.y.values * u.m,
+                                        source_pos_in_camera.x,
+                                        source_pos_in_camera.y)
 
-        disp_df = pd.DataFrame(np.transpose(disp_parameters),
-                               columns=['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'])
-        disp_df['src_x'] = source_pos_in_camera.x.value
-        disp_df['src_y'] = source_pos_in_camera.y.value
+            disp_df = pd.DataFrame(np.transpose(disp_parameters),
+                                   columns=['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'])
+            disp_df['src_x'] = source_pos_in_camera.x.value
+            disp_df['src_y'] = source_pos_in_camera.y.value
 
-        store['events/LSTCam'] = pd.concat([store['events/LSTCam'], disp_df], axis=1)
+            store[dl1_params_key] = pd.concat([store[dl1_params_key], disp_df], axis=1)
 
 
     # Write energy histogram from simtel file and extra metadata
     write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
 
-    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
-        writer.write("run_config", [event.mcheader])
 
 
 
