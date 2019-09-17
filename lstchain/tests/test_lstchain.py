@@ -121,13 +121,13 @@ def test_apply_models():
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
 
-@pytest.mark.last
-def test_clean_test_files():
-    """
-    Function to clean the test files created by the previous test
-    """
-    import shutil
-    shutil.rmtree(test_dir)
+# @pytest.mark.last
+# def test_clean_test_files():
+#     """
+#     Function to clean the test files created by the previous test
+#     """
+#     import shutil
+#     shutil.rmtree(test_dir)
 
 
 def test_disp_vector():

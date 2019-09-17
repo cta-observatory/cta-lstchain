@@ -382,7 +382,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     #Construction of Source position in camera coordinates from disp_norm distance.
 
-    dl2['reco_src_x'], dl2['reco_src_y'] = utils.disp_to_pos(dl2.reco_disp_dx,
+    dl2['reco_src_x'], dl2['reco_src_y'] = disp.disp_to_pos(dl2.reco_disp_dx,
                                                              dl2.reco_disp_dy,
                                                              dl2.x,
                                                              dl2.y,
