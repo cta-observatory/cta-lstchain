@@ -14,9 +14,9 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 import os
 from . import utils
+from . import disp
 from ..io import standard_config, replace_config
 import astropy.units as u
-
 
 __all__ = [
     'train_energy',
@@ -399,7 +399,6 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
-
 
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
