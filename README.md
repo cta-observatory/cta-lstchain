@@ -5,10 +5,10 @@ The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ct
 
 master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain)
 
-
+  
 Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
-In doubt, refer to tested code and scripts.
-
+In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
+are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
