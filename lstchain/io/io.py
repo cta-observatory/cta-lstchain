@@ -539,6 +539,6 @@ def write_dl2_dataframe(dataframe, outfile):
     dataframe: `pandas.DataFrame`
     outfile: path
     """
-    dl2_params_lstcam = 'dl2/event/telescope/params/LST_LSTCam'
+    dl2_params_lstcam = 'dl2/event/telescope/parameters/LST_LSTCam'
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam)
 
