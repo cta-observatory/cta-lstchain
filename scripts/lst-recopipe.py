@@ -80,7 +80,7 @@ if __name__ == '__main__':
     dl0_to_dl1.r0_to_dl1(args.datafile)
     dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-    dl1_params_lstcam = 'dl1/event/telescope/params/LST_LSTCam'
+    dl1_params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
     data = pd.read_hdf(dl1_file, key=dl1_params_lstcam)
     data = filter_events(data, filters=config["events_filters"])
 

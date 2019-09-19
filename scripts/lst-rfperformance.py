@@ -78,7 +78,7 @@ if __name__ == '__main__':
         custom_config=config,
     )
 
-    params_lstcam = 'dl1/event/telescope/params/LST_LSTCam'
+    params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
     gammas = filter_events(pd.read_hdf(args.gammatest, key=params_lstcam),
                            config["events_filters"],
                            )
