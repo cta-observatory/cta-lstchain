@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 
-params_lstcam = 'dl1/event/telescope/params/LST_LSTCam'
+params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
 
 
 def train_energy(train, custom_config={}):
