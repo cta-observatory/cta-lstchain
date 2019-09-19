@@ -14,7 +14,6 @@ def test_write_dataframe():
     a = np.ones(3)
     df = pd.DataFrame(a, columns=['a'])
     with tempfile.NamedTemporaryFile() as f:
-        print(f.name)
         io.write_dataframe(df, f.name, 'data/awesome_table')
         with tables.open_file(f.name) as file:
             np.testing.assert_array_equal(file.root.data.awesome_table[:]['a'], a)
@@ -41,7 +40,7 @@ def test_smart_merge_h5files():
 @pytest.mark.run(after='test_dl0_to_dl1')
 def test_read_simu_info_hdf5():
     mcheader = io.read_simu_info_hdf5(dl1_file)
-    assert mcheader.simtel_version == 1462392225 # simtel verion of the mc_gamma_testfile defined in test_lstchain
+    assert mcheader.simtel_version == 1462392225  # simtel verion of the mc_gamma_testfile defined in test_lstchain
     assert mcheader.num_showers == 20000
 
 
