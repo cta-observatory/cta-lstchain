@@ -30,7 +30,7 @@ from ..io import DL1ParametersContainer, standard_config, replace_config
 import tables
 from functools import partial
 from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
-from ..io import add_global_metadata, write_metadata, write_subarray_tables
+from ..io import add_global_metadata, write_metadata, write_subarray_tables, write_dataframe
 
 
 import pandas as pd
@@ -250,36 +250,17 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
                     writer.write(table_name=f'telescope/image/{tel_name}',
                                  containers=[event.dl0, tel, extra_im])
-                    writer.write(table_name=f'telescope/params/{tel_name}',
+                    writer.write(table_name=f'telescope/parameters/{tel_name}',
                                  containers=[dl1_container])
 
     ### Reconstruct source position from disp for all events and write the result in the output file
 
+
     for tel_name in ['LST_LSTCam']:
         focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
+        dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
 
-        with pd.HDFStore(output_filename) as store:
-            dl1_params_key = f'dl1/event/telescope/params/{tel_name}'
-            df = store[dl1_params_key]
-
-            source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
-                                                 df.mc_az.values * u.rad,
-                                                 focal,
-                                                 df.mc_alt_tel.values * u.rad,
-                                                 df.mc_az_tel.values * u.rad,
-                                                 )
-            disp_parameters = disp.disp(df.x.values * u.m,
-                                        df.y.values * u.m,
-                                        source_pos_in_camera.x,
-                                        source_pos_in_camera.y)
-
-            disp_df = pd.DataFrame(np.transpose(disp_parameters),
-                                   columns=['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'])
-            disp_df['src_x'] = source_pos_in_camera.x.value
-            disp_df['src_y'] = source_pos_in_camera.y.value
-
-            store[dl1_params_key] = pd.concat([store[dl1_params_key], disp_df], axis=1)
-
+        add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
 
     # Write energy histogram from simtel file and extra metadata
     write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
@@ -359,3 +340,42 @@ def get_spectral_w(w_pars, energy):
     w = ((energy/E0)**(index_w-index))*R/N_
 
     return w
+
+
+
+def add_disp_to_parameters_table(dl1_file, table_path, focal):
+    """
+    Reconstruct the disp parameters and source position from a DL1 parameters table and write the result in the file
+
+    Parameters
+    ----------
+    dl1_file: HDF5 DL1 file containing the required field in `table_path`:
+        - mc_alt
+        - mc_az
+        - mc_alt_tel
+        - mc_az_tel
+
+    table_path: path to the parameters table in the file
+    focal: focal of the telescope
+    """
+
+    df = pd.read_hdf(dl1_file, key=table_path)
+    source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
+                                         df.mc_az.values * u.rad,
+                                         focal,
+                                         df.mc_alt_tel.values * u.rad,
+                                         df.mc_az_tel.values * u.rad,
+                                         )
+    disp_parameters = disp.disp(df.x.values * u.m,
+                                df.y.values * u.m,
+                                source_pos_in_camera.x,
+                                source_pos_in_camera.y)
+    df['disp_dx'] = disp_parameters[0]
+    df['disp_dy'] = disp_parameters[1]
+    df['disp_norm'] = disp_parameters[2]
+    df['disp_angle'] = disp_parameters[3]
+    df['disp_sign'] = disp_parameters[4]
+    df['src_x'] = source_pos_in_camera.x.value
+    df['src_y'] = source_pos_in_camera.y.value
+
+    write_dataframe(df, dl1_file, table_path)
