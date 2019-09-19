@@ -526,7 +526,9 @@ def write_dataframe(dataframe, outfile, table_path):
     """
     with pd.HDFStore(outfile, mode='a') as store:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.put(path, dataframe, format='table', data_columns=True)
+        store.append(path, dataframe,
+                     format='table',
+                     data_columns=True)
         store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
 
 
@@ -542,3 +544,38 @@ def write_dl2_dataframe(dataframe, outfile):
     dl2_params_lstcam = 'dl2/event/telescope/parameters/LST_LSTCam'
     write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam)
 
+
+def add_column_table(table, ColClass, col_label, values):
+    """
+    Add a column to an pytable Table
+
+    Parameters
+    ----------
+    table: `tables.table.Table`
+    ColClass: `tables.atom.MetaAtom`
+    col_label: str
+    values: list or `numpy.ndarray`
+
+    Returns
+    -------
+    `tables.table.Table`
+    """
+    # Step 1: Adjust table description
+    d = table.description._v_colobjects.copy()  # original description
+    d[col_label] = ColClass()  # add column
+
+    # Step 2: Create new temporary table:
+    newtable = tables.Table(table._v_file.root, '_temp_table', d, filters=table.filters)  # new table
+    table.attrs._f_copy(newtable)  # copy attributes
+    # Copy table rows, also add new column values:
+    for row, value in zip(table, values):
+        newtable.append([tuple(list(row[:]) + [value])])
+    newtable.flush()
+
+    # Step 3: Move temporary table to original location:
+    parent = table._v_parent  # original table location
+    name = table._v_name  # original table name
+    table.remove()  # remove original table
+    newtable.move(parent, name)  # move temporary table to original location
+
+    return newtable
