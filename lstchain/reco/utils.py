@@ -12,30 +12,28 @@ Usage:
 """
 
 import numpy as np
-from ctapipe.coordinates import NominalFrame, CameraFrame
+from ctapipe.coordinates import CameraFrame
 import astropy.units as u
 from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
+from . import disp
 
 
 __all__ = [
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
-    'disp_to_pos',
     'get_event_pos_in_camera',
     'reco_source_position_sky',
     'camera_to_sky',
     'sky_to_camera',
     'source_side',
     'source_dx_dy',
-    'disp_vector',
     'polar_to_cartesian',
     'cartesian_to_polar',
     'predict_source_position_in_camera',
-    'disp_parameters',
 ]
 
 
@@ -73,7 +71,8 @@ def az_to_phi(az):
     """
     return -az
 
-        
+
+@deprecated("09/07/2019", message="This is a custom implementation. Use `sky_to_camera` that relies on astropy")
 def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     """Transform Alt-Az source position into Camera(x,y) coordinates
     source position. 
@@ -149,27 +148,6 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     return source_x, source_y
 
 
-def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
-    """
-    Calculates source position in camera coordinates(x,y) from the reconstructed disp
-    
-    Parameters:
-    -----------
-    disp: DispContainer
-    cog_x: float
-    Coordinate x of the center of gravity of Hillas ellipse
-    cog_y: float
-    Coordinate y of the center of gravity of Hillas ellipse
-
-    Returns:
-    --------
-    (source_pos_x, source_pos_y)
-    """
-    source_pos_x = cog_x + disp_dx
-    source_pos_y = cog_y + disp_dy
-   
-    return source_pos_x, source_pos_y
-
 
 
 def get_event_pos_in_camera(event, tel):
@@ -185,46 +163,20 @@ def get_event_pos_in_camera(event, tel):
     (x, y) (float, float): position in the camera
     """
     array_pointing = SkyCoord(alt=event.mcheader.run_array_direction[1],
-                           az=event.mcheader.run_array_direction[0], 
-                           frame=horizon_frame
-    )
+                              az=event.mcheader.run_array_direction[0],
+                              frame=horizon_frame)
     
     event_direction = SkyCoord(alt=event.mc.alt,
-                            az=event.mc.az,
-                            frame=horizon_frame
-    )
+                               az=event.mc.az,
+                               frame=horizon_frame)
 
     focal = tel.optics.equivalent_focal_length
 
     camera_frame = CameraFrame(focal_length=focal,
-                               telescope_pointing=array_pointing
-    )
-    '''
-    camera_pos = sky_to_camera(event_direction.alt, event_direction.az,
-                               focal,
-                               array_pointing.alt, array_pointing.az)
-    '''
+                               telescope_pointing=array_pointing)
+
     camera_pos = event_direction.transform_to(camera_frame)
     return camera_pos.x, camera_pos.y
-
-@deprecated('31/01/2019', message='Use disp_parameters')
-def disp_norm(source_pos, hillas):
-    """
-    Deprecated, use disp_parameters.
-    Compute the norm of the disp_norm vector
-
-    Parameters
-    ----------
-    event: `ctapipe.io.container.MCEventContainer`
-    tel: `ctapipe.instrument.TelescopeDescription`
-    hillas: `ctapipe.io.container.HillasParametersContainer`
-
-    Returns
-    -------
-    disp_norm: float
-    """
-    disp_norm = np.sqrt(((source_pos[0] - hillas.x) ** 2 + (source_pos[1] - hillas.y) ** 2).sum())
-    return disp_norm
 
 
 def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az):
@@ -235,16 +187,17 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     ----------
     cog_x: `astropy.units.Quantity`
     cog_y: `astropy.units.Quantity`
-    disp: DispContainer
+    disp_dx: `astropy.units.Quantity`
+    disp_dy: `astropy.units.Quantity`
     focal_length: `astropy.units.Quantity`
     pointing_alt: `astropy.units.Quantity`
     pointing_az: `astropy.units.Quantity`
 
     Returns
     -------
-
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    src_x, src_y = disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
+    src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
@@ -261,23 +214,23 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-    (alt, az)
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
 
     Example:
     --------
     import astropy.units as u
     import numpy as np
-    x = np.array([1,0]) * u.m
-    y = np.array([1,1]) * u.m
+    pos_x = np.array([0, 0]) * u.m
+    pos_y = np.array([0, 0]) * u.m
+    focal = 28*u.m
+    pointing_alt = np.array([1.0, 1.0]) * u.rad
+    pointing_az = np.array([0.2, 0.5]) * u.rad
+    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az,
-                               frame=horizon_frame
-    )
+    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
 
-    camera_frame = CameraFrame(focal_length=focal,
-                               telescope_pointing=pointing_direction
-    )
+    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
 
     camera_coord = SkyCoord(pos_x, pos_y, frame=camera_frame)
 
@@ -298,24 +251,18 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az,
-                               frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
 
-    camera_frame = CameraFrame(focal_length=focal,
-                               telescope_pointing=pointing_direction
-    )
+    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
     
-    event_direction = SkyCoord(alt=alt, az=az,
-                            frame=horizon_frame)
-    
-    nom_frame = NominalFrame(origin=pointing_direction,
-    )
-    
+    event_direction = SkyCoord(alt=alt, az=az, frame=horizon_frame)
+
     camera_pos = event_direction.transform_to(camera_frame)
     
     return camera_pos
+
 
 def source_side(source_pos_x, cog_x):
     """
@@ -350,21 +297,6 @@ def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
     """
     return source_pos_x - cog_x, source_pos_y - cog_y
 
-def disp_vector(disp_norm, disp_angle, disp_sign):
-    """
-    Compute `disp_norm.dx` and `disp_norm.dy` vector from `disp_norm.norm`, `disp_norm.angle` and `disp_norm.sign`
-
-    Parameters
-    ----------
-    disp_norm: float
-    disp_angle: float
-    disp_sign: float
-
-    Returns
-    -------
-    disp_dx, disp_dy
-    """
-    return polar_to_cartesian(disp_norm, disp_angle, disp_sign)
 
 def polar_to_cartesian(norm, angle, sign):
     """
@@ -429,33 +361,6 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
     reco_src_y = cog_y + disp_dy
     return reco_src_x, reco_src_y
 
-
-def disp_parameters(hillas, source_pos_x, source_pos_y):
-    """
-    Compute the disp_norm parameters from Hillas parameters in the event position in the camera frame
-    Return a `DispContainer`
-
-    Parameters
-    ----------
-    hillas: `ctapipe.io.containers.HillasParametersContainer`
-    source_pos_x: X coordinate of the source (event) position in the camera frame
-    source_pos_y: Y coordinate of the source (event) position in the camera frame
-
-    Returns
-    -------
-    `lstchain.io.containers.DispContainer`
-    """
-    disp = DispContainer()
-    disp.dx = source_pos_x - hillas.x
-    disp.dy = source_pos_y - hillas.y
-    disp.norm = np.sqrt(disp.dx**2 + disp.dy**2)
-    if disp.dx==0:
-        disp.angle = np.pi/2. * np.sign(disp.dy)
-    else:
-        disp.angle = np.arctan(disp.dy/disp.dx)
-    disp.sign = np.sign(disp.dx)
-    disp.miss = np.abs(np.sin(hillas.psi.to(u.rad).value) * disp.dx - np.cos(hillas.psi.to(u.rad).value)*disp.dy)
-    return disp
 
 
 def filter_events(events,

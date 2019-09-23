@@ -2,7 +2,9 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode
+import sys
+import logging
+from traitlets import Dict, List, Unicode, Float, Bool
 
 
 from ctapipe.core import Provenance, traits
@@ -10,16 +12,14 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 
-from ctapipe.image import ImageExtractor
-
-from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.io.containers import FlatFieldContainer, PedestalContainer, WaveformCalibrationContainer
+from lstchain.calib.camera.flatfield import FlatFieldCalculator
+from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera import CameraR0Calibrator
 
 __all__ = [
     'CalibrationHDF5Writer'
 ]
+
 
 class CalibrationHDF5Writer(Tool):
     """
@@ -36,9 +36,24 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
+    minimum_charge = Float(
+        800,
+        help='Temporary cut on charge till the calibox TIB do not work'
+    ).tag(config=True)
+
+    one_event = Bool(
+        False,
+        help='Stop after first calibration event'
+    ).tag(config=True)
+
     output_file = Unicode(
         'calibration.hdf5',
         help='Name of the output file'
+    ).tag(config=True)
+
+    log_file = Unicode(
+        'None',
+        help='Name of the log file'
     ).tag(config=True)
 
     pedestal_product = traits.enum_trait(
@@ -58,24 +73,23 @@ class CalibrationHDF5Writer(Tool):
 
     aliases = Dict(dict(
         input_file='EventSource.input_url',
+        output_file='CalibrationHDF5Writer.output_file',
+        log_file='CalibrationHDF5Writer.log_file',
         max_events='EventSource.max_events',
         pedestal_file= 'LSTR0Corrections.pedestal_path',
         flatfield_product='CalibrationHDF5Writer.flatfield_product',
         pedestal_product='CalibrationHDF5Writer.pedestal_product',
-        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product'
+        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product',
     ))
 
     classes = List([EventSource,
                     FlatFieldCalculator,
-                    FlatFieldContainer,
-                    PedestalCalculator,
-                    PedestalContainer,
-                    WaveformCalibrationContainer
+                    PedestalCalculator
                     ]
                    + traits.classes_with_traits(CameraR0Calibrator)
-                   + traits.classes_with_traits(ImageExtractor)
                    + traits.classes_with_traits(FlatFieldCalculator)
                    + traits.classes_with_traits(PedestalCalculator)
+
                    )
 
     def __init__(self, **kwargs):
@@ -95,10 +109,16 @@ class CalibrationHDF5Writer(Tool):
         self.writer = None
         self.r0calibrator = None
         self.tel_id = None
+        self.tot_events = 0
 
     def setup(self):
         kwargs = dict(parent=self)
+
         self.eventsource = EventSource.from_config(**kwargs)
+
+        # remember how many event in the files
+        self.tot_events = len(self.eventsource.multi_file)
+        self.log.debug(f"Input file has file {self.tot_events} events")
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
@@ -122,6 +142,8 @@ class CalibrationHDF5Writer(Tool):
 
         group_name = 'tel_' + str(self.tel_id)
 
+        self.log.debug(f"Open output file {self.output_file}")
+
         self.writer = HDF5TableWriter(
             filename=self.output_file, group_name=group_name, overwrite=True
         )
@@ -129,55 +151,90 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
-        ped_initialized = False
-        ff_initialized = False
-        for count, event in enumerate(self.eventsource):
+        new_ped = False
+        new_ff = False
+        end_of_file = False
+        try:
 
-            #
-            if count == 0:
-                ped_data = event.mon.tel[self.tel_id].pedestal
-                ff_data = event.mon.tel[self.tel_id].flatfield
-                status_data = event.mon.tel[self.tel_id].pixel_status
-                calib_data = event.mon.tel[self.tel_id].calibration
+            self.log.debug(f"Start loop")
+            for count, event in enumerate(self.eventsource):
 
-            # correct for low level calibration
-            self.r0calibrator.calibrate(event)
+                if count % 1000 == 0:
+                    self.log.debug(f"Event {count}")
 
-            # if pedestal
-            if event.r1.tel[self.tel_id].trigger_type == 32:
-                if self.pedestal.calculate_pedestals(event):
+                # if last event write results
+                if count == self.tot_events-1 or count == self.eventsource.max_events-1:
+                    self.log.debug(f"Last event, count = {count}")
+                    end_of_file = True
 
-                    self.log.debug(f"new pedestal at event n. {count+1}, id {event.r0.event_id}")
+                # save the config, to be retrieved as data.meta['config']
+                if count == 0:
+                    ped_data = event.mon.tel[self.tel_id].pedestal
+                    ped_data.meta['config'] = self.config
 
-                    # update pedestal mask
-                    status_data.pedestal_failing_pixels = np.logical_or(ped_data.charge_median_outliers,
-                                                                        ped_data.charge_std_outliers)
+                    ff_data = event.mon.tel[self.tel_id].flatfield
+                    ff_data.meta['config'] = self.config
 
-                    if not ped_initialized:
-                        # save the config, to be retrieved as data.meta['config']
-                        ped_data.meta['config'] = self.config
-                        ped_initialized = True
-                    else:
-                        self.log.debug(f"write pedestal data")
-                        # write only after a first event (used to initialize the mask)
-                        self.writer.write('pedestal', ped_data)
+                    status_data = event.mon.tel[self.tel_id].pixel_status
+                    status_data.meta['config'] = self.config
 
-            # consider flat field events only after first pedestal event
-            elif event.r0.tel[self.tel_id].trigger_type == 1 and ped_initialized:
-                if self.flatfield.calculate_relative_gain(event):
+                    calib_data = event.mon.tel[self.tel_id].calibration
+                    calib_data.meta['config'] = self.config
 
-                    self.log.debug(f"new flatfield at event n. {count+1}, id {event.r0.event_id}")
-                    # update the flatfield mask
-                    status_data.flatfield_failing_pixels = np.logical_or(ff_data.charge_median_outliers,
-                                                                         ff_data.time_median_outliers)
+                # correct for low level calibration
+                self.r0calibrator.calibrate(event)
 
-                    # mask from pedestal and flat-fleid data
+                # if pedestal event
+                if event.r1.tel[self.tel_id].trigger_type == 32:
+
+                    new_ped = self.pedestal.calculate_pedestals(event)
+
+                # if flat-field event: no calibration  TIB for the moment, use a cut on the charge for ff events
+                elif event.r1.tel[self.tel_id].trigger_type == 4 or np.median(
+                        np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1)) > self.minimum_charge:
+
+                    new_ff = self.flatfield.calculate_relative_gain(event)
+
+                # write pedestal results when enough statistics or end of file
+                if new_ped or end_of_file:
+
+                    # update the monitoring container with the last statistics
+                    if end_of_file:
+                        self.pedestal.store_results(event)
+
+                    # write the event
+                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.r0.event_id} "
+                                   f"stat = {ped_data.n_events} events")
+
+                    # write on file
+                    self.writer.write('pedestal', ped_data)
+
+                    new_ped = False
+
+                # write flatfield results when enough statistics (also for pedestals) or end of file
+                if (new_ff and ped_data.n_events > 0) or end_of_file:
+
+                    # update the monitoring container with the last statistics
+                    if end_of_file:
+                        self.flatfield.store_results(event)
+
+                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.r0.event_id} "
+                                   f"stat = {ff_data.n_events} events")
+
+                    # write on file
+                    self.writer.write('flatfield', ff_data)
+
+                    new_ff = False
+
+                    # Then, calculate calibration coefficients
+
+                    # mask from pedestal and flat-field data
                     monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                                status_data.flatfield_failing_pixels)
 
-                    # calibration unusable pixels are an OR of all maskes
+                    # calibration unusable pixels are an OR of all masks
                     calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
-                                                               status_data.hardware_failing_pixels)
+                                                            status_data.hardware_failing_pixels)
 
                     # Extract calibration coefficients with F-factor method
                     # Assume fix F2 factor, F2=1+Var(gain)/Mean(Gain)**2 must be known from elsewhere
@@ -185,29 +242,32 @@ class CalibrationHDF5Writer(Tool):
 
                     # calculate photon-electrons
                     n_pe = F2 * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
-                                 ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
+                                     ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
 
                     # fill WaveformCalibrationContainer (this is an example)
                     calib_data.time = ff_data.sample_time
                     calib_data.time_range = ff_data.sample_time_range
                     calib_data.n_pe = n_pe
-                    calib_data.dc_to_pe = n_pe/ff_data.charge_median
+                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)
                     calib_data.time_correction = -ff_data.relative_time_median
 
+                    ped_extractor_name = self.config.get("PedestalCalculator").get("charge_product")
+                    ped_width=self.config.get(ped_extractor_name).get("window_width")
+                    calib_data.pedestal_per_sample = ped_data.charge_median/ped_width
 
-                    # save the config, to be retrieved as data.meta['config']
-                    if not ff_initialized:
-                        ff_data.meta['config']=self.config
-                        calib_data.meta['config'] = self.config
-                        ff_initialized = True
-                    else:
-                        # write only after a first event (used to initialize the mask)
-                        self.log.debug(f"write flatfield data")
-                        self.writer.write('flatfield', ff_data)
-                        self.log.debug(f"write pixel_status data")
-                        self.writer.write('pixel_status',status_data)
-                        self.log.debug(f"write calibration data")
-                        self.writer.write('calibration', calib_data)
+                    # write calib and pixel status
+
+                    self.log.debug(f"Write pixel_status data")
+                    self.writer.write('pixel_status',status_data)
+
+                    self.log.debug(f"Write calibration data")
+                    self.writer.write('calibration', calib_data)
+                    if self.one_event:
+                        break
+
+                    #self.writer.write('mon', event.mon.tel[self.tel_id])
+        except ValueError as e:
+            self.log.error(e)
 
     def finish(self):
         Provenance().add_output_file(
