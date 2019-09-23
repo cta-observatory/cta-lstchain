@@ -12,13 +12,12 @@ Usage:
 """
 
 import numpy as np
-from ctapipe.coordinates import NominalFrame, CameraFrame
+from ctapipe.coordinates import CameraFrame
 import astropy.units as u
-from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
-
+from . import disp
 
 __all__ = [
     'alt_to_theta',
@@ -147,8 +146,6 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     return source_x, source_y
 
 
-
-
 def get_event_pos_in_camera(event, tel):
     """
     Return the position of the source in the camera frame
@@ -178,8 +175,6 @@ def get_event_pos_in_camera(event, tel):
     return camera_pos.x, camera_pos.y
 
 
-
-
 def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az):
     """
     Compute the reconstructed source position in the sky
@@ -188,16 +183,17 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     ----------
     cog_x: `astropy.units.Quantity`
     cog_y: `astropy.units.Quantity`
-    disp: DispContainer
+    disp_dx: `astropy.units.Quantity`
+    disp_dy: `astropy.units.Quantity`
     focal_length: `astropy.units.Quantity`
     pointing_alt: `astropy.units.Quantity`
     pointing_az: `astropy.units.Quantity`
 
     Returns
     -------
-
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    src_x, src_y = disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
+    src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
@@ -214,14 +210,18 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-    (alt, az)
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
 
     Example:
     --------
     import astropy.units as u
     import numpy as np
-    x = np.array([1,0]) * u.m
-    y = np.array([1,1]) * u.m
+    pos_x = np.array([0, 0]) * u.m
+    pos_y = np.array([0, 0]) * u.m
+    focal = 28*u.m
+    pointing_alt = np.array([1.0, 1.0]) * u.rad
+    pointing_az = np.array([0.2, 0.5]) * u.rad
+    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
     pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
@@ -233,6 +233,7 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     horizon = camera_coord.transform_to(horizon_frame)
         
     return horizon
+
 
 def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     """
@@ -247,7 +248,7 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
 
@@ -258,6 +259,7 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     camera_pos = event_direction.transform_to(camera_frame)
     
     return camera_pos
+
 
 def source_side(source_pos_x, cog_x):
     """
@@ -356,6 +358,18 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
     reco_src_y = cog_y + disp_dy
     return reco_src_x, reco_src_y
 
+
+
+
+def expand_tel_list(tel_list, max_tels):
+    """
+    transform for the telescope list (to turn it into a telescope pattern)
+    un-pack var-length list of tel_ids into
+    fixed-width bit pattern by tel_index
+    """
+    pattern = np.zeros(max_tels).astype(bool)
+    pattern[tel_list] = 1
+    return pattern
 
 
 def filter_events(events,

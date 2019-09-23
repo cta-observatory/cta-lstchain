@@ -1,13 +1,19 @@
 language: python
 
+python:
+    - 3.6
+    - 3.7
+
+env:
+    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.1" PROTOZFITS_VERSION=v1.4.2
+    - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
+
 matrix:
-    include:
-        python: 3.6
-        os: linux
-        env:
-            - CTAPIPE_VERSION=master
-            - PROTOZFITS_VERSION=v1.4.2
-            - CTAPIPE_IO_LST_VERSION=master
+  allow_failures:
+      - env: CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
+
+  include:
+      - env: CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.1" PROTOZFITS_VERSION=v1.4.2
 
 
 before_install:
@@ -29,12 +35,10 @@ install:
     - conda env create --name cta --file environment.yml
     - conda activate cta
     - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
-    - pip install https://github.com/cta-sst-1m/protozfitsreader/archive/$PROTOZFITS_VERSION.tar.gz
     - pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
     - python setup.py install
 
 
 script:
     - pytest
-
 
