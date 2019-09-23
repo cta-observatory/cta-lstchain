@@ -10,7 +10,7 @@ from lstchain.mc import (
 )
 
 from lstchain.tests.test_lstchain import dl1_file
-# from lstchain.tests.test_lstchain import dl2_file, lstcam_key # uncomment when the tests loading dl2_file are written
+# from lstchain.tests.test_lstchain import dl2_file, dl2_params_lstcam_key  # uncomment when the tests loading dl2_file are written
 
 
 @pytest.mark.run(after='test_dl0_to_dl1')
@@ -28,7 +28,7 @@ def test_read_sim_par():
 @pytest.mark.run(after='test_apply_models')
 def test_process_mc():
     # TODO: write a test for `test_process_mc` using `dl2` dataframe
-    # dl2 = pd.read_hdf(dl2_file, key=lstcam_key)
+    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     pass
 
 def test_calculate_sensitivity():
@@ -96,7 +96,7 @@ def test_ring_containment():
 @pytest.mark.run(after='test_apply_models')
 def test_sens():
     # TODO: define test for sens
-    # dl2 = pd.read_hdf(dl2_file, key=lstcam_key)
+    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     pass
 
 

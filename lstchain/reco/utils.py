@@ -14,12 +14,10 @@ Usage:
 import numpy as np
 from ctapipe.coordinates import CameraFrame
 import astropy.units as u
-from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
-
 
 __all__ = [
     'alt_to_theta',
@@ -148,8 +146,6 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     return source_x, source_y
 
 
-
-
 def get_event_pos_in_camera(event, tel):
     """
     Return the position of the source in the camera frame
@@ -237,6 +233,7 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     horizon = camera_coord.transform_to(horizon_frame)
         
     return horizon
+
 
 def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     """
@@ -361,6 +358,18 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
     reco_src_y = cog_y + disp_dy
     return reco_src_x, reco_src_y
 
+
+
+
+def expand_tel_list(tel_list, max_tels):
+    """
+    transform for the telescope list (to turn it into a telescope pattern)
+    un-pack var-length list of tel_ids into
+    fixed-width bit pattern by tel_index
+    """
+    pattern = np.zeros(max_tels).astype(bool)
+    pattern[tel_list] = 1
+    return pattern
 
 
 def filter_events(events,

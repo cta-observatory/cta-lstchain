@@ -78,12 +78,13 @@ if __name__ == '__main__':
         custom_config=config,
     )
 
-    gammas = filter_events(pd.read_hdf(args.gammatest, key='events/LSTCam'),
-                                      config["events_filters"]
-                                      )
-    proton = filter_events(pd.read_hdf(args.protontest, key='events/LSTCam'),
-                                      config["events_filters"],
-                                      )
+    params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
+    gammas = filter_events(pd.read_hdf(args.gammatest, key=params_lstcam),
+                           config["events_filters"],
+                           )
+    proton = filter_events(pd.read_hdf(args.protontest, key=params_lstcam),
+                           config["events_filters"],
+                           )
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
@@ -91,8 +92,8 @@ if __name__ == '__main__':
 
     ####PLOT SOME RESULTS#####
 
-    gammas = dl2[dl2.gammaness>=0.5]
-    protons = dl2[dl2.gammaness<0.5]
+    gammas = dl2[dl2.gammaness >= 0.5]
+    protons = dl2[dl2.gammaness < 0.5]
     gammas.reco_type = 0
     protons.reco_type = 1
 
