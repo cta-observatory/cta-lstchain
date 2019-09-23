@@ -25,7 +25,12 @@ def disp(cog_x, cog_y, src_x, src_y):
 
     Returns
     -------
-    (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign) : `numpy.ndarray` or float
+    (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign):
+        disp_dx: 'astropy.units.m`
+        disp_dy: 'astropy.units.m`
+        disp_norm: 'astropy.units.m`
+        disp_angle: 'astropy.units.rad`
+        disp_sign: `numpy.ndarray`
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y

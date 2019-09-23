@@ -6,6 +6,7 @@ channels:
 dependencies:
   - ctapipe=0.7.0
   - gammapy
+  - h5py
   - pip:
       - pytest_runner
       - pytest-ordering

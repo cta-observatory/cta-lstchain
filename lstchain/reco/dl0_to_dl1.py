@@ -23,15 +23,22 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-
+from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
+
+import tables
+from functools import partial
+from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
+from ..io import add_global_metadata, write_metadata, write_subarray_tables
+from ..io.io import add_column_table
 
 import pandas as pd
 from . import disp
 import astropy.units as u
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
+
 
 __all__ = [
     'get_dl1',
@@ -43,6 +50,14 @@ __all__ = [
 cleaning_method = tailcuts_clean
 
 
+filters = tables.Filters(
+    complevel=5,    # enable compression, with level 0=disabled, 9=max
+    complib='blosc:zstd',   #  compression using blosc
+    fletcher32=True,    # attach a checksum to each chunk for error correction
+    bitshuffle=False,   # for BLOSC, shuffle bits for better compression
+)
+
+
 def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -51,7 +66,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
     Parameters
     ----------
-    event: ctapipe event container
+    calibrated_event: ctapipe event container
     telescope_id: int
     dl1_container: DL1ParametersContainer
     config_file: path to a configuration file
@@ -126,27 +141,77 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
 
     custom_calibration = config["custom_calibration"]
 
-    source = event_source(input_filename)
+    source = event_source(input_filename, back_seekable=True)
     source.allowed_tels = config["allowed_tels"]
     source.max_events = config["max_events"]
+
+    metadata = global_metadata(source)
+    write_metadata(metadata, output_filename)
 
     cal = load_calibrator_from_config(config)
 
     dl1_container = DL1ParametersContainer()
 
+    ### Write extra information to the DL1 file
+    event = next(iter(source))
+    write_array_info(event, output_filename)
+    write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters, metadata=metadata)
+
+    extra_im = ExtraImageInfo()
+    extra_im.prefix = ''  # get rid of the prefix
+    subarray = event.inst.subarray
+
+
     with HDF5TableWriter(
         filename=output_filename,
-        group_name='events',
-        overwrite=True
+        group_name='dl1/event',
+        mode='a',
+        filters=filters,
+        add_prefix=True,
+        # overwrite=True
     ) as writer:
+
+        print("USING FILTERS: ", writer._h5file.filters)
+
+        # build a mapping of tel_id back to tel_index:
+        # (note this should be part of SubarrayDescription)
+        idx = np.zeros(max(subarray.tel_indices) + 1)
+        for key, val in subarray.tel_indices.items():
+            idx[key] = val
+
+        # the final transform then needs the mapping and the number of telescopes
+        tel_list_transform = partial(utils.expand_tel_list,
+                                     max_tels=len(event.inst.subarray.tel) + 1,
+                                     )
+
+        writer.add_column_transform(
+            table_name='subarray/trigger',
+            col_name='tels_with_trigger',
+            transform=tel_list_transform
+        )
 
         for i, event in enumerate(source):
             if i % 100 == 0:
                 print(i)
+
+
+            event.dl0.prefix = ''
+            event.mc.prefix = 'mc'
+            event.trig.prefix = ''
+
+            # write sub tables
+            write_subarray_tables(writer, event, metadata)
+
             if not custom_calibration:
                 cal(event)
-                # for telescope_id, dl1 in event.dl1.tel.items():
+
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
+
+                tel = event.dl1.tel[telescope_id]
+                tel.prefix = ''  # don't really need one
+                # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
+                tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
+
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
 
@@ -176,37 +241,27 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     dl1_container.width = width.value
                     dl1_container.length = length.value
 
-                    if width >= 0:
-                        # Camera geometry
-                        camera = event.inst.subarray.tel[telescope_id].camera
-                        writer.write(camera.cam_id, [dl1_container])
+                    dl1_container.prefix = tel.prefix
 
-    lst_focal = OpticsDescription.from_name('LST').equivalent_focal_length
 
-    with pd.HDFStore(output_filename) as store:
+                    extra_im.tel_id = telescope_id
+                    for container in [extra_im, dl1_container, event.dl0, tel]:
+                        add_global_metadata(container, metadata)
 
-        df = store['events/LSTCam']
+                    writer.write(table_name=f'telescope/image/{tel_name}',
+                                 containers=[event.dl0, tel, extra_im])
+                    writer.write(table_name=f'telescope/parameters/{tel_name}',
+                                 containers=[dl1_container])
 
-        source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
-                                             df.mc_az.values * u.rad,
-                                             lst_focal,
-                                             df.mc_alt_tel.values * u.rad,
-                                             df.mc_az_tel.values * u.rad,
-                                             )
-        disp_parameters = disp.disp(df.x.values * u.m,
-                                    df.y.values * u.m,
-                                    source_pos_in_camera.x,
-                                    source_pos_in_camera.y)
+    ### Reconstruct source position from disp for all events and write the result in the output file
+    for tel_name in ['LST_LSTCam']:
+        focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
+        dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
+        add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
 
-        disp_df = pd.DataFrame(np.transpose(disp_parameters),
-                               columns=['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'])
-        disp_df['src_x'] = source_pos_in_camera.x.value
-        disp_df['src_y'] = source_pos_in_camera.y.value
+    # Write energy histogram from simtel file and extra metadata
+    write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
 
-        store['events/LSTCam'] = pd.concat([store['events/LSTCam'], disp_df], axis=1)
-
-    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a") as writer:
-        writer.write("run_config", [event.mcheader])
 
 
 
@@ -281,3 +336,49 @@ def get_spectral_w(w_pars, energy):
     w = ((energy/E0)**(index_w-index))*R/N_
 
     return w
+
+
+
+def add_disp_to_parameters_table(dl1_file, table_path, focal):
+    """
+    Reconstruct the disp parameters and source position from a DL1 parameters table and write the result in the file
+
+    Parameters
+    ----------
+    dl1_file: HDF5 DL1 file containing the required field in `table_path`:
+        - mc_alt
+        - mc_az
+        - mc_alt_tel
+        - mc_az_tel
+
+    table_path: path to the parameters table in the file
+    focal: focal of the telescope
+    """
+    df = pd.read_hdf(dl1_file, key=table_path)
+    source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
+                                         df.mc_az.values * u.rad,
+                                         focal,
+                                         df.mc_alt_tel.values * u.rad,
+                                         df.mc_az_tel.values * u.rad,
+                                         )
+    disp_parameters = disp.disp(df.x.values * u.m,
+                                df.y.values * u.m,
+                                source_pos_in_camera.x,
+                                source_pos_in_camera.y)
+
+    with tables.open_file(dl1_file, mode="a") as file:
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'disp_dx', disp_parameters[0].value)
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'disp_dy', disp_parameters[1].value)
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'disp_norm', disp_parameters[2].value)
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'disp_angle', disp_parameters[3].value)
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'disp_sign', disp_parameters[4])
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
+        tab = file.root[table_path]
+        add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
+
