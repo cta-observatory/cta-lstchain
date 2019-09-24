@@ -386,6 +386,7 @@ def check_mcheader(mcheader1, mcheader2):
     # It does not matter that the number of simulated showers is the same
     keys = list(mcheader1.keys())
     keys.remove('num_showers') #should not be checked
+    keys.remove('detector_prog_start')
     keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
