@@ -385,8 +385,15 @@ def check_mcheader(mcheader1, mcheader2):
     assert mcheader1.keys() == mcheader2.keys()
     # It does not matter that the number of simulated showers is the same
     keys = list(mcheader1.keys())
-    keys.remove('num_showers') #should not be checked
-    keys.remove('detector_prog_start')
+    """keys that don't need to be checked: """
+    for k in ['num_showers', 'shower_reuse', 'detector_prog_start', 'detector_prog_id', 'shower_prog_id',
+              'shower_prog_start',
+              ]:
+        try:
+            keys.remove(k)
+        except:
+            pass
+
     keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
