@@ -389,10 +389,8 @@ def check_mcheader(mcheader1, mcheader2):
     for k in ['num_showers', 'shower_reuse', 'detector_prog_start', 'detector_prog_id', 'shower_prog_id',
               'shower_prog_start',
               ]:
-        try:
+        if k in keys:
             keys.remove(k)
-        except:
-            pass
 
     keys.remove('run_array_direction') #specific comparison
 
