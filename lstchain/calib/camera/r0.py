@@ -30,14 +30,16 @@ class CameraR0Calibrator(Component):
         Set to None if no Tool to pass.
     kwargs
     """
-    offset = Int(
-        300,
-        help='Define the offset of the baseline'
-    ).tag(config=True)
+    offset = Int(default_value=400,
+                 help='Define the offset of the baseline').tag(config=True)
 
-    r1_sample_start = Int(default_value=None, help='Start sample for r1 waveform', allow_none=True).tag(config=True)
+    r1_sample_start = Int(default_value=None,
+                          help='Start sample for r1 waveform',
+                          allow_none=True).tag(config=True)
 
-    r1_sample_end = Int(default_value=None, help='End sample for r1 waveform', allow_none=True).tag(config=True)
+    r1_sample_end = Int(default_value=None,
+                        help='End sample for r1 waveform',
+                        allow_none=True).tag(config=True)
 
     def __init__(self, **kwargs):
         """
@@ -74,16 +76,14 @@ class LSTR0Corrections(CameraR0Calibrator):
     The R0 calibrator class for LST Camera.
     """
 
-    pedestal_path = Unicode(
-        '',
-        allow_none=True,
-        help='Path to the LST pedestal binary file'
-    ).tag(config=True)
+    pedestal_path = Unicode('',
+                            allow_none=True,
+                            help='Path to the LST pedestal binary file'
+                            ).tag(config=True)
 
-    tel_id = Int(
-        0,
-        help='id of the telescope to calibrate'
-    ).tag(config=True)
+    tel_id = Int(0,
+                 help='id of the telescope to calibrate'
+                 ).tag(config=True)
 
     def __init__(self, **kwargs):
         """
@@ -110,14 +110,30 @@ class LSTR0Corrections(CameraR0Calibrator):
         self.high_gain = 0
         self.low_gain = 1
 
-        self.pedestal_value_array = np.zeros((self.n_gain, self.n_pix*self.n_module, self.size4drs+40), dtype=np.int16)
-        self.first_cap_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
+        self.pedestal_value_array = np.zeros((self.n_gain,
+                                              self.n_pix*self.n_module,
+                                              self.size4drs+40), dtype=np.int16)
 
-        self.first_cap_time_lapse_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
-        self.last_reading_time_array = np.zeros((self.n_module, self.n_gain, self.n_pix, self.size4drs))
+        self.first_cap_array = np.zeros((self.n_module,
+                                         self.n_gain,
+                                         self.n_pix))
 
-        self.first_cap_array_spike = np.zeros((self.n_module, self.n_gain, self.n_pix))
-        self.first_cap_old_array = np.zeros((self.n_module, self.n_gain, self.n_pix))
+        self.first_cap_time_lapse_array = np.zeros((self.n_module,
+                                                    self.n_gain,
+                                                    self.n_pix))
+
+        self.last_reading_time_array = np.zeros((self.n_module,
+                                                 self.n_gain,
+                                                 self.n_pix,
+                                                 self.size4drs))
+
+        self.first_cap_array_spike = np.zeros((self.n_module,
+                                               self.n_gain,
+                                               self.n_pix))
+
+        self.first_cap_old_array = np.zeros((self.n_module,
+                                             self.n_gain,
+                                             self.n_pix))
 
         self._load_calib()
 
@@ -127,11 +143,16 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.time_lapse_corr(event)
             self.interpolate_spikes(event)
 
-            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
-            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
+            event.r1.tel[self.tel_id].trigger_type = \
+                        event.r0.tel[self.tel_id].trigger_type
+
+            event.r1.tel[self.tel_id].trigger_time = \
+                        event.r0.tel[self.tel_id].trigger_time
 
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
-            event.r1.tel[tel_id].waveform = samples.astype('float32') - self.offset
+
+            event.r1.tel[tel_id].waveform = samples.astype('float32') \
+                                          - self.offset
 
 
     def subtract_pedestal(self, event):
@@ -145,19 +166,26 @@ class LSTR0Corrections(CameraR0Calibrator):
         n_modules = event.lst.tel[self.tel_id].svc.num_modules
 
         for nr_module in range(0, n_modules):
-            self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module)
+            self.first_cap_array[nr_module, :, :] = \
+                        self._get_first_capacitor(event, nr_module)
 
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
         samples = np.copy(event.r0.tel[self.tel_id].waveform)
         samples.astype('int16')
+
         samples = subtract_pedestal_jit(
             samples,
             expected_pixel_id,
             self.first_cap_array,
             self.pedestal_value_array,
             n_modules)
-        event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
-        event.r1.tel[self.tel_id].trigger_time = event.r1.tel[self.tel_id].trigger_time
+
+        event.r1.tel[self.tel_id].trigger_type = \
+            event.r0.tel[self.tel_id].trigger_type
+
+        event.r1.tel[self.tel_id].trigger_time = \
+            event.r1.tel[self.tel_id].trigger_time
+
         event.r1.tel[self.tel_id].waveform = samples[:, :, :]
 
     def time_lapse_corr(self, event):
@@ -178,15 +206,23 @@ class LSTR0Corrections(CameraR0Calibrator):
         #If R1 container exist modifies it
         if isinstance(event.r1.tel[self.tel_id].waveform, np.ndarray):
             samples = event.r1.tel[self.tel_id].waveform
-            do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
-                               self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
+
+            do_time_lapse_corr(samples, expected_pixel_id,
+                               local_clock_list,
+                               self.first_cap_time_lapse_array,
+                               self.last_reading_time_array,
+                               n_modules)
+
             event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
             event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
             event.r1.tel[self.tel_id].waveform = samples[:, :, :]
         else: # Modifies R0 container. This is for create pedestal file.
             samples = np.copy(event.r0.tel[self.tel_id].waveform)
-            do_time_lapse_corr(samples, expected_pixel_id, local_clock_list,
-                               self.first_cap_time_lapse_array, self.last_reading_time_array, n_modules)
+            do_time_lapse_corr(samples, expected_pixel_id,
+                               local_clock_list,
+                               self.first_cap_time_lapse_array,
+                               self.last_reading_time_array,
+                               n_modules)
             event.r0.tel[self.tel_id].waveform = samples[:, :, :]
 
     def interpolate_spikes(self, event):
@@ -209,13 +245,18 @@ class LSTR0Corrections(CameraR0Calibrator):
             samples = waveform.copy()
             samples = samples.astype('int16')
 
-            event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses(samples,
-                                                                                expected_pixel_id,
-                                                                                self.first_cap_array_spike,
-                                                                                self.first_cap_old_array,
-                                                                                n_modules)
-            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
-            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
+            event.r1.tel[self.tel_id].waveform = \
+                self.interpolate_pseudo_pulses(samples,
+                                               expected_pixel_id,
+                                               self.first_cap_array_spike,
+                                               self.first_cap_old_array,
+                                                n_modules)
+
+            event.r1.tel[self.tel_id].trigger_type = \
+                                event.r0.tel[self.tel_id].trigger_type
+
+            event.r1.tel[self.tel_id].trigger_time = \
+                                event.r0.tel[self.tel_id].trigger_time
 
     @staticmethod
     @jit(parallel=True)
@@ -250,23 +291,35 @@ class LSTR0Corrections(CameraR0Calibrator):
                 for pix in prange(0, n_pix):
                     for k in prange(0, 4):
                         # looking for spike A first case
-                        abspos = int(1024 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
-                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
+                        abspos = int(1024 - roisize - 2 -
+                                 fc_old[nr_module, gain, pix]
+                                 + k * 1024 + size4drs)
+                        spike_A_position = int((abspos -
+                                                fc[nr_module, gain, pix]
+                                                + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
-                            # The correction is only needed for even last capacitor (lc) in the
-                            # first half of the DRS4 ring
-                            if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
+                            # The correction is only needed for even
+                            # last capacitor (lc) in the first half of the
+                            # DRS4 ring
+                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and
+                               (fc_old[nr_module, gain, pix]+ 39) % 1024 <= 510):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain,
+                                                    spike_A_position, pixel)
                         # looking for spike A second case
-                        abspos = int(roisize - 2 + fc_old[nr_module, gain, pix] + k * 1024)
-                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
+                        abspos = int(roisize - 2 + fc_old[nr_module, gain, pix]
+                                + k * 1024)
+                        spike_A_position = int((abspos \
+                                          -fc[nr_module, gain, pix] + \
+                                           size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
                             # The correction is only needed for even last capacitor (lc) in the
                             # first half of the DRS4 ring
-                            if (fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510:
+                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and
+                               (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain,
+                                                    spike_A_position, pixel)
         return waveform
 
     def _load_calib(self):
@@ -276,7 +329,8 @@ class LSTR0Corrections(CameraR0Calibrator):
         if self.pedestal_path:
             with fits.open(self.pedestal_path) as f:
                 pedestal_data = np.int16(f[1].data)
-                self.pedestal_value_array[:, :, :self.size4drs] = pedestal_data - self.offset
+                self.pedestal_value_array[:, :, :self.size4drs] = \
+                                                    pedestal_data - self.offset
                 self.pedestal_value_array[:, :, self.size4drs:self.size4drs + 40] \
                     = pedestal_data[:, :, 0:40] - self.offset
 
@@ -320,7 +374,8 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
     return waveform
 
 @jit(parallel=True)
-def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_time_array, number_of_modules):
+def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
+                       fc, last_time_array, number_of_modules):
     """
     Numba function for time lapse baseline correction.
     Change waveform array.
@@ -334,10 +389,13 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list, fc, last_t
                 for k in prange(0, 40):
                     posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                     if last_time_array[nr_module, gain, pix, posads] > 0:
-                        time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
+                        time_diff = time_now \
+                                  - last_time_array[nr_module, gain,
+                                                    pix, posads]
                         time_diff_ms = time_diff / (133.e3)
                         if time_diff_ms < 100:
-                            val = waveform[gain, pixel, k] - ped_time(time_diff_ms)
+                            val =( waveform[gain, pixel, k] 
+                                - ped_time(time_diff_ms) )
                             waveform[gain, pixel, k] = val
 
                 # updating times from slices -1 to 38 remove spike b (small jump of signal)
