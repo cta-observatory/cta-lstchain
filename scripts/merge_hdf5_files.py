@@ -45,7 +45,7 @@ if __name__ == '__main__':
         keys = None
 
     if args.smart:
-        smart_merge_h5files(file_list, args.outfile)
+        smart_merge_h5files(file_list, args.outfile, node_keys=keys)
     else:
         auto_merge_h5files(file_list, args.outfile, nodes_keys=keys)
 
