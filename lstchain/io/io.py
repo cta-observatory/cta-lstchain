@@ -231,7 +231,7 @@ def merging_check(file_list):
             assert (table == array_info0[ii]).all()
 
 
-def smart_merge_h5files(file_list, output_filename='merged.h5'):
+def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
     """
     Check that HDF5 files are compatible for merging and merge them
 
@@ -241,7 +241,7 @@ def smart_merge_h5files(file_list, output_filename='merged.h5'):
     output_filename: path to the merged file
     """
     merging_check(file_list)
-    auto_merge_h5files(file_list, output_filename)
+    auto_merge_h5files(file_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
 
     # Merge metadata
     metadata0 = read_metadata(file_list[0])
