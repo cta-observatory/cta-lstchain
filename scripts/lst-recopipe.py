@@ -11,7 +11,6 @@ $> python lst-recopipe arg1 arg2 ...
 
 from lstchain.reco import dl0_to_dl1
 from lstchain.reco import dl1_to_dl2
-from lstchain.io import get_dataset_keys
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import argparse
@@ -22,7 +21,7 @@ from distutils.util import strtobool
 from lstchain.reco.utils import filter_events
 from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
-import tables
+from lstchain.io.io import dl1_params_lstcam_key
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -80,8 +79,7 @@ if __name__ == '__main__':
     dl0_to_dl1.r0_to_dl1(args.datafile)
     dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-    dl1_params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
-    data = pd.read_hdf(dl1_file, key=dl1_params_lstcam)
+    data = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     data = filter_events(data, filters=config["events_filters"])
 
     #Load the trained RF for reconstruction:
