@@ -8,11 +8,11 @@
      "log_level":"DEBUG"
    },         
    "EventSource": {
-      "input_url": "/ctadata/franca/LST/LST-1.1.Run00251.0000.fits.fz",
+      "input_url": "/ctadata/franca/LST/LST-1.1.Run00472.0000.fits.fz",
       "max_events": 1000
    },
    "LSTR0Corrections": {
-      "pedestal_path": "/astro/users/cassol/soft/python/lstchain-test/pedestal_run97_new.fits",
+      "pedestal_path": "/ctadata/franca/LST/pedestal_file_run446_0000.fits",
       "r1_sample_start": 2,
       "r1_sample_end": 38,
       "tel_id": 0

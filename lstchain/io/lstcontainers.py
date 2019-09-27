@@ -133,9 +133,13 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, pulse_time, hillas):
-        timepars = time.timing_parameters(geom, image, pulse_time, hillas)
-        self.time_gradient = timepars.slope.value
-        self.intercept = timepars.intercept
+        try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
+            timepars = time.timing_parameters(geom, image, pulse_time, hillas)
+            self.time_gradient = timepars.slope.value
+            self.intercept = timepars.intercept
+        except ValueError:
+            self.time_gradient = np.nan
+            self.intercept = np.nan
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
@@ -153,11 +157,6 @@ class DL1ParametersContainer(Container):
         self.tel_pos_z = tel_pos[2] 
 
     def set_source_camera_position(self, event, telescope_id):
-        # sourcepos = utils.cal_cam_source_pos(mc_alt, mc_az,
-        #                                      mc_alt_tel, mc_az_tel,
-        #                                      focal_length)
-        # self.src_x = sourcepos[0]
-        # self.src_y = sourcepos[1]
         tel = event.inst.subarray.tel[telescope_id]
         source_pos = utils.get_event_pos_in_camera(event, tel)
         self.src_x = source_pos[0]

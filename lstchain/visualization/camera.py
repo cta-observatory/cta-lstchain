@@ -1,5 +1,5 @@
 import numpy as np
-from ..reco.utils import disp_vector
+from ..reco.disp import disp_vector
 import astropy.units as u
 
 __all__ = [
