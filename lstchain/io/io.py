@@ -555,8 +555,7 @@ def write_dl2_dataframe(dataframe, outfile):
     dataframe: `pandas.DataFrame`
     outfile: path
     """
-    dl2_params_lstcam = 'dl2/event/telescope/parameters/LST_LSTCam'
-    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam)
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key)
 
 
 def add_column_table(table, ColClass, col_label, values):
