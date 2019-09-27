@@ -14,9 +14,14 @@ from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
-import ctaplot
 import astropy.units as u
 from lstchain.io import standard_config, replace_config, read_configuration_file
+from lstchain.io.io import dl1_params_lstcam_key
+
+try:
+    import ctaplot
+except ImportError as e:
+    print("ctaplot not installed, some plotting function will be missing")
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
@@ -78,11 +83,10 @@ if __name__ == '__main__':
         custom_config=config,
     )
 
-    params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
-    gammas = filter_events(pd.read_hdf(args.gammatest, key=params_lstcam),
+    gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            config["events_filters"],
                            )
-    proton = filter_events(pd.read_hdf(args.protontest, key=params_lstcam),
+    proton = filter_events(pd.read_hdf(args.protontest, key=dl1_params_lstcam_key),
                            config["events_filters"],
                            )
 
@@ -123,23 +127,23 @@ if __name__ == '__main__':
     plt.show()
 
 
-
-    ctaplot.plot_theta2(gammas.mc_alt,
-                        np.arctan(np.tan(gammas.mc_az)),
-                        src_pos_reco.alt.rad,
-                        np.arctan(np.tan(src_pos_reco.az.rad)),
-                        bins=50, range=(0, 1),
-    )
-
-    plt.show()
-    ctaplot.plot_angular_res_per_energy(src_pos_reco.alt.rad,
-                                        np.arctan(np.tan(src_pos_reco.az.rad)),
-                                        gammas.mc_alt,
-                                        np.arctan(np.tan(gammas.mc_az)),
-                                        10**(gammas.mc_energy-3)
-    )
-    plt.show()
-
+    try:
+        ctaplot.plot_theta2(gammas.mc_alt,
+                            np.arctan(np.tan(gammas.mc_az)),
+                            src_pos_reco.alt.rad,
+                            np.arctan(np.tan(src_pos_reco.az.rad)),
+                            bins=50, range=(0, 1),
+        )
+        plt.show()
+        ctaplot.plot_angular_res_per_energy(src_pos_reco.alt.rad,
+                                            np.arctan(np.tan(src_pos_reco.az.rad)),
+                                            gammas.mc_alt,
+                                            np.arctan(np.tan(gammas.mc_az)),
+                                            10**(gammas.mc_energy-3)
+        )
+        plt.show()
+    except:
+        pass
 
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
