@@ -17,6 +17,7 @@ from . import utils
 from . import disp
 from ..io import standard_config, replace_config
 import astropy.units as u
+from ..io.io import dl1_params_lstcam_key
 
 __all__ = [
     'train_energy',
@@ -29,8 +30,6 @@ __all__ = [
     'apply_models',
 ]
 
-
-params_lstcam = 'dl1/event/telescope/parameters/LST_LSTCam'
 
 
 def train_energy(train, custom_config={}):
@@ -297,8 +296,8 @@ def build_models(filegammas, fileprotons,
     events_filters = config["events_filters"]
     regression_features = config["regression_features"]
 
-    df_gamma = pd.read_hdf(filegammas, key=params_lstcam)
-    df_proton = pd.read_hdf(fileprotons, key=params_lstcam)
+    df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
+    df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     df_gamma = utils.filter_events(df_gamma, filters=events_filters)
     df_proton = utils.filter_events(df_proton, filters=events_filters)
