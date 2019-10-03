@@ -74,16 +74,18 @@ class LSTR0Corrections(CameraR0Calibrator):
     The R0 calibrator class for LST Camera.
     """
 
-    pedestal_path = Unicode(
-        '',
-        allow_none=True,
-        help='Path to the LST pedestal binary file'
-    ).tag(config=True)
+    pedestal_path = Unicode('',
+                            allow_none=True,
+                            help='Path to the LST pedestal binary file'
+                           ).tag(config=True)
 
-    tel_id = Int(
-        0,
-        help='id of the telescope to calibrate'
-    ).tag(config=True)
+    tel_id = Int(0,
+                 help='id of the telescope to calibrate'
+                ).tag(config=True)
+
+    n_module = Int(265,
+                   help='id of the telescope to calibrate'
+                  ).tag(config=True)
 
     def __init__(self, **kwargs):
         """
@@ -102,7 +104,6 @@ class LSTR0Corrections(CameraR0Calibrator):
         kwargs
         """
         super().__init__(**kwargs)
-        self.n_module = 265
         self.n_gain = 2
         self.n_pix = 7
         self.size4drs = 4 * 1024
