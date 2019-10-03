@@ -160,7 +160,7 @@ def stack_tables_h5files(filenames_list, output_filename='merged.h5', keys=None)
 
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None):
+def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False):
     """
     Automatic merge of HDF5 files.
     A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
@@ -173,26 +173,40 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None):
     """
 
     if nodes_keys is None:
-        keys = get_dataset_keys(file_list[0]) if nodes_keys is None else nodes_keys
-    groups = set([k.split('/')[0] for k in keys])
+        keys = get_dataset_keys(file_list[0])
+    else:
+        keys = nodes_keys
 
-    f1 = open_file(file_list[0])
-    merge_file = open_file(output_filename, 'w')
-
-    nodes = {}
-    for g in groups:
-        nodes[g] = f1.copy_node('/', name=g, newparent=merge_file.root, newname=g, recursive=True)
-
-
-    for filename in file_list[1:]:
-        with open_file(filename) as file:
+    with open_file(output_filename, 'w') as merge_file:
+        with open_file(file_list[0]) as f1:
             for k in keys:
-                try:
-                    merge_file.root[k].append(file.root[k].read())
-                except:
-                    print("Can't append node {} from file {}".format(k, filename))
-
-    merge_file.close()
+                if type(f1.root[k]) == tables.table.Table:
+                    merge_file.create_table(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                                            os.path.basename(k),
+                                            createparents=True,
+                                            obj=f1.root[k].read())
+                if type(f1.root[k]) == tables.array.Array:
+                    if merge_arrays:
+                        merge_file.create_earray(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                                                os.path.basename(k),
+                                                createparents=True,
+                                                obj=f1.root[k].read())
+                    else:
+                        merge_file.create_array(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                                                os.path.basename(k),
+                                                createparents=True,
+                                                obj=f1.root[k].read())
+        for filename in file_list[1:]:
+            with open_file(filename) as file:
+                for k in keys:
+                    try:
+                        if merge_arrays:
+                            merge_file.root[k].append(file.root[k].read())
+                        else:
+                            if type(file.root[k]) == tables.table.Table:
+                                merge_file.root[k].append(file.root[k].read())
+                    except:
+                        print("Can't append node {} from file {}".format(k, filename))
 
 
 def merging_check(file_list):
@@ -225,7 +239,7 @@ def merging_check(file_list):
             assert (table == array_info0[ii]).all()
 
 
-def smart_merge_h5files(file_list, output_filename='merged.h5'):
+def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
     """
     Check that HDF5 files are compatible for merging and merge them
 
@@ -235,7 +249,7 @@ def smart_merge_h5files(file_list, output_filename='merged.h5'):
     output_filename: path to the merged file
     """
     merging_check(file_list)
-    auto_merge_h5files(file_list, output_filename)
+    auto_merge_h5files(file_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
 
     # Merge metadata
     metadata0 = read_metadata(file_list[0])
@@ -592,3 +606,36 @@ def add_column_table(table, ColClass, col_label, values):
     newtable.move(parent, name)  # move temporary table to original location
 
     return newtable
+
+
+
+def recursive_copy_node(src_file, dir_file, path):
+    """
+    Copy a node recursively from a src file to a dir file without copying the tables/arrays in the node
+
+    Parameters
+    ----------
+    src_file: opened `tables.file.File`
+    dir_file: `tables.file.File` opened in writing mode
+    path: path to the node in `src_file`
+
+    """
+    path_split = path.split('/')
+    while '' in path_split:
+        path_split.remove('')
+    assert len(path_split)>0
+    src_file.copy_node('/',
+                       name=path_split[0],
+                       newparent=dir_file.root,
+                       newname=path_split[0],
+                       recursive=False)
+    if len(path_split) > 1:
+        recursive_path = os.path.join('/', path_split[0])
+        for p in path_split[1:]:
+            src_file.copy_node(recursive_path,
+                               name=p,
+                               newparent=dir_file.root[recursive_path],
+                               newname=p, recursive=False)
+            recursive_path = os.path.join(recursive_path, p)
+
+
