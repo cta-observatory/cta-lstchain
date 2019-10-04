@@ -27,7 +27,6 @@ from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ctapipe.image.cleaning import number_of_islands
-from copy import deepcopy
 
 import tables
 from functools import partial
@@ -60,7 +59,7 @@ filters = tables.Filters(
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}):
+def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}, use_main_island=True):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -99,16 +98,17 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
         # check the number of islands 
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
-        intensity_of_island = np.zeros(num_islands+1)
 
-        for iisland in range(1, num_islands+1):
-            intensity_of_island[iisland] = np.sum(image[island_labels==iisland])
+        if use_main_island:
+            n_pixels_on_island = np.zeros(num_islands+1)
 
-        max_island_label = np.argmax(intensity_of_island)
-        signal_pixels_main = deepcopy(signal_pixels)
-        signal_pixels_main[island_labels!=max_island_label] = False
+            for iisland in range(1, num_islands+1):
+                n_pixels_on_island[iisland] = np.sum(island_labels==iisland)
+              
+            max_island_label = np.argmax(n_pixels_on_island)
+            signal_pixels[island_labels!=max_island_label] = False
 
-        hillas = hillas_parameters(camera[signal_pixels_main], image[signal_pixels_main])
+        hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
         # Fill container
         dl1_container.fill_mc(calibrated_event)
@@ -116,12 +116,12 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
         dl1_container.set_mc_type(calibrated_event)
-        dl1_container.set_timing_features(camera[signal_pixels_main],
-                                          image[signal_pixels_main],
-                                          pulse_time[signal_pixels_main],
+        dl1_container.set_timing_features(camera[signal_pixels],
+                                          image[signal_pixels],
+                                          pulse_time[signal_pixels],
                                           hillas)
-        dl1_container.set_leakage(camera, image, signal_pixels_main)
-        dl1_container.set_n_islands(camera, signal_pixels)
+        dl1_container.set_leakage(camera, image, signal_pixels)
+        dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
         return dl1_container
@@ -232,7 +232,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     lst_calibration(event, telescope_id)
 
                 try:
-                    dl1_filled = get_dl1(event, telescope_id, dl1_container=dl1_container, custom_config=config)
+                    dl1_filled = get_dl1(event, telescope_id, dl1_container=dl1_container, custom_config=config, use_main_island=True)
                 except HillasParameterizationError:
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
