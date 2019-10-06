@@ -79,11 +79,10 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root['simulation/run_config']
         colnames = simu_info.colnames
-        colnames.remove('num_showers')
-        colnames.remove('shower_prog_start')
-        colnames.remove('detector_prog_start')
+        not_to_check = ['num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id']
         for k in colnames:
-            assert np.all(simu_info[:][k] == simu_info[0][k])
+            if k not in not_to_check:
+                assert np.all(simu_info[:][k] == simu_info[0][k])
         num_showers = simu_info[:]['num_showers'].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
@@ -293,7 +292,7 @@ def read_simtel_energy_histogram(filename):
     return hist
 
 
-def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadata={}):
+def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadata=None):
     """
     Write the mcheader from an event container to a HDF5 file
 
