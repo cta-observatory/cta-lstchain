@@ -3,7 +3,8 @@ import numpy as np
 import pytest
 import os
 import pandas as pd
-from ..io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.reco.utils import filter_events
 
 test_dir = 'testfiles'
 
@@ -111,6 +112,7 @@ def test_apply_models():
     from sklearn.externals import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
