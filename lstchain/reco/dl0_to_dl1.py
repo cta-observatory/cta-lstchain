@@ -108,6 +108,9 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels!=max_island_label] = False
 
+        if np.sum(signal_pixels) < 3 :
+            return None
+
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
         # Fill container
