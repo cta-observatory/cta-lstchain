@@ -379,7 +379,9 @@ def filter_events(events,
                                  wl=[0, np.inf],
                                  r=[0, np.inf],
                                  leakage=[0, 1],
-                                 )):
+                                 ),
+                  dropna=True,
+                  ):
     """
     Apply data filtering to a pandas dataframe.
     Each filtering range is applied if the column name exists in the DataFrame so that
@@ -390,6 +392,8 @@ def filter_events(events,
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
+    dropna: bool
+        if True (default), `dropna()` is applied to the dataframe.
 
     Returns
     -------
@@ -402,4 +406,7 @@ def filter_events(events,
         if k in events.columns:
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
-    return events[filter]
+    if dropna:
+        return events[filter].dropna()
+    else:
+        return events[filter]

@@ -3,14 +3,14 @@ import numpy as np
 import pytest
 import os
 import pandas as pd
+from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.reco.utils import filter_events
 
 test_dir = 'testfiles'
 
 os.makedirs(test_dir, exist_ok=True)
 
 mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
-dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
-dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
 dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'rf_energy.pkl')
@@ -112,6 +112,7 @@ def test_apply_models():
     from sklearn.externals import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
