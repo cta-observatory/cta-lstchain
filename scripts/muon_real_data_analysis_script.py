@@ -200,7 +200,7 @@ if __name__ == '__main__':
             continue
        
         i += 1
-        print(i)
+        #print(i)
         r0calib.calibrate(event)
         pedcorrectedsamples = event.r1.tel[0].waveform
         integrator = LocalPeakWindowSum(window_shift=4, window_width=9)
