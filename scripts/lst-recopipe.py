@@ -11,16 +11,17 @@ $> python lst-recopipe arg1 arg2 ...
 
 from lstchain.reco import dl0_to_dl1
 from lstchain.reco import dl1_to_dl2
-from lstchain.io import get_dataset_keys
 from sklearn.externals import joblib
 from ctapipe.utils import get_dataset_path
 import argparse
 import os
+import shutil
 import pandas as pd 
 from distutils.util import strtobool
 from lstchain.reco.utils import filter_events
 from lstchain.io import read_configuration_file, standard_config, replace_config
-import tables
+from lstchain.io import write_dl2_dataframe
+from lstchain.io.io import dl1_params_lstcam_key
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
     dl0_to_dl1.r0_to_dl1(args.datafile)
     dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-    data = pd.read_hdf(dl1_file, key='events/LSTCam')
+    data = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     data = filter_events(data, filters=config["events_filters"])
 
     #Load the trained RF for reconstruction:
@@ -95,18 +96,9 @@ if __name__ == '__main__':
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     if args.storeresults==True:
-        #Store results
         os.makedirs(args.outdir, exist_ok=True)
-        outfile = args.outdir+'/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+        outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
 
-        dl2.to_hdf(outfile, key="events/LSTCam", mode="w")
+        shutil.move(dl1_file, outfile)
+        write_dl2_dataframe(dl2, outfile)
 
-        keys = get_dataset_keys(dl1_file)
-        groups = set([k.split('/')[0] for k in keys])
-        groups.remove('events') # we don't want to copy DL1 events
-
-        f1 = tables.open_file(dl1_file)
-        with tables.open_file(outfile, mode='a') as dl2_file:
-            nodes = {}
-            for g in groups:
-                nodes[g] = f1.copy_node('/', name=g, newparent=dl2_file.root, newname=g, recursive=True)

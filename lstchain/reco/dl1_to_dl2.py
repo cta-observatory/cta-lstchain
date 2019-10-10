@@ -16,6 +16,8 @@ import os
 from . import utils
 from . import disp
 from ..io import standard_config, replace_config
+import astropy.units as u
+from ..io.io import dl1_params_lstcam_key
 
 __all__ = [
     'train_energy',
@@ -27,6 +29,7 @@ __all__ = [
     'build_models',
     'apply_models',
 ]
+
 
 
 def train_energy(train, custom_config={}):
@@ -293,8 +296,8 @@ def build_models(filegammas, fileprotons,
     events_filters = config["events_filters"]
     regression_features = config["regression_features"]
 
-    df_gamma = pd.read_hdf(filegammas, key='events/LSTCam')
-    df_proton = pd.read_hdf(fileprotons, key='events/LSTCam')
+    df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
+    df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     df_gamma = utils.filter_events(df_gamma, filters=events_filters)
     df_proton = utils.filter_events(df_proton, filters=events_filters)
@@ -378,11 +381,23 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     #Construction of Source position in camera coordinates from disp_norm distance.
 
-    dl2['src_x_rec'], dl2['src_y_rec'] = disp.disp_to_pos(dl2.reco_disp_dx,
-                                                           dl2.reco_disp_dy,
-                                                           dl2.x,
-                                                           dl2.y,
-                                                           )
+    dl2['reco_src_x'], dl2['reco_src_y'] = disp.disp_to_pos(dl2.reco_disp_dx,
+                                                             dl2.reco_disp_dy,
+                                                             dl2.x,
+                                                             dl2.y,
+                                                             )
+
+    focal_length = 28 * u.m
+    src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
+                                                  dl2.y.values * u.m,
+                                                  dl2.reco_disp_dx.values * u.m,
+                                                  dl2.reco_disp_dy.values * u.m,
+                                                  focal_length,
+                                                  dl2.mc_alt_tel.values * u.rad,
+                                                  dl2.mc_az_tel.values * u.rad)
+
+    dl2['reco_alt'] = src_pos_reco.alt.rad
+    dl2['reco_az'] = src_pos_reco.az.rad
 
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
