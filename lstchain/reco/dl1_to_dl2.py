@@ -58,7 +58,7 @@ def train_energy(train, custom_config={}):
 
     reg = model(**regression_args)
     reg.fit(train[features],
-                  train['mc_energy'])
+                  train['log_mc_energy'])
 
     print("Model {} trained!".format(model))
     return reg
@@ -193,7 +193,7 @@ def train_reco(train, custom_config={}):
 
     reg_energy = model(**regression_args)
     reg_energy.fit(train[features],
-                  train['mc_energy'])
+                  train['log_mc_energy'])
 
     print("Random Forest trained!")
     print("Training Random Forest Regressor for disp_norm Reconstruction...")
@@ -319,7 +319,7 @@ def build_models(filegammas, fileprotons,
 
     #Apply the regressors to the test set
 
-    test['reco_energy'] = temp_reg_energy.predict(test[regression_features])
+    test['log_reco_energy'] = temp_reg_energy.predict(test[regression_features])
     disp_vector = temp_reg_disp_vector.predict(test[regression_features])
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
@@ -327,7 +327,7 @@ def build_models(filegammas, fileprotons,
     #Apply cut in reconstructed energy. New train set is the previous
     #test with energy and disp_norm reconstructed.
 
-    train = test[test['reco_energy'] > energy_min]
+    train = test[test['log_reco_energy'] > energy_min]
 
     del temp_reg_energy, temp_reg_disp_vector
 
@@ -374,7 +374,8 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     dl2 = dl1.copy()
     #Reconstruction of Energy and disp_norm distance
-    dl2['reco_energy'] = reg_energy.predict(dl2[regression_features])
+    dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
+    dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
     disp_vector = reg_disp_vector.predict(dl2[regression_features])
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
