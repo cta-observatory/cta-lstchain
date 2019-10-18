@@ -61,7 +61,7 @@ custom_config = {
         "length",
         "x",
         "y",
-        "reco_energy",
+        "log_reco_energy",
         "reco_disp_dx",
         "reco_disp_dy"
     ],

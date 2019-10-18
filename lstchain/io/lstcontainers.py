@@ -25,6 +25,7 @@ class DL1ParametersContainer(Container):
         For now I have not found an elegant way to do so
     """
     intensity = Field(None, 'total intensity (size)')
+    log_intensity = Field(None, 'log of total intensity (size)')
 
     x = Field(None, 'centroid x coordinate', unit=u.m)
     y = Field(None, 'centroid x coordinate', unit=u.m)
@@ -53,6 +54,7 @@ class DL1ParametersContainer(Container):
     gps_time = Field(None, 'GPS time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
+    log_mc_energy = Field(None, 'log of simulated energy/GeV')
     mc_alt = Field(None, 'Simulated altitude', unit=u.rad)
     mc_az = Field(None, 'Simulated azimuth', unit=u.rad)
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
