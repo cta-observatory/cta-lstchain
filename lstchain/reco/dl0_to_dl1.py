@@ -244,8 +244,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     # Some custom def
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     # Log10(Energy) in GeV
-                    dl1_container.mc_energy = np.log10(event.mc.energy.value * 1e3)
-                    dl1_container.intensity = np.log10(dl1_container.intensity)
+                    dl1_container.mc_energy = event.mc.energy.value
+                    dl1_container.log_mc_energy = np.log10(event.mc.energy.value * 1e3)
+                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     foclen = (

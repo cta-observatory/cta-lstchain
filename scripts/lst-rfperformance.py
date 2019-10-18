@@ -139,7 +139,7 @@ if __name__ == '__main__':
                                             np.arctan(np.tan(src_pos_reco.az.rad)),
                                             gammas.mc_alt,
                                             np.arctan(np.tan(gammas.mc_az)),
-                                            10**(gammas.mc_energy-3)
+                                            gammas.mc_energy
         )
         plt.show()
     except:
