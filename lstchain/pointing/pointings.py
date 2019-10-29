@@ -1,8 +1,10 @@
 import os
 import numpy as np
 from ctapipe.core import Component
-from ctapipe_io_lst.containers import LSTDriveContainer
+from ctapipe_io_lst.containers import LSTMonitoringContainer, LSTDriveContainer
 from ctapipe.core.traits import Unicode, Int
+from astropy.io import ascii
+
 
 __all__ = [
     'PointingPosition'
@@ -29,20 +31,23 @@ class PointingPosition(Component):
         """
         Reading drive reports
 
+        Parameters:
+        -----------
+        str: drive report file
+
         Returns:
         data:`~astropy.table.Table`
              A table of drive reports
 
         """
-        from astropy.io import ascii
         self.log.info("Drive report file:", self.drive_path)
         if self.drive_path:
                 data = ascii.read(self.drive_path)
             # Renaming the columns, since the drive report doesn't contain
             # these information it self
                 data['col6'].name = 'time'
-                data['col8'].name = 'Az_avg'
-                data['col13'].name = 'El_avg'
+                data['col8'].name = 'azimuth_avg'
+                data['col13'].name = 'altitude_avg'
                 return data
         else:
             raise Exception("No drive report file found")
@@ -56,31 +61,29 @@ class PointingPosition(Component):
         time: array
             times from events
 
-        Returns
-        ----------
-        Azimuth: array
-
-        Elevation: array
-
+        Drivereport: Container
+            a container filled with drive information
         """
-        timeL = ev_time[0]
-        timeH = ev_time[-1]
         drive_container = LSTDriveContainer()
         data = self._read_drive_report()
         drive_container.time = data['time'].data
-        drive_container.Az_avg = data['Az_avg'].data
-        drive_container.El_avg = data['El_avg'].data
+        drive_container.azimuth_avg = data['azimuth_avg'].data
+        drive_container.altitude_avg = data['altitude_avg'].data
+
         xp = drive_container.time
+        lower_drive_time = xp[xp < ev_time].max()
+        upper_drive_time = xp[xp > ev_time].min()
 
-        ind = np.where((xp >= timeL) & (xp <= timeH))
+        time_in_window = (xp >= lower_drive_time) & (xp <= upper_drive_time)
+        run_times = xp[time_in_window]
 
-        if np.array(ind).size:
-            run_times = xp[ind]
-            run_Az = drive_container.Az_avg[ind]
-            run_El = drive_container.El_avg[ind]
+        if len(run_times) > 1:
+            run_azimuth = drive_container.azimuth_avg[time_in_window]
+            run_altitude = drive_container.altitude_avg[time_in_window]
 
-            ev_Az = np.interp(ev_time, run_times, run_Az)
-            ev_El = np.interp(ev_time, run_times, run_El)
-            return ev_Az, ev_El
+            ev_azimuth = np.interp(ev_time, run_times, run_azimuth)
+            ev_altitude = np.interp(ev_time, run_times, run_altitude)
+            return ev_azimuth, ev_altitude
         else:
             raise Exception("No drive time in the range of event times")
+
