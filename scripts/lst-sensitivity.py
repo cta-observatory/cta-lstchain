@@ -93,8 +93,8 @@ sns.distplot(protons_mc.mc_energy, label='protons');
 plt.legend()
 plt.tight_layout()
 plt.show()
-sns.distplot(gammas_mc.reco_energy, label='gammas');
-sns.distplot(protons_mc.reco_energy, label='protons');
+sns.distplot(gammas_mc.log_reco_energy, label='gammas');
+sns.distplot(protons_mc.log_reco_energy, label='protons');
 plt.legend();
 plt.tight_layout()
 plt.show()
@@ -102,7 +102,7 @@ ctaplot.plot_theta2(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gam
 plt.show()
 plt.figure(figsize=(12,8))
 ctaplot.plot_angular_res_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az,
-                                    10**(gammas_mc.reco_energy-3),
+                                    gammas_mc.reco_energy),
                                    );
 
 ctaplot.plot_angular_res_cta_requirements('north', color='black')
@@ -129,7 +129,7 @@ total_number_of_events = gamma_ps_simu_info.num_showers * gamma_ps_simu_info.sho
 spectral_index = gamma_ps_simu_info.spectral_index
 area = (gamma_ps_simu_info.max_scatter_range.value - gamma_ps_simu_info.min_scatter_range.value)**2 * np.pi
 ctaplot.plot_effective_area_per_energy_power_law(emin, emax, total_number_of_events, spectral_index,
-                                                 10**(gammas_mc.reco_energy-3)[gammas_mc.tel_id==1],
+                                                 gammas_mc.reco_energy[gammas_mc.tel_id==1],
                                                  area,
                                                  label='selected gammas',
                                                  linestyle='--'
