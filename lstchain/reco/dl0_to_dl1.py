@@ -271,7 +271,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                                  containers=[dl1_container])
 
                     # writes mc information per telescope, including photo electron image
-                    if (event.mc.tel[telescope_id].photo_electron_image > 0).any():
+                    if (event.mc.tel[telescope_id].photo_electron_image > 0).any() and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
                         writer.write(table_name=f'simulation/{tel_name}',
                                      containers=[event.mc.tel[telescope_id], extra_im]
