@@ -39,7 +39,7 @@ __all__ = ['read_simu_info_hdf5',
 
 
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
-dl1_images_lstcam_key = 'dl1/event/telescope/images/LST_LSTCam'
+dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 
 
