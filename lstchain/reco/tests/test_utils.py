@@ -4,8 +4,6 @@ import numpy as np
 
 
 
-
-
 def test_camera_to_sky():
     pos_x = np.array([0, 0]) * u.m
     pos_y = np.array([0, 0]) * u.m
@@ -13,8 +11,8 @@ def test_camera_to_sky():
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
-    np.testing.assert_allclose(sky_coords.alt, pointing_alt)
-    np.testing.assert_allclose(sky_coords.az, pointing_az)
+    np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
+    np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
 
 def test_reco_source_position_sky():
