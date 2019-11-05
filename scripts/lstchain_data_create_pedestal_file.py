@@ -13,7 +13,7 @@ from lstchain.calib.camera.drs4 import DragonPedestal
 ''' 
 Script to create pedestal file for low level calibration. 
 To run script in console:
-python create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits 
+python lstchain_data_create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits 
 --max_events 9000
 not to use deltaT correction add --deltaT False
 '''
@@ -62,10 +62,11 @@ if __name__ == '__main__':
     if args.deltaT:
         print("DeltaT correction active")
         for i, event in enumerate(reader):
-            lst_r0.time_lapse_corr(event)
-            pedestal.fill_pedestal_event(event)
-            if i%500 == 0:
-                print("i = {}, ev id = {}".format(i, event.r0.event_id))
+            for tel_id in event.r0.tels_with_data:
+                lst_r0.time_lapse_corr(event, tel_id)
+                pedestal.fill_pedestal_event(event)
+                if i%500 == 0:
+                    print("i = {}, ev id = {}".format(i, event.r0.event_id))
 
     else:
         print("DeltaT correction no active")
