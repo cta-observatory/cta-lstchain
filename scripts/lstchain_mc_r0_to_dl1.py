@@ -23,6 +23,7 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
+
 args = parser.parse_args()
 
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     config = {}
     if args.config_file is not None:
         try:
-            config = read_configuration_file(args.config_file)
+            config = read_configuration_file(os.path.abspath(args.config_file))
         except("Custom configuration could not be loaded !!!"):
             pass
 
