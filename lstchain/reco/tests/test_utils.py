@@ -26,8 +26,8 @@ def test_reco_source_position_sky():
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     sky_coords = utils.reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az)
-    np.testing.assert_allclose(sky_coords.alt, pointing_alt)
-    np.testing.assert_allclose(sky_coords.az, pointing_az)
+    np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
+    np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
 
 def test_sky_to_camera():
@@ -37,6 +37,6 @@ def test_sky_to_camera():
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     camera_coords = utils.sky_to_camera(alt, az, focal, pointing_alt, pointing_az)
-    np.testing.assert_allclose(camera_coords.x.value, np.array([0, 0]), rtol=1e-5, atol=1e-5)
-    np.testing.assert_allclose(camera_coords.y.value, np.array([0, 0]), rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(camera_coords.x.value, np.array([0, 0]), rtol=1e-4, atol=1e-4)
+    np.testing.assert_allclose(camera_coords.y.value, np.array([0, 0]), rtol=1e-4, atol=1e-4)
 
