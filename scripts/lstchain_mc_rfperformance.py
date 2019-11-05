@@ -2,7 +2,7 @@
 4
 Usage:
 
-$>python lst-rfperformance.py
+$>python lstchain_mc_rfperformance.py
 
 """
 
