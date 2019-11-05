@@ -26,7 +26,10 @@ class DragonPedestal:
     def __init__(self, tel_id, n_module):
         self.tel_id = tel_id
         self.n_module = n_module
-        self.n_pixels = n_module*n_channel # Each module has 7 channels (pixels)
+
+        # Readout system of LST has 265 modules.
+        # Each module has 7 channels (pixels)
+        self.n_pixels = 265*n_channel
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.first_cap_array = np.zeros((n_module, n_gain, n_channel))
@@ -54,14 +57,16 @@ class DragonPedestal:
                 for pix in prange(0, n_channel):
                     fc = first_cap[gain, pix]
                     pixel = expected_pixel_id[nr_module * 7 + pix]
-
                     posads0 = int((2 + fc) % size4drs)
                     if posads0 + 40 < size4drs:
-                        meanped[gain, pixel, posads0:(posads0 + 36)] += waveform[gain, pixel, 2:38]
-                        numped[gain, pixel, posads0:(posads0 + 36)] += 1
-
+                        # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
+                        # hence we skip them
+                        meanped[gain, pixel, (posads0+8):(posads0 + 36)] += waveform[gain, pixel, 10:38]
+                        numped[gain, pixel, (posads0+8):(posads0 + 36)] += 1
                     else:
-                        for k in prange(2, roi_size - 2):
+                        for k in prange(10, roi_size - 2):
+                            # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
+                            # hence we skip them
                             posads = int((k + fc) % size4drs)
                             val = waveform[gain, pixel, k]
                             meanped[gain, pixel, posads] += val

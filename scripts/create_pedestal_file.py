@@ -47,22 +47,22 @@ if __name__ == '__main__':
 
     seeker = EventSeeker(reader)
     ev = seeker[0]
-    telid = ev.r0.tels_with_data[0]
-    n_modules = ev.lst.tel[telid].svc.num_modules
+    tel_id = ev.r0.tels_with_data[0]
+    n_modules = ev.lst.tel[tel_id].svc.num_modules
 
     config = Config({
         "LSTR0Corrections": {
-            "tel_id": telid
+            "tel_id": tel_id
         }
     })
     lst_r0 = LSTR0Corrections(config=config)
 
-    pedestal = DragonPedestal(tel_id=telid, n_module=n_modules)
+    pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules)
 
     if args.deltaT:
         print("DeltaT correction active")
         for i, event in enumerate(reader):
-            lst_r0.time_lapse_corr(event)
+            lst_r0.time_lapse_corr(event, tel_id)
             pedestal.fill_pedestal_event(event)
             if i%500 == 0:
                 print("i = {}, ev id = {}".format(i, event.r0.event_id))
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-    primaryhdu = fits.PrimaryHDU(ev.lst.tel[telid].svc.pixel_ids)
+    primaryhdu = fits.PrimaryHDU(ev.lst.tel[tel_id].svc.pixel_ids)
     secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
 
     hdulist = fits.HDUList([primaryhdu, secondhdu])
