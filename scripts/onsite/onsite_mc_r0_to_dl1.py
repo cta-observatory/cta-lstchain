@@ -22,8 +22,7 @@ import os
 import shutil
 import random
 
-from master import *
-from data_management import *
+from lstchain.io.data_management import *
 
 
 
