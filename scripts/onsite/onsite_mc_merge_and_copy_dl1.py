@@ -1,10 +1,7 @@
 #!/usr//bin/env python3
 
 # T. Vuillaume, 12/09/2019
-# merge and copy DL1 data after 
-
-
-# lstchain_dir="/home/thomas.vuillaume/software/cta-observatory/cta-lstchain"
+# merge and copy DL1 data after production
 
 
 # input_dir='/fefs/aswg/data/mc/DL1/20190822/gamma-diffuse/south_pointing/training/'
@@ -16,8 +13,6 @@
 # python $lstchain_dir/scripts/merge_hdf5_files.py -d $input_dir -o $output_file
 
 
-
-
 # 1. check job_logs
 # 2. check that all files have been created in DL1 based on training and testing lists
 # 3. move DL1 files in final place
@@ -27,7 +22,7 @@
 
 import os
 import sys
-from .data_management import *
+from lstchain.io.data_management import *
 from lstchain.io import smart_merge_h5files
 
 
