@@ -21,18 +21,28 @@ not to use deltaT correction add --deltaT False
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file", help="Path to fitz.fz file to create pedestal file.",
-                    type=str, default="")
+parser.add_argument("--input_file",
+                    help="Path to fitz.fz file to create pedestal file.",
+                    type=str,
+                    default="")
 
-parser.add_argument("--output_file", help="Path where script create pedestal file",
+parser.add_argument("--output_file",
+                    help="Path where script create pedestal file",
                     type=str)
 
 # Optional argument
-parser.add_argument("--max_events", help="Maximum numbers of events to read."
-                                         "Default = 5000",
-                    type=int, default=5000)
+parser.add_argument("--max_events",
+                    help="Maximum numbers of events to read. Default = 5000",
+                    type=int,
+                    default=5000)
 
-parser.add_argument('--deltaT', '-s', type=lambda x: bool(strtobool(x)),
+parser.add_argument("--start_r0_waveform",
+                    help="Start sample for waveform. Default = 10",
+                    type=int,
+                    default=10)
+
+parser.add_argument('--deltaT', '-s',
+                    type=lambda x: bool(strtobool(x)),
                     help='Boolean. True for use deltaT correction'
                     'Default=True, use False otherwise',
                     default=True)
@@ -57,7 +67,7 @@ if __name__ == '__main__':
     })
     lst_r0 = LSTR0Corrections(config=config)
 
-    pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules)
+    pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
 
     if args.deltaT:
         print("DeltaT correction active")
