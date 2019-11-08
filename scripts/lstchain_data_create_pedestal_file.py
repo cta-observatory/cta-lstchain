@@ -62,19 +62,11 @@ if __name__ == '__main__':
     if args.deltaT:
         print("DeltaT correction active")
         for i, event in enumerate(reader):
-<<<<<<< HEAD:scripts/create_pedestal_file.py
-            lst_r0.time_lapse_corr(event, tel_id)
-            pedestal.fill_pedestal_event(event)
-            if i%500 == 0:
-                print("i = {}, ev id = {}".format(i, event.r0.event_id))
-=======
             for tel_id in event.r0.tels_with_data:
                 lst_r0.time_lapse_corr(event, tel_id)
                 pedestal.fill_pedestal_event(event)
                 if i%500 == 0:
                     print("i = {}, ev id = {}".format(i, event.r0.event_id))
->>>>>>> 05b9bad2b5fccc68cddde97204bd227890948edd:scripts/lstchain_data_create_pedestal_file.py
-
     else:
         print("DeltaT correction no active")
         for i, event in enumerate(reader):
