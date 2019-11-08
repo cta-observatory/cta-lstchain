@@ -3,6 +3,13 @@
 # import sys
 import setuptools
 import lstchain
+import os
+
+def list_scripts():
+    script_dir = 'scripts'
+    script_list = [f'{os.path.join(script_dir, f)}' for f in os.listdir(script_dir) if f.startswith('lstchain_')]
+    return script_list
+
 
 setuptools.setup(name='lstchain',
                  version=lstchain.__version__,
@@ -19,4 +26,5 @@ setuptools.setup(name='lstchain',
                  url='https://github.com/cta-observatory/cta-lstchain',
                  long_description='',
                  classifiers=[],
+                 scripts=list_scripts()
                  )
