@@ -61,7 +61,7 @@ custom_config = {
         "length",
         "x",
         "y",
-        "reco_energy",
+        "log_reco_energy",
         "reco_disp_dx",
         "reco_disp_dy"
     ],
@@ -163,7 +163,7 @@ def test_change_frame_camera_sky():
 
     sky_pos = camera_to_sky(x, y, focal_length, pointing_alt, pointing_az)
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
-    np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y])
+    np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y], decimal=4)
 
 
 def test_polar_cartesian():
