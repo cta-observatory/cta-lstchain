@@ -1,6 +1,9 @@
 import numpy as np
 from numba import jit, prange
 
+from ctapipe.core import Component
+from ctapipe.core.traits import Int
+
 
 __all__ = ['DragonPedestal']
 
@@ -17,13 +20,18 @@ n_gain = 2
 n_channel = 7
 
 
-class DragonPedestal:
+class DragonPedestal(Component):
     """
         The DragonPedestal class to create pedestal
         for LST readout system using chip DRS4.
     """
 
-    def __init__(self, tel_id, n_module):
+    r0_sample_start = Int(default_value=10,
+                          help='Start sample for waveform'
+                          ).tag(config=True)
+
+    def __init__(self, tel_id, n_module, **kwargs):
+        super().__init__(**kwargs)
         self.tel_id = tel_id
         self.n_module = n_module
 
@@ -32,7 +40,7 @@ class DragonPedestal:
         self.n_pixels = 265*n_channel
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
-        self.first_cap_array = np.zeros((n_module, n_gain, n_channel))
+        self.first_cap_array = np.zeros((self.n_module, n_gain, n_channel))
 
     def fill_pedestal_event(self, event):
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
@@ -45,28 +53,29 @@ class DragonPedestal:
                                       self.first_cap_array,
                                       self.meanped,
                                       self.numped,
-                                      self.n_module)
+                                      self.n_module,
+                                      self.r0_sample_start)
 
     @staticmethod
     @jit(parallel=True)
     def _fill_pedestal_event_jit(waveform, expected_pixel_id, first_cap_array,
-                                 meanped, numped, n_module):
+                                 meanped, numped, n_module, start_sample_r0):
         for nr_module in prange(0, n_module):
             first_cap = first_cap_array[nr_module, :, :]
             for gain in prange(0, n_gain):
                 for pix in prange(0, n_channel):
                     fc = first_cap[gain, pix]
                     pixel = expected_pixel_id[nr_module * 7 + pix]
-                    posads0 = int((2 + fc) % size4drs)
-                    if posads0 + 40 < size4drs:
+                    posads0 = int((start_sample_r0+fc)%size4drs)
+                    if posads0 + roi_size < size4drs:
                         # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
-                        # hence we skip them
-                        meanped[gain, pixel, (posads0+8):(posads0 + 36)] += waveform[gain, pixel, 10:38]
-                        numped[gain, pixel, (posads0+8):(posads0 + 36)] += 1
+                        # hence we skip them. Start sample might be set as script argument. Default = 10.
+                        meanped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += waveform[gain, pixel, start_sample_r0:roi_size-2]
+                        numped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += 1
                     else:
-                        for k in prange(10, roi_size - 2):
+                        for k in prange(start_sample_r0, roi_size - 2):
                             # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
-                            # hence we skip them
+                            # hence we skip them. Start sample might be set as script argument. Default = 10.
                             posads = int((k + fc) % size4drs)
                             val = waveform[gain, pixel, k]
                             meanped[gain, pixel, posads] += val
