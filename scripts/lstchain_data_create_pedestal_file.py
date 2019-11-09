@@ -15,6 +15,7 @@ Script to create pedestal file for low level calibration.
 To run script in console:
 python lstchain_data_create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits 
 --max_events 9000
+To set start sample in waveform --start_r0_waveform i (default i = 11)
 not to use deltaT correction add --deltaT False
 '''
 

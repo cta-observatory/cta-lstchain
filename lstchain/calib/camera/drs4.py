@@ -26,7 +26,7 @@ class DragonPedestal(Component):
         for LST readout system using chip DRS4.
     """
 
-    r0_sample_start = Int(default_value=10,
+    r0_sample_start = Int(default_value=11,
                           help='Start sample for waveform'
                           ).tag(config=True)
 
