@@ -39,7 +39,7 @@ parser.add_argument("--max_events",
 parser.add_argument("--start_r0_waveform",
                     help="Start sample for waveform. Default = 10",
                     type=int,
-                    default=10)
+                    default=11)
 
 parser.add_argument('--deltaT', '-s',
                     type=lambda x: bool(strtobool(x)),

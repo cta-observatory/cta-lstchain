@@ -69,13 +69,13 @@ class DragonPedestal(Component):
                     posads0 = int((start_sample_r0+fc)%size4drs)
                     if posads0 + roi_size < size4drs:
                         # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
-                        # hence we skip them. Start sample might be set as script argument. Default = 10.
+                        # hence we skip them. Start sample might be set as script argument. Default = 11.
                         meanped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += waveform[gain, pixel, start_sample_r0:roi_size-2]
                         numped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += 1
                     else:
                         for k in prange(start_sample_r0, roi_size - 2):
                             # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
-                            # hence we skip them. Start sample might be set as script argument. Default = 10.
+                            # hence we skip them. Start sample might be set as script argument. Default = 11.
                             posads = int((k + fc) % size4drs)
                             val = waveform[gain, pixel, k]
                             meanped[gain, pixel, posads] += val
