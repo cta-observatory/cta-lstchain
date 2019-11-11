@@ -66,19 +66,10 @@ if __name__ == '__main__':
     print("calibration file: {}".format(args.calibration_file))
     print("max events: {}".format(args.max_events))
     
-    #if sys.argv[1:]:
-    #    run_name = sys.argv[1]
-        #max_events = sys.argv[2]
-    #    max_events = 10000
-    #else:
-    #    run_name = "/fefs/onsite/data/20190527/LST-1.4.Run00442.0001.fits.fz"
-    #    max_events = None
 
     r0calib = LSTR0Corrections(
-        #pedestal_path="/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Data/pedestal_file_run446_0000.fits",
         pedestal_path = args.pedestal_file,
         r1_sample_start=2,r1_sample_end=38)
-
 
     ff_data = FlatFieldContainer()
     cal_data =  WaveformCalibrationContainer()
@@ -87,7 +78,6 @@ if __name__ == '__main__':
     dc_to_pe = []
     ped_median = []
 
-    #with HDF5TableReader('/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Calibration/calibration.hdf5') as h5_table:
     with HDF5TableReader(args.calibration_file) as h5_table:
         assert h5_table._h5file.isopen == True
         for cont in h5_table.read('/tel_0/pedestal', ped_data):
