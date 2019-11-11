@@ -109,10 +109,10 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
 
     Paramenters
     ---------
-    event_id:  `int` id of the analyzed event
-    image:     `np.ndarray` number of photoelectrons in each pixel
-    geom:      CameraGeometry
-    teldes:    Telescope description
+    event_id:   `int` id of the analyzed event
+    image:      `np.ndarray` number of photoelectrons in each pixel
+    geom:       CameraGeometry
+    teldes:     Telescope description
     plot_rings: `bool` plot the muon ring
     plots_path: `string` path to store the figures
 
@@ -120,7 +120,7 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     ---------
     muonintensityoutput ``
     muonringparam       ``
-    impact_condition    `bool` 
+    good_ring           `bool` it determines whether the ring can be used for analysis or not
 
     TODO: several hard-coded quantities that can go into a configuration file
     """
@@ -136,21 +136,23 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     mir_rad = np.sqrt(teldes.optics.mirror_area.to("m2") / np.pi)
     dist_mask = np.abs(dist - muonringparam.ring_radius
                     ) < muonringparam.ring_radius * 0.4
-    pix_im = image[0] * dist_mask
+    pix_ring = image[0] * dist_mask
+    pix_out_ring = image[0] * ~dist_mask
+
     nom_dist = np.sqrt(np.power(muonringparam.ring_center_x,2) 
                     + np.power(muonringparam.ring_center_y, 2))
 
-    if(npix_above_threshold(pix_im, tailcuts[0]) > 0.1 * min_pix
-       and npix_composing_ring(pix_im) > min_pix
-       and nom_dist < cam_rad  
-       and muonringparam.ring_radius < 1.5 * u.deg
-       and muonringparam.ring_radius > 1. * u.deg):
-        muonringparam.ring_containment = ring_containment(
+    print("muonringparam.ring_radius", muonringparam.ring_radius)
+    print("cam_rad", cam_rad)
+    print("muonringparam.ring_center_x", muonringparam.ring_center_x)
+    print("muonringparam.ring_center_y", muonringparam.ring_center_y)
+
+
+    muonringparam.ring_containment = ring_containment(
             muonringparam.ring_radius,
             cam_rad,
             muonringparam.ring_center_x,
             muonringparam.ring_center_y)
-
 
     ctel = MuonLineIntegrate(
                 mir_rad, hole_radius = 0.308 * u.m,
@@ -165,15 +167,16 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
                                     x[dist_mask], y[dist_mask],
                                     image[0][dist_mask])
     muonintensityoutput.mask = dist_mask
-    idx_ring = np.nonzero(pix_im)
+    idx_ring = np.nonzero(pix_ring)
     muonintensityoutput.ring_completeness = ring_completeness(
-                    x[idx_ring], y[idx_ring], pix_im[idx_ring],
+                    x[idx_ring], y[idx_ring], pix_ring[idx_ring],
                     muonringparam.ring_radius,
                     muonringparam.ring_center_x,
                     muonringparam.ring_center_y,
                     threshold=30,
                     bins=30)
-    muonintensityoutput.ring_size = np.sum(pix_im)
+    muonintensityoutput.ring_size = np.sum(pix_ring)
+    size_outside_ring = np.sum(pix_out_ring * clean_mask)
     dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius
                                              ) < (muonintensityoutput.ring_width)
     pix_ringwidth_im = image[0] * dist_ringwidth_mask
@@ -181,7 +184,7 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
 
     muonintensityoutput.ring_pix_completeness = npix_above_threshold(
                     pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
-                    pix_im[idx_ringwidth])
+                    pix_ring[idx_ringwidth])
 
     print("Impact parameter = %s"
                              "ring_width=%s, ring radius=%s, ring completeness=%s"% (
@@ -195,8 +198,19 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
         0.9 * mir_rad,  # 90% inside the mirror
         
         muonintensityoutput.impact_parameter >
-        0.2 * mir_rad  # 20% inside the mirror
+        0.2 * mir_rad,  # 20% inside the mirror
+
+        npix_above_threshold(pix_ring, tailcuts[0]) > 
+        0.1 * min_pix,
+
+        npix_composing_ring(pix_ring) >
+        min_pix,
         
+        muonringparam.ring_radius <
+        1.5 * u.deg,
+
+        muonringparam.ring_radius >
+        1. * u.deg
         # TODO: To be applied when we have decent optics
         # muonintensityoutput.ring_width
         # < 0.08,
@@ -207,11 +221,11 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
 
     muonintensityparam = muonintensityoutput 
     if all(conditions):
-        impact_condition = True
+        good_ring = True
     else:
-        impact_condition = False
+        good_ring = False
 
-    if(plot_rings and plots_path):
+    if(plot_rings and plots_path and good_ring):
         altaz = AltAz(alt = 70 * u.deg, az = 0 * u.deg)
         focal_length=teldes.optics.equivalent_focal_length        
         ring_nominal = SkyCoord(
@@ -233,7 +247,7 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
         ringrad_outer = ringrad_camcoord * (1. + ringwidthfrac)
 
         fig, ax = plt.subplots(figsize=(10,10))
-        plot_muon_event(ax, geom, image, centroid, ringrad_camcoord, 
+        plot_muon_event(ax, geom, image * clean_mask, centroid, ringrad_camcoord, 
                         ringrad_inner, ringrad_outer, event_id)
 
         fig.savefig('{}/Event_{}_fitted.png'.format(plots_path, event_id))
@@ -241,4 +255,4 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     if(plot_rings and not plots_path):
         print("You are trying to plot without giving a path!")
 
-    return muonintensityparam, muonringparam, impact_condition
+    return muonintensityparam, size_outside_ring, muonringparam, good_ring
