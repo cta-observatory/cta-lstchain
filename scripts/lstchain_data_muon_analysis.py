@@ -1,3 +1,4 @@
+import argparse
 import sys, os
 import numpy as np
 from ctapipe.image.extractor import LocalPeakWindowSum
@@ -20,20 +21,55 @@ from astropy.table import Table
 import matplotlib.pyplot as plt
 
 
+'''
+Script to perform the analysis of muon events.
+To run it, type:
+
+python lstchain_data_muon_analysis.py --input_file LST-1.4.Run00442.0001.fits.fz \
+--output_file Data_table.fits --max_events 1000
+
+'''
+
+parser = argparse.ArgumentParser()
+
+# Required arguments
+parser.add_argument("--input_file", help="Path to fits.fz data file.",
+                    type=str, default="")
+
+parser.add_argument("--output_file", help="Path to create the output fits table with muon parameters",
+                    type=str)
+
+parser.add_argument("--pedestal_file", help="Path to the pedestal file",
+                    type=str)
+
+parser.add_argument("--calibration_file", help="Path to the file containing the calibration constants",
+                    type=str)
+
+# Optional argument
+parser.add_argument("--max_events", help="Maximum numbers of events to read."
+                                         "Default = 100",
+                    type=int, default=100)
+
+args = parser.parse_args()
+
 if __name__ == '__main__':
+    print("input file: {}".format(args.input_file))
+    print("output file: {}".format(args.output_file))
+    print("pedestal file: {}".format(args.pedestal_file))
+    print("calibration file: {}".format(args.calibration_file))
+    print("max events: {}".format(args.max_events))
     
-    if sys.argv[1:]:
-        run_name = sys.argv[1]
+    #if sys.argv[1:]:
+    #    run_name = sys.argv[1]
         #max_events = sys.argv[2]
-        max_events = 10000
-    else:
-        run_name = "/fefs/onsite/data/20190527/LST-1.4.Run00442.0001.fits.fz"
-        max_events = None
+    #    max_events = 10000
+    #else:
+    #    run_name = "/fefs/onsite/data/20190527/LST-1.4.Run00442.0001.fits.fz"
+    #    max_events = None
 
     r0calib = LSTR0Corrections(
-        #pedestal_path="Data/pedestal_run436.fits",
-        #pedestal_path="./Calibration/pedestal_file_run446_0000.fits",
-        pedestal_path="/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Data/pedestal_file_run446_0000.fits",
+        #pedestal_path="/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Data/pedestal_file_run446_0000.fits",
+        pedestal_path = args.pedestal_file,
         r1_sample_start=2,r1_sample_end=38)
 
 
@@ -44,7 +80,8 @@ if __name__ == '__main__':
     dc_to_pe = []
     ped_median = []
 
-    with HDF5TableReader('/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Calibration/calibration.hdf5') as h5_table:
+    #with HDF5TableReader('/Users/rlopezcoto/Desktop/Data_LST_local/20190604/Calibration/calibration.hdf5') as h5_table:
+    with HDF5TableReader(args.calibration_file) as h5_table:
         assert h5_table._h5file.isopen == True
         for cont in h5_table.read('/tel_0/pedestal', ped_data):
                 ped_median = cont.charge_median
@@ -55,7 +92,7 @@ if __name__ == '__main__':
 
     geom = CameraGeometry.from_name("LSTCam-002")
     
-    source = event_source(input_url = run_name, max_events = None)
+    source = event_source(input_url = args.input_file, max_events = args.max_events)
     output_parameters = {'MuonEff': [],
                          'ImpactP': [],
                          'RingWidth': [],
@@ -97,28 +134,27 @@ if __name__ == '__main__':
         output_parameters['Event_id'].append(
         event_id)
         output_parameters['RingSize'].append(
-        muonintensityoutput.ring_size)
+        muonintensityparam.ring_size)
         output_parameters['RingRadius'].append(
         muonringparam.ring_radius.value)
         output_parameters['MuonEff'].append(
-        muonintensityoutput.optical_efficiency_muon)
+        muonintensityparam.optical_efficiency_muon)
         output_parameters['ImpactP'].append(
-        muonintensityoutput.impact_parameter.value)
+        muonintensityparam.impact_parameter.value)
         output_parameters['RingWidth'].append(
-        muonintensityoutput.ring_width.value)
+        muonintensityparam.ring_width.value)
         output_parameters['RingCont'].append(
         muonringparam.ring_containment)
         output_parameters['RingComp'].append(
-        muonintensityoutput.ring_completeness)
+        muonintensityparam.ring_completeness)
         output_parameters['RingPixComp'].append(
-        muonintensityoutput.ring_pix_completeness)
+        muonintensityparam.ring_pix_completeness)
         output_parameters['Impact_x_arr'].append(
-        muonintensityoutput.impact_parameter_pos_x.value)
+        muonintensityparam.impact_parameter_pos_x.value)
         output_parameters['Impact_y_arr'].append(
-        muonintensityoutput.impact_parameter_pos_y.value)
+        muonintensityparam.impact_parameter_pos_y.value)
 
     table = Table(output_parameters)
-    outname = "./Data_table.fits"
-    if os.path.exists(outname):
-            os.remove(outname)
-    table.write(outname,format='fits')
+    if os.path.exists(args.output_file):
+            os.remove(args.output_file)
+    table.write(args.output_file, format='fits')
