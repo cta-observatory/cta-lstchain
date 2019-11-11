@@ -94,28 +94,28 @@ if __name__ == '__main__':
 
         num_muons = num_muons + 1
 
+        output_parameters['Event_id'].append(
+        event_id)
+        output_parameters['RingSize'].append(
+        muonintensityoutput.ring_size)
+        output_parameters['RingRadius'].append(
+        muonringparam.ring_radius.value)
         output_parameters['MuonEff'].append(
-        muonintensityparam.optical_efficiency_muon)
+        muonintensityoutput.optical_efficiency_muon)
         output_parameters['ImpactP'].append(
-        muonintensityparam.impact_parameter.value)
+        muonintensityoutput.impact_parameter.value)
         output_parameters['RingWidth'].append(
-        muonintensityparam.ring_width.value)
+        muonintensityoutput.ring_width.value)
         output_parameters['RingCont'].append(
         muonringparam.ring_containment)
         output_parameters['RingComp'].append(
-        muonintensityparam.ring_completeness)
+        muonintensityoutput.ring_completeness)
         output_parameters['RingPixComp'].append(
-        muonintensityparam.ring_pix_completeness)
+        muonintensityoutput.ring_pix_completeness)
         output_parameters['Impact_x_arr'].append(
-        muonintensityparam.impact_parameter_pos_x.value)
+        muonintensityoutput.impact_parameter_pos_x.value)
         output_parameters['Impact_y_arr'].append(
-        muonintensityparam.impact_parameter_pos_y.value)
-        output_parameters['RingSize'].append(
-        muonintensityparam.ring_size)
-        output_parameters['RingRadius'].append(
-        muonringparam.ring_radius.value)
-        output_parameters['Event_id'].append(
-        event_id)
+        muonintensityoutput.impact_parameter_pos_y.value)
 
     table = Table(output_parameters)
     outname = "./Data_table.fits"
