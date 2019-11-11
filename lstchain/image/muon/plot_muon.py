@@ -1,8 +1,30 @@
 from ctapipe.visualization import CameraDisplay
 
-def plot_event(ax, geom, phe, centroid, ringrad_camcoord, ringrad_inner, ringrad_outer, event_id):
+__all__ = ['plot_muon_event',
+           ]
+
+def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord, 
+                    ringrad_inner, ringrad_outer, event_id):
+    """
+    
+
+    Paramenters
+    ---------
+    ax:               `matplotlib.pyplot.axis`
+    geom:             CameraGeometry  
+    centroid:         `float` centroid of the muon ring
+    ringrad_camcoord: `float` ring radius in camera coordinates
+    ringrad_inner:    `float` inner ring radius in camera coordinates
+    ringrad_outer:    `float` outer ring radius in camera coordinates
+    event_id:         `int` id of the analyzed event
+
+    Returns
+    ---------
+    ax:               `matplotlib.pyplot.axis`
+    """
+
     disp0 = CameraDisplay(geom, ax=ax)
-    disp0.image = phe[0]
+    disp0.image = image[0]
     disp0.cmap = 'viridis'
     disp0.add_colorbar(ax=ax)
     disp0.add_ellipse(centroid, ringrad_camcoord.value,
