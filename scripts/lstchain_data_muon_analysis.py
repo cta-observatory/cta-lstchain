@@ -18,7 +18,6 @@ from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.image.muon import analyze_muon_event
 
 from astropy.table import Table
-import matplotlib.pyplot as plt
 
 
 '''
@@ -33,22 +32,30 @@ python lstchain_data_muon_analysis.py --input_file LST-1.4.Run00442.0001.fits.fz
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file", help="Path to fits.fz data file.",
-                    type=str, default="")
+parser.add_argument("--input_file", help = "Path to fits.fz data file.",
+                    type = str, default = "")
 
-parser.add_argument("--output_file", help="Path to create the output fits table with muon parameters",
-                    type=str)
+parser.add_argument("--output_file", help = "Path to create the output fits table with muon parameters",
+                    type = str)
 
-parser.add_argument("--pedestal_file", help="Path to the pedestal file",
-                    type=str)
+parser.add_argument("--pedestal_file", help = "Path to the pedestal file",
+                    type = str)
 
-parser.add_argument("--calibration_file", help="Path to the file containing the calibration constants",
-                    type=str)
+parser.add_argument("--calibration_file", help = "Path to the file containing the calibration constants",
+                    type = str)
 
 # Optional argument
-parser.add_argument("--max_events", help="Maximum numbers of events to read."
+parser.add_argument("--max_events", help = "Maximum numbers of events to read."
                                          "Default = 100",
-                    type=int, default=100)
+                    type = int, default = 100)
+
+parser.add_argument("--plot_rings", help = "Plot figures of the stored rings", 
+                    default = False, action='store_true')
+
+parser.add_argument("--plots_path", help = "Path to the plots",
+                    default = None, type = str)
+
+
 
 args = parser.parse_args()
 
@@ -122,10 +129,9 @@ if __name__ == '__main__':
         if((np.size(image[0][image[0]>10.]) > 300) or (np.size(image[0][image[0]>10.]) < 50)):
             continue
 
-        plot_ring = False
-
         muonintensityparam, muonringparam, impact_condition = \
-            analyze_muon_event(event_id, image, geom, teldes, plot_ring)
+            analyze_muon_event(event_id, image, geom, teldes, 
+                               args.plot_rings, args.plots_path)
         #if not (impact_condition):
         #    continue
         print("Number of muons found, EventID", num_muons, event_id)
