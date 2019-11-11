@@ -89,7 +89,12 @@ if __name__ == '__main__':
 
     geom = CameraGeometry.from_name("LSTCam-002")
     
-    source = event_source(input_url = args.input_file, max_events = args.max_events)
+    if (args.max_events):
+        max_events = args.max_events
+    else:
+        max_events = None
+
+    source = event_source(input_url = args.input_file, max_events = max_events)
     output_parameters = {'event_id': [],
                          'ring_size': [],
                          'size_outside': [],
