@@ -226,8 +226,8 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
         ringrad_outer = ringrad_camcoord * (1. + ringwidthfrac)
 
         fig, ax = plt.subplots(figsize=(10,10))
-        plot_event(ax, geom, image, centroid, ringrad_camcoord, ringrad_inner, ringrad_outer,
-                   event_id)
+        plot_muon_event(ax, geom, image, centroid, ringrad_camcoord, 
+                        ringrad_inner, ringrad_outer, event_id)
 
         fig.savefig('figures/Event_{}_fitted.png'.format(event_id))
 
