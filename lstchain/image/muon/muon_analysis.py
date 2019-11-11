@@ -11,12 +11,15 @@ from ctapipe.image.muon.muon_ring_finder import ChaudhuriKunduRingFitter
 from ctapipe.coordinates import CameraFrame, NominalFrame
 from astropy import units as u
 
+from lstchain.image.muon import plot_muon_event
+import matplotlib.pyplot as plt
+
 __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
            ]
 
-def get_muon_center(geom):
+def get_muon_center(geom, teldes):
     """
     Get the x,y coordinates of the center of the muon ring
     in the NominalFrame
@@ -24,6 +27,7 @@ def get_muon_center(geom):
     Paramenters
     ---------
     geom: CameraGeometry
+    teldes:    Telescope description
 
     Returns
     ---------
@@ -56,7 +60,7 @@ def get_muon_center(geom):
 
     return x, y
 
-def fit_muon(x, y, image, geom):
+def fit_muon(x, y, image, geom, tailcuts):
     """
     Fit the muon ring
 
@@ -65,6 +69,7 @@ def fit_muon(x, y, image, geom):
     x, y:    `floats` coordinates in  the NominalFrame
     image:   `np.ndarray` number of photoelectrons in each pixel
     geom:    CameraGeometry
+    image:   `list` tail cuts for image cleaning
 
     Returns
     ---------
@@ -98,7 +103,7 @@ def fit_muon(x, y, image, geom):
     
     return muonringparam, clean_mask, dist, image_clean
 
-def analyze_muon_event(event_id, image, geom, plot_ring):
+def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     """
     Analyze an event to fit a muon ring
 
@@ -107,7 +112,9 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
     event_id:  `int` id of the analyzed event
     image:     `np.ndarray` number of photoelectrons in each pixel
     geom:      CameraGeometry
-    plot_ring: `bool` plot the muon ring
+    teldes:    Telescope description
+    plot_rings: `bool` plot the muon ring
+    plots_path: `string` path to store the figures
 
     Returns
     ---------
@@ -123,8 +130,8 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
     cam_rad = 2.26 * u.deg
     min_pix = 148  # 8%
 
-    x, y = get_muon_center(geom)
-    muonringparam, clean_mask, dist, image = fit_muon(x, y, image[0], geom)
+    x, y = get_muon_center(geom, teldes)
+    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image[0], geom, tailcuts)
 
     mir_rad = np.sqrt(teldes.optics.mirror_area.to("m2") / np.pi)
     dist_mask = np.abs(dist - muonringparam.ring_radius
@@ -204,9 +211,9 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
     else:
         impact_condition = False
 
-    if(plot_ring):
+    if(plot_rings and plots_path):
         altaz = AltAz(alt = 70 * u.deg, az = 0 * u.deg)
-        flen = event.inst.subarray.tel[0].optics.equivalent_focal_length
+        focal_length=teldes.optics.equivalent_focal_length        
         ring_nominal = SkyCoord(
                 delta_az=muonringparam.ring_center_x,
                 delta_alt=muonringparam.ring_center_y,
@@ -214,13 +221,13 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
             )
 
         ring_camcoord = ring_nominal.transform_to(CameraFrame(
-                focal_length=flen,
-                rotation=geom.pix_rotation,
-                telescope_pointing=altaz))
+                focal_length = focal_length,
+                rotation = geom.pix_rotation,
+                telescope_pointing = altaz))
         centroid = (ring_camcoord.x.value, ring_camcoord.y.value)
         radius = muonringparam.ring_radius
         width = muonintensityoutput.ring_width
-        ringrad_camcoord = 2 * radius.to(u.rad) * flen
+        ringrad_camcoord = 2 * radius.to(u.rad) * focal_length
         ringwidthfrac = width / radius
         ringrad_inner = ringrad_camcoord * (1. - ringwidthfrac)
         ringrad_outer = ringrad_camcoord * (1. + ringwidthfrac)
@@ -229,7 +236,9 @@ def analyze_muon_event(event_id, image, geom, plot_ring):
         plot_muon_event(ax, geom, image, centroid, ringrad_camcoord, 
                         ringrad_inner, ringrad_outer, event_id)
 
-        fig.savefig('figures/Event_{}_fitted.png'.format(event_id))
+        fig.savefig('{}/Event_{}_fitted.png'.format(plots_path, event_id))
 
+    if(plot_rings and not plots_path):
+        print("You are trying to plot without giving a path!")
 
     return muonintensityparam, muonringparam, impact_condition
