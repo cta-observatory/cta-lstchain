@@ -93,7 +93,10 @@ if __name__ == '__main__':
     geom = CameraGeometry.from_name("LSTCam-002")
     
     source = event_source(input_url = args.input_file, max_events = args.max_events)
-    output_parameters = {'MuonEff': [],
+    output_parameters = {'Event_id': [],
+                         'RingSize': [],
+                         'RingRadius': [],
+                         'MuonEff': [],
                          'ImpactP': [],
                          'RingWidth': [],
                          'RingCont': [],
@@ -101,9 +104,7 @@ if __name__ == '__main__':
                          'RingPixComp': [],
                          'Impact_x_arr': [],
                          'Impact_y_arr': [],
-                         'RingSize': [],
-                         'RingRadius': [],
-                         'Event_id': []}
+                         }
 
     num_muons = 0
     for event in source:
