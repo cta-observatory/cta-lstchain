@@ -8,13 +8,14 @@ from ctapipe.image.muon.features import npix_composing_ring
 from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.instrument import CameraGeometry
-
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer
 from ctapipe.io import event_source
 from ctapipe.io import EventSeeker
 
 from lstchain.calib.camera.r0 import LSTR0Corrections
+from lstchain.image.muon import analyze_muon_event
+
 from astropy.table import Table
 import matplotlib.pyplot as plt
 
@@ -84,9 +85,9 @@ if __name__ == '__main__':
             continue
 
         plot_ring = False
-        muonintensityparam, muonringparam, impact_condition = \
-            analyze_muon_event(event_id, image, geom, plot_ring)
 
+        muonintensityparam, muonringparam, impact_condition = \
+            analyze_muon_event(event_id, image, geom, teldes, plot_ring)
         #if not (impact_condition):
         #    continue
         print("Number of muons found, EventID", num_muons, event_id)
