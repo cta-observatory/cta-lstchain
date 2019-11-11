@@ -100,17 +100,19 @@ if __name__ == '__main__':
     geom = CameraGeometry.from_name("LSTCam-002")
     
     source = event_source(input_url = args.input_file, max_events = args.max_events)
-    output_parameters = {'Event_id': [],
-                         'RingSize': [],
-                         'RingRadius': [],
-                         'MuonEff': [],
-                         'ImpactP': [],
-                         'RingWidth': [],
-                         'RingCont': [],
-                         'RingComp': [],
-                         'RingPixComp': [],
-                         'Impact_x_arr': [],
-                         'Impact_y_arr': [],
+    output_parameters = {'event_id': [],
+                         'ring_size': [],
+                         'size_outside': [],
+                         'ring_radius': [],
+                         'ring_width': [],
+                         'muon_efficiency': [],
+                         'ring_containment': [],
+                         'ring_completeness': [],
+                         'ring_pixel_completeness': [],
+                         'impact_parameter': [],
+                         'impact_x_array': [],
+                         'impact_y_array': [],
+                         'good_ring': [],
                          }
 
     num_muons = 0
@@ -129,37 +131,41 @@ if __name__ == '__main__':
         if((np.size(image[0][image[0]>10.]) > 300) or (np.size(image[0][image[0]>10.]) < 50)):
             continue
 
-        muonintensityparam, muonringparam, impact_condition = \
+        muonintensityparam, size_outside_ring, muonringparam, good_ring = \
             analyze_muon_event(event_id, image, geom, teldes, 
                                args.plot_rings, args.plots_path)
-        #if not (impact_condition):
+        #if not (good_ring):
         #    continue
-        print("Number of muons found, EventID", num_muons, event_id)
+        print("Number of muons found {}, EventID {}".format(num_muons, event_id))
 
         num_muons = num_muons + 1
 
-        output_parameters['Event_id'].append(
+        output_parameters['event_id'].append(
         event_id)
-        output_parameters['RingSize'].append(
+        output_parameters['ring_size'].append(
         muonintensityparam.ring_size)
-        output_parameters['RingRadius'].append(
+        output_parameters['size_outside'].append(
+        size_outside_ring)
+        output_parameters['ring_radius'].append(
         muonringparam.ring_radius.value)
-        output_parameters['MuonEff'].append(
-        muonintensityparam.optical_efficiency_muon)
-        output_parameters['ImpactP'].append(
-        muonintensityparam.impact_parameter.value)
-        output_parameters['RingWidth'].append(
+        output_parameters['ring_width'].append(
         muonintensityparam.ring_width.value)
-        output_parameters['RingCont'].append(
+        output_parameters['muon_efficiency'].append(
+        muonintensityparam.optical_efficiency_muon)
+        output_parameters['ring_containment'].append(
         muonringparam.ring_containment)
-        output_parameters['RingComp'].append(
+        output_parameters['ring_completeness'].append(
         muonintensityparam.ring_completeness)
-        output_parameters['RingPixComp'].append(
+        output_parameters['ring_pixel_completeness'].append(
         muonintensityparam.ring_pix_completeness)
-        output_parameters['Impact_x_arr'].append(
+        output_parameters['impact_parameter'].append(
+        muonintensityparam.impact_parameter.value)
+        output_parameters['impact_x_array'].append(
         muonintensityparam.impact_parameter_pos_x.value)
-        output_parameters['Impact_y_arr'].append(
+        output_parameters['impact_y_array'].append(
         muonintensityparam.impact_parameter_pos_y.value)
+        output_parameters['good_ring'].append(
+        good_ring)
 
     table = Table(output_parameters)
     if os.path.exists(args.output_file):
