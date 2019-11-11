@@ -95,6 +95,7 @@ if __name__ == '__main__':
                          'size_outside': [],
                          'ring_radius': [],
                          'ring_width': [],
+                         'good_ring': [],
                          'muon_efficiency': [],
                          'ring_containment': [],
                          'ring_completeness': [],
@@ -102,7 +103,6 @@ if __name__ == '__main__':
                          'impact_parameter': [],
                          'impact_x_array': [],
                          'impact_y_array': [],
-                         'good_ring': [],
                          }
 
     num_muons = 0
@@ -140,6 +140,8 @@ if __name__ == '__main__':
         muonringparam.ring_radius.value)
         output_parameters['ring_width'].append(
         muonintensityparam.ring_width.value)
+        output_parameters['good_ring'].append(
+        good_ring)
         output_parameters['muon_efficiency'].append(
         muonintensityparam.optical_efficiency_muon)
         output_parameters['ring_containment'].append(
@@ -154,8 +156,6 @@ if __name__ == '__main__':
         muonintensityparam.impact_parameter_pos_x.value)
         output_parameters['impact_y_array'].append(
         muonintensityparam.impact_parameter_pos_y.value)
-        output_parameters['good_ring'].append(
-        good_ring)
 
     table = Table(output_parameters)
     if os.path.exists(args.output_file):
