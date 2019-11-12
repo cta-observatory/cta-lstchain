@@ -408,7 +408,7 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                                                     pix, posads]
                         time_diff_ms = time_diff / (133.e3)
                         if time_diff_ms < 100:
-                            val =( waveform[gain, pixel, k] 
+                            val =( waveform[gain, pixel, k]
                                 - ped_time(time_diff_ms) )
                             waveform[gain, pixel, k] = val
 
@@ -416,7 +416,7 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                 # without interpolation (Seiya Nozaki idea)
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
-                    last_time_array[nr_module, gain, pix, (posads0+4096-1)%4096:(posads0+39)] = time_now
+                    last_time_array[nr_module, gain, pix, (posads0):(posads0+40)] = time_now
                 else:
                     for k in prange(0, 40):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
@@ -427,12 +427,12 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                 # if the ROI is in the last quarter of each DRS4
                 # for even channel numbers extra 12 slices are read in a different place
                 # code from Takayuki & Julian
-                if pix % 2 == 0:
+               # if pix % 2 == 0:
                     first_cap = fc[nr_module, gain, pix]
                     if first_cap % 1024 > 767 and first_cap % 1024 < 1014:
-                        start = int(first_cap) + 1024 - 1
-                        end = int(first_cap) + 1024 + 11
-                        last_time_array[nr_module, gain, pix, start%4096:end%4096] = time_now
+                        start = int(first_cap) + 1024
+                        end = int(first_cap) + 1024 + 10
+                        last_time_array[nr_module, gain, pix, (start%4096):(end%4096)] = time_now
                     elif first_cap % 1024 >= 1014:
                         channel = int(first_cap / 1024)
                         for kk in range(first_cap + 1024 - 1, (channel + 2) * 1024):
@@ -453,31 +453,25 @@ def do_time_lapse_corr_old(waveform, expected_pixel_id, local_clock_list,
         time_now = local_clock_list[nr_module]
         for gain in prange(0, 2):
             for pix in prange(0, 7):
-                pixel = expected_pixel_id[nr_module*7 + pix]
+                pixel = expected_pixel_id[nr_module * 7 + pix]
                 for k in prange(0, 40):
                     posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                     if last_time_array[nr_module, gain, pix, posads] > 0:
-                        time_diff = time_now \
-                                  - last_time_array[nr_module, gain,
-                                                    pix, posads]
+                        time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
                         time_diff_ms = time_diff / (133.e3)
                         if time_diff_ms < 100:
-                            val =( waveform[gain, pixel, k]
-                                - ped_time(time_diff_ms) )
+                            val = waveform[gain, pixel, k] - ped_time(time_diff_ms)
                             waveform[gain, pixel, k] = val
 
-                # updating times from slices -1 to 38 remove spike b (small jump of signal)
-                # without interpolation (Seiya Nozaki idea)
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
-                if posads0+40 < 4096:
-                    last_time_array[nr_module, gain, pix, (posads0+4096-1)%4096:(posads0+39)] = time_now
+                if posads0 + 40 < 4096 and (posads0-1) > 1:
+                    last_time_array[nr_module, gain, pix, (posads0-1):(posads0 + 39)] = time_now
                 else:
                     for k in prange(-1, 39):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
                 # now the magic of Dragon,
-                # extra conditions on the number of capacitor times being updated
                 # if the ROI is in the last quarter of each DRS4
                 # for even channel numbers extra 12 slices are read in a different place
                 # code from Takayuki & Julian
@@ -486,10 +480,10 @@ def do_time_lapse_corr_old(waveform, expected_pixel_id, local_clock_list,
                     if first_cap % 1024 > 766 and first_cap % 1024 < 1013:
                         start = int(first_cap) + 1024 - 1
                         end = int(first_cap) + 1024 + 11
-                        last_time_array[nr_module, gain, pix, start%4096:end%4096] = time_now
-                    elif first_cap % 1024 >= 1013:
+                        last_time_array[nr_module, gain, pix, (start % 4096):(end % 4096)] = time_now
+                    elif first_cap % 1024 >= 1014:
                         channel = int(first_cap / 1024)
-                        for kk in range(first_cap + 1024 - 1, (channel + 2) * 1024):
+                        for kk in range(first_cap + 1024, (channel + 2) * 1024):
                             last_time_array[nr_module, gain, pix, int(kk) % 4096] = time_now
 
 
