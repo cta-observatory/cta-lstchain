@@ -24,8 +24,11 @@ from astropy.table import Table
 Script to perform the analysis of muon events.
 To run it, type:
 
-python lstchain_data_muon_analysis.py --input_file LST-1.4.Run00442.0001.fits.fz \
---output_file Data_table.fits --max_events 1000
+python lstchain_data_muon_analysis.py 
+--input_file LST-1.4.Run00442.0001.fits.fz 
+--output_file Data_table.fits --pedestal_file pedestal_file_run446_0000.fits 
+--calibration_file calibration.hdf5
+--max_events 1000
 
 '''
 
@@ -55,7 +58,9 @@ parser.add_argument("--plot_rings", help = "Plot figures of the stored rings",
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
 
-
+parser.add_argument("--run_number", help = "Run number to analyze."
+                                         "Default = 442",
+                    type = int, default = 442)
 
 args = parser.parse_args()
 
@@ -65,36 +70,11 @@ if __name__ == '__main__':
     print("pedestal file: {}".format(args.pedestal_file))
     print("calibration file: {}".format(args.calibration_file))
     print("max events: {}".format(args.max_events))
-    
 
-    r0calib = LSTR0Corrections(
-        pedestal_path = args.pedestal_file,
-        r1_sample_start=2,r1_sample_end=38)
-
-    ff_data = FlatFieldContainer()
-    cal_data =  WaveformCalibrationContainer()
-    ped_data =  PedestalContainer()
-
-    dc_to_pe = []
-    ped_median = []
-
-    with HDF5TableReader(args.calibration_file) as h5_table:
-        assert h5_table._h5file.isopen == True
-        for cont in h5_table.read('/tel_0/pedestal', ped_data):
-                ped_median = cont.charge_median
-                
-        for calib in h5_table.read('/tel_0/calibration', cal_data):
-                dc_to_pe = calib['dc_to_pe']
-    h5_table.close()
-
+    # Camera geometry
     geom = CameraGeometry.from_name("LSTCam-002")
-    
-    if (args.max_events):
-        max_events = args.max_events
-    else:
-        max_events = None
 
-    source = event_source(input_url = args.input_file, max_events = max_events)
+    # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
                          'ring_size': [],
                          'size_outside': [],
@@ -109,14 +89,59 @@ if __name__ == '__main__':
                          'impact_x_array': [],
                          'impact_y_array': [],
                          }
+    
+    # Calibration related quantities
+    r0calib = LSTR0Corrections(
+        pedestal_path = args.pedestal_file,
+        r1_sample_start=2,r1_sample_end=38)
 
+    ff_data = FlatFieldContainer()
+    cal_data =  WaveformCalibrationContainer()
+    ped_data =  PedestalContainer()
+
+    dc_to_pe = []
+    ped_median = []
+
+    if (args.run_number > 500): #  Not sure where did the tel definition change  
+        with HDF5TableReader(args.calibration_file) as h5_table:
+            assert h5_table._h5file.isopen == True
+            for cont in h5_table.read('/tel_1/pedestal', ped_data):
+                ped_median = cont.charge_median
+                
+            for calib in h5_table.read('/tel_1/calibration', cal_data):
+                dc_to_pe = calib['dc_to_pe']
+        h5_table.close()
+
+    else:
+        with HDF5TableReader(args.calibration_file) as h5_table:
+            assert h5_table._h5file.isopen == True
+            for cont in h5_table.read('/tel_0/pedestal', ped_data):
+                ped_median = cont.charge_median
+                
+            for calib in h5_table.read('/tel_0/calibration', cal_data):
+                dc_to_pe = calib['dc_to_pe']
+        h5_table.close()
+
+    # Maximum number of events
+    if (args.max_events):
+        max_events = args.max_events
+    else:
+        max_events = None
+
+    # File open
     num_muons = 0
+    source = event_source(input_url = args.input_file, max_events = max_events)
     for event in source:
 
-        event_id = event.lst.tel[0].evt.event_id
-        teldes = event.inst.subarray.tel[0]
         r0calib.calibrate(event)
-        pedcorrectedsamples = event.r1.tel[0].waveform
+        if (args.run_number > 500): #  Not sure where did the tel definition change  
+            event_id = event.lst.tel[1].evt.event_id
+            teldes = event.inst.subarray.tel[1]
+            pedcorrectedsamples = event.r1.tel[1].waveform
+        else:
+            event_id = event.lst.tel[0].evt.event_id
+            teldes = event.inst.subarray.tel[0]
+            pedcorrectedsamples = event.r1.tel[0].waveform
         integrator = LocalPeakWindowSum(window_shift=4, window_width=9)
         integration, pulse_time = integrator(pedcorrectedsamples)
         image = (integration - ped_median)*dc_to_pe
