@@ -389,6 +389,11 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
                                                              )
 
     focal_length = 28 * u.m
+    if 'mc_alt_tel' not in dl2.columns:
+        dl2['mc_alt_tel'] = pd.Series(np.zeros_like(dl2.x), index=dl2.index)
+    if 'mc_az_tel' not in dl2.columns:
+        dl2['mc_az_tel'] = pd.Series(np.zeros_like(dl2.x), index=dl2.index)
+
     src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
                                                   dl2.y.values * u.m,
                                                   dl2.reco_disp_dx.values * u.m,
