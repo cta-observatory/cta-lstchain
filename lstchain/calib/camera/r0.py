@@ -81,7 +81,7 @@ class LSTR0Corrections(CameraR0Calibrator):
     ).tag(config=True)
 
     tel_id = Int(
-        0,
+        1,
         help='id of the telescope to calibrate'
     ).tag(config=True)
 
