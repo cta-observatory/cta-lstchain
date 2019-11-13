@@ -115,7 +115,6 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
         # Fill container
-        dl1_container.fill_mc(calibrated_event)
         dl1_container.fill_hillas(hillas)
         dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
@@ -184,15 +183,18 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     cal = load_calibrator_from_config(config)
 
     if not is_simu:
-        #TODO : add calibration config in config file, read it and pass it here
-        charge_config = Config()
+        # TODO : add calibration config in config file, read it and pass it here
+        charge_config = Config({"LocalPeakWindowSum":{"window_shift": 5,"window_width":12}})
+
         r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path,
                                             r1_sample_start=2,  # numbers in config ?
                                             r1_sample_end=38,
                                             )
         r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
-                                  image_extractor=config['image_extractor'],
-                                  config=charge_config)
+                                                image_extractor=config['image_extractor'],
+                                                config=charge_config,
+                                                allowed_tels=[1],
+                                                )
 
     dl1_container = DL1ParametersContainer()
 
@@ -265,6 +267,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
                 tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
+                tel_name = tel_name.replace('-002', '')
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -274,6 +277,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                                          dl1_container=dl1_container,
                                          custom_config=config,
                                          use_main_island=True)
+                    if is_simu:
+                        dl1_filled.fill_mc(event)
+
                 except HillasParameterizationError:
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
@@ -303,21 +309,23 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                     dl1_container.prefix = tel.prefix
 
-
                     extra_im.tel_id = telescope_id
-                    for container in [extra_im, dl1_container, event.dl0, tel]:
+                    for container in [extra_im, dl1_container, event.r0, tel]:
                         add_global_metadata(container, metadata)
 
+                    event.r0.prefix = ''
+
                     writer.write(table_name=f'telescope/image/{tel_name}',
-                                 containers=[event.dl0, tel, extra_im])
+                                 containers=[event.r0, tel, extra_im])
                     writer.write(table_name=f'telescope/parameters/{tel_name}',
                                  containers=[dl1_container])
 
-    ### Reconstruct source position from disp for all events and write the result in the output file
-    for tel_name in ['LST_LSTCam']:
-        focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-        dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
-        add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
+    if is_simu:
+        ### Reconstruct source position from disp for all events and write the result in the output file
+        for tel_name in ['LST_LSTCam']:
+            focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
+            dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
+            add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
 
     # Write energy histogram from simtel file and extra metadata
     if is_simu:
