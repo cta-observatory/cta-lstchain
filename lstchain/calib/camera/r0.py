@@ -166,30 +166,24 @@ class LSTR0Corrections(CameraR0Calibrator):
         n_modules = event.lst.tel[tel_id].svc.num_modules
 
         for nr_module in range(0, n_modules):
-            self.first_cap_array[nr_module, :, :] = \
-                        self._get_first_capacitor(event, nr_module, tel_id)
+            self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module, tel_id)
 
         expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
         samples = np.copy(event.r0.tel[tel_id].waveform)
         samples.astype('int16')
 
-        samples = subtract_pedestal_jit(
-                                        samples,
+        samples = subtract_pedestal_jit(samples,
                                         expected_pixel_id,
                                         self.first_cap_array,
                                         self.pedestal_value_array,
                                         n_modules)
 
-        event.r1.tel[self.tel_id].trigger_type = \
-            event.r0.tel[self.tel_id].trigger_type
-
-        event.r1.tel[self.tel_id].trigger_time = \
-            event.r1.tel[self.tel_id].trigger_time
-
+        event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
+        event.r1.tel[self.tel_id].trigger_time = event.r1.tel[self.tel_id].trigger_time
         event.r1.tel[self.tel_id].waveform = samples[:, :, :]
 
 
-    def time_lapse_corr(self, event, tel_id, run_id):
+    def time_lapse_corr(self, event, tel_id):
         """
         Perform time lapse baseline corrections.
         Fill the R1 container or
@@ -200,7 +194,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         tel_id : id of the telescope
         """
 
-        #run_id = event.lst.tel[1].svc.configuration_id
+        run_id = event.lst.tel[1].svc.configuration_id
 
         expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
         local_clock_list = event.lst.tel[tel_id].evt.local_clock_counter
@@ -220,11 +214,11 @@ class LSTR0Corrections(CameraR0Calibrator):
                                    n_modules)
             else:
                 do_time_lapse_corr_old(samples,
-                                   expected_pixel_id,
-                                   local_clock_list,
-                                   self.first_cap_time_lapse_array,
-                                   self.last_reading_time_array,
-                                   n_modules)
+                                       expected_pixel_id,
+                                       local_clock_list,
+                                       self.first_cap_time_lapse_array,
+                                       self.last_reading_time_array,
+                                       n_modules)
 
 
             event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
@@ -249,6 +243,9 @@ class LSTR0Corrections(CameraR0Calibrator):
         event : `ctapipe` event-container
         tel_id : id of the telescope
         """
+
+        run_id = event.lst.tel[1].svc.configuration_id
+
         self.first_cap_old_array[:, :, :] = self.first_cap_array_spike[:, :, :]
         n_modules = event.lst.tel[tel_id].svc.num_modules
         for nr_module in range(0, n_modules):
@@ -260,22 +257,28 @@ class LSTR0Corrections(CameraR0Calibrator):
             expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
             samples = waveform.copy()
 
-            event.r1.tel[self.tel_id].waveform = \
-                self.interpolate_pseudo_pulses(samples,
-                                               expected_pixel_id,
-                                               self.first_cap_array_spike,
-                                               self.first_cap_old_array,
-                                               n_modules)
+            if run_id > 1574:
+                event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses_new(samples,
+                                                                                        expected_pixel_id,
+                                                                                        self.first_cap_array_spike,
+                                                                                        self.first_cap_old_array,
+                                                                                        n_modules)
+            else:
+                event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses_old(samples,
+                                                                                        expected_pixel_id,
+                                                                                        self.first_cap_array_spike,
+                                                                                        self.first_cap_old_array,
+                                                                                        n_modules)
 
-            event.r1.tel[self.tel_id].trigger_type = \
-                                event.r0.tel[self.tel_id].trigger_type
 
-            event.r1.tel[self.tel_id].trigger_time = \
-                                event.r0.tel[self.tel_id].trigger_time
+
+            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
+
+            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
 
     @staticmethod
     @jit(parallel=True)
-    def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules):
+    def interpolate_pseudo_pulses_old(waveform, expected_pixel_id, fc, fc_old, n_modules):
         """
         Interpolate Spike A & B.
         Change waveform array.
@@ -306,6 +309,7 @@ class LSTR0Corrections(CameraR0Calibrator):
                 for pix in prange(0, n_pix):
                     for k in prange(0, 4):
                         # looking for spike A first case
+                        #                           -1
                         abspos = int(1024 - roisize - 2 -fc_old[nr_module, gain, pix]+ k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix]+ size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
@@ -313,13 +317,6 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # last capacitor (lc) in the first half of the
                             # DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix]+ 39) % 1024 <= 510):
-
-
-                            #lc_old = ((fc_old[nr_module, gain, pix]) + 39)%4096
-                            #spikeA1_flag = (lc_old%2==0) & lc_old%1024 <=510
-                            #if spikeA1_flag:
-
-
                                 pixel = expected_pixel_id[nr_module*7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
 
@@ -331,6 +328,63 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # first half of the DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+        return waveform
+
+    @staticmethod
+    @jit(parallel=True)
+    def interpolate_pseudo_pulses_new(waveform, expected_pixel_id, fc, fc_old, n_modules):
+        """
+        Interpolate Spike A & B.
+        Change waveform array.
+        Parameters
+        ----------
+        waveform : ndarray
+            Waveform stored in a numpy array of shape
+            (n_gain, n_pix, n_samples).
+        expected_pixel_id: ndarray
+            Array stored expected pixel id
+            (n_pix*n_modules).
+        fc : ndarray
+            Value of first capacitor stored in a numpy array of shape
+            (n_clus, n_gain, n_pix).
+        fc_old : ndarray
+            Value of first capacitor from previous event
+            stored in a numpy array of shape
+            (n_clus, n_gain, n_pix).
+        n_modules : int
+            Number of modules
+        """
+        roisize = 40
+        size4drs = 4096
+        n_gain = 2
+        n_pix = 7
+        for nr_module in prange(0, n_modules):
+            for gain in prange(0, n_gain):
+                for pix in prange(0, n_pix):
+                    for k in prange(0, 4):
+                        # looking for spike A first case
+                        #                           -1
+                        abspos = int(1025 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
+                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
+                        if (spike_A_position > 2 and spike_A_position < 38):
+                            # The correction is only needed for even
+                            # last capacitor (lc) in the first half of the
+                            # DRS4 ring
+                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (
+                                fc_old[nr_module, gain, pix] + 39) % 1024 <= 511):
+                                pixel = expected_pixel_id[nr_module * 7 + pix]
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+
+                        # looking for spike A second case
+                        abspos = int(roisize - 1 + fc_old[nr_module, gain, pix] + k * 1024)
+                        spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
+                        if (spike_A_position > 2 and spike_A_position < 38):
+                            # The correction is only needed for even last capacitor (lc) in the
+                            # first half of the DRS4 ring
+                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (
+                                fc_old[nr_module, gain, pix] + 39) % 1024 <= 511):
+                                pixel = expected_pixel_id[nr_module * 7 + pix]
                                 interpolate_spike_A(waveform, gain,
                                                     spike_A_position, pixel)
         return waveform
