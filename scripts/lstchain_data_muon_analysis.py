@@ -132,15 +132,17 @@ if __name__ == '__main__':
     num_muons = 0
     source = event_source(input_url = args.input_file, max_events = max_events)
     for event in source:
-
         r0calib.calibrate(event)
-        if (args.run_number > 500): #  Not sure where did the tel definition change  
+        #  Not sure where did the tel definition change
+        #  but we moved to tel[0] to tel[1] at some point
+        #  of the commissioning period
+        if (args.run_number > 500): 
             event_id = event.lst.tel[1].evt.event_id
-            teldes = event.inst.subarray.tel[1]
+            telescope_description = event.inst.subarray.tel[1]
             pedcorrectedsamples = event.r1.tel[1].waveform
         else:
             event_id = event.lst.tel[0].evt.event_id
-            teldes = event.inst.subarray.tel[0]
+            telescope_description = event.inst.subarray.tel[0]
             pedcorrectedsamples = event.r1.tel[0].waveform
         integrator = LocalPeakWindowSum(window_shift=4, window_width=9)
         integration, pulse_time = integrator(pedcorrectedsamples)
@@ -151,9 +153,12 @@ if __name__ == '__main__':
         if((np.size(image[0][image[0]>10.]) > 300) or (np.size(image[0][image[0]>10.]) < 50)):
             continue
 
+        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
+        mirror_area = telescope_description.optics.mirror_area.to("m2")
+
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
-            analyze_muon_event(event_id, image, geom, teldes, 
-                               args.plot_rings, args.plots_path)
+            analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
+                               mirror_area, args.plot_rings, args.plots_path)
         #if not (good_ring):
         #    continue
         print("Number of muons found {}, EventID {}".format(num_muons, event_id))
