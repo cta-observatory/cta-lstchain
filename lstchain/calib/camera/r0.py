@@ -257,10 +257,10 @@ class LSTR0Corrections(CameraR0Calibrator):
 
             if run_id > self.last_run_with_old_firmware:
                 event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses(samples,
-                                                                                        expected_pixel_id,
-                                                                                        self.first_cap_array_spike,
-                                                                                        self.first_cap_old_array,
-                                                                                        n_modules)
+                                                                                    expected_pixel_id,
+                                                                                    self.first_cap_array_spike,
+                                                                                    self.first_cap_old_array,
+                                                                                    n_modules)
             else:
                 event.r1.tel[self.tel_id].waveform = \
                     self.interpolate_pseudo_pulses_data_from_20181010_to_20191104(samples,
@@ -296,7 +296,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         n_modules : int
             Number of modules
         """
-        roisize = 40
+        roi_size = 40
         size4drs = 4096
         n_gain = 2
         n_pix = 7
@@ -305,23 +305,23 @@ class LSTR0Corrections(CameraR0Calibrator):
                 for pix in prange(0, n_pix):
                     for k in prange(0, 4):
                         # looking for spike A first case
-                        abspos = int(1025 - roisize - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
+                        abspos = int(1025 - roi_size - 2 - fc_old[nr_module, gain, pix] + k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
                             # The correction is only needed for even
                             # last capacitor (lc) in the first half of the
                             # DRS4 ring
-                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 511):
+                            if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % 1024 <= 511):
                                 pixel = expected_pixel_id[nr_module * 7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
 
                         # looking for spike A second case
-                        abspos = int(roisize - 1 + fc_old[nr_module, gain, pix] + k * 1024)
+                        abspos = int(roi_size - 1 + fc_old[nr_module, gain, pix] + k * 1024)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix] + size4drs) % size4drs)
-                        if (spike_A_position > 2 and spike_A_position < 38):
+                        if (spike_A_position > 2 and spike_A_position < (roi_size-2)):
                             # The correction is only needed for even last capacitor (lc) in the
                             # first half of the DRS4 ring
-                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 511):
+                            if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % 1024 <= 511):
                                 pixel = expected_pixel_id[nr_module * 7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
         return waveform
@@ -351,7 +351,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         n_modules : int
             Number of modules
         """
-        roisize = 40
+        roi_size = 40
         size4drs = 4096
         n_gain = 2
         n_pix = 7
@@ -360,23 +360,23 @@ class LSTR0Corrections(CameraR0Calibrator):
                 for pix in prange(0, n_pix):
                     for k in prange(0, 4):
                         # looking for spike A first case
-                        abspos = int(1024 - roisize - 2 -fc_old[nr_module, gain, pix]+ k * 1024 + size4drs)
+                        abspos = int(1024 - roi_size - 2 -fc_old[nr_module, gain, pix]+ k * 1024 + size4drs)
                         spike_A_position = int((abspos - fc[nr_module, gain, pix]+ size4drs) % size4drs)
                         if (spike_A_position > 2 and spike_A_position < 38):
                             # The correction is only needed for even
                             # last capacitor (lc) in the first half of the
                             # DRS4 ring
-                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix]+ 39) % 1024 <= 510):
+                            if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix]+ (roi_size-1)) % 1024 <= 510):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
 
                         # looking for spike A second case
-                        abspos = int(roisize - 2 + fc_old[nr_module, gain, pix]+ k * 1024)
+                        abspos = int(roi_size - 2 + fc_old[nr_module, gain, pix]+ k * 1024)
                         spike_A_position = int((abspos -fc[nr_module, gain, pix] + size4drs) % size4drs)
-                        if (spike_A_position > 2 and spike_A_position < 38):
+                        if (spike_A_position > 2 and spike_A_position < (roi_size-2)):
                             # The correction is only needed for even last capacitor (lc) in the
                             # first half of the DRS4 ring
-                            if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (fc_old[nr_module, gain, pix] + 39) % 1024 <= 510):
+                            if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % 1024 <= 510):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
         return waveform
@@ -421,6 +421,7 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
     """
     waveform = np.zeros(event_waveform.shape)
     size4drs = 4096
+    roi_size = 40
     n_gain = 2
     n_pix = 7
     for nr_module in prange(0, n_modules):
@@ -430,7 +431,7 @@ def subtract_pedestal_jit(event_waveform, expected_pixel_id, fc_cap, pedestal_va
                 position = int((fc_cap[nr_module, gain, pix]) % size4drs)
                 waveform[gain, pixel, :] = \
                     (event_waveform[gain, pixel, :] -
-                    pedestal_value_array[gain, pixel, position:position + 40])
+                    pedestal_value_array[gain, pixel, position:position + roi_size])
     return waveform
 
 @jit(parallel=True)
@@ -441,12 +442,13 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
     Change waveform array.
     """
     size4drs = 4096
+    roi_size = 40
     for nr_module in prange(0, number_of_modules):
         time_now = local_clock_list[nr_module]
         for gain in prange(0, 2):
             for pix in prange(0, 7):
                 pixel = expected_pixel_id[nr_module*7 + pix]
-                for k in prange(0, 40):
+                for k in prange(0, roi_size):
                     posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                     if last_time_array[nr_module, gain, pix, posads] > 0:
                         time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
@@ -456,10 +458,10 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                             waveform[gain, pixel, k] = val
 
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
-                if posads0+40 < 4096:
-                    last_time_array[nr_module, gain, pix, (posads0):(posads0+40)] = time_now
+                if posads0+roi_size < size4drs:
+                    last_time_array[nr_module, gain, pix, (posads0):(posads0+roi_size)] = time_now
                 else:
-                    for k in prange(0, 40):
+                    for k in prange(0, roi_size):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
@@ -468,7 +470,6 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                 # if the ROI is in the last quarter of each DRS4
                 # for even channel numbers extra 12 slices are read in a different place
                 # code from Takayuki & Julian
-
                 if pix % 2 == 0:
                     first_cap = fc[nr_module, gain, pix]
                     if first_cap % 1024 > 765 and first_cap % 1024 < 1012:
@@ -489,12 +490,13 @@ def do_time_lapse_corr_data_from_20181010_to_20191104(waveform, expected_pixel_i
     Change waveform array.
     """
     size4drs = 4096
+    roi_size = 40
     for nr_module in prange(0, number_of_modules):
         time_now = local_clock_list[nr_module]
         for gain in prange(0, 2):
             for pix in prange(0, 7):
                 pixel = expected_pixel_id[nr_module * 7 + pix]
-                for k in prange(0, 40):
+                for k in prange(0, roi_size):
                     posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                     if last_time_array[nr_module, gain, pix, posads] > 0:
                         time_diff = time_now - last_time_array[nr_module, gain, pix, posads]
@@ -504,10 +506,11 @@ def do_time_lapse_corr_data_from_20181010_to_20191104(waveform, expected_pixel_i
                             waveform[gain, pixel, k] = val
 
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
-                if posads0 + 40 < 4096 and (posads0-1) > 1:
-                    last_time_array[nr_module, gain, pix, (posads0-1):(posads0 + 39)] = time_now
+                if posads0 + roi_size < size4drs and (posads0-1) > 1:
+                    last_time_array[nr_module, gain, pix, (posads0-1):(posads0 + (roi_size-1))] = time_now
                 else:
-                    for k in prange(-1, 39):
+                    # Old firmware issue: readout shifted by 1 cell
+                    for k in prange(-1, roi_size-1):
                         posads = int((k + fc[nr_module, gain, pix]) % size4drs)
                         last_time_array[nr_module, gain, pix, posads] = time_now
 
