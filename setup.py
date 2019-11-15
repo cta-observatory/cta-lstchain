@@ -6,8 +6,11 @@ import lstchain
 import os
 
 def list_scripts():
+    script_list = []
     script_dir = 'scripts'
-    script_list = [f'{os.path.join(script_dir, f)}' for f in os.listdir(script_dir) if f.startswith('lstchain_')]
+    script_list.extend([f'{os.path.join(script_dir, f)}' for f in os.listdir(script_dir) if f.startswith('lstchain_')])
+    script_dir = 'scripts/onsite'
+    script_list.extend([f'{os.path.join(script_dir, f)}' for f in os.listdir(script_dir) if f.startswith('onsite')])
     return script_list
 
 
