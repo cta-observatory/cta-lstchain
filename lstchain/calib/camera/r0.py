@@ -112,7 +112,8 @@ class LSTR0Corrections(CameraR0Calibrator):
 
         self.pedestal_value_array = np.zeros((self.n_gain,
                                               self.n_pix*self.n_module,
-                                              self.size4drs+40), dtype=np.int16)
+                                              self.size4drs+40),
+                                              dtype=np.int16)
 
         self.first_cap_array = np.zeros((self.n_module,
                                          self.n_gain,
@@ -143,16 +144,13 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.time_lapse_corr(event, tel_id)
             self.interpolate_spikes(event, tel_id)
 
-            event.r1.tel[self.tel_id].trigger_type = \
-                        event.r0.tel[self.tel_id].trigger_type
+            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
 
-            event.r1.tel[self.tel_id].trigger_time = \
-                        event.r0.tel[self.tel_id].trigger_time
+            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
 
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
-            event.r1.tel[tel_id].waveform = samples.astype('int16') \
-                                          - self.offset
+            event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
 
     def subtract_pedestal(self, event, tel_id):
         """
@@ -224,9 +222,11 @@ class LSTR0Corrections(CameraR0Calibrator):
             event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
             event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
             event.r1.tel[self.tel_id].waveform = samples[:, :, :]
+
         else: # Modifies R0 container. This is for create pedestal file.
             samples = np.copy(event.r0.tel[self.tel_id].waveform)
-            do_time_lapse_corr(samples, expected_pixel_id,
+            do_time_lapse_corr(samples,
+                               expected_pixel_id,
                                local_clock_list,
                                self.first_cap_time_lapse_array,
                                self.last_reading_time_array,
@@ -385,8 +385,7 @@ class LSTR0Corrections(CameraR0Calibrator):
                             if ((fc_old[nr_module, gain, pix] + 39) % 2 == 0 and (
                                 fc_old[nr_module, gain, pix] + 39) % 1024 <= 511):
                                 pixel = expected_pixel_id[nr_module * 7 + pix]
-                                interpolate_spike_A(waveform, gain,
-                                                    spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
         return waveform
 
     def _load_calib(self):
@@ -466,8 +465,6 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                                 - ped_time(time_diff_ms) )
                             waveform[gain, pixel, k] = val
 
-                # updating times from slices -1 to 38 remove spike b (small jump of signal)
-                # without interpolation (Seiya Nozaki idea)
                 posads0 = int((0 + fc[nr_module, gain, pix]) % size4drs)
                 if posads0+40 < 4096:
                     last_time_array[nr_module, gain, pix, (posads0):(posads0+40)] = time_now
@@ -481,19 +478,17 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                 # if the ROI is in the last quarter of each DRS4
                 # for even channel numbers extra 12 slices are read in a different place
                 # code from Takayuki & Julian
-               # if pix % 2 == 0:
+
+                if pix % 2 == 0:
                     first_cap = fc[nr_module, gain, pix]
-                    if first_cap % 1024 > 767 and first_cap % 1024 < 1014:
+                    if first_cap % 1024 > 767-2 and first_cap % 1024 < 1014-2:
                         start = int(first_cap) + 1024
-                        end = int(first_cap) + 1024 + 10
+                        end = int(first_cap) + 1024 + 12
                         last_time_array[nr_module, gain, pix, (start%4096):(end%4096)] = time_now
-                    elif first_cap % 1024 >= 1014:
+                    elif first_cap % 1024 >= 1012:
                         channel = int(first_cap / 1024)
-                        for kk in range(first_cap + 1024 - 1, (channel + 2) * 1024):
+                        for kk in range(first_cap + 1024, ((channel + 2) * 1024)):
                             last_time_array[nr_module, gain, pix, int(kk) % 4096] = time_now
-
-
-
 
 @jit(parallel=True)
 def do_time_lapse_corr_old(waveform, expected_pixel_id, local_clock_list,
@@ -539,12 +534,6 @@ def do_time_lapse_corr_old(waveform, expected_pixel_id, local_clock_list,
                         channel = int(first_cap / 1024)
                         for kk in range(first_cap + 1024, (channel + 2) * 1024):
                             last_time_array[nr_module, gain, pix, int(kk) % 4096] = time_now
-
-
-
-
-
-
 
 @jit
 def ped_time(timediff):
