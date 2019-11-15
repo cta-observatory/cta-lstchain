@@ -2,7 +2,8 @@ import argparse
 import numpy as np
 from astropy.io import fits
 from numba import prange
-from ctapipe_io_lst import LSTEventSource
+
+from ctapipe.io import event_source
 from ctapipe.io import EventSeeker
 from distutils.util import strtobool
 from traitlets.config.loader import Config
@@ -39,11 +40,12 @@ parser.add_argument('--deltaT', '-s', type=lambda x: bool(strtobool(x)),
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
-    print("input file: {}".format(args.input_file))
-    print("max events: {}".format(args.max_events))
-    reader = LSTEventSource(input_url=args.input_file, max_events=args.max_events)
-    print("---> Number of files", reader.multi_file.num_inputs())
+
+def main():
+    print("--> Input file: {}".format(args.input_file))
+    print("--> Number of events: {}".format(args.max_events))
+    reader = event_source(input_url=args.input_file, max_events=args.max_events)
+    print("--> Number of files", reader.multi_file.num_inputs())
 
     seeker = EventSeeker(reader)
     ev = seeker[0]
@@ -83,3 +85,8 @@ if __name__ == '__main__':
 
     hdulist = fits.HDUList([primaryhdu, secondhdu])
     hdulist.writeto(args.output_file)
+
+
+if __name__ == '__main__':
+    main()
+
