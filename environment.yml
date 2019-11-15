@@ -7,6 +7,7 @@ dependencies:
   - ctapipe=0.7.0
   - gammapy
   - h5py
+  - pytest=5.1
   - pip:
       - pytest_runner
       - pytest-ordering
