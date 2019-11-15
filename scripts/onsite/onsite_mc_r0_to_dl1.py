@@ -21,28 +21,81 @@ import sys
 import os
 import shutil
 import random
-
+import argparse
+import calendar
+import lstchain
 from lstchain.io.data_management import *
 
+### TODO :
+### CHANGE THE PROD_ID with a default one or prompt user
+ 
+
+parser = argparse.ArgumentParser(description="R0 to DL1")
 
 
-DL0_DATA_DIR = sys.argv[1]
+parser.add_argument('input_dir', type=str,
+                    help='path to the files directory to analyse',
+                   )
 
+parser.add_argument('--config_file', '-conf', action='store', type=str,
+                    dest='config_file',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied',
+                    default=None
+                    )
 
+parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
+                    dest='pedestal_path',
+                    help='Path to a pedestal file',
+                    default=None
+                    )
+
+parser.add_argument('--calibration_path', '-calib', action='store', type=str,
+                    dest='calibration_path',
+                    help='Path to a calibration file',
+                    default=None
+                    )
+
+parser.add_argument('--train_test_ratio', '-ratio', action='store', type=str,
+                    dest='train_test_ratio',
+                    help='Ratio of training data',
+                    default=0.25
+                    )
+
+parser.add_argument('--random_seed', '-seed', action='store', type=str,
+                    dest='random_seed',
+                    help='Random seed for random processes',
+                    default=42,
+                    )
+
+parser.add_argument('--n_files_per_dl1', '-nfdl1', action='store', type=str,
+                    dest='n_files_per_dl1',
+                    help='Number of input files merged in one DL1. If 0, the number of files per DL1 is computed based on the size of the DL0 files and the expected reduction factor of 50 to obtain DL1 files of ~100 MB. Else, use fixed number of files',
+                    default=0,
+                    )
+
+today = calendar.datetime.date.today()
+default_prod_id = f'{today.year:04d}{today.month:02d}{today.day:02d}_v{lstchain.__version__}_v00'
+# TODO : should not be today's date but observation (or MC production) date
+
+parser.add_argument('--prod_id', action='store', type=str,
+                    dest='prod_id',
+                    help="Production ID",
+                    default=default_prod_id,
+                   )
+
+args = parser.parse_args()
 
 
 if __name__ == '__main__':
 
-    BASE_DIR = '/fefs/aswg/'
-    PROD_ID = '20190923'
-    TRAIN_TEST_RATIO = 0.25
-    RANDOM_SEED = 42
-    NFILES_PER_DL1 = 0  # IF 0, the number of files per DL1 is computed based on the size of the DL0 files and the expected reduction factor of 50. Else, use fixed number of files.
+    PROD_ID = args.prod_id
+    TRAIN_TEST_RATIO = args.train_test_ratio
+    RANDOM_SEED = args.random_seed
+    NFILES_PER_DL1 = args.n_files_per_dl1
     
     DESIRED_DL1_SIZE_MB = 100
     
-    
-    DL0_DATA_DIR = sys.argv[1]
+    DL0_DATA_DIR = args.input_dir
     
     print("\n ==== START {} ==== \n".format(sys.argv[0]))
     
@@ -117,33 +170,35 @@ if __name__ == '__main__':
         number_of_sublists = len(list)//NFILES_PER_DL1+int(len(list)%NFILES_PER_DL1>0)
         for i in range(number_of_sublists):
             output_file = os.path.join(dir_lists, '{}_{}.list'.format(l, i))
-            print("dir_lists:", dir_lists)
             with open(output_file, 'w+') as out:
                 for line in list[i*NFILES_PER_DL1:NFILES_PER_DL1*(i+1)]:
                     out.write(line)
                     out.write('\n')
-            print('{} files generated for {} list'.format(number_of_sublists, l))
-
+        print('{} files generated for {} list'.format(number_of_sublists, l))
 
         ### LSTCHAIN ###
         counter = 0
-
+        
         for file in os.listdir(dir_lists):
             jobo = os.path.join(JOB_LOGS, "job{}.o".format(counter))
             jobe = os.path.join(JOB_LOGS, "job{}.e".format(counter))
-            cmd = 'sbatch -e {} -o {} lstchain_core.sh {} {}'.format(
-                jobe,
-                jobo,
-                os.path.join(dir_lists, file),
-                output_dir,
-            )
+            cc = ' -conf {}'.format(args.config_file) if args.config_file is not None else ' '
+            base_cmd = 'slurm_core.sh "python /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/scripts/lst-r0_to_dl1.py -o {} {}"'.format(output_dir, cc)
+            cmd = 'sbatch -e {} -o {} {} {}'.format(jobe, jobo, base_cmd, os.path.join(dir_lists, file))
+
             os.system(cmd)
-            print(cmd)
+#             print(cmd)
             counter+=1
 
         print("{} jobs submitted".format(counter))
-        
-    shutil.copyfile(sys.argv[0], os.path.join(RUNNING_DIR, sys.argv[0]))
+    
+    # copy this script itself into logs
+    shutil.copyfile(sys.argv[0], os.path.join(RUNNING_DIR, os.path.basename(sys.argv[0])))
+    # copy config file into logs
+    if args.config_file is not None:
+        shutil.copy(args.config_file, os.path.join(RUNNING_DIR, os.path.basename(args.config_file)))
+    
+    # save file lists into logs
     shutil.move('testing.list', os.path.join(RUNNING_DIR, 'testing.list'))
     shutil.move('training.list', os.path.join(RUNNING_DIR, 'training.list'))
     
