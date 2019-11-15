@@ -19,7 +19,7 @@ __all__ = ['get_muon_center',
            'analyze_muon_event',
            ]
 
-def get_muon_center(geom, teldes):
+def get_muon_center(geom, equivalent_focal_length):
     """
     Get the x,y coordinates of the center of the muon ring
     in the NominalFrame
@@ -27,33 +27,34 @@ def get_muon_center(geom, teldes):
     Paramenters
     ---------
     geom: CameraGeometry
-    teldes:    Telescope description
+    equivalent_focal_length:    Focal length of the telescope
 
     Returns
     ---------
     x, y:    `floats` coordinates in  the NominalFrame
     """
 
+    print("equivalent_focal_length", equivalent_focal_length)
+
     x, y = geom.pix_x, geom.pix_y
 
     telescope_pointing = SkyCoord(
-            alt=70 * u.deg,
-            az=0 * u.deg,
-            frame=AltAz()
+            alt = 70 * u.deg,
+            az = 0 * u.deg,
+            frame = AltAz()
         )
 
     camera_coord = SkyCoord(
-            x=x, y=y,
-            frame=CameraFrame(
-                focal_length=teldes.optics.equivalent_focal_length,
-                rotation=geom.pix_rotation,
-                telescope_pointing=telescope_pointing
+            x = x, y = y,
+            frame = CameraFrame(
+                focal_length = equivalent_focal_length,
+                rotation = geom.pix_rotation,
+                telescope_pointing = telescope_pointing
             )
     )
     nom_coord = camera_coord.transform_to(
             NominalFrame(origin=telescope_pointing)
         )
-
 
     x = nom_coord.delta_az.to(u.deg)
     y = nom_coord.delta_alt.to(u.deg)
@@ -103,7 +104,8 @@ def fit_muon(x, y, image, geom, tailcuts):
     
     return muonringparam, clean_mask, dist, image_clean
 
-def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
+def analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
+                       mirror_area, plot_rings, plots_path):
     """
     Analyze an event to fit a muon ring
 
@@ -112,7 +114,8 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     event_id:   `int` id of the analyzed event
     image:      `np.ndarray` number of photoelectrons in each pixel
     geom:       CameraGeometry
-    teldes:     Telescope description
+    equivalent_focal_length: `float` focal length of the telescope
+    mirror_area: `float` mirror area of the telescope
     plot_rings: `bool` plot the muon ring
     plots_path: `string` path to store the figures
 
@@ -130,10 +133,10 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     cam_rad = 2.26 * u.deg
     min_pix = 148  # 8%
 
-    x, y = get_muon_center(geom, teldes)
+    x, y = get_muon_center(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image[0], geom, tailcuts)
 
-    mir_rad = np.sqrt(teldes.optics.mirror_area.to("m2") / np.pi)
+    mirror_radius = np.sqrt(mirror_area / np.pi)
     dist_mask = np.abs(dist - muonringparam.ring_radius
                     ) < muonringparam.ring_radius * 0.4
     pix_ring = image[0] * dist_mask
@@ -142,12 +145,6 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
     nom_dist = np.sqrt(np.power(muonringparam.ring_center_x,2) 
                     + np.power(muonringparam.ring_center_y, 2))
 
-    print("muonringparam.ring_radius", muonringparam.ring_radius)
-    print("cam_rad", cam_rad)
-    print("muonringparam.ring_center_x", muonringparam.ring_center_x)
-    print("muonringparam.ring_center_y", muonringparam.ring_center_y)
-
-
     muonringparam.ring_containment = ring_containment(
             muonringparam.ring_radius,
             cam_rad,
@@ -155,7 +152,7 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
             muonringparam.ring_center_y)
 
     ctel = MuonLineIntegrate(
-                mir_rad, hole_radius = 0.308 * u.m,
+                mirror_radius, hole_radius = 0.308 * u.m,
                 pixel_width=0.1 * u.deg,
                 sct_flag=False,
                 secondary_radius = 0. * u.m
@@ -195,10 +192,10 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
 
     conditions = [
         muonintensityoutput.impact_parameter <
-        0.9 * mir_rad,  # 90% inside the mirror
+        0.9 * mirror_radius,  # 90% inside the mirror
         
         muonintensityoutput.impact_parameter >
-        0.2 * mir_rad,  # 20% inside the mirror
+        0.2 * mirror_radius,  # 20% inside the mirror
 
         npix_above_threshold(pix_ring, tailcuts[0]) > 
         0.1 * min_pix,
@@ -227,11 +224,11 @@ def analyze_muon_event(event_id, image, geom, teldes, plot_rings, plots_path):
 
     if(plot_rings and plots_path and good_ring):
         altaz = AltAz(alt = 70 * u.deg, az = 0 * u.deg)
-        focal_length=teldes.optics.equivalent_focal_length        
+        focal_length = equivalent_focal_length        
         ring_nominal = SkyCoord(
-                delta_az=muonringparam.ring_center_x,
-                delta_alt=muonringparam.ring_center_y,
-                frame=NominalFrame(origin=altaz)
+                delta_az = muonringparam.ring_center_x,
+                delta_alt = muonringparam.ring_center_y,
+                frame = NominalFrame(origin=altaz)
             )
 
         ring_camcoord = ring_nominal.transform_to(CameraFrame(
