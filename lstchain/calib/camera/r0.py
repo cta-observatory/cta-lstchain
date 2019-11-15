@@ -224,12 +224,22 @@ class LSTR0Corrections(CameraR0Calibrator):
 
         else: # Modifies R0 container. This is for create pedestal file.
             samples = np.copy(event.r0.tel[self.tel_id].waveform)
-            do_time_lapse_corr(samples,
-                               expected_pixel_id,
-                               local_clock_list,
-                               self.first_cap_time_lapse_array,
-                               self.last_reading_time_array,
-                               n_modules)
+
+            if run_id > self.last_run_with_old_firmware:
+                do_time_lapse_corr(samples,
+                                   expected_pixel_id,
+                                   local_clock_list,
+                                   self.first_cap_time_lapse_array,
+                                   self.last_reading_time_array,
+                                   n_modules)
+            else:
+                do_time_lapse_corr_data_from_20181010_to_20191104(samples,
+                                                                  expected_pixel_id,
+                                                                  local_clock_list,
+                                                                  self.first_cap_time_lapse_array,
+                                                                  self.last_reading_time_array,
+                                                                  n_modules)
+
             event.r0.tel[self.tel_id].waveform = samples[:, :, :]
 
 
