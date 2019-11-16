@@ -270,6 +270,13 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'), out
                     writer.write(table_name=f'telescope/parameters/{tel_name}',
                                  containers=[dl1_container])
 
+                    # writes mc information per telescope, including photo electron image
+                    if (event.mc.tel[telescope_id].photo_electron_image > 0).any() and config['write_pe_image']:
+                        event.mc.tel[telescope_id].prefix = ''
+                        writer.write(table_name=f'simulation/{tel_name}',
+                                     containers=[event.mc.tel[telescope_id], extra_im]
+                                     )
+
     ### Reconstruct source position from disp for all events and write the result in the output file
     for tel_name in ['LST_LSTCam']:
         focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
