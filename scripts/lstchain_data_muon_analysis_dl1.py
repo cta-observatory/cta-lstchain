@@ -30,7 +30,7 @@ python lstchain_data_muon_analysis_dl1.py
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file", help = "Path to fits.fz data file.",
+parser.add_argument("--input_file", help = "Path to DL1a data file (containing charge information).",
                     type = str, default = "")
 
 parser.add_argument("--output_file", help = "Path to create the output fits table with muon parameters",
