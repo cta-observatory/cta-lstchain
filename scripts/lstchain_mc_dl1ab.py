@@ -1,6 +1,7 @@
 # Read DL1 file and recompute parameters
 
 import os
+import shutil
 import tables
 import numpy as np
 import argparse
@@ -13,22 +14,28 @@ from ctapipe.instrument import CameraGeometry, OpticsDescription
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from ctapipe.io.containers import HillasParametersContainer
 from astropy.units import Quantity
+from distutils.util import strtobool
 
 parser = argparse.ArgumentParser(description="Compute a new parameters table in a DL1 HDF5 file from calibrated "
                                              "images and based on passed config file")
 
 # Required arguments
-parser.add_argument('datafile', type=str,
+parser.add_argument('input_file', type=str,
                     help='path to the DL1 file ',
                     )
 
-parser.add_argument('table_name', type=str, help='key for the table of new parameters')
+parser.add_argument('output_file', type=str, help='key for the table of new parameters')
 
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
+
+parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
+                    dest='noimage',
+                    help='Boolean. True to remove the images in output file',
+                    default=False)
 
 args = parser.parse_args()
 
@@ -50,7 +57,9 @@ if __name__ == '__main__':
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend(['wl', 'r', 'leakage', 'n_islands', 'intercept', 'time_gradient'])
 
-    with tables.open_file(args.datafile, mode='a') as file:
+    shutil.copy(args.input_file, args.output_file)
+
+    with tables.open_file(args.output_file, mode='a') as file:
         images = file.root[dl1_images_lstcam_key][:]['image']
         pulse_times = file.root[dl1_images_lstcam_key][:]['pulse_time']
         params = file.root[dl1_params_lstcam_key].read()
@@ -82,9 +91,4 @@ if __name__ == '__main__':
                 for p in parameters_to_update:
                     params[ii][p] = 0
 
-        table_key = os.path.join(dl1_params_lstcam_key.rsplit('/', maxsplit=1)[0], args.table_name)
-        file.create_table(os.path.join('/', dl1_params_lstcam_key.rsplit('/', maxsplit=1)[0]),
-                          args.table_name,
-                          createparents=True,
-                          obj=params,
-                          )
+        file.root[dl1_params_lstcam_key][:] = params
