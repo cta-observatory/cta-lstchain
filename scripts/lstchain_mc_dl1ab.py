@@ -1,5 +1,6 @@
 # Read DL1 file and recompute parameters
 
+import os
 import tables
 import numpy as np
 import argparse
@@ -13,25 +14,21 @@ from lstchain.io.lstcontainers import DL1ParametersContainer
 from ctapipe.io.containers import HillasParametersContainer
 from astropy.units import Quantity
 
-parser = argparse.ArgumentParser(description="Update parameters table in a DL1 HDF5 file")
-
+parser = argparse.ArgumentParser(description="Compute a new parameters table in a DL1 HDF5 file from calibrated "
+                                             "images and based on passed config file")
 
 # Required arguments
 parser.add_argument('datafile', type=str,
                     help='path to the DL1 file ',
                     )
 
+parser.add_argument('table_name', type=str, help='key for the table of new parameters')
+
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
-
-# parser.add_argument('--outfile', '-o', action='store', type=str,
-#                     dest='outfile',
-#                     help='Path to a new DL1 file',
-#                     )
-
 
 args = parser.parse_args()
 
@@ -85,4 +82,9 @@ if __name__ == '__main__':
                 for p in parameters_to_update:
                     params[ii][p] = 0
 
-        file.root[dl1_params_lstcam_key][:] = params
+        table_key = os.path.join(dl1_params_lstcam_key.rsplit('/', maxsplit=1)[0], args.table_name)
+        file.create_table(os.path.join('/', dl1_params_lstcam_key.rsplit('/', maxsplit=1)[0]),
+                          args.table_name,
+                          createparents=True,
+                          obj=params,
+                          )
