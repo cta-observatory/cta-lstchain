@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
+           'tag_muon',
            ]
 
 def get_muon_center(geom, equivalent_focal_length):
@@ -253,3 +254,21 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         print("You are trying to plot without giving a path!")
 
     return muonintensityparam, size_outside_ring, muonringparam, good_ring
+
+def tag_muon(image,thr_low=0,thr_up=1.e10):
+    """
+    Tag muon with a double threshold on the image photoelectron size 
+    Default values apply no tagging
+
+    Paramenters
+    ---------
+    image:      `np.ndarray` number of photoelectrons in each pixel
+    thr_low: `float` lower size threshold in photoelectrons
+    thr_up: `float` upper size threshold in photoelectrons
+
+    Returns
+    ---------
+    `bool` it determines whether a muon was tagged or not
+
+    """
+    return image.sum() > thr_low and image.sum() < thr_up
