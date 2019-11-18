@@ -191,7 +191,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         tel_id : id of the telescope
         """
 
-        run_id = event.lst.tel[1].svc.configuration_id
+        run_id = event.lst.tel[tel_id].svc.configuration_id
 
         expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
         local_clock_list = event.lst.tel[tel_id].evt.local_clock_counter
@@ -255,7 +255,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         event : `ctapipe` event-container
         tel_id : id of the telescope
         """
-        run_id = event.lst.tel[1].svc.configuration_id
+        run_id = event.lst.tel[tel_id].svc.configuration_id
 
         self.first_cap_old_array[:, :, :] = self.first_cap_array_spike[:, :, :]
         n_modules = event.lst.tel[tel_id].svc.num_modules
