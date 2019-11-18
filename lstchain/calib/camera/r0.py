@@ -184,8 +184,7 @@ class LSTR0Corrections(CameraR0Calibrator):
     def time_lapse_corr(self, event, tel_id):
         """
         Perform time lapse baseline corrections.
-        Fill the R1 container or
-        modifies R0 container
+        Fill the R1 container or modifies R0 container.
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -203,6 +202,10 @@ class LSTR0Corrections(CameraR0Calibrator):
         #If R1 container exist modifies it
         if isinstance(event.r1.tel[self.tel_id].waveform, np.ndarray):
             samples = event.r1.tel[self.tel_id].waveform
+
+            # We have 2 functions: one for data from 2018/10/10 to 2019/11/04 and
+            # one for data from 2019/11/05 (from Run 1574) after update firmware.
+            # The old readout (before 2019/11/05) is shifted by 1 cell.
             if run_id > self.last_run_with_old_firmware:
                 do_time_lapse_corr(samples,
                                    expected_pixel_id,
@@ -265,6 +268,9 @@ class LSTR0Corrections(CameraR0Calibrator):
             expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
             samples = waveform.copy()
 
+            # We have 2 functions: one for data from 2018/10/10 to 2019/11/04 and
+            # one for data from 2019/11/05 (from Run 1574) after update firmware.
+            # The old readout (before 2019/11/05) is shifted by 1 cell.
             if run_id > self.last_run_with_old_firmware:
                 event.r1.tel[self.tel_id].waveform = self.interpolate_pseudo_pulses(samples,
                                                                                     expected_pixel_id,
