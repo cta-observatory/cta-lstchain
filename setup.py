@@ -10,6 +10,14 @@ def list_scripts():
     script_list = [f'{os.path.join(script_dir, f)}' for f in os.listdir(script_dir) if f.startswith('lstchain_')]
     return script_list
 
+entry_points = {}
+entry_points['console_scripts'] = [
+    'calc_camera_calibration = lstchain.tools.calc_camera_calibration:main',
+    'onsite_create_drs4_pedestal_file = scripts.onsite.onsite_create_drs4_pedestal_file:main',
+    'onsite_create_calibration_file = scripts.onsite.onsite_create_calibration_file:main',
+    'lstchain_data_create_pedestal_file = scripts.lstchain_data_create_pedestal_file:main'
+]
+
 
 setuptools.setup(name='lstchain',
                  version=lstchain.__version__,
@@ -26,5 +34,6 @@ setuptools.setup(name='lstchain',
                  url='https://github.com/cta-observatory/cta-lstchain',
                  long_description='',
                  classifiers=[],
+                 entry_points=entry_points,
                  scripts=list_scripts()
                  )
