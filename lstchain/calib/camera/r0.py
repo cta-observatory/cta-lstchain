@@ -493,11 +493,11 @@ def do_time_lapse_corr(waveform, expected_pixel_id, local_clock_list,
                 # code from Takayuki & Julian
                 if pix % 2 == 0:
                     first_cap = fc[nr_module, gain, pix]
-                    if first_cap % size1drs > 765 and first_cap % size1drs < 1012:
+                    if first_cap % size1drs > 767 and first_cap % size1drs < 1013:
                         start = int(first_cap) + size1drs
                         end = int(first_cap) + size1drs + 12
                         last_time_array[nr_module, gain, pix, (start%size4drs):(end%size4drs)] = time_now
-                    elif first_cap % size1drs >= 1012:
+                    elif first_cap % size1drs >= 1013:
                         channel = int(first_cap / size1drs)
                         for kk in range(first_cap + size1drs, ((channel + 2) * size1drs)):
                             last_time_array[nr_module, gain, pix, int(kk) % size4drs] = time_now
@@ -549,7 +549,7 @@ def do_time_lapse_corr_data_from_20181010_to_20191104(waveform, expected_pixel_i
                         start = int(first_cap) + size1drs - 1
                         end = int(first_cap) + size1drs + 11
                         last_time_array[nr_module, gain, pix, (start % size4drs):(end % size4drs)] = time_now
-                    elif first_cap % size1drs >= 1014:
+                    elif first_cap % size1drs >= 1013:
                         channel = int(first_cap / size1drs)
                         for kk in range(first_cap + size1drs, (channel + 2) * size1drs):
                             last_time_array[nr_module, gain, pix, int(kk) % size4drs] = time_now
