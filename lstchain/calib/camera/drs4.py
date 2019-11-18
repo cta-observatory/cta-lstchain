@@ -16,6 +16,7 @@ size4drs = 4096
 roi_size = 40
 high_gain = 0
 low_gain = 1
+N_module_in_camera = 265
 n_gain = 2
 n_channel = 7
 
@@ -33,11 +34,11 @@ class DragonPedestal(Component):
     def __init__(self, tel_id, n_module, **kwargs):
         super().__init__(**kwargs)
         self.tel_id = tel_id
-        self.n_module = n_module
+        self.n_module = n_module # This is number of module read from data
 
         # Readout system of LST has 265 modules.
         # Each module has 7 channels (pixels)
-        self.n_pixels = 265*n_channel
+        self.n_pixels = self.N_module_in_camera*n_channel
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.first_cap_array = np.zeros((self.n_module, n_gain, n_channel))
