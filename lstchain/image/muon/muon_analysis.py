@@ -18,6 +18,7 @@ __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
            'tag_muon',
+           'tag_muon_pix',
            ]
 
 def get_muon_center(geom, equivalent_focal_length):
@@ -272,3 +273,22 @@ def tag_muon(image,thr_low=0,thr_up=1.e10):
 
     """
     return image.sum() > thr_low and image.sum() < thr_up
+
+def tag_muon_pix(image,thr_low=50,thr_up=300):
+    """
+    Tag muon with a double threshold on the number of pixels above 10 photoelectrons 
+    Default values apply elimination of pedestal and calibration events
+
+    Paramenters
+    ---------
+    image:      `np.ndarray` number of photoelectrons in each pixel
+    thr_low: `int` lower threshold for number of pixel > 10 pe  
+    thr_up: `int` upper threshold for number of pixel > 10 pe
+
+    Returns
+    ---------
+    `bool` it determines whether a muon was tagged or not
+
+    """
+
+    return ((np.size(image[0][image[0]>10.]) < thr_up) and (np.size(image[0][image[0]>10.]) > thr_low))
