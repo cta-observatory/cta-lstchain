@@ -15,7 +15,7 @@ from ctapipe.io import event_source
 from ctapipe.io import EventSeeker
 
 from lstchain.calib.camera.r0 import LSTR0Corrections
-from lstchain.image.muon import analyze_muon_event, tag_muon, tag_muon_pix
+from lstchain.image.muon import analyze_muon_event, tag_muon, tag_pix_thr
 
 from astropy.table import Table
 
@@ -150,7 +150,11 @@ if __name__ == '__main__':
 
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[0][image[0] > 10.])))
-        if not tag_muon_pix(image):
+        
+        #if not tag_pix_thr(image): #default skipps pedestal and calibration events
+        #    continue
+
+        if not tag_muon(image):
             continue
         
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
