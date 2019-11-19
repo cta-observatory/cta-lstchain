@@ -4,15 +4,6 @@
 # merge and copy DL1 data after production
 
 
-# input_dir='/fefs/aswg/data/mc/DL1/20190822/gamma-diffuse/south_pointing/training/'
-# output_file='/fefs/aswg/data/mc/DL1/20190822/gamma-diffuse/south_pointing/dl1_20190822_proton_training.h5'
-
-# # input_dir=$1
-# # output_file=$2
-
-# python $lstchain_dir/scripts/merge_hdf5_files.py -d $input_dir -o $output_file
-
-
 # 1. check job_logs
 # 2. check that all files have been created in DL1 based on training and testing lists
 # 3. move DL1 files in final place
@@ -112,7 +103,6 @@ for t in ['testing', 'training']:
 
 # 4. move DL1 files in final place
 check_and_make_dir(final_DL1_dir)
-# shutil.move(os.path.join(running_DL1_dir, "*"), final_DL1_dir)
 move_dir_content(running_DL1_dir, final_DL1_dir)
 print("DL1 files have been moved in {}".format(final_DL1_dir))
 
