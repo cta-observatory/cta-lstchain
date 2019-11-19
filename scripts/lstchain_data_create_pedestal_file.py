@@ -32,7 +32,7 @@ parser.add_argument("--output_file",
 
 # Optional argument
 parser.add_argument("--max_events",
-                    help="Maximum numbers of events to read. Default = 5000",
+                    help="Maximum numbers of events to read. Default = 8000",
                     type=int,
                     default=8000)
 
