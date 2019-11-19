@@ -154,7 +154,7 @@ if __name__ == '__main__':
         #if not tag_pix_thr(image): #default skipps pedestal and calibration events
         #    continue
 
-        if not tag_muon(image):
+        if not tag_muon(image,thr_low=4500,thr_up=5600):
             continue
         
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
