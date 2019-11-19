@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
-           'tag_muon',
+           'muon_filter',
            'tag_pix_thr',
            ]
 
@@ -256,7 +256,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
     return muonintensityparam, size_outside_ring, muonringparam, good_ring
 
-def tag_muon(image,thr_low=0,thr_up=1.e10):
+def muon_filter(image,thr_low=0,thr_up=1.e10):
     """
     Tag muon with a double threshold on the image photoelectron size 
     Default values apply no tagging
