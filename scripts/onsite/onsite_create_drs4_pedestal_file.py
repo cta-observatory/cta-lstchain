@@ -1,8 +1,6 @@
 #!/usr//bin/env python
 
 """
- F. Cassol, 12/11/2019
-
  Onsite script for creating drs4 pedestal file to be run as a command line:
 
  --> onsite_create_calibration_file -h
@@ -84,7 +82,7 @@ def main():
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        drs4.plot_waveforms(input_file, output_file, run, plot_file)
+        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=1, offset_value=300)
 
         print("\n--> END")
 

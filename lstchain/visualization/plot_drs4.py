@@ -1,21 +1,26 @@
 
 from matplotlib import pyplot as plt
-
+from traitlets.config.loader import Config
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe.io import event_source
 from lstchain.calib.camera.r0 import LSTR0Corrections
+from ctapipe.io.containers import PedestalContainer
+from ctapipe.instrument import  CameraGeometry
 
 
-__all__ = ['plot_drs4',
+from ctapipe.calib.camera.pedestals import PedestalIntegrator
+from ctapipe.visualization import CameraDisplay
+
+__all__ = ['plot_pedestals',
            ]
 
 channel = ['HG', 'LG']
 
 
-def plot_waveforms(data_file, pedestal_file, run= 0 , plot_file="none"):
+def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1, offset_value=400):
     """
-     plot camera calibration quantities
+     plot pedestal quantities quantities
 
      Parameters
      ----------
@@ -33,23 +38,131 @@ def plot_waveforms(data_file, pedestal_file, run= 0 , plot_file="none"):
         pp = PdfPages(plot_file)
 
     plt.rc('font', size=15)
-    offset_value=400
-    tel_id = 1
 
     # r0 calibrator
     r0_calib = LSTR0Corrections(pedestal_path=pedestal_file, offset=offset_value,
                                 r1_sample_start=2, r1_sample_end=38, tel_id=tel_id )
 
     # event_reader
-    reader = event_source(data_file, max_events=8)
+    reader = event_source(data_file, max_events=1000)
+    t = np.linspace(2, 37, 36)
+
+    # configuration for the charge integrator
+    charge_config = Config({
+        "FixedWindowSum": {
+            "window_start": 12,
+            "window_width": 12,
+        }
+
+    })
+    # declare the pedestal component
+    pedestal = PedestalIntegrator(tel_id=tel_id,
+                                  sample_size=1000,
+                                  sample_duration=1000000,
+                                  charge_median_cut_outliers=[-10, 10],
+                                  charge_std_cut_outliers=[-10, 10],
+                                  charge_product="FixedWindowSum",
+                                  config=charge_config)
+
+    for i, event in enumerate(reader):
+
+        # move from R0 to R1
+        r0_calib.calibrate(event)
+
+        ok = pedestal.calculate_pedestals(event)
+        if ok:
+            ped_data = event.mon.tel[tel_id].pedestal
+            break
+
+    camera = CameraGeometry.from_name("LSTCam", 2)
+
+    # plot open pdf
+    if plot_file != "none":
+        pp = PdfPages(plot_file)
+
+    plt.rc('font', size=15)
+
+    ### first figure
+    fig = plt.figure(1, figsize=(12, 24))
+    plt.tight_layout()
+    n_samples = charge_config["FixedWindowSum"]['window_width']
+    fig.suptitle(f"Run {run}, integration on {n_samples} samples", fontsize=25)
+    pad = 420
+
+    image = ped_data.charge_median
+    mask = ped_data.charge_median_outliers
+    for chan in (np.arange(2)):
+        pad += 1
+        plt.subplot(pad)
+        plt.tight_layout()
+        disp = CameraDisplay(camera)
+        mymin = np.median(image[chan]) - 2 * np.std(image[chan])
+        mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+        disp.set_limits_minmax(mymin, mymax)
+        disp.highlight_pixels(mask[chan], linewidth=2)
+        disp.image = image[chan]
+        disp.cmap = plt.cm.coolwarm
+        # disp.axes.text(lposx, 0, f'{channel[chan]} pedestal [ADC]', rotation=90)
+        plt.title(f'{channel[chan]} pedestal [ADC]')
+        disp.add_colorbar()
+
+    image = ped_data.charge_std
+    mask = ped_data.charge_std_outliers
+    for chan in (np.arange(2)):
+        pad += 1
+        plt.subplot(pad)
+        plt.tight_layout()
+        disp = CameraDisplay(camera)
+        mymin = np.median(image[chan]) - 2 * np.std(image[chan])
+        mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+        disp.set_limits_minmax(mymin, mymax)
+        disp.highlight_pixels(mask[chan], linewidth=2)
+        disp.image = image[chan]
+        disp.cmap = plt.cm.coolwarm
+        # disp.axes.text(lposx, 0, f'{channel[chan]} pedestal std [ADC]', rotation=90)
+        plt.title(f'{channel[chan]} pedestal std [ADC]')
+        disp.add_colorbar()
+
+    ###  histograms
+    for chan in np.arange(2):
+        mean_ped = ped_data.charge_mean[chan]
+        ped_std = ped_data.charge_std[chan]
+
+        # select good pixels
+        select = np.logical_not(mask[chan])
+
+        #fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)
+        pad += 1
+        # pedestal charge
+        plt.subplot(pad)
+        plt.tight_layout()
+        plt.ylabel('pixels', fontsize=20)
+        plt.xlabel('{channel[chan]} pedestal)', fontsize=20)
+        median = np.median(mean_ped[select])
+        rms = np.std(mean_ped[select])
+        label = f"{channel[chan]} Median {median:3.2f}, std {rms:3.2f}"
+        plt.hist(mean_ped[select], bins=50, label=label)
+        plt.legend()
+        pad += 1
+        # pedestal std
+        plt.subplot(pad)
+        plt.ylabel('pixels', fontsize=20)
+        plt.xlabel('{channel[chan]} pedestal std', fontsize=20)
+        median = np.median(ped_std[select])
+        rms = np.std(ped_std[select])
+        label = f" Median {median:3.2f}, std {rms:3.2f}"
+        plt.hist(ped_std[select], bins=50, label=label)
+        plt.legend()
+
+    plt.subplots_adjust(top=0.92)
+    if plot_file != "none":
+
+        pp.savefig()
 
     pix = 0
     pad = 420
-
-    t = np.linspace(2, 37, 36)
-    tel_id = 1
-    for ev in reader:
-
+    # plot corrected waveforms of first 8 events
+    for i, ev in enumerate(reader):
         for chan in np.arange(2):
 
             if pad == 420:
@@ -82,7 +195,12 @@ def plot_waveforms(data_file, pedestal_file, run= 0 , plot_file="none"):
 
         if plot_file != "none" and pad == 428:
             pad = 420
+            plt.subplots_adjust(top=0.92)
             pp.savefig()
+
+        if i == 8:
+            break
 
     if plot_file != "none":
         pp.close()
+
