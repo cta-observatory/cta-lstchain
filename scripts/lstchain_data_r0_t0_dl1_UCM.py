@@ -1,59 +1,66 @@
-import sys, os
+'''
+ This script process real data from r0 raw files up to
+ two DL1a+b h5 separated files. It cannot handle MC data.
+
+ It is just a temporary script that will be deprecated whenever
+ the PR #201 (https://github.com/cta-observatory/cta-lstchain/pull/201)
+ is merged.
+'''
+
+import os
 import argparse
 import numpy as np
-from astropy.time import Time 
+from astropy.time import Time
 from datetime import datetime
-from traitlets.config.loader import Config 
+from traitlets.config.loader import Config
 import tables
 from ctapipe.image import (
         hillas_parameters,
         tailcuts_clean,
         HillasParameterizationError,
         )
-
 from ctapipe.io import event_source
 from lstchain.reco import utils
-from ctapipe.visualization import CameraDisplay
-from ctapipe.plotting.camera import CameraPlotter
 from ctapipe.image.extractor import *
-from ctapipe.io.containers import PedestalContainer
-from ctapipe.io.hdf5tableio import HDF5TableWriter, HDF5TableReader
+from ctapipe.io.hdf5tableio import HDF5TableWriter
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.calibrator import LSTCameraCalibrator
-from lstchain.io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
-from lstchain.io import add_global_metadata, write_metadata, write_subarray_tables
+from lstchain.io import (
+        write_array_info, global_metadata, write_subarray_tables,
+        add_global_metadata, write_metadata
+        )
 from lstchain.io.lstcontainers import ExtraImageInfo
 from functools import partial
 from lstchain.io import DL1ParametersContainer, standard_config, replace_config
 from lstchain.io.config import read_configuration_file
 from lstchain.pointing import PointingPosition
 
-parser = argparse.ArgumentParser(description="R0 to DL1a+b")                                                                                                                                                        
+parser = argparse.ArgumentParser(description="R0 to DL1a+b")
 
 parser.add_argument("--input_file", '-f', type=str,
-        help="Path to the fitz.fz file.",
-        default="")                                                                       
+                    help="Path to the fitz.fz file.",
+                    default="")
 
 parser.add_argument("--outdir", '-o', action='store', type=str,
-        help="Path to the output DL1 file.",
-        default="./dl1_data/")                                                                       
+                    help="Path to the output DL1 file.",
+                    default="./dl1_data/")
 
 parser.add_argument("--pedestal_drs4", type=str,
-        help="Path to the DRS4 pedestal file.")
+                    help="Path to the DRS4 pedestal file.")
 
 parser.add_argument("--calibration_coeff", type=str,
-        help="Path to the file containing calibration coefficients.")                                                                       
+                    help="Path to the file with calibration coefficients.")
 
 parser.add_argument("--pointing", action='store_true',
-        help="Flag for adding the interpolated pointing info to the events")                                                                       
+                    help="Flag for adding the interpolated pointing")
 
 parser.add_argument("--drive_date", type=str,
-        help="Date to find Drive report as YY_MM_DD")                                                                       
+                    help="Date to find Drive report as YY_MM_DD")
 
 parser.add_argument("--config", type=str,
-        help="Path to configuration file.")                                                                       
+                    help="Path to configuration file.")
 
-args = parser.parse_args() 
+args = parser.parse_args()
 
 
 cleaning_method = tailcuts_clean
@@ -64,7 +71,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
     (faster for multiple event processing)
- 
+
     Parameters
     ----------
     calibrated_event: ctapipe event container
@@ -73,7 +80,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     config_file: path to a configuration file
     configuration used for tailcut cleaning
     superseeds the standard configuration
-    
+
     Returns
     -------
     DL1ParametersContainer
@@ -87,7 +94,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     tel = calibrated_event.inst.subarray.tels[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
     camera = tel.camera
-    image = dl1.image[0] # Get just the first channel, HG (?)
+    image = dl1.image[0]  # Get just the first channel, HG (?)
     pulse_time = dl1.pulse_time[0]
 
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
@@ -104,9 +111,9 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         dl1_container.set_leakage(camera, image, signal_pixels)
         dl1_container.set_n_islands(camera, signal_pixels)
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
-        
+
         return dl1_container
-    
+
     else:
         return None
 
@@ -137,11 +144,10 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
                          )
 
     # Create separate files dl1a and dl1b
-    output_filename_dl1a = str(output_filename + "_a.h5") 
-    output_filename_dl1b = str(output_filename + "_b.h5") 
+    output_filename_dl1a = str(output_filename + "_a.h5")
+    output_filename_dl1b = str(output_filename + "_b.h5")
 
     config = replace_config(standard_config, custom_config)
-    custom_calibration = config["custom_calibration"]
 
     source = event_source(input_filename)
     source.allowed_tels = config["allowed_tels"]
@@ -153,12 +159,12 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
 
     dl1_container = DL1ParametersContainer()
 
-    # Write extra information to the DL1 file                                                                         
-    first_event = next(iter(source))                                                                                          
-    write_array_info(first_event, output_filename_dl1a)                                                                            
-    write_array_info(first_event, output_filename_dl1b)                                                                            
-    extra_im = ExtraImageInfo()                                                                                         
-    extra_im.prefix = ''  # get rid of the prefix                                                                       
+    # Write extra information to the DL1 file
+    first_event = next(iter(source))
+    write_array_info(first_event, output_filename_dl1a)
+    write_array_info(first_event, output_filename_dl1b)
+    extra_im = ExtraImageInfo()
+    extra_im.prefix = ''  # get rid of the prefix
 
     for tel_id in source.allowed_tels:
         start_ntp = first_event.lst.tel[tel_id].svc.date
@@ -178,20 +184,20 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
            }
        })
 
-    r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = args.calibration_coeff,
+    r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=args.calibration_coeff,
                                   image_extractor="LocalPeakWindowSum",
                                   config=charge_config)
 
     filters = tables.Filters(
             complevel=5,    # enable compression, with level 0=disabled, 9=max
-            complib='blosc:zstd',   #  compression using blosc
+            complib='blosc:zstd',   # compression using blosc
             fletcher32=True,    # attach a checksum to each chunk for error correction
             bitshuffle=False,   # for BLOSC, shuffle bits for better compression
             )
 
     if args.pointing:
         pointings = PointingPosition()
-        pointings.drive_path=(f'/fefs/home/lapp/DrivePositioning/' + 
+        pointings.drive_path = (f'/fefs/home/lapp/DrivePositioning/' +
                                'drive_log_{args.drive_date}.txt')
 
     # File containing only DL1a data
@@ -201,59 +207,57 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
         mode='a',
         filters=filters,
         add_prefix=True,
-        #overwrite=True
+        # overwrite=True
         ) as writer:
-    
+
         print("USING FILTERS: ", writer._h5file.filters)
-    
+
         # build a mapping of tel_id back to tel_index:
         # (note this should be part of SubarrayDescription)
         idx = np.zeros(max(subarray.tel_indices) + 1)
         for key, val in subarray.tel_indices.items():
             idx[key] = val
-    
+
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(utils.expand_tel_list,
                     max_tels=len(first_event.inst.subarray.tel) + 1,
                                          )
-    
+
             writer.add_column_transform(
                         table_name='subarray/trigger',
                         col_name='tels_with_trigger',
                         transform=tel_list_transform
                         )
 
-
             for i, event in enumerate(source):
                 if i % 100 == 0:
                     print(i)
-                                    
-                event.dl0.prefix = ''                                                                                       
-                event.trig.prefix = ''
-                            
-                write_subarray_tables(writer, event, metadata)
-                            
-                for ii, telescope_id in enumerate(event.r0.tels_with_data):
-                    
-                    event.pointing[telescope_id].prefix = ''
-    
-                    tel = event.dl1.tel[telescope_id]
-                    tel.prefix = ''  # don't really need one
-                                    # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                    tel_name = str(event.inst.subarray.tel[telescope_id])[4:-4] # "LST_LSTCam"
 
-                    # calibrate r0 --> r1        
+                event.dl0.prefix = ''
+                event.trig.prefix = ''
+
+                write_subarray_tables(writer, event, metadata)
+
+                for ii, telescope_id in enumerate(event.r0.tels_with_data):
+
+                    event.pointing[telescope_id].prefix = ''
+
+                    tel = event.dl1.tel[telescope_id]
+                    tel.prefix = ''  # remove the first part of the tel_name
+                    tel_name = str(event.inst.subarray.tel[telescope_id])[4:-4]
+
+                    # calibrate r0 --> r1
                     r0_r1_calibrator.calibrate(event)
 
                     # Get only triggerd event (not pedestal)
-                    #if event.r0.tel[telescope_id].trigger_type != 32: 
+                    # if event.r0.tel[telescope_id].trigger_type != 32:
                     '''
                     NB: Given the problems with the TIB for the time being
                     all events are processed regardless its trigger type
-                    '''    
+                    '''
                     # calibrate r1 --> dl1
                     r1_dl1_calibrator(event)
-                    
+
                     try:
                         dl1_filled = get_dl1(event,
                                 telescope_id,
@@ -296,22 +300,22 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
         mode='a',
         filters=filters,
         add_prefix=True,
-        #overwrite=True
+        # overwrite=True
         ) as writer:
-    
+
         print("USING FILTERS: ", writer._h5file.filters)
-    
+
         # build a mapping of tel_id back to tel_index:
         # (note this should be part of SubarrayDescription)
         idx = np.zeros(max(subarray.tel_indices) + 1)
         for key, val in subarray.tel_indices.items():
             idx[key] = val
-    
+
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(utils.expand_tel_list,
                     max_tels=len(first_event.inst.subarray.tel) + 1,
                                          )
-    
+
             writer.add_column_transform(
                         table_name='subarray/trigger',
                         col_name='tels_with_trigger',
@@ -321,30 +325,29 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
             for i, event in enumerate(source):
                 if i % 100 == 0:
                     print(i)
-                                    
-                event.dl0.prefix = ''                                                                                       
+
+                event.dl0.prefix = ''
                 event.trig.prefix = ''
-                            
+
                 write_subarray_tables(writer, event, metadata)
-                            
+
                 for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
                     event.pointing[telescope_id].prefix = ''
-    
+
                     tel = event.dl1.tel[telescope_id]
-                    tel.prefix = ''  # don't really need one
-                                    # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                    tel_name = str(event.inst.subarray.tel[telescope_id])[4:-4] # "LST_LSTCam"
-    
-                    # calibrate r0 --> r1        
+                    tel.prefix = ''  # remove the first part of the tel_name
+                    tel_name = str(event.inst.subarray.tel[telescope_id])[4:-4]
+
+                    # calibrate r0 --> r1
                     r0_r1_calibrator.calibrate(event)
 
                     # Get only triggerd event (not pedestal)
-                    #if event.r0.tel[telescope_id].trigger_type != 32: 
+                    # if event.r0.tel[telescope_id].trigger_type != 32:
                     '''
                     NB: Given the problems with the TIB for the time being
                     all events are processed regardless its trigger type
-                    '''    
+                    '''
 
                     # calibrate r1 --> dl1
                     r1_dl1_calibrator(event)
@@ -378,8 +381,8 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
                         ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
 
                         if ucts_timestamp != 0:
-                            ns = 1e-9 # to nanosecs
-                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp*ns))
+                            ns = 1e-9  # to nanosecs
+                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * ns))
                         else:
                             ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
                             utc_time = Time(datetime.utcfromtimestamp(ntp_time))
@@ -390,7 +393,7 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
                         extra_im.tel_id = telescope_id
 
                         if args.pointing:
-                            Az,El=pointings.cal_pointingposition(utc_time.unix)
+                            Az, El = pointings.cal_pointingposition(utc_time.unix)
                             event.pointing[telescope_id].azimuth = Az
                             event.pointing[telescope_id].altitude = El
 
@@ -407,12 +410,16 @@ def r0_to_dl1(input_filename, output_filename=None, custom_config={}):
 
             writer.close()
 
+
 if __name__ == '__main__':
     os.makedirs(args.outdir, exist_ok=True)
 
     output_filename = (args.outdir +
-                       '/dl1_' + os.path.basename(args.input_file).split('.')[2] +
-                       '_' + os.path.basename(args.input_file).split('.')[3])
+                       '/dl1_' +
+                       os.path.basename(args.input_file).split('.')[2] +
+                       '_' +
+                       os.path.basename(args.input_file).split('.')[3]
+                       )
 
     config = {}
     if args.config is not None:
