@@ -248,7 +248,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
             event.trig.prefix = ''
 
             # write sub tables
-            write_subarray_tables(writer, event, metadata)
+            if is_simu:
+                write_subarray_tables(writer, event, metadata)
 
             if not custom_calibration and is_simu:
                 cal(event)
