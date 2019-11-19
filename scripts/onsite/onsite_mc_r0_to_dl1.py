@@ -31,17 +31,19 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
-                    dest='pedestal_path',
-                    help='Path to a pedestal file',
-                    default=None
-                    )
+## Foreseen for Real Data
 
-parser.add_argument('--calibration_path', '-calib', action='store', type=str,
-                    dest='calibration_path',
-                    help='Path to a calibration file',
-                    default=None
-                    )
+# parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
+#                     dest='pedestal_path',
+#                     help='Path to a pedestal file',
+#                     default=None
+#                     )
+#
+# parser.add_argument('--calibration_path', '-calib', action='store', type=str,
+#                     dest='calibration_path',
+#                     help='Path to a calibration file',
+#                     default=None
+#                     )
 
 parser.add_argument('--train_test_ratio', '-ratio', action='store', type=str,
                     dest='train_test_ratio',
@@ -91,8 +93,6 @@ if __name__ == '__main__':
     print("Working on DL0 files in {}".format(DL0_DATA_DIR))
     
     check_data_path(DL0_DATA_DIR)
-
-    # make_output_data_dirs(DL0_DATA_DIR)
 
     raw_files_list = get_input_filelist(DL0_DATA_DIR)
     
