@@ -15,6 +15,7 @@ from lstchain.io.lstcontainers import DL1ParametersContainer
 from ctapipe.io.containers import HillasParametersContainer
 from astropy.units import Quantity
 from distutils.util import strtobool
+from lstchain.io import get_dataset_keys, auto_merge_h5files
 
 parser = argparse.ArgumentParser(description="Compute a new parameters table in a DL1 HDF5 file from calibrated "
                                              "images and based on passed config file")
@@ -57,38 +58,46 @@ if __name__ == '__main__':
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend(['wl', 'r', 'leakage', 'n_islands', 'intercept', 'time_gradient'])
 
-    shutil.copy(args.input_file, args.output_file)
+    nodes_keys = get_dataset_keys(args.input_file)
+    if args.noimage:
+        nodes_keys.remove(dl1_images_lstcam_key)
 
-    with tables.open_file(args.output_file, mode='a') as file:
-        images = file.root[dl1_images_lstcam_key][:]['image']
-        pulse_times = file.root[dl1_images_lstcam_key][:]['pulse_time']
-        params = file.root[dl1_params_lstcam_key].read()
+    auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
 
-        for ii, image in enumerate(images):
-            pulse_time = pulse_times[ii]
-            signal_pixels = tailcuts_clean(geom, image, **config['tailcut'])
-            if image[signal_pixels].shape[0] > 0:
-                num_islands, island_labels = number_of_islands(geom, signal_pixels)
-                hillas = hillas_parameters(geom[signal_pixels], image[signal_pixels])
+    with tables.open_file(args.input_file, mode='r') as input:
+        image_table = input.root[dl1_images_lstcam_key]
+        with tables.open_file(args.output_file, mode='a') as output:
 
-                dl1_container.fill_hillas(hillas)
-                dl1_container.set_timing_features(geom[signal_pixels],
-                                                  image[signal_pixels],
-                                                  pulse_time[signal_pixels],
-                                                  hillas)
-                dl1_container.set_leakage(geom, image, signal_pixels)
-                dl1_container.n_islands = num_islands
-                dl1_container.wl = dl1_container.width / dl1_container.length
-                width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                dl1_container.width = width.value
-                dl1_container.length = length.value
-                dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
+            params = output.root[dl1_params_lstcam_key].read()
 
-                for p in parameters_to_update:
-                    params[ii][p] = Quantity(dl1_container[p]).value
-            else:
-                for p in parameters_to_update:
-                    params[ii][p] = 0
+            for ii, row in enumerate(image_table):
+                if ii%10000 == 0:
+                    print(ii)
+                image = row['image']
+                pulse_time = row['pulse_time']
+                signal_pixels = tailcuts_clean(geom, image, **config['tailcut'])
+                if image[signal_pixels].shape[0] > 0:
+                    num_islands, island_labels = number_of_islands(geom, signal_pixels)
+                    hillas = hillas_parameters(geom[signal_pixels], image[signal_pixels])
 
-        file.root[dl1_params_lstcam_key][:] = params
+                    dl1_container.fill_hillas(hillas)
+                    dl1_container.set_timing_features(geom[signal_pixels],
+                                                      image[signal_pixels],
+                                                      pulse_time[signal_pixels],
+                                                      hillas)
+                    dl1_container.set_leakage(geom, image, signal_pixels)
+                    dl1_container.n_islands = num_islands
+                    dl1_container.wl = dl1_container.width / dl1_container.length
+                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                    dl1_container.width = width.value
+                    dl1_container.length = length.value
+                    dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
+
+                    for p in parameters_to_update:
+                        params[ii][p] = Quantity(dl1_container[p]).value
+                else:
+                    for p in parameters_to_update:
+                        params[ii][p] = 0
+
+            output.root[dl1_params_lstcam_key][:] = params
