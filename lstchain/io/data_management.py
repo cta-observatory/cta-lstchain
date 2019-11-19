@@ -109,7 +109,8 @@ def check_and_make_dir(dir):
         path to a directory
     """
     if os.path.exists(dir) and os.listdir(dir)!=[]:
-        clean = query_yes_no("The directory {} is not empty. Do you want to remove its content?".format(dir), default='yes')
+        clean = query_yes_no("The directory {} is not empty. Do you want to remove its content?".format(dir),
+                             default='yes')
         if clean:
             shutil.rmtree(dir)
     os.makedirs(dir, exist_ok=True)
@@ -137,4 +138,23 @@ def check_job_logs(job_logs_dir):
     if not logs_with_error == []:
         query_continue("There are errors in the following log files:\n {}"
                        "\n Are you sure you want to continue?".format(logs_with_error), default="no")
+
+
+
+def check_prod_id(path1, path2):
+    """
+    Check if prod_id of path1 == prod_id of path2
+    Query user to continue it not.
+
+    Parameters
+    ----------
+    path1: str
+    path2: str
+
+    """
+
+    id1 = path1.split('/')[-1]
+    id2 = path2.split('/')[-1]
+    if id1 != id2:
+        query_continue("Extracted prod IDs are different ({} vs {}). Continue ?".format(id1, id2))
 
