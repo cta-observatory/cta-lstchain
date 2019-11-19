@@ -1,4 +1,7 @@
-# Read DL1 file and recompute parameters
+# Read a HDF5 DL1 file, recompute parameters based on calibrated images and pulse times and a config file
+# and write a new HDF5 file
+# Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
+
 
 import os
 import shutil
@@ -17,8 +20,11 @@ from astropy.units import Quantity
 from distutils.util import strtobool
 from lstchain.io import get_dataset_keys, auto_merge_h5files
 
-parser = argparse.ArgumentParser(description="Compute a new parameters table in a DL1 HDF5 file from calibrated "
-                                             "images and based on passed config file")
+parser = argparse.ArgumentParser(description="Recompute parameters in a DL1 HDF5 file from calibrated images"
+                                             "and based on passed config file. The results are written in a new HDF5 "
+                                             "file."
+                                             "Updated parameters are : Hillas paramaters, wl, r, leakage, "
+                                             "n_islands, intercept, time_gradient")
 
 # Required arguments
 parser.add_argument('input_file', type=str,
