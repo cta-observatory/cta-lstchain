@@ -1,7 +1,6 @@
 #!/usr//bin/env python
 
 """
- F. Cassol, 12/11/2019
 
  Onsite script for creating a flat-field calibration file file to be run as a command line:
 
@@ -77,8 +76,7 @@ def main():
         log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file):
-            print(f">>> Output file {output_file} exists already. ")
-            if query_yes_no("Do you want to remove it?"):
+            if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
             else:
                 exit(1)
@@ -90,7 +88,7 @@ def main():
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../lstchain/data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
-            print(f">>> Config file {config_file} do not exists. Exit ")
+            print(f">>> Config file {config_file} do not exists. \n Exit ")
             exit(1)
         print(f"\n--> Config file {config_file}")
 

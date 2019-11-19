@@ -24,7 +24,6 @@ channel = ['HG', 'LG']
 
 plot_dir = "none"
 
-
 def read_file(file_name, tel_id=1):
     """
      read camera calibration quantities
@@ -70,7 +69,6 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         pp = PdfPages(plot_file)
 
     plt.rc('font', size=15)
-    lposx=2.25
 
     ### first figure
     fig = plt.figure(1, figsize=(12, 24))
