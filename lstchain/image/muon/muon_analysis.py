@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
+           'muon_filter',
+           'tag_pix_thr',
            ]
 
 def get_muon_center(geom, equivalent_focal_length):
@@ -253,3 +255,41 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         print("You are trying to plot without giving a path!")
 
     return muonintensityparam, size_outside_ring, muonringparam, good_ring
+
+def muon_filter(image,thr_low=0,thr_up=1.e10):
+    """
+    Tag muon with a double threshold on the image photoelectron size 
+    Default values apply no tagging
+
+    Paramenters
+    ---------
+    image:      `np.ndarray` number of photoelectrons in each pixel
+    thr_low: `float` lower size threshold in photoelectrons
+    thr_up: `float` upper size threshold in photoelectrons
+
+    Returns
+    ---------
+    `bool` it determines whether a muon was tagged or not
+
+    """
+    return image.sum() > thr_low and image.sum() < thr_up
+
+def tag_pix_thr(image,thr_low=50,thr_up=300,pe_thr=10):
+    """
+    Tag event with a double threshold on the number of pixels above 10 photoelectrons 
+    Default values apply elimination of pedestal and calibration events
+
+    Paramenters
+    ---------
+    image:      `np.ndarray` number of photoelectrons in each pixel
+    thr_low: `int` lower threshold for number of pixel > 10 pe  
+    thr_up: `int` upper threshold for number of pixel > 10 pe
+    pe_thr: 'float' minimum number of photoelectrons for a pixel to be counted
+
+    Returns
+    ---------
+    `bool` it determines whether a the event is in the given nr of pixel range
+
+    """
+
+    return ((np.size(image[0][image[0]>pe_thr]) < thr_up) and (np.size(image[0][image[0]>pe_thr]) > thr_low))
