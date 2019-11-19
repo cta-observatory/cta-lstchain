@@ -18,7 +18,7 @@ __all__ = ['get_muon_center',
            'fit_muon',
            'analyze_muon_event',
            'tag_muon',
-           'tag_muon_pix',
+           'tag_pix_thr',
            ]
 
 def get_muon_center(geom, equivalent_focal_length):
@@ -274,9 +274,9 @@ def tag_muon(image,thr_low=0,thr_up=1.e10):
     """
     return image.sum() > thr_low and image.sum() < thr_up
 
-def tag_muon_pix(image,thr_low=50,thr_up=300):
+def tag_pix_thr(image,thr_low=50,thr_up=300,pe_thr=10):
     """
-    Tag muon with a double threshold on the number of pixels above 10 photoelectrons 
+    Tag event with a double threshold on the number of pixels above 10 photoelectrons 
     Default values apply elimination of pedestal and calibration events
 
     Paramenters
@@ -284,11 +284,12 @@ def tag_muon_pix(image,thr_low=50,thr_up=300):
     image:      `np.ndarray` number of photoelectrons in each pixel
     thr_low: `int` lower threshold for number of pixel > 10 pe  
     thr_up: `int` upper threshold for number of pixel > 10 pe
+    pe_thr: 'float' minimum number of photoelectrons for a pixel to be counted
 
     Returns
     ---------
-    `bool` it determines whether a muon was tagged or not
+    `bool` it determines whether a the event is in the given nr of pixel range
 
     """
 
-    return ((np.size(image[0][image[0]>10.]) < thr_up) and (np.size(image[0][image[0]>10.]) > thr_low))
+    return ((np.size(image[0][image[0]>pe_thr]) < thr_up) and (np.size(image[0][image[0]>pe_thr]) > thr_low))
