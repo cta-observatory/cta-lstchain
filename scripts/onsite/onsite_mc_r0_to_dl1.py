@@ -1,20 +1,10 @@
 #!/usr//bin/env python
 
-# T. Vuillaume, 20/06/2019
-
-# Choose the selected options
-
-
-## TODO:
-#   - clean the code
-#   - prints --> logs
+## Code to reduce R0 data to DL1 onsite (La Palma cluster)
 
 
 ####################################### OPTIONS #######################################
 
-## env ##
-# source / fefs / aswg / software / scripts / source_env.sh
-# lstchain_repo = "/fefs/home/thomas.vuillaume/software/cta-observatory/cta-lstchain"
 
 
 import sys
@@ -26,8 +16,6 @@ import calendar
 import lstchain
 from lstchain.io.data_management import *
 
-### TODO :
-### CHANGE THE PROD_ID with a default one or prompt user
  
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
@@ -69,13 +57,14 @@ parser.add_argument('--random_seed', '-seed', action='store', type=str,
 
 parser.add_argument('--n_files_per_dl1', '-nfdl1', action='store', type=str,
                     dest='n_files_per_dl1',
-                    help='Number of input files merged in one DL1. If 0, the number of files per DL1 is computed based on the size of the DL0 files and the expected reduction factor of 50 to obtain DL1 files of ~100 MB. Else, use fixed number of files',
+                    help='Number of input files merged in one DL1. If 0, the number of files per DL1 is computed based '
+                         'on the size of the DL0 files and the expected reduction factor of 50 '
+                         'to obtain DL1 files of ~100 MB. Else, use fixed number of files',
                     default=0,
                     )
 
 today = calendar.datetime.date.today()
 default_prod_id = f'{today.year:04d}{today.month:02d}{today.day:02d}_v{lstchain.__version__}_v00'
-# TODO : should not be today's date but observation (or MC production) date
 
 parser.add_argument('--prod_id', action='store', type=str,
                     dest='prod_id',
@@ -140,7 +129,6 @@ if __name__ == '__main__':
 
     RUNNING_DIR = os.path.join(DL0_DATA_DIR.replace('DL0', 'running_analysis'), PROD_ID)
 
-    # LOG_DIR = os.path.join(DL0_DATA_DIR.replace('DL0', 'analysis_logs'), PROD_ID) - this one should be handled by the cleaning script
     JOB_LOGS = os.path.join(RUNNING_DIR, 'job_logs')
     # DIR_LISTS_BASE = os.path.join(RUNNING_DIR, 'file_lists')
     DL1_DATA_DIR = os.path.join(RUNNING_DIR, 'DL1')
@@ -183,7 +171,7 @@ if __name__ == '__main__':
             jobo = os.path.join(JOB_LOGS, "job{}.o".format(counter))
             jobe = os.path.join(JOB_LOGS, "job{}.e".format(counter))
             cc = ' -conf {}'.format(args.config_file) if args.config_file is not None else ' '
-            base_cmd = 'slurm_core.sh "python /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/scripts/lst-r0_to_dl1.py -o {} {}"'.format(output_dir, cc)
+            base_cmd = 'slurm_core.sh "lstchain_mc_r0_to_dl1.py -o {} {}"'.format(output_dir, cc)
             cmd = 'sbatch -e {} -o {} {} {}'.format(jobe, jobo, base_cmd, os.path.join(dir_lists, file))
 
             os.system(cmd)
