@@ -1,10 +1,9 @@
 #!/bin/sh
 
-# core job to run a
-# outdir and file should be passed to the script
-# example: ./core_job.sh /path_to/gamma_20deg_0deg.simtel.gz /path_to/results
+# core job to run cmd $1 inside conda environement
+
+source /local/home/lstanalyzer/.bashrc
+conda activate cta
 
 
-conda activate cta-dev
-
-
+$1

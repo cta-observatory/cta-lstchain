@@ -2,8 +2,7 @@
 # slurm core job - send a job with the command passed as arg1 on every line in the file passed as arg2
 
 
-PATH="$PATH:/fefs/aswg/software/virtual_env/anaconda3/bin/"
-conda init bash
+source /local/home/lstanalyzer/.bashrc
 conda activate cta
 
 
