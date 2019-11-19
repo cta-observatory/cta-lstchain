@@ -114,7 +114,7 @@
   ],
   "max_events": null,
   "custom_calibration": false,
-
+  "write_pe_image": false,
   "image_extractor": "NeighborPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
