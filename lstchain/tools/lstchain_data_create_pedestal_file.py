@@ -116,16 +116,10 @@ class PedestalHDF5Writer(Tool):
             if self.pedestal.calculate_pedestals(event):
 
                 ped_data = event.mon.tel[self.pedestal.tel_id].pedestal
-<<<<<<< HEAD:lstchain/tools/lstchain_data_create_pedestal_file.py
-                self.log.debug(f" r0 {event.r0.tel[self.pedestal.tel_id].waveform.shape}")
-                self.log.debug(f" r1 {event.r1.tel[self.pedestal.tel_id].waveform.shape}")
-||||||| merged common ancestors
-                self.log.debug(f" r0 {event.r0.tel[0].waveform.shape}")
-                self.log.debug(f" r1 {event.r1.tel[0].waveform.shape}")
-=======
+
                 self.log.debug(f" r0 {event.r0.tel[tel_id].waveform.shape}")
                 self.log.debug(f" r1 {event.r1.tel[tel_id].waveform.shape}")
->>>>>>> 4341c3edabd03bc705a1291632c2a2239e5fb0df:lstchain/tools/calc_pedestals.py
+
                 if write_config:
                     ped_data.meta['config']= self.config
                     write_config = False
