@@ -2,8 +2,6 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-import sys
-import logging
 from traitlets import Dict, List, Unicode, Float, Bool
 
 
