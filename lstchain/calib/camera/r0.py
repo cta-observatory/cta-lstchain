@@ -81,8 +81,9 @@ class LSTR0Corrections(CameraR0Calibrator):
                             help='Path to the LST pedestal binary file'
                             ).tag(config=True)
 
-    tel_id = Int(0,
-                 help='id of the telescope to calibrate'
+
+    tel_id = Int(1,
+                 help='id of the telescope to calibrate',
                  ).tag(config=True)
 
     def __init__(self, **kwargs):
