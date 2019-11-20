@@ -153,8 +153,8 @@ def check_prod_id(path1, path2):
 
     """
 
-    id1 = path1.split('/')[-1]
-    id2 = path2.split('/')[-1]
+    id1 = os.path.abspath(path1).split('/')[-1]
+    id2 = os.path.abspath(path2).split('/')[-1]
     if id1 != id2:
         query_continue("Extracted prod IDs are different ({} vs {}). Continue ?".format(id1, id2))
 
