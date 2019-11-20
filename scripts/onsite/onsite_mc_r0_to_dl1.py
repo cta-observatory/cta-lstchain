@@ -94,7 +94,7 @@ if __name__ == '__main__':
     
     if NFILES_PER_DL1 == 0:
         size_dl0 = os.stat(raw_files_list[0]).st_size/1e6
-        reduction_dl0_dl1 = 50
+        reduction_dl0_dl1 = 5
         size_dl1 = size_dl0/reduction_dl0_dl1
         NFILES_PER_DL1 = max(1, int(DESIRED_DL1_SIZE_MB/size_dl1))
     
