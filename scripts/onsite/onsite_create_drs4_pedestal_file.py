@@ -27,7 +27,7 @@ required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
-                      type=int, default=5000)
+                      type=int, default=8000)
 
 args = parser.parse_args()
 run = args.run_number
@@ -74,7 +74,7 @@ def main():
                 exit(1)
 
         # run lstchain script
-        cmd = f"lstchain_data_create_pedestal_file --input_file {input_file} " \
+        cmd = f"lstchain_data_create_drs4_pedestal_file --input_file {input_file} " \
               f"--output_file {output_file} --max_events {max_events}"
 
         os.system(cmd)

@@ -64,7 +64,9 @@ parser.add_argument("--run_number", help = "Run number to analyze."
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
+
+def main():
+
     print("input file: {}".format(args.input_file))
     print("output file: {}".format(args.output_file))
     print("pedestal file: {}".format(args.pedestal_file))
@@ -200,3 +202,7 @@ if __name__ == '__main__':
     if os.path.exists(args.output_file):
             os.remove(args.output_file)
     table.write(args.output_file, format='fits')
+
+
+if __name__ == '__main__':
+    main()
