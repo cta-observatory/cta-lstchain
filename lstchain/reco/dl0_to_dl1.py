@@ -37,6 +37,8 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
+from astropy.time import Time
+from datetime import datetime
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -295,7 +297,28 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trig.gps_time.value
+                    # dl1_container.gps_time = event.trig.gps_time.value
+
+                    # GPS time is not available for the time being in the above field.
+                    # In the mean time, it is taken from UCTS timestamp (in unix time)
+                    # or alternatively from the TIB pps and 10 MHz counters. The first
+                    # one started to work around mid Nov 2019, so previous runs take 
+                    # timing information from the TIB NTP counters.
+                    # This will be deprecated and modified back to the commented line
+                    # whenever gps_time is dumped to gps_time field.
+                    
+                    ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
+                    
+                    if ucts_timestamp != 0:
+                        ns = 1e-9  # Convert nanosecs to secs
+                        utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * ns))
+                    else:
+                        start_ntp = event.lst.tel[telescope_id].svc.date
+                        ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
+                        utc_time = Time(datetime.utcfromtimestamp(ntp_time))
+                    
+                    gps_time = utc_time.gps
+                    dl1_container.gps_time = gps_time
 
                     foclen = (
                         event.inst.subarray.tel[telescope_id]
