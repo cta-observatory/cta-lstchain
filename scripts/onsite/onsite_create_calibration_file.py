@@ -13,10 +13,6 @@ from pathlib import Path
 from lstchain.io.data_management import *
 import lstchain.visualization.plot_calib as calib
 
-# to be changed with the right one : /fefs/aswg/data/real
-base_dir = '/ctadata/franca/fefs/aswg/real'
-#base_dir = '/fefs/aswg/data/real'
-
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
                                  formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -32,12 +28,14 @@ optional.add_argument('-v', '--version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
+optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
 
 args = parser.parse_args()
 run = args.run_number
 ped_run = args.pedestal_run
 prod_id = 'v%02d'%args.version
 stat_events = args.statistics
+base_dir = args.base_dir
 max_events = 1000000
 
 
@@ -83,8 +81,6 @@ def main():
 
         print(f"\n--> Log file {log_file}")
 
-
-
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../lstchain/data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
@@ -93,7 +89,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # run lstchain script
-        cmd = f"lstchain_create_calibration_file " \
+        cmd = f"lstchain_data_create_calibration_file " \
               f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
               f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events}  " \
               f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
