@@ -66,3 +66,7 @@ if __name__ == '__main__':
 
     if not args.store_dl1:
         os.remove(dl1_file)
+
+
+if __name__ == '__main__':
+    main()

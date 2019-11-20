@@ -65,7 +65,8 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 args = parser.parse_args()
 
 
-if __name__ == '__main__':
+def main():
+
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -164,3 +165,7 @@ if __name__ == '__main__':
     plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
     plt.hist(dl2[dl2['mc_type']==0]['gammaness'], bins=100)
     plt.show()
+
+
+if __name__ == '__main__':
+    main()

@@ -27,8 +27,8 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 args = parser.parse_args()
 
 
+def main():
 
-if __name__ == '__main__':
     os.makedirs(args.outdir, exist_ok=True)
     
     dl0_to_dl1.allowed_tels = {1, 2, 3, 4}
@@ -43,3 +43,6 @@ if __name__ == '__main__':
 
     dl0_to_dl1.r0_to_dl1(args.infile, output_filename=output_filename, custom_config=config)
 
+
+if __name__ == '__main__':
+    main()

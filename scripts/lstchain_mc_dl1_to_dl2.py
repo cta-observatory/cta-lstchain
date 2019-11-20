@@ -49,7 +49,8 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
+
+def main():
 
     custom_config = {}
     if args.config_file is not None:
@@ -82,3 +83,7 @@ if __name__ == '__main__':
 
     shutil.copyfile(args.datafile, outfile)
     write_dl2_dataframe(dl2.astype(float), outfile)
+
+
+if __name__ == '__main__':
+    main()

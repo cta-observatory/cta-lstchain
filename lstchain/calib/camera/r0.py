@@ -30,6 +30,10 @@ class CameraR0Calibrator(Component):
         Set to None if no Tool to pass.
     kwargs
     """
+    tel_id = Int(1,
+                 help='id of the telescope to calibrate'
+                 ).tag(config=True)
+
     offset = Int(default_value=400,
                  help='Define the offset of the baseline').tag(config=True)
 
@@ -80,11 +84,6 @@ class LSTR0Corrections(CameraR0Calibrator):
                             allow_none=True,
                             help='Path to the LST pedestal binary file'
                             ).tag(config=True)
-
-
-    tel_id = Int(1,
-                 help='id of the telescope to calibrate',
-                 ).tag(config=True)
 
     def __init__(self, **kwargs):
         """

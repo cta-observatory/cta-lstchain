@@ -32,8 +32,8 @@ parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(
 args = parser.parse_args()
 
 
+def main():
 
-if __name__ == '__main__':
     file_list = [args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')]
 
     if args.noimage:
@@ -49,3 +49,6 @@ if __name__ == '__main__':
     else:
         auto_merge_h5files(file_list, args.outfile, nodes_keys=keys)
 
+
+if __name__ == '__main__':
+    main()
