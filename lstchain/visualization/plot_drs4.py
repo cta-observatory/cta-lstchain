@@ -136,8 +136,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         # pedestal charge
         plt.subplot(pad)
         plt.tight_layout()
-        plt.ylabel('pixels', fontsize=20)
-        plt.xlabel('{channel[chan]} pedestal)', fontsize=20)
+        plt.ylabel('pixels')
+        plt.xlabel(f'{channel[chan]} pedestal')
         median = np.median(mean_ped[select])
         rms = np.std(mean_ped[select])
         label = f"{channel[chan]} Median {median:3.2f}, std {rms:3.2f}"
@@ -146,15 +146,15 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         pad += 1
         # pedestal std
         plt.subplot(pad)
-        plt.ylabel('pixels', fontsize=20)
-        plt.xlabel('{channel[chan]} pedestal std', fontsize=20)
+        plt.ylabel('pixels')
+        plt.xlabel(f'{channel[chan]} pedestal std')
         median = np.median(ped_std[select])
         rms = np.std(ped_std[select])
         label = f" Median {median:3.2f}, std {rms:3.2f}"
         plt.hist(ped_std[select], bins=50, label=label)
         plt.legend()
 
-    plt.subplots_adjust(top=0.92)
+    plt.subplots_adjust(top=0.94)
     if plot_file != "none":
 
         pp.savefig()
