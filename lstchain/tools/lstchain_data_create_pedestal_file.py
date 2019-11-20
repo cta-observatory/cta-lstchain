@@ -18,6 +18,7 @@ __all__ = ['PedestalCalculator',
            'PedestalContainer',
            ]
 
+
 class PedestalHDF5Writer(Tool):
     '''
     Example of tool that extract the pedestal value per pixel and write the pedestal
@@ -43,6 +44,7 @@ class PedestalHDF5Writer(Tool):
 
     aliases = Dict(dict(
         input_file='EventSource.input_url',
+        output_file='CalibrationHDF5Writer.output_file',
         max_events='EventSource.max_events',
         tel_id='PedestalCalculator.tel_id',
         sample_duration='PedestalCalculator.sample_duration',
@@ -114,8 +116,10 @@ class PedestalHDF5Writer(Tool):
             if self.pedestal.calculate_pedestals(event):
 
                 ped_data = event.mon.tel[self.pedestal.tel_id].pedestal
+
                 self.log.debug(f" r0 {event.r0.tel[tel_id].waveform.shape}")
                 self.log.debug(f" r1 {event.r1.tel[tel_id].waveform.shape}")
+
                 if write_config:
                     ped_data.meta['config']= self.config
                     write_config = False
