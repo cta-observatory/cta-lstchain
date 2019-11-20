@@ -93,7 +93,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # run lstchain script
-        cmd = f"calc_camera_calibration " \
+        cmd = f"lstchain_create_calibration_file " \
               f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
               f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events}  " \
               f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
