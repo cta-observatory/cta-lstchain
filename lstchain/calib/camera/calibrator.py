@@ -31,7 +31,7 @@ class LSTCameraCalibrator(CameraCalibrator):
     ).tag(config=True)
 
     allowed_tels = List(
-        [0],
+        [1],
         help='List of telescope to be calibrated'
     ).tag(config=True)
 

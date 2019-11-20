@@ -85,7 +85,6 @@ class LSTR0Corrections(CameraR0Calibrator):
                             help='Path to the LST pedestal binary file'
                             ).tag(config=True)
 
-
     def __init__(self, **kwargs):
         """
         The R0 calibrator for LST data.
