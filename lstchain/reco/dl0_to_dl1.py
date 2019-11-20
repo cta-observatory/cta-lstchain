@@ -201,11 +201,10 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
-
+    event = next(iter(source))
+    write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
     if is_simu:
-        event = next(iter(source))
-        write_array_info(event, output_filename)
         write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters, metadata=metadata)
         subarray = event.inst.subarray
 
