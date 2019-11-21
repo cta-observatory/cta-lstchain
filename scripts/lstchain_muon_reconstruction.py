@@ -181,6 +181,7 @@ class MuonDisplayerTool(Tool):
         if self.outfile:
             t.write(self.outfile)
 
+
 if __name__ == '__main__':
     tool = MuonDisplayerTool()
     tool.run()

@@ -140,7 +140,6 @@ def check_job_logs(job_logs_dir):
                        "\n Are you sure you want to continue?".format(logs_with_error), default="no")
 
 
-
 def check_prod_id(path1, path2):
     """
     Check if prod_id of path1 == prod_id of path2

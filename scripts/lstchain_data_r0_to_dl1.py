@@ -23,12 +23,23 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
+parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
+                    dest='pedestal_path',
+                    help='Path to a pedestal file',
+                    default=None
+                    )
+
+parser.add_argument('--calibration_path', '-calib', action='store', type=str,
+                    dest='calibration_path',
+                    help='Path to a calibration file',
+                    default=None
+                    )
+
 
 args = parser.parse_args()
 
 
-def main():
-
+if __name__ == '__main__':
     os.makedirs(args.outdir, exist_ok=True)
     
     dl0_to_dl1.allowed_tels = {1, 2, 3, 4}
@@ -37,12 +48,14 @@ def main():
     config = {}
     if args.config_file is not None:
         try:
-            config = read_configuration_file(os.path.abspath(args.config_file))
+            config = read_configuration_file(args.config_file)
         except("Custom configuration could not be loaded !!!"):
             pass
 
-    dl0_to_dl1.r0_to_dl1(args.infile, output_filename=output_filename, custom_config=config)
+    dl0_to_dl1.r0_to_dl1(args.infile,
+                         output_filename=output_filename,
+                         custom_config=config,
+                         pedestal_path=args.pedestal_path,
+                         calibration_path=args.calibration_path,
+                         )
 
-
-if __name__ == '__main__':
-    main()

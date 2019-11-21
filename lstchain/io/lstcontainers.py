@@ -48,6 +48,8 @@ class DL1ParametersContainer(Container):
     intercept = Field(None, 'Intercept')
     leakage = Field(None, 'Leakage')
     n_islands = Field(None, 'Number of Islands')
+    alt_tel = Field(None, 'Telescope altitude pointing', unit=u.rad)
+    az_tel = Field(None, 'Telescope azimuth pointing', unit=u.rad)
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
@@ -61,8 +63,8 @@ class DL1ParametersContainer(Container):
     mc_core_y = Field(None, 'Simulated impact point y position', unit=u.m)
     mc_h_first_int = Field(None, 'Simulated first interaction height', unit=u.m)
     mc_type = Field(None, 'Simulated particle type')
-    mc_az_tel = Field(None, 'Telescope altitude pointing', unit=u.rad)
-    mc_alt_tel = Field(None, 'Telescope azimuth pointing', unit=u.rad)
+    mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
+    mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
     mc_x_max = Field(None, "MC Xmax value", unit=u.g / (u.cm ** 2))
     mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
     mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
