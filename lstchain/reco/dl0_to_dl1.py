@@ -305,10 +305,10 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     # one started to work around mid Nov 2019, so previous runs take 
                     # timing information from the TIB NTP counters.
                     # This will be deprecated and modified back to the commented line
-                    # whenever gps_time is dumped to gps_time field.
-                    
+                    # whenever GPS time is dumped to gps_time field.
+ 
                     ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
-                    
+ 
                     if ucts_timestamp != 0:
                         ns = 1e-9  # Convert nanosecs to secs
                         utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * ns))
@@ -316,7 +316,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         start_ntp = event.lst.tel[telescope_id].svc.date
                         ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
                         utc_time = Time(datetime.utcfromtimestamp(ntp_time))
-                    
+
                     gps_time = utc_time.gps
                     dl1_container.gps_time = gps_time
 
