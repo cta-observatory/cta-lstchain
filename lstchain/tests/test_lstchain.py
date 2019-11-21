@@ -13,9 +13,9 @@ os.makedirs(test_dir, exist_ok=True)
 mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
 dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
 dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
-file_model_energy = os.path.join(test_dir, 'rf_energy.pkl')
-file_model_disp = os.path.join(test_dir, 'rf_disp.pkl')
-file_model_gh_sep = os.path.join(test_dir, 'rf_gh_sep.pkl')
+file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
+file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
+file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
 
 custom_config = {
     "events_filters": {
