@@ -297,10 +297,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
                     dl1_container.gps_time = event.trig.gps_time.value
 
-                    foclen = (
-                        event.inst.subarray.tel[telescope_id]
-                        .optics.equivalent_focal_length
-                    )
+                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
