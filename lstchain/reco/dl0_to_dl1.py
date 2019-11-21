@@ -308,8 +308,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
  
                         if ucts_timestamp != 0:
-                            ns = 1e-9  # Convert nanosecs to secs
-                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * ns))
+                            # UCTS timestamps are nanoseconds in UNIX timestamp format  
+                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * u.ns))
                         else:
                             start_ntp = event.lst.tel[telescope_id].svc.date
                             ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
@@ -319,9 +319,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.gps_time = gps_time
 
                         if pointing_file_path:
-                            pointing_file = pointing_file_path
                             pointings = PointingPosition()
-                            pointings.drive_path = pointing_file
+                            pointings.drive_path = pointing_file_path
                             azimuth, altitude = pointings.cal_pointingposition(utc_time.unix)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
