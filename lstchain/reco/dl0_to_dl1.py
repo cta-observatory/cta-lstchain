@@ -327,10 +327,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                             dl1_container.az_tel = azimuth
                             dl1_container.alt_tel = altitude
 
-                    foclen = (
-                        event.inst.subarray.tel[telescope_id]
-                        .optics.equivalent_focal_length
-                    )
+                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
