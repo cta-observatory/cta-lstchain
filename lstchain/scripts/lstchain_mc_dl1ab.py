@@ -27,9 +27,7 @@ parser = argparse.ArgumentParser(description="Recompute parameters in a DL1 HDF5
                                              "n_islands, intercept, time_gradient")
 
 # Required arguments
-parser.add_argument('input_file', type=str,
-                    help='path to the DL1 file ',
-                    )
+parser.add_argument('input_file', type=str, help='path to the DL1 file ')
 
 parser.add_argument('output_file', type=str, help='key for the table of new parameters')
 
@@ -47,8 +45,7 @@ parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(
 args = parser.parse_args()
 
 
-
-if __name__ == '__main__':
+def main():
     std_config = get_standard_config()
 
     if args.config_file is not None:
@@ -107,3 +104,7 @@ if __name__ == '__main__':
                         params[ii][p] = 0
 
             output.root[dl1_params_lstcam_key][:] = params
+
+
+if __name__ == '__main__':
+    main()

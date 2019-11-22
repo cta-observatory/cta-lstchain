@@ -45,7 +45,7 @@ parser.add_argument('--pointing_file_path', '-pointing', action='store', type=st
 args = parser.parse_args()
 
 
-if __name__ == '__main__':
+def main():
     os.makedirs(args.outdir, exist_ok=True)
 
     dl0_to_dl1.allowed_tels = {1, 2, 3, 4}
@@ -65,3 +65,7 @@ if __name__ == '__main__':
                          calibration_path=args.calibration_path,
                          pointing_file_path=args.pointing_file_path,
                          )
+
+
+if __name__ == '__main__':
+    main()
