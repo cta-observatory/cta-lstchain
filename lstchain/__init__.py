@@ -8,4 +8,5 @@ from . import image
 
 from .io import standard_config
 
-__version__ = 0.1
+from . import version
+__version__ = version.get_version(pep440=False)
