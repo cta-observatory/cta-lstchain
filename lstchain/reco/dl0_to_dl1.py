@@ -37,19 +37,20 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
+from astropy.time import Time
+from datetime import datetime
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
 from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..calib.camera.calib import combine_channels
-
+from ..pointing import PointingPosition
 
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
 ]
-
 
 
 cleaning_method = tailcuts_clean
@@ -97,7 +98,6 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
 
-
     if image[signal_pixels].sum() > 0:
 
         # check the number of islands 
@@ -138,6 +138,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
               custom_config={},
               pedestal_path=None,
               calibration_path=None,
+              pointing_file_path=None,
               ):
     """
     Chain r0 to dl1
@@ -150,6 +151,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     output_filename: str
         path to output file, default: `./` + basename(input_filename)
     config_file: path to a configuration file
+    pointing_file_path: path to the Drive log with the pointing information
 
     Returns
     -------
@@ -159,7 +161,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         output_filename = (
             'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
         )
-
 
     config = replace_config(standard_config, custom_config)
 
@@ -236,7 +237,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 transform=tel_list_transform
             )
 
-
         ### EVENT LOOP ###
         for i, event in enumerate(source):
             if i % 100 == 0:
@@ -256,7 +256,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
             if not is_simu:
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
-
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
@@ -295,7 +294,38 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trig.gps_time.value
+                    # dl1_container.gps_time = event.trig.gps_time.value
+
+                    # GPS time is not available for the time being in the above field.
+                    # In the mean time, it is taken from UCTS timestamp (in unix time)
+                    # or alternatively from the TIB pps and 10 MHz counters. The first
+                    # one started to work around mid Nov 2019, so previous runs take
+                    # timing information from the TIB NTP counters.
+                    # This will be deprecated and modified back to the commented line
+                    # whenever GPS time is dumped to gps_time field.
+
+                    if not is_simu:
+                        ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
+ 
+                        if ucts_timestamp != 0:
+                            # UCTS timestamps are nanoseconds in UNIX timestamp format  
+                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * u.ns))
+                        else:
+                            start_ntp = event.lst.tel[telescope_id].svc.date
+                            ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
+                            utc_time = Time(datetime.utcfromtimestamp(ntp_time))
+
+                        gps_time = utc_time.gps
+                        dl1_container.gps_time = gps_time
+
+                        if pointing_file_path:
+                            pointings = PointingPosition()
+                            pointings.drive_path = pointing_file_path
+                            azimuth, altitude = pointings.cal_pointingposition(utc_time.unix)
+                            event.pointing[telescope_id].azimuth = azimuth
+                            event.pointing[telescope_id].altitude = altitude
+                            dl1_container.az_tel = azimuth
+                            dl1_container.alt_tel = altitude
 
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
@@ -332,12 +362,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
             add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
 
-
     # Write energy histogram from simtel file and extra metadata
     if is_simu:
         write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
-
-
 
 
 def get_spectral_w_pars(filename):
@@ -388,6 +415,7 @@ def get_spectral_w_pars(filename):
 
     return E0,spectral_index,index_w,R,N_
 
+
 def get_spectral_w(w_pars, energy):
     """
     Return spectral weight of an event
@@ -411,7 +439,6 @@ def get_spectral_w(w_pars, energy):
     w = ((energy/E0)**(index_w-index))*R/N_
 
     return w
-
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
@@ -456,4 +483,3 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
         add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
-
