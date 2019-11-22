@@ -12,11 +12,12 @@ def find_scripts(script_dir, prefix):
     point_list = []
     for f in script_list:
         point_list.append(f"{f} = {script_dir}.{f}:main")
+    print(point_list)
     return point_list
 
-lstchain_list = find_scripts('scripts','lstchain_')
-onsite_list = find_scripts('scripts/onsite','onsite_')
-tools_list = find_scripts('lstchain/tools','lstchain_')
+lstchain_list = find_scripts('lstchain/scripts','lstchain_')
+onsite_list = find_scripts('lstchain/scripts/onsite', 'onsite_')
+tools_list = find_scripts('lstchain/tools', 'lstchain_')
 
 entry_points = {}
 entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
@@ -37,5 +38,4 @@ setuptools.setup(name='lstchain',
                  long_description='',
                  classifiers=[],
                  entry_points=entry_points
-
                  )
