@@ -54,13 +54,13 @@ def main():
         output_dir = f"{base_dir}/calibration/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
-            os.makedirs(dir, exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
 
         # make log dir
         log_dir = f"{output_dir}/log"
         if not os.path.exists(log_dir):
             print(f"--> Create directory {log_dir}")
-            os.makedirs(dir, exist_ok=True)
+            os.makedirs(log_dir, exist_ok=True)
 
         # define output file
         output_file = f"{output_dir}/drs4_pedestal.Run{run}.0000.fits"
