@@ -308,8 +308,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
  
                         if ucts_timestamp != 0:
-                            # UCTS timestamps are nanoseconds in UNIX timestamp format  
-                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp * u.ns))
+                            # UCTS timestamps are nanoseconds in UNIX timestamp format and must be given in seconds
+                            utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp / 1e9))
                         else:
                             start_ntp = event.lst.tel[telescope_id].svc.date
                             ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
