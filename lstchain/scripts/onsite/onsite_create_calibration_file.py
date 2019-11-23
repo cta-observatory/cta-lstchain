@@ -82,7 +82,7 @@ def main():
         print(f"\n--> Log file {log_file}")
 
         # define config file
-        config_file = os.path.join(os.path.dirname(__file__), "../../lstchain/data/onsite_camera_calibration_param.json")
+        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
             print(f">>> Config file {config_file} do not exists. \n Exit ")
             exit(1)
@@ -107,7 +107,6 @@ def main():
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-
 
 
 if __name__ == '__main__':
