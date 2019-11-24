@@ -10,7 +10,7 @@
      "log_level":"DEBUG"
    },         
   "PedestalCalculator":{
-      "sample_duration":100000,
+      "sample_duration":10000,
       "tel_id":1,
      "charge_median_cut_outliers": [-10,10],
      "charge_std_cut_outliers": [-10,10],
