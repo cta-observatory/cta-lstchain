@@ -294,27 +294,18 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    # dl1_container.gps_time = event.trig.gps_time.value
-
-                    # GPS time is not available for the time being in the above field.
-                    # In the mean time, it is taken from UCTS timestamp (in unix time)
-                    # or alternatively from the TIB pps and 10 MHz counters. The first
-                    # one started to work around mid Nov 2019, so previous runs take
-                    # timing information from the TIB NTP counters. For the time being
-                    # we will stick with the TIB time since UCTS does not seem to be trustable.
-                    # This will be deprecated and modified back to the commented line
-                    # whenever GPS time is dumped to gps_time field.
+                    dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # ucts_timestamp = event.lst.tel[telescope_id].evt.ucts_timestamp
- 
-                        # if ucts_timestamp != 0:
-                        #     # UCTS timestamps are nanoseconds in UNIX timestamp format and must be given in seconds
-                        #     utc_time = Time(datetime.utcfromtimestamp(ucts_timestamp / 1e9))
-                        # else:
-                        start_ntp = event.lst.tel[telescope_id].svc.date
-                        ntp_time = start_ntp + event.r0.tel[telescope_id].trigger_time
-                        utc_time = Time(datetime.utcfromtimestamp(ntp_time))
+                        # For real data, GPS time is not available for the time being.
+                        # In the mean time, it is taken from TIB pps and 10 MHz counters
+                        # since UCTS timestamps do not seem to be trustable. This will be
+                        # deprecated and modified back to directly use gps_time whenever
+                        # the GPS starts working.
+
+                        # TAI time in s taken from TIB
+                        tai_time = event.r0.tel[telescope_id].trigger_time
+                        utc_time = Time(datetime.utcfromtimestamp(tai_time))
 
                         gps_time = utc_time.gps
                         dl1_container.gps_time = gps_time
