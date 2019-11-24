@@ -9,49 +9,37 @@ $> python lst-recopipe arg1 arg2 ...
 
 """
 
-from lstchain.reco import dl0_to_dl1
 from lstchain.reco import dl1_to_dl2
 from sklearn.externals import joblib
-from ctapipe.utils import get_dataset_path
 import argparse
 import os
 import shutil
-import pandas as pd 
-from distutils.util import strtobool
+import pandas as pd
 from lstchain.reco.utils import filter_events
 from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
+
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
 # Required arguments
 parser.add_argument('--datafile', '-f', type=str,
                     dest='datafile',
-                    help='path to the file with simtelarray events',
-                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+                    help='path to a DL1 HDF5 file',
+                    )
 
 parser.add_argument('--pathmodels', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
                      default='./trained_models')
 
-parser.add_argument('--storeresults', '-s', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='storeresults',
-                    help='Boolean. True for storing the reco dl2 events'
-                    'Default=True, use False otherwise',
-                    default=True)
-
 # Optional argument
 parser.add_argument('--outdir', '-o', action='store', type=str,
                      dest='outdir',
                      help='Path where to store the reco dl2 events',
-                     default='./dl2_results')
+                     default='./dl2_data')
 
-parser.add_argument('--maxevents', '-x', action='store', type=int,
-                     dest='max_events',
-                     help='Maximum number of events to analyze',
-                     default=None)
 
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
@@ -61,26 +49,21 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
+
+def main():
 
     custom_config = {}
     if args.config_file is not None:
         try:
-            custom_config = read_configuration_file(args.config_file)
+            custom_config = read_configuration_file(os.path.abspath(args.config_file))
         except("Custom configuration could not be loaded !!!"):
             pass
 
     config = replace_config(standard_config, custom_config)
 
-    #Get the data from the Simtelarray file:
-    
-    dl0_to_dl1.max_events = args.max_events
-    dl0_to_dl1.allowed_tels={1}
-    dl0_to_dl1.r0_to_dl1(args.datafile)
-    dl1_file = 'dl1_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
-
-    data = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
     data = filter_events(data, filters=config["events_filters"])
+
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -95,10 +78,12 @@ if __name__ == '__main__':
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
-    if args.storeresults==True:
-        os.makedirs(args.outdir, exist_ok=True)
-        outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile).split('.')[0] + '.h5'
+    os.makedirs(args.outdir, exist_ok=True)
+    outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
 
-        shutil.move(dl1_file, outfile)
-        write_dl2_dataframe(dl2, outfile)
+    shutil.copyfile(args.datafile, outfile)
+    write_dl2_dataframe(dl2.astype(float), outfile)
 
+
+if __name__ == '__main__':
+    main()

@@ -44,7 +44,7 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
+def main():
     #Train the models
         
     config = {}
@@ -60,4 +60,7 @@ if __name__ == '__main__':
                             path_models=args.path_models,
                             custom_config=config,
                             )
-    
+
+
+if __name__ == '__main__':
+    main()

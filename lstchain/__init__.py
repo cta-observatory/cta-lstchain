@@ -4,7 +4,9 @@ from . import visualization
 from . import calib
 from . import mc
 from . import spectra
+from . import image
 
 from .io import standard_config
 
-__version__ = 0.1
+from . import version
+__version__ = version.get_version(pep440=False)

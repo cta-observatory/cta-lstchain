@@ -3,6 +3,24 @@
 # import sys
 import setuptools
 import lstchain
+import os
+
+
+def find_scripts(script_dir, prefix):
+    script_list = [f'{os.path.splitext(f)[0]}' for f in os.listdir(script_dir) if f.startswith(prefix)]
+    script_dir = script_dir.replace('/', '.')
+    point_list = []
+    for f in script_list:
+        point_list.append(f"{f} = {script_dir}.{f}:main")
+    print(point_list)
+    return point_list
+
+lstchain_list = find_scripts('lstchain/scripts','lstchain_')
+onsite_list = find_scripts('lstchain/scripts/onsite', 'onsite_')
+tools_list = find_scripts('lstchain/tools', 'lstchain_')
+
+entry_points = {}
+entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
 
 setuptools.setup(name='lstchain',
                  version=lstchain.__version__,
@@ -19,4 +37,5 @@ setuptools.setup(name='lstchain',
                  url='https://github.com/cta-observatory/cta-lstchain',
                  long_description='',
                  classifiers=[],
+                 entry_points=entry_points
                  )
