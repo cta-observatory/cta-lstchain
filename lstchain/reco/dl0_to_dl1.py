@@ -300,7 +300,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     # In the mean time, it is taken from UCTS timestamp (in unix time)
                     # or alternatively from the TIB pps and 10 MHz counters. The first
                     # one started to work around mid Nov 2019, so previous runs take
-                    # timing information from the TIB NTP counters.
+                    # timing information from the TIB NTP counters. For the time being
+                    # we will stick with the TIB time since UCTS does not seem to be trustable.
                     # This will be deprecated and modified back to the commented line
                     # whenever GPS time is dumped to gps_time field.
 
