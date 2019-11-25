@@ -89,13 +89,13 @@ def main():
 
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[image > 10.])))
-        if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
+        #if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
+        #    continue
+        if not tag_pix_thr(image): #default skipps pedestal and calibration events
             continue
-        #if not tag_pix_thr(image): #default skipps pedestal and calibration events
-        #    continue
 
-        #if not muon_filter(image): #default values apply no filtering
-        #    continue
+        if not muon_filter(image): #default values apply no filtering
+            continue
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
             analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
