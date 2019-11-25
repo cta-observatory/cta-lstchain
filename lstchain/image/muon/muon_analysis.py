@@ -36,8 +36,6 @@ def get_muon_center(geom, equivalent_focal_length):
     x, y:    `floats` coordinates in  the NominalFrame
     """
 
-    print("equivalent_focal_length", equivalent_focal_length)
-
     x, y = geom.pix_x, geom.pix_y
 
     telescope_pointing = SkyCoord(
