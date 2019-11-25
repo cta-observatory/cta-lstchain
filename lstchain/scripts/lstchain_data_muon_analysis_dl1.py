@@ -11,7 +11,7 @@ from ctapipe.instrument import CameraGeometry
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from astropy import units as u
 
-from lstchain.image.muon import analyze_muon_event
+from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 
 from astropy.table import Table
@@ -88,9 +88,14 @@ def main():
     for image, event_id in zip(images, parameters['event_id']):
 
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
-                                                                  np.size(image[0][image[0] > 10.])))
-        if((np.size(image[0][image[0]>10.]) > 300) or (np.size(image[0][image[0]>10.]) < 50)):
+                                                                  np.size(image[image > 10.])))
+        if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
             continue
+        #if not tag_pix_thr(image): #default skipps pedestal and calibration events
+        #    continue
+
+        #if not muon_filter(image): #default values apply no filtering
+        #    continue
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
             analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
