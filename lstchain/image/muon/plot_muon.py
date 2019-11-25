@@ -24,7 +24,7 @@ def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord,
     """
 
     disp0 = CameraDisplay(geom, ax=ax)
-    disp0.image = image[0]
+    disp0.image = image
     disp0.cmap = 'viridis'
     disp0.add_colorbar(ax=ax)
     disp0.add_ellipse(centroid, ringrad_camcoord.value,
