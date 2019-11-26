@@ -52,7 +52,7 @@ class PointingPosition(Component):
         else:
             raise Exception("No drive report file found")
 
-    def cal_pointingposition(self, ev_time):
+    def cal_pointingposition(self, ev_time, drive_data):
         """
         Calculating pointing positions by interpolation
 
@@ -65,10 +65,9 @@ class PointingPosition(Component):
             a container filled with drive information
         """
         drive_container = LSTDriveContainer()
-        data = self._read_drive_report()
-        drive_container.time = data['time'].data
-        drive_container.azimuth_avg = data['azimuth_avg'].data
-        drive_container.altitude_avg = data['altitude_avg'].data
+        drive_container.time = drive_data['time'].data
+        drive_container.azimuth_avg = drive_data['azimuth_avg'].data
+        drive_container.altitude_avg = drive_data['altitude_avg'].data
 
         xp = drive_container.time
         lower_drive_time = xp[xp < ev_time].max()
