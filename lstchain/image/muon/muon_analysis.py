@@ -36,8 +36,6 @@ def get_muon_center(geom, equivalent_focal_length):
     x, y:    `floats` coordinates in  the NominalFrame
     """
 
-    print("equivalent_focal_length", equivalent_focal_length)
-
     x, y = geom.pix_x, geom.pix_y
 
     telescope_pointing = SkyCoord(
@@ -136,13 +134,13 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     min_pix = 148  # 8%
 
     x, y = get_muon_center(geom, equivalent_focal_length)
-    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image[0], geom, tailcuts)
+    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom, tailcuts)
 
     mirror_radius = np.sqrt(mirror_area / np.pi)
     dist_mask = np.abs(dist - muonringparam.ring_radius
                     ) < muonringparam.ring_radius * 0.4
-    pix_ring = image[0] * dist_mask
-    pix_out_ring = image[0] * ~dist_mask
+    pix_ring = image * dist_mask
+    pix_out_ring = image * ~dist_mask
 
     nom_dist = np.sqrt(np.power(muonringparam.ring_center_x,2) 
                     + np.power(muonringparam.ring_center_y, 2))
@@ -164,7 +162,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
                                     muonringparam.ring_center_y,
                                     muonringparam.ring_radius,
                                     x[dist_mask], y[dist_mask],
-                                    image[0][dist_mask])
+                                    image[dist_mask])
     muonintensityoutput.mask = dist_mask
     idx_ring = np.nonzero(pix_ring)
     muonintensityoutput.ring_completeness = ring_completeness(
@@ -178,7 +176,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     size_outside_ring = np.sum(pix_out_ring * clean_mask)
     dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius
                                              ) < (muonintensityoutput.ring_width)
-    pix_ringwidth_im = image[0] * dist_ringwidth_mask
+    pix_ringwidth_im = image * dist_ringwidth_mask
     idx_ringwidth = np.nonzero(pix_ringwidth_im)
 
     muonintensityoutput.ring_pix_completeness = npix_above_threshold(
@@ -256,7 +254,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
     return muonintensityparam, size_outside_ring, muonringparam, good_ring
 
-def muon_filter(image,thr_low=0,thr_up=1.e10):
+def muon_filter(image, thr_low = 0, thr_up = 1.e10):
     """
     Tag muon with a double threshold on the image photoelectron size 
     Default values apply no tagging
@@ -274,7 +272,7 @@ def muon_filter(image,thr_low=0,thr_up=1.e10):
     """
     return image.sum() > thr_low and image.sum() < thr_up
 
-def tag_pix_thr(image,thr_low=50,thr_up=300,pe_thr=10):
+def tag_pix_thr(image, thr_low = 50, thr_up = 500, pe_thr = 10):
     """
     Tag event with a double threshold on the number of pixels above 10 photoelectrons 
     Default values apply elimination of pedestal and calibration events
@@ -292,4 +290,4 @@ def tag_pix_thr(image,thr_low=50,thr_up=300,pe_thr=10):
 
     """
 
-    return ((np.size(image[0][image[0]>pe_thr]) < thr_up) and (np.size(image[0][image[0]>pe_thr]) > thr_low))
+    return ((np.size(image[image > pe_thr]) < thr_up) and (np.size(image[image > pe_thr]) > thr_low))
