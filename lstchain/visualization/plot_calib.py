@@ -216,9 +216,10 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         select = np.logical_not(mask[chan])
         median = int(np.median(n_pe[select]))
         rms = np.std(n_pe[select])
-
+        mymin= median - 4*rms
+        mymax= median + 4*rms
         label = f"{channel[chan]} Median {median:3.2f}, std {rms:5.2f}"
-        plt.hist(n_pe[select], label=label, histtype='step', range=(50, 110), bins=50, stacked=True, alpha=0.5,
+        plt.hist(n_pe[select], label=label, histtype='step', range=(mymin, mymax), bins=50, stacked=True, alpha=0.5,
                  fill=True)
         plt.legend()
     plt.xlabel(f'pe', fontsize=20)
