@@ -199,6 +199,12 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     dl1_container = DL1ParametersContainer()
 
+    if pointing_file_path:
+        # Open drive report
+        pointings = PointingPosition()
+        pointings.drive_path = pointing_file_path
+        drive_data = pointings._read_drive_report()
+
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
@@ -311,9 +317,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.gps_time = gps_time
 
                         if pointing_file_path:
-                            pointings = PointingPosition()
-                            pointings.drive_path = pointing_file_path
-                            azimuth, altitude = pointings.cal_pointingposition(utc_time.unix)
+                            azimuth, altitude = pointings.cal_pointingposition(utc_time.unix, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
