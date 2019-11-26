@@ -150,6 +150,10 @@ def main():
         integration, pulse_time = integrator(pedcorrectedsamples)
         image = (integration - ped_median)*dc_to_pe
 
+        # WARNING!!!
+        # The current analysis is not performed using gain selection
+        # image[0] is the extracted image from low gain.
+
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[0][image[0] > 10.])))
         
