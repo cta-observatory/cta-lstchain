@@ -150,20 +150,24 @@ def main():
         integration, pulse_time = integrator(pedcorrectedsamples)
         image = (integration - ped_median)*dc_to_pe
 
+        # WARNING!!!
+        # The current analysis is not performed using gain selection
+        # image[0] is the extracted image from low gain.
+
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[0][image[0] > 10.])))
         
-        if not tag_pix_thr(image): #default skipps pedestal and calibration events
+        if not tag_pix_thr(image[0]): #default skipps pedestal and calibration events
             continue
 
-        if not muon_filter(image): #default values apply no filtering
+        if not muon_filter(image[0]): #default values apply no filtering
             continue
         
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
         mirror_area = telescope_description.optics.mirror_area.to("m2")
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
-            analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
+            analyze_muon_event(event_id, image[0], geom, equivalent_focal_length, 
                                mirror_area, args.plot_rings, args.plots_path)
         #if not (good_ring):
         #    continue
