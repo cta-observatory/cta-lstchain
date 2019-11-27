@@ -1,12 +1,12 @@
-import numpy as np
 import h5py
-
-from ctapipe.core import Component
-from ctapipe.core.traits import Int, Unicode
+import numpy as np
 
 from numba import jit, njit, prange
 
+from ctapipe.core import Component
+from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import LocalPeakWindowSum
+
 
 __all__ = ['TimeCorrection']
 
@@ -24,12 +24,26 @@ class TimeCorrectionCalculate(Component):
         file with coefficients for time correction curve
         of chip DRS4.
     """
+
+    minimum_charge = Float(200,
+                           help='Cut on charge. Default 200 ADC'
+                          ).tag(config=True)
+
+    r1_sample_start = Int(default_value=2,
+                          help='Start sample for r1 waveform',
+                          allow_none=True).tag(config=True)
+
+
+    r1_sample_end = Int(default_value=38,
+                        help='End sample for r1 waveform',
+                        allow_none=True).tag(config=True)
+
     tel_id = Int(1,
                  help='Id of the telescope to calibrate'
                  ).tag(config=True)
 
     n_combine = Int(8,
-                    help='How many capacitors are combines in a single point. Default 8'
+                    help='How many capacitors are combines in a single bin. Default 8'
                     ).tag(config=True)
 
     n_harmonics = Int(16,
@@ -40,16 +54,15 @@ class TimeCorrectionCalculate(Component):
                        help='Number of capacitors (1024 or 4096). Default 1024.'
                        ).tag(config=True)
 
-    window_width = Int(
-        default_value=7,
-        help='Define the width of the integration window'
-        ).tag(config=True)
+    window_width = Int(default_value=7,
+                       help='Define the width of the integration window'
+                      ).tag(config=True)
 
     window_shift = Int(
-        default_value=3,
-        help='Define the shift of the integration window'
-             'from the peak_index (peak_index - shift)'
-        ).tag(config=True)
+                      default_value=3,
+                      help='Define the shift of the integration window'
+                      'from the peak_index (peak_index - shift)'
+                      ).tag(config=True)
 
     calib_file_path = Unicode('',
                               allow_none=True,
@@ -69,13 +82,19 @@ class TimeCorrectionCalculate(Component):
 
         self.sum_events = 0
 
-    def call_calib_pulse_time_jit(self, ev):
-        if ev.r0.tel[self.tel_id].trigger_type == 1:
+    def calibrate_pulse_time(self, event):
+        """
+        Fill bins using time pulse from LocalPeakWindowSum.
+        Parameters
+        ----------
+        event : `ctapipe` event-container
+        """
+        if event.r0.tel[self.tel_id].trigger_type == 1:
             for nr_module in prange(0, n_modules):
-                self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(ev, nr_module)
+                self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 
-            pixel_ids = ev.lst.tel[self.tel_id].svc.pixel_ids
-            charge, pulse_time = self.extractor(ev.r1.tel[self.tel_id].waveform[:, :, 2:38])
+            pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
+            charge, pulse_time = self.extractor(event.r1.tel[self.tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end])
             self.calib_pulse_time_jit(charge,
                                       pulse_time,
                                       pixel_ids,
@@ -83,7 +102,8 @@ class TimeCorrectionCalculate(Component):
                                       self.mean_values_per_bin,
                                       self.entries_per_bin,
                                       n_cap=self.n_capacitors,
-                                      n_combine=self.n_combine)
+                                      n_combine=self.n_combine,
+                                      min_charge=self.minimum_charge)
             self.sum_events += 1
 
     @jit(parallel=True)
@@ -95,16 +115,45 @@ class TimeCorrectionCalculate(Component):
                              mean_values_per_bin,
                              entries_per_bin,
                              n_cap,
-                             n_combine):
+                             n_combine,
+                             min_charge):
         """
-        Numba function for calib pulse
+        Numba function for calibration pulse time.
+
+        Parameters
+        ----------
+        pulse : ndarray
+            Pulse time stored in a numpy array of shape
+            (n_gain, n_pixels).
+        charge : ndarray
+            Charge in each pixel.
+            (n_gain, n_pixels).
+        pixel_ids: ndarray
+            Array stored expected pixel id
+            (n_pixels).
+        first_cap_array : ndarray
+            Value of first capacitor stored in a numpy array of shape
+            (n_clus, n_gain, n_pix).
+        mean_values_per_bin : ndarray
+            Array to fill using pulse time
+            stored in a numpy array of shape
+            (n_gain, n_pixels, n_bins).
+        entries_per_bin : ndarray
+            Array to store number of entries per bin
+            stored in a numpy array of shape
+            (n_gain, n_pixels, n_bins).
+        n_cap : int
+            Number of capacitors
+        n_combine : int
+            Number of combine capacitors in a single bin
+
         """
 
         for nr_module in prange(0, n_modules):
             for gain in prange(0, n_gain):
                 for pix in prange(0, n_channel):
                     pixel = pixel_ids[nr_module * 7 + pix]
-                    if charge[gain, pixel] > 200: # cut change
+                    if charge[gain, pixel] > min_charge: # cut change
                         fc = first_cap_array[nr_module, :, :]
                         first_cap = (fc[gain, pix]) % n_cap
                         bin = int(first_cap / n_combine)
@@ -120,6 +169,16 @@ class TimeCorrectionCalculate(Component):
             self.save_to_h5_file()
 
     def fit(self, pixel_id, gain):
+        """
+            Fit data bins using Fourier series expansion
+            Parameters
+            ----------
+            pixel_id : ndarray
+            Array stored expected pixel id of shape
+            (n_pixels).
+            gain: int
+            0 for high gain, 1 for low gain
+        """
         self.pos = np.zeros(self.n_bins)
         for i in range(0, self.n_bins):
             self.pos[i] = ( i +0.5 ) *self.n_combine
@@ -131,7 +190,25 @@ class TimeCorrectionCalculate(Component):
             self.integrate_with_trig(self.pos, self.mean_values_per_bin[gain, pixel_id], n, self.fan, self.fbn)
 
     def integrate_with_trig(self, x, y, n, an, bn):
-        # Function to expanding into Fourier series
+        """
+            Function to expanding into Fourier series
+            Parameters
+            ----------
+            x : ndarray
+            Array stored position in DRS4 ring of shape
+            (n_bins).
+            y: ndarray
+            Array stored mean pulse time per bin of shape
+            (n_bins)
+            n : int
+            n harmonic
+            an: ndarray
+            Array to fill with cos coeff of shape
+            (n_harmonics)
+            bn: ndarray
+            Array to fill with sin coeff of shape
+            (n_harmonics)
+        """
         suma = 0
         sumb = 0
 
@@ -153,6 +230,9 @@ class TimeCorrectionCalculate(Component):
         return fc
 
     def save_to_h5_file(self):
+        """
+            Function to save Fourier series expansion coeff into h5py file
+        """
         fan_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
         fbn_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
         for pix_id in range(0, n_pixels):
