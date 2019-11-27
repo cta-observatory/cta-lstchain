@@ -5,18 +5,26 @@ from numba import njit, prange
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Unicode
 
+high_gain = 0
+low_gain = 1
+
+n_gain = 2
+n_channel = 7
+n_modules = 265
+n_pixels = 1855
 
 class PulseTimeCorrection(Component):
-    high_gain = 0
-    low_gain = 1
-
-    n_gain = 2
-    n_modules = 265
-    n_pixels = 1855
-
+    """
+        The PulseTimeCorrection class to correct time pulse
+        using Fourier series expansion.
+    """
     tel_id = Int(1,
                  help='id of the telescope to calibrate'
                  ).tag(config=True)
+
+    n_capacitors = Int(1024,
+                       help='number of capacitors (1024 or 4096)'
+                       ).tag(config=True)
 
     calib_file_path = Unicode('',
                             allow_none=True,
@@ -26,11 +34,11 @@ class PulseTimeCorrection(Component):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.n_harm = None
-        self.fan_array = None
-        self.fbn_array = None
+        self.n_harmonics = None
+        self.fan_array = None # array to store cos coeff for Fourier series expansion
+        self.fbn_array = None # array to store sin coeff for Fourier series expansion
 
-        self.first_cap_array = np.zeros((self.n_modules, self.n_gain, 7))
+        self.first_cap_array = np.zeros((n_modules, n_gain, n_channel))
 
         self.load_calib_file()
 
@@ -40,7 +48,7 @@ class PulseTimeCorrection(Component):
         """
         if self.calib_file_path:
             with h5py.File(self.calib_file_path, 'r') as hf:
-                self.n_harm = hf["/"].attrs['n_harm']
+                self.n_harmonics = hf["/"].attrs['n_harm']
                 fan = hf.get('fan')
                 self.fan_array = np.array(fan)
                 fbn = hf.get('fbn')
@@ -48,8 +56,7 @@ class PulseTimeCorrection(Component):
 
     def get_corr_pulse(self, event, pulse):
         """
-        Interpolate Spike A & B.
-        Change waveform array.
+        Return pulse time after time correction.
         Parameters
         ----------
         event : `ctapipe` event-container
@@ -59,8 +66,8 @@ class PulseTimeCorrection(Component):
             (2, 1855).
         """
         pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
-        pulse_corr = np.empty((self.n_gain, self.n_pixels))
-        for nr in prange(0, self.n_modules):
+        pulse_corr = np.empty((n_gain, n_pixels))
+        for nr in prange(0, n_modules):
             self.first_cap_array[nr, :, :] = self.get_first_capacitor(event, nr)
         self.get_corr_pulse_jit(pulse,
                                 pulse_corr,
@@ -68,42 +75,50 @@ class PulseTimeCorrection(Component):
                                 self.first_cap_array,
                                 self.fan_array,
                                 self.fbn_array,
-                                self.n_harm)
+                                self.n_harmonics,
+                                self.n_capacitors)
         return pulse_corr
 
     @staticmethod
     @njit(parallel=True)
-    def get_corr_pulse_jit(pulse, pulse_corr, pixel_ids, first_capacitor, fan_array, fbn_array, fNumHarmonics):
+    def get_corr_pulse_jit(pulse, pulse_corr, pixel_ids, first_capacitor, fan_array, fbn_array, n_harmonics, n_cap):
         """
-        Interpolate Spike A & B.
-        Change waveform array.
+        Numba function for pulse time correction.
         Parameters
         ----------
-        waveform : ndarray
-            Waveform stored in a numpy array of shape
-            (n_gain, n_pix, n_samples).
+        pulse : ndarray
+            Pulse time stored in a numpy array of shape
+            (n_gain, n_pixels).
+        pulse_corr : ndarray
+            Pulse correction time stored in a numpy array of shape
+            (n_gain, n_pixels).
         pixel_ids: ndarray
             Array stored expected pixel id
-            (n_pix*n_modules).
+            (n_pixels).
         first_capacitor : ndarray
             Value of first capacitor stored in a numpy array of shape
             (n_clus, n_gain, n_pix).
         fan_array : ndarray
-            Value of first capacitor from previous event
+            Array to store coeff for Fourier series expansion
             stored in a numpy array of shape
-            (n_clus, n_gain, n_pix).
-        n_modules : int
+            (n_gain, n_pixels, n_harmonics).
+        fbn_array : ndarray
+            Array to store coeff for Fourier series expansion
+            stored in a numpy array of shape
+            (n_gain, n_pixels, n_harmonics).
+        n_harmonics : int
             Number of harmonics
         """
-        for gain in prange(0, 2):
-            for nr in prange(0, 265):
-                for pix in prange(0, 7):
+        for gain in prange(0, n_gain):
+            for nr in prange(0, n_modules):
+                for pix in prange(0, n_channel):
                     fc = first_capacitor[nr, gain, pix]
                     pixel = pixel_ids[nr * 7 + pix]
-                    pulse_corr[gain, pixel] = pulse[gain, pixel] - get_corr_time_jit(fc % 1024,
+                    pulse_corr[gain, pixel] = pulse[gain, pixel] - get_corr_time_jit(fc % n_cap,
                                                                                      fan_array[gain, pixel],
                                                                                      fbn_array[gain, pixel],
-                                                                                     fNumHarmonics)
+                                                                                     n_harmonics,
+                                                                                     n_cap)
 
     def get_first_capacitor(self, event, nr):
         """
@@ -114,19 +129,19 @@ class PulseTimeCorrection(Component):
             nr_module : number of module
             tel_id : id of the telescope
         """
-        fc = np.zeros((2, 7))
+        fc = np.zeros((n_gain, n_channel))
         first_cap = event.lst.tel[self.tel_id].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
         # First capacitor order according Dragon v5 board data format
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
-            fc[self.high_gain, i] = first_cap[j]
+            fc[high_gain, i] = first_cap[j]
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [4, 4, 5, 5, 6, 6, 7]):
-            fc[self.low_gain, i] = first_cap[j]
+            fc[low_gain, i] = first_cap[j]
         return fc
 
 @njit()
-def get_corr_time_jit(first_cap, fan, fbn, fNumHarmonics, fNumCap=1024):
+def get_corr_time_jit(first_cap, fan, fbn, n_harmonics, n_cap):
     time = fan[0] / 2.
-    for n in prange(1, fNumHarmonics):
-        time += fan[n] * np.cos((first_cap * n * 2 * np.pi) / fNumCap)
-        time += fbn[n] * np.sin((first_cap * n * 2 * np.pi) / fNumCap)
+    for n in prange(1, n_harmonics):
+        time += fan[n] * np.cos((first_cap * n * 2 * np.pi) / n_cap)
+        time += fbn[n] * np.sin((first_cap * n * 2 * np.pi) / n_cap)
     return time
