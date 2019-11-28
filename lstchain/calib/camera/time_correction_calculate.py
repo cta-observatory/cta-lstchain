@@ -166,7 +166,7 @@ class TimeCorrectionCalculate(Component):
                                "Please use more events to time calibration file.")
         else:
             self.mean_values_per_bin = self.mean_values_per_bin / self.entries_per_bin
-            self.save_to_h5_file()
+            self.save_to_hdf5_file()
 
     def fit(self, pixel_id, gain):
         """
@@ -229,9 +229,9 @@ class TimeCorrectionCalculate(Component):
             fc[low_gain, i] = first_cap[j]
         return fc
 
-    def save_to_h5_file(self):
+    def save_to_hdf5_file(self):
         """
-            Function to save Fourier series expansion coeff into h5py file
+            Function to save Fourier series expansion coeff into hdf5 file
         """
         fan_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
         fbn_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
