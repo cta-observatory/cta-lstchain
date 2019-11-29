@@ -66,8 +66,9 @@ class PulseTimeCorrection(Component):
             (2, 1855).
         """
         pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
+        n_modules_from_event = event.lst.tel[self.tel_id].svc.num_modules
         pulse_corr = np.empty((n_gain, n_pixels))
-        for nr in prange(0, n_modules):
+        for nr in prange(0, n_modules_from_event):
             self.first_cap_array[nr, :, :] = self.get_first_capacitor(event, nr)
         self.get_corr_pulse_jit(pulse,
                                 pulse_corr,

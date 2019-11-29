@@ -23,20 +23,14 @@ class TimeCorrectionCalculate(Component):
         The TimeCorrectionCalculate class to create h5py
         file with coefficients for time correction curve
         of chip DRS4.
+        Description of this method: "Analysis techniques
+        and performance of the Domino Ring Sampler version 4
+        based readout for the MAGIC telescopes [arxiv:1305.1007]
     """
 
     minimum_charge = Float(200,
                            help='Cut on charge. Default 200 ADC'
                           ).tag(config=True)
-
-    r1_sample_start = Int(default_value=2,
-                          help='Start sample for r1 waveform',
-                          allow_none=True).tag(config=True)
-
-
-    r1_sample_end = Int(default_value=38,
-                        help='End sample for r1 waveform',
-                        allow_none=True).tag(config=True)
 
     tel_id = Int(1,
                  help='Id of the telescope to calibrate'
@@ -89,12 +83,12 @@ class TimeCorrectionCalculate(Component):
         ----------
         event : `ctapipe` event-container
         """
-        if event.r0.tel[self.tel_id].trigger_type == 1:
+        if event.r1.tel[self.tel_id].trigger_type == 1:
             for nr_module in prange(0, n_modules):
                 self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 
             pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
-            charge, pulse_time = self.extractor(event.r1.tel[self.tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end])
+            charge, pulse_time = self.extractor(event.r1.tel[self.tel_id].waveform)
             self.calib_pulse_time_jit(charge,
                                       pulse_time,
                                       pixel_ids,
