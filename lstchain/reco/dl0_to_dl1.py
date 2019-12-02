@@ -312,11 +312,27 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         # TAI time in s taken from TIB
                         tai_time = event.r0.tel[telescope_id].trigger_time
                         utc_time = Time(datetime.utcfromtimestamp(tai_time))
-
                         gps_time = utc_time.gps
-                        dl1_container.gps_time = gps_time
 
-                        if pointing_file_path:
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
+
+                        # Get counters of module 0
+                        dragon_time = (
+                                event.lst.tel[telescope_id].svc.date + 
+                                event.lst.tel[telescope_id].evt.pps_counter[0] + 
+                                event.lst.tel[telescope_id].evt.tenMHz_counter[0] * 10**(-7)) 
+
+                        tib_time = (
+                                event.lst.tel[telescope_id].svc.date + 
+                                event.lst.tel[telescope_id].evt.tib_pps_counter + 
+                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7)) 
+
+                        dl1_container.gps_time = gps_time
+                        dl1_container.tib_time = tib_time
+                        dl1_container.ucts_time = ucts_time
+                        dl1_container.dragon_time = dragon_time
+
+                        if pointing_file_path and tai_time > 0:
                             azimuth, altitude = pointings.cal_pointingposition(utc_time.unix, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
@@ -340,7 +356,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     writer.write(table_name=f'telescope/image/{tel_name}',
                                  containers=[event.r0, tel, extra_im])
                     writer.write(table_name=f'telescope/parameters/{tel_name}',
-                                 containers=[dl1_container])
+                            containers=[dl1_container])
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
