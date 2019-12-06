@@ -70,8 +70,8 @@ def main():
             exit(0)
 
         # define output and log file
-        output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
-        log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
+        output_file = f"{output_dir}/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.hdf5"
+        log_file = f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file):
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
@@ -99,7 +99,7 @@ def main():
         os.system(cmd)
 
         # plot and save some results
-        plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pdf"
+        plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
         calib.read_file(output_file)
         calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)

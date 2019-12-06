@@ -166,7 +166,6 @@ class PedestalIntegrator(PedestalCalculator):
         if self.num_events_seen == 0:
             raise ValueError("No pedestal events in statistics, zero results")
 
-
         container = event.mon.tel[self.tel_id].pedestal
 
         # mask the part of the array not filled
