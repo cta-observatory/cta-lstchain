@@ -39,6 +39,11 @@ class CalibrationHDF5Writer(Tool):
         help='Temporary cut on charge till the calibox TIB do not work'
     ).tag(config=True)
 
+    maximum_charge = Float(
+        300,
+        help='Temporary cut on charge till the calibox TIB do not work'
+    ).tag(config=True)
+
     one_event = Bool(
         False,
         help='Stop after first calibration event'
@@ -183,13 +188,19 @@ class CalibrationHDF5Writer(Tool):
                 self.r0calibrator.calibrate(event)
 
                 # if pedestal event
-                if event.r1.tel[self.tel_id].trigger_type == 32:
+                if event.r1.tel[self.tel_id].trigger_type == 32 or (
+                        np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+                        < self.minimum_charge):
 
                     new_ped = self.pedestal.calculate_pedestals(event)
 
-                # if flat-field event: no calibration  TIB for the moment, use a cut on the charge for ff events
-                elif event.r1.tel[self.tel_id].trigger_type == 4 or np.median(
-                        np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1)) > self.minimum_charge:
+                # if flat-field event: no calibration  TIB for the moment,
+                # use a cut on the charge for ff events
+                elif event.r1.tel[self.tel_id].trigger_type == 4 or (
+                        np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+                        > self.minimum_charge
+                        and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
+                        < self.maximum_charge):
 
                     new_ff = self.flatfield.calculate_relative_gain(event)
 

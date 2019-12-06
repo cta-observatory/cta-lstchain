@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe.io import event_source
 from lstchain.calib.camera.r0 import LSTR0Corrections
-from ctapipe.io.containers import PedestalContainer
 from ctapipe.instrument import  CameraGeometry
 
 
@@ -189,7 +188,6 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
             plt.plot([0, 40], [offset_value, offset_value], 'k--',  label="offset")
             plt.xlabel("time sample [ns]")
             plt.ylabel("counts [ADC]")
-
             plt.legend()
             plt.ylim([-50, 500])
 
