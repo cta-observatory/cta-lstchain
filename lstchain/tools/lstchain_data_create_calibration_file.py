@@ -34,9 +34,14 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-    minimum_charge = Float(
+    minimum_hg_charge_median = Float(
         800,
-        help='Temporary cut on charge till the calibox TIB do not work'
+        help='Temporary cut on HG charge till the calibox TIB do not work'
+    ).tag(config=True)
+
+    maximum_lg_charge_std = Float(
+        300,
+        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work'
     ).tag(config=True)
 
     one_event = Bool(
@@ -182,14 +187,21 @@ class CalibrationHDF5Writer(Tool):
                 # correct for low level calibration
                 self.r0calibrator.calibrate(event)
 
+                # reject event without trigger type
+                if event.r1.tel[self.tel_id].trigger_type == -1:
+                    continue
+
                 # if pedestal event
                 if event.r1.tel[self.tel_id].trigger_type == 32:
-
                     new_ped = self.pedestal.calculate_pedestals(event)
 
-                # if flat-field event: no calibration  TIB for the moment, use a cut on the charge for ff events
-                elif event.r1.tel[self.tel_id].trigger_type == 4 or np.median(
-                        np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1)) > self.minimum_charge:
+                # if flat-field event: no calibration  TIB for the moment,
+                # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
+                elif event.r1.tel[self.tel_id].trigger_type == 4 or (
+                        np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+                        > self.minimum_hg_charge_median
+                        and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
+                        < self.maximum_lg_charge_std):
 
                     new_ff = self.flatfield.calculate_relative_gain(event)
 
