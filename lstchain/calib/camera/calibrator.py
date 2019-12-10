@@ -1,10 +1,12 @@
 import numpy as np
+import os
 from ctapipe.core.traits import Unicode, List
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import *
 from ctapipe.image.extractor import *
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.io.containers import MonitoringContainer
+from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 __all__ = ['LSTCameraCalibrator']
 
@@ -28,6 +30,12 @@ class LSTCameraCalibrator(CameraCalibrator):
         '',
         allow_none=True,
         help='Path to LST calibration file'
+    ).tag(config=True)
+
+    time_calibration_path = Unicode(
+        '',
+        allow_none=True,
+        help='Path to drs4 time calibration file'
     ).tag(config=True)
 
     allowed_tels = List(
@@ -61,11 +69,19 @@ class LSTCameraCalibrator(CameraCalibrator):
             config=self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
+
         self.data_volume_reducer = DataVolumeReducer.from_name(
             self.reducer_product,
             config=self.config
         )
         self.log.info(f" {self.reducer_product}")
+
+        # declare time calibrator if correction file exist
+        if os.path.exists(self.time_calibration_path):
+            self.time_corrector = PulseTimeCorrection(calib_file_path=self.time_calibration_path)
+        else:
+            self.time_corrector = None
+            self.log.info(f"File {self.time_calibration_path} not found. No drs4 time corrections")
 
         # calibration data container
         self.mon_data = MonitoringContainer()
@@ -113,7 +129,6 @@ class LSTCameraCalibrator(CameraCalibrator):
                 (event.r1.tel[telid].waveform-self.mon_data.tel[telid].calibration.pedestal_per_sample[:,:,np.newaxis])
                 *self.mon_data.tel[telid].calibration.dc_to_pe[:,:,np.newaxis])
 
-
     def _calibrate_dl1(self, event, telid):
         """
         create calibrated dl1 image and calibrate it
@@ -130,7 +145,14 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         event.dl0.event_id = event.r1.event_id
         event.dl1.tel[telid].image = charge
-        event.dl1.tel[telid].pulse_time = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+
+        # correct time with drs4 corrections if available
+        if self.time_corrector:
+            pulse_corr_array = self.time_corrector.get_corr_pulse(event, pulse_time)
+            event.dl1.tel[telid].pulse_time = pulse_corr_array
+        # otherwise use the ff time correction (not drs4 corrected)
+        else:
+            event.dl1.tel[telid].pulse_time = pulse_time + self.mon_data.tel[telid].calibration.time_correction
 
 
 
