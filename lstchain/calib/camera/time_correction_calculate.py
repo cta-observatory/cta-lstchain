@@ -8,7 +8,7 @@ from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import LocalPeakWindowSum
 
 
-__all__ = ['TimeCorrection']
+__all__ = ['TimeCorrectionCalculate']
 
 high_gain = 0
 low_gain = 1
