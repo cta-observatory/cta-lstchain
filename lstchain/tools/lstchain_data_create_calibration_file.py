@@ -35,13 +35,13 @@ class CalibrationHDF5Writer(Tool):
     description = "Generate a HDF5 file with camera calibration coefficients"
 
     minimum_hg_charge_median = Float(
-        800,
-        help='Temporary cut on HG charge till the calibox TIB do not work'
+        5000,
+        help='Temporary cut on HG charge till the calibox TIB do not work (default for filter 5.2)'
     ).tag(config=True)
 
     maximum_lg_charge_std = Float(
         300,
-        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work'
+        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
     ).tag(config=True)
 
     one_event = Bool(
@@ -259,7 +259,9 @@ class CalibrationHDF5Writer(Tool):
                     calib_data.time_range = ff_data.sample_time_range
                     calib_data.n_pe = n_pe
                     calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)
-                    calib_data.time_correction = -ff_data.relative_time_median
+                    # put the time around zero
+                    camera_time_median = np.median(ff_data.time_median, axis=1)
+                    calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
 
                     ped_extractor_name = self.config.get("PedestalCalculator").get("charge_product")
                     ped_width=self.config.get(ped_extractor_name).get("window_width")
