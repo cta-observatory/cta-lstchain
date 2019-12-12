@@ -61,6 +61,23 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
+parser.add_argument('--source_dependent', '-srcdep', action='store', type=str,
+                    dest='src_dependent',
+                    help='Boolean. True for source-dependent analysis. Default=False',
+                    default=False
+                    )
+
+parser.add_argument('--expected_src_pos_x', '-srcposx', action='store', type=str,
+                    dest='expected_src_pos_x',
+                    help='Expected source position_x(deg) for source-dependent analysis. Default=0.4',
+                    default=0.4
+                    )
+
+parser.add_argument('--expected_src_pos_y', '-srcposy', action='store', type=str,
+                    dest='expected_src_pos_y',
+                    help='Expected source position_y(deg) for source-dependent analysis. Default=0.0',
+                    default=0.0
+                    )
 
 args = parser.parse_args()
 
@@ -75,6 +92,7 @@ def main():
             pass
 
     config = replace_config(standard_config, custom_config)
+    expected_src_pos = [float(args.expected_src_pos_x), float(args.expected_src_pos_y)]
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
@@ -82,6 +100,8 @@ def main():
         save_models=args.storerf,
         path_models=args.path_models,
         custom_config=config,
+        src_dependent=args.src_dependent,
+        expected_src_pos=expected_src_pos
     )
 
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
@@ -93,7 +113,8 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config, \
+                                  src_dependent=args.src_dependent, expected_src_pos=expected_src_pos)
 
     ####PLOT SOME RESULTS#####
 
