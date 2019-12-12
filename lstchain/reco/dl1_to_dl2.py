@@ -249,6 +249,8 @@ def build_models(filegammas, fileprotons,
                  energy_min=-1,
                  custom_config={},
                  test_size=0.2,
+                 src_dependent=False,
+                 expected_src_pos=[0.4, 0.0],
                  ):
     """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
@@ -302,6 +304,24 @@ def build_models(filegammas, fileprotons,
     df_gamma = utils.filter_events(df_gamma, filters=events_filters)
     df_proton = utils.filter_events(df_proton, filters=events_filters)
 
+    #Set source-dependent paramters
+    if src_dependent:
+        print("source-dependent analysis is activated (source position = {}deg)".format(expected_src_pos))
+        
+        focal_length = 28 * u.m
+        expected_src_pos = focal_length.value * np.tan(np.deg2rad(expected_src_pos))
+
+        df_gamma['dist'] = np.sqrt((df_gamma['x'] - expected_src_pos[0])**2 + (df_gamma['y'] - expected_src_pos[1])**2)
+        df_gamma['time_gradient'] = df_gamma['time_gradient'] * np.sign(df_gamma['x'] - expected_src_pos[0])
+        df_gamma['skewness'] = df_gamma['skewness'] * np.sign(df_gamma['x'] - expected_src_pos[0])
+
+        df_proton['dist'] = np.sqrt((df_proton['x'] - expected_src_pos[0])**2 + (df_proton['y'] - expected_src_pos[1])**2)
+        df_proton['time_gradient'] = df_proton['time_gradient'] * np.sign(df_proton['x'] - expected_src_pos[0])
+        df_proton['skewness'] = df_proton['skewness'] * np.sign(df_proton['x'] - expected_src_pos[0])
+        
+        config['regression_features'].append('dist')
+        config['classification_features'].append('dist')
+
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
@@ -347,7 +367,7 @@ def build_models(filegammas, fileprotons,
     return reg_energy, reg_disp_vector, cls_gh
 
 
-def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}):
+def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}, src_dependent=False, expected_src_pos=[0.4, 0.0]):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -373,6 +393,21 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     classification_features = config["classification_features"]
 
     dl2 = dl1.copy()
+
+    #Set source-dependent paramters
+    if src_dependent:
+        print("source-dependent analysis is activated (source position = {}deg)".format(expected_src_pos))
+
+        focal_length = 28 * u.m
+        expected_src_pos = focal_length.value * np.tan(np.deg2rad(expected_src_pos))
+
+        dl2['dist'] = np.sqrt((dl2['x'] - expected_src_pos[0])**2 + (dl2['y'] - expected_src_pos[1])**2)
+        dl2['time_gradient'] = dl2['time_gradient'] * np.sign(dl2['x'] - expected_src_pos[0])
+        dl2['skewness'] = dl2['skewness'] * np.sign(dl2['x'] - expected_src_pos[0])
+
+        regression_features.append('dist')
+        classification_features.append('dist')   
+
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
     dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
