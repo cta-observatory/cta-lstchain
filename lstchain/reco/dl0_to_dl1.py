@@ -37,8 +37,6 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
-from astropy.time import Time
-from datetime import datetime
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -303,21 +301,38 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # For real data, GPS time is not available for the time being.
-                        # In the mean time, it is taken from TIB pps and 10 MHz counters
-                        # since UCTS timestamps do not seem to be trustable. This will be
-                        # deprecated and modified back to directly use gps_time whenever
-                        # the GPS starts working.
+                        # GPS time is not available for the time being. Meanwhile,
+                        # timestamps can be extracted from the UCTS and alternatively
+                        # calculated from the TIB/Dragon modules counters + NTP time
+                        # corresponding to the start of the run. For the time being,
+                        # we will store the three of them in the dl1 files.
+                        # This will be deprecated and modified back to directly use
+                        # gps_time whenever the GPS starts working reliably.
 
-                        # TAI time in s taken from TIB
-                        tai_time = event.r0.tel[telescope_id].trigger_time
-                        utc_time = Time(datetime.utcfromtimestamp(tai_time))
+                        # gps_time = event.r0.tel[telescope_id].trigger_time
 
-                        gps_time = utc_time.gps
-                        dl1_container.gps_time = gps_time
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
 
-                        if pointing_file_path:
-                            azimuth, altitude = pointings.cal_pointingposition(utc_time.unix, drive_data)
+                        # Get counters from the central Dragon module
+                        module_id = 82
+
+                        dragon_time = (
+                                event.lst.tel[telescope_id].svc.date +
+                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+
+                        tib_time = (
+                                event.lst.tel[telescope_id].svc.date +
+                                event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+
+                        #dl1_container.gps_time = gps_time
+                        dl1_container.tib_time = tib_time
+                        dl1_container.ucts_time = ucts_time
+                        dl1_container.dragon_time = dragon_time
+
+                        if pointing_file_path and dragon_time > 0:
+                            azimuth, altitude = pointings.cal_pointingposition(dragon_time, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
