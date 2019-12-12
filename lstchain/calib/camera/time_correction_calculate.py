@@ -241,7 +241,7 @@ class TimeCorrectionCalculate(Component):
             fbn_array[low_gain, pix_id, :] = self.fbn
 
         try:
-            hf = h5py.File(self.calib_file_path, 'a')
+            hf = h5py.File(self.calib_file_path, 'w')
             hf.create_dataset('fan', data=fan_array)
             hf.create_dataset('fbn', data=fbn_array)
             hf.attrs['n_events'] = self.sum_events
