@@ -1,11 +1,12 @@
 import numpy as np
 import os
-from ctapipe.core.traits import Unicode, List
+from ctapipe.core.traits import Unicode, List, Int
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import *
 from ctapipe.image.extractor import *
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.io.containers import MonitoringContainer
+from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 __all__ = ['LSTCameraCalibrator']
@@ -43,6 +44,12 @@ class LSTCameraCalibrator(CameraCalibrator):
         help='List of telescope to be calibrated'
     ).tag(config=True)
 
+    gain_threshold = Int(
+        None,
+        allow_none=True,
+        help='Threshold for the gain selection in ADC'
+    ).tag(config=True)
+
     def __init__(self, **kwargs):
         """
         Parameters
@@ -75,6 +82,10 @@ class LSTCameraCalibrator(CameraCalibrator):
             config=self.config
         )
         self.log.info(f" {self.reducer_product}")
+
+        # declare gain selector if the threshold is define
+        if self.gain_threshold:
+            self.gain_selector = gainselection.ThresholdGainSelector(threshold=self.gain_threshold)
 
         # declare time calibrator if correction file exist
         if os.path.exists(self.time_calibration_path):
@@ -143,16 +154,25 @@ class LSTCameraCalibrator(CameraCalibrator):
             self.image_extractor.neighbors = camera.neighbor_matrix_where
         charge, pulse_time = self.image_extractor(waveforms)
 
-        event.dl0.event_id = event.r1.event_id
-        event.dl1.tel[telid].image = charge
-
-        # correct time with drs4 corrections if available
+        # correct time with drs4 correction if available
         if self.time_corrector:
             pulse_corr_array = self.time_corrector.get_corr_pulse(event, pulse_time)
-            event.dl1.tel[telid].pulse_time = pulse_corr_array
+
         # otherwise use the ff time correction (not drs4 corrected)
         else:
-            event.dl1.tel[telid].pulse_time = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+            pulse_corr_array = pulse_time + self.mon_data.tel[telid].calibration.time_correction
 
+        # perform the gain selection if the threshold is defined
+        if self.gain_threshold:
+            waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
+            event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
+            event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
+            # remember the mask in the pixel_status array (this info  is missing for the moment in the
+            # r1 cantainer)
+            event.lst.tel[telid].evt.pixel_status = gain_mask
+
+        else:
+            event.dl1.tel[telid].image = charge
+            event.dl1.tel[telid].pulse_time = pulse_corr_array
 
 
