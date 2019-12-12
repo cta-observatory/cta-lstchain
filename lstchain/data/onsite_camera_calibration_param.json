@@ -30,6 +30,10 @@
        "tel_id":1,
       "r1_sample_end": 38
    },
+     "TimeCorrectionCalculate": {
+       "tel_id":1,
+       "charge_product":"LocalPeakWindowSum"
+   },
     "LocalPeakWindowSum":{
      "window_shift": 5,
      "window_width":12
