@@ -104,6 +104,10 @@ def main():
         expected_src_pos=expected_src_pos
     )
 
+    if args.src_dependent:
+        config['regression_features'].pop()
+        config['classification_features'].pop()
+
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            config["events_filters"],
                            )
