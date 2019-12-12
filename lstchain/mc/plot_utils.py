@@ -13,12 +13,12 @@ __all__ = ['fill_bin_content',
            'plot_MAGIC_sensitivity',
            'plot_Crab_SED',
            'plot_sensitivity',
-           'sens_minimization_plot',
+           'sensitivity_minimization_plot',
            'sensitivity_plot_comparison',
            'plot_positions_survived_events',
-           ]
+]
 
-def fill_bin_content(ax, sens, energy_bin, gb, tb):
+def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta2):
     """
     Function to fill bin content to be plotted in the case of an
     optimized figure array
@@ -26,10 +26,10 @@ def fill_bin_content(ax, sens, energy_bin, gb, tb):
     Parameters
     --------
     ax:    `matplotlib.pyplot.axis`  
-    sens:  `numpy.ndarray`  sensitivity array
+    sensitivity:  `numpy.ndarray`  sensitivity array
     energy_bin:    `int`  energy bin number
-    gb:    `int`  number of bins in gammaness
-    tb:    `int`  number of bins in theta2
+    n_bins_gammaness:    `int`  number of bins in gammaness
+    n_bins_theta2:    `int`  number of bins in theta2
 
     Returns
     --------
@@ -37,22 +37,26 @@ def fill_bin_content(ax, sens, energy_bin, gb, tb):
 
     """
 
-    for i in range(0, gb):
-        for j in range(0, tb):
-            theta2 = 0.005 + 0.005 / 2 + ((0.05 - 0.005)/tb) * j
-            gammaness = 0.1/2+(1/gb) * i
-            text = ax.text(theta2, gammaness, "%.2f %%" % sens[energy_bin][i][j],
+    for i in range(0, n_bins_gammaness):
+        for j in range(0, n_bins_theta2):
+            # With theta2, we start the binning in 0.005 deg^2 and increase up to n_bins_theta2 steps
+            # up to reach 0.05 deg^2
+            theta2 = 0.005 + 0.005 / 2 + ((0.05 - 0.005) / n_bins_theta2) * j
+            # With gammaness, we start with 0.05 and increase up to n_bins_gammaness steps
+            # up to reaching 1
+            gammaness = 0.1 / 2 + (1 / n_bins_gammaness) * i
+            text = ax.text(theta2, gammaness, "%.2f %%" % sensitivity[energy_bin][i][j],
                            ha = "center", va = "center", color = "w", size = 8)
     return ax
 
-def format_axes_ebin(ax, pl):
+def format_axes_ebin(ax, img):
     """
     Format axes for the theta2 and gammaness optimization per energy bin
 
     Parameters
     --------
     ax:    `matplotlib.pyplot.axis`  
-    pl:    `matplotlib.pyplot.figure`  
+    img:    `matplotlib.image.AxesImage`  
 
     Returns
     --------
@@ -72,7 +76,7 @@ def format_axes_ebin(ax, pl):
 
     fig = ax.get_figure()
     #cbaxes = fig.add_axes([0.9, 0.125, 0.03, 0.755])
-    cbar = fig.colorbar(pl)#, cax=cbaxes)
+    cbar = fig.colorbar(img)#, cax=cbaxes)
     cbar.set_label('Sensitivity (% Crab)', fontsize = 15)
 
 def format_axes_array(ax, arr_i, arr_j, plot):
@@ -175,14 +179,14 @@ def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
 
     return ax
 
-def plot_sensitivity(ax, e, sensitivity):
+def plot_sensitivity(energy, sensitivity, ax = None):
     """
     Plot the achieved sensitivity
 
     Parameters
     --------
-    ax:    `matplotlib.pyplot.axis`  
-    e:           `numpy.ndarray`  energy array
+    ax:          `matplotlib.pyplot.axis`  
+    energy:      `astropy.units.quantity.Quantity`  energy array
     sensitivity: `numpy.ndarray`  sensitivity array (bins of energy)
 
     Returns
@@ -190,10 +194,11 @@ def plot_sensitivity(ax, e, sensitivity):
     ax:    `matplotlib.pyplot.axis`  
 
     """
+    ax = plt.gca() if ax is None else ax
 
     mask = sensitivity < 1e100
-    egeom = np.sqrt(e[1:] * e[:-1])
-    binsize = (e[1:] - e[:-1]) / 2
+    egeom = np.sqrt(energy[1:] * energy[:-1])
+    binsize = (energy[1:] - energy[:-1]) / 2
 
     dFdE = crab_hegra(egeom[mask])
 
@@ -204,7 +209,7 @@ def plot_sensitivity(ax, e, sensitivity):
                                                 * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
                 xerr=binsize[mask].to_value(), marker = 'o', color = 'C3', label = 'Sensitivity')
 
-def sens_minimization_plot(eb, gb, tb, e, sens):
+def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sens):
     """
     Plot the sensitivity minimization plots in different
     energy bins to check that the theta2 and gammaness
@@ -213,9 +218,9 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     TODO: Save plots!
     Parameters
     --------
-    eb:    `int`  number of bins in energy
-    gb:    `int`  number of bins in gammaness
-    tb:    `int`  number of bins in theta2
+    n_bins_energy:    `int`  number of bins in energy
+    n_bins_gammaness:    `int`  number of bins in gammaness
+    n_bins_theta2:    `int`  number of bins in theta2
     e:  `numpy.ndarray`  sensitivity array
     sens: `numpy.ndarray`  sensitivity array (bins of energy, gammaness and theta2)
 
@@ -226,22 +231,22 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     """
 
     #TODO : To be changed!!!
-    # if (eb == 12):
+    # if (n_bins_energy == 12):
     #     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
     figarr, axarr = plt.subplots(5,4, sharex = True, sharey = True, figsize = (13.2,18))
 
     # The minimum sensitivity per energy bin
-    sensitivity = np.ndarray(shape = eb)
+    sensitivity = np.ndarray(shape = n_bins_energy)
 
-    for i in range(0, eb):
-        for j in range(0, gb):
-            for k in range(0, tb):
+    for i in range(0, n_bins_energy):
+        for j in range(0, n_bins_gammaness):
+            for k in range(0, n_bins_theta2):
                 conditions = (not np.isfinite(sens[i,j,k])) or (sens[i,j,k] <= 0)
                 if conditions:
                     sens[i,j,k] = 1
 
-    for ebin in range(0,eb):
+    for ebin in range(0,n_bins_energy):
         if (figarr):
             arr_i = int(ebin / 4)
             arr_j = ebin-int(ebin / 4) * 4
@@ -250,12 +255,12 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
                                                 vmax = sens.max()), aspect = 'auto')
 
         fig, ax = plt.subplots(figsize = (8, 8))
-        ax.set_title("Ebin: %.2f - %.2f %s" % (e[ebin].to_value(),
-                                               e[ebin+1].to_value(), e.unit.name))
-        pl = ax.imshow(sens[ebin], cmap='viridis', extent = [0.005, 0.05, 1., 0.], aspect = 'auto')
+        ax.set_title("Ebin: %.2f - %.2f %s" % (energy[ebin].to_value(),
+                                               energy[ebin+1].to_value(), energy.unit.name))
+        img = ax.imshow(sens[ebin], cmap='viridis', extent = [0.005, 0.05, 1., 0.], aspect = 'auto')
 
-        fill_bin_content(ax, sens, ebin, gb, tb)
-        format_axes_ebin(ax, pl)
+        fill_bin_content(ax, sens, ebin, n_bins_gammaness, n_bins_theta2)
+        format_axes_ebin(ax, img)
         fig.savefig("Ebin%d.png" % ebin)
         if (figarr):
             figarr.subplots_adjust(hspace = 0, wspace = 0)
@@ -264,15 +269,15 @@ def sens_minimization_plot(eb, gb, tb, e, sens):
     return figarr
 
 
-def sensitivity_plot_comparison(eb, e, sensitivity):
+def sensitivity_plot_comparison(n_bins_energy, energy, sensitivity):
     """
     Main sensitivity plot.
     We plot the sensitivity achieved, MAGIC sensitivity and Crab SEDs
 
     Parameters
     --------
-    eb:   `int`  number of bins in energy
-    e:    `numpy.ndarray`  sensitivity array
+    n_bins_energy:   `int`  number of bins in energy
+    energy:    `numpy.ndarray`  sensitivity array
     sens: `numpy.ndarray`  sensitivity array (bins of energy, gammaness and theta2)
 
     Returns
@@ -283,7 +288,7 @@ def sensitivity_plot_comparison(eb, e, sensitivity):
 
     # Final sensitivity plot
     fig_sens, ax = plt.subplots()
-    plot_sensitivity(ax, e, sensitivity)
+    plot_sensitivity(energy, sensitivity, ax)
 
     plot_Crab_SED(ax, 100, 10**1. * u.GeV, 10**5 * u.GeV, label = r'Crab')
     plot_Crab_SED(ax, 1, 10**1. * u.GeV, 10**5 * u.GeV, ls = 'dotted',label = '1% Crab')
@@ -298,7 +303,9 @@ def sensitivity_plot_comparison(eb, e, sensitivity):
 def plot_positions_survived_events(df_gammas,
                                    df_protons,
                                    gammaness_g, gammaness_p,
-                                   theta2_g, p_contained, sens, E, eb, g, t):
+                                   theta2_g, p_contained, sens, energy, 
+                                   n_bins_energy, gammaness_bins, theta2_bins, 
+                                   save_figure = False, ax=None):
     """
     Plot positions of surviving events after cuts
 
@@ -312,10 +319,10 @@ def plot_positions_survived_events(df_gammas,
     p_contained: `numpy.ndarray`  containment of proton events inside
                   the ring established in camera coordinates
     sens: `numpy.ndarray`  array with sensitivity values in energy bins
-    E: `numpy.ndarray`  energy edge bins (size eb+1)
-    eb: `int`  number of bins in energy
-    gammaness: `numpy.ndarray`  gammaness bins
-    theta2: `numpy.ndarray`  theta2 bins
+    energy: `numpy.ndarray`  energy edge bins (size n_bins_energy + 1)
+    n_bins_energy: `int`  number of bins in energy
+    gammaness_bins: `numpy.ndarray`  gammaness bins
+    theta2_bins: `numpy.ndarray`  theta2 bins
 
     Returns
     --------
@@ -324,20 +331,22 @@ def plot_positions_survived_events(df_gammas,
 
     e_reco_g = 10**df_gammas.mc_energy
     e_reco_p = 10**df_protons.mc_energy
-    for i in range(0,eb):
+    for i in range(0, n_bins_energy):
         fig, ax = plt.subplots()
-        print("Energy range [GeV]: ", E[i], E[i+1])
+        print("Energy range [GeV]: ", energy[i], energy[i+1])
         ind = np.unravel_index(np.nanargmin(sens[i], axis = None), sens[i].shape)
-        events_g = df_gammas[(e_reco_g < E[i+1]) & (e_reco_g > E[i]) \
-                      & (gammaness_g > gammaness[ind[0]]) & (theta2_g < theta2[ind[1]])]
+        events_g = df_gammas[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
+                      & (gammaness_g > gammaness_bins[ind[0]]) & (theta2_g < theta2_bins[ind[1]])]
 
-        events_p = df_protons[(e_reco_p < E[i+1]) & (e_reco_p > E[i]) \
-                      & (gammaness_p > gammaness[ind[0]]) & p_contained]
+        events_p = df_protons[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
+                      & (gammaness_p > gammaness_bins[ind[0]]) & p_contained]
         events_p.intensity.hist()
         ax.xlabel("Log(10) Intensity Protons")
         ax.savefig("intensity_prot%d" % i)
-        # ax.show()
+
         df = pd.concat([events_g, events_p], ignore_index = True)
         plot_pos(df, True)
-        fig.savefig("srcpos_bin%d" % i)
-        # ax.show()
+        
+        if (save_figure):
+            fig.savefig("srcpos_bin%d" % i)
+

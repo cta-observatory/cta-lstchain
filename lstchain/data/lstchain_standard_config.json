@@ -55,7 +55,7 @@
   },
 
   "regression_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -73,7 +73,7 @@
   ],
 
   "classification_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -88,7 +88,7 @@
     "intercept",
     "leakage",
     "n_islands",
-    "reco_energy",
+    "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
   ],
@@ -96,7 +96,7 @@
   "allowed_tels": [1, 2, 3, 4],
   "max_events": null,
   "custom_calibration": false,
-
+  "write_pe_image": false,
   "image_extractor": "NeighborPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
