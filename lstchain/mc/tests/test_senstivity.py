@@ -56,12 +56,12 @@ def test_calculate_sensitivity_lima():
 
 def test_bin_definition():
 
-    gb, tb = bin_definition(11,10)
-    gbin = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-    tbin = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
+    gammaness_bins, theta2_bins = bin_definition(11,10)
+    gammaness_bins_test = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    theta2_bins_test = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
             0.045, 0.05]
-    np.testing.assert_allclose(gb, gbin) 
-    np.testing.assert_allclose(tb.to_value(), tbin) 
+    np.testing.assert_allclose(gammaness_bins, gammaness_bins_test) 
+    np.testing.assert_allclose(theta2_bins.to_value(), theta2_bins_test) 
 
 def test_ring_containment():
 
