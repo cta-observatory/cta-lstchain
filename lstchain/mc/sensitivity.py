@@ -344,13 +344,6 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
 
     gamaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
 
-    # Number of simulated events per energy bin
-    # bins, n_sim_bin = power_law_integrated_distribution(emin_sens.to_value(),
-    #                                                    emax_sens.to_value(),
-    #                                                    mc_par_g['sim_ev'],
-    #                                                    mc_par_g['sp_idx'], n_bins_energy + 1)
-    #
-
     # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
     dFdEd0, proton_par = proton_bess(energy)
@@ -584,12 +577,6 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
     energy = np.logspace(np.log10(emin_sens.to_value()),
                 np.log10(emax_sens.to_value()), n_bins_energy + 1) * u.GeV
-
-    # Number of simulated events per energy bin
-    # bins, n_sim_bin = power_law_integrated_distribution(emin_sens.to_value(),
-    #                                                    emax_sens.to_value(),
-    #                                                    mc_par_g['sim_ev'],
-    #                                                    mc_par_g['sp_idx'], n_bins_energy + 1)
 
     # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
