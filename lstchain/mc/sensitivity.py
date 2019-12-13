@@ -250,13 +250,8 @@ def bin_definition(n_bins_gammaness, n_bins_theta2):
 
     gammaness_bins = np.linspace(0, max_gam, n_bins_gammaness)
     theta2_bins = np.linspace(min_th2, max_th2, n_bins_theta2)
-
-    ####TEST####
-    #g = np.full(n_bins_gammaness, 0.0)
-    #t = np.linspace(10*u.deg*u.deg, 10*u.deg*u.deg, n_bins_theta2)
-    ###########
     
-    return g, t
+    return gammaness_bins, theta2_bins
 
 def ring_containment(angdist2, ring_radius, ring_halfwidth):
     """
