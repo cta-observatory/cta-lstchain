@@ -354,8 +354,13 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                     writer.write(table_name=f'telescope/image/{tel_name}',
                                  containers=[event.r0, tel, extra_im])
-                    writer.write(table_name=f'telescope/parameters/{tel_name}',
-                                 containers=[dl1_container])
+
+                    if config['tailcut']['picture_thresh'] > 0 \
+                            and config['tailcut']['boundary_thresh'] > 0 \
+                            and config['tailcut']['min_number_picture_neighbors'] > 0 \
+                            and not config['tailcut']['keep_isolated_pixels']:
+                        writer.write(table_name=f'telescope/parameters/{tel_name}',
+                                     containers=[dl1_container])
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
