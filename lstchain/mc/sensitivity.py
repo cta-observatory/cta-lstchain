@@ -22,7 +22,7 @@ __all__ = ['read_sim_par',
            'bin_definition',
            'ring_containment',
            'find_best_cuts_sensitivity',
-           'sensivitity',
+           'sensitivity',
            ]
 
 def read_sim_par(dl1_file):
