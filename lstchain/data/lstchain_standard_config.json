@@ -72,6 +72,19 @@
     "n_islands"
   ],
 
+  "regression_features_source_dependent": [
+    "log_intensity",
+    "width",
+    "length",
+    "wl",
+    "skewness",
+    "kurtosis",
+    "time_gradient",
+    "leakage",
+    "n_islands",
+    "dist"
+  ],
+
   "classification_features": [
     "log_intensity",
     "width",
@@ -88,6 +101,23 @@
     "intercept",
     "leakage",
     "n_islands",
+    "log_reco_energy",
+    "reco_disp_dx",
+    "reco_disp_dy"
+  ],
+
+  "classification_features_source_dependent": [
+    "log_intensity",
+    "width",
+    "length",
+    "wl",
+    "skewness",
+    "kurtosis",
+    "time_gradient",
+    "intercept",
+    "leakage",
+    "n_islands",
+    "dist",
     "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
