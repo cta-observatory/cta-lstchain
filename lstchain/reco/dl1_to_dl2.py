@@ -32,7 +32,7 @@ __all__ = [
 
 
 
-def train_energy(train, custom_config={}):
+def train_energy(train, custom_config={}, src_dependent=False):
     """
     Train a Random Forest Regressor for the regression of the energy
     TODO: introduce the possibility to use another model
@@ -48,9 +48,13 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
+    model = RandomForestRegressor    
     regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
-    model = RandomForestRegressor
+    
+    if src_dependent:
+        features = config['regression_features_source_dependent']
+    else:
+        features = config['regression_features']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -64,7 +68,7 @@ def train_energy(train, custom_config={}):
     return reg
 
 
-def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy']):
+def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy'], src_dependent=False):
     """
     Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
@@ -81,9 +85,13 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
     model = RandomForestRegressor
+    regression_args = config['random_forest_regressor_args']
+
+    if src_dependent:
+        features = config['regression_features_source_dependent']
+    else:
+        features = config['regression_features']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -99,7 +107,7 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     return reg
 
 
-def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
+def train_disp_norm(train, custom_config={}, predict_feature='disp_norm', src_dependent=False):
     """
     Train a model for the regression of the disp_norm norm
 
@@ -114,9 +122,13 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
     model = RandomForestRegressor
+    regression_args = config['random_forest_regressor_args']
+
+    if src_dependent:
+        features = config['regression_features_source_dependent']
+    else:
+        features = config['regression_features']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -166,7 +178,7 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
 
 
-def train_reco(train, custom_config={}):
+def train_reco(train, custom_config={}, src_dependent=False):
     """
     Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
@@ -183,9 +195,13 @@ def train_reco(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
     model = RandomForestRegressor
+    regression_args = config['random_forest_regressor_args']
+
+    if src_dependent:
+        features = config['regression_features_source_dependent']
+    else:
+        features = config['regression_features']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -207,7 +223,7 @@ def train_reco(train, custom_config={}):
     return reg_energy, reg_disp
 
 
-def train_sep(train, custom_config={}):
+def train_sep(train, custom_config={}, src_dependent=False):
 
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
@@ -227,9 +243,14 @@ def train_sep(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
-    features = config["classification_features"]
     model = RandomForestClassifier
+    classification_args = config['random_forest_classifier_args']
+
+    if src_dependent:
+        features = config["classification_features_source_dependent"]
+    else:
+        features = config["classification_features"]
+
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -296,7 +317,6 @@ def build_models(filegammas, fileprotons,
 
     config = replace_config(standard_config, custom_config)
     events_filters = config["events_filters"]
-    regression_features = config["regression_features"]
 
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
@@ -319,23 +339,26 @@ def build_models(filegammas, fileprotons,
         df_proton['time_gradient'] = df_proton['time_gradient'] * np.sign(df_proton['x'] - expected_src_pos[0])
         df_proton['skewness'] = df_proton['skewness'] * np.sign(df_proton['x'] - expected_src_pos[0])
         
-        config['regression_features'].append('dist')
-        config['classification_features'].append('dist')
+
+    if src_dependent:
+        regression_features = config['regression_features_source_dependent']
+    else:
+        regression_features = config['regression_features']
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
-    reg_energy = train_energy(df_gamma, custom_config=config)
+    reg_energy = train_energy(df_gamma, custom_config=config, src_dependent=src_dependent)
 
-    reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+    reg_disp_vector = train_disp_vector(df_gamma, custom_config=config, src_dependent=src_dependent)
 
     #Train classifier for gamma/hadron separation.
 
     train, testg = train_test_split(df_gamma, test_size=test_size)
     test = testg.append(df_proton, ignore_index=True)
 
-    temp_reg_energy = train_energy(train, custom_config=config)
+    temp_reg_energy = train_energy(train, custom_config=config, src_dependent=src_dependent)
 
-    temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+    temp_reg_disp_vector = train_disp_vector(train, custom_config=config, src_dependent=src_dependent)
 
     #Apply the regressors to the test set
 
@@ -353,7 +376,7 @@ def build_models(filegammas, fileprotons,
 
     #Train the Classifier
 
-    cls_gh = train_sep(train, custom_config=config)
+    cls_gh = train_sep(train, custom_config=config, src_dependent=src_dependent)
 
     if save_models:
         os.makedirs(path_models, exist_ok=True)
@@ -389,8 +412,6 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={},
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
 
     dl2 = dl1.copy()
 
@@ -405,9 +426,13 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={},
         dl2['time_gradient'] = dl2['time_gradient'] * np.sign(dl2['x'] - expected_src_pos[0])
         dl2['skewness'] = dl2['skewness'] * np.sign(dl2['x'] - expected_src_pos[0])
 
-        regression_features.append('dist')
-        classification_features.append('dist')   
-
+    if src_dependent:
+        regression_features = config["regression_features_source_dependent"]
+        classification_features = config["classification_features_source_dependent"]
+    else:
+        regression_features = config["regression_features"]
+        classification_features = config["classification_features"]
+      
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
     dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
