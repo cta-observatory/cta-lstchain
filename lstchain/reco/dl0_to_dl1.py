@@ -56,7 +56,7 @@ cleaning_method = tailcuts_clean
 
 filters = tables.Filters(
     complevel=5,    # enable compression, with level 0=disabled, 9=max
-    complib='blosc:zstd',   #  compression using blosc
+    complib='blosc:zstd',   # compression using blosc
     fletcher32=True,    # attach a checksum to each chunk for error correction
     bitshuffle=False,   # for BLOSC, shuffle bits for better compression
 )
@@ -98,17 +98,17 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
     if image[signal_pixels].sum() > 0:
 
-        # check the number of islands 
+        # check the number of islands
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
 
         if use_main_island:
             n_pixels_on_island = np.zeros(num_islands+1)
 
             for iisland in range(1, num_islands+1):
-                n_pixels_on_island[iisland] = np.sum(island_labels==iisland)
-              
+                n_pixels_on_island[iisland] = np.sum(island_labels == iisland)
+
             max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels!=max_island_label] = False
+            signal_pixels[island_labels != max_island_label] = False
 
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
@@ -183,7 +183,10 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     if not is_simu:
         # TODO : add calibration config in config file, read it and pass it here
-        charge_config = Config({"LocalPeakWindowSum":{"window_shift": 5,"window_width":12}})
+        charge_config = Config({"LocalPeakWindowSum":
+                                {"window_shift": 5,
+                                 "window_width": 12}
+                                })
 
         r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path,
                                             r1_sample_start=2,  # numbers in config ?
@@ -311,7 +314,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                         # gps_time = event.r0.tel[telescope_id].trigger_time
 
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # nsecs
 
                         # Get counters from the central Dragon module
                         module_id = 82
@@ -357,8 +360,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                     if config['tailcut']['picture_thresh'] > 0 \
                             and config['tailcut']['boundary_thresh'] > 0 \
-                            and config['tailcut']['min_number_picture_neighbors'] > 0 \
-                            and not config['tailcut']['keep_isolated_pixels']:
+                            and config['tailcut']['min_number_picture_neighbors'] > 0:
                         writer.write(table_name=f'telescope/parameters/{tel_name}',
                                      containers=[dl1_container])
 
@@ -400,13 +402,13 @@ def get_spectral_w_pars(filename):
 
     source = SimTelFile(filename)
 
-    emin,emax = source.mc_run_headers[0]['E_range']*1e3 #GeV
+    emin, emax = source.mc_run_headers[0]['E_range']*1e3  # GeV
     spectral_index = source.mc_run_headers[0]['spectral_index']
     num_showers = source.mc_run_headers[0]['num_showers']
     num_use = source.mc_run_headers[0]['num_use']
     Simulated_Events = num_showers * num_use
-    Max_impact = source.mc_run_headers[0]['core_range'][1]*1e2 #cm
-    Area_sim = np.pi * math.pow(Max_impact,2)
+    Max_impact = source.mc_run_headers[0]['core_range'][1]*1e2  # cm
+    Area_sim = np.pi * math.pow(Max_impact, 2)
     cone = source.mc_run_headers[0]['viewcone'][1]
 
     cone = cone * np.pi/180
@@ -415,21 +417,21 @@ def get_spectral_w_pars(filename):
     else:
         Omega = 2*np.pi*(1-np.cos(cone))
 
-    if particle=='proton':
-        K_w = 9.6e-11 # GeV^-1 cm^-2 s^-1
+    if particle == 'proton':
+        K_w = 9.6e-11  # GeV^-1 cm^-2 s^-1
         index_w = -2.7
-        E0 = 1000. # GeV
-    if particle=='gamma':
-        K_w = 2.83e-11 # GeV^-1 cm^-2 s^-1
+        E0 = 1000.  # GeV
+    if particle == 'gamma':
+        K_w = 2.83e-11  # GeV^-1 cm^-2 s^-1
         index_w = -2.62
-        E0 = 1000. # GeV
+        E0 = 1000.  # GeV
 
     K = Simulated_Events*(1+spectral_index)/(emax**(1+spectral_index)-emin**(1+spectral_index))
     Int_e1_e2 = K*E0**spectral_index
     N_ = Int_e1_e2*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
     R = K_w*Area_sim*Omega*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
 
-    return E0,spectral_index,index_w,R,N_
+    return E0, spectral_index, index_w, R, N_
 
 
 def get_spectral_w(w_pars, energy):
@@ -459,7 +461,8 @@ def get_spectral_w(w_pars, energy):
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
     """
-    Reconstruct the disp parameters and source position from a DL1 parameters table and write the result in the file
+    Reconstruct the disp parameters and source position from a DL1 parameters
+    table and write the result in the file
 
     Parameters
     ----------
