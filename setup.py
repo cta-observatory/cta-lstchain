@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # import sys
-import setuptools
-import lstchain
+from setuptools import setup, find_packages
 import os
+from version import get_version, update_release_version
 
+update_release_version()
+version = get_version()
 
 def find_scripts(script_dir, prefix):
     script_list = [f'{os.path.splitext(f)[0]}' for f in os.listdir(script_dir) if f.startswith(prefix)]
@@ -23,9 +25,9 @@ entry_points = {}
 entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
 
 setuptools.setup(name='lstchain',
-                 version=lstchain.__version__,
+                 version=version,
                  description="DESCRIPTION",  # these should be minimum list of what is needed to run
-                 packages=setuptools.find_packages(),
+                 packages=find_packages(),
                  install_requires=['h5py',
                                    'seaborn'
                                    ],
