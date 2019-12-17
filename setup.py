@@ -24,20 +24,20 @@ tools_list = find_scripts('lstchain/tools', 'lstchain_')
 entry_points = {}
 entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
 
-setuptools.setup(name='lstchain',
-                 version=version,
-                 description="DESCRIPTION",  # these should be minimum list of what is needed to run
-                 packages=find_packages(),
-                 install_requires=['h5py',
-                                   'seaborn'
-                                   ],
-                 package_data={'lstchain': ['data/lstchain_standard_config.json']},
-                 tests_require=['pytest', 'pytest-ordering'],
-                 author='LST collaboration',
-                 author_email='',
-                 license='',
-                 url='https://github.com/cta-observatory/cta-lstchain',
-                 long_description='',
-                 classifiers=[],
-                 entry_points=entry_points
-                 )
+setup(name='lstchain',
+      version=version,
+      description="DESCRIPTION",  # these should be minimum list of what is needed to run
+      packages=find_packages(),
+      install_requires=['h5py',
+                        'seaborn'
+                        ],
+      package_data={'lstchain': ['data/lstchain_standard_config.json']},
+      tests_require=['pytest', 'pytest-ordering'],
+      author='LST collaboration',
+      author_email='',
+      license='',
+      url='https://github.com/cta-observatory/cta-lstchain',
+      long_description='',
+      classifiers=[],
+      entry_points=entry_points
+      )
