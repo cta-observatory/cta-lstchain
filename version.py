@@ -33,7 +33,7 @@ from os import path, name, devnull, environ, listdir
 __all__ = ("get_version",)
 
 CURRENT_DIRECTORY = path.dirname(path.abspath(__file__))
-VERSION_FILE = path.join(CURRENT_DIRECTORY, "_version_cache.py")
+VERSION_FILE = path.join(CURRENT_DIRECTORY, 'lstchain', "_version_cache.py")
 
 GIT_COMMAND = "git"
 
