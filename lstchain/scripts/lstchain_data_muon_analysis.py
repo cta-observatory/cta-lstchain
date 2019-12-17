@@ -51,10 +51,6 @@ parser.add_argument("--plot_rings", help = "Plot figures of the stored rings",
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
 
-parser.add_argument("--run_number", help = "Run number to analyze."
-                                         "Default = 442",
-                    type = int, default = 442)
-
 parser.add_argument("--tel_id", help = "telescope id"
                                          "Default = 1",
                     type = int, default = 1)
@@ -92,11 +88,11 @@ def main():
 
     tel_id = args.tel_id
 
-    # Calibration related quantities
+    # Low level calibration
     r0calib = LSTR0Corrections(
-        pedestal_path = args.pedestal_file,
-        r1_sample_start=2,r1_sample_end=38, tel_id=tel_id)
+        pedestal_path = args.pedestal_file, tel_id=tel_id)
 
+    # high level calibration and gain selection
     charge_config = Config({
         "LocalPeakWindowSum": {
             "window_shift": 4,
