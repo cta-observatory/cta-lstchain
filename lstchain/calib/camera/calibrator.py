@@ -45,7 +45,7 @@ class LSTCameraCalibrator(CameraCalibrator):
     ).tag(config=True)
 
     gain_threshold = Int(
-        None,
+        4094,
         allow_none=True,
         help='Threshold for the gain selection in ADC'
     ).tag(config=True)
@@ -164,13 +164,27 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # perform the gain selection if the threshold is defined
         if self.gain_threshold:
-            waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
+            waveforms, gain_mask = self.gain_selector(event.r0.tel[telid].waveform)
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
-            # remember the mask in the pixel_status array (this info  is missing for the moment in the
-            # r1 cantainer)
+
+            # remember the mask in the lst pixel_status array (this info is missing for the moment in the
+            # r1 container). I follow the prescription given in the document
+            # "R1 & DL0 Telescope Event Interfaces and Prototype Evaluation" of K. Kosack
+
+            # bit 2 = LG
+            gain_mask *= 4
+
+            # bit 3 = HG
+            gain_mask[np.where(gain_mask == 0)] = 8
+
+            # bit 1 = pixel broken pixel (coming from the EvB)
+            gain_mask += event.lst.tel[telid].evt.pixel_status >> 1 & 1
+
+            # update pixel status
             event.lst.tel[telid].evt.pixel_status = gain_mask
 
+        # if threshold == None
         else:
             event.dl1.tel[telid].image = charge
             event.dl1.tel[telid].pulse_time = pulse_corr_array
