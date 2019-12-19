@@ -33,7 +33,7 @@ def test_load_calibrator_from_config():
     config = get_standard_config()
     cal = load_calibrator_from_config(config)
 
-    assert isinstance(cal.image_extractor, NeighborPeakWindowSum)
+    #assert isinstance(cal.image_extractor, NeighborPeakWindowSum)
     assert isinstance(cal.gain_selector, ThresholdGainSelector)
     assert isinstance(cal, CameraCalibrator)
 
