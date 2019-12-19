@@ -83,7 +83,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         )
         self.log.info(f" {self.reducer_product}")
 
-        # declare gain selector if the threshold is define
+        # declare gain selector if the threshold is defined
         if self.gain_threshold:
             self.gain_selector = gainselection.ThresholdGainSelector(threshold=self.gain_threshold)
 
@@ -164,7 +164,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # perform the gain selection if the threshold is defined
         if self.gain_threshold:
-            waveforms, gain_mask = self.gain_selector(event.r0.tel[telid].waveform)
+            waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
 
