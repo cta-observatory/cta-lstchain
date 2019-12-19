@@ -37,11 +37,11 @@ class CameraR0Calibrator(Component):
     offset = Int(default_value=400,
                  help='Define the offset of the baseline').tag(config=True)
 
-    r1_sample_start = Int(default_value=None,
+    r1_sample_start = Int(default_value=2,
                           help='Start sample for r1 waveform',
                           allow_none=True).tag(config=True)
 
-    r1_sample_end = Int(default_value=None,
+    r1_sample_end = Int(default_value=38,
                         help='End sample for r1 waveform',
                         allow_none=True).tag(config=True)
 
