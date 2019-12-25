@@ -27,7 +27,7 @@ parser.add_argument('--protonfile', '-fp', type=str,
 parser.add_argument('--storerf', '-s', action='store', type=lambda x: bool(strtobool(x)),
                     dest='storerf',
                     help='Boolean. True for storing trained models in 3 files'
-                    'Deafult=True, use False otherwise',
+                    'Default=True, use False otherwise',
                     default=True)
 
 # Optional arguments
@@ -42,11 +42,10 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--source_dependent', '-srcdep', action='store', type=str,
+parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda x: bool(strtobool(x)),
                     dest='src_dependent',
-                    help='Boolean. True for source-dependent analysis. Default=False',
-                    default=False
-                    )
+                    help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
+                    default=False)
 
 parser.add_argument('--expected_src_pos_x', '-srcposx', action='store', type=str,
                     dest='expected_src_pos_x',
