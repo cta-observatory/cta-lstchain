@@ -341,8 +341,8 @@ def plot_positions_survived_events(df_gammas,
         events_p = df_protons[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
                       & (gammaness_p > gammaness_bins[ind[0]]) & p_contained]
         events_p.intensity.hist()
-        ax.xlabel("Log(10) Intensity Protons")
-        ax.savefig("intensity_prot%d" % i)
+        ax.set_xlabel("Log(10) Intensity Protons")
+        fig.savefig("intensity_prot%d" % i)
 
         df = pd.concat([events_g, events_p], ignore_index = True)
         plot_pos(df, True)
