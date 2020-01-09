@@ -6,7 +6,8 @@ __all__ = [
     'lst_calibration',
     'load_calibrator_from_config',
     'load_image_extractor_from_config',
-    'load_gain_selector_from_config'
+    'load_gain_selector_from_config',
+    'RealCalibrator',
 ]
 
 
@@ -17,6 +18,21 @@ from ctapipe.calib import CameraCalibrator
 from astropy.utils import deprecated
 from traitlets.config import Config
 from ...io.config import get_standard_config, replace_config
+
+
+
+class RealCalibrator:
+    """
+    Class to simplify the application of the real data calibration in a single call.
+    """
+    def __init__(self, r0_r1_calibrator, r1_dl1_calibrator):
+        self._r0_r1_calibrator = r0_r1_calibrator
+        self._r1_dl1_calibrator = r1_dl1_calibrator
+
+    def __call__(self, event):
+        self._r0_r1_calibrator.calibrate(event)
+        self._r1_dl1_calibrator(event)
+
 
 
 def load_gain_selector_from_config(custom_config):
