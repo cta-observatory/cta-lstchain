@@ -113,20 +113,20 @@ def main():
                                         10**(gammas_mc.reco_energy - 3),
                                         );
     
-    ctaplot.plot_angular_res_cta_requirements('north', color='black')
-    
+    ctaplot.plot_angular_res_cta_requirements('north', color='black')    
     plt.legend()
     plt.tight_layout()
     plt.show()
+
     plt.figure(figsize=(12, 8))
-    ctaplot.plot_energy_resolution(10**(gammas_mc.mc_energy - 3), 10**(gammas_mc.reco_energy - 3));
-    
+    ctaplot.plot_energy_resolution(gammas_mc.mc_energy , gammas_mc.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirements('north', color='black')
     
     plt.legend()
     plt.tight_layout()
     plt.show()
     
+    ctaplot.plot_energy_resolution(gammas_mc.mc_energy , gammas_mc.reco_energy)
     ctaplot.plot_energy_bias(10**(gammas_mc.mc_energy - 3), 10**(gammas_mc.reco_energy - 3))
     plt.show()
     
