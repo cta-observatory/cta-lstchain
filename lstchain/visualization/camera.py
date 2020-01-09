@@ -9,6 +9,7 @@ __all__ = [
     'overlay_disp_vector',
     'overlay_hillas_major_axis',
     'overlay_source',
+    'display_dl1_event',
 ]
 
 def display_dl1_event(event, tel_id=1, axes=None, **kwargs):
