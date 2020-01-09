@@ -95,7 +95,6 @@
 
   "allowed_tels": [1, 2, 3, 4],
   "max_events": null,
-  "custom_calibration": false,
   "write_pe_image": false,
   "image_extractor": "NeighborPeakWindowSum",
   "image_extractor_config": {},
