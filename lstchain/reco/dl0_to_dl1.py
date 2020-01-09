@@ -46,6 +46,7 @@ from ..calib.camera.calib import combine_channels
 from ..pointing import PointingPosition
 from ..calib import RealCalibrator
 
+
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
@@ -61,17 +62,6 @@ filters = tables.Filters(
     fletcher32=True,    # attach a checksum to each chunk for error correction
     bitshuffle=False,   # for BLOSC, shuffle bits for better compression
 )
-
-
-### steps ###
-# load config: load calibrator, definitions
-# r0 to DL1a
-# save DL1a
-# DL1a to DL1b
-# save DL1b
-# DL1 to DL2
-# save DL2
-
 
 
 
@@ -143,6 +133,22 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
 
     else:
         return None
+
+
+def dl1a_to_dl1b(image, pulse_time, camera_geometry, dl1_container):
+    """
+    Calibrated image and pulse_time to parameters.
+    Fills the dl1 container.
+
+    Parameters
+    ----------
+    image: `numpy.ndarray`
+    pulse_time: `numpy.ndarray`
+
+    """
+    # TODO
+    pass
+
 
 
 def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
