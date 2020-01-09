@@ -101,8 +101,8 @@ def main():
     plt.legend()
     plt.tight_layout()
     plt.show()
-    sns.distplot(gammas_mc.reco_energy, label='gammas');
-    sns.distplot(protons_mc.reco_energy, label='protons');
+    sns.distplot(gammas_mc.reco_energy.apply(np.log10), label='gammas');
+    sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons');
     plt.legend();
     plt.tight_layout()
     plt.show()
