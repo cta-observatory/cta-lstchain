@@ -44,13 +44,14 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..calib.camera.calib import combine_channels
 from ..pointing import PointingPosition
+from ..calib import RealCalibrator
 
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
 ]
 
-
+# TODO: load cleaning method from config
 cleaning_method = tailcuts_clean
 
 
@@ -60,6 +61,19 @@ filters = tables.Filters(
     fletcher32=True,    # attach a checksum to each chunk for error correction
     bitshuffle=False,   # for BLOSC, shuffle bits for better compression
 )
+
+
+### steps ###
+# load config: load calibrator, definitions
+# r0 to DL1a
+# save DL1a
+# DL1a to DL1b
+# save DL1b
+# DL1 to DL2
+# save DL2
+
+
+
 
 
 def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}, use_main_island=True):
@@ -162,8 +176,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     config = replace_config(standard_config, custom_config)
 
-    custom_calibration = config["custom_calibration"]
-
     try:
         source = event_source(input_filename, back_seekable=True)
     except:
@@ -194,6 +206,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                                                 config=charge_config,
                                                 allowed_tels=[1],
                                                 )
+        cal = RealCalibrator(r0_r1_calibrator, r1_dl1_calibrator)
+
 
     dl1_container = DL1ParametersContainer()
 
@@ -254,12 +268,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
 
-            if not custom_calibration and is_simu:
-                cal(event)
-
-            if not is_simu:
-                r0_r1_calibrator.calibrate(event)
-                r1_dl1_calibrator(event)
+            cal(event)
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
@@ -272,8 +281,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
                 tel_name = tel_name.replace('-002', '')
 
-                if custom_calibration:
-                    lst_calibration(event, telescope_id)
 
                 try:
                     dl1_filled = get_dl1(event, telescope_id,
