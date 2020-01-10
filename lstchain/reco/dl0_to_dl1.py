@@ -136,7 +136,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
               custom_config={},
               pedestal_path=None,
               calibration_path=None,
-              pointing_file_path=None,
+              time_calibration_path=None,
+              pointing_file_path=None
               ):
     """
     Chain r0 to dl1
@@ -183,15 +184,16 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     if not is_simu:
         # TODO : add calibration config in config file, read it and pass it here
-        charge_config = Config({"LocalPeakWindowSum":{"window_shift": 5,"window_width":12}})
 
         r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path,
-                                            r1_sample_start=2,  # numbers in config ?
-                                            r1_sample_end=38,
-                                            )
+                                            tel_id=1)
+
+        # all this will be cleaned up in a next PR related to the configuration files
         r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
+                                                time_calibration_path=time_calibration_path,
                                                 image_extractor=config['image_extractor'],
-                                                config=charge_config,
+                                                gain_threshold=Config(config).gain_selector_config['threshold'],
+                                                config=Config(config),
                                                 allowed_tels=[1],
                                                 )
 
@@ -207,6 +209,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     extra_im.prefix = ''  # get rid of the prefix
 
     event = next(iter(source))
+
+
+
     write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
     if is_simu:
@@ -261,16 +266,14 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
-            for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
-                if not is_simu:
-                    combine_channels(event, telescope_id, 4095)
+            for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
                 tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
-                tel_name = tel_name.replace('-002', '')
+                tel_name = tel_name.replace('-003', '')
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
