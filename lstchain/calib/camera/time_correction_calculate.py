@@ -5,10 +5,10 @@ from numba import jit, njit, prange
 
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Float, Unicode
-from ctapipe.image.extractor import LocalPeakWindowSum
+from ctapipe.image.extractor import ImageExtractor
 
 
-__all__ = ['TimeCorrection']
+__all__ = ['TimeCorrectionCalculate']
 
 high_gain = 0
 low_gain = 1
@@ -17,6 +17,7 @@ n_gain = 2
 n_channel = 7
 n_modules = 265
 n_pixels = 1855
+
 
 class TimeCorrectionCalculate(Component):
     """
@@ -48,15 +49,10 @@ class TimeCorrectionCalculate(Component):
                        help='Number of capacitors (1024 or 4096). Default 1024.'
                        ).tag(config=True)
 
-    window_width = Int(default_value=7,
-                       help='Define the width of the integration window'
-                      ).tag(config=True)
-
-    window_shift = Int(
-                      default_value=3,
-                      help='Define the shift of the integration window'
-                      'from the peak_index (peak_index - shift)'
-                      ).tag(config=True)
+    charge_product = Unicode(
+        'LocalPeakWindowSum',
+        help='Name of the charge extractor to be used'
+    ).tag(config=True)
 
     calib_file_path = Unicode('',
                               allow_none=True,
@@ -72,8 +68,14 @@ class TimeCorrectionCalculate(Component):
         self.entries_per_bin = np.zeros((n_gain, n_pixels, self.n_bins))
 
         self.first_cap_array = np.zeros((n_modules, n_gain, n_channel))
-        self.extractor = LocalPeakWindowSum(window_width=self.window_width, window_shift=self.window_shift)
 
+        # load the waveform charge extractor
+        self.extractor = ImageExtractor.from_name(
+            self.charge_product,
+            config=self.config
+        )
+
+        self.log.info(f"extractor {self.extractor}")
         self.sum_events = 0
 
     def calibrate_pulse_time(self, event):
@@ -244,6 +246,7 @@ class TimeCorrectionCalculate(Component):
             hf.create_dataset('fbn', data=fbn_array)
             hf.attrs['n_events'] = self.sum_events
             hf.attrs['n_harm'] = self.n_harmonics
+
         except Exception as err:
             print("FAILED!", err)
         hf.close()
