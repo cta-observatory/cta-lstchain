@@ -51,17 +51,6 @@ parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda
                     help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
                     default=False)
 
-parser.add_argument('--expected_src_pos_x', '-srcposx', action='store', type=str,
-                    dest='expected_src_pos_x',
-                    help='Expected source position_x(deg) for source-dependent analysis. Default=0.4',
-                    default=0.4
-                    )
-
-parser.add_argument('--expected_src_pos_y', '-srcposy', action='store', type=str,
-                    dest='expected_src_pos_y',
-                    help='Expected source position_y(deg) for source-dependent analysis. Default=0.0',
-                    default=0.0
-                    )
 
 args = parser.parse_args()
 
@@ -80,7 +69,7 @@ if __name__ == '__main__':
         cmd_dl1_to_dl2 = cmd_dl1_to_dl2 + f' -conf {args.config_file}'
 
     if args.src_dependent is True:
-        cmd_r0_to_dl1 = cmd_r0_to_dl1 + f' -srcdep {args.src_dependent} -srcposx {args.expected_src_pos_x} -srcposy {args.expected_src_pos_y}'
+        cmd_r0_to_dl1 = cmd_r0_to_dl1 + f' -srcdep {args.src_dependent} '
 
     os.system(cmd_r0_to_dl1)
     os.system(cmd_dl1_to_dl2)

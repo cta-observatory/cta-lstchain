@@ -21,7 +21,6 @@ from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
 
-
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
 # Required arguments
@@ -53,21 +52,7 @@ parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda
                     help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
                     default=False)
 
-parser.add_argument('--expected_src_pos_x', '-srcposx', action='store', type=str,
-                    dest='expected_src_pos_x',
-                    help='Expected source position_x(deg) for source-dependent analysis. Default=0.4',
-                    default=0.4
-                    )
-
-parser.add_argument('--expected_src_pos_y', '-srcposy', action='store', type=str,
-                    dest='expected_src_pos_y',
-                    help='Expected source position_y(deg) for source-dependent analysis. Default=0.0',
-                    default=0.0
-                    )
-
-
 args = parser.parse_args()
-
 
 def main():
 
@@ -80,11 +65,8 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    expected_src_pos = [float(args.expected_src_pos_x), float(args.expected_src_pos_y)]
-
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
     data = filter_events(data, filters=config["events_filters"])
-
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -98,7 +80,7 @@ def main():
     #Apply the models to the data
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config, \
-                                  src_dependent=args.src_dependent, expected_src_pos=expected_src_pos)
+                                  src_dependent=args.src_dependent)
 
     os.makedirs(args.outdir, exist_ok=True)
     outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)

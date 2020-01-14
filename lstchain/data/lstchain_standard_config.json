@@ -118,9 +118,7 @@
     "leakage",
     "n_islands",
     "dist",
-    "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
+    "log_reco_energy"
   ],
 
   "allowed_tels": [1, 2, 3, 4],

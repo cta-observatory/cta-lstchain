@@ -271,7 +271,6 @@ def build_models(filegammas, fileprotons,
                  custom_config={},
                  test_size=0.2,
                  src_dependent=False,
-                 expected_src_pos=[0.4, 0.0],
                  ):
     """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
@@ -326,19 +325,15 @@ def build_models(filegammas, fileprotons,
 
     #Set source-dependent paramters
     if src_dependent:
-        print("source-dependent analysis is activated (source position = {}deg)".format(expected_src_pos))
+        print("source-dependent analysis is activated")
         
-        focal_length = 28 * u.m
-        expected_src_pos = focal_length.value * np.tan(np.deg2rad(expected_src_pos))
-
-        df_gamma['dist'] = np.sqrt((df_gamma['x'] - expected_src_pos[0])**2 + (df_gamma['y'] - expected_src_pos[1])**2)
-        df_gamma['time_gradient'] = df_gamma['time_gradient'] * np.sign(df_gamma['x'] - expected_src_pos[0])
-        df_gamma['skewness'] = df_gamma['skewness'] * np.sign(df_gamma['x'] - expected_src_pos[0])
-
-        df_proton['dist'] = np.sqrt((df_proton['x'] - expected_src_pos[0])**2 + (df_proton['y'] - expected_src_pos[1])**2)
-        df_proton['time_gradient'] = df_proton['time_gradient'] * np.sign(df_proton['x'] - expected_src_pos[0])
-        df_proton['skewness'] = df_proton['skewness'] * np.sign(df_proton['x'] - expected_src_pos[0])
+        #For gamma data(MC), 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
+        df_gamma['dist'] = np.sqrt((df_gamma['x'] - df_gamma['src_x'])**2 + (df_gamma['y'] - df_gamma['src_y'])**2)
+        df_gamma['time_gradient'] = df_gamma['time_gradient'] * np.sign(df_gamma['x'] - df_gamma['src_x'])
+        df_gamma['skewness'] = df_gamma['skewness'] * np.sign(df_gamma['x'] - df_gamma['src_x'])
         
+        #For proton data(MC/Real), 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
+        df_proton['dist'] = np.sqrt(df_proton['x']**2 +  df_proton['y']**2)
 
     if src_dependent:
         regression_features = config['regression_features_source_dependent']
@@ -390,7 +385,7 @@ def build_models(filegammas, fileprotons,
     return reg_energy, reg_disp_vector, cls_gh
 
 
-def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}, src_dependent=False, expected_src_pos=[0.4, 0.0]):
+def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}, src_dependent=False):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -415,16 +410,27 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={},
 
     dl2 = dl1.copy()
 
+    is_simu = 'mc_type' in dl2.columns
+
     #Set source-dependent paramters
     if src_dependent:
-        print("source-dependent analysis is activated (source position = {}deg)".format(expected_src_pos))
+        print("source-dependent analysis is activated")
 
-        focal_length = 28 * u.m
-        expected_src_pos = focal_length.value * np.tan(np.deg2rad(expected_src_pos))
-
-        dl2['dist'] = np.sqrt((dl2['x'] - expected_src_pos[0])**2 + (dl2['y'] - expected_src_pos[1])**2)
-        dl2['time_gradient'] = dl2['time_gradient'] * np.sign(dl2['x'] - expected_src_pos[0])
-        dl2['skewness'] = dl2['skewness'] * np.sign(dl2['x'] - expected_src_pos[0])
+        if is_simu:
+            #For gamma MC, 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
+            if dl2['mc_type'].any() == 0:
+                dl2['dist'] = np.sqrt((dl2['x'] - dl2['src_x'])**2 + (dl2['y'] - dl2['src_y'])**2)
+                dl2['time_gradient'] = dl2['time_gradient'] * np.sign(dl2['x'] - dl2['src_x'])
+                dl2['skewness'] = dl2['skewness'] * np.sign(dl2['x'] - dl2['src_x'])
+            
+            #For proton MC, 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
+            else:
+                dl2['dist'] = np.sqrt(dl2['x']**2 + dl2['y']**2)
+        
+        if not is_simu:
+            # TODO: get source position for real data from drive report
+            # for the moment, 'dist' is defined for ON observation mode
+            dl2['dist'] = np.sqrt(dl2['x']**2 + dl2['y']**2)
 
     if src_dependent:
         regression_features = config["regression_features_source_dependent"]
