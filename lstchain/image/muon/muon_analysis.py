@@ -128,7 +128,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     TODO: several hard-coded quantities that can go into a configuration file
     """
 
-    tailcuts = [5, 10]
+    tailcuts = [10, 5]
 
     cam_rad = 2.26 * u.deg
     min_pix = 148  # 8%

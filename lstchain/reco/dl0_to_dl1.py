@@ -37,8 +37,6 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
-from astropy.time import Time
-from datetime import datetime
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -138,7 +136,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
               custom_config={},
               pedestal_path=None,
               calibration_path=None,
-              pointing_file_path=None,
+              time_calibration_path=None,
+              pointing_file_path=None
               ):
     """
     Chain r0 to dl1
@@ -185,15 +184,16 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     if not is_simu:
         # TODO : add calibration config in config file, read it and pass it here
-        charge_config = Config({"LocalPeakWindowSum":{"window_shift": 5,"window_width":12}})
 
         r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path,
-                                            r1_sample_start=2,  # numbers in config ?
-                                            r1_sample_end=38,
-                                            )
+                                            tel_id=1)
+
+        # all this will be cleaned up in a next PR related to the configuration files
         r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
+                                                time_calibration_path=time_calibration_path,
                                                 image_extractor=config['image_extractor'],
-                                                config=charge_config,
+                                                gain_threshold=Config(config).gain_selector_config['threshold'],
+                                                config=Config(config),
                                                 allowed_tels=[1],
                                                 )
 
@@ -209,6 +209,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     extra_im.prefix = ''  # get rid of the prefix
 
     event = next(iter(source))
+
+
+
     write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
     if is_simu:
@@ -263,16 +266,14 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
-            for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
-                if not is_simu:
-                    combine_channels(event, telescope_id, 4095)
+            for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
                 tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
-                tel_name = tel_name.replace('-002', '')
+                tel_name = tel_name.replace('-003', '')
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -303,21 +304,38 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # For real data, GPS time is not available for the time being.
-                        # In the mean time, it is taken from TIB pps and 10 MHz counters
-                        # since UCTS timestamps do not seem to be trustable. This will be
-                        # deprecated and modified back to directly use gps_time whenever
-                        # the GPS starts working.
+                        # GPS time is not available for the time being. Meanwhile,
+                        # timestamps can be extracted from the UCTS and alternatively
+                        # calculated from the TIB/Dragon modules counters + NTP time
+                        # corresponding to the start of the run. For the time being,
+                        # we will store the three of them in the dl1 files.
+                        # This will be deprecated and modified back to directly use
+                        # gps_time whenever the GPS starts working reliably.
 
-                        # TAI time in s taken from TIB
-                        tai_time = event.r0.tel[telescope_id].trigger_time
-                        utc_time = Time(datetime.utcfromtimestamp(tai_time))
+                        # gps_time = event.r0.tel[telescope_id].trigger_time
 
-                        gps_time = utc_time.gps
-                        dl1_container.gps_time = gps_time
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
 
-                        if pointing_file_path and tai_time > 0:
-                            azimuth, altitude = pointings.cal_pointingposition(utc_time.unix, drive_data)
+                        # Get counters from the central Dragon module
+                        module_id = 82
+
+                        dragon_time = (
+                                event.lst.tel[telescope_id].svc.date +
+                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+
+                        tib_time = (
+                                event.lst.tel[telescope_id].svc.date +
+                                event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+
+                        #dl1_container.gps_time = gps_time
+                        dl1_container.tib_time = tib_time
+                        dl1_container.ucts_time = ucts_time
+                        dl1_container.dragon_time = dragon_time
+
+                        if pointing_file_path and dragon_time > 0:
+                            azimuth, altitude = pointings.cal_pointingposition(dragon_time, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
@@ -361,80 +379,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     # Write energy histogram from simtel file and extra metadata
     if is_simu:
         write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
-
-
-def get_spectral_w_pars(filename):
-    """
-    Return parameters required to calculate spectral weighting of an event
-
-    Parameters
-    ----------
-    filename: string, simtelarray file
-
-    Returns
-    -------
-    array of parameters
-    """
-
-    particle = utils.guess_type(filename)
-
-    source = SimTelFile(filename)
-
-    emin,emax = source.mc_run_headers[0]['E_range']*1e3 #GeV
-    spectral_index = source.mc_run_headers[0]['spectral_index']
-    num_showers = source.mc_run_headers[0]['num_showers']
-    num_use = source.mc_run_headers[0]['num_use']
-    Simulated_Events = num_showers * num_use
-    Max_impact = source.mc_run_headers[0]['core_range'][1]*1e2 #cm
-    Area_sim = np.pi * math.pow(Max_impact,2)
-    cone = source.mc_run_headers[0]['viewcone'][1]
-
-    cone = cone * np.pi/180
-    if(cone == 0):
-        Omega = 1
-    else:
-        Omega = 2*np.pi*(1-np.cos(cone))
-
-    if particle=='proton':
-        K_w = 9.6e-11 # GeV^-1 cm^-2 s^-1
-        index_w = -2.7
-        E0 = 1000. # GeV
-    if particle=='gamma':
-        K_w = 2.83e-11 # GeV^-1 cm^-2 s^-1
-        index_w = -2.62
-        E0 = 1000. # GeV
-
-    K = Simulated_Events*(1+spectral_index)/(emax**(1+spectral_index)-emin**(1+spectral_index))
-    Int_e1_e2 = K*E0**spectral_index
-    N_ = Int_e1_e2*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
-    R = K_w*Area_sim*Omega*(emax**(index_w+1)-emin**(index_w+1))/(E0**index_w)/(index_w+1)
-
-    return E0,spectral_index,index_w,R,N_
-
-
-def get_spectral_w(w_pars, energy):
-    """
-    Return spectral weight of an event
-
-    Parameters
-    ----------
-    w_pars: parameters obtained with get_spectral_w_pars() function
-    energy: energy of the event in GeV
-
-    Returns
-    -------
-    float w
-    """
-
-    E0 = w_pars[0]
-    index = w_pars[1]
-    index_w = w_pars[2]
-    R = w_pars[3]
-    N_ = w_pars[4]
-
-    w = ((energy/E0)**(index_w-index))*R/N_
-
-    return w
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):

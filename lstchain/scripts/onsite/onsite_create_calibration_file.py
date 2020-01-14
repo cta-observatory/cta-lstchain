@@ -28,7 +28,7 @@ optional.add_argument('-v', '--version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
-optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
+optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
 
 args = parser.parse_args()
 run = args.run_number
@@ -69,9 +69,14 @@ def main():
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
 
-        # define output and log file
-        output_file = f"{output_dir}/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.hdf5"
-        log_file = f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.log"
+
+        #
+        # produce ff calibration file
+        #
+
+        # define charge file names
+        output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
+        log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file):
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
@@ -93,9 +98,8 @@ def main():
               f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
               f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events}  " \
               f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
-        #print(cmd)
-        print("\n--> RUNNING...")
 
+        print("\n--> RUNNING...")
         os.system(cmd)
 
         # plot and save some results
@@ -103,6 +107,18 @@ def main():
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
         calib.read_file(output_file)
         calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
+
+        #
+        # produce drs4 time calibration file
+        #
+
+        time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
+        print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
+        cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
+              f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
+        print("\n--> RUNNING...")
+        os.system(cmd)
+
         print("\n--> END")
 
     except Exception as e:
