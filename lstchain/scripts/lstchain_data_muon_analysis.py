@@ -40,10 +40,15 @@ parser.add_argument("--pedestal_file", help = "Path to the pedestal file",
 parser.add_argument("--calibration_file", help = "Path to the file containing the calibration constants",
                     type = str)
 
+parser.add_argument("--time_calibration_file", help = "Path to the calibraiton file with time corrections ",
+                    type = str)
+
 # Optional argument
-parser.add_argument("--max_events", help = "Maximum numbers of events to read."
+parser.add_argument("--max_events", help = "Maximum numbers of events to read. "
                                          "Default = 100",
                     type = int, default = 100)
+parser.add_argument("--gain_threshold", help = "Gain threshold in ADC. "
+                                               "Default = 4094", type = int, default=4094)
 
 parser.add_argument("--plot_rings", help = "Plot figures of the stored rings", 
                     default = False, action='store_true')
@@ -51,9 +56,9 @@ parser.add_argument("--plot_rings", help = "Plot figures of the stored rings",
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
 
-parser.add_argument("--tel_id", help = "telescope id"
-                                         "Default = 1",
-                    type = int, default = 1)
+
+parser.add_argument("--tel_id", help = "telescope id. "
+                                       "Default = 1",type = int, default = 1)
 
 
 args = parser.parse_args()
@@ -92,6 +97,13 @@ def main():
     r0calib = LSTR0Corrections(
         pedestal_path = args.pedestal_file, tel_id=tel_id)
 
+
+    tel_id = args.tel_id
+
+    # Low level calibration
+    r0calib = LSTR0Corrections(
+        pedestal_path = args.pedestal_file, tel_id=tel_id)
+
     # high level calibration and gain selection
     charge_config = Config({
         "LocalPeakWindowSum": {
@@ -101,8 +113,12 @@ def main():
     })
 
     r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=args.calibration_file,
+                                            time_calibration_path=args.time_calibration_file,
                                             image_extractor="LocalPeakWindowSum",
-                                            config=charge_config,allowed_tels=[tel_id])
+                                            config=charge_config,
+                                            gain_threshold=args.gain_threshold,
+                                            allowed_tels=[tel_id])
+
 
     # Maximum number of events
     if args.max_events:
@@ -121,26 +137,26 @@ def main():
         # drs4 calibration
         r0calib.calibrate(event)
 
-
         # r1 calibration
         r1_dl1_calibrator(event)
         image = event.dl1.tel[tel_id].image
 
-        #print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
-        #                                            np.size(image[0][image[0] > 10.])))
         if not tag_pix_thr(image): #default skipps pedestal and calibration events
             continue
 
-        if not muon_filter(image[0]): #default values apply no filtering
+        if not muon_filter(image): #default values apply no filtering
             continue
+
+
         print("--> Event {}. Number of pixels above 10 phe: {}".format(event_id,
-                                                                   np.size(image[0][image[0] > 10.])))
+                                                                   np.size(image[image > 10.])))
+
 
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
         mirror_area = telescope_description.optics.mirror_area.to("m2")
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
-            analyze_muon_event(event_id, image[0], geom, equivalent_focal_length, 
+            analyze_muon_event(event_id, image, geom, equivalent_focal_length,
                                mirror_area, args.plot_rings, args.plots_path)
         #if not (good_ring):
         #    continue

@@ -54,6 +54,9 @@ class DL1ParametersContainer(Container):
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
     gps_time = Field(None, 'GPS time event trigger')
+    dragon_time = Field(None, 'Dragon time event trigger')
+    ucts_time = Field(None, 'UCTS time event trigger')
+    tib_time = Field(None, 'TIB time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     log_mc_energy = Field(None, 'log of simulated energy/GeV')
