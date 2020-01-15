@@ -334,8 +334,16 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         dl1_container.ucts_time = ucts_time
                         dl1_container.dragon_time = dragon_time
 
-                        if pointing_file_path and dragon_time > 0:
-                            azimuth, altitude = pointings.cal_pointingposition(dragon_time, drive_data)
+                        # Select the timestamps to be used for pointing interpolation
+                        if config['timestamps_pointing'] == "ucts":
+                            event_timestamps = ucts_time
+                        elif config['timestamps_pointing'] == "dragon":
+                            event_timestamps = dragon_time
+                        elif config['timestamps_pointing'] == "tib":
+                            event_timestamps = tib_time
+
+                        if pointing_file_path and event_timestamps > 0:
+                            azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
