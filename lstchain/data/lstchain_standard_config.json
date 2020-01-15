@@ -94,7 +94,7 @@
   ],
 
   "allowed_tels": [1, 2, 3, 4],
-  "max_events": null,
+  "max_events": 10000,
   "custom_calibration": false,
   "write_pe_image": false,
   "image_extractor": "LocalPeakWindowSum",
@@ -106,5 +106,6 @@
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
-    }
+    },
+  "timestamps_pointing":"ucts"
 }
