@@ -40,15 +40,15 @@ parser.add_argument("--pedestal_file", help = "Path to the pedestal file",
 parser.add_argument("--calibration_file", help = "Path to the file containing the calibration constants",
                     type = str)
 
-parser.add_argument("--time_calibration_file", help = "Path to the calibraiton file with time corrections ",
-                    type = str)
+parser.add_argument("--time_calibration_file", help = "Path to the calibration file with time corrections ",
+                    type = str, default='')
 
 # Optional argument
 parser.add_argument("--max_events", help = "Maximum numbers of events to read. "
                                          "Default = 100",
                     type = int, default = 100)
 parser.add_argument("--gain_threshold", help = "Gain threshold in ADC. "
-                                               "Default = 4094", type = int, default=4094)
+                                               "Default = 3500", type = int, default=3500)
 
 parser.add_argument("--plot_rings", help = "Plot figures of the stored rings", 
                     default = False, action='store_true')
@@ -70,10 +70,11 @@ def main():
     print("output file: {}".format(args.output_file))
     print("pedestal file: {}".format(args.pedestal_file))
     print("calibration file: {}".format(args.calibration_file))
+    print("time calibration file: {}".format(args.time_calibration_file))
     print("max events: {}".format(args.max_events))
 
     # Camera geometry
-    geom = CameraGeometry.from_name("LSTCam-003")
+    #geom = CameraGeometry.from_name("LSTCam-003")
 
     # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
@@ -90,13 +91,6 @@ def main():
                          'impact_x_array': [],
                          'impact_y_array': [],
                          }
-
-    tel_id = args.tel_id
-
-    # Low level calibration
-    r0calib = LSTR0Corrections(
-        pedestal_path = args.pedestal_file, tel_id=tel_id)
-
 
     tel_id = args.tel_id
 
@@ -130,9 +124,16 @@ def main():
     num_muons = 0
     source = event_source(input_url = args.input_file, max_events = max_events)
 
+    # geometry
+    subarray = source.subarray()
+    telescope_description = subarray.tel[tel_id]
+    equivalent_focal_length = telescope_description.optics.equivalent_focal_length
+    mirror_area = telescope_description.optics.mirror_area.to("m2")
+    geom = telescope_description.camera
+
+
     for event in source:
         event_id = event.lst.tel[tel_id].evt.event_id
-        telescope_description = event.inst.subarray.tel[tel_id]
 
         # drs4 calibration
         r0calib.calibrate(event)
@@ -151,9 +152,6 @@ def main():
         print("--> Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                    np.size(image[image > 10.])))
 
-
-        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
-        mirror_area = telescope_description.optics.mirror_area.to("m2")
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
             analyze_muon_event(event_id, image, geom, equivalent_focal_length,
