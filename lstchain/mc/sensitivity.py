@@ -5,7 +5,6 @@ import math
 from eventio.simtel.simtelfile import SimTelFile
 from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
 from .mc import rate, weight, power_law_integrated_distribution
-from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra, crab_magic
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
