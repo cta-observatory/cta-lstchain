@@ -341,6 +341,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                             event_timestamps = dragon_time
                         elif config['timestamps_pointing'] == "tib":
                             event_timestamps = tib_time
+                        else:
+                            raise ValueError("The timestamps_pointing option is not a valid one. \
+                                    Try ucts (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
