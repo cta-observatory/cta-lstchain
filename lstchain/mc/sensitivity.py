@@ -384,7 +384,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
     # FIX: ring_halfwidth should be given as input
-    area_ratio_p = np.pi * t / ang_area_p
+    area_ratio_p = np.pi * theta2_bins / ang_area_p
     # ratio between the area where we search for protons ang_area_p
     # and the area where we search for gammas math.pi * t
 
