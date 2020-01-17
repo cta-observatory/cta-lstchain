@@ -29,8 +29,10 @@ optional.add_argument('-v', '--version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
-optional.add_argument('-t','--time_calibration', help="Perform only the time calibration (yes/no)",type=str, default='yes')
-optional.add_argument('-f','--ff_calibration', help="Perform only the charge calibration (yes/np)",type=str, default='yes')
+optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
+optional.add_argument('--time_calibration', help="Perform only the time calibration (yes/no)",type=str, default='yes')
+optional.add_argument('--ff_calibration', help="Perform only the charge calibration (yes/np)",type=str, default='yes')
+
 
 args = parser.parse_args()
 run = args.run_number
@@ -40,6 +42,8 @@ stat_events = args.statistics
 base_dir = args.base_dir
 time_calibration = args.time_calibration
 ff_calibration = args.ff_calibration
+tel_id = args.tel_id
+
 max_events = 1000000
 
 
@@ -112,7 +116,7 @@ def main():
             # plot and save some results
             plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.pdf"
             print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-            calib.read_file(output_file)
+            calib.read_file(output_file,tel_id)
             calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
 
         #
