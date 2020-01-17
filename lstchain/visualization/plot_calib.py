@@ -63,7 +63,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
      calib_data: calibration container WaveformCalibrationContainer()
 
      """
-    camera = CameraGeometry.from_name("LSTCam", 2)
+    camera = CameraGeometry.from_name("LSTCam", 4)
 
     # plot open pdf
     if plot_file != "none":
