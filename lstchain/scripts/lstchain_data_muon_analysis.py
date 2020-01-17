@@ -55,8 +55,6 @@ parser.add_argument("--plot_rings", help = "Plot figures of the stored rings",
 
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
-
-
 parser.add_argument("--tel_id", help = "telescope id. "
                                        "Default = 1",type = int, default = 1)
 
@@ -125,7 +123,7 @@ def main():
     source = event_source(input_url = args.input_file, max_events = max_events)
 
     # geometry
-    subarray = source.subarray()
+    subarray = source.subarray(tel_id)
     telescope_description = subarray.tel[tel_id]
     equivalent_focal_length = telescope_description.optics.equivalent_focal_length
     mirror_area = telescope_description.optics.mirror_area.to("m2")
