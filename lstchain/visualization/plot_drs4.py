@@ -30,6 +30,10 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
      run: run number of data to be corrected
 
      plot_file:  name of output pdf file
+
+     tel_id: id of the telescope
+
+     offset_value: baseline off_set
      """
 
     # plot open pdf
@@ -64,6 +68,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
                                   config=charge_config)
 
     for i, event in enumerate(reader):
+        if tel_id != event.r0.tels_with_data[0]:
+            raise Exception(f"Given wrong telescope id {tel_id}, files has id {event.r0.tels_with_data[0]}")
 
         # move from R0 to R1
         r0_calib.calibrate(event)
