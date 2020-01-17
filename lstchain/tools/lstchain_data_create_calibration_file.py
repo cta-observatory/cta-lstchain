@@ -44,11 +44,6 @@ class CalibrationHDF5Writer(Tool):
         help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
     ).tag(config=True)
 
-    maximum_charge = Float(
-        300,
-        help='Temporary cut on charge till the calibox TIB do not work'
-    ).tag(config=True)
-
     one_event = Bool(
         False,
         help='Stop after first calibration event'
