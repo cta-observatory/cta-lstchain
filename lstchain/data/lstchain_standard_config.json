@@ -97,10 +97,15 @@
   "max_events": null,
   "custom_calibration": false,
   "write_pe_image": false,
-  "image_extractor": "NeighborPeakWindowSum",
+  "image_extractor": "LocalPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
-    "threshold":  4094
-  }
+    "threshold":  3500
+  },
+  "LocalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "timestamps_pointing":"ucts"
 }
