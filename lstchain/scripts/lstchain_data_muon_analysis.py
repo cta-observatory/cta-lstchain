@@ -143,7 +143,7 @@ def main():
         if not tag_pix_thr(image): #default skipps pedestal and calibration events
             continue
 
-        if not muon_filter(image): #default values apply no filtering
+        if not muon_filter(image,800,5000): #default values apply no filtering
             continue
 
 
