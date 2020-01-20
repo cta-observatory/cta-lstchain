@@ -29,9 +29,9 @@ optional.add_argument('-v', '--version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
+optional.add_argument('--default_time_run', help="If 0 time calibration is calculated otherwise create a link to the give run time calibration",type=int, default='1625')
+optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
-optional.add_argument('--time_calibration', help="Perform only the time calibration (yes/no)",type=str, default='yes')
-optional.add_argument('--ff_calibration', help="Perform only the charge calibration (yes/np)",type=str, default='yes')
 
 
 args = parser.parse_args()
@@ -40,7 +40,7 @@ ped_run = args.pedestal_run
 prod_id = 'v%02d'%args.version
 stat_events = args.statistics
 base_dir = args.base_dir
-time_calibration = args.time_calibration
+default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
 
@@ -122,13 +122,29 @@ def main():
         #
         # produce drs4 time calibration file
         #
-        if time_calibration is 'yes':
+
+        if default_time_run is 0:
             time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
                   f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
+        else:
+            # otherwise perform a link to the default time calibration file
+            print(f"\n--> PRODUCING LINK TO DEFAULT TIME CALIBRATION (run {default_time_run})")
+            file_list = sorted(Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run{default_time_run}*'))
+
+
+            if len(file_list) == 0:
+                print(f">>> Error: time calibration file for run {default_time_run} not found\n")
+                raise NameError()
+            else:
+                time_calibration_file = file_list[0]
+                input_dir, name = os.path.split(os.path.abspath(time_calibration_file ))
+                cmd=f"ln -sf {time_calibration_file} {output_dir}/{name}"
+                print(f"\n--> Time calibration file: {output_dir}/{name}")
+                os.system(cmd)
 
         print("\n--> END")
 
