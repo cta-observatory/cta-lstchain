@@ -122,9 +122,9 @@ def main():
         #
         # produce drs4 time calibration file
         #
-
+        time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
+     
         if default_time_run is 0:
-            time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
                   f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
@@ -142,9 +142,10 @@ def main():
             else:
                 time_calibration_file = file_list[0]
                 input_dir, name = os.path.split(os.path.abspath(time_calibration_file ))
-                cmd=f"ln -sf {time_calibration_file} {output_dir}/{name}"
-                print(f"\n--> Time calibration file: {output_dir}/{name}")
+                cmd=f"ln -sf {time_calibration_file} {time_file}"
                 os.system(cmd)
+
+        print(f"\n--> Time calibration file: {time_file}")
 
         print("\n--> END")
 
