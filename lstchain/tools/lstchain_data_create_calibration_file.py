@@ -195,6 +195,7 @@ class CalibrationHDF5Writer(Tool):
                 if event.r1.tel[self.tel_id].trigger_type == 32:
                     new_ped = self.pedestal.calculate_pedestals(event)
 
+
                 # if flat-field event: no calibration  TIB for the moment,
                 # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
                 elif event.r1.tel[self.tel_id].trigger_type == 4 or (
