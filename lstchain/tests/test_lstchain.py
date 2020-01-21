@@ -121,6 +121,33 @@ def test_apply_models():
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
+@pytest.mark.run(after='test_apply_models')
+def test_sensitivity():
+    nfiles_gammas = 1
+    nfiles_protons = 1
+
+    eb = 20  # Number of energy bins
+    gb = 11  # Number of gammaness bins
+    tb = 10  # Number of theta2 bins
+    obstime = 50 * 3600 * u.s
+    noff = 2
+
+
+    E, best_sens, result, units, gcut, tcut = sensitivity.find_best_cuts_sens(mc_gamma_testfile,
+                                                                              mc_gamma_testfile,
+                                                                              dl2_file,
+                                                                              dl2_file
+                                                                              1, 1,
+                                                                              eb, gb, tb, noff,
+                                                                              obstime)
+
+    E, best_sens, result, units, dl2 = sensitivity.sens(mc_gamma_testfile,
+                                                        mc_gamma_testfile,
+                                                        dl2_file, dl2_file,
+                                                        1, 1,
+                                                        eb, gcut, tcut * (u.deg ** 2), noff,
+                                                        obstime)
+
 
 @pytest.mark.last
 def test_clean_test_files():
