@@ -139,7 +139,7 @@ def test_sensitivity():
     E, best_sens, result, units, gcut, tcut = sensitivity.find_best_cuts_sensitivity(mc_gamma_testfile,
                                                                                      mc_gamma_testfile,
                                                                                      dl2_file,
-                                                                                     dl2_file
+                                                                                     dl2_file,
                                                                                      1, 1,
                                                                                      eb, gb, tb, noff,
                                                                                      obstime)
