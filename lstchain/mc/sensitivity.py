@@ -341,7 +341,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     energy = np.logspace(np.log10(emin_sensitivity.to_value()),
                 np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.GeV
 
-    gamaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
+    gammaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
 
     # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
@@ -416,17 +416,17 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
         for j in range(0, n_bins_gammaness):  #  cut in gammaness
             for k in range(0, n_bins_theta2):  #  cut in theta2                
                 rate_g_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
-                                            & (gammaness_g > g[j]) & (theta2_g < t[k])])
+                                            & (gammaness_g > gammaness_bins[j]) & (theta2_g < theta2_bins[k])])
 
                 rate_p_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
-                                            & (gammaness_p > g[j]) & p_contained])
+                                            & (gammaness_p > gammaness_bins[j]) & p_contained])
                 final_gamma[i][j][k] = rate_g_ebin * obstime
                 final_hadrons[i][j][k] = rate_p_ebin * obstime * area_ratio_p[k]
 
                 pre_gamma[i][j][k] = e_reco_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
-                                            & (gammaness_g > g[j]) & (theta2_g < t[k])].shape[0]
+                                            & (gammaness_g > gammaness_bins[j]) & (theta2_g < theta2_bins[k])].shape[0]
                 pre_hadrons[i][j][k] = e_reco_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
-                                            & (gammaness_p > g[j]) & p_contained].shape[0]
+                                            & (gammaness_p > gammaness_bins[j]) & p_contained].shape[0]
 
                 ngamma_per_ebin[i] = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]) * obstime
                 nhadron_per_ebin[i] = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]) * obstime
@@ -466,8 +466,8 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     # Calculate the minimum sensitivity per energy bin
     for i in range(0, n_bins_energy):
         ind = np.unravel_index(np.nanargmin(sensitivity_3Darray[i], axis=None), sensitivity_3Darray[i].shape)
-        gcut[i] = g[ind[0]]
-        tcut[i] = t[ind[1]].to_value()
+        gcut[i] = gammaness_bins[ind[0]]
+        tcut[i] = theta2_bins[ind[1]].to_value()
         ngammas[i] = final_gamma[i][ind]
         nhadrons[i] = final_hadrons[i][ind]
         gammarate[i] = final_gamma[i][ind]/(obstime.to(u.min)).to_value()
@@ -478,9 +478,9 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
         eff_p[i] = final_hadrons[i][ind]/nhadron_per_ebin[i]
 
         e_aftercuts = e_true_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
-                               & (gammaness_g > g[ind[0]]) & (theta2_g < t[ind[1]])]
+                               & (gammaness_g > gammaness_bins[ind[0]]) & (theta2_g < theta2_bins[ind[1]])]
 
-        e_aftercuts_p = e_true_p[(e_true_p < energy[i+1]) & (e_true_p > energy[i]) \
+        e_aftercuts_p = e_true_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
                                  & p_contained]
 
         e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha']-mc_par_g['sp_idx']))
@@ -512,7 +512,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
              u.min**-1, u.min**-1, "",
              sensitivity_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
     
-    # sens_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity_3Darray)
+    # sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity_3Darray)
     # plot_positions_survived_events(events_g,
     #                               events_p,
     #                               gammaness_g, gammaness_p,
