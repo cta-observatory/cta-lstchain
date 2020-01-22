@@ -1,3 +1,4 @@
+from lstchain.mc import sensitivity
 from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
