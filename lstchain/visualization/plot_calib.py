@@ -3,7 +3,6 @@ from matplotlib import pyplot as plt
 from ctapipe.visualization import CameraDisplay
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.instrument import CameraGeometry
 from ctapipe_io_lst import load_camera_geometry
 
 # read back the monitoring containers written with the tool calc_camera_calibration.py
