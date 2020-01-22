@@ -1,4 +1,4 @@
-from lstchain.mc import sensitivity
+from lstchain.mc.sensititivy import sensitivity, find_best_cuts_sensitivity
 from lstchain.mc import plot_utils
 import matplotlib.pyplot as plt
 import astropy.units as u
