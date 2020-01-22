@@ -138,19 +138,19 @@ def test_sensitivity():
 
 
     E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(mc_gamma_testfile,
-                                                                                     mc_gamma_testfile,
-                                                                                     dl2_file,
-                                                                                     dl2_file,
-                                                                                     1, 1,
-                                                                                     eb, gb, tb, noff,
-                                                                                     obstime)
+                                                                         mc_gamma_testfile,
+                                                                         dl2_file,
+                                                                         dl2_file,
+                                                                         1, 1,
+                                                                         eb, gb, tb, noff,
+                                                                         obstime)
 
     E, best_sens, result, units, dl2 = sensitivity(mc_gamma_testfile,
-                                                               mc_gamma_testfile,
-                                                               dl2_file, dl2_file,
-                                                               1, 1,
-                                                               eb, gcut, tcut * (u.deg ** 2), noff,
-                                                               obstime)
+                                                   mc_gamma_testfile,
+                                                   dl2_file, dl2_file,
+                                                   1, 1,
+                                                   eb, gcut, tcut * (u.deg ** 2), noff,
+                                                   obstime)
 
 
 @pytest.mark.last
