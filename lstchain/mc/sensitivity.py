@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import astropy.units as u
-import math
-from eventio.simtel.simtelfile import SimTelFile
 from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
 from .mc import rate, weight, power_law_integrated_distribution
 from lstchain.spectra.crab import crab_hegra, crab_magic
