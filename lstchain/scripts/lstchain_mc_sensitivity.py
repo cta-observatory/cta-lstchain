@@ -46,7 +46,7 @@ def main():
     obstime = 50 * 3600 * u.s
     noff = 5
 
-    energy, best_sens, result, units, gcut, tcut = sensitivity.find_best_cuts_sensitivity(args.dl1file_gammas,
+    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
                                                args.dl1file_protons,
                                                args.dl2_file_g_cuts, args.dl2_file_p_cuts,
                                                ntelescopes_gammas, ntelescopes_protons,
@@ -57,7 +57,7 @@ def main():
     # gcut = np.ones(eb) * 0.8
     # tcut = np.ones(eb) * 0.01
 
-    energy, best_sens, result, units, dl2 = sensitivity.sensitivity(args.dl1file_gammas,
+    energy, best_sens, result, units, dl2 = sensitivity(args.dl1file_gammas,
                                                args.dl1file_protons,
                                                args.dl2_file_g_sens, args.dl2_file_p_sens,
                                                nfiles_gammas, nfiles_protons,
