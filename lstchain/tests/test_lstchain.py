@@ -1,4 +1,3 @@
-from lstchain.mc import sensitivity
 from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
@@ -126,7 +125,7 @@ def test_apply_models():
 
 @pytest.mark.run(after='test_apply_models')
 def test_sensitivity():
-    from lstchain.mc import sensitivity 
+    from lstchain.mc.sensitivity import sensitivity.find_best_cuts_sensitivity, sensitivity 
 
     nfiles_gammas = 1
     nfiles_protons = 1
