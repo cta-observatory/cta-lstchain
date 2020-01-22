@@ -123,7 +123,7 @@ def main():
         # produce drs4 time calibration file
         #
         time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
-     
+
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
