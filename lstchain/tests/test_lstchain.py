@@ -125,7 +125,7 @@ def test_apply_models():
 
 @pytest.mark.run(after='test_apply_models')
 def test_sensitivity():
-    from lstchain.mc.sensitivity import sensitivity.find_best_cuts_sensitivity, sensitivity 
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
 
     nfiles_gammas = 1
     nfiles_protons = 1
@@ -137,7 +137,7 @@ def test_sensitivity():
     noff = 2
 
 
-    E, best_sens, result, units, gcut, tcut = sensitivity.find_best_cuts_sensitivity(mc_gamma_testfile,
+    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(mc_gamma_testfile,
                                                                                      mc_gamma_testfile,
                                                                                      dl2_file,
                                                                                      dl2_file,
@@ -145,7 +145,7 @@ def test_sensitivity():
                                                                                      eb, gb, tb, noff,
                                                                                      obstime)
 
-    E, best_sens, result, units, dl2 = sensitivity.sensitivity(mc_gamma_testfile,
+    E, best_sens, result, units, dl2 = sensitivity(mc_gamma_testfile,
                                                                mc_gamma_testfile,
                                                                dl2_file, dl2_file,
                                                                1, 1,
