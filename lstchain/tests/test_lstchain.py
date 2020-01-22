@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
+import astropy.units as u 
 
 test_dir = 'testfiles'
 
@@ -125,7 +126,7 @@ def test_apply_models():
 @pytest.mark.run(after='test_apply_models')
 def test_sensitivity():
     from lstchain.mc import sensitivity 
-    
+
     nfiles_gammas = 1
     nfiles_protons = 1
 
