@@ -5,29 +5,31 @@ from astropy.table import Table
 import numpy as np
 import argparse
 import ctaplot
+from lstchain.visualization import plot_dl2
+from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
 
 parser = argparse.ArgumentParser(description="Compute Sensitivity Curve.")
 
-parser.add_argument('--gammadl1', '-gd1', type=str,
-                    dest='dl1file_gammas',
-                    help='path to gammas simtelfile')
-parser.add_argument('--protondl1', '-pd1', type=str,
-                    dest='dl1file_protons',
-                    help='path to protons simtelfile')
-parser.add_argument('--gammadl2-cuts', '-gd2-cuts', type=str,
-                    dest='dl2_file_g_cuts',
-                    help='path to reconstructed gammas dl2 file')
-parser.add_argument('--protondl2-cuts', '-pd2-cuts', type=str,
-                    dest='dl2_file_p_cuts',
-                    help='path to reconstructed protons dl2 file')
-parser.add_argument('--gammadl2-sens', '-gd2-sens', type=str,
-                    dest='dl2_file_g_sens',
-                    help='path to reconstructed gammas dl2 file')
-parser.add_argument('--protondl2-sens', '-pd2-sens', type=str,
-                    dest='dl2_file_p_sens',
-                    help='path to reconstructed protons dl2 file')
+parser.add_argument('--gammadl1', '-gd1', type = str,
+                    dest = 'dl1file_gammas',
+                    help = 'path to gammas simtelfile')
+parser.add_argument('--protondl1', '-pd1', type = str,
+                    dest = 'dl1file_protons',
+                    help = 'path to protons simtelfile')
+parser.add_argument('--gammadl2-cuts', '-gd2-cuts', type = str,
+                    dest = 'dl2_file_g_cuts',
+                    help = 'path to reconstructed gammas dl2 file')
+parser.add_argument('--protondl2-cuts', '-pd2-cuts', type = str,
+                    dest = 'dl2_file_p_cuts',
+                    help = 'path to reconstructed protons dl2 file')
+parser.add_argument('--gammadl2-sens', '-gd2-sens', type = str,
+                    dest = 'dl2_file_g_sens',
+                    help = 'path to reconstructed gammas dl2 file')
+parser.add_argument('--protondl2-sens', '-pd2-sens', type = str,
+                    dest = 'dl2_file_p_sens',
+                    help = 'path to reconstructed protons dl2 file')
 
 args = parser.parse_args()
 
@@ -35,10 +37,9 @@ args = parser.parse_args()
 def main():
     ntelescopes_gamma = 4
     ntelescopes_protons = 4
-
-    n_bins_energy = 20  # Number of energy bins
-    n_bins_gammaness = 11  # Number of gammaness bins
-    n_bins_theta2 = 10  # Number of theta2 bins
+    n_bins_energy = 20  #  Number of energy bins
+    n_bins_gammaness = 11  #  Number of gammaness bins
+    n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
 
@@ -69,7 +70,7 @@ def main():
 
     for i, key in enumerate(tab.columns.keys()):
         tab[key].unit = units[i]
-        if key == 'sensitivity':
+        if key=='sensitivity':
             continue
         tab[key].format = '8f'
 
@@ -91,11 +92,12 @@ def main():
     plt.legend()
     plt.tight_layout()
     plt.show()
-    sns.distplot(gammas_mc.mc_energy, label='gammas')
-    sns.distplot(protons_mc.mc_energy, label='protons')
+    sns.distplot(gammas_mc.mc_energy, label='gammas');
+    sns.distplot(protons_mc.mc_energy, label='protons');
     plt.legend()
     plt.tight_layout()
     plt.show()
+
     sns.distplot(gammas_mc.reco_energy.apply(np.log10), label='gammas')
     sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons')
     plt.legend()
@@ -110,6 +112,7 @@ def main():
                                         )
 
     ctaplot.plot_angular_res_cta_requirements('north', color='black')
+
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -117,7 +120,7 @@ def main():
     plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirements('north', color='black')
-
+    
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -125,7 +128,7 @@ def main():
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy)
     ctaplot.plot_energy_bias(10 ** (gammas_mc.mc_energy - 3), 10 ** (gammas_mc.reco_energy - 3))
     plt.show()
-
+    
     gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl1file_gammas)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
@@ -140,7 +143,7 @@ def main():
                                                      )
 
     ctaplot.plot_effective_area_cta_requirements('north', color='black')
-    plt.legend()
+    plt.legend();
     plt.tight_layout()
     plt.show()
 

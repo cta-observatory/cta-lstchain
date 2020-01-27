@@ -47,7 +47,7 @@ class PointingPosition(Component):
             # these information it self
                 data['col6'].name = 'time'
                 data['col8'].name = 'azimuth_avg'
-                data['col13'].name = 'altitude_avg'
+                data['col13'].name = 'zenith_avg'
                 return data
         else:
             raise Exception("No drive report file found")
@@ -67,7 +67,8 @@ class PointingPosition(Component):
         drive_container = LSTDriveContainer()
         drive_container.time = drive_data['time'].data
         drive_container.azimuth_avg = drive_data['azimuth_avg'].data
-        drive_container.altitude_avg = drive_data['altitude_avg'].data
+        drive_container.altitude_avg =  90.0 - drive_data['zenith_avg'].data 
+      
 
         xp = drive_container.time
         lower_drive_time = xp[xp < ev_time].max()

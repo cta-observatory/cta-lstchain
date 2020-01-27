@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
+import astropy.units as u 
 
 test_dir = 'testfiles'
 
@@ -120,6 +121,36 @@ def test_apply_models():
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
+
+
+@pytest.mark.run(after='test_apply_models')
+def test_sensitivity():
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
+
+    nfiles_gammas = 1
+    nfiles_protons = 1
+
+    eb = 20  # Number of energy bins
+    gb = 11  # Number of gammaness bins
+    tb = 10  # Number of theta2 bins
+    obstime = 50 * 3600 * u.s
+    noff = 2
+
+
+    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(dl1_file,
+                                                                         dl1_file,
+                                                                         dl2_file,
+                                                                         dl2_file,
+                                                                         1, 1,
+                                                                         eb, gb, tb, noff,
+                                                                         obstime)
+
+    E, best_sens, result, units, dl2 = sensitivity(dl1_file,
+                                                   dl1_file,
+                                                   dl2_file, dl2_file,
+                                                   1, 1,
+                                                   eb, gcut, tcut * (u.deg ** 2), noff,
+                                                   obstime)
 
 
 @pytest.mark.last

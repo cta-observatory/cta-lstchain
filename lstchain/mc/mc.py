@@ -12,6 +12,7 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
     """
     For each bin, return the expected number of events for a power-law distribution.
     bins: `numpy.ndarray`, e.g. `np.logspace(np.log10(emin), np.logspace(emax))`
+
     Parameters
     ----------
     emin:   `float` minimum energy
@@ -27,6 +28,7 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
 
     TODO: Introduce any spectral form
     """
+
     bins = np.logspace(np.log10(emin), np.log10(emax), bin_number)
 
     if spectral_index == -1:
@@ -41,6 +43,17 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
 
 def int_diff_sp(emin, emax, sp_idx, e0):
     """
+
+    Parameters
+    --------
+    emin:  `float`  minimum energy
+    emax:  `float`  maximum energy
+    sp_idx:`float`  spectral index of the power-law distribution
+    e0:    `float`  normalization energy
+
+    Returns
+    --------
+    integral_e: `float` energy integral
 
     TODO: Introduce any spectral form
     """
@@ -107,6 +120,7 @@ def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
     ----------
     weight: `float` rate of events
     """
+
     sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, e0)
     norm_sim = sim_integral * int_diff_sp(emin, emax, w_sp_idx, e0)
 
