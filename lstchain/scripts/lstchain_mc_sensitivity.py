@@ -74,7 +74,7 @@ def main():
 
     print(tab)
 
-    plot_utils.sens_plot(eb, energy, best_sens)
+    plot_utils.sensitivity_plot_comparison(eb, energy, best_sens)
     plt.show()
 
     egeom = np.sqrt(energy[1:] * energy[:-1])
