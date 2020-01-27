@@ -35,6 +35,12 @@ parser.add_argument('--calibration_path', '-calib', action='store', type=str,
                     default=None
                     )
 
+parser.add_argument('--time_calibration_path', '-time_calib', action='store', type=str,
+                    dest='time_calibration_path',
+                    help='Path to a calibration file for pulse time correction',
+                    default=None
+                    )
+
 parser.add_argument('--pointing_file_path', '-pointing', action='store', type=str,
                     dest='pointing_file_path',
                     help='Path to the Drive log file with the pointing information.',
@@ -63,7 +69,8 @@ def main():
                          custom_config=config,
                          pedestal_path=args.pedestal_path,
                          calibration_path=args.calibration_path,
-                         pointing_file_path=args.pointing_file_path,
+                         time_calibration_path=args.time_calibration_path,
+                         pointing_file_path=args.pointing_file_path
                          )
 
 
