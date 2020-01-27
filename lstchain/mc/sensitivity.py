@@ -7,9 +7,9 @@ from lstchain.spectra.crab import crab_hegra, crab_magic
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
 from lstchain.reco.utils import reco_source_position_sky
-from  astropy.coordinates.angle_utilities import angular_separation
+from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
-
+from lstchain.io.io import dl2_params_lstcam_key
 
 __all__ = ['read_sim_par',
            'process_mc',
@@ -70,7 +70,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     """
     sim_par = read_sim_par(dl1_file)
-    events = pd.read_hdf(dl2_file)
+    events = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
 
     # Filters:
     # TO DO: These cuts must be given in a configuration file
@@ -506,7 +506,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
                                     'eff_gamma', 'eff_hadron',
                                     'nevents_g', 'nevents_p'])
 
-    units = [energy.unit, energy.unit,"", t.unit,"", "",
+    units = [energy.unit, energy.unit,"", theta2_bins.unit,"", "",
              u.min**-1, u.min**-1, "",
              sensitivity_flux.unit, mc_par_g['area_sim'].to(u.m**2).unit, "", "", "", ""]
     
