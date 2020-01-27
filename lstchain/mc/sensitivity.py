@@ -71,7 +71,6 @@ def process_mc(dl1_file, dl2_file, mc_type):
     mc_par:    `dict` with simulated parameters
 
     """
-    from ..io.io import dl2_params_lstcam_key
     sim_par = read_sim_par(dl1_file)
 
     events = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
@@ -349,7 +348,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
 
     gammaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
 
-    # Extract spectral parameterss
+    # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
     dFdEd0, proton_par = proton_bess(energy)
 
@@ -411,7 +410,6 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     # Weight events and count number of events per bin:
     for i in range(0, n_bins_energy):  # binning in energy
         total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])])
-        total_rate_gamma_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])])
 
         print("********Energy bin [GeV]*****")
         print(energy[i], energy[i + 1])
