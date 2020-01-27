@@ -28,7 +28,11 @@ optional.add_argument('-v', '--version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
-optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
+optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
+optional.add_argument('--default_time_run', help="If 0 time calibration is calculated otherwise create a link to the give run time calibration",type=int, default='1625')
+optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
+optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
+
 
 args = parser.parse_args()
 run = args.run_number
@@ -36,6 +40,10 @@ ped_run = args.pedestal_run
 prod_id = 'v%02d'%args.version
 stat_events = args.statistics
 base_dir = args.base_dir
+default_time_run = args.default_time_run
+ff_calibration = args.ff_calibration
+tel_id = args.tel_id
+
 max_events = 1000000
 
 
@@ -69,14 +77,21 @@ def main():
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
 
-        # define output and log file
+
+        #
+        # produce ff calibration file
+        #
+
+
+        # define charge file names
         output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
         log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
         print(f"\n--> Output file {output_file}")
-        if os.path.exists(output_file):
+        if os.path.exists(output_file) and ff_calibration is 'yes':
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
             else:
+                print(f"\n--> Stop")
                 exit(1)
 
         print(f"\n--> Log file {log_file}")
@@ -88,21 +103,50 @@ def main():
             exit(1)
         print(f"\n--> Config file {config_file}")
 
-        # run lstchain script
-        cmd = f"lstchain_data_create_calibration_file " \
-              f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
-              f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events}  " \
-              f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
-        #print(cmd)
-        print("\n--> RUNNING...")
+        if ff_calibration is 'yes':
+            # run lstchain script
+            cmd = f"lstchain_data_create_calibration_file " \
+                  f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
+                  f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events}  " \
+                  f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
 
-        os.system(cmd)
+            print("\n--> RUNNING...")
+            os.system(cmd)
 
-        # plot and save some results
-        plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pdf"
-        print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        calib.read_file(output_file)
-        calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
+            # plot and save some results
+            plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.pdf"
+            print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
+            calib.read_file(output_file,tel_id)
+            calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
+
+        #
+        # produce drs4 time calibration file
+        #
+        time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
+
+        if default_time_run is 0:
+            print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
+            cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
+                  f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
+            print("\n--> RUNNING...")
+            os.system(cmd)
+        else:
+            # otherwise perform a link to the default time calibration file
+            print(f"\n--> PRODUCING LINK TO DEFAULT TIME CALIBRATION (run {default_time_run})")
+            file_list = sorted(Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run{default_time_run}*'))
+
+
+            if len(file_list) == 0:
+                print(f">>> Error: time calibration file for run {default_time_run} not found\n")
+                raise NameError()
+            else:
+                time_calibration_file = file_list[0]
+                input_dir, name = os.path.split(os.path.abspath(time_calibration_file ))
+                cmd=f"ln -sf {time_calibration_file} {time_file}"
+                os.system(cmd)
+
+        print(f"\n--> Time calibration file: {time_file}")
+
         print("\n--> END")
 
     except Exception as e:
