@@ -90,8 +90,8 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     events = events[filter_good_events]
 
-    e_reco = 10**events.reco_energy.to_numpy() * u.GeV
-    e_true = 10**events.mc_energy.to_numpy() * u.GeV
+    e_reco = events.reco_energy.to_numpy() * u.GeV
+    e_true = events.mc_energy.to_numpy() * u.GeV
 
     gammaness = events.gammaness
 
@@ -752,8 +752,8 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     events = pd.concat((events_g, events_p))
     dl2 = pd.DataFrame(columns=events.keys())
     for i in range(0, n_bins_energy):
-        df_bin = events[(10 ** events.mc_energy < energy[i + 1]) & (10 ** events.mc_energy > energy[i]) \
-                        & (events.gammaness > gcut[i]) & (events.theta2 < tcut[i])]
+        df_bin = events[(events.mc_energy < energy[i+1]) & (events.mc_energy > energy[i]) \
+                               & (events.gammaness > gcut[i]) & (events.theta2 < tcut[i])]
 
         dl2 = pd.concat((dl2, df_bin))
 
