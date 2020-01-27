@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from ctapipe.visualization import CameraDisplay
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.instrument import  CameraGeometry
+from ctapipe_io_lst import load_camera_geometry
 
 # read back the monitoring containers written with the tool calc_camera_calibration.py
 from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer, \
@@ -23,6 +23,7 @@ status_data = PixelStatusContainer()
 channel = ['HG', 'LG']
 
 plot_dir = "none"
+
 
 def read_file(file_name, tel_id=1):
     """
@@ -62,13 +63,15 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
      calib_data: calibration container WaveformCalibrationContainer()
 
      """
-    camera = CameraGeometry.from_name("LSTCam", 2)
+    # read geometry
+    camera = load_camera_geometry()
 
     # plot open pdf
     if plot_file != "none":
         pp = PdfPages(plot_file)
 
     plt.rc('font', size=15)
+
 
     ### first figure
     fig = plt.figure(1, figsize=(12, 24))
@@ -263,7 +266,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         # select good pixels
         select = np.logical_not(mask[chan])
         fig = plt.figure(chan+10, figsize=(12, 18))
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.tight_layout(rect=[0, 0.0, 1, 0.95])
 
         fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)
 
