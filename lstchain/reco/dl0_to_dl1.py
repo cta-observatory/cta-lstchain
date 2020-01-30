@@ -204,7 +204,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         pointings = PointingPosition()
         pointings.drive_path = pointing_file_path
         drive_data = pointings._read_drive_report()
-
+    
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
@@ -346,11 +346,11 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                                     Try ucts (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
-                            azimuth, zenith = pointings.cal_pointingposition(event_timestamps, drive_data)
+                            azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
-                            event.pointing[telescope_id].altitude = 90.0 - zenith
+                            event.pointing[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
-                            dl1_container.alt_tel = 90.0 - zenith
+                            dl1_container.alt_tel = altitude
 
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))

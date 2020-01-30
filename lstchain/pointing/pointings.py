@@ -67,7 +67,7 @@ class PointingPosition(Component):
         drive_container = LSTDriveContainer()
         drive_container.time = drive_data['time'].data
         drive_container.azimuth_avg = drive_data['azimuth_avg'].data
-        drive_container.zenith_avg =  drive_data['zenith_avg'].data 
+        drive_container.altitude_avg =  90.0 - drive_data['zenith_avg'].data 
       
 
         xp = drive_container.time
@@ -79,11 +79,11 @@ class PointingPosition(Component):
 
         if len(run_times) > 1:
             run_azimuth = drive_container.azimuth_avg[time_in_window]
-            run_zenith = drive_container.zenith_avg[time_in_window]
+            run_altitude = drive_container.altitude_avg[time_in_window]
 
             ev_azimuth = np.interp(ev_time, run_times, run_azimuth)
-            ev_zenith = np.interp(ev_time, run_times, run_zenith)
-            return ev_azimuth, ev_zenith
+            ev_altitude = np.interp(ev_time, run_times, run_altitude)
+            return ev_azimuth, ev_altitude
         else:
             raise Exception("No drive time in the range of event times")
 
