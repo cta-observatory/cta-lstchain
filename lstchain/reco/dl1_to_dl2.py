@@ -28,6 +28,7 @@ __all__ = [
     'train_sep',
     'build_models',
     'apply_models',
+    'set_source_dependent_parameters'
 ]
 
 
@@ -447,22 +448,16 @@ def set_source_dependent_parameters(data):
     """
 
     is_simu = 'mc_type' in data.columns
+    data['dist'] = np.NaN
 
     if is_simu:
         #For gamma MC, 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
-        data['dist'] = data['disp_norm'][data['mc_type']==0]
-            
+        data['dist'][data['mc_type']==0] = data['disp_norm'][data['mc_type']==0]
         #For proton MC, 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
-        data['dist'] = data['r'][data['mc_type']!=0]
-        
+        data['dist'][data['mc_type']!=0] = data['r'][data['mc_type']!=0]
+    
     if not is_simu:
         # TODO: should get source position for real data from drive report
         # for the moment, 'dist' is defined for ON observation mode
         data['dist'] = data['r']
-
-    
-
-
-
-
 
