@@ -361,6 +361,11 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.prefix = tel.prefix
 
                     extra_im.tel_id = telescope_id
+                    extra_im.num_trig_pix = event.r0.tel[telescope_id].num_trig_pix
+                    extra_im.trigger_time = event.r0.tel[telescope_id].trigger_time
+                    extra_im.trigger_type = event.r0.tel[telescope_id].trigger_type
+                    extra_im.trig_pix_id = event.r0.tel[telescope_id].trig_pix_id
+
                     for container in [extra_im, dl1_container, event.r0, tel]:
                         add_global_metadata(container, metadata)
 
@@ -369,7 +374,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     writer.write(table_name=f'telescope/image/{tel_name}',
                                  containers=[event.r0, tel, extra_im])
                     writer.write(table_name=f'telescope/parameters/{tel_name}',
-                                 containers=[dl1_container])
+                                 containers=[dl1_container, extra_im])
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
