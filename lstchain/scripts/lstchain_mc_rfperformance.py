@@ -62,10 +62,6 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='src_dependent',
-                    help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
-                    default=False)
 
 args = parser.parse_args()
 
@@ -86,7 +82,6 @@ def main():
         save_models=args.storerf,
         path_models=args.path_models,
         custom_config=config,
-        src_dependent=args.src_dependent,
     )
 
 
@@ -99,8 +94,7 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config, \
-                                  src_dependent=args.src_dependent)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     ####PLOT SOME RESULTS#####
 

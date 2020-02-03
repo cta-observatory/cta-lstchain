@@ -32,7 +32,7 @@ __all__ = [
 
 
 
-def train_energy(train, custom_config={}, src_dependent=False):
+def train_energy(train, custom_config={}):
     """
     Train a Random Forest Regressor for the regression of the energy
     TODO: introduce the possibility to use another model
@@ -48,13 +48,9 @@ def train_energy(train, custom_config={}, src_dependent=False):
     """
 
     config = replace_config(standard_config, custom_config)
+    regression_args = config['random_forest_regressor_args'] 
+    features = config['regression_features']
     model = RandomForestRegressor    
-    regression_args = config['random_forest_regressor_args']
-    
-    if src_dependent:
-        features = config['regression_features_source_dependent']
-    else:
-        features = config['regression_features']
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -68,7 +64,7 @@ def train_energy(train, custom_config={}, src_dependent=False):
     return reg
 
 
-def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy'], src_dependent=False):
+def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy']):
     """
     Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
@@ -85,13 +81,9 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     """
 
     config = replace_config(standard_config, custom_config)
-    model = RandomForestRegressor
     regression_args = config['random_forest_regressor_args']
-
-    if src_dependent:
-        features = config['regression_features_source_dependent']
-    else:
-        features = config['regression_features']
+    features = config['regression_features']
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -107,7 +99,7 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     return reg
 
 
-def train_disp_norm(train, custom_config={}, predict_feature='disp_norm', src_dependent=False):
+def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     """
     Train a model for the regression of the disp_norm norm
 
@@ -122,13 +114,9 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm', src_de
     """
 
     config = replace_config(standard_config, custom_config)
-    model = RandomForestRegressor
     regression_args = config['random_forest_regressor_args']
-
-    if src_dependent:
-        features = config['regression_features_source_dependent']
-    else:
-        features = config['regression_features']
+    features = config['regression_features']
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -178,7 +166,7 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
 
 
-def train_reco(train, custom_config={}, src_dependent=False):
+def train_reco(train, custom_config={}):
     """
     Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
@@ -195,13 +183,9 @@ def train_reco(train, custom_config={}, src_dependent=False):
     """
 
     config = replace_config(standard_config, custom_config)
-    model = RandomForestRegressor
     regression_args = config['random_forest_regressor_args']
-
-    if src_dependent:
-        features = config['regression_features_source_dependent']
-    else:
-        features = config['regression_features']
+    features = config['regression_features']
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -223,7 +207,7 @@ def train_reco(train, custom_config={}, src_dependent=False):
     return reg_energy, reg_disp
 
 
-def train_sep(train, custom_config={}, src_dependent=False):
+def train_sep(train, custom_config={}):
 
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
@@ -243,13 +227,9 @@ def train_sep(train, custom_config={}, src_dependent=False):
     """
 
     config = replace_config(standard_config, custom_config)
-    model = RandomForestClassifier
     classification_args = config['random_forest_classifier_args']
-
-    if src_dependent:
-        features = config["classification_features_source_dependent"]
-    else:
-        features = config["classification_features"]
+    features = config["classification_features"]
+    model = RandomForestClassifier
 
 
     print("Given features: ", features)
@@ -270,7 +250,6 @@ def build_models(filegammas, fileprotons,
                  energy_min=-1,
                  custom_config={},
                  test_size=0.2,
-                 src_dependent=False,
                  ):
     """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
@@ -324,36 +303,31 @@ def build_models(filegammas, fileprotons,
     df_proton = utils.filter_events(df_proton, filters=events_filters)
 
     #Set source-dependent paramters
-    if src_dependent:
-        print("source-dependent analysis is activated")
-        
-        #For gamma data(MC), 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
-        df_gamma['dist'] = np.sqrt((df_gamma['x'] - df_gamma['src_x'])**2 + (df_gamma['y'] - df_gamma['src_y'])**2)
-        df_gamma['time_gradient'] = df_gamma['time_gradient'] * np.sign(df_gamma['x'] - df_gamma['src_x'])
-        df_gamma['skewness'] = df_gamma['skewness'] * np.sign(df_gamma['x'] - df_gamma['src_x'])
-        
-        #For proton data(MC/Real), 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
-        df_proton['dist'] = np.sqrt(df_proton['x']**2 +  df_proton['y']**2)
+    source_dependent_analysis = config["source_dependent_analysis"]
 
-    if src_dependent:
-        regression_features = config['regression_features_source_dependent']
-    else:
-        regression_features = config['regression_features']
+    if source_dependent_analysis:
+        print("source-dependent analysis is activated")
+        set_source_dependent_parameters(df_gamma)
+        set_source_dependent_parameters(df_proton)
+        config["regression_features"].append("dist")
+        config["classification_features"].append("dist")        
+
+    regression_features = config['regression_features']
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
-    reg_energy = train_energy(df_gamma, custom_config=config, src_dependent=src_dependent)
+    reg_energy = train_energy(df_gamma, custom_config=config)
 
-    reg_disp_vector = train_disp_vector(df_gamma, custom_config=config, src_dependent=src_dependent)
+    reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
 
     #Train classifier for gamma/hadron separation.
 
     train, testg = train_test_split(df_gamma, test_size=test_size)
     test = testg.append(df_proton, ignore_index=True)
 
-    temp_reg_energy = train_energy(train, custom_config=config, src_dependent=src_dependent)
+    temp_reg_energy = train_energy(train, custom_config=config)
 
-    temp_reg_disp_vector = train_disp_vector(train, custom_config=config, src_dependent=src_dependent)
+    temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
 
     #Apply the regressors to the test set
 
@@ -371,7 +345,7 @@ def build_models(filegammas, fileprotons,
 
     #Train the Classifier
 
-    cls_gh = train_sep(train, custom_config=config, src_dependent=src_dependent)
+    cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
         os.makedirs(path_models, exist_ok=True)
@@ -385,7 +359,7 @@ def build_models(filegammas, fileprotons,
     return reg_energy, reg_disp_vector, cls_gh
 
 
-def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}, src_dependent=False):
+def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -410,34 +384,17 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={},
 
     dl2 = dl1.copy()
 
-    is_simu = 'mc_type' in dl2.columns
-
     #Set source-dependent paramters
-    if src_dependent:
+    source_dependent_analysis = config["source_dependent_analysis"]
+
+    if source_dependent_analysis:
         print("source-dependent analysis is activated")
+        set_source_dependent_parameters(dl2)
+        config["regression_features"].append("dist")
+        config["classification_features"].append("dist")   
 
-        if is_simu:
-            #For gamma MC, 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
-            if dl2['mc_type'].any() == 0:
-                dl2['dist'] = np.sqrt((dl2['x'] - dl2['src_x'])**2 + (dl2['y'] - dl2['src_y'])**2)
-                dl2['time_gradient'] = dl2['time_gradient'] * np.sign(dl2['x'] - dl2['src_x'])
-                dl2['skewness'] = dl2['skewness'] * np.sign(dl2['x'] - dl2['src_x'])
-            
-            #For proton MC, 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
-            else:
-                dl2['dist'] = np.sqrt(dl2['x']**2 + dl2['y']**2)
-        
-        if not is_simu:
-            # TODO: get source position for real data from drive report
-            # for the moment, 'dist' is defined for ON observation mode
-            dl2['dist'] = np.sqrt(dl2['x']**2 + dl2['y']**2)
-
-    if src_dependent:
-        regression_features = config["regression_features_source_dependent"]
-        classification_features = config["classification_features_source_dependent"]
-    else:
-        regression_features = config["regression_features"]
-        classification_features = config["classification_features"]
+    regression_features = config["regression_features"]
+    classification_features = config["classification_features"]
       
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
@@ -478,4 +435,34 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={},
     probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
     dl2['gammaness'] = probs
     return dl2
+
+
+def set_source_dependent_parameters(data):
+    """Set parameters for source-dependent analysis .
+
+    Parameters:
+    -----------
+    data: Pandas DataFrame
+
+    """
+
+    is_simu = 'mc_type' in data.columns
+
+    if is_simu:
+        #For gamma MC, 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
+        data['dist'] = data['disp_norm'][data['mc_type']==0]
+            
+        #For proton MC, 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
+        data['dist'] = data['r'][data['mc_type']!=0]
+        
+    if not is_simu:
+        # TODO: should get source position for real data from drive report
+        # for the moment, 'dist' is defined for ON observation mode
+        data['dist'] = data['r']
+
+    
+
+
+
+
 
