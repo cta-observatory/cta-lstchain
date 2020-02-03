@@ -46,11 +46,6 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='src_dependent',
-                    help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
-                    default=False)
-
 
 args = parser.parse_args()
 
@@ -67,9 +62,6 @@ if __name__ == '__main__':
     cmd_dl1_to_dl2 = f'lstchain_mc_dl1_to_dl2.py -f {dl1_file} -p {args.path_models} -o {args.outdir}'
     if args.config_file is not None:
         cmd_dl1_to_dl2 = cmd_dl1_to_dl2 + f' -conf {args.config_file}'
-
-    if args.src_dependent is True:
-        cmd_r0_to_dl1 = cmd_r0_to_dl1 + f' -srcdep {args.src_dependent} '
 
     os.system(cmd_r0_to_dl1)
     os.system(cmd_dl1_to_dl2)

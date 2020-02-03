@@ -42,11 +42,6 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--source_dependent', '-srcdep', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='src_dependent',
-                    help='Boolean. True for source-dependent analysis. Default = False (source-independent analysis)',
-                    default=False)
-
 
 args = parser.parse_args()
 
@@ -66,7 +61,6 @@ def main():
                             save_models=args.storerf,
                             path_models=args.path_models,
                             custom_config=config,
-                            src_dependent=args.src_dependent,
                             )
 
 
