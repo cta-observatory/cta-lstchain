@@ -145,14 +145,16 @@ true_hadroness:
 
 def energy_results(data):
     """
+    Plot energy resolution, energy bias and energy migration matrix in the same figure
 
     Parameters
     ----------
-    data
+    data: `pandas.DataFrame`
+        dl2 MC gamma data - must include the columns `mc_energy` and `reco_energy`
 
     Returns
     -------
-
+    `matplotlib.pyplot.figure`
     """
     import matplotlib
     fig, axes = plt.subplots(2, 2, figsize=(12,8))
