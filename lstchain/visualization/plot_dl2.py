@@ -7,10 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 from scipy.stats import norm
-from matplotlib import gridspec
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve
-
+from astropy.utils.decorators import deprecated
 
 __all__ = [
     'plot_features',
@@ -18,10 +15,11 @@ __all__ = [
     'plot_disp',
     'plot_disp_vector',
     'plot_pos',
-    'plot_ROC',
+    'plot_roc_gamma',
     'plot_importances',
-    'plot_e_resolution',
-    'calc_resolution'
+    'plot_energy_resolution',
+    'calc_resolution',
+    'energy_results'
 ]
 
 def plot_features(data, true_hadroness=False):
@@ -145,6 +143,40 @@ true_hadroness:
     plt.xlabel(r"Time gradient")
 
 
+def energy_results(data):
+    """
+
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+
+    """
+    import matplotlib
+    fig, axes = plt.subplots(2, 2, figsize=(12,8))
+
+    ctaplot.plot_energy_resolution(data.mc_energy, data.reco_energy, ax=axes[0, 0])
+    ctaplot.plot_energy_bias(data.mc_energy, data.reco_energy, ax=axes[1, 0])
+    ctaplot.plot_migration_matrix(data.mc_energy.apply(np.log10),
+                                  data.reco_energy.apply(np.log10),
+                                  ax=axes[0, 1],
+                                  colorbar=True,
+                                  hist2d_args=dict(norm=matplotlib.colors.LogNorm()),
+                                  line_args=dict(color='black'),
+                                  )
+    axes[0, 1].set_xlabel('log(mc energy/[TeV])')
+    axes[0, 1].set_ylabel('log(reco energy/[TeV])')
+    axes[0, 0].set_title("")
+    axes[0, 0].label_outer()
+    axes[1, 0].set_title("")
+    axes[1, 0].set_ylabel("Energy bias")
+    axes[1, 1].remove()
+    fig.tight_layout()
+    return fig
+
+@deprecated(message="Use energy results")
 def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     """Plot the performance of reconstructed Energy.
@@ -384,77 +416,6 @@ def plot_importances(clf,features):
     plt.xlim([-1,
               len(features)])
 
-def plot_ROC(clf,data,features, Energy_cut):
-    # Plot ROC curve:
-    check = clf.predict_proba(data[features])[:, 0]
-    accuracy = accuracy_score(data['mc_type'],
-                              data['reco_type'])
-    print(accuracy)
-
-    fpr_rf, tpr_rf, _ = roc_curve(1-data['gammaness'],
-                                  check)
-
-    plt.plot(fpr_rf, tpr_rf,
-             label='Energy Cut: '+'%.3f'%(pow(10,Energy_cut)/1000)+' TeV')
-    plt.xlabel('False positive rate',
-               fontsize=15)
-    plt.ylabel('True positive rate',
-               fontsize=15)
-    plt.legend(loc='best')
-
-def plot_e_resolution(data, n_bins, emin, emax):
-
-
-    #delta_e = ((data['log_mc_energy']-data['reco_energy'])*np.log(10))
-    delta_e = np.log(10**data['reco_energy']/10**data['log_mc_energy'])
-    means_result = scipy.stats.binned_statistic(
-        data['log_mc_energy'],[delta_e,delta_e**2],
-        bins=n_bins,range=(emin, emax),statistic='mean')
-    means, means2 = means_result.statistic
-    standard_deviations = np.sqrt(means2 - means**2)
-    bin_edges = means_result.bin_edges
-    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-
-    gs0 = gridspec.GridSpec(1,2,width_ratios=[1,2])
-    subplot = plt.subplot(gs0[0])
-    gs = gridspec.GridSpecFromSubplotSpec(2, 1,
-                                          height_ratios=[1, 1],
-                                          subplot_spec=subplot)
-
-    ax0 = plt.subplot(gs[0])
-    plot0 = ax0.errorbar(x=bin_centers,
-                         y=means, yerr=standard_deviations,
-                         linestyle='none', marker='.')
-
-    plt.ylabel('Bias',fontsize=24)
-    plt.grid()
-    ax1 = plt.subplot(gs[1],sharex = ax0)
-    plot1 = ax1.plot(bin_centers,standard_deviations,
-                     marker='X',linestyle='None')
-    plt.ylabel('STD',fontsize=24)
-    plt.xlabel('$log_{10}E_{true}(GeV)$',fontsize=24)
-    plt.grid()
-
-    subplot2 = plt.subplot(gs0[1])
-
-    #Lines for setting the configuration of the subplots depending on n_bins
-
-    sqrtn_bins = np.sqrt(n_bins)
-    a = int(np.ceil(sqrtn_bins))
-    dif = a - sqrtn_bins
-    b=a
-    if dif > 0.5:
-        b=a-1
-
-    gs2 = gridspec.GridSpecFromSubplotSpec(a, b,subplot_spec=subplot2)
-    for nbin in range(0,n_bins):
-        ax = plt.subplot(gs2[nbin])
-        plt.hist(delta_e[means_result.binnumber==nbin+1], 50,
-                 label='$logE_{center}$ '+'%.2f' % bin_centers[nbin])
-        plt.legend()
-    plt.subplots_adjust(hspace=.25)
-    plt.subplots_adjust(wspace=.5)
-
 def calc_resolution(data):
 
     delta_e = np.log(10**data['reco_energy']/10**data['log_mc_energy'])
@@ -477,3 +438,68 @@ def calc_resolution(data):
     plt.xlabel("$log(E_{rec}/E_{true})$")
     print(mu,sigma)
     return mu,sigma
+
+def plot_roc_gamma(dl2_data, energy_bins=None, ax=None, **kwargs):
+    """
+    Plot a ROC curve of the gammaness classification from a pandas dataframe.
+    If there are more than two `mc_type`, all events with `mc_type!=gamma_label` are considered background.
+
+    Parameters
+    ----------
+    dl2_data: `pandas.DataFrame`
+        Reconstructed MC events at DL2+ level.
+        must include the columns `mc_type`, `gammaness` and `mc_energy`.
+    energy_bins: None or int or `numpy.ndarray`
+        if None, all energy are stacked
+        else, one roc curve per energy bin is done on the same plot
+    ax: `matplotlib.pyplot.axis`
+    kwargs: args for `ctaplot.plot_roc_curve_gammaness`
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axis`
+    """
+    if energy_bins is None:
+        ax = ctaplot.plot_roc_curve_gammaness(dl2_data.mc_type, dl2_data.gammaness,
+                                              ax=ax,
+                                              **kwargs
+                                              )
+    else:
+        ax = ctaplot.plot_roc_curve_gammaness_per_energy(dl2_data.mc_type, dl2_data.gammaness, dl2_data.mc_energy,
+                                                         energy_bins=energy_bins,
+                                                         ax=ax,
+                                                         **kwargs)
+    return ax
+
+def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_north=False, **kwargs):
+    """
+    Plot the energy resolution from a pandas dataframe of DL2+ data.
+    See `~ctaplot.plot_energy_resolution` for doc.
+
+    Parameters
+    ----------
+   dl2_data: `pandas.DataFrame`
+        Reconstructed MC events at DL2+ level.
+    ax: `matplotlib.pyplot.axes`
+    bias_correction: `bool`
+        correct for systematic bias
+    cta_req_north: `bool`
+        if True, includes CTA requirement curve
+    kwargs: args for `matplotlib.pyplot.plot`
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axes`
+    """
+
+    ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy,
+                                dl2_data.reco_energy,
+                                ax=ax,
+                                bias_correction=bias_correction,
+                                **kwargs,
+                                )
+
+    if cta_req_north:
+        ax = ctaplot.plot_energy_resolution_cta_requirement('north', ax=ax, color='black')
+    return ax
+
