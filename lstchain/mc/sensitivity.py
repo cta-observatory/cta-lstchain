@@ -89,8 +89,8 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     events = events[filter_good_events]
 
-    e_reco = events.reco_energy.to_numpy() * u.GeV
-    e_true = events.mc_energy.to_numpy() * u.GeV
+    e_reco = events.reco_energy.to_numpy() * u.TeV
+    e_true = events.mc_energy.to_numpy() * u.TeV
 
     gammaness = events.gammaness
 
@@ -332,11 +332,14 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
 
     # Pass units to GeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin'] * u.GeV / u.TeV
-    mc_par_g['emax'] = mc_par_g['emax'] * u.GeV / u.TeV
+    mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
+    mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
 
-    mc_par_g['area_sim'] = mc_par_g['area_sim'] * u.m ** 2
-    mc_par_p['area_sim'] = mc_par_p['area_sim'] * u.m ** 2
+    mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
+    mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
+
+    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
     # TODO: This information should be read from the files
@@ -568,14 +571,14 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
 
     # Pass units to GeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin'] * u.GeV / u.TeV
-    mc_par_g['emax'] = mc_par_g['emax'] * u.GeV / u.TeV
+    mc_par_g['emin'] = mc_par_g['emin']to(u.GeV)
+    mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
 
-    mc_par_p['emin'] = mc_par_p['emin'] * u.GeV / u.TeV
-    mc_par_p['emax'] = mc_par_p['emax'] * u.GeV / u.TeV
+    mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
+    mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
 
-    mc_par_g['area_sim'] = mc_par_g['area_sim'] * u.m ** 2
-    mc_par_p['area_sim'] = mc_par_p['area_sim'] * u.m ** 2
+    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
     emin_sensitivity = 10 ** 1 * u.GeV  # mc_par_g['emin']
