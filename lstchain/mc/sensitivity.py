@@ -571,7 +571,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
 
     # Pass units to GeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin']to(u.GeV)
+    mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
     mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
 
     mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
