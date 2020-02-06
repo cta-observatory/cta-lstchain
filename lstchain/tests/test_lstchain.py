@@ -159,7 +159,8 @@ def test_sensitivity():
 
     E, best_sens, result, units, dl2 = sensitivity(dl1_file,
                                                    dl1_file,
-                                                   dl2_file, dl2_file,
+                                                   dl2_file,
+                                                   fake_dl2_proton_file,
                                                    1, 1,
                                                    eb, gcut, tcut * (u.deg ** 2), noff,
                                                    obstime)
