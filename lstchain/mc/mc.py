@@ -87,7 +87,6 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
 
     TODO: Introduce any spectral form
     """
-    print("cone", cone)
 
     if(cone == 0):
         omega = 1

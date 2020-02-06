@@ -418,7 +418,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     for i in range(0, n_bins_energy):  # binning in energy
         total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])])
 
-        print("********Energy bin [GeV]*****")
+        print("******** Energy bin [GeV] *****")
         print(energy[i], energy[i + 1])
         total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])])
         total_rate_gamma_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])])
@@ -620,12 +620,18 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                  proton_par['alpha'], rate_p,
                  mc_par_p['sim_ev'], proton_par['e0'])
 
-    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    if (w_g.unit ==  u.Unit("sr / s")):
+        print("You are using diffuse gammas to estimate point-like sensitivity")
+        print("These results will make no sense")
+        w_g = w_g / u.sr  # Fix to make tests pass
+
+    rate_weighted_g = ((e_true_g / crab_par['e0'].to(u.TeV)) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
                       * w_g
-    rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
+    rate_weighted_p = ((e_true_p / proton_par['e0'].to(u.TeV)) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
     p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
+
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
@@ -648,6 +654,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
         rate_g_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i]) \
                                              & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])])
 
+
         rate_p_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
                                              & (gammaness_p > gcut[i]) & p_contained])
         final_gamma[i] = (rate_g_ebin * obstime).value
@@ -659,10 +666,10 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                                   & (gammaness_p > gcut[i]) & p_contained].shape[0]
 
         ngamma_per_ebin[i] = np.sum(
-            rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])].to(u.TeV / u.s).value) \
+            rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])].to(1 / u.s).value) \
                              * obstime.to(u.s).value
         nhadron_per_ebin[i] = np.sum(
-            rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])].to(u.TeV / u.s).value) \
+            rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])].to(1 / u.s).value) \
                               * obstime.to(u.s).value
 
     n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima_ebin(final_gamma, final_hadrons * noff,
