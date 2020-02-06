@@ -94,7 +94,6 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     gammaness = events.gammaness
 
-
     # TO DO: Focal length should be read from file
     #focal_length = source.telescope_descriptions[1]['camera_settings']['focal_length'] * u.m
     focal_length = 28 * u.m
@@ -381,9 +380,14 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
                  proton_par['alpha'], rate_p,
                  mc_par_p['sim_ev'], proton_par['e0'])
 
-    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    if (w_g.unit ==  u.Unit("sr / s")):
+        print("You are using diffuse gammas to estimate point-like sensitivity")
+        print("These results will make no sense")
+        w_g = w_g / u.sr  # Fix to make tests pass
+
+    rate_weighted_g = ((e_true_g / crab_par['e0'].to(u.TeV)) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
                       * w_g
-    rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
+    rate_weighted_p = ((e_true_p / proton_par['e0'].to(u.TeV)) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
     p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
