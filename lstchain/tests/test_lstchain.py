@@ -2,9 +2,11 @@ from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
 import os
+import shutil
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
+import astropy.units as u 
 
 test_dir = 'testfiles'
 
@@ -13,6 +15,7 @@ os.makedirs(test_dir, exist_ok=True)
 mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
 dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
 dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
+fake_dl2_proton_file = os.path.join(test_dir, 'dl2_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
@@ -120,6 +123,47 @@ def test_apply_models():
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
+
+def produce_fake_dl2_proton_file():
+    """
+    Produce a fake dl2 proton file by copying the dl2 gamma test file
+    and changing mc_type
+    """
+    events = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
+    events.mc_type = 101
+    events.to_hdf(fake_dl2_proton_file, key=dl2_params_lstcam_key)
+
+@pytest.mark.run(after='produce_fake_dl2_proton_file')
+def test_sensitivity():
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
+
+    produce_fake_dl2_proton_file()
+
+    nfiles_gammas = 1
+    nfiles_protons = 1
+
+    eb = 10  # Number of energy bins
+    gb = 11  # Number of gammaness bins
+    tb = 10  # Number of theta2 bins
+    obstime = 50 * 3600 * u.s
+    noff = 2
+
+
+    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(dl1_file,
+                                                                         dl1_file,
+                                                                         dl2_file,
+                                                                         fake_dl2_proton_file,
+                                                                         1, 1,
+                                                                         eb, gb, tb, noff,
+                                                                         obstime)
+
+    E, best_sens, result, units, dl2 = sensitivity(dl1_file,
+                                                   dl1_file,
+                                                   dl2_file,
+                                                   fake_dl2_proton_file,
+                                                   1, 1,
+                                                   eb, gcut, tcut * (u.deg ** 2), noff,
+                                                   obstime)
 
 
 @pytest.mark.last
