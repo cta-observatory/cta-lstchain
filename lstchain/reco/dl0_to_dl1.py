@@ -317,7 +317,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                         # gps_time = event.r0.tel[telescope_id].trigger_time
 
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
+                        gps_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
 
                         # Get counters from the central Dragon module
                         module_id = 82
@@ -332,21 +332,20 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                                 event.lst.tel[telescope_id].evt.tib_pps_counter +
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
-                        #dl1_container.gps_time = gps_time
+                        dl1_container.gps_time = gps_time
                         dl1_container.tib_time = tib_time
-                        dl1_container.ucts_time = ucts_time
                         dl1_container.dragon_time = dragon_time
 
                         # Select the timestamps to be used for pointing interpolation
-                        if config['timestamps_pointing'] == "ucts":
-                            event_timestamps = ucts_time
+                        if config['timestamps_pointing'] == "gps":
+                            event_timestamps = gps_time
                         elif config['timestamps_pointing'] == "dragon":
                             event_timestamps = dragon_time
                         elif config['timestamps_pointing'] == "tib":
                             event_timestamps = tib_time
                         else:
                             raise ValueError("The timestamps_pointing option is not a valid one. \
-                                    Try ucts (default), dragon or tib.")
+                                    Try gps (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
