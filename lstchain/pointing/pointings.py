@@ -81,8 +81,8 @@ class PointingPosition(Component):
             run_azimuth = drive_container.azimuth_avg[time_in_window]
             run_altitude = drive_container.altitude_avg[time_in_window]
 
-            ev_azimuth = np.interp(ev_time, run_times, run_azimuth)
-            ev_altitude = np.interp(ev_time, run_times, run_altitude)
+            ev_azimuth = np.interp(ev_time, run_times, run_azimuth) * u.deg
+            ev_altitude = np.interp(ev_time, run_times, run_altitude) * u.deg
             return ev_azimuth, ev_altitude
         else:
             raise Exception("No drive time in the range of event times")
