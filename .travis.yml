@@ -32,8 +32,8 @@ before_install:
     - conda info -a # Useful for debugging any issues with conda
 
 install:
-    - conda env create --name cta --file environment.yml
-    - conda activate cta
+    - conda env create --file environment.yml
+    - conda activate lst-dev
     - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
     - pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
     - python setup.py install
