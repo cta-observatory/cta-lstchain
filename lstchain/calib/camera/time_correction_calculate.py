@@ -241,12 +241,12 @@ class TimeCorrectionCalculate(Component):
             fbn_array[low_gain, pix_id, :] = self.fbn
 
         try:
-            hf = h5py.File(self.calib_file_path, 'w')
-            hf.create_dataset('fan', data=fan_array)
-            hf.create_dataset('fbn', data=fbn_array)
-            hf.attrs['n_events'] = self.sum_events
-            hf.attrs['n_harm'] = self.n_harmonics
+            with h5py.File(self.calib_file_path, 'w') as hf:
+                hf.create_dataset('fan', data=fan_array)
+                hf.create_dataset('fbn', data=fbn_array)
+                hf.attrs['n_events'] = self.sum_events
+                hf.attrs['n_harm'] = self.n_harmonics
 
         except Exception as err:
-            print("FAILED!", err)
-        hf.close()
+            print(f"FAILED to create the file {self.calib_file_path}", err)
+

@@ -1,0 +1,133 @@
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.ensemble.forest module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.ensemble. Anything that cannot be imported from sklearn.ensemble is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/utils/deprecation.py:144: FutureWarning: The sklearn.tree.tree module is  deprecated in version 0.22 and will be removed in version 0.24. The corresponding classes / functions should instead be imported from sklearn.tree. Anything that cannot be imported from sklearn.tree is now part of the private API.
+  warnings.warn(message, FutureWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestRegressor from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator DecisionTreeClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+/home/maria.bernardos/miniconda3/envs/cta/lib/python3.7/site-packages/sklearn/base.py:318: UserWarning: Trying to unpickle estimator RandomForestClassifier from version 0.20.3 when using version 0.22.1. This might lead to breaking code or invalid results. Use at your own risk.
+  UserWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
