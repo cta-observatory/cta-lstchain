@@ -62,7 +62,8 @@ filters = tables.Filters(
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}, use_main_island=True):
+def get_dl1(calibrated_event, telescope_id, dl1_container = None, 
+            custom_config = {}, use_main_island = True):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -71,11 +72,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     Parameters
     ----------
     calibrated_event: ctapipe event container
-    telescope_id: int
+    telescope_id: `int`
     dl1_container: DL1ParametersContainer
-    config_file: path to a configuration file
+    custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
+    use_main_island: `bool` Use only the main island 
+        to calculate DL1 parameters
 
     Returns
     -------
@@ -102,13 +105,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
 
         if use_main_island:
-            n_pixels_on_island = np.zeros(num_islands+1)
+            n_pixels_on_island = np.zeros(num_islands + 1)
 
-            for iisland in range(1, num_islands+1):
-                n_pixels_on_island[iisland] = np.sum(island_labels==iisland)
+            for iisland in range(1, num_islands + 1):
+                n_pixels_on_island[iisland] = np.sum(island_labels == iisland)
               
             max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels!=max_island_label] = False
+            signal_pixels[island_labels != max_island_label] = False
 
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
@@ -149,7 +152,11 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         path to input file, default: `gamma_test_large.simtel.gz`
     output_filename: str
         path to output file, default: `./` + basename(input_filename)
-    config_file: path to a configuration file
+    custom_config: path to a configuration file
+    pedestal_path: Path to the DRS4 pedestal file
+    calibration_path: Path to the file with calibration constants and
+        pedestals
+    time_calibration_path: Path to the DRS4 time correction file
     pointing_file_path: path to the Drive log with the pointing information
 
     Returns
