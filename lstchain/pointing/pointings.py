@@ -87,4 +87,5 @@ class PointingPosition(Component):
             return ev_azimuth, ev_altitude
         else:
             raise Exception("No drive time in the range of event times")
+            return np.nan, np.nan
 
