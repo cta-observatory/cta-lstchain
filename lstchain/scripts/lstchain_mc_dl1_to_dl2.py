@@ -19,7 +19,7 @@ from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
-
+import numpy as np
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -62,8 +62,15 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
+
+    # Dealing with pointing errors
     if 'alt_tel' in data.columns and 'az_tel' in data.columns:
-        impute_pointing(data)
+        # make sure there is a least one good pointing value to interp from.
+        if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
+            impute_pointing(data)
+        else:
+            data.alt_tel = 0
+            data.az_tel = 0
     data = filter_events(data, filters=config["events_filters"])
 
 
