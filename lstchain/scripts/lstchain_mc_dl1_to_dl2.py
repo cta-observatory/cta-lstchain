@@ -19,6 +19,7 @@ from lstchain.reco.utils import filter_events
 from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.reco.utils import impute_pointing
 
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
@@ -62,6 +63,7 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
+    impute_pointing(data)
     data = filter_events(data, filters=config["events_filters"])
 
 
