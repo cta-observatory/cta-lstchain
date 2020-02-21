@@ -18,7 +18,6 @@ from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
-from sklearn.impute import KNNImputer
 
 __all__ = [
     'alt_to_theta',
