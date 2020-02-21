@@ -5,15 +5,18 @@ import tables
 from tables import open_file
 import os
 import pandas as pd
-
 import ctapipe
 import lstchain
-from ctapipe.io import HDF5TableReader
+from ctapipe.io import HDF5TableReader, HDF5TableWriter
 from ctapipe.io.containers import MCHeaderContainer
-from ctapipe.io import HDF5TableWriter
+from ctapipe.io import EventSource
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
+from ctapipe.io.containers import DataContainer, SubarrayDescription
+from astropy.coordinates import Angle
+import astropy.units as u
+from ctapipe.instrument import TelescopeDescription
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -33,7 +36,9 @@ __all__ = ['read_simu_info_hdf5',
            'write_subarray_tables',
            'write_metadata',
            'write_dataframe',
-           'write_dl2_dataframe'
+           'write_dl2_dataframe',
+           'write_dl1_title',
+           'check_dl1_file',
            ]
 
 
@@ -42,6 +47,162 @@ dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 
+class LSTChainDL1EventSource(EventSource):
+
+    def __init__(self, config=None, parent=None, **kwargs):
+        super().__init__(config=config, parent=parent, **kwargs)
+
+        if self.is_compatible(self.input_url):
+            self.file = tables.open_file(self.input_url, "r")
+        else:
+            raise Exception("The file cannot be open")
+
+    @staticmethod
+    def is_compatible(file_path):
+        try:
+            return check_dl1_file(file_path)
+        except Exception:
+            return False
+
+
+    def _generator(self):
+
+        with tables.open_file(self.input_url, mode='r') as self.file:
+            counter = 0
+
+            images = self.file.root[dl1_images_lstcam_key]['images']
+            pulse_times = self.file.root[dl1_images_lstcam_key]['pulse_time']
+            if len(images) != len(pulse_times):
+                raise Exception("The number of images ({}) is different from the number of time maps ({})".format(
+                    len(images), len(pulse_times),
+                )
+                )
+
+            if self.max_events is None:
+                max_events = len(images)
+            else:
+                max_events = self.max_events
+
+            parameters = self.file.root[dl1_params_lstcam_key]
+
+            data = DataContainer()
+            data.meta['origin'] = 'cta-lstchain'
+            data.meta['input_url'] = self.input_url
+            data.meta['max_events'] = self.max_events
+
+            for ii in range(max_events):
+                data.r0.reset()
+                data.dl1.reset()
+                data.mc.reset()
+
+                data.dl1.obs_id = parameters[ii]['obs_id']
+                data.dl1.event_id = parameters[ii]['event_id']
+                data.r0.tels_with_data = {parameters[ii]['tel_id']}
+
+                # mc info
+                data.mc.energy = parameters[ii]['mc_energy']
+                data.mc.alt = Angle(parameters[ii]['mc_alt'] * u.rad)
+                data.mc.az = Angle(parameters[ii]['mc_az'] * u.rad)
+                data.mc.core_x = parameters[ii]['mc_core_x'] * u.m
+                data.mc.core_y = parameters[ii]['mc_core_y'] * u.m
+                data.mc.x_max = parameters[ii]['mc_x_max'] * u.g / (u.cm**2)
+
+                self._build_mcheader(data)
+
+                tel_id = parameters[ii]['tel_id']
+                data.dl1.tel[tel_id].image = images[ii]
+                data.dl1.tel[tel_id].pulse_time = pulse_times[ii]
+
+                yield data
+                counter += 1
+
+        return
+
+    def _build_subarray_info(self):
+        """
+        constructs a SubarrayDescription object from the info in an DL1 file
+        Parameters
+        ----------
+        file: pytables opened File
+        Returns
+        -------
+        SubarrayDescription :
+            instrumental information
+        """
+
+        subarray = SubarrayDescription("MonteCarloArray")
+
+        for tel in self.file.root.Array_Information:
+            tel_id = tel['id']
+            tel_type = tel['type']
+            subarray.tels[tel_id] = self._build_telescope_description(tel_type)
+            tel_pos = u.Quantity([tel['x'], tel['y'], tel['z']], u.m)
+            subarray.positions[tel_id] = tel_pos
+
+        return subarray
+
+    def _build_telescope_description(self, tel_type):
+
+        tel_info = self.file.root.Telescope_Type_Information \
+            [self.file.root.Telescope_Type_Information[:]['type'] == tel_type][0]
+
+        camera_name = tel_info['camera'].decode()
+        optics_name = tel_info['optics'].decode()
+        try:
+            CameraGeometry.from_name(camera_name)
+        except ValueError:
+            warnings.warn(f'Unkown camera name {camera_name}')
+        try:
+            OpticsDescription.from_name(optics_name)
+        except ValueError:
+            warnings.warn(f'Unkown optics name {optics_name}')
+
+        return TelescopeDescription.from_name(optics_name, camera_name)
+
+
+
+
+
+def check_dl1_file(filename):
+    """
+    Check if a DL1 files has been created with lstchain
+
+    Parameters
+    ----------
+    filename: str
+        path to the file
+
+    Returns
+    -------
+    bool
+    """
+    with tables.open_file(filename, "r") as file:
+        return file.title == 'dl1_lstchain'
+
+
+def write_dl1_title(filename):
+    """
+    Write the title for HDF5 DL1 files created with lstchain
+
+    Parameters
+    ----------
+    filename:
+    """
+    write_title(filename, title='dl1_lstchain')
+
+
+def write_title(filename, title):
+    """
+    Write a title in a HDF5 file header
+
+    Parameters
+    ----------
+    filename: str
+        path to the file
+    title: str
+    """
+    with tables.open_file(filename, 'a') as file:
+        file.title = title
 
 
 def read_simu_info_hdf5(filename):
