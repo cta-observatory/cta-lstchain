@@ -361,9 +361,12 @@ def write_array_info(event, output_filename):
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
+            camera_name = str(camera)
+            if camera_name is 'UNKNOWN':
+                continue
             camera.to_table().write(
                 output_filename,
-                path=f'/instrument/telescope/camera/{camera}',
+                path=f'/instrument/telescope/camera/{camera_name}',
                 append=True,
                 serialize_meta=serialize_meta,
             )
@@ -450,7 +453,7 @@ def write_metadata(metadata, output_filename):
     # So this metadata is written in the file attributes
     with open_file(output_filename, mode='a') as file:
         for k, item in metadata.as_dict().items():
-            if k in file.root._v_attrs and type(item) is list:
+            if k in file.root._v_attrs and type(file.root._v_attrs) is list:
                 attribute = file.root._v_attrs[k].extend(metadata[k])
                 file.root._v_attrs[k] = attribute
             else:
