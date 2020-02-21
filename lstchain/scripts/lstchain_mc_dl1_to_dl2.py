@@ -63,7 +63,8 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
-    impute_pointing(data)
+    if 'alt_tel' in data.columns and 'az_tel' in data.columns:
+        impute_pointing(data)
     data = filter_events(data, filters=config["events_filters"])
 
 
