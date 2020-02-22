@@ -304,13 +304,15 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # GPS time is not available for the time being. Meanwhile,
-                        # timestamps can be extracted from the UCTS and alternatively
-                        # calculated from the TIB/Dragon modules counters + NTP time
-                        # corresponding to the start of the run. For the time being,
-                        # we will store the three of them in the dl1 files.
-                        # This will be deprecated and modified back to directly use
-                        # gps_time whenever the GPS starts working reliably.
+                        # GPS + WRS + UCTS is now working in its nominal configuration. 
+                        # These TS are stored into ucts_time container.
+                        # TS can be alternatively calculated from the TIB/Dragon 
+                        # modules counters + NTP time corresponding to the start 
+                        # of the run (just for cross-checks). For the time being,
+                        # the three TS will be stored in the DL1 files.
+                        # This will be deprecated and modified back to uniquely use
+                        # gps_time whenever the GPS + WRS + UCTS info reliably and stably
+                        # arrives at the EvB side.
 
                         # gps_time = event.r0.tel[telescope_id].trigger_time
 
