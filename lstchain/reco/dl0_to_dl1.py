@@ -198,7 +198,7 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         # all this will be cleaned up in a next PR related to the configuration files
         r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
                                                 time_calibration_path=time_calibration_path,
-                                                image_extractor=config['image_extractor'],
+                                                extractor_product=config['image_extractor'],
                                                 gain_threshold=Config(config).gain_selector_config['threshold'],
                                                 config=Config(config),
                                                 allowed_tels=[1],
