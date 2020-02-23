@@ -34,7 +34,7 @@ def crab_magic(E):
 
     dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
-    return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
+    return dFdE.to(1/u.TeV / u.cm**2 / u.s), par
 
 def crab_hegra(E):
     """ From http://adsabs.harvard.edu/abs/2004ApJ...614..897A
@@ -61,4 +61,4 @@ def crab_hegra(E):
 
     dFdE  = f0 * np.power(E / e0, alpha)
 
-    return dFdE.to(1/u.GeV / u.cm**2 / u.s), par
+    return dFdE.to(1/u.TeV / u.cm**2 / u.s), par
