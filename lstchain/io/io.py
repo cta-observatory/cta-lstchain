@@ -361,9 +361,17 @@ def write_array_info(event, output_filename):
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
-            camera_name = str(camera)
-            if camera_name is 'UNKNOWN':
-                continue
+            camera_name = str(sub.tel[tel_id])
+            with tables.open_file(output_filename, mode='r') as f:
+                telescope_chidren = f.root['instrument/telescope']._v_children.keys()
+                if 'camera' in telescope_chidren:
+                    cameras_name = f.root['instrument/telescope/camera']._v_children.keys()
+                    if camera_name in cameras_name:
+                        print(
+                            f'WARNING during lstchain.io.write_array_info():',
+                            f'camera {camera_name} seems to be already present in the h5 file.'
+                        )
+                        continue
             camera.to_table().write(
                 output_filename,
                 path=f'/instrument/telescope/camera/{camera_name}',
