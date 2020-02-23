@@ -20,6 +20,7 @@ from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
 import numpy as np
+import astropy.units as u
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -63,14 +64,14 @@ def main():
 
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
 
-    # Dealing with pointing errors
+    # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns:
         # make sure there is a least one good pointing value to interp from.
         if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
             impute_pointing(data)
         else:
-            data.alt_tel = 0
-            data.az_tel = 0
+            data.alt_tel = u.Quantity(-90, u.deg)
+            data.az_tel = u.Quantity(-90, u.deg)
     data = filter_events(data, filters=config["events_filters"])
 
 
