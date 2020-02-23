@@ -23,10 +23,10 @@ def crab_magic(E):
     par: `dict` with spectral parameters
     """
 
-    f0    = 3.23e-14 / u.GeV / u.cm**2 / u.s
+    f0    = 3.23e-11 / u.TeV / u.cm**2 / u.s
     alpha = -2.47
     beta  = -0.24
-    e0    = 1000 * u.GeV
+    e0    = 1. * u.TeV
 
     par_var = [f0, alpha, beta, e0]
     par_dic = ['f0', 'alpha', 'beta', 'e0']
@@ -51,9 +51,9 @@ def crab_hegra(E):
     par: `dict` with spectral parameters
     """
 
-    f0    = 2.83e-14 / u.GeV / u.cm**2 / u.s
+    f0    = 2.83e-11 / u.TeV / u.cm**2 / u.s
     alpha = -2.62
-    e0    = 1000 * u.GeV
+    e0    = 1. * u.TeV
 
     par_var = [f0, alpha, e0]
     par_dic = ['f0', 'alpha', 'e0']

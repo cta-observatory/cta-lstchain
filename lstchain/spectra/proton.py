@@ -20,9 +20,9 @@ def proton_bess(E):
     par: `dict` with spectral parameters
     """
 
-    f0 = 9.6e-9 / u.GeV / u.cm**2 / u.s / u.sr
+    f0 = 9.6e-6 / u.TeV / u.cm**2 / u.s / u.sr
     alpha = -2.70
-    e0 = 1000. * u.GeV
+    e0 = 1. * u.TeV
 
     par_var = [f0, alpha, e0]
     par_dic = ['f0', 'alpha', 'e0']
