@@ -30,4 +30,4 @@ def proton_bess(E):
 
     dFdEdO = f0 * np.power(E/e0, alpha)
 
-    return dFdEdO.to(1 / u.GeV / u.cm**2 / u.s / u.sr), par
+    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr), par
