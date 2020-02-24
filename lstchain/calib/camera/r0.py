@@ -37,11 +37,11 @@ class CameraR0Calibrator(Component):
     offset = Int(default_value=400,
                  help='Define the offset of the baseline').tag(config=True)
 
-    r1_sample_start = Int(default_value=None,
+    r1_sample_start = Int(default_value=2,
                           help='Start sample for r1 waveform',
                           allow_none=True).tag(config=True)
 
-    r1_sample_end = Int(default_value=None,
+    r1_sample_end = Int(default_value=38,
                         help='End sample for r1 waveform',
                         allow_none=True).tag(config=True)
 
@@ -144,13 +144,14 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.time_lapse_corr(event, tel_id)
             self.interpolate_spikes(event, tel_id)
 
-            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
+            event.r1.tel[tel_id].trigger_type = event.r0.tel[tel_id].trigger_type
 
-            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
+            event.r1.tel[tel_id].trigger_time = event.r0.tel[tel_id].trigger_time
 
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
             event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
+
 
     def subtract_pedestal(self, event, tel_id):
         """

@@ -1,22 +1,14 @@
 import argparse
 import sys, os
-import numpy as np
-from ctapipe.image.extractor import LocalPeakWindowSum
-from ctapipe.image.muon.features import ring_containment 
-from ctapipe.image.muon.features import ring_completeness
-from ctapipe.image.muon.features import npix_above_threshold
-from ctapipe.image.muon.features import npix_composing_ring
-from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
-from ctapipe.image.cleaning import tailcuts_clean
+
 from ctapipe.instrument import CameraGeometry
-from ctapipe.io.hdf5tableio import HDF5TableReader
-from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer
 from ctapipe.io import event_source
-from ctapipe.io import EventSeeker
+import numpy as np
 
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr
-
+from lstchain.calib.camera.calibrator import LSTCameraCalibrator
+from traitlets.config.loader import Config
 from astropy.table import Table
 
 
@@ -29,6 +21,7 @@ python lstchain_data_muon_analysis.py
 --output_file Data_table.fits --pedestal_file pedestal_file_run446_0000.fits 
 --calibration_file calibration.hdf5
 --max_events 1000
+--tel_id 0
 
 '''
 
@@ -47,20 +40,24 @@ parser.add_argument("--pedestal_file", help = "Path to the pedestal file",
 parser.add_argument("--calibration_file", help = "Path to the file containing the calibration constants",
                     type = str)
 
+parser.add_argument("--time_calibration_file", help = "Path to the calibration file with time corrections ",
+                    type = str, default='')
+
 # Optional argument
-parser.add_argument("--max_events", help = "Maximum numbers of events to read."
+parser.add_argument("--max_events", help = "Maximum numbers of events to read. "
                                          "Default = 100",
                     type = int, default = 100)
+parser.add_argument("--gain_threshold", help = "Gain threshold in ADC. "
+                                               "Default = 3500", type = int, default=3500)
 
 parser.add_argument("--plot_rings", help = "Plot figures of the stored rings", 
                     default = False, action='store_true')
 
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
+parser.add_argument("--tel_id", help = "telescope id. "
+                                       "Default = 1",type = int, default = 1)
 
-parser.add_argument("--run_number", help = "Run number to analyze."
-                                         "Default = 442",
-                    type = int, default = 442)
 
 args = parser.parse_args()
 
@@ -71,10 +68,11 @@ def main():
     print("output file: {}".format(args.output_file))
     print("pedestal file: {}".format(args.pedestal_file))
     print("calibration file: {}".format(args.calibration_file))
+    print("time calibration file: {}".format(args.time_calibration_file))
     print("max events: {}".format(args.max_events))
 
     # Camera geometry
-    geom = CameraGeometry.from_name("LSTCam-002")
+    #geom = CameraGeometry.from_name("LSTCam-003")
 
     # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
@@ -91,41 +89,31 @@ def main():
                          'impact_x_array': [],
                          'impact_y_array': [],
                          }
-    
-    # Calibration related quantities
+
+    tel_id = args.tel_id
+
+    # Low level calibration
     r0calib = LSTR0Corrections(
-        pedestal_path = args.pedestal_file,
-        r1_sample_start=2,r1_sample_end=38)
+        pedestal_path = args.pedestal_file, tel_id=tel_id)
 
-    ff_data = FlatFieldContainer()
-    cal_data =  WaveformCalibrationContainer()
-    ped_data =  PedestalContainer()
+    # high level calibration and gain selection
+    charge_config = Config({
+        "LocalPeakWindowSum": {
+            "window_shift": 4,
+            "window_width": 8
+        }
+    })
 
-    dc_to_pe = []
-    ped_median = []
+    r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=args.calibration_file,
+                                            time_calibration_path=args.time_calibration_file,
+                                            image_extractor="LocalPeakWindowSum",
+                                            config=charge_config,
+                                            gain_threshold=args.gain_threshold,
+                                            allowed_tels=[tel_id])
 
-    if (args.run_number > 500): #  Not sure where did the tel definition change  
-        with HDF5TableReader(args.calibration_file) as h5_table:
-            assert h5_table._h5file.isopen == True
-            for cont in h5_table.read('/tel_1/pedestal', ped_data):
-                ped_median = cont.charge_median
-                
-            for calib in h5_table.read('/tel_1/calibration', cal_data):
-                dc_to_pe = calib['dc_to_pe']
-        h5_table.close()
-
-    else:
-        with HDF5TableReader(args.calibration_file) as h5_table:
-            assert h5_table._h5file.isopen == True
-            for cont in h5_table.read('/tel_0/pedestal', ped_data):
-                ped_median = cont.charge_median
-                
-            for calib in h5_table.read('/tel_0/calibration', cal_data):
-                dc_to_pe = calib['dc_to_pe']
-        h5_table.close()
 
     # Maximum number of events
-    if (args.max_events):
+    if args.max_events:
         max_events = args.max_events
     else:
         max_events = None
@@ -133,41 +121,38 @@ def main():
     # File open
     num_muons = 0
     source = event_source(input_url = args.input_file, max_events = max_events)
+
+    # geometry
+    subarray = source.subarray(tel_id)
+    telescope_description = subarray.tel[tel_id]
+    equivalent_focal_length = telescope_description.optics.equivalent_focal_length
+    mirror_area = telescope_description.optics.mirror_area.to("m2")
+    geom = telescope_description.camera
+
+
     for event in source:
+        event_id = event.lst.tel[tel_id].evt.event_id
+
+        # drs4 calibration
         r0calib.calibrate(event)
-        #  Not sure where did the tel definition change
-        #  but we moved to tel[0] to tel[1] at some point
-        #  of the commissioning period
-        if (args.run_number > 500): 
-            event_id = event.lst.tel[1].evt.event_id
-            telescope_description = event.inst.subarray.tel[1]
-            pedcorrectedsamples = event.r1.tel[1].waveform
-        else:
-            event_id = event.lst.tel[0].evt.event_id
-            telescope_description = event.inst.subarray.tel[0]
-            pedcorrectedsamples = event.r1.tel[0].waveform
-        integrator = LocalPeakWindowSum(window_shift=4, window_width=9)
-        integration, pulse_time = integrator(pedcorrectedsamples)
-        image = (integration - ped_median)*dc_to_pe
 
-        # WARNING!!!
-        # The current analysis is not performed using gain selection
-        # image[0] is the extracted image from low gain.
+        # r1 calibration
+        r1_dl1_calibrator(event)
+        image = event.dl1.tel[tel_id].image
 
-        print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
-                                                                  np.size(image[0][image[0] > 10.])))
-        
-        if not tag_pix_thr(image[0]): #default skipps pedestal and calibration events
+        if not tag_pix_thr(image): #default skipps pedestal and calibration events
             continue
 
-        if not muon_filter(image[0]): #default values apply no filtering
+        if not muon_filter(image,800,5000): #default values apply no filtering
             continue
-        
-        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
-        mirror_area = telescope_description.optics.mirror_area.to("m2")
+
+
+        print("--> Event {}. Number of pixels above 10 phe: {}".format(event_id,
+                                                                   np.size(image[image > 10.])))
+
 
         muonintensityparam, size_outside_ring, muonringparam, good_ring = \
-            analyze_muon_event(event_id, image[0], geom, equivalent_focal_length, 
+            analyze_muon_event(event_id, image, geom, equivalent_focal_length,
                                mirror_area, args.plot_rings, args.plots_path)
         #if not (good_ring):
         #    continue
