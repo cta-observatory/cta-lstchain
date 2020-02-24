@@ -194,6 +194,10 @@ class ExtraMCInfo(Container):
 class ExtraImageInfo(Container):
     """ attach the tel_id """
     tel_id = Field(0, "Telescope ID")
+    trigger_type = Field(None, "trigger type")
+    trigger_time = Field(None, "trigger time")
+    num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
+    trig_pix_id = Field(None, "pixels involved in the camera trigger")
 
 
 class ThrownEventsHistogram(Container):

@@ -50,3 +50,10 @@ def test_read_simu_info_merged_hdf5():
     mcheader = io.read_simu_info_merged_hdf5(merged_dl1_file)
     assert mcheader.simtel_version == 1462392225  # simtel verion of the mc_gamma_testfile defined in test_lstchain
     assert mcheader.num_showers == 40000
+
+@pytest.mark.run(after='test_dl0_to_dl1')
+def test_trigger_type_in_dl1_params():
+    from lstchain.io.io import dl1_params_lstcam_key
+    params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    assert 'trigger_type' in params.columns
+

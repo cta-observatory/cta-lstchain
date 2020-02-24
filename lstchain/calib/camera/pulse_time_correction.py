@@ -5,6 +5,7 @@ from numba import njit, prange
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Unicode
 
+
 high_gain = 0
 low_gain = 1
 
@@ -12,6 +13,7 @@ n_gain = 2
 n_channel = 7
 n_modules = 265
 n_pixels = 1855
+
 
 class PulseTimeCorrection(Component):
     """
@@ -37,7 +39,6 @@ class PulseTimeCorrection(Component):
         self.n_harmonics = None
         self.fan_array = None # array to store cos coeff for Fourier series expansion
         self.fbn_array = None # array to store sin coeff for Fourier series expansion
-
         self.first_cap_array = np.zeros((n_modules, n_gain, n_channel))
 
         self.load_calib_file()
@@ -46,13 +47,18 @@ class PulseTimeCorrection(Component):
         """
             Function to load calibration file.
         """
-        if self.calib_file_path:
+
+        try:
+
             with h5py.File(self.calib_file_path, 'r') as hf:
                 self.n_harmonics = hf["/"].attrs['n_harm']
                 fan = hf.get('fan')
                 self.fan_array = np.array(fan)
                 fbn = hf.get('fbn')
                 self.fbn_array = np.array(fbn)
+
+        except:
+            self.log.error(f"Problem in reading time from calibration file {self.calib_file_path}")
 
     def get_corr_pulse(self, event, pulse):
         """

@@ -175,7 +175,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # mask the part of the array not filled
         self.sample_masked_pixels[self.num_events_seen:] = 1
 
-
         relative_gain_results = self.calculate_relative_gain_results(
             self.charge_medians,
             self.charges,
@@ -201,8 +200,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                                  container.charge_std_outliers)
         event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels = \
             np.logical_or(ff_charge_failing_pixels, container.time_median_outliers)
-
-
 
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""

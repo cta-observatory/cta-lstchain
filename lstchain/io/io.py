@@ -349,6 +349,7 @@ def write_array_info(event, output_filename):
         serialize_meta=serialize_meta,
         append=True
     )
+
     sub.to_table(kind='optics').write(
         output_filename,
         path='/instrument/telescope/optics',

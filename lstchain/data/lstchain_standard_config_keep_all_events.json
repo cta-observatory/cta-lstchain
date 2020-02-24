@@ -9,10 +9,10 @@
   },
 
   "tailcut": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "picture_thresh":0,
+    "boundary_thresh":0,
+    "keep_isolated_pixels":true,
+    "min_number_picture_neighbors":0
   },
 
     "random_forest_regressor_args": {
@@ -97,17 +97,10 @@
   "max_events": null,
   "custom_calibration": false,
   "write_pe_image": false,
-  "image_extractor": "LocalPeakWindowSum",
+  "image_extractor": "NeighborPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
-    "threshold":  3500
-  },
-  "LocalPeakWindowSum":{
-     "window_shift": 4,
-     "window_width":8
-    },
-  "timestamps_pointing":"ucts",
-
-  "source_dependent_analysis": false
+    "threshold":  20.9
+  }
 }

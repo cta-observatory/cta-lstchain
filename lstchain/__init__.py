@@ -8,5 +8,5 @@ from . import image
 
 from .io import standard_config
 
-from . import version
-__version__ = version.get_version(pep440=False)
+from .version import get_version
+__version__ = get_version(pep440=False)
