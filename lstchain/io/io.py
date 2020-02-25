@@ -361,7 +361,7 @@ def write_array_info(event, output_filename):
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
-            camera_name = str(sub.tel[tel_id])
+            camera_name = str(camera)
             with tables.open_file(output_filename, mode='r') as f:
                 telescope_chidren = f.root['instrument/telescope']._v_children.keys()
                 if 'camera' in telescope_chidren:
