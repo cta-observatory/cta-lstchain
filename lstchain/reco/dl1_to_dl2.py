@@ -397,8 +397,8 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
         alt_tel = dl2['alt_tel'].values
         az_tel = dl2['az_tel'].values
     else:
-        alt_tel = np.zeros(len(dl2))
-        az_tel = np.zeros(len(dl2))
+        alt_tel = - np.pi/2. * np.ones(len(dl2))
+        az_tel = - np.pi/2. * np.ones(len(dl2))
 
 
     src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
