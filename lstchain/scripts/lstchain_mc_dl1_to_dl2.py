@@ -70,8 +70,8 @@ def main():
         if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
             impute_pointing(data)
         else:
-            data.alt_tel = u.Quantity(-90, u.deg)
-            data.az_tel = u.Quantity(-90, u.deg)
+            data.alt_tel = - np.pi/2.
+            data.az_tel = - np.pi/2.
     data = filter_events(data, filters=config["events_filters"])
 
 
