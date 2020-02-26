@@ -62,7 +62,8 @@ filters = tables.Filters(
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}, use_main_island=True):
+def get_dl1(calibrated_event, telescope_id, dl1_container = None, 
+            custom_config = {}, use_main_island = True):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -71,11 +72,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
     Parameters
     ----------
     calibrated_event: ctapipe event container
-    telescope_id: int
+    telescope_id: `int`
     dl1_container: DL1ParametersContainer
-    config_file: path to a configuration file
+    custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
+    use_main_island: `bool` Use only the main island 
+        to calculate DL1 parameters
 
     Returns
     -------
@@ -102,13 +105,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
 
         if use_main_island:
-            n_pixels_on_island = np.zeros(num_islands+1)
+            n_pixels_on_island = np.zeros(num_islands + 1)
 
-            for iisland in range(1, num_islands+1):
-                n_pixels_on_island[iisland] = np.sum(island_labels==iisland)
+            for iisland in range(1, num_islands + 1):
+                n_pixels_on_island[iisland] = np.sum(island_labels == iisland)
               
             max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels!=max_island_label] = False
+            signal_pixels[island_labels != max_island_label] = False
 
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
 
@@ -131,13 +134,13 @@ def get_dl1(calibrated_event, telescope_id, dl1_container=None, custom_config={}
         return None
 
 
-def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
-              output_filename=None,
-              custom_config={},
-              pedestal_path=None,
-              calibration_path=None,
-              time_calibration_path=None,
-              pointing_file_path=None
+def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
+              output_filename = None,
+              custom_config = {},
+              pedestal_path = None,
+              calibration_path = None,
+              time_calibration_path = None,
+              pointing_file_path = None
               ):
     """
     Chain r0 to dl1
@@ -149,7 +152,11 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         path to input file, default: `gamma_test_large.simtel.gz`
     output_filename: str
         path to output file, default: `./` + basename(input_filename)
-    config_file: path to a configuration file
+    custom_config: path to a configuration file
+    pedestal_path: Path to the DRS4 pedestal file
+    calibration_path: Path to the file with calibration constants and
+        pedestals
+    time_calibration_path: Path to the DRS4 time correction file
     pointing_file_path: path to the Drive log with the pointing information
 
     Returns
@@ -187,16 +194,16 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     if not is_simu:
         # TODO : add calibration config in config file, read it and pass it here
 
-        r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path,
-                                            tel_id=1)
+        r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
+                                            tel_id = 1)
 
         # all this will be cleaned up in a next PR related to the configuration files
-        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
-                                                time_calibration_path=time_calibration_path,
-                                                image_extractor=config['image_extractor'],
-                                                gain_threshold=Config(config).gain_selector_config['threshold'],
-                                                config=Config(config),
-                                                allowed_tels=[1],
+        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                time_calibration_path = time_calibration_path,
+                                                extractor_product = config['image_extractor'],
+                                                gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                config = Config(config),
+                                                allowed_tels = [1],
                                                 )
 
     dl1_container = DL1ParametersContainer()
@@ -215,15 +222,16 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
     if is_simu:
-        write_mcheader(event.mcheader, output_filename, obs_id=event.r0.obs_id, filters=filters, metadata=metadata)
+        write_mcheader(event.mcheader, output_filename, obs_id = event.r0.obs_id, 
+                       filters = filters, metadata = metadata)
         subarray = event.inst.subarray
 
-    with HDF5TableWriter(filename=output_filename,
-                         group_name='dl1/event',
-                         mode='a',
-                         filters=filters,
-                         add_prefix=True,
-                         # overwrite=True,
+    with HDF5TableWriter(filename = output_filename,
+                         group_name = 'dl1/event',
+                         mode = 'a',
+                         filters = filters,
+                         add_prefix = True,
+                         # overwrite = True,
                          ) as writer:
 
         print("USING FILTERS: ", writer._h5file.filters)
@@ -237,13 +245,13 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(utils.expand_tel_list,
-                                         max_tels=len(event.inst.subarray.tel) + 1,
+                                         max_tels = len(event.inst.subarray.tel) + 1,
                                          )
 
             writer.add_column_transform(
-                table_name='subarray/trigger',
-                col_name='tels_with_trigger',
-                transform=tel_list_transform
+                table_name = 'subarray/trigger',
+                col_name = 'tels_with_trigger',
+                transform = tel_list_transform
             )
 
         ### EVENT LOOP ###
@@ -280,9 +288,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
                 try:
                     dl1_filled = get_dl1(event, telescope_id,
-                                         dl1_container=dl1_container,
-                                         custom_config=config,
-                                         use_main_island=True)
+                                         dl1_container = dl1_container,
+                                         custom_config = config,
+                                         use_main_island = True)
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -304,13 +312,15 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # GPS time is not available for the time being. Meanwhile,
-                        # timestamps can be extracted from the UCTS and alternatively
-                        # calculated from the TIB/Dragon modules counters + NTP time
-                        # corresponding to the start of the run. For the time being,
-                        # we will store the three of them in the dl1 files.
-                        # This will be deprecated and modified back to directly use
-                        # gps_time whenever the GPS starts working reliably.
+                        # GPS + WRS + UCTS is now working in its nominal configuration. 
+                        # These TS are stored into ucts_time container.
+                        # TS can be alternatively calculated from the TIB/Dragon 
+                        # modules counters + NTP time corresponding to the start 
+                        # of the run (just for cross-checks). For the time being,
+                        # the three TS will be stored in the DL1 files.
+                        # This will be deprecated and modified back to uniquely use
+                        # gps_time whenever the GPS + WRS + UCTS info reliably and stably
+                        # arrives at the EvB side.
 
                         # gps_time = event.r0.tel[telescope_id].trigger_time
 
@@ -370,18 +380,19 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                         add_global_metadata(container, metadata)
 
                     event.r0.prefix = ''
-                    writer.write(table_name=f'telescope/image/{tel_name}',
-                                 containers=[event.r0, tel, extra_im])
-                    writer.write(table_name=f'telescope/parameters/{tel_name}',
-                                 containers=[dl1_container, extra_im])
+
+                    writer.write(table_name = f'telescope/image/{tel_name}',
+                                 containers = [event.r0, tel, extra_im])
+                    writer.write(table_name = f'telescope/parameters/{tel_name}',
+                                 containers = [dl1_container, extra_im])
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
                             and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
-                        writer.write(table_name=f'simulation/{tel_name}',
-                                     containers=[event.mc.tel[telescope_id], extra_im]
+                        writer.write(table_name = f'simulation/{tel_name}',
+                                     containers = [event.mc.tel[telescope_id], extra_im]
                                      )
 
     if is_simu:
@@ -393,7 +404,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
 
     # Write energy histogram from simtel file and extra metadata
     if is_simu:
-        write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id, metadata=metadata)
+        write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
+                                      metadata = metadata)
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
@@ -411,7 +423,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     table_path: path to the parameters table in the file
     focal: focal of the telescope
     """
-    df = pd.read_hdf(dl1_file, key=table_path)
+    df = pd.read_hdf(dl1_file, key = table_path)
     source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
                                          df.mc_az.values * u.rad,
                                          focal,
@@ -423,7 +435,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
                                 source_pos_in_camera.x,
                                 source_pos_in_camera.y)
 
-    with tables.open_file(dl1_file, mode="a") as file:
+    with tables.open_file(dl1_file, mode = "a") as file:
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'disp_dx', disp_parameters[0].value)
         tab = file.root[table_path]
