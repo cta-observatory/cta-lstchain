@@ -450,6 +450,7 @@ def impute_pointing(dl1_data, missing_values=np.nan):
     missing_values: number, string, np.nan or None, default=`np.nan`
         The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
     """
-    dl1_data = dl1_data.sort_index(by='event_id')
+    dl1_data = dl1_data.sort_values(by='event_id')
     for k in ['alt_tel', 'az_tel']:
         dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
+    return dl1_data

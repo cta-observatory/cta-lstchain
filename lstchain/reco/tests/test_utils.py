@@ -46,8 +46,9 @@ def test_linear_imputer():
 
 
 def test_impute_pointing():
+    event_id = np.arange(5, 14, dtype=int)
     a = np.array([0.2, 0.3, np.nan, np.nan, np.nan, 0.7, np.nan, 0.8, np.nan])
-    df = pd.DataFrame(np.transpose([a, a]), columns=['alt_tel', 'az_tel'])
-    utils.impute_pointing(df)
+    df = pd.DataFrame(np.transpose([event_id, a, a]), columns=['event_id', 'alt_tel', 'az_tel'])
+    df = utils.impute_pointing(df)
     np.testing.assert_allclose(df.alt_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
     np.testing.assert_allclose(df.az_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])

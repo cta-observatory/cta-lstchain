@@ -68,7 +68,7 @@ def main():
     if 'alt_tel' in data.columns and 'az_tel' in data.columns:
         # make sure there is a least one good pointing value to interp from.
         if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
-            impute_pointing(data)
+            data = impute_pointing(data)
         else:
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
