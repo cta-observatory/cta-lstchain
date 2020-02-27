@@ -18,7 +18,7 @@ class LSTCameraCalibrator(CameraCalibrator):
     the DL1 data level in the event container.
     """
     extractor_product = Unicode(
-        'NeighborPeakWindowSum',
+        'LocalPeakWindowSum',
         help='Name of the charge extractor to be used'
     ).tag(config=True)
 
@@ -76,6 +76,8 @@ class LSTCameraCalibrator(CameraCalibrator):
             config=self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
+
+        print("EXTRACTOR", self.image_extractor)
 
         self.data_volume_reducer = DataVolumeReducer.from_name(
             self.reducer_product,
