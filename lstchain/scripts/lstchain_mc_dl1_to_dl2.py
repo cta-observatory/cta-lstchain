@@ -65,7 +65,8 @@ def main():
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
 
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
-    if 'alt_tel' in data.columns and 'az_tel' in data.columns:
+    if 'alt_tel' in data.columns and 'az_tel' in data.columns \
+            and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
         # make sure there is a least one good pointing value to interp from.
         if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
             data = impute_pointing(data)
