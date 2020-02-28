@@ -18,6 +18,7 @@ from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
+from warnings import warn
 
 __all__ = [
     'alt_to_theta',
@@ -450,6 +451,10 @@ def impute_pointing(dl1_data, missing_values=np.nan):
     missing_values: number, string, np.nan or None, default=`np.nan`
         The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
     """
+    if len(set(dl1_data.event_id)) != len(dl1_data.event_id):
+        warn("Beware, the data has been resorted by `event_id` to interpolate invalid pointing values but there are "
+             "several events with the same `event_id` in the data, thus probably leading to unexpected behaviour",
+             UserWarning)
     dl1_data = dl1_data.sort_values(by='event_id')
     for k in ['alt_tel', 'az_tel']:
         dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
