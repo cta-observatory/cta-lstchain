@@ -1,7 +1,7 @@
 from lstchain.reco import utils
 import astropy.units as u
 import numpy as np
-
+import pandas as pd
 
 
 def test_camera_to_sky():
@@ -38,3 +38,17 @@ def test_sky_to_camera():
     np.testing.assert_allclose(camera_coords.x.value, np.array([0, 0]), rtol=1e-4, atol=1e-4)
     np.testing.assert_allclose(camera_coords.y.value, np.array([0, 0]), rtol=1e-4, atol=1e-4)
 
+
+def test_linear_imputer():
+    a = np.array([0.2, 0.3, np.nan, np.nan, np.nan, 0.7, np.nan, 0.8, np.nan])
+    utils.linear_imputer(a, missing_values=np.nan, copy=False)
+    np.testing.assert_allclose(a, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
+
+
+def test_impute_pointing():
+    event_id = np.arange(5, 14, dtype=int)
+    a = np.array([0.2, 0.3, np.nan, np.nan, np.nan, 0.7, np.nan, 0.8, np.nan])
+    df = pd.DataFrame(np.transpose([event_id, a, a]), columns=['event_id', 'alt_tel', 'az_tel'])
+    df = utils.impute_pointing(df)
+    np.testing.assert_allclose(df.alt_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
+    np.testing.assert_allclose(df.az_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
