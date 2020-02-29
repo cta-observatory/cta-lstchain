@@ -455,7 +455,7 @@ def write_metadata(metadata, output_filename):
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    metadata: `lstchain.io.MetaData()`
     output_filename: path
     """
     # One cannot write strings with ctapipe HDF5Writer and Tables can write only fixed length string
