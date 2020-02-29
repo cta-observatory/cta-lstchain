@@ -172,9 +172,9 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     """
 
     if nodes_keys is None:
-        keys = get_dataset_keys(file_list[0])
+        keys = set(get_dataset_keys(file_list[0]))
     else:
-        keys = nodes_keys
+        keys = set(nodes_keys)
 
     with open_file(output_filename, 'w') as merge_file:
         with open_file(file_list[0]) as f1:
@@ -196,8 +196,9 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                                 createparents=True,
                                                 obj=f1.root[k].read())
         for filename in file_list[1:]:
+            common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
-                for k in keys:
+                for k in common_keys:
                     try:
                         if merge_arrays:
                             merge_file.root[k].append(file.root[k].read())
@@ -219,8 +220,13 @@ def merging_check(file_list):
     Parameters
     ----------
     file_list: list of paths to hdf5 files
+
+    Returns
+    -------
+    list: list of paths of files that can be merged
     """
     assert len(file_list) > 1, "The list of files is too short"
+    fl = set(file_list)
 
     filename0 = file_list[0]
     array_info0 = read_array_info(filename0)
@@ -228,14 +234,20 @@ def merging_check(file_list):
     thrown_events_hist0 = read_simtel_energy_histogram(filename0)
     metadata0 = read_metadata(filename0)
     for filename in file_list[1:]:
-        mcheader = read_simu_info_hdf5(filename)
-        thrown_events_hist = read_simtel_energy_histogram(filename)
-        metadata = read_metadata(filename)
-        check_metadata(metadata0, metadata)
-        check_mcheader(mcheader0, mcheader)
-        check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
-        for ii, table in read_array_info(filename).items():
-            assert (table == array_info0[ii]).all()
+        try:
+            mcheader = read_simu_info_hdf5(filename)
+            thrown_events_hist = read_simtel_energy_histogram(filename)
+            metadata = read_metadata(filename)
+            check_metadata(metadata0, metadata)
+            check_mcheader(mcheader0, mcheader)
+            check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
+            for ii, table in read_array_info(filename).items():
+                assert (table == array_info0[ii]).all()
+        except:
+            fl.remove(filename)
+            print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
+
+    return list(fl)
 
 
 def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
@@ -247,12 +259,12 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     file_list: list of paths to hdf5 files
     output_filename: path to the merged file
     """
-    merging_check(file_list)
-    auto_merge_h5files(file_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
+    smart_list = merging_check(file_list)
+    auto_merge_h5files(smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
 
     # Merge metadata
-    metadata0 = read_metadata(file_list[0])
-    for file in file_list[1:]:
+    metadata0 = read_metadata(smart_list[0])
+    for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
         metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
