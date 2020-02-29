@@ -226,14 +226,14 @@ def merging_check(file_list):
     list: list of paths of files that can be merged
     """
     assert len(file_list) > 1, "The list of files is too short"
-    fl = set(file_list)
+    mergeable_list = file_list.copy()
 
-    filename0 = file_list[0]
+    filename0 = mergeable_list[0]
     array_info0 = read_array_info(filename0)
     mcheader0 = read_simu_info_hdf5(filename0)
     thrown_events_hist0 = read_simtel_energy_histogram(filename0)
     metadata0 = read_metadata(filename0)
-    for filename in file_list[1:]:
+    for filename in mergeable_list[1:]:
         try:
             mcheader = read_simu_info_hdf5(filename)
             thrown_events_hist = read_simtel_energy_histogram(filename)
@@ -244,10 +244,10 @@ def merging_check(file_list):
             for ii, table in read_array_info(filename).items():
                 assert (table == array_info0[ii]).all()
         except:
-            fl.remove(filename)
+            mergeable_list.remove(filename)
             print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
 
-    return list(fl)
+    return mergeable_list
 
 
 def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
