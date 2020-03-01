@@ -330,23 +330,23 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
 
-    # Pass units to GeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
-    mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
+    # Pass units to TeV and cm2
+    mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
+    mc_par_g['emax'] = mc_par_g['emax'].to(u.TeV)
 
-    mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
-    mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
+    mc_par_p['emin'] = mc_par_p['emin'].to(u.TeV)
+    mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
 
     mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
     mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
     # TODO: This information should be read from the files
-    emin_sensitivity = 10 ** 1 * u.GeV  # mc_par_g['emin']
-    emax_sensitivity = 10 ** 5 * u.GeV  # mc_par_g['emax']
+    emin_sensitivity = 0.01 * u.TeV  # mc_par_g['emin']
+    emax_sensitivity =  100 * u.TeV  # mc_par_g['emax']
 
     energy = np.logspace(np.log10(emin_sensitivity.to_value()),
-                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.GeV
+                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
 
     gammaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
 
@@ -385,9 +385,9 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
         print("These results will make no sense")
         w_g = w_g / u.sr  # Fix to make tests pass
 
-    rate_weighted_g = ((e_true_g / crab_par['e0'].to(u.TeV)) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
                       * w_g
-    rate_weighted_p = ((e_true_p / proton_par['e0'].to(u.TeV)) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
+    rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
     p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
@@ -418,7 +418,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     for i in range(0, n_bins_energy):  # binning in energy
         total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])])
 
-        print("******** Energy bin [GeV] *****")
+        print("******** Energy bin [TeV] *****")
         print(energy[i], energy[i + 1])
         total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])])
         total_rate_gamma_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])])
@@ -574,22 +574,22 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
 
-    # Pass units to GeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin'].to(u.GeV)
-    mc_par_g['emax'] = mc_par_g['emax'].to(u.GeV)
+    # Pass units to TeV and cm2
+    mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
+    mc_par_g['emax'] = mc_par_g['emax'].to(u.TeV)
 
-    mc_par_p['emin'] = mc_par_p['emin'].to(u.GeV)
-    mc_par_p['emax'] = mc_par_p['emax'].to(u.GeV)
+    mc_par_p['emin'] = mc_par_p['emin'].to(u.TeV)
+    mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
 
     mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
     mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
-    emin_sensitivity = 10 ** 1 * u.GeV  # mc_par_g['emin']
-    emax_sensitivity = 10 ** 5 * u.GeV  # mc_par_g['emax']
+    emin_sensitivity = 0.01 * u.TeV  # mc_par_g['emin']
+    emax_sensitivity =  100 * u.TeV  # mc_par_g['emax']
 
     energy = np.logspace(np.log10(emin_sensitivity.to_value()),
-                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.GeV
+                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
 
     # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
@@ -625,9 +625,9 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
         print("These results will make no sense")
         w_g = w_g / u.sr  # Fix to make tests pass
 
-    rate_weighted_g = ((e_true_g / crab_par['e0'].to(u.TeV)) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
                       * w_g
-    rate_weighted_p = ((e_true_p / proton_par['e0'].to(u.TeV)) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
+    rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
     p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
@@ -732,7 +732,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     egeom = np.sqrt(energy[1:] * energy[:-1])
     dFdE, par = crab_hegra(egeom)
     sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.TeV / (u.cm ** 2 * u.s))
-    print("******** Energy [GeV] *********")
+    print("******** Energy [TeV] *********")
     print(egeom)
     print("**************")
     print("sensitivity ", sensitivity_flux)
