@@ -18,37 +18,37 @@ class LSTCameraCalibrator(CameraCalibrator):
     the DL1 data level in the event container.
     """
     extractor_product = Unicode(
-        'NeighborPeakWindowSum',
-        help='Name of the charge extractor to be used'
-    ).tag(config=True)
+        'LocalPeakWindowSum',
+        help = 'Name of the charge extractor to be used'
+    ).tag(config = True)
 
     reducer_product = Unicode(
         'NullDataVolumeReducer',
-        help='Name of the DataVolumeReducer to use'
-    ).tag(config=True)
+        help = 'Name of the DataVolumeReducer to use'
+    ).tag(config = True)
 
     calibration_path = Unicode(
         '',
-        allow_none=True,
-        help='Path to LST calibration file'
-    ).tag(config=True)
+        allow_none = True,
+        help = 'Path to LST calibration file'
+    ).tag(config = True)
 
     time_calibration_path = Unicode(
         '',
-        allow_none=True,
-        help='Path to drs4 time calibration file'
-    ).tag(config=True)
+        allow_none = True,
+        help = 'Path to drs4 time calibration file'
+    ).tag(config = True)
 
     allowed_tels = List(
         [1],
-        help='List of telescope to be calibrated'
-    ).tag(config=True)
+        help = 'List of telescope to be calibrated'
+    ).tag(config = True)
 
     gain_threshold = Int(
         4094,
-        allow_none=True,
-        help='Threshold for the gain selection in ADC'
-    ).tag(config=True)
+        allow_none = True,
+        help = 'Threshold for the gain selection in ADC'
+    ).tag(config = True)
 
     def __init__(self, **kwargs):
         """
@@ -73,23 +73,27 @@ class LSTCameraCalibrator(CameraCalibrator):
         # load the waveform charge extractor
         self.image_extractor = ImageExtractor.from_name(
             self.extractor_product,
-            config=self.config
+            config = self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
 
+        print("EXTRACTOR", self.image_extractor)
+
         self.data_volume_reducer = DataVolumeReducer.from_name(
             self.reducer_product,
-            config=self.config
+            config = self.config
         )
         self.log.info(f" {self.reducer_product}")
 
         # declare gain selector if the threshold is defined
         if self.gain_threshold:
-            self.gain_selector = gainselection.ThresholdGainSelector(threshold=self.gain_threshold)
+            self.gain_selector = gainselection.ThresholdGainSelector(
+                threshold = self.gain_threshold)
 
         # declare time calibrator if correction file exist
         if os.path.exists(self.time_calibration_path):
-            self.time_corrector = PulseTimeCorrection(calib_file_path=self.time_calibration_path)
+            self.time_corrector = PulseTimeCorrection(
+                calib_file_path = self.time_calibration_path)
         else:
             self.time_corrector = None
             self.log.info(f"File {self.time_calibration_path} not found. No drs4 time corrections")
@@ -105,7 +109,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         Read the correction from hdf5 calibration file
         """
 
-        self.mon_data.tels_with_data=self.allowed_tels
+        self.mon_data.tels_with_data = self.allowed_tels
         self.log.info(f"read {self.calibration_path}")
 
         try:
@@ -116,7 +120,7 @@ class LSTCameraCalibrator(CameraCalibrator):
                     table = '/tel_' + str(telid) + '/calibration'
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
                     # eliminate inf values (should be done probably before)
-                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
+                    dc_to_pe = self.mon_data.tel[telid].calibration.dc_to_pe
 
                     dc_to_pe[np.isinf(dc_to_pe)] = 0
                     self.log.info(f"read {self.mon_data.tel[telid].calibration.dc_to_pe}")
@@ -137,8 +141,8 @@ class LSTCameraCalibrator(CameraCalibrator):
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
         event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform-self.mon_data.tel[telid].calibration.pedestal_per_sample[:,:,np.newaxis])
-                *self.mon_data.tel[telid].calibration.dc_to_pe[:,:,np.newaxis])
+                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
+                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
 
     def _calibrate_dl1(self, event, telid):
         """
