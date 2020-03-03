@@ -66,7 +66,7 @@ def int_diff_sp(emin, emax, sp_idx, e0):
 
     return integral_e
 
-def rate(emin, emax, sp_idx, cone, area, norm, e0):
+def rate(emin, emax, param, cone, area):
     """
     Calculates the rate of events for a power-law distribution,
     in a given energy range, collection area and solid angle
@@ -93,14 +93,14 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
     else:
         omega = 2 * np.pi * (1-np.cos(cone)) * u.sr
 
-    integral = int_diff_sp(emin, emax, sp_idx, e0)
+    integral = int_diff_sp(emin, emax, param['alpha'], param['e0'])
 
-    rate = norm * area * omega * integral
+    rate = param['f0'] * area * omega * integral
 
     return rate
 
 
-def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
+def weight(emin, emax, sim_sp_idx, rate, nev, w_param):
     """
     Calculates the weight of events to transform a power-law distribution
     with spectral index sim_sp_idx to a power-law distribution with 
@@ -121,8 +121,8 @@ def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
     weight: `float` rate of events
     """
 
-    sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, e0)
-    norm_sim = sim_integral * int_diff_sp(emin, emax, w_sp_idx, e0)
+    sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, w_param['e0'])
+    norm_sim = sim_integral * int_diff_sp(emin, emax, w_param['alpha'], w_param['e0'])
 
     weight = rate / norm_sim
 

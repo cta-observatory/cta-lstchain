@@ -364,21 +364,15 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
-                  mc_par_g['cone'], mc_par_g['area_sim'],
-                  crab_par['f0'], crab_par['e0'])
+    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
-    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
-                  mc_par_p['cone'], mc_par_p['area_sim'],
-                  proton_par['f0'], proton_par['e0'])
+    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g,
-                 mc_par_g['sim_ev'], crab_par['e0'])
+    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+                 mc_par_g['sim_ev'], crab_par)
 
-    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p,
-                 mc_par_p['sim_ev'], proton_par['e0'])
+    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
+                 mc_par_p['sim_ev'], proton_par)
 
     if (w_g.unit ==  u.Unit("sr / s")):
         print("You are using diffuse gammas to estimate point-like sensitivity")
@@ -604,22 +598,16 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
-                  mc_par_g['cone'], mc_par_g['area_sim'],
-                  crab_par['f0'], crab_par['e0'])
+    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
-    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
-                  mc_par_p['cone'], mc_par_p['area_sim'],
-                  proton_par['f0'], proton_par['e0'])
+    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g,
-                 mc_par_g['sim_ev'], crab_par['e0'])
+    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+                 mc_par_g['sim_ev'], crab_par)
 
-    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p,
-                 mc_par_p['sim_ev'], proton_par['e0'])
-
+    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
+                 mc_par_p['sim_ev'], proton_par)
+    
     if (w_g.unit ==  u.Unit("sr / s")):
         print("You are using diffuse gammas to estimate point-like sensitivity")
         print("These results will make no sense")
