@@ -120,6 +120,11 @@ class LSTCameraCalibrator(CameraCalibrator):
 
                     dc_to_pe[np.isinf(dc_to_pe)] = 0
                     self.log.info(f"read {self.mon_data.tel[telid].calibration.dc_to_pe}")
+
+                    # read the pixel_status container
+                    table = '/tel_' + str(telid) + '/pixel_status'
+                    next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
+
         except:
             self.log.error(f"Problem in reading calibration file {self.calibration_path}")
 
@@ -133,6 +138,8 @@ class LSTCameraCalibrator(CameraCalibrator):
         
         event.dl0.event_id = event.r1.event_id
         event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
+        event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
+
 
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
