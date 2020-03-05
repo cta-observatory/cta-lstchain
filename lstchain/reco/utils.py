@@ -12,13 +12,13 @@ Usage:
 """
 
 import numpy as np
-from ctapipe.coordinates import NominalFrame, CameraFrame
+from ctapipe.coordinates import CameraFrame
 import astropy.units as u
-from ..io.lstcontainers import DispContainer
 from astropy.utils import deprecated
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
-
+from . import disp
+from warnings import warn
 
 __all__ = [
     'alt_to_theta',
@@ -147,8 +147,6 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     return source_x, source_y
 
 
-
-
 def get_event_pos_in_camera(event, tel):
     """
     Return the position of the source in the camera frame
@@ -178,8 +176,6 @@ def get_event_pos_in_camera(event, tel):
     return camera_pos.x, camera_pos.y
 
 
-
-
 def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az):
     """
     Compute the reconstructed source position in the sky
@@ -188,16 +184,17 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     ----------
     cog_x: `astropy.units.Quantity`
     cog_y: `astropy.units.Quantity`
-    disp: DispContainer
+    disp_dx: `astropy.units.Quantity`
+    disp_dy: `astropy.units.Quantity`
     focal_length: `astropy.units.Quantity`
     pointing_alt: `astropy.units.Quantity`
     pointing_az: `astropy.units.Quantity`
 
     Returns
     -------
-
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    src_x, src_y = disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
+    src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
@@ -214,14 +211,18 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-    (alt, az)
+    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
 
     Example:
     --------
     import astropy.units as u
     import numpy as np
-    x = np.array([1,0]) * u.m
-    y = np.array([1,1]) * u.m
+    pos_x = np.array([0, 0]) * u.m
+    pos_y = np.array([0, 0]) * u.m
+    focal = 28*u.m
+    pointing_alt = np.array([1.0, 1.0]) * u.rad
+    pointing_az = np.array([0.2, 0.5]) * u.rad
+    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
     pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
@@ -233,6 +234,7 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     horizon = camera_coord.transform_to(horizon_frame)
         
     return horizon
+
 
 def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     """
@@ -247,7 +249,7 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     Returns
     -------
-
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
 
@@ -258,6 +260,7 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     camera_pos = event_direction.transform_to(camera_frame)
     
     return camera_pos
+
 
 def source_side(source_pos_x, cog_x):
     """
@@ -358,6 +361,18 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
 
 
 
+
+def expand_tel_list(tel_list, max_tels):
+    """
+    transform for the telescope list (to turn it into a telescope pattern)
+    un-pack var-length list of tel_ids into
+    fixed-width bit pattern by tel_index
+    """
+    pattern = np.zeros(max_tels).astype(bool)
+    pattern[tel_list] = 1
+    return pattern
+
+
 def filter_events(events,
                   filters=dict(intensity=[0, np.inf],
                                  width=[0, np.inf],
@@ -365,7 +380,9 @@ def filter_events(events,
                                  wl=[0, np.inf],
                                  r=[0, np.inf],
                                  leakage=[0, 1],
-                                 )):
+                                 ),
+                  dropna=True,
+                  ):
     """
     Apply data filtering to a pandas dataframe.
     Each filtering range is applied if the column name exists in the DataFrame so that
@@ -376,6 +393,8 @@ def filter_events(events,
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
+    dropna: bool
+        if True (default), `dropna()` is applied to the dataframe.
 
     Returns
     -------
@@ -388,4 +407,55 @@ def filter_events(events,
         if k in events.columns:
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
-    return events[filter]
+    if dropna:
+        return events[filter].dropna()
+    else:
+        return events[filter]
+
+
+def linear_imputer(y, missing_values=np.nan, copy=True):
+    """
+    Replace missing values in y with values from a linear interpolation on their position in the array.
+    Parameters
+    ----------
+    y: list or `numpy.array`
+    missing_values: number, string, np.nan or None, default=`np.nan`
+        The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
+    copy : bool, default=True
+        If True, a copy of X will be created. If False, imputation will be done in-place whenever possible.
+    Returns
+    -------
+    `numpy.array` : array with `missing_values` imputed
+    """
+    x = np.arange(len(y))
+    if missing_values is np.nan:
+        mask_missing = np.isnan(y)
+    else:
+        mask_missing = y == missing_values
+    imputed_values = np.interp(x[mask_missing], x[~mask_missing], y[~mask_missing])
+    if copy:
+        yy = np.copy(y)
+        yy[mask_missing] = imputed_values
+        return yy
+    else:
+        y[mask_missing] = imputed_values
+        return y
+
+
+def impute_pointing(dl1_data, missing_values=np.nan):
+    """
+    Impute missing pointing values using `linear_imputer` and replace them inplace
+    Parameters
+    ----------
+    dl1_data: `pandas.DataFrame`
+    missing_values: number, string, np.nan or None, default=`np.nan`
+        The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
+    """
+    if len(set(dl1_data.event_id)) != len(dl1_data.event_id):
+        warn("Beware, the data has been resorted by `event_id` to interpolate invalid pointing values but there are "
+             "several events with the same `event_id` in the data, thus probably leading to unexpected behaviour",
+             UserWarning)
+    dl1_data = dl1_data.sort_values(by='event_id')
+    for k in ['alt_tel', 'az_tel']:
+        dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
+    return dl1_data

@@ -42,10 +42,10 @@ true_hadroness:
 
     #Energy distribution
     plt.subplot(331)
-    plt.hist(data[data[hadro]<1]['mc_energy'],
+    plt.hist(data[data[hadro]<1]['log_mc_energy'],
             histtype=u'step',bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro]>0]['mc_energy'],
+    plt.hist(data[data[hadro]>0]['log_mc_energy'],
              histtype=u'step',bins=100,
              label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
@@ -65,16 +65,16 @@ true_hadroness:
 
     #Intensity distribution
     plt.subplot(333)
-    plt.hist(data[data[hadro] < 1]['intensity'],
+    plt.hist(data[data[hadro] < 1]['log_intensity'],
              histtype=u'step', bins=100,
              label="Gammas")
-    plt.hist(data[data[hadro] > 0]['intensity'],
+    plt.hist(data[data[hadro] > 0]['log_intensity'],
              histtype=u'step', bins=100,
              label="Protons")
     plt.ylabel(r'# of events', fontsize=15)
     plt.xlabel(r"$log_{10}Intensity$")
 
-    dataforwl = data[data['intensity'] > np.log10(200)]
+    dataforwl = data[data['log_intensity'] > np.log10(200)]
     #Width distribution
     plt.subplot(334)
     plt.hist(dataforwl[dataforwl[hadro] < 1]['width'],
@@ -167,9 +167,9 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
 
     plt.subplot(221)
 
-    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
+    delta_e = np.log(10**data['log_reco_energy']/10**data['log_mc_energy'])
     means_result = scipy.stats.binned_statistic(
-        data['mc_energy'],[delta_e,delta_e**2],
+        data['log_mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
@@ -182,7 +182,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
     plt.ylabel('Bias',fontsize=24)
 
     plt.subplot(222)
-    hE = plt.hist2d(gammas['mc_energy'],
+    hE = plt.hist2d(gammas['log_mc_energy'],
                 gammas['reco_energy'],
                     bins=100)
 
@@ -191,7 +191,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
                fontsize=15)
     plt.ylabel('$log_{10}E_{rec}$',
                fontsize=15)
-    plt.plot(gammas['mc_energy'],gammas['mc_energy'],
+    plt.plot(gammas['log_mc_energy'],gammas['log_mc_energy'],
              "-",color='red')
 
     #Plot a profile
@@ -265,7 +265,7 @@ def plot_disp(data, true_hadroness=False):
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
 
     plt.subplot(223)
-    theta2 = (gammas['src_x']-gammas['src_x_rec'])**2 + (gammas['src_y']-gammas['src_y'])**2
+    theta2 = (gammas['src_x']-gammas['reco_src_x'])**2 + (gammas['src_y']-gammas['src_y'])**2
 
     plt.hist(theta2, bins=100, range=[0, 0.1], histtype=u'step')
     plt.xlabel(r'$\theta^{2}(º)$', fontsize=15)
@@ -313,10 +313,10 @@ def plot_pos(data,true_hadroness=False):
 
     #Reconstructed position
 
-    recX = data[data[hadro]==0]['src_x_rec']
-    recY = data[data[hadro]==0]['src_y_rec']
-    recXprot = data[data[hadro]==101]['src_x_rec']
-    recYprot = data[data[hadro]==101]['src_y_rec']
+    recX = data[data[hadro]==0]['reco_src_x']
+    recY = data[data[hadro]==0]['reco_src_y']
+    recXprot = data[data[hadro]==101]['reco_src_x']
+    recYprot = data[data[hadro]==101]['reco_src_y']
     ran = np.array([(-0.3, 0.3), (-0.4, 0.4)])
     nbins=50
 
@@ -405,10 +405,10 @@ def plot_ROC(clf,data,features, Energy_cut):
 def plot_e_resolution(data, n_bins, emin, emax):
 
 
-    #delta_e = ((data['mc_energy']-data['reco_energy'])*np.log(10))
-    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
+    #delta_e = ((data['log_mc_energy']-data['reco_energy'])*np.log(10))
+    delta_e = np.log(10**data['reco_energy']/10**data['log_mc_energy'])
     means_result = scipy.stats.binned_statistic(
-        data['mc_energy'],[delta_e,delta_e**2],
+        data['log_mc_energy'],[delta_e,delta_e**2],
         bins=n_bins,range=(emin, emax),statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
@@ -457,7 +457,7 @@ def plot_e_resolution(data, n_bins, emin, emax):
 
 def calc_resolution(data):
 
-    delta_e = np.log(10**data['reco_energy']/10**data['mc_energy'])
+    delta_e = np.log(10**data['reco_energy']/10**data['log_mc_energy'])
     n , bins, _ = plt.hist(delta_e,bins=500)
     mu,sigma = scipy.stats.norm.fit(delta_e)
     print(mu,sigma)
