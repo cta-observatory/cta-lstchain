@@ -305,15 +305,9 @@ def build_models(filegammas, fileprotons,
     df_proton = utils.filter_events(df_proton, filters=events_filters)
 
     #Set source-dependent paramters
-    source_dependent_analysis = config["source_dependent_analysis"]
-
-    if source_dependent_analysis:
-        print("source-dependent analysis is activated")
-        set_source_dependent_parameters(df_gamma)
-        set_source_dependent_parameters(df_proton)
-        config["regression_features"].append("dist")
-        config["classification_features"].append("dist")        
-
+    set_source_dependent_parameters(df_gamma, config)
+    set_source_dependent_parameters(df_proton, config)
+    
     regression_features = config['regression_features']
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
@@ -387,13 +381,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     dl2 = dl1.copy()
 
     #Set source-dependent paramters
-    source_dependent_analysis = config["source_dependent_analysis"]
-
-    if source_dependent_analysis:
-        print("source-dependent analysis is activated")
-        set_source_dependent_parameters(dl2)
-        config["regression_features"].append("dist")
-        config["classification_features"].append("dist")   
+    set_source_dependent_parameters(dl2, config)
 
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
@@ -442,26 +430,65 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     return dl2
 
 
-def set_source_dependent_parameters(data):
+def set_source_dependent_parameters(data, config):
     """Set parameters for source-dependent analysis .
 
     Parameters:
     -----------
     data: Pandas DataFrame
-
+    config: dictionnary containing configuration
     """
 
     is_simu = 'mc_type' in data.columns
-    data['dist'] = np.NaN
 
     if is_simu:
-        #For gamma MC, 'dist' is calculated as the distance between source position defined in MC and C.O.G. of shower images
-        data['dist'][data['mc_type']==0] = data['disp_norm'][data['mc_type']==0]
-        #For proton MC, 'dist' is calculated as the distance between center of the camera and C.O.G. of shower images
-        data['dist'][data['mc_type']!=0] = data['r'][data['mc_type']!=0]
-    
+        #For gamma MC, expected source position is actual one for each event
+        if all(data['mc_type'])==0:
+
+            if ('dist' in config['regression_features']) or ('dist' in config['classification_features']):
+                data['dist'] = data['disp_norm']
+            
+            if ('time_gradient_from_source' in config['regression_features']) or ('time_gradient_from_source' in config['classification_features']):
+                data['time_gradient_from_source'] = data['time_gradient'] * data['disp_sign']
+
+            if ( 'skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features']):
+                data['skewness_from_source'] = data['skewness'] * data['disp_sign']
+
+        #For proton MC, expected source position should be written in config file(alt, az)
+        if all(data['mc_type'])!=0:
+
+            if( ('dist' in config['regression_features']) or ('dist' in config['classification_features']) 
+                or ('time_gradient_from_source' in config['regression_features']) or ('time_gradient_from_source' in config['classification_features'])
+                or ('skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features'])):
+                
+                focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
+
+                expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'] + config['mc_wobble_offset'])*u.deg, data['mc_az_tel']*u.deg, focal_length, 
+                                                        data['mc_alt_tel']*u.deg, data['mc_az_tel']*u.deg)
+                expected_src_pos_x_m = expected_src_pos.x.to_value()
+                expected_src_pos_y_m = expected_src_pos.y.to_value()
+
+            if ('dist' in config['regression_features']) or ('dist' in config['classification_features']):
+                data['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
+                                
+            if ('time_gradient_from_source' in config['regression_features']) or ('time_gradient_from_source' in config['classification_features']):
+                data['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
+
+            if ('skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features']):
+                data['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
+
+                
     if not is_simu:
-        # TODO: should get source position for real data from drive report
-        # for the moment, 'dist' is defined for ON observation mode
-        data['dist'] = data['r']
+        # TODO: expected source position should be obtained by using tel_alt,az and source RA,Dec
+        # For the moment, 'dist' is defined for ON observation mode
+
+        if ('dist' in config['regression_features']) or ('dist' in config['classification_features']):
+            data['dist'] = data['r']
+                
+        if ('time_gradient_from_source' in config['regression_features']) or ('time_gradient_from_source' in config['classification_features']):
+            data['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'])
+
+        if ('skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features']):
+            data['skewness_from_source'] = data['skewness'] * np.sign(data['x'])
+
 

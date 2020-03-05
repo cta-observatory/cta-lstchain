@@ -109,5 +109,5 @@
     },
   "timestamps_pointing":"ucts",
 
-  "source_dependent_analysis": false
+  "mc_wobble_offset": 0.4
 }
