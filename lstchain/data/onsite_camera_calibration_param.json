@@ -1,0 +1,45 @@
+{
+   "version": 1,
+   
+   "CalibrationHDF5Writer": {
+     "minimum_hg_charge_median": 5000,
+     "maximum_lg_charge_std": 300,
+     "one_event": true,
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "r0calibrator_product": "LSTR0Corrections",
+     "log_level":"DEBUG"
+   },         
+  "PedestalCalculator":{
+      "sample_duration":100000,
+      "tel_id":1,
+     "charge_median_cut_outliers": [-10,10],
+     "charge_std_cut_outliers": [-10,10],
+     "charge_product":"FixedWindowSum"
+   },
+    "FlatFieldCalculator":{
+      "sample_duration":100000,
+     "tel_id":1,
+      "charge_product":"LocalPeakWindowSum",
+      "charge_median_cut_outliers": [-0.5,0.5],
+       "charge_std_cut_outliers": [-10,10],
+     "time_cut_outliers": [2,38]
+   },
+     "LSTR0Corrections": {
+      "r1_sample_start": 2,
+       "tel_id":1,
+      "r1_sample_end": 38
+   },
+     "TimeCorrectionCalculate": {
+       "tel_id":1,
+       "charge_product":"LocalPeakWindowSum"
+   },
+    "LocalPeakWindowSum":{
+     "window_shift": 5,
+     "window_width":12
+    },
+    "FixedWindowSum":{
+     "window_start": 12,
+     "window_width":12
+    }
+}

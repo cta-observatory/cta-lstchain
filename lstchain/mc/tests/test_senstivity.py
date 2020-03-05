@@ -10,7 +10,7 @@ from lstchain.mc import (
 )
 
 from lstchain.tests.test_lstchain import dl1_file
-# from lstchain.tests.test_lstchain import dl2_file, lstcam_key # uncomment when the tests loading dl2_file are written
+# from lstchain.tests.test_lstchain import dl2_file, dl2_params_lstcam_key  # uncomment when the tests loading dl2_file are written
 
 
 @pytest.mark.run(after='test_dl0_to_dl1')
@@ -28,7 +28,7 @@ def test_read_sim_par():
 @pytest.mark.run(after='test_apply_models')
 def test_process_mc():
     # TODO: write a test for `test_process_mc` using `dl2` dataframe
-    # dl2 = pd.read_hdf(dl2_file, key=lstcam_key)
+    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     pass
 
 def test_calculate_sensitivity():
@@ -56,12 +56,12 @@ def test_calculate_sensitivity_lima():
 
 def test_bin_definition():
 
-    gb, tb = bin_definition(11,10)
-    gbin = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-    tbin = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
+    gammaness_bins, theta2_bins = bin_definition(11,10)
+    gammaness_bins_test = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    theta2_bins_test = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
             0.045, 0.05]
-    np.testing.assert_allclose(gb, gbin) 
-    np.testing.assert_allclose(tb.to_value(), tbin) 
+    np.testing.assert_allclose(gammaness_bins, gammaness_bins_test) 
+    np.testing.assert_allclose(theta2_bins.to_value(), theta2_bins_test) 
 
 def test_ring_containment():
 
@@ -96,7 +96,7 @@ def test_ring_containment():
 @pytest.mark.run(after='test_apply_models')
 def test_sens():
     # TODO: define test for sens
-    # dl2 = pd.read_hdf(dl2_file, key=lstcam_key)
+    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     pass
 
 
