@@ -13,6 +13,7 @@ from astropy import units as u
 
 from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.visualization import plot_calib as calib
 
 from astropy.table import Table
 import pandas as pd
@@ -33,6 +34,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input_file", help = "Path to DL1a data file (containing charge information).",
                     type = str, default = "")
 
+parser.add_argument("--calib_file", help = "Path to corresponding calibration file (containing bad pixel information).",
+                    type = str, default = "")
+
 parser.add_argument("--output_file", help = "Path to create the output fits table with muon parameters",
                     type = str)
 
@@ -49,6 +53,7 @@ args = parser.parse_args()
 def main():
 
     print("input file: {}".format(args.input_file))
+    print("calib file: {}".format(args.calib_file))
     print("output file: {}".format(args.output_file))
 
     # Camera geometry
@@ -69,7 +74,12 @@ def main():
                          'impact_x_array': [],
                          'impact_y_array': [],
                          }
-    
+
+    calib.read_file(args.calib_file)
+    bad_pixels = calib.calib_data.unusable_pixels[0]
+    print("Found a total of", np.sum(bad_pixels), "pixels.")
+    good_pixels = np.logical_not(bad_pixels)
+
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)
     # For some reason the call above is not working, this is a fix using
     # tables for the time being
@@ -85,8 +95,8 @@ def main():
 
     # File open
     num_muons = 0
-    for image, event_id in zip(images, parameters['event_id']):
-
+    for full_image, event_id in zip(images, parameters['event_id']):
+        image = full_image*good_pixels
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[image > 10.])))
         #if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
