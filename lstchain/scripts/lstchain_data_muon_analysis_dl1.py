@@ -77,7 +77,7 @@ def main():
 
     calib.read_file(args.calib_file)
     bad_pixels = calib.calib_data.unusable_pixels[0]
-    print("Found a total of", np.sum(bad_pixels), "pixels.")
+    print("Found a total of", np.sum(bad_pixels), "bad pixels.")
     good_pixels = np.logical_not(bad_pixels)
 
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)
