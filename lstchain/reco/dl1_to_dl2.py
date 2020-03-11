@@ -447,12 +447,13 @@ def set_source_dependent_parameters(data, config):
 
             if ('dist' in config['regression_features']) or ('dist' in config['classification_features']):
                 data['dist'] = data['disp_norm']
-            
+
+            # disp_sign = source_position - c.o.g. position, so need to be multiplied by "-1"
             if ('time_gradient_from_source' in config['regression_features']) or ('time_gradient_from_source' in config['classification_features']):
-                data['time_gradient_from_source'] = data['time_gradient'] * data['disp_sign']
+                data['time_gradient_from_source'] = data['time_gradient'] * data['disp_sign'] * -1
 
             if ( 'skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features']):
-                data['skewness_from_source'] = data['skewness'] * data['disp_sign']
+                data['skewness_from_source'] = data['skewness'] * data['disp_sign'] * -1
 
         #For proton MC, expected source position should be written in config file(alt, az)
         if all(data['mc_type'])!=0:
