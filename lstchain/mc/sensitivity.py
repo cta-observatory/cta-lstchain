@@ -364,13 +364,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     y0 = mc_par_g['sim_ev'] / (mc_par_g['emax'].to_value()**(mc_par_g['sp_idx'] + 1) \
                                - mc_par_g['emin'].to_value()**(mc_par_g['sp_idx'] + 1)) \
         * (mc_par_g['sp_idx'] + 1)
-
-    if(shape == "PowerLaw"):
-        y = y0 * (bins[1:]**(crab_par['alpha'] + 1) - bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
-
-    elif(shape == "LogParabola"):
-        log_parabola = LogParabola(amplitude=y0, reference=crab_par['e0'], alpha=-1*crab_par['alpha'], beta=-1*crab_par['beta'])
-        y = log_parabola.integral(bins[:-1] * u.TeV, bins[1:] * u.TeV, intervals=True).to_value()
+    y = y0 * (bins[1:]**(crab_par['alpha'] + 1) - bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
 
     n_sim_bin = y
 
@@ -390,14 +384,8 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
         print("These results will make no sense")
         w_g = w_g / u.sr  # Fix to make tests pass
 
-    if(shape == "PowerLaw"):
-        rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
-                          * w_g
-
-    elif(shape == "LogParabola"):
-        rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] + crab_par['beta'] * np.log(e_true_g / crab_par['e0']) - mc_par_g['sp_idx'])) \
-                          * w_g
-
+    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+                      * w_g
     rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
@@ -509,14 +497,9 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
 
         e_aftercuts_p = e_true_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
                                  & p_contained]
+        e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha'] - mc_par_g['sp_idx']))
 
-        if(shape == "PowerLaw"):
-            e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha'] - mc_par_g['sp_idx']))
-        
-        elif(shape == "LogParabola"):
-            e_aftercuts_w = np.sum(np.power(e_aftercuts/crab_par['e0'], crab_par['alpha'] + crab_par['beta'] * np.log(e_aftercuts / crab_par['e0'])) * np.power(e_aftercuts, -1 * mc_par_g['sp_idx']))
-     
-        eff_area[i] = e_aftercuts_w.to_value() / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m**2).to_value()            
+        eff_area[i] = e_aftercuts_w.to_value() / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m**2).to_value()
 
         nevents_gamma[i] = e_aftercuts.shape[0]
         nevents_proton[i] = e_aftercuts_p.shape[0]
@@ -619,13 +602,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     y0 = mc_par_g['sim_ev'] / (mc_par_g['emax'].to_value() ** (mc_par_g['sp_idx'] + 1) \
                                - mc_par_g['emin'].to_value() ** (mc_par_g['sp_idx'] + 1)) \
          * (mc_par_g['sp_idx'] + 1)
-
-    if(shape == "PowerLaw"):
-        y = y0 * (bins[1:]**(crab_par['alpha'] + 1) - bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
-
-    elif(shape == "LogParabola"):
-        log_parabola = LogParabola(amplitude=y0, reference=crab_par['e0'], alpha=-1*crab_par['alpha'], beta=-1*crab_par['beta'])
-        y = log_parabola.integral(bins[:-1] * u.TeV, bins[1:] * u.TeV, intervals=True).to_value()
+    y = y0 * (bins[1:] ** (crab_par['alpha'] + 1) - bins[:-1] ** (crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
 
     n_sim_bin = y
 
@@ -645,14 +622,8 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
         print("These results will make no sense")
         w_g = w_g / u.sr  # Fix to make tests pass
 
-    if(shape == "PowerLaw"):
-        rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
-                          * w_g
-
-    elif(shape == "LogParabola"):
-        rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] + crab_par['beta'] * np.log(e_true_g / crab_par['e0']) - mc_par_g['sp_idx'])) \
-                          * w_g
-
+    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
+                      * w_g
     rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
 
@@ -743,14 +714,10 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
         e_aftercuts_p = e_true_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
                                  & (gammaness_p > gcut[i]) & p_contained]
 
-        if(shape == "PowerLaw"):
-            e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha'] - mc_par_g['sp_idx']))
+        e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha'] - mc_par_g['sp_idx']))
 
-        elif(shape == "LogParabola"):
-            e_aftercuts_w = np.sum(np.power(e_aftercuts/crab_par['e0'], crab_par['alpha'] + crab_par['beta'] * np.log(e_aftercuts / crab_par['e0'])) * np.power(e_aftercuts, -1 * mc_par_g['sp_idx']))
-
-        #e_w = np.sum(np.power(e_true_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])],
-        #                      crab_par['alpha'] - mc_par_g['sp_idx']))
+        e_w = np.sum(np.power(e_true_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])],
+                              crab_par['alpha'] - mc_par_g['sp_idx']))
 
         eff_area[i] = e_aftercuts_w.to_value() / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m ** 2).to_value()
 
