@@ -13,7 +13,7 @@ from astropy import units as u
 
 from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.visualization import plot_calib as calib
+from lstchain.visualization import plot_calib
 
 from astropy.table import Table
 import pandas as pd
@@ -75,10 +75,9 @@ def main():
                          'impact_y_array': [],
                          }
 
-    calib.read_file(args.calib_file)
-    bad_pixels = calib.calib_data.unusable_pixels[0]
-    print("Found a total of", np.sum(bad_pixels), "bad pixels.")
-    good_pixels = np.logical_not(bad_pixels)
+    plot_calib.read_file(args.calib_file)
+    bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+    print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
 
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)
     # For some reason the call above is not working, this is a fix using
@@ -96,7 +95,7 @@ def main():
     # File open
     num_muons = 0
     for full_image, event_id in zip(images, parameters['event_id']):
-        image = full_image*good_pixels
+        image = full_image*(~bad_pixels)
         print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                                                                   np.size(image[image > 10.])))
         #if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
