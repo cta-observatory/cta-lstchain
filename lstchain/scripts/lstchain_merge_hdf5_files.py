@@ -28,13 +28,22 @@ parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(
                     dest='noimage',
                     help='Boolean. True to remove the images',
                     default=False)
-
-args = parser.parse_args()
+                                                                                    
+parser.add_argument('--run-number', '-r', action='store', type=str,                                                           
+                    dest='run_number',                                                                                  
+                    help='Merge files run-wise',                                                                        
+                    default=None)                                                                                       
+                                                                                                                        
+args = parser.parse_args()                                                                                              
 
 
 def main():
 
-    file_list = [args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')]
+    if args.run_number:                                                                                                 
+        file_list = sorted([args.srcdir + '/' + f for f in os.listdir(args.srcdir) if (f.endswith('.h5') and            
+                                                                                       args.run_number in f)])                 
+    else:                                                                                                               
+        file_list = sorted([args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')])
 
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
