@@ -23,7 +23,7 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from .volume_reducer import apply_volume_reduction, check_volume_reduction_method
+from .volume_reducer import apply_volume_reduction, get_volume_reduction_method
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
@@ -225,7 +225,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                        filters = filters, metadata = metadata)
         subarray = event.inst.subarray
 
-    volume_reduction, algorithm = check_volume_reduction_method(config)
+    volume_reduction_algorithm = get_volume_reduction_method(config)
 
     with HDF5TableWriter(filename = output_filename,
                          group_name = 'dl1/event',
@@ -237,8 +237,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
         print("USING FILTERS: ", writer._h5file.filters)
 
-        if volume_reduction:
-            print("Volume reduction algorithm: {}".format(algorithm))
+        if volume_reduction_algorithm is not None:
+            print("Volume reduction algorithm being used: {}".format(volume_reduction_algorithm))
 
         if is_simu:
             # build a mapping of tel_id back to tel_index:
@@ -278,6 +278,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
+            # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
+            # When the last version of the method is implemented, vol. reduction will be done at dl0
+            if volume_reduction_algorithm is not None:
+                apply_volume_reduction(event, volume_reduction_algorithm, config)
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
@@ -289,11 +293,6 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
-
-                # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten
-                # When the last version of the method is implemented, vol. reduction will be done at dl0
-                if volume_reduction:
-                    apply_volume_reduction(event, telescope_id, config)
 
                 try:
                     dl1_filled = get_dl1(event, telescope_id,
