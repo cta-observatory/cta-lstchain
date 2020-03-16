@@ -1,20 +1,15 @@
+#!/usr/bin/env python
 """
-**TEMPORTAL** module with functions to perform a volume reduction to LST data:
+**TEMPORARY** module with functions to perform a volume reduction to LST data:
 
-NOTE : The volume reduction SHOULD BE performed at the dl0 data levels.
+This is a temporary implementation of the 'tailcut and dilation' volume reduction method.
+The volume reduction produces reduced waveforms and write them in the DL0 container.
 
-This is a temporal implementation of the 'tailcut and dilation' volume reduction method that computes
-the mask from the dl1 (integrated image) level, and applies it to the image (dl1) as well as to the waveform (dl0) and
-pulse_time arrays (dl1), filling the 'anti-mask' with zeros.
+To date, the ** DL0 container is overwritten ** if the volume reduction is applied.
 
-This means that the 'first' dl0 computed data is OVERWRITTEN by the vol. reduced dl0 data.
 
 Usage:
-
-"import volume_reducer"
-
 In the configuration file:
-
 (...)
 
 "volume_reducer":{
@@ -27,13 +22,13 @@ In the configuration file:
 """
 from ctapipe.image.cleaning import tailcuts_clean, dilate
 
-__all__ = ['check_volume_reduction_method',
+__all__ = ['get_volume_reduction_method',
            'apply_volume_reduction',
            'zero_suppression_tailcut_dilation'
            ]
 
 
-def check_volume_reduction_method(config_file):
+def get_volume_reduction_method(config_file):
     """
     Checks in the configuration file if a volume reduction method has been set.
 
@@ -44,58 +39,54 @@ def check_volume_reduction_method(config_file):
 
     Returns
     -------
-    flag: bool
-        Flag indicating if the volume reducer method declared in the configuration file is(not) none
     algorithm: str
         Volume reduction algorithm name
     """
     if config_file['volume_reducer']['algorithm'] is None:
-        flag = False
-        algorithm = ''
+        algorithm = None
     else:
-        flag = True
         algorithm = config_file['volume_reducer']['algorithm']
-        print(algorithm)
 
-    return flag, algorithm
+    return algorithm
 
 
-def apply_volume_reduction(event, tel_id, config):
+def apply_volume_reduction(event, vol_reduction_algorithm, config):
     """
-    Apply to an event the volume reduction method specified in the configuration file.
+    Apply to a **calibrated** event the volume reduction method specified in the configuration file (if not None).
 
     Parameters
     ----------
     event: 'ctapipe.io.containers.DataContainer'
-    tel_id: int
-        A telescope id wih data: an `event.r0.tels_with_data` object.
+    vol_reduction_algorithm: str
+        Name of the volume reduction algorithm to be applied. The algorithm name (str) is the returned value of
+        `get_volumne_reduction_method`
     config: dict
-        Loaded configuration: configuration used to select the volume reducer method and its
-        corresponding parameters.
+        Read the parameters of the volume reduction method specified in the config file.
 
     Returns
     -------
     none
-        Modifies the event container (at dl0) by applying the computed mask to the image, the waveform
+        Modifies the event container by applying the computed mask to the image, the waveform
         and the pulse_time objects, as:
             image[~mask] = 0, ...
 
     """
-    camera = event.inst.subarray.tel[tel_id].camera
-
-    image = event.dl1.tel[tel_id].image  # Volume reduction mask computed, to date, at dl1 level !
-
-    pulse_time = event.dl1.tel[tel_id].pulse_time
-    waveform = event.dl0.tel[tel_id].waveform
-
-    algorithm = globals()[config['volume_reducer']['algorithm']]
+    vol_reduction_algorithm = globals()[vol_reduction_algorithm]
     parameters = config['volume_reducer']['parameters']
 
-    mask_volume_reduction = algorithm(camera, image, **parameters)
+    for tel_id in event.r0.tels_with_data:
 
-    image[~mask_volume_reduction] = 0
-    pulse_time[~mask_volume_reduction] = 0
-    waveform[~mask_volume_reduction, :] = 0
+        camera = event.inst.subarray.tel[tel_id].camera
+
+        image = event.dl1.tel[tel_id].image  # Volume reduction mask computed, to date, at dl1 level !
+        pulse_time = event.dl1.tel[tel_id].pulse_time
+        waveform = event.dl0.tel[tel_id].waveform
+
+        pixels_to_keep = vol_reduction_algorithm(camera, image, **parameters)
+
+        image[~pixels_to_keep] = 0
+        pulse_time[~pixels_to_keep] = 0
+        waveform[~pixels_to_keep, :] = 0
 
 
 def zero_suppression_tailcut_dilation(geom, image, number_of_dilation=3, **kwargs):
