@@ -6,7 +6,6 @@ from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra,crab_magic
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats.poisson import excess_matching_significance_on_off
-from gammapy.spectrum.models import LogParabola
 from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
