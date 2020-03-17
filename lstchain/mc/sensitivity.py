@@ -295,7 +295,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
                                dl2_file_g, dl2_file_p,
                                nfiles_gammas, nfiles_protons,
                                n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
-                               obstime = 50 * 3600 * u.s, shape="PowerLaw"):
+                               obstime = 50 * 3600 * u.s):
 
     """
     Main function to find the best cuts to calculate the sensitivity
@@ -352,11 +352,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     gammaness_bins, theta2_bins = bin_definition(n_bins_gammaness, n_bins_theta2)
 
     # Extract spectral parameters
-    if(shape == "PowerLaw"):
-        dFdE, crab_par = crab_hegra(energy)
-    elif(shape == "LogParabola"):
-        dFdE, crab_par = crab_magic(energy)
-
+    dFdE, crab_par = crab_hegra(energy)
     dFdEd0, proton_par = proton_bess(energy)
 
     bins = np.logspace(np.log10(emin_sensitivity.to_value()), np.log10(emax_sensitivity.to_value()), n_bins_energy + 1)
@@ -369,11 +365,11 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(shape, mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
+    rate_g = rate("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
     rate_p = rate("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(shape, mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+    w_g = weight("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
                  mc_par_g['sim_ev'], crab_par)
 
     w_p = weight("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
@@ -539,7 +535,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                 dl2_file_g, dl2_file_p,
                 nfiles_gammas, nfiles_protons,
                 n_bins_energy, gcut, tcut, noff,
-                obstime=50 * 3600 * u.s, shape="PowerLaw"):
+                obstime=50 * 3600 * u.s):
     """
     Main function to calculate the sensitivity given a MC dataset
 
@@ -591,11 +587,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                          np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
 
     # Extract spectral parameters
-    if(shape == "PowerLaw"):
-        dFdE, crab_par = crab_hegra(energy)
-    elif(shape == "LogParabola"):
-        dFdE, crab_par = crab_magic(energy)
-        
+    dFdE, crab_par = crab_hegra(energy)
     dFdEd0, proton_par = proton_bess(energy)
 
     bins = np.logspace(np.log10(emin_sensitivity.to_value()), np.log10(emax_sensitivity.to_value()), n_bins_energy + 1)
@@ -607,11 +599,11 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(shape, mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
+    rate_g = rate("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
     rate_p = rate("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(shape, mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+    w_g = weight("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
                  mc_par_g['sim_ev'], crab_par)
 
     w_p = weight("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
