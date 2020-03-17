@@ -139,16 +139,21 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     max_radial_excess_kurtosis = 1.            # maximum excess kurtosis
     min_impact_parameter = 0.2                 # in fraction of mirror radius
     max_impact_parameter = 0.9                 # in fraction of mirror radius
-    ring_integration_width = 0.4               # +/- integration range along ring radius
+    ring_integration_width = 0.4               # +/- integration range along ring radius, in fraction of ring radius
+    outer_ring_width = 0.2                     # in fraction of ring radius, width of ring just outside the integrated muon ring, used to check pedestal bias
     
     x, y = get_muon_center(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom, tailcuts)
 
     mirror_radius = np.sqrt(mirror_area / np.pi)
     dist_mask = np.abs(dist - muonringparam.ring_radius
-                    ) < muonringparam.ring_radius * 0.4
+                    ) < muonringparam.ring_radius * ring_integration_width
     pix_ring = image * dist_mask
-    pix_out_ring = image * ~dist_mask
+    pix_outside_ring = image * ~dist_mask
+
+    # mask to select pixels just outside the ring that will be integrated to obtain the ring's intensity:
+    dist_mask_2 = np.logical_and(~dist_mask, np.abs(dist-muonringparam.ring_radius) < muonringparam.ring_radius*(ring_integration_width+outer_ring_width))
+    pix_ring_2 = image[dist_mask_2]
 
 #    nom_dist = np.sqrt(np.power(muonringparam.ring_center_x,2) 
 #                    + np.power(muonringparam.ring_center_y, 2))
@@ -163,18 +168,9 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     radial_distribution = radial_light_distribution(
         muonringparam.ring_center_x,
         muonringparam.ring_center_y,
-        muonringparam.ring_radius,
         x[clean_mask], y[clean_mask],
         image[clean_mask])
     
-    muonintensityoutput = MuonIntensityParameter()
-
-    # Set default values for cases in which the muon intensity fit (with MuonLineIntegrate) is not done:
-    muonintensityoutput.ring_width = np.nan*u.deg
-    muonintensityoutput.impact_parameter_pos_x = np.nan*u.m
-    muonintensityoutput.impact_parameter_pos_y = np.nan*u.m
-    muonintensityoutput.impact_parameter = np.nan*u.m
-
     
     # Do complicated calculations (minuit-based max likelihood ring fit) only for selected rings:
     candidate_clean_ring = all(
@@ -200,27 +196,41 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             muonringparam.ring_radius,
             x[dist_mask], y[dist_mask],
             image[dist_mask])
-     
+
+        dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius) < (muonintensityoutput.ring_width)
+        # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
+        # within the "width" fitted using MuonLineIntegrate.
+        muonintensityoutput.ring_completeness = ring_completeness(
+            x[dist_ringwidth_mask], y[dist_ringwidth_mask], image[dist_ringwidth_mask],
+            muonringparam.ring_radius,
+            muonringparam.ring_center_x,
+            muonringparam.ring_center_y,
+            threshold=30,
+            bins=30)
+
+        pix_ringwidth_im = image * dist_ringwidth_mask
+        idx_ringwidth = np.nonzero(pix_ringwidth_im)
+        muonintensityoutput.ring_pix_completeness = npix_above_threshold(
+            pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
+                pix_ring[idx_ringwidth])
+
+    else:
+            muonintensityoutput = MuonIntensityParameter()
+            # Set default values for cases in which the muon intensity fit (with MuonLineIntegrate) is not done:
+            muonintensityoutput.ring_width = np.nan*u.deg
+            muonintensityoutput.impact_parameter_pos_x = np.nan*u.m
+            muonintensityoutput.impact_parameter_pos_y = np.nan*u.m
+            muonintensityoutput.impact_parameter = np.nan*u.m
+            muonintensityoutput.ring_pix_completeness = np.nan
+            muonintensityoutput.ring_completeness = np.nan
+
+
     muonintensityoutput.mask = dist_mask
-    idx_ring = np.nonzero(pix_ring)
-
-    muonintensityoutput.ring_completeness = ring_completeness(
-                    x[idx_ring], y[idx_ring], pix_ring[idx_ring],
-                    muonringparam.ring_radius,
-                    muonringparam.ring_center_x,
-                    muonringparam.ring_center_y,
-                    threshold=30,
-                    bins=30)
     muonintensityoutput.ring_size = np.sum(pix_ring)
-    size_outside_ring = np.sum(pix_out_ring * clean_mask)
-    dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius
-                                             ) < (muonintensityoutput.ring_width)
-    pix_ringwidth_im = image * dist_ringwidth_mask
-    idx_ringwidth = np.nonzero(pix_ringwidth_im)
+    size_outside_ring = np.sum(pix_outside_ring * clean_mask)
 
-    muonintensityoutput.ring_pix_completeness = npix_above_threshold(
-                    pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
-                    pix_ring[idx_ringwidth])
+    # This is just mean charge per pixel in pixels just around the ring (on the outer side):
+    mean_pixel_charge_around_ring = np.sum(pix_ring_2)/len(pix_ring_2) 
 
     if candidate_clean_ring:
         print("Impact parameter=%s, ring_width=%s, ring radius=%s, ring completeness=%s"%
@@ -239,9 +249,11 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         muonintensityoutput.impact_parameter >
         min_impact_parameter * mirror_radius, 
 
-        # TODO: To be applied when we have decent optics
+        # TODO: To be applied when we have decent optics. 
         # muonintensityoutput.ring_width
         # < 0.08,
+        # NOTE: inside "candidate_clean_ring" cuts there is already a cut in the st dev of light distribution along ring radius,
+        # which is also a measure of the ring width
         
         # muonintensityoutput.ring_width
         # > 0.04
@@ -289,7 +301,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     if(plot_rings and not plots_path):
         print("You are trying to plot without giving a path!")
 
-    return muonintensityparam, size_outside_ring, muonringparam, good_ring, radial_distribution
+    return muonintensityparam, size_outside_ring, muonringparam, good_ring, radial_distribution, mean_pixel_charge_around_ring
 
 def muon_filter(image, thr_low = 0, thr_up = 1.e10):
     """
@@ -330,7 +342,7 @@ def tag_pix_thr(image, thr_low = 50, thr_up = 500, pe_thr = 10):
     return ((np.size(image[image > pe_thr]) < thr_up) and (np.size(image[image > pe_thr]) > thr_low))
 
 
-def radial_light_distribution(centre_x, centre_y, radius, pixel_x, pixel_y, image):
+def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
     """
 
     Parameters
@@ -339,12 +351,10 @@ def radial_light_distribution(centre_x, centre_y, radius, pixel_x, pixel_y, imag
         Centre of muon ring in the field of view from circle fitting
     centre_y: float
         Centre of muon ring in the field of view from circle fitting
-    radius: float
-        Radius of muon ring from circle fitting
     pixel_x: ndarray
-        X position of pixels in image from circle fitting
+        X position of pixels in image
     pixel_y: ndarray
-        Y position of pixel in image from circle fitting
+        Y position of pixel in image
     image: ndarray
         Amplitude of image pixels
 
@@ -353,7 +363,6 @@ def radial_light_distribution(centre_x, centre_y, radius, pixel_x, pixel_y, imag
     standard_dev, skewness
     """
     # Convert everything to degrees:
-    ring_radius = radius.to(u.deg).value
     x0 = centre_x.to(u.deg).value
     y0 = centre_y.to(u.deg).value
     pix_x = pixel_x.to(u.deg).value
@@ -362,8 +371,7 @@ def radial_light_distribution(centre_x, centre_y, radius, pixel_x, pixel_y, imag
     pix_r = np.hypot(pix_x-x0, pix_y-y0)
 
     # meanm, standard deviation & skewness of light distribution along ring radius.
-    # ring_radius is approximately equal to "mean", but not exactly.
-    
+    # ring_radius calculated elsewhere is approximately equal to "mean", but not exactly, so we recalculate it here:
     mean = np.sum(np.multiply(image,pix_r))/np.sum(image)
     standard_dev = np.sqrt(np.sum(np.multiply(image,np.square(pix_r-mean)))/np.sum(image))
     skewness =  np.sum(np.multiply(image,np.power((pix_r-mean)/standard_dev,3.)))/np.sum(image)
