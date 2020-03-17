@@ -1,6 +1,6 @@
 import numpy as np
 import astropy.units as u
-from gammapy.spectrum.models import LogParabola
+from gammapy.modeling.models import LogParabolaSpectralModel
 
 __all__ = [
     'power_law_integrated_distribution',
@@ -104,7 +104,7 @@ def rate(shape, emin, emax, param, cone, area):
         integral = param['f0'] * int_diff_sp(emin, emax, param['alpha'], param['e0'])
     
     elif(shape == "LogParabola"):
-        log_parabola = LogParabola(amplitude=param['f0'], reference=param['e0'], alpha=-1*param['alpha'], beta=-1*param['beta'])
+        log_parabola =  LogParabolaSpectralModel(amplitude=param['f0'], reference=param['e0'], alpha=-1*param['alpha'], beta=-1*param['beta'])
         integral = log_parabola.integral(emin, emax)
 
     rate = area * omega * integral
@@ -147,7 +147,8 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
         norm_sim = sim_integral * int_diff_sp(emin, emax, w_param['alpha'], w_param['e0'])
     
     elif(shape == "LogParabola"):
-        log_parabola = LogParabola(amplitude= sim_integral, reference= w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
+        log_parabola =  LogParabolaSpectralModel(amplitude=sim_integral, reference=w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
+
         norm_sim = log_parabola.integral(emin, emax)
 
     weight = rate / norm_sim
