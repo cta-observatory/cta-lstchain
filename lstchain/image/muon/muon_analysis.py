@@ -89,19 +89,15 @@ def fit_muon(x, y, image, geom, tailcuts):
     image_clean = image * clean_mask
     muonringparam = muonring.fit(x, y, image_clean)
 
-    dist = np.sqrt(np.power(x - muonringparam.ring_center_x, 2)
+    # Do an iterative fit removing pixels which are beyond 0.4*ring_radius of the ring (along the radial direction):
+    # (Q: is this effective? Seems anyway unnecessary for clean rings which are those we want in the end)
+
+    for _ in [0]*2:  # just to iterate the fit twice more
+        dist = np.sqrt(np.power(x - muonringparam.ring_center_x, 2)
                        + np.power(y - muonringparam.ring_center_y, 2))
-    ring_dist = np.abs(dist - muonringparam.ring_radius)
-    muonringparam = muonring.fit(
-            x, y, image_clean * (ring_dist < muonringparam.ring_radius * 0.4)
-        )
-
-    dist = np.sqrt(np.power(x - muonringparam.ring_center_x, 2) +
-                       np.power(y - muonringparam.ring_center_y, 2))
-    ring_dist = np.abs(dist - muonringparam.ring_radius)
-
-    muonringparam = muonring.fit(
-            x, y, image_clean * (ring_dist < muonringparam.ring_radius * 0.4)
+        ring_dist = np.abs(dist - muonringparam.ring_radius)
+        muonringparam = muonring.fit(
+        x, y, image_clean * (ring_dist < muonringparam.ring_radius * 0.4)
         )
     
     return muonringparam, clean_mask, dist, image_clean
@@ -143,6 +139,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     max_radial_excess_kurtosis = 1.            # maximum excess kurtosis
     min_impact_parameter = 0.2                 # in fraction of mirror radius
     max_impact_parameter = 0.9                 # in fraction of mirror radius
+    ring_integration_width = 0.4               # +/- integration range along ring radius
     
     x, y = get_muon_center(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom, tailcuts)
