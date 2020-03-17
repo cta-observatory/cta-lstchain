@@ -74,19 +74,25 @@ def rate(shape, emin, emax, param, cone, area):
 
     Parameters
     ----------
+    shape: `string` weighted spectrum shape
     emin:  `float`  minimum energy
     emax:  `float`  maximum energy
-    sp_idx:`float`  spectral index of the power-law distribution
+    param: `dict` with weighted spectral parameters
     cone:  `float`  angle [deg] for the solid angle cone
     area:  `float`  collection area [cm**2]
-    norm:  `float`  normalization of the differential energy spectrum at e0
-    e0:    `float`  normalization energy
+
+    if shape is 'PowerLaw':
+    param should include 'f0','e0','alpha'
+    dFdE  = f0 * np.power(E / e0, alpha)
+
+    if shape is 'LogParabola':
+    param should include 'f0','e0','alpha','beta'
+    dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
     ----------
     rate: `float` rate of events
 
-    TODO: Introduce any spectral form
     """
 
     if(cone == 0):
@@ -114,13 +120,21 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
 
     Parameters
     ----------
+    shape:      `string` estimated spectrum shape
     emin:       `float` minimum energy
     emax:       `float` maximum energy
     sim_sp_idx: `float` simulated spectral index of the power-law distribution
-    w_sp_idx:   `float` weighted spectral index of the power-law distribution
     rate:       `float` rate of simulated events
     nev:        `int`   number of simulated events 
-    e0:         `float` normalization energy
+    w_param:    `dict` with weighted spectral parameters
+
+    if shape is 'PowerLaw':
+    w_param should include 'f0','e0','alpha'
+    dFdE  = f0 * np.power(E / e0, alpha)
+
+    if shape is 'LogParabola':
+    w_param should include 'f0','e0','alpha','beta'
+    dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
     ----------
