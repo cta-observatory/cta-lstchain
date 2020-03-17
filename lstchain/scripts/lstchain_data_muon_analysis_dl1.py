@@ -78,9 +78,11 @@ def main():
                          'impact_parameter': [],
                          'impact_x_array': [],
                          'impact_y_array': [],
-                         'radial_stdev' : [],            # Standard deviation of (cleaned) light distribution along ring radius
-                         'radial_skewness' : [],         # Skewness of (cleaned) light distribution along ring radius
-                         'radial_excess_kurtosis' : []   # Excess kurtosis of (cleaned) light distribution along ring radius
+                         'radial_stdev' : [],                  # Standard deviation of (cleaned) light distribution along ring radius
+                         'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
+                         'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
+                         'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
+                         'mean_pixel_charge_around_ring' : []  # Average pixel charge in pixels surrounding the outer part of the ring 
                          }
 
     plot_calib.read_file(args.calib_file)
@@ -114,16 +116,16 @@ def main():
         #if not muon_filter(image) #default values apply no filtering. This filter is rather useless for biased extractors anyway
         #    continue
 
-        muonintensityparam, size_outside_ring, muonringparam, good_ring, radial_distribution = \
-        analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
-                           mirror_area, args.plot_rings, args.plots_path)
+        muonintensityparam, size_outside_ring, muonringparam, good_ring, \
+        radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
+                                                                                mirror_area, args.plot_rings, args.plots_path)
 
         #if not (good_ring):
         #    continue
 
         if good_ring:
-            print("Number of good muon rings found {}, EventID {}".format(num_muons, event_id))
             num_muons = num_muons + 1
+            print("Number of good muon rings found {}, EventID {}".format(num_muons, event_id))
 
         output_parameters['event_id'].append(
         event_id)
@@ -157,6 +159,10 @@ def main():
         radial_distribution['skewness'])
         output_parameters['radial_excess_kurtosis'].append(
         radial_distribution['excess_kurtosis'])
+        output_parameters['num_pixels_in_ring'].append(
+        np.sum(muonintensityparam.mask))
+        output_parameters['mean_pixel_charge_around_ring'].append(
+        mean_pixel_charge_around_ring)
         
         if num_muons == max_muons:
             break
