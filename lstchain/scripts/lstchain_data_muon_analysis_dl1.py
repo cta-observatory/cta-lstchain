@@ -47,6 +47,9 @@ parser.add_argument("--plot_rings", help = "Plot figures of the stored rings",
 parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
 
+parser.add_argument("--max_muons", help = "Maximum number of processed muon ring candidates",
+                    default = -1, type = int)
+
 args = parser.parse_args()
 
 
@@ -55,6 +58,8 @@ def main():
     print("input file: {}".format(args.input_file))
     print("calib file: {}".format(args.calib_file))
     print("output file: {}".format(args.output_file))
+    
+    max_muons = args.max_muons
 
     # Camera geometry
     geom = CameraGeometry.from_name("LSTCam-002")
@@ -73,6 +78,9 @@ def main():
                          'impact_parameter': [],
                          'impact_x_array': [],
                          'impact_y_array': [],
+                         'radial_stdev' : [],            # Standard deviation of (cleaned) light distribution along ring radius
+                         'radial_skewness' : [],         # Skewness of (cleaned) light distribution along ring radius
+                         'radial_excess_kurtosis' : []   # Excess kurtosis of (cleaned) light distribution along ring radius
                          }
 
     plot_calib.read_file(args.calib_file)
@@ -96,24 +104,26 @@ def main():
     num_muons = 0
     for full_image, event_id in zip(images, parameters['event_id']):
         image = full_image*(~bad_pixels)
-        print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
-                                                                  np.size(image[image > 10.])))
+        #print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
+        #                                                          np.size(image[image > 10.])))
         #if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
         #    continue
-        if not tag_pix_thr(image): #default skipps pedestal and calibration events
+        if not tag_pix_thr(image): #default skips pedestal and calibration events
             continue
 
-        if not muon_filter(image): #default values apply no filtering
-            continue
+        #if not muon_filter(image) #default values apply no filtering. This filter is rather useless for biased extractors anyway
+        #    continue
 
-        muonintensityparam, size_outside_ring, muonringparam, good_ring = \
-            analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
-                               mirror_area, args.plot_rings, args.plots_path)
+        muonintensityparam, size_outside_ring, muonringparam, good_ring, radial_distribution = \
+        analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
+                           mirror_area, args.plot_rings, args.plots_path)
+
         #if not (good_ring):
         #    continue
-        print("Number of muons found {}, EventID {}".format(num_muons, event_id))
 
-        num_muons = num_muons + 1
+        if good_ring:
+            print("Number of good muon rings found {}, EventID {}".format(num_muons, event_id))
+            num_muons = num_muons + 1
 
         output_parameters['event_id'].append(
         event_id)
@@ -141,12 +151,20 @@ def main():
         muonintensityparam.impact_parameter_pos_x.value)
         output_parameters['impact_y_array'].append(
         muonintensityparam.impact_parameter_pos_y.value)
-
+        output_parameters['radial_stdev'].append(
+        radial_distribution['standard_dev'].value)
+        output_parameters['radial_skewness'].append(
+        radial_distribution['skewness'])
+        output_parameters['radial_excess_kurtosis'].append(
+        radial_distribution['excess_kurtosis'])
+        
+        if num_muons == max_muons:
+            break
+        
     table = Table(output_parameters)
     if os.path.exists(args.output_file):
             os.remove(args.output_file)
     table.write(args.output_file, format='fits')
-
 
 if __name__ == '__main__':
     main()
