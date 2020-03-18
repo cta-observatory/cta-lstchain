@@ -98,10 +98,12 @@ def main():
 
     filenames = glob.glob(args.input_file)
     filenames.sort()
+    
+    num_muons = 0
+    
     for filename in filenames:
         print('Opening file', filename)
 
-        
         with tables.open_file(filename) as file:
             
             # unfortunately pandas.read_hdf does not seem compatible with "with... as..." statements
@@ -114,8 +116,6 @@ def main():
             equivalent_focal_length = telescope_description['equivalent_focal_length'].values * u.m
             mirror_area = telescope_description['mirror_area'].values * pow(u.m,2)
             
-            # File open
-            num_muons = 0
             for full_image, event_id in zip(images, parameters['event_id']):
                 image = full_image*(~bad_pixels)
                 #print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
@@ -176,7 +176,10 @@ def main():
                     
                 if num_muons == max_muons:
                     break
-        
+
+            if num_muons == max_muons:
+                break
+
     table = Table(output_parameters)
     if os.path.exists(args.output_file):
             os.remove(args.output_file)
