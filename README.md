@@ -19,7 +19,7 @@ are unit tested and should be working as long as the build status is passing.
 git clone https://github.com/cta-observatory/cta-lstchain.git
 cd cta-lstchain
 conda env create -f environment.yml
-source activate cta
+conda activate lst-dev
 ```
 
 - Install lstchain:
