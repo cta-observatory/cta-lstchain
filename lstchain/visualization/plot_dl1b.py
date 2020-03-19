@@ -1,7 +1,9 @@
 import argparse
+from distutils.util import strtobool
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.colors import LogNorm
 import numpy as np
 import os
 import pandas as pd
@@ -12,6 +14,11 @@ parser = argparse.ArgumentParser(description="Plots of DL1 b image parameters")
 parser.add_argument("--infile", '-f', type=str,
                     dest='infile',
                     help="Path to the DL1 input file")
+
+parser.add_argument("--cuts", type=lambda x: bool(strtobool(x)),
+                    dest='cuts',
+                    help='Apply cuts',
+                    default=False)
 
 parser.add_argument("--min_intensity", type=float,
                     dest='min_intensity',
@@ -46,15 +53,16 @@ def main():
     df_data.sort_values('dragon_time')
 
     # Apply cuts
-    df_data = df_data[(df_data['intensity'] > args.min_intensity) &
-                      (df_data['intensity'] < args.max_intensity) &
-                      (df_data['leakage'] < args.leakage_cut) &
-                      (df_data['wl'] > args.wl_cut)]
+    if args.cuts:
+        df_data = df_data[(df_data['intensity'] > args.min_intensity) &
+                          (df_data['intensity'] < args.max_intensity) &
+                          (df_data['leakage'] < args.leakage_cut) &
+                          (df_data['wl'] > args.wl_cut)]
 
     # Determine the duration of the total number of events in the file
     timestamps = df_data['dragon_time'][df_data['dragon_time'] > 0]
     duration = timestamps.iloc[-1] - timestamps.iloc[0]
-    e_bins = int(duration / 10)
+    e_bins = int(np.round(duration) / 10)  # 10 secs bin
     weight_time = np.ones_like(timestamps) * 0.1  # Beware the factor 10
     if e_bins <= 0:
         e_bins = 1
@@ -68,10 +76,16 @@ def main():
     with PdfPages(output_filename) as pdf:
 
         fig, axes = plt.subplots(nrows=3, ncols=2)
-        plt.suptitle(f'Input file name: {args.infile}' + '\n' +
-                     f'Cuts: ' + f'wl > {args.wl_cut}, ' +
-                     f'{args.min_intensity:.0e} < intensity < {args.max_intensity:.0e}, ' +
-                     f'leakage < {args.leakage_cut}')
+
+        if args.cuts:
+            plt.suptitle(f'Input file name: {args.infile}' + '\n' +
+                         f'Cuts: ' + f'wl > {args.wl_cut}, ' +
+                         f'{args.min_intensity:.0e} < intensity <' +
+                         f'{args.max_intensity:.0e}, ' +
+                         f'leakage < {args.leakage_cut}')
+        else:
+            plt.suptitle(f'Input file name: {args.infile}' + '\n' +
+                         f'No cuts applied')
 
         # Intensity distribution
         ax = axes[0][0]
@@ -108,7 +122,7 @@ def main():
 
         # Center of gravity
         ax = axes[2][1]
-        cog = ax.hist2d(df_data['x'], df_data['y'], bins=100)
+        cog = ax.hist2d(df_data['x'], df_data['y'], bins=100, norm=LogNorm())
         ax.set_xlabel('x (m)')
         ax.set_ylabel('y (m)')
         fig.colorbar(cog[-1], ax=ax)
