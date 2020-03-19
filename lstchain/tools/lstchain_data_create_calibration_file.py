@@ -168,7 +168,7 @@ class CalibrationHDF5Writer(Tool):
             self.log.debug(f"Start loop")
             for count, event in enumerate(self.eventsource):
 
-                if count % 100 == 0:
+                if count % 1000 == 0:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results

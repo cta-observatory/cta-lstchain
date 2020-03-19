@@ -121,7 +121,6 @@ class PedestalIntegrator(PedestalCalculator):
         if event.meta['origin'] != 'hessio':
 
             self.trigger_time = event.r1.tel[self.tel_id].trigger_time
-            #pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         else: # patches for MC data
 
@@ -129,9 +128,6 @@ class PedestalIntegrator(PedestalCalculator):
                 self.trigger_time = event.trig.gps_time.unix
             else:
                 self.trigger_time = 0
-
-            #pixel_mask = np.zeros((waveform.shape[0],waveform.shape[1]), dtype=bool)
-            #event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels = pixel_mask
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
