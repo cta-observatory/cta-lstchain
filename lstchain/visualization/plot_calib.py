@@ -186,7 +186,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         disp.image = image[chan]
         disp.cmap = plt.cm.coolwarm
         disp.set_limits_minmax(0.7, 1.3)
-        plt.title(f'{channel[chan]} relative gain')
+        plt.title(f'{channel[chan]} relative signal')
         #disp.axes.text(lposx, 0, f'{channel[chan]} relative gain', rotation=90)
         disp.add_colorbar()
 
