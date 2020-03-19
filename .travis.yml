@@ -5,7 +5,7 @@ python:
     - 3.7
 
 env:
-    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.2" PROTOZFITS_VERSION=v1.4.2
+    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.4.1" PROTOZFITS_VERSION=v1.4.2
     - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
 
 matrix:
@@ -32,8 +32,8 @@ before_install:
     - conda info -a # Useful for debugging any issues with conda
 
 install:
-    - conda env create --name cta --file environment.yml
-    - conda activate cta
+    - conda env create --file environment.yml
+    - conda activate lst-dev
     - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
     - pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
     - python setup.py install
