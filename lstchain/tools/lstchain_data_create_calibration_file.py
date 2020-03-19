@@ -204,6 +204,7 @@ class CalibrationHDF5Writer(Tool):
 
                 # if pedestal event
                 if event.r1.tel[self.tel_id].trigger_type == 32 or (
+                    self.simulation and
                     np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
                     < self.minimum_hg_charge_median):
 
@@ -279,17 +280,13 @@ class CalibrationHDF5Writer(Tool):
                     calib_data.n_pe = n_pe
 
                     # find signal median of good pixels
-
                     masked_npe = np.ma.array(n_pe,mask=calib_data.unusable_pixels)
+                    npe_signal_median = np.ma.median(masked_npe, axis=1)
 
-
-
-                    signal_median = np.ma.median(masked_npe, axis=1)
-                    self.log.debug(f"--> {signal_median}")
                     # Flat field factor
-                    ff = calib_data.n_pe / signal_median[:, np.newaxis]
+                    ff = npe_signal_median[:, np.newaxis]/n_pe
 
-                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)/ff
+                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)*ff
 
                     # put the time around zero
                     camera_time_median = np.median(ff_data.time_median, axis=1)
