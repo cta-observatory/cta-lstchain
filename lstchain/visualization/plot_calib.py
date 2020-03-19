@@ -316,7 +316,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         plt.subplot(325)
         plt.tight_layout()
         plt.ylabel('pixels', fontsize=20)
-        plt.xlabel('relative gain', fontsize=20)
+        plt.xlabel('relative signal', fontsize=20)
         median = np.median(gain_median[select])
         rms = np.std(gain_median[select])
         label=f"Relative gain {median:3.2f}, std {rms:5.2f}"
@@ -336,6 +336,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         plt.subplots_adjust(top=0.92)
         if plot_file != "none":
             pp.savefig(plt.gcf())
+
 
     if plot_file != "none":
         pp.close()
