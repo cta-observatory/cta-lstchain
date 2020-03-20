@@ -3,7 +3,6 @@ from distutils.util import strtobool
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.colors import LogNorm
 import numpy as np
 import os
 import pandas as pd
@@ -122,7 +121,7 @@ def main():
 
         # Center of gravity
         ax = axes[2][1]
-        cog = ax.hist2d(df_data['x'], df_data['y'], bins=100, norm=LogNorm())
+        cog = ax.hist2d(df_data['x'], df_data['y'], bins=100)
         ax.set_xlabel('x (m)')
         ax.set_ylabel('y (m)')
         fig.colorbar(cog[-1], ax=ax)
