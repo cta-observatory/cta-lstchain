@@ -21,12 +21,12 @@ parser.add_argument("--cuts", type=lambda x: bool(strtobool(x)),
 
 parser.add_argument("--min_intensity", type=float,
                     dest='min_intensity',
-                    help="Minimum value of intensity",
+                    help="Minimum value of intensity (in phe)",
                     default="1e2")
 
 parser.add_argument("--max_intensity", type=float,
                     dest='max_intensity',
-                    help="Maximum value of intensity",
+                    help="Maximum value of intensity (in phe)",
                     default="1e5")
 
 parser.add_argument("--leakage_cut", action='store', type=float,
@@ -79,7 +79,7 @@ def main():
         if args.cuts:
             plt.suptitle(f'Input file name: {args.infile}' + '\n' +
                          f'Cuts: ' + f'wl > {args.wl_cut}, ' +
-                         f'{args.min_intensity:.0e} < intensity <' +
+                         f'{args.min_intensity:.0e} < intensity (phe) <' +
                          f'{args.max_intensity:.0e}, ' +
                          f'leakage < {args.leakage_cut}')
         else:
@@ -90,7 +90,7 @@ def main():
         ax = axes[0][0]
         ax.hist(df_data['log_intensity'], histtype='step')
         ax.set_ylabel('Number of events')
-        ax.set_xlabel(r'$log_{10}$ Intensity')
+        ax.set_xlabel(r'$log_{10}$ (intensity/phe)')
         ax.set_yscale('log')
 
         # Width distribution
@@ -115,9 +115,9 @@ def main():
 
         # Rates
         ax = axes[2][0]
-        ax.hist(timestamps, bins=e_bins, histtype='step', weights=weight_time)
-        ax.set_xlabel('Timestamp (sec)')
-        ax.set_ylabel('Rate (Hz)')
+        ax.hist(df_data['wl'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Width/Length')
 
         # Center of gravity
         ax = axes[2][1]
@@ -132,7 +132,7 @@ def main():
 
         # Second page
 
-        fig, axes = plt.subplots(nrows=2, ncols=1)
+        fig, axes = plt.subplots(nrows=3, ncols=1)
 
         # TODO: indicate timestamps using datetime format
         # Timestamps
@@ -157,7 +157,14 @@ def main():
         ax.set_ylabel('Altitude (deg)')
         ax.set_xlabel('Timestamps (sec)')
 
-        plt.tight_layout(rect=[0, 0.5, 0.95, 1])
+        # Rates
+        ax = axes[2]
+        # plt.plot(df_data['ucts_time'], df_data['alt_tel'] * 180/np.pi)
+        ax.hist(timestamps, bins=e_bins, histtype='step', weights=weight_time)
+        ax.set_xlabel('Timestamp (sec)')
+        ax.set_ylabel('Rate (Hz)')
+
+        plt.tight_layout(rect=[0, 0.25, 0.95, 0.95])
 
         pdf.savefig()
 
