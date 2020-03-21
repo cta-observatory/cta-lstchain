@@ -132,37 +132,36 @@ def main():
 
         # Second page
 
-        fig, axes = plt.subplots(nrows=3, ncols=1)
+        fig = plt.figure()
 
         # TODO: indicate timestamps using datetime format
         # Timestamps
-        ax = axes[0]
-        ax.plot(df_data['event_id'][df_data['ucts_time'] > 0],
-                df_data['ucts_time'][df_data['ucts_time'] > 0],
-                label='UCTS')
-        ax.plot(df_data['event_id'][df_data['tib_time'] > 0],
-                df_data['tib_time'][df_data['tib_time'] > 0],
-                label='TIB')
-        ax.plot(df_data['event_id'], df_data['dragon_time'],
-                '--', label='Dragon')
-        ax.set_ylabel('Timestamps (sec)')
-        ax.set_xlabel('Event Id')
-        ax.tick_params(axis='x', labelrotation=30)
-        ax.legend(loc=0)
+        ax1 = fig.add_subplot(3, 1, 1)
+        ax1.plot(df_data['event_id'][df_data['ucts_time'] > 0],
+                 df_data['ucts_time'][df_data['ucts_time'] > 0],
+                 label='UCTS')
+        ax1.plot(df_data['event_id'][df_data['tib_time'] > 0],
+                 df_data['tib_time'][df_data['tib_time'] > 0],
+                 label='TIB')
+        ax1.plot(df_data['event_id'], df_data['dragon_time'],
+                 '--', label='Dragon')
+        ax1.set_ylabel('Timestamps (sec)')
+        ax1.set_xlabel('Event Id')
+        ax1.tick_params(axis='x', labelrotation=30)
+        ax1.legend(loc=0)
 
         # Telescope altitude
-        ax = axes[1]
+        ax2 = fig.add_subplot(3, 1, 2)
         # plt.plot(df_data['ucts_time'], df_data['alt_tel'] * 180/np.pi)
-        ax.plot(df_data['dragon_time'], df_data['alt_tel'] * 180/np.pi)
-        ax.set_ylabel('Altitude (deg)')
-        ax.set_xlabel('Timestamps (sec)')
+        ax2.plot(df_data['dragon_time'], df_data['alt_tel'] * 180/np.pi)
+        ax2.set_ylabel('Altitude (deg)')
 
         # Rates
-        ax = axes[2]
+        ax3 = fig.add_subplot(3, 1, 3, sharex=ax2)
         # plt.plot(df_data['ucts_time'], df_data['alt_tel'] * 180/np.pi)
-        ax.hist(timestamps, bins=e_bins, histtype='step', weights=weight_time)
-        ax.set_xlabel('Timestamp (sec)')
-        ax.set_ylabel('Rate (Hz)')
+        ax3.hist(timestamps, bins=e_bins, histtype='step', weights=weight_time)
+        ax3.set_xlabel('Timestamp (sec)')
+        ax3.set_ylabel('Rate (Hz)')
 
         plt.tight_layout(rect=[0, 0.25, 0.95, 0.95])
 
