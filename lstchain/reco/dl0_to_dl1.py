@@ -312,32 +312,37 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     dl1_container.gps_time = event.trig.gps_time.value
 
                     if not is_simu:
-                        # GPS + WRS + UCTS is now working in its nominal configuration. 
+                        # GPS + WRS + UCTS is now working in its nominal configuration.
                         # These TS are stored into ucts_time container.
-                        # TS can be alternatively calculated from the TIB/Dragon 
-                        # modules counters + NTP time corresponding to the start 
-                        # of the run (just for cross-checks). For the time being,
-                        # the three TS will be stored in the DL1 files.
-                        # This will be deprecated and modified back to uniquely use
-                        # gps_time whenever the GPS + WRS + UCTS info reliably and stably
-                        # arrives at the EvB side.
+                        # TS can be alternatively calculated from the TIB and Dragon module
+                        # counters by using the first UCTS TS as the reference point.
+                        # For the time being, the three TS are stored in the DL1 files
+                        # for checking purposes.
 
                         # gps_time = event.r0.tel[telescope_id].trigger_time
 
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9 # nsecs
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # nsecs
 
-                        # Get counters from the central Dragon module
-                        module_id = 82
+                        module_id = 82  # Get counters from the central Dragon module
 
-                        dragon_time = (
-                                event.lst.tel[telescope_id].svc.date +
+                        if i == 0:
+                            first_ucts_time = ucts_time
+
+                            initial_dragon_counter = (
                                 event.lst.tel[telescope_id].evt.pps_counter[module_id] +
                                 event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
 
-                        tib_time = (
-                                event.lst.tel[telescope_id].svc.date +
+                            initial_tib_counter = (
                                 event.lst.tel[telescope_id].evt.tib_pps_counter +
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+
+                        dragon_time = (first_ucts_time - initial_dragon_counter +
+                            event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                            event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+
+                        tib_time = (first_ucts_time - initial_tib_counter +
+                            event.lst.tel[telescope_id].evt.tib_pps_counter +
+                            event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
                         #dl1_container.gps_time = gps_time
                         dl1_container.tib_time = tib_time
@@ -353,7 +358,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                             event_timestamps = tib_time
                         else:
                             raise ValueError("The timestamps_pointing option is not a valid one. \
-                                    Try ucts (default), dragon or tib.")
+                                             Try ucts (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
