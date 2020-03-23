@@ -167,6 +167,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
         output_filename = (
             'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
         )
+    if os.path.exists(output_filename):
+        raise AttributeError(output_filename + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
 
@@ -216,8 +218,6 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     extra_im.prefix = ''  # get rid of the prefix
 
     event = next(iter(source))
-
-
 
     write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
