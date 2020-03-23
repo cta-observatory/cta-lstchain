@@ -120,5 +120,10 @@
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
     "threshold":  4094
+  },
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
   }
 }

@@ -107,5 +107,10 @@
      "window_shift": 4,
      "window_width":8
     },
-  "timestamps_pointing":"ucts"
+  "timestamps_pointing":"ucts",
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  }
 }
