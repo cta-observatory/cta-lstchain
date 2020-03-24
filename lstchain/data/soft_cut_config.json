@@ -81,7 +81,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands"
   ],
@@ -98,7 +97,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands",
     "log_reco_energy",
