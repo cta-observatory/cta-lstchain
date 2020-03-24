@@ -5,7 +5,7 @@ import tables
 from tables import open_file
 import os
 import pandas as pd
-
+import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
@@ -87,6 +87,11 @@ def read_simu_info_merged_hdf5(filename):
 
     combined_mcheader = read_simu_info_hdf5(filename)
     combined_mcheader['num_showers'] = num_showers
+
+    for k in combined_mcheader.keys():
+        if combined_mcheader[k] is not None and combined_mcheader.fields[k].unit is not None:
+            combined_mcheader[k] = u.Quantity(combined_mcheader[k], combined_mcheader.fields[k].unit)
+
     return combined_mcheader
 
 
