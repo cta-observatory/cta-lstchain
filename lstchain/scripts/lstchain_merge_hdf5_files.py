@@ -5,8 +5,10 @@ from distutils.util import strtobool
 from lstchain.io import get_dataset_keys
 from lstchain.io import smart_merge_h5files, auto_merge_h5files
 
-parser = argparse.ArgumentParser(description="Merge all HDF5 files resulting from parallel reconstructions \
- present in a directory. Every dataset in the files must be readable with pandas.")
+parser = argparse.ArgumentParser(description="Merge all HDF5 files resulting \
+                                 from parallel reconstructions present in a \
+                                 directory. Every dataset in the files must be \
+                                 readable with pandas.")
 
 
 parser.add_argument('--source-dir', '-d', type=str,
@@ -41,10 +43,11 @@ args = parser.parse_args()
 def main():
 
     if args.run_number:
-        file_list = sorted([args.srcdir + '/' + f for f in os.listdir(args.srcdir) if (f.endswith('.h5') and
-                                                                                       args.run_number in f)])
+        file_list = sorted([os.path.join(args.srcdir, f) for f in os.listdir(args.srcdir)
+                            if (f.endswith('.h5') and args.run_number in f)])
     else:
-        file_list = sorted([args.srcdir + '/' + f for f in os.listdir(args.srcdir) if f.endswith('.h5')])
+        file_list = sorted([os.path.join(args.srcdir, f) for f in os.listdir(args.srcdir)
+                            if f.endswith('.h5')])
 
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
