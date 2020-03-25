@@ -16,6 +16,7 @@ wl_cut = 0.1
 gammaness_cut = 0.6
 intensity_max_cut=80000
 
+<<<<<<< Updated upstream
 campaign="3rdCrabCampaign"
 
 path="/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/"+campaign+"/v0.4.4_v00/"
@@ -131,6 +132,56 @@ if campaign=="3rdCrabCampaign":
                             [19.33],
                             [19.75]])
 
+=======
+path="/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/2ndCrabCampaign/"
+
+dates=["20200115", "20200117", "20200118", "20200127",
+       "20200128", "20200201", "20200202"]
+
+runs_on=np.array([["1795", "1796", "1797", "1799", "1800"],
+                  ["1813", "1814", "1817", "1818",
+                   "1819", "1820", "1821", "1824", "1825",
+                   "1826", "1827"],
+                  ["1832", "1833", "1834", "1835", "1836",
+                   "1843", "1844"],
+                  ["1874", "1876", "1878", "1879", "1880"],
+                  ["1887", "1888", "1891", "1892"],
+                  ["1925", "1926", "1928", "1929",
+                   "1931", "1932"],
+                  ["1948", "1951", "1952", "1954", "1955"]])
+
+runs_off=np.array([["1798", "1801"],
+                   ["1815", "1816", "1822",
+                    "1823"],
+                   ["1837", "1840", "1841",
+                    "1842"],
+                   ["1877", "1881"],
+                   ["1893"],
+                   ["1927", "1930", "1933"],
+                   ["1949", "1953"]])
+
+runs_on_time=np.array([[3.10, 30.41, 19.84, 36.11, 29.65],
+                       [0.21, 15.48, 17.33, 17.82,
+                        23.89, 19.26, 11.87, 21.32, 18.42,
+                        1.43, 0.08],
+                       [19.47, 19.75, 20.87, 20.87, 20.68,
+                        20.05, 36.83],
+                       [20.06, 20.02, 6.7, 20.15, 19.83],
+                       [0.26, 3.90, 21.04, 19.93],
+                       [1.58, 19.17, 19.72, 19.93, 20.22,
+                        19.28, 19.43],
+                       [18.32, 22.0, 20.23, 28.42, 3.30]])
+
+runs_off_time=np.array([[17.49, 12.03],
+                        [20.48, 18.77, 25.83,
+                         13.07],
+                        [20.16, 20.11, 20.08,
+                         19.61],
+                        [20.13, 20.30],
+                        [19.63],
+                        [20.15, 19.98, 18.93],
+                        [10.85, 10.87]])
+>>>>>>> Stashed changes
 
 dl2_df = pd.DataFrame()
 dl2_df_off = pd.DataFrame()
@@ -145,7 +196,11 @@ for i, date in enumerate(dates):
     #date=dates[i]
     print("Adding data from %s" % date )
     for run_on in runs_on[i]:
+<<<<<<< Updated upstream
         dl2_file=path+date+"/"+"Run0"+run_on+"/"+"Run0"+run_on+".h5"
+=======
+        dl2_file=path+date+"/"+"Run"+run_on+"/"+"Run"+run_on+".h5"
+>>>>>>> Stashed changes
         df = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
         df_sel_gammaness = [(df['leakage'] < leakage_cut)
                             & (df['intensity'] > intensity_cut)
@@ -158,7 +213,11 @@ for i, date in enumerate(dates):
     obstime_on=obstime_on+sum(runs_on_time[i])
 
     for run_off in runs_off[i]:
+<<<<<<< Updated upstream
         dl2_file_off=path+date+"/"+"Run0"+run_off+"/"+"Run0"+run_off+".h5"
+=======
+        dl2_file_off=path+date+"/"+"Run"+run_off+"/"+"Run"+run_off+".h5"
+>>>>>>> Stashed changes
         df = pd.read_hdf(dl2_file_off, key=dl2_params_lstcam_key)
         df_sel_gammaness_off = [(df['leakage'] < leakage_cut)
                                 & (df['intensity'] > intensity_cut)
@@ -260,7 +319,11 @@ ax.annotate(s=f'Significance = {S:.2f} $\sigma$ \n  Rate = {Nex/obstime:.1f} $\g
 ax.set_xlabel(r'$\theta^2$ [deg$^2$]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
+<<<<<<< Updated upstream
 fig.savefig("thetaplot_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("thetaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 nbins = 30
 range_max = 2 # deg
 
@@ -275,7 +338,11 @@ ax.annotate(s=f'Significance = {S:.2f} $\sigma$ \n  Rate = {Nex/obstime:.1f} $\g
 ax.set_xlabel(r'$\theta^2$ [deg$^2$]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
+<<<<<<< Updated upstream
 fig.savefig("thetaplot_2_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("thetaplot_2_int%d_gammaness%f.pdf" % (intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 
 dl2_df_off_all_cuts = [(dl2_df_off['intensity'] > intensity_cut)
                        & (dl2_df['intensity'] < intensity_max_cut)
@@ -344,5 +411,9 @@ ax.annotate(s=f'Significance = {S:.2f} $\sigma$ \n'
 ax.set_xlabel(r'$\alpha$ [deg]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
+<<<<<<< Updated upstream
 fig.savefig("alphaplot_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("alphaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 plt.show()

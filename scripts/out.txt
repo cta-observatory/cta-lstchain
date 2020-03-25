@@ -30,6 +30,7 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
   warnings.warn(msg, category=FutureWarning)
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -51,6 +52,8 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+>>>>>>> Stashed changes
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
@@ -58,6 +61,7 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
   warnings.warn(msg, category=FutureWarning)
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -65,6 +69,8 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+>>>>>>> Stashed changes
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
@@ -104,6 +110,7 @@ WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all a
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
   return np.dtype(dict(**dt))
@@ -117,6 +124,14 @@ WARNING: Tried to get polar motions for times after IERS data is valid. Defaulti
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+>>>>>>> Stashed changes
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -303,9 +318,12 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
   warnings.warn(msg, category=FutureWarning)
+<<<<<<< Updated upstream
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+>>>>>>> Stashed changes
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -313,10 +331,13 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
   warnings.warn(msg, category=FutureWarning)
+=======
+>>>>>>> Stashed changes
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
@@ -352,6 +373,7 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
   warnings.warn(msg, category=FutureWarning)
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -359,6 +381,8 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+>>>>>>> Stashed changes
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
@@ -573,6 +597,7 @@ WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all a
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
   return np.dtype(dict(**dt))
@@ -585,7 +610,15 @@ WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all a
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)
+WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
+WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+>>>>>>> Stashed changes
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -649,6 +682,7 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+<<<<<<< Updated upstream
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   return np.dtype(dict(**dt))
 /home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
@@ -712,3 +746,5 @@ WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-U
 WARNING: failed to download https://datacenter.iers.org/data/9/finals2000A.all and ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all, using local IERS-B: <urlopen error timed out>;<urlopen error ftp error: timeout('timed out')> [astropy.utils.iers.iers]
 WARNING: Tried to get polar motions for times after IERS data is valid. Defaulting to polar motion from the 50-yr mean for those. This may affect precision at the 10s of arcsec level [astropy.coordinates.builtin_frames.utils]
 WARNING: (some) times are outside of range covered by IERS table. Assuming UT1-UTC=0 for coordinate transformations. [astropy.coordinates.builtin_frames.utils]
+=======
+>>>>>>> Stashed changes
