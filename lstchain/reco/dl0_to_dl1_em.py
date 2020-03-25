@@ -23,6 +23,7 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
+from .volume_reducer import check_and_apply_volume_reduction
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
@@ -172,6 +173,8 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
         output_filename = (
             'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
         )
+    if os.path.exists(output_filename):
+        raise AttributeError(output_filename + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
 
@@ -221,8 +224,6 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     extra_im.prefix = ''  # get rid of the prefix
 
     event = next(iter(source))
-
-
 
     write_array_info(event, output_filename)
     ### Write extra information to the DL1 file
@@ -277,6 +278,9 @@ def r0_to_dl1(input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
+            # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
+            # When the last version of the method is implemented, vol. reduction will be done at dl0
+            check_and_apply_volume_reduction(event, config)
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 

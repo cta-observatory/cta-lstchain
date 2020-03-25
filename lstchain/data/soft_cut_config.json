@@ -81,7 +81,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands"
   ],
@@ -98,7 +97,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands",
     "log_reco_energy",
@@ -120,5 +118,10 @@
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
     "threshold":  4094
+  },
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
   }
 }
