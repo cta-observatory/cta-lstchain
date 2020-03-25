@@ -26,7 +26,12 @@ from . import utils
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
+from ..image.muon import analyze_muon_event, tag_pix_thr
+from ..image.muon import fill_muon_event
+from ..visualization import plot_calib
+
 from ctapipe.image.cleaning import number_of_islands
+from ctapipe.instrument import CameraGeometry
 
 import tables
 from functools import partial
@@ -37,6 +42,7 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
+from astropy.table import Table
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -165,9 +171,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     """
     if output_filename is None:
         output_filename = (
-            'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
+            'dl1_' + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
         )
-
+    
     config = replace_config(standard_config, custom_config)
 
     custom_calibration = config["custom_calibration"]
@@ -182,13 +188,42 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     is_simu = source.metadata['is_simulation']
 
     source.allowed_tels = config["allowed_tels"]
-    source.max_events = config["max_events"]
+    source.max_events = config["max_events"]+1
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
     cal = load_calibrator_from_config(config)
 
+    
+    # Camera geometry TBD: read from config file?
+    geom = CameraGeometry.from_name("LSTCam-002")
+
+    # Dictionary to store muon ring parameters
+    muon_parameters  = {'event_id': [],
+                        'ring_size': [],
+                        'size_outside': [],
+                        'ring_radius': [],
+                        'ring_width': [],
+                        'good_ring': [],
+                        'muon_efficiency': [],
+                        'ring_containment': [],
+                        'ring_completeness': [],
+                        'ring_pixel_completeness': [],
+                        'impact_parameter': [],
+                        'impact_x_array': [],
+                        'impact_y_array': [],
+                        'radial_stdev' : [],                  # Standard deviation of (cleaned) light distribution along ring radius
+                        'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
+                        'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
+                        'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
+                        'mean_pixel_charge_around_ring' : []  # Average pixel charge in pixels surrounding the outer part of the ring 
+    }
+
+    plot_calib.read_file(calibration_path)
+    bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+    print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
+    
     if not is_simu:
         # TODO : add calibration config in config file, read it and pass it here
 
@@ -266,11 +301,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
+                if not custom_calibration:
+                    cal(event)
 
-            if not custom_calibration and is_simu:
-                cal(event)
-
-            if not is_simu:
+            else:
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
@@ -365,7 +399,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
+                    # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m**2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
@@ -389,6 +425,23 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
                                  containers = [dl1_container, extra_im])
 
+
+                    # Muon ring analysis
+                    
+                    # Set to 0 unreliable pixels:
+                    image = tel.image*(~bad_pixels)
+
+                    # process only promising events, in terms of # of pixels with large signals:
+                    if tag_pix_thr(image): 
+
+                        muonintensityparam, size_outside_ring, muonringparam, good_ring, \
+                            radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                                                                                    mirror_area, False, '')
+                        if good_ring:
+                            fill_muon_event(muon_parameters, good_ring, event.r0.event_id, muonintensityparam, muonringparam,
+                                            radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
+
+                            
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
@@ -410,6 +463,13 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
         write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
                                       metadata = metadata)
 
+
+    k = output_filename.find('Run')
+    muon_output_filename = output_filename[0:output_filename.find('LST-')+5] + '.' + \
+                           output_filename[k:k+13] + '.fits'
+    muon_output_filename = muon_output_filename.replace("dl1", "muons")
+    table = Table(muon_parameters)
+    table.write(muon_output_filename, format='fits', overwrite=True)
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
     """
