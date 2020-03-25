@@ -21,6 +21,7 @@ __all__ = ['get_muon_center',
            'muon_filter',
            'tag_pix_thr',
            'radial_light_distribution',
+           'fill_muon_event',
           ]
 
 def get_muon_center(geom, equivalent_focal_length):
@@ -381,3 +382,27 @@ def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
 #    plt.show()
     
     return {'standard_dev' : standard_dev*u.deg, 'skewness' : skewness, 'excess_kurtosis' : excess_kurtosis}
+
+
+def fill_muon_event(output_parameters, good_ring, event_id, muonintensityparam, muonringparam, radial_distribution, size_outside_ring, mean_pixel_charge_around_ring):
+
+    output_parameters['event_id'].append(event_id)
+    output_parameters['ring_size'].append(muonintensityparam.ring_size)
+    output_parameters['size_outside'].append(size_outside_ring)
+    output_parameters['ring_radius'].append(muonringparam.ring_radius.value)
+    output_parameters['ring_width'].append(muonintensityparam.ring_width.value)
+    output_parameters['good_ring'].append(good_ring)
+    output_parameters['muon_efficiency'].append(muonintensityparam.optical_efficiency_muon)
+    output_parameters['ring_containment'].append(muonringparam.ring_containment)
+    output_parameters['ring_completeness'].append(muonintensityparam.ring_completeness)
+    output_parameters['ring_pixel_completeness'].append(muonintensityparam.ring_pix_completeness)
+    output_parameters['impact_parameter'].append(muonintensityparam.impact_parameter.value)
+    output_parameters['impact_x_array'].append(muonintensityparam.impact_parameter_pos_x.value)
+    output_parameters['impact_y_array'].append(muonintensityparam.impact_parameter_pos_y.value)
+    output_parameters['radial_stdev'].append(radial_distribution['standard_dev'].value)
+    output_parameters['radial_skewness'].append(radial_distribution['skewness'])
+    output_parameters['radial_excess_kurtosis'].append(radial_distribution['excess_kurtosis'])
+    output_parameters['num_pixels_in_ring'].append(np.sum(muonintensityparam.mask))
+    output_parameters['mean_pixel_charge_around_ring'].append(mean_pixel_charge_around_ring)
+
+    return
