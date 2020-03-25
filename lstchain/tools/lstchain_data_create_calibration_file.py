@@ -208,8 +208,6 @@ class CalibrationHDF5Writer(Tool):
                     np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
                     < self.minimum_hg_charge_median):
 
-                    #self.log.debug(f"ped {event.r1.tel[self.tel_id].waveform[0,1]} "
-                    #               f"{np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))}")
                     new_ped = self.pedestal.calculate_pedestals(event)
 
 
