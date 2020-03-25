@@ -393,9 +393,9 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
         az_tel = dl2['mc_az_tel'].values
-    elif 'alt_tel' in dl2.columns:
-        alt_tel = dl2['alt_tel'].values
-        az_tel = dl2['az_tel'].values
+    #elif 'alt_tel' in dl2.columns:
+    #    alt_tel = dl2['alt_tel'].values
+    #    az_tel = dl2['az_tel'].values
     else:
         alt_tel = - np.pi/2. * np.ones(len(dl2))
         az_tel = - np.pi/2. * np.ones(len(dl2))
@@ -416,4 +416,3 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
     dl2['gammaness'] = probs
     return dl2
-
