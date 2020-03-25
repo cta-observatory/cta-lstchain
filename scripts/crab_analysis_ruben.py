@@ -17,6 +17,7 @@ gammaness_cut = 0.6
 intensity_max_cut=80000
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 campaign="3rdCrabCampaign"
 
 path="/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/"+campaign+"/v0.4.4_v00/"
@@ -133,6 +134,8 @@ if campaign=="3rdCrabCampaign":
                             [19.75]])
 
 =======
+=======
+>>>>>>> Stashed changes
 path="/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/2ndCrabCampaign/"
 
 dates=["20200115", "20200117", "20200118", "20200127",
@@ -181,6 +184,9 @@ runs_off_time=np.array([[17.49, 12.03],
                         [19.63],
                         [20.15, 19.98, 18.93],
                         [10.85, 10.87]])
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 dl2_df = pd.DataFrame()
@@ -197,7 +203,11 @@ for i, date in enumerate(dates):
     print("Adding data from %s" % date )
     for run_on in runs_on[i]:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         dl2_file=path+date+"/"+"Run0"+run_on+"/"+"Run0"+run_on+".h5"
+=======
+        dl2_file=path+date+"/"+"Run"+run_on+"/"+"Run"+run_on+".h5"
+>>>>>>> Stashed changes
 =======
         dl2_file=path+date+"/"+"Run"+run_on+"/"+"Run"+run_on+".h5"
 >>>>>>> Stashed changes
@@ -214,7 +224,11 @@ for i, date in enumerate(dates):
 
     for run_off in runs_off[i]:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         dl2_file_off=path+date+"/"+"Run0"+run_off+"/"+"Run0"+run_off+".h5"
+=======
+        dl2_file_off=path+date+"/"+"Run"+run_off+"/"+"Run"+run_off+".h5"
+>>>>>>> Stashed changes
 =======
         dl2_file_off=path+date+"/"+"Run"+run_off+"/"+"Run"+run_off+".h5"
 >>>>>>> Stashed changes
@@ -320,7 +334,11 @@ ax.set_xlabel(r'$\theta^2$ [deg$^2$]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 fig.savefig("thetaplot_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("thetaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 =======
 #fig.savefig("thetaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
 >>>>>>> Stashed changes
@@ -339,7 +357,11 @@ ax.set_xlabel(r'$\theta^2$ [deg$^2$]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 fig.savefig("thetaplot_2_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("thetaplot_2_int%d_gammaness%f.pdf" % (intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 =======
 #fig.savefig("thetaplot_2_int%d_gammaness%f.pdf" % (intensity_cut, gammaness_cut))
 >>>>>>> Stashed changes
@@ -412,7 +434,11 @@ ax.set_xlabel(r'$\alpha$ [deg]')
 ax.set_ylabel(r'Number of events')
 ax.legend()
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 fig.savefig("alphaplot_%s_int%d_gammaness%.2f.pdf" % (campaign, intensity_cut, gammaness_cut))
+=======
+#fig.savefig("alphaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
+>>>>>>> Stashed changes
 =======
 #fig.savefig("alphaplot_%s_int%d_gammaness%f.pdf" % (date, intensity_cut, gammaness_cut))
 >>>>>>> Stashed changes

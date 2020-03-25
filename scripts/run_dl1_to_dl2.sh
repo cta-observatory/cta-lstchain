@@ -3,6 +3,7 @@
 #DATES=( 20191123 20191124 20191126 20191129 ) #First Crab Campaign
 #DATES=(20200114 20200115 20200117 20200118 20200125 20200127 20200128 20200131 20200201 20200202) #Second Crab Campaign
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 #DATES=(20200213 20200215 20200217 20200218 20200227 20200228) #Third Crab Campaign
 DATES=(20200227 20200228)
 #Create outputs if they dont exist
@@ -15,6 +16,8 @@ CAMPAIGN="3rdCrabCampaign"
 
 sizeref=999999999
 =======
+=======
+>>>>>>> Stashed changes
 DATES=(20200213 20200215 20200217 20200218 20200227 20200228) #Third Crab Campaign
 
 #Create outputs if they dont exist
@@ -23,6 +26,9 @@ DATES=(20200213 20200215 20200217 20200218 20200227 20200228) #Third Crab Campai
 `mkdir -p /fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/2ndCrabCampaign/v0.4.4_v00/`
 `mkdir -p /fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/3rdCrabCampaign/v0.4.4_v00/`
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 for date in "${DATES[@]}"
@@ -32,7 +38,11 @@ do
     #PATH_OUTPUT=/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/1stCrabCampaign/v0.4.4_v00/$date
     #PATH_OUTPUT=/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/2ndCrabCampaign/v0.4.4_v00/$date
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     PATH_OUTPUT=/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/$CAMPAIGN/v0.4.4_v00/$date
+=======
+    PATH_OUTPUT=/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/3ndCrabCampaign/v0.4.4_v00/$date
+>>>>>>> Stashed changes
 =======
     PATH_OUTPUT=/fefs/aswg/workspace/maria.bernardos/LSTanalysis/real/DL2/3ndCrabCampaign/v0.4.4_v00/$date
 >>>>>>> Stashed changes
@@ -40,6 +50,7 @@ do
 
     for f in $FILES
     do
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         b=$(basename $f)
         outfile=$PATH_OUTPUT"/dl2_"$b
@@ -57,6 +68,9 @@ do
             fi
         fi
         #srun -o out.txt --mem=50g python $SCRIPT -f $f -p $PATH_MODELS -o $PATH_OUTPUT &
+=======
+        srun -o out.txt --mem=50g python $SCRIPT -f $f -p $PATH_MODELS -o $PATH_OUTPUT &
+>>>>>>> Stashed changes
 =======
         srun -o out.txt --mem=50g python $SCRIPT -f $f -p $PATH_MODELS -o $PATH_OUTPUT &
 >>>>>>> Stashed changes
