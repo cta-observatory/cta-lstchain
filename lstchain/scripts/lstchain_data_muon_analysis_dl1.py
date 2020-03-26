@@ -67,6 +67,7 @@ def main():
 
     # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
+                         'event_time': [],
                          'ring_size': [],
                          'size_outside': [],
                          'ring_radius': [],
@@ -116,7 +117,7 @@ def main():
             equivalent_focal_length = telescope_description['equivalent_focal_length'].values * u.m
             mirror_area = telescope_description['mirror_area'].values * pow(u.m,2)
             
-            for full_image, event_id in zip(images, parameters['event_id']):
+            for full_image, event_id, dragon_time in zip(images, parameters['event_id'], parameters['dragon_time']):
                 image = full_image*(~bad_pixels)
                 #print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                 #                                                          np.size(image[image > 10.])))
@@ -138,7 +139,7 @@ def main():
 
                 # write ring data, including also "not-so-good" rings, in case we want to reconsider ring selections!:
 
-                fill_muon_event(output_parameters, good_ring, event_id, muonintensityparam, muonringparam,
+                fill_muon_event(output_parameters, good_ring, event_id, dragon_time, muonintensityparam, muonringparam,
                                 radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
                     
                 if num_muons == max_muons:

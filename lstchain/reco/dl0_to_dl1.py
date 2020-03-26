@@ -193,7 +193,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
-    cal = load_calibrator_from_config(config)
+    cal_mc = load_calibrator_from_config(config)
 
     
     # Camera geometry TBD: read from config file?
@@ -201,6 +201,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     # Dictionary to store muon ring parameters
     muon_parameters  = {'event_id': [],
+                        'event_time': [],
                         'ring_size': [],
                         'size_outside': [],
                         'ring_radius': [],
@@ -239,6 +240,16 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                                 allowed_tels = [1],
                                                 )
 
+        # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
+        # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                               time_calibration_path = time_calibration_path,
+                                                               extractor_product = 'GlobalPeakWindowSum',
+                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                               config = Config(config),
+                                                               allowed_tels = [1],)
+
+        
     dl1_container = DL1ParametersContainer()
 
     if pointing_file_path:
@@ -302,12 +313,11 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
                 if not custom_calibration:
-                    cal(event)
+                    cal_mc(event)
 
             else:
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
-
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
@@ -434,11 +444,19 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     # process only promising events, in terms of # of pixels with large signals:
                     if tag_pix_thr(image): 
 
+                        # re-calibrate r1, using a better pulse integrator for muon rings:
+                        # NOTE!! As soon as we have >1 telescope we need to have one such calibrator r1_dl1_calibrator_for_muon_rings
+                        # per camera, since we do not want to re-calibrate all cameras whenever one of them has a candidate muon ring!
+                        r1_dl1_calibrator_for_muon_rings(event)
+                        tel = event.dl1.tel[telescope_id]
+                        image = tel.image*(~bad_pixels)
                         muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                             radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
                                                                                                     mirror_area, False, '')
+                            #                                                                        mirror_area, True, './') # (test) plot muon rings as png files
+
                         if good_ring:
-                            fill_muon_event(muon_parameters, good_ring, event.r0.event_id, muonintensityparam, muonringparam,
+                            fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time, muonintensityparam, muonringparam,
                                             radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
 
                             

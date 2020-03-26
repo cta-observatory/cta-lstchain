@@ -384,9 +384,11 @@ def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
     return {'standard_dev' : standard_dev*u.deg, 'skewness' : skewness, 'excess_kurtosis' : excess_kurtosis}
 
 
-def fill_muon_event(output_parameters, good_ring, event_id, muonintensityparam, muonringparam, radial_distribution, size_outside_ring, mean_pixel_charge_around_ring):
+def fill_muon_event(output_parameters, good_ring, event_id, event_time, muonintensityparam, muonringparam,
+                    radial_distribution, size_outside_ring, mean_pixel_charge_around_ring):
 
     output_parameters['event_id'].append(event_id)
+    output_parameters['event_time'].append(event_time)
     output_parameters['ring_size'].append(muonintensityparam.ring_size)
     output_parameters['size_outside'].append(size_outside_ring)
     output_parameters['ring_radius'].append(muonringparam.ring_radius.value)
