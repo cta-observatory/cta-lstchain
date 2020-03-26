@@ -482,10 +482,13 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                       metadata = metadata)
 
 
-    k = output_filename.find('Run')
-    muon_output_filename = output_filename[0:output_filename.find('LST-')+5] + '.' + \
-                           output_filename[k:k+13] + '.fits'
-    muon_output_filename = muon_output_filename.replace("dl1", "muons")
+    dir = os.path.dirname(output_filename)
+    name = os.path.basename(output_filename)
+    k = name.find('Run')
+    muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
+                           name[k:k+13] + '.fits'
+    
+    muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
     table = Table(muon_parameters)
     table.write(muon_output_filename, format='fits', overwrite=True)
 
