@@ -140,7 +140,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     max_radial_excess_kurtosis = 1.            # maximum excess kurtosis
     min_impact_parameter = 0.2                 # in fraction of mirror radius
     max_impact_parameter = 0.9                 # in fraction of mirror radius
-    ring_integration_width = 0.25              # +/- integration range along ring radius, in fraction of ring radius
+    ring_integration_width = 0.25              # +/- integration range along ring radius, in fraction of ring radius (was 0.4 until 20200326)
     outer_ring_width = 0.2                     # in fraction of ring radius, width of ring just outside the integrated muon ring, used to check pedestal bias
     
     x, y = get_muon_center(geom, equivalent_focal_length)
