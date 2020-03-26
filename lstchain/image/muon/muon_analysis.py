@@ -91,7 +91,7 @@ def fit_muon(x, y, image, geom, tailcuts):
     muonringparam = muonring.fit(x, y, image_clean)
 
     # Do an iterative fit removing pixels which are beyond 0.4*ring_radius of the ring (along the radial direction):
-    # (Q: is this effective? Seems anyway unnecessary for clean rings which are those we want in the end)
+    # The goal is to improve fit for good rings with very few additional non-ring bright pixels.
 
     for _ in [0]*2:  # just to iterate the fit twice more
         dist = np.sqrt(np.power(x - muonringparam.ring_center_x, 2)
@@ -140,7 +140,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     max_radial_excess_kurtosis = 1.            # maximum excess kurtosis
     min_impact_parameter = 0.2                 # in fraction of mirror radius
     max_impact_parameter = 0.9                 # in fraction of mirror radius
-    ring_integration_width = 0.4               # +/- integration range along ring radius, in fraction of ring radius
+    ring_integration_width = 0.25              # +/- integration range along ring radius, in fraction of ring radius
     outer_ring_width = 0.2                     # in fraction of ring radius, width of ring just outside the integrated muon ring, used to check pedestal bias
     
     x, y = get_muon_center(geom, equivalent_focal_length)
@@ -371,7 +371,7 @@ def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
 
     pix_r = np.hypot(pix_x-x0, pix_y-y0)
 
-    # meanm, standard deviation & skewness of light distribution along ring radius.
+    # mean, standard deviation & skewness of light distribution along ring radius.
     # ring_radius calculated elsewhere is approximately equal to "mean", but not exactly, so we recalculate it here:
     mean = np.sum(np.multiply(image,pix_r))/np.sum(image)
     standard_dev = np.sqrt(np.sum(np.multiply(image,np.square(pix_r-mean)))/np.sum(image))
