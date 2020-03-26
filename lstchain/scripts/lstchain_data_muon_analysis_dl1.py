@@ -12,7 +12,7 @@ from ctapipe.instrument import CameraGeometry
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from astropy import units as u
 
-from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr
+from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr, fill_muon_event
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.visualization import plot_calib
 
@@ -33,13 +33,13 @@ parser = argparse.ArgumentParser()
 
 # Required arguments
 parser.add_argument("--input_file", help = "Path to DL1a data file (containing charge information).",
-                    type = str, default = "")
+                    type = str, required=True)
 
 parser.add_argument("--calib_file", help = "Path to corresponding calibration file (containing bad pixel information).",
-                    type = str, default = "")
+                    type = str, required=True)
 
 parser.add_argument("--output_file", help = "Path to create the output fits table with muon parameters",
-                    type = str)
+                    type = str, required=True)
 
 # Optional argument
 parser.add_argument("--plot_rings", help = "Plot figures of the stored rings", 
@@ -49,7 +49,7 @@ parser.add_argument("--plots_path", help = "Path to the plots",
                     default = None, type = str)
 
 parser.add_argument("--max_muons", help = "Maximum number of processed muon ring candidates",
-                    default = -1, type = int)
+                    default = np.nan, type = int)
 
 args = parser.parse_args()
 
@@ -137,42 +137,9 @@ def main():
                     print("Number of good muon rings found {}, EventID {}".format(num_muons, event_id))
 
                 # write ring data, including also "not-so-good" rings, in case we want to reconsider ring selections!:
-                output_parameters['event_id'].append(
-                    event_id)
-                output_parameters['ring_size'].append(
-                    muonintensityparam.ring_size)
-                output_parameters['size_outside'].append(
-                    size_outside_ring)
-                output_parameters['ring_radius'].append(
-                    muonringparam.ring_radius.value)
-                output_parameters['ring_width'].append(
-                    muonintensityparam.ring_width.value)
-                output_parameters['good_ring'].append(
-                    good_ring)
-                output_parameters['muon_efficiency'].append(
-                    muonintensityparam.optical_efficiency_muon)
-                output_parameters['ring_containment'].append(
-                    muonringparam.ring_containment)
-                output_parameters['ring_completeness'].append(
-                    muonintensityparam.ring_completeness)
-                output_parameters['ring_pixel_completeness'].append(
-                    muonintensityparam.ring_pix_completeness)
-                output_parameters['impact_parameter'].append(
-                    muonintensityparam.impact_parameter.value)
-                output_parameters['impact_x_array'].append(
-                    muonintensityparam.impact_parameter_pos_x.value)
-                output_parameters['impact_y_array'].append(
-                    muonintensityparam.impact_parameter_pos_y.value)
-                output_parameters['radial_stdev'].append(
-                    radial_distribution['standard_dev'].value)
-                output_parameters['radial_skewness'].append(
-                    radial_distribution['skewness'])
-                output_parameters['radial_excess_kurtosis'].append(
-                    radial_distribution['excess_kurtosis'])
-                output_parameters['num_pixels_in_ring'].append(
-                    np.sum(muonintensityparam.mask))
-                output_parameters['mean_pixel_charge_around_ring'].append(
-                    mean_pixel_charge_around_ring)
+
+                fill_muon_event(output_parameters, good_ring, event_id, muonintensityparam, muonringparam,
+                                radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
                     
                 if num_muons == max_muons:
                     break
