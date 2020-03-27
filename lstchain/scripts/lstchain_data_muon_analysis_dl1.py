@@ -8,7 +8,7 @@ from ctapipe.image.muon.features import npix_above_threshold
 from ctapipe.image.muon.features import npix_composing_ring
 from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.instrument import CameraGeometry
+from ctapipe_io_lst import load_camera_geometry
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from astropy import units as u
 
@@ -63,7 +63,7 @@ def main():
     max_muons = args.max_muons
 
     # Camera geometry
-    geom = CameraGeometry.from_name("LSTCam-002")
+    geom = load_camera_geometry()
 
     # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
