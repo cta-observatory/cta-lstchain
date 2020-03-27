@@ -31,7 +31,7 @@ from ..image.muon import fill_muon_event
 from ..visualization import plot_calib
 
 from ctapipe.image.cleaning import number_of_islands
-from ctapipe.instrument import CameraGeometry
+from ctapipe_io_lst import load_camera_geometry
 
 import tables
 from functools import partial
@@ -197,7 +197,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     
     # Camera geometry TBD: read from config file?
-    geom = CameraGeometry.from_name("LSTCam-002")
+    geom = load_camera_geometry()
 
     # Dictionary to store muon ring parameters
     muon_parameters  = {'event_id': [],
