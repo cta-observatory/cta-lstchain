@@ -1,5 +1,6 @@
 import numpy as np
 import astropy.units as u
+import sys
 from gammapy.modeling.models import LogParabolaSpectralModel
 
 __all__ = [
@@ -101,9 +102,31 @@ def rate(shape, emin, emax, param, cone, area):
         omega = 2 * np.pi * (1-np.cos(cone)) * u.sr
 
     if(shape == "PowerLaw"):
+        if(len(param) != 3):
+            print("param included {} parameters, not 3".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha'")
+            sys.exit(1)
+
+        for key in ['f0','e0','alpha']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha'")
+                sys.exit(1)
+            
         integral = param['f0'] * int_diff_sp(emin, emax, param['alpha'], param['e0'])
     
     elif(shape == "LogParabola"):
+        if(len(param) != 4):
+            print("param included {} parameters, not 4".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha', 'beta'")
+            sys.exit(1)
+
+        for key in ['f0','e0','alpha', 'beta']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha', 'beta'")
+                sys.exit(1)
+
         log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=param['f0'], reference=param['e0'], alpha=-1*param['alpha'], beta=-1*param['beta'])
         integral = log_parabola.integral(emin, emax)
 
@@ -144,9 +167,31 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
     sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, w_param['e0'])
     
     if(shape == "PowerLaw"):
+        if(len(param) != 3):
+            print("param included {} parameters, not 3".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha'")
+            sys.exit(1)
+        
+        for key in ['f0','e0','alpha']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha'")
+                sys.exit(1)
+
         norm_sim = sim_integral * int_diff_sp(emin, emax, w_param['alpha'], w_param['e0'])
     
     elif(shape == "LogParabola"):
+        if(len(param) != 4):
+            print("param included {} parameters, not 4".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha', 'beta'")
+            sys.exit(1)
+
+        for key in ['f0','e0','alpha', 'beta']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha', 'beta'")
+                sys.exit(1)
+
         log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=sim_integral, reference=w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
 
         norm_sim = log_parabola.integral(emin, emax)
