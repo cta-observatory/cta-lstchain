@@ -167,13 +167,13 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
     sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, w_param['e0'])
     
     if(shape == "PowerLaw"):
-        if(len(param) != 3):
-            print("param included {} parameters, not 3".format(len(param)))
+        if(len(w_param) != 3):
+            print("param included {} parameters, not 3".format(len(w_param)))
             print("param should include 'f0', 'e0', 'alpha'")
             sys.exit(1)
         
         for key in ['f0','e0','alpha']:
-            if(key not in param.keys()):
+            if(key not in w_param.keys()):
                 print("{} is missing in param".format(key))
                 print("param should include 'f0', 'e0', 'alpha'")
                 sys.exit(1)
@@ -181,13 +181,13 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
         norm_sim = sim_integral * int_diff_sp(emin, emax, w_param['alpha'], w_param['e0'])
     
     elif(shape == "LogParabola"):
-        if(len(param) != 4):
-            print("param included {} parameters, not 4".format(len(param)))
+        if(len(w_param) != 4):
+            print("param included {} parameters, not 4".format(len(w_param)))
             print("param should include 'f0', 'e0', 'alpha', 'beta'")
             sys.exit(1)
 
         for key in ['f0','e0','alpha', 'beta']:
-            if(key not in param.keys()):
+            if(key not in w_param.keys()):
                 print("{} is missing in param".format(key))
                 print("param should include 'f0', 'e0', 'alpha', 'beta'")
                 sys.exit(1)
