@@ -165,7 +165,7 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
     """
 
     sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, w_param['e0'])
-    
+
     if(shape == "PowerLaw"):
         if(len(w_param) != 3):
             print("param included {} parameters, not 3".format(len(w_param)))
@@ -192,9 +192,9 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
                 print("param should include 'f0', 'e0', 'alpha', 'beta'")
                 sys.exit(1)
 
-        log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=sim_integral, reference=w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
+        log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=sim_integral/(u.s * u.cm * u.cm), reference=w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
 
-        norm_sim = log_parabola.integral(emin, emax)
+        norm_sim = log_parabola.integral(emin, emax) * (u.s * u.cm * u.cm)
 
     weight = rate / norm_sim
 
