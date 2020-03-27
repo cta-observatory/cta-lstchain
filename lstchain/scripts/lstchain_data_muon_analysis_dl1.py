@@ -63,7 +63,7 @@ def main():
     max_muons = args.max_muons
 
     # Camera geometry
-    geom = CameraGeometry.from_name("LSTCam-002")
+    geom = CameraGeometry.from_name("LSTCam-004")
 
     # Definition of the output parameters for the table
     output_parameters = {'event_id': [],
