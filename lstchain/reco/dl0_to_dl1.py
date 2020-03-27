@@ -197,7 +197,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     
     # Camera geometry TBD: read from config file?
-    geom = CameraGeometry.from_name("LSTCam-004")
+    geom = CameraGeometry.from_name("LSTCam-002")
 
     # Dictionary to store muon ring parameters
     muon_parameters  = {'event_id': [],
