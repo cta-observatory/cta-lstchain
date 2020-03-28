@@ -67,7 +67,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands"
   ],
@@ -85,7 +84,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands",
     "log_reco_energy",
@@ -109,5 +107,11 @@
     },
   "timestamps_pointing":"ucts",
 
-  "mc_wobble_offset": 0.4
+  "mc_wobble_offset": 0.4,
+
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  }
 }
