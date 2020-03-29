@@ -12,7 +12,7 @@ from ctapipe_io_lst import load_camera_geometry
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from astropy import units as u
 
-from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr, fill_muon_event
+from lstchain.image.muon import analyze_muon_event, muon_filter, tag_pix_thr, create_muon_table, fill_muon_event
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.visualization import plot_calib
 
@@ -66,26 +66,7 @@ def main():
     geom = load_camera_geometry()
 
     # Definition of the output parameters for the table
-    output_parameters = {'event_id': [],
-                         'event_time': [],
-                         'ring_size': [],
-                         'size_outside': [],
-                         'ring_radius': [],
-                         'ring_width': [],
-                         'good_ring': [],
-                         'muon_efficiency': [],
-                         'ring_containment': [],
-                         'ring_completeness': [],
-                         'ring_pixel_completeness': [],
-                         'impact_parameter': [],
-                         'impact_x_array': [],
-                         'impact_y_array': [],
-                         'radial_stdev' : [],                  # Standard deviation of (cleaned) light distribution along ring radius
-                         'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
-                         'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
-                         'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
-                         'mean_pixel_charge_around_ring' : []  # Average pixel charge in pixels surrounding the outer part of the ring 
-                         }
+    output_parameters = create_muon_table()
 
     plot_calib.read_file(args.calib_file)
     bad_pixels = plot_calib.calib_data.unusable_pixels[0]
