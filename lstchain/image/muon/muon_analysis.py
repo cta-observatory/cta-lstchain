@@ -21,6 +21,7 @@ __all__ = ['get_muon_center',
            'muon_filter',
            'tag_pix_thr',
            'radial_light_distribution',
+           'create_muon_table',
            'fill_muon_event',
           ]
 
@@ -384,6 +385,32 @@ def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
     return {'standard_dev' : standard_dev*u.deg, 'skewness' : skewness, 'excess_kurtosis' : excess_kurtosis}
 
 
+def create_muon_table():
+    
+    return {'event_id': [],
+            'event_time': [],
+            'ring_size': [],
+            'size_outside': [],
+            'ring_center_x': [],
+            'ring_center_y': [],
+            'ring_radius': [],
+            'ring_width': [],
+            'good_ring': [],
+            'muon_efficiency': [],
+            'ring_containment': [],
+            'ring_completeness': [],
+            'ring_pixel_completeness': [],
+            'impact_parameter': [],
+            'impact_x_array': [],
+            'impact_y_array': [],
+            'radial_stdev' : [],                  # Standard deviation of (cleaned) light distribution along ring radius
+            'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
+            'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
+            'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
+            'mean_pixel_charge_around_ring' : []  # Average pixel charge in pixels surrounding the outer part of the ring 
+    }
+
+
 def fill_muon_event(output_parameters, good_ring, event_id, event_time, muonintensityparam, muonringparam,
                     radial_distribution, size_outside_ring, mean_pixel_charge_around_ring):
 
@@ -391,6 +418,8 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time, muoninte
     output_parameters['event_time'].append(event_time)
     output_parameters['ring_size'].append(muonintensityparam.ring_size)
     output_parameters['size_outside'].append(size_outside_ring)
+    output_parameters['ring_center_x'].append(muonringparam.ring_center_x.value)
+    output_parameters['ring_center_y'].append(muonringparam.ring_center_y.value)
     output_parameters['ring_radius'].append(muonringparam.ring_radius.value)
     output_parameters['ring_width'].append(muonintensityparam.ring_width.value)
     output_parameters['good_ring'].append(good_ring)
