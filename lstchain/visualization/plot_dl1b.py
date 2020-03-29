@@ -86,40 +86,89 @@ def main():
             plt.suptitle(f'Input file name: {args.infile}' + '\n' +
                          f'No cuts applied')
 
-        # Intensity distribution
+        # Intensity
         ax = axes[0][0]
         ax.hist(df_data['log_intensity'], histtype='step')
         ax.set_ylabel('Number of events')
         ax.set_xlabel(r'$log_{10}$ (intensity/phe)')
         ax.set_yscale('log')
 
-        # Width distribution
+        # Width
         ax = axes[0][1]
         ax.hist(df_data['width'], histtype='step')
         ax.set_ylabel('Number of events')
         ax.set_xlabel('Width (deg)')
         ax.set_yscale('log')
 
-        # Length distribution
+        # Length
         ax = axes[1][0]
         ax.hist(df_data['length'], histtype='step')
         ax.set_ylabel('Number of events')
         ax.set_xlabel('Length (deg)')
         ax.set_yscale('log')
 
-        # Psi distribution
+        # Width/length
         ax = axes[1][1]
-        ax.hist(df_data['psi'] * 180/np.pi, histtype='step')
-        ax.set_ylabel('Number of events')
-        ax.set_xlabel('Psi (deg)')
-
-        # Rates
-        ax = axes[2][0]
         ax.hist(df_data['wl'], histtype='step')
         ax.set_ylabel('Number of events')
         ax.set_xlabel('Width/Length')
 
-        # Center of gravity
+        # Psi
+        ax = axes[2][0]
+        ax.hist(df_data['psi'] * 180/np.pi, histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Psi (deg)')
+
+        # Phi
+        ax = axes[2][1]
+        ax.hist(df_data['phi'] * 180/np.pi, histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Phi (deg)')
+
+        plt.subplots_adjust(wspace=0.25)
+        plt.tight_layout(rect=[0, 0, 0.95, 0.9])
+        pdf.savefig()
+
+        # Second page
+
+        fig, axes = plt.subplots(nrows=3, ncols=2)
+
+        # Leakage
+        ax = axes[0][0]
+        ax.hist(df_data['leakage'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Leakage')
+        ax.set_yscale('log')
+
+        # Number of islands
+        ax = axes[0][1]
+        ax.hist(df_data['n_islands'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Number of islands')
+        ax.set_yscale('log')
+
+        # Intercept
+        ax = axes[1][0]
+        ax.hist(df_data['intercept'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Intercept')
+        ax.set_yscale('log')
+
+        # Skewness
+        ax = axes[1][1]
+        ax.hist(df_data['skewness'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Skewness')
+        ax.set_yscale('log')
+
+        # R coordinate of cog
+        ax = axes[2][0]
+        ax.hist(df_data['r'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('r (m)')
+        ax.set_yscale('log')
+
+        # Camera (cog)
         ax = axes[2][1]
         cog = ax.hist2d(df_data['x'], df_data['y'], bins=100)
         ax.set_xlabel('x (m)')
@@ -130,7 +179,29 @@ def main():
         plt.tight_layout(rect=[0, 0, 0.95, 0.9])
         pdf.savefig()
 
-        # Second page
+        # Third page
+
+        fig, axes = plt.subplots(nrows=3, ncols=2)
+
+        # Time gradient
+        ax = axes[0][0]
+        ax.hist(df_data['time_gradient'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Time gradient')
+        ax.set_yscale('log')
+
+        # Kurtosis
+        ax = axes[0][1]
+        ax.hist(df_data['kurtosis'], histtype='step')
+        ax.set_ylabel('Number of events')
+        ax.set_xlabel('Kurtosis')
+        ax.set_yscale('log')
+
+        plt.subplots_adjust(wspace=0.25)
+        plt.tight_layout(rect=[0, 0, 0.95, 0.9])
+        pdf.savefig()
+
+        # Fourth page
 
         fig = plt.figure()
 
