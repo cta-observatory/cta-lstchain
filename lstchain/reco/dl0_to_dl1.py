@@ -420,34 +420,31 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                  containers = [dl1_container, extra_im])
 
 
-                    # Muon ring analysis
-
+                    # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
                         # Set to 0 unreliable pixels:
                         image = tel.image*(~bad_pixels)
-                    else:
-                        image = tel.image
 
-                    # process only promising events, in terms of # of pixels with large signals:
-                    if tag_pix_thr(image): 
+                        # process only promising events, in terms of # of pixels with large signals:
+                        if tag_pix_thr(image): 
 
-                        # re-calibrate r1, using a better pulse integrator for muon rings:
-                        # NOTE!! As soon as we have >1 telescope we need to have one such calibrator r1_dl1_calibrator_for_muon_rings
-                        # per camera, since we do not want to re-calibrate all cameras whenever one of them has a candidate muon ring!
-                        r1_dl1_calibrator_for_muon_rings(event)
-                        tel = event.dl1.tel[telescope_id]
-                        if not is_simu:
+                            # re-calibrate r1, using a better pulse integrator for muon rings:
+                            # NOTE!! As soon as we have >1 telescope we need to have one such calibrator r1_dl1_calibrator_for_muon_rings
+                            # per camera, since we do not want to re-calibrate all cameras whenever one of them has a candidate muon ring!
+                            r1_dl1_calibrator_for_muon_rings(event)
+                            tel = event.dl1.tel[telescope_id]
                             image = tel.image*(~bad_pixels)
-                        muonintensityparam, size_outside_ring, muonringparam, good_ring, \
-                            radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
-                                                                                                    mirror_area, False, '')
+                            muonintensityparam, size_outside_ring, muonringparam, good_ring, \
+                                radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                                                                                        mirror_area, False, '')
                             #                                                                        mirror_area, True, './') # (test) plot muon rings as png files
 
-                        if good_ring:
-                            fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time, muonintensityparam, muonringparam,
-                                            radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
+                            if good_ring:
+                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time, muonintensityparam, muonringparam,
+                                                radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
 
-                            
+
+
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
@@ -463,9 +460,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
             add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
-
     # Write energy histogram from simtel file and extra metadata
-    if is_simu:
         write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
                                       metadata = metadata)
 
