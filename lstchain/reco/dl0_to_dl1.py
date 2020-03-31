@@ -425,6 +425,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     if not is_simu:
                         # Set to 0 unreliable pixels:
                         image = tel.image*(~bad_pixels)
+                    else:
+                        image = tel.image
 
                     # process only promising events, in terms of # of pixels with large signals:
                     if tag_pix_thr(image): 
