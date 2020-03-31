@@ -188,7 +188,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     is_simu = source.metadata['is_simulation']
 
     source.allowed_tels = config["allowed_tels"]
-    source.max_events = config["max_events"]+1
+    if config["max_events"] is not None:
+        source.max_events = config["max_events"]+1
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
