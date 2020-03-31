@@ -203,11 +203,13 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     # Dictionary to store muon ring parameters
     muon_parameters  = create_muon_table()
 
-    plot_calib.read_file(calibration_path)
-    bad_pixels = plot_calib.calib_data.unusable_pixels[0]
-    print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
     
     if not is_simu:
+        
+        plot_calib.read_file(calibration_path)
+        bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+        print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
+
         # TODO : add calibration config in config file, read it and pass it here
 
         r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
