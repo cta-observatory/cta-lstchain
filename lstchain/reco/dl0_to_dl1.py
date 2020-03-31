@@ -421,9 +421,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
 
                     # Muon ring analysis
-                    
-                    # Set to 0 unreliable pixels:
-                    image = tel.image*(~bad_pixels)
+
+                    if not is_simu:
+                        # Set to 0 unreliable pixels:
+                        image = tel.image*(~bad_pixels)
 
                     # process only promising events, in terms of # of pixels with large signals:
                     if tag_pix_thr(image): 
@@ -433,7 +434,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                         # per camera, since we do not want to re-calibrate all cameras whenever one of them has a candidate muon ring!
                         r1_dl1_calibrator_for_muon_rings(event)
                         tel = event.dl1.tel[telescope_id]
-                        image = tel.image*(~bad_pixels)
+                        if not is_simu:
+                            image = tel.image*(~bad_pixels)
                         muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                             radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
                                                                                                     mirror_area, False, '')
