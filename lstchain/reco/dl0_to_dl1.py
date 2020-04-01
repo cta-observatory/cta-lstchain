@@ -31,7 +31,6 @@ from ..image.muon import create_muon_table, fill_muon_event
 from ..visualization import plot_calib
 
 from ctapipe.image.cleaning import number_of_islands
-from ctapipe_io_lst import load_camera_geometry
 
 import tables
 from functools import partial
@@ -197,21 +196,13 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     cal_mc = load_calibrator_from_config(config)
 
     
-    # Camera geometry TBD: read from config file?
-    geom = load_camera_geometry()
-
     # Dictionary to store muon ring parameters
     muon_parameters  = create_muon_table()
 
     
     if not is_simu:
-        
-        plot_calib.read_file(calibration_path)
-        bad_pixels = plot_calib.calib_data.unusable_pixels[0]
-        print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
 
-        # TODO : add calibration config in config file, read it and pass it here
-
+        # TODO : add DRS4 calibration config in config file, read it and pass it here
         r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
                                             tel_id = 1)
 
@@ -422,6 +413,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
+                        bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                         # Set to 0 unreliable pixels:
                         image = tel.image*(~bad_pixels)
 
@@ -434,6 +426,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                             r1_dl1_calibrator_for_muon_rings(event)
                             tel = event.dl1.tel[telescope_id]
                             image = tel.image*(~bad_pixels)
+
+                            # read geometry from event.inst. But not needed for every event. FIXME?
+                            geom = event.inst.subarray.tel[telescope_id].camera
+
                             muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                 radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
                                                                                                         mirror_area, False, '')
@@ -460,20 +456,23 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
             add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
-    # Write energy histogram from simtel file and extra metadata
-        write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
-                                      metadata = metadata)
 
-
-    dir = os.path.dirname(output_filename)
-    name = os.path.basename(output_filename)
-    k = name.find('Run')
-    muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
-                           name[k:k+13] + '.fits'
+        # Write energy histogram from simtel file and extra metadata
+        # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
+        if source.max_events is None:
+            write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
+                                          metadata = metadata)
+    else:
+        dir = os.path.dirname(output_filename)
+        name = os.path.basename(output_filename)
+        k = name.find('Run')
+        muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
+                               name[k:k+13] + '.fits'
     
-    muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
-    table = Table(muon_parameters)
-    table.write(muon_output_filename, format='fits', overwrite=True)
+        muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
+        table = Table(muon_parameters)
+        table.write(muon_output_filename, format='fits', overwrite=True)
+
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
     """
@@ -491,6 +490,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     focal: focal of the telescope
     """
     df = pd.read_hdf(dl1_file, key = table_path)
+
     source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
                                          df.mc_az.values * u.rad,
                                          focal,

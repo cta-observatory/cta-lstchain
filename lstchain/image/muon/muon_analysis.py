@@ -212,9 +212,8 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
         pix_ringwidth_im = image * dist_ringwidth_mask
         idx_ringwidth = np.nonzero(pix_ringwidth_im)
-        muonintensityoutput.ring_pix_completeness = npix_above_threshold(
-            pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
-                pix_ring[idx_ringwidth])
+        muonintensityoutput.ring_pix_completeness = npix_above_threshold(pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
+            pix_ring[idx_ringwidth])
 
     else:
             muonintensityoutput = MuonIntensityParameter()
@@ -235,12 +234,10 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     mean_pixel_charge_around_ring = np.sum(pix_ring_2)/len(pix_ring_2) 
 
     if candidate_clean_ring:
-        print("Impact parameter=%s, ring_width=%s, ring radius=%s, ring completeness=%s"%
-              ('{0:.3f}'.format(muonintensityoutput.impact_parameter),
-               '{0:.3f}'.format(muonintensityoutput.ring_width),
-               '{0:.3f}'.format(muonringparam.ring_radius),
-               '{0:.3f}'.format(muonintensityoutput.ring_completeness)))
-
+        print("Impact parameter={:.3f}, ring_width={:.3f}, ring radius={:.3f}, ring completeness={:.3f}".format(
+            muonintensityoutput.impact_parameter, muonintensityoutput.ring_width, 
+            muonringparam.ring_radius, muonintensityoutput.ring_completeness,
+))
     # Now add the conditions based on the detailed muon ring fit made by MuonLineIntegrate:
     conditions = [
         candidate_clean_ring,
@@ -344,15 +341,15 @@ def tag_pix_thr(image, thr_low = 50, thr_up = 500, pe_thr = 10):
     return ((np.size(image[image > pe_thr]) < thr_up) and (np.size(image[image > pe_thr]) > thr_low))
 
 
-def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
+def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
     """
 
     Parameters
     ----------
-    centre_x: float
-        Centre of muon ring in the field of view from circle fitting
-    centre_y: float
-        Centre of muon ring in the field of view from circle fitting
+    center_x: float
+        Center of muon ring in the field of view from circle fitting
+    center_y: float
+        Center of muon ring in the field of view from circle fitting
     pixel_x: ndarray
         X position of pixels in image
     pixel_y: ndarray
@@ -365,23 +362,21 @@ def radial_light_distribution(centre_x, centre_y, pixel_x, pixel_y, image):
     standard_dev, skewness
     """
     # Convert everything to degrees:
-    x0 = centre_x.to(u.deg).value
-    y0 = centre_y.to(u.deg).value
-    pix_x = pixel_x.to(u.deg).value
-    pix_y = pixel_y.to(u.deg).value
+    x0 = center_x.to_value(u.deg)
+    y0 = center_y.to_value(u.deg)
+    pix_x = pixel_x.to_value(u.deg)
+    pix_y = pixel_y.to_value(u.deg)
 
-    pix_r = np.hypot(pix_x-x0, pix_y-y0)
-
+    pix_r = np.sqrt((pix_x-x0)**2 + (pix_y-y0)**2)
+    
     # mean, standard deviation & skewness of light distribution along ring radius.
     # ring_radius calculated elsewhere is approximately equal to "mean", but not exactly, so we recalculate it here:
-    mean = np.sum(np.multiply(image,pix_r))/np.sum(image)
-    standard_dev = np.sqrt(np.sum(np.multiply(image,np.square(pix_r-mean)))/np.sum(image))
-    skewness =  np.sum(np.multiply(image,np.power((pix_r-mean)/standard_dev,3.)))/np.sum(image)
-    excess_kurtosis = np.sum(np.multiply(image,np.power((pix_r-mean)/standard_dev,4.)))/np.sum(image) - 3.
+    mean = np.average(pix_r, weights=image)
+    delta_r = pix_r - mean
+    standard_dev = np.sqrt(np.average(delta_r**2, weights=image))
+    skewness = np.average((delta_r/standard_dev)**3, weights=image)
+    excess_kurtosis = np.average((delta_r/standard_dev)**4, weights=image)-3.
 
-#    plt.scatter(pix_r, image)
-#    plt.show()
-    
     return {'standard_dev' : standard_dev*u.deg, 'skewness' : skewness, 'excess_kurtosis' : excess_kurtosis}
 
 

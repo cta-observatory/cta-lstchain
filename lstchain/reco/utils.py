@@ -159,11 +159,12 @@ def get_event_pos_in_camera(event, tel):
     -------
     (x, y) (float, float): position in the camera
     """
-    array_pointing = SkyCoord(alt=event.mcheader.run_array_direction[1],
+
+    array_pointing = SkyCoord(alt=clip_alt(event.mcheader.run_array_direction[1]),
                               az=event.mcheader.run_array_direction[0],
                               frame=horizon_frame)
     
-    event_direction = SkyCoord(alt=event.mc.alt,
+    event_direction = SkyCoord(alt=clip_alt(event.mc.alt),
                                az=event.mc.az,
                                frame=horizon_frame)
 
@@ -225,7 +226,7 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
 
@@ -251,11 +252,11 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     -------
     camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
     
-    event_direction = SkyCoord(alt=alt, az=az, frame=horizon_frame)
+    event_direction = SkyCoord(alt=clip_alt(alt), az=az, frame=horizon_frame)
 
     camera_pos = event_direction.transform_to(camera_frame)
     
@@ -459,3 +460,10 @@ def impute_pointing(dl1_data, missing_values=np.nan):
     for k in ['alt_tel', 'az_tel']:
         dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
     return dl1_data
+
+def clip_alt(alt):
+    """
+    Make sure altitude is not larger than 90 deg (it happens in some MC files for zenith=0),
+    to keep astropy happy
+    """
+    return np.clip(alt, -90.*u.deg, 90.*u.deg)
