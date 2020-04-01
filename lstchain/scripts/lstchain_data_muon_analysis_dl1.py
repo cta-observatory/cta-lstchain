@@ -8,7 +8,7 @@ from ctapipe.image.muon.features import npix_above_threshold
 from ctapipe.image.muon.features import npix_composing_ring
 from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe_io_lst import load_camera_geometry
+from ctapipe.instrument import CameraGeometry
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from astropy import units as u
 
@@ -62,9 +62,6 @@ def main():
     
     max_muons = args.max_muons
 
-    # Camera geometry
-    geom = load_camera_geometry()
-
     # Definition of the output parameters for the table
     output_parameters = create_muon_table()
 
@@ -87,6 +84,9 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
+        cam_description_table = Table.read(filename, path="instrument/telescope/camera/LSTCam")
+        geom = CameraGeometry.from_table(cam_description_table)
+
         with tables.open_file(filename) as file:
             
             # unfortunately pandas.read_hdf does not seem compatible with "with... as..." statements
@@ -98,7 +98,13 @@ def main():
         
             equivalent_focal_length = telescope_description['equivalent_focal_length'].values * u.m
             mirror_area = telescope_description['mirror_area'].values * pow(u.m,2)
-            
+
+            # fill dummy event times with NaNs in case they do not exist (like in MC):
+            if not 'dragon_time' in parameters.keys():
+                dummy_times = np.empty(len(parameters['event_id']))
+                dummy_times[:] = np.nan
+                parameters['dragon_time'] = dummy_times
+
             for full_image, event_id, dragon_time in zip(images, parameters['event_id'], parameters['dragon_time']):
                 if args.calib_file is not None:
                     image = full_image*(~bad_pixels)
@@ -110,16 +116,16 @@ def main():
                 #    continue
                 if not tag_pix_thr(image): #default skips pedestal and calibration events
                     continue
-                
+
                 #if not muon_filter(image) #default values apply no filtering. This filter is rather useless for biased extractors anyway
                 #    continue
             
                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                     radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event_id, image, geom, equivalent_focal_length, 
                                                                                             mirror_area, args.plot_rings, args.plots_path)
-        
+
                 if good_ring:
-                    num_muons = num_muons + 1
+                    num_muons += 1
                     print("Number of good muon rings found {}, EventID {}".format(num_muons, event_id))
 
                 # write ring data, including also "not-so-good" rings, in case we want to reconsider ring selections!:
