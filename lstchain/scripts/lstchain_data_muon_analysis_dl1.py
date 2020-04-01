@@ -36,7 +36,7 @@ parser.add_argument("--input_file", help = "Path to DL1a data file (containing c
                     type = str, required=True)
 
 parser.add_argument("--calib_file", help = "Path to corresponding calibration file (containing bad pixel information).",
-                    type = str, required=True)
+                    type = str, default = None, required=False)
 
 parser.add_argument("--output_file", help = "Path to create the output fits table with muon parameters",
                     type = str, required=True)
@@ -68,9 +68,10 @@ def main():
     # Definition of the output parameters for the table
     output_parameters = create_muon_table()
 
-    plot_calib.read_file(args.calib_file)
-    bad_pixels = plot_calib.calib_data.unusable_pixels[0]
-    print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
+    if args.calib_file is not None:
+        plot_calib.read_file(args.calib_file)
+        bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+        print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
 
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)
     # The call above does not work, because of the file's vector columns (pixel-wise charges & times)
@@ -99,7 +100,10 @@ def main():
             mirror_area = telescope_description['mirror_area'].values * pow(u.m,2)
             
             for full_image, event_id, dragon_time in zip(images, parameters['event_id'], parameters['dragon_time']):
-                image = full_image*(~bad_pixels)
+                if args.calib_file is not None:
+                    image = full_image*(~bad_pixels)
+                else:
+                    image = full_image
                 #print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
                 #                                                          np.size(image[image > 10.])))
                 #if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
