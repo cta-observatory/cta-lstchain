@@ -4,6 +4,7 @@ channels:
   - cta-observatory
   - conda-forge
 dependencies:
+  - pip
   - ctapipe=0.7.0
   - gammapy
   - h5py
