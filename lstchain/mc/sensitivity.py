@@ -207,9 +207,9 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
     Parameters
     ---------
     n_excesses:   `numpy.ndarray` number of excess events in the signal region
-    n_background:   `numpy.ndarray` number of events in the background region
-    alpha: `float` inverse of the number of off positions
-    n_bins_energy: `int` number of bins in energy
+    n_background: `numpy.ndarray` number of events in the background region
+    alpha:        `float` inverse of the number of off positions
+    n_bins_energy:`int` number of bins in energy
 
     Returns
     ---------
@@ -218,6 +218,13 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
                 a 5 sigma significance
 
     """
+
+    if not (len(n_excesses) == n_bins_energy and
+        len(n_background) == n_bins_energy and
+        len(alpha) == n_bins_energy):
+        print("Excess, background and alpha arrays must have the same length")
+        return
+
     stat = WStatCountsStatistic(
         n_on=np.ones_like(n_background),
         n_off=n_background,
@@ -233,8 +240,8 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
         # If the excess needed to get 5 sigma is less than 5%
         # of the background, we force it to be at least 5% of
         # the background
-        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha:
-            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha
+        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
+            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
 
     sensitivity = n_excesses_5sigma / n_excesses * 100  # percentage of Crab
 
