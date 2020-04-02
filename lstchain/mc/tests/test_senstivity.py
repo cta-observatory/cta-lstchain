@@ -5,6 +5,7 @@ from lstchain.mc import (
     read_sim_par,
     calculate_sensitivity,
     calculate_sensitivity_lima,
+    calculate_sensitivity_lima_ebin,
     bin_definition,
     ring_containment,
 )
@@ -53,6 +54,18 @@ def test_calculate_sensitivity_lima():
     np.testing.assert_allclose(calculate_sensitivity_lima(
             [10, 100], [50,100], [1, 1], 1, 1, 0),
                                ([63.00, 83.57],[630.07,  83.57]), rtol = 1.e-3)
+
+def test_calculate_sensitivity_lima_ebin():
+    
+    np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
+            [50], [10], [0.2], 1), ([13.48], [26.97]), 
+                               rtol = 1.e-3)
+
+    np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
+            [50, 20, 10], [10, 10, 10], [0.2, 0.2, 0.2], 3), 
+                               (([13.48, 13.48, 13.48]),
+                                [ 26.97208396,  67.43020989, 134.86041979]), 
+                               rtol = 1.e-3)
 
 def test_bin_definition():
 
