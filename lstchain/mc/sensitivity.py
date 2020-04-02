@@ -177,10 +177,9 @@ def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n
     """
 
     stat = WStatCountsStatistic(
-        )                
-    n_on=np.ones_like(n_background),
-    n_off=n_background,
-    alpha=alpha)
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
 
     n_excesses_5sigma = stat.excess_matching_significance(5)
 
@@ -219,8 +218,12 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
                 a 5 sigma significance
 
     """
-    n_excesses_5sigma = excess_matching_significance_on_off(\
-        n_off = n_background, alpha = alpha, significance = 5, method = 'lima')
+    stat = WStatCountsStatistic(
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
+
+    n_excesses_5sigma = stat.excess_matching_significance(5)
 
     for i in range(0, n_bins_energy):
         # If the excess needed to get 5 sigma is less than 10,
