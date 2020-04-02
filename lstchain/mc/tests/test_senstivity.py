@@ -51,7 +51,7 @@ def test_calculate_sensitivity_lima():
                                ([63.00, 31.5]), rtol = 1.e-3)
     # Testing an array
     np.testing.assert_allclose(calculate_sensitivity_lima(
-            [10, 100], [50,100], 1, 1, 1, 0),
+            [10, 100], [50,100], [1, 1], 1, 1, 0),
                                ([63.00, 83.57],[630.07,  83.57]), rtol = 1.e-3)
 
 def test_bin_definition():
