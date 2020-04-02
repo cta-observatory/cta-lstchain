@@ -91,15 +91,17 @@ def fit_muon(x, y, image, geom, tailcuts):
     image_clean = image * clean_mask
     muonringparam = muonring.fit(x, y, image_clean)
 
-    # Do an iterative fit removing pixels which are beyond 0.4*ring_radius of the ring (along the radial direction):
+    max_allowed_outliers_distance = 0.4
+    # Do an iterative fit removing pixels which are beyond max_allowed_outliers_distance*ring_radius
+    # of the ring (along the radial direction):
     # The goal is to improve fit for good rings with very few additional non-ring bright pixels.
 
     for _ in [0]*2:  # just to iterate the fit twice more
-        dist = np.sqrt(np.power(x - muonringparam.ring_center_x, 2)
-                       + np.power(y - muonringparam.ring_center_y, 2))
+        dist = np.sqrt((x - muonringparam.ring_center_x)**2
+                       +(y - muonringparam.ring_center_y)**2)
         ring_dist = np.abs(dist - muonringparam.ring_radius)
         muonringparam = muonring.fit(
-        x, y, image_clean * (ring_dist < muonringparam.ring_radius * 0.4)
+        x, y, image_clean * (ring_dist < muonringparam.ring_radius * max_allowed_outliers_distance)
         )
     
     return muonringparam, clean_mask, dist, image_clean
@@ -210,10 +212,8 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             threshold=30,
             bins=30)
 
-        pix_ringwidth_im = image * dist_ringwidth_mask
-        idx_ringwidth = np.nonzero(pix_ringwidth_im)
-        muonintensityoutput.ring_pix_completeness = npix_above_threshold(pix_ringwidth_im[idx_ringwidth], tailcuts[0]) / len(
-            pix_ring[idx_ringwidth])
+        pix_ringwidth_im = image[dist_ringwidth_mask]
+        muonintensityoutput.ring_pix_completeness =  npix_above_threshold(pix_ringwidth_im, tailcuts[0]) / len(pix_ringwidth_im)
 
     else:
             muonintensityoutput = MuonIntensityParameter()
@@ -374,8 +374,8 @@ def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
     mean = np.average(pix_r, weights=image)
     delta_r = pix_r - mean
     standard_dev = np.sqrt(np.average(delta_r**2, weights=image))
-    skewness = np.average((delta_r/standard_dev)**3, weights=image)
-    excess_kurtosis = np.average((delta_r/standard_dev)**4, weights=image)-3.
+    skewness = np.average(delta_r**3, weights=image) / standard_dev**3
+    excess_kurtosis = np.average(delta_r**4, weights=image)/standard_dev**4 - 3.
 
     return {'standard_dev' : standard_dev*u.deg, 'skewness' : skewness, 'excess_kurtosis' : excess_kurtosis}
 
