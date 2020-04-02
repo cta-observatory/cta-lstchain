@@ -453,8 +453,10 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
                 ngamma_per_ebin[i] = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]) * obstime
                 nhadron_per_ebin[i] = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]) * obstime
 
-    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff,
-                                                  n_bins_energy, n_bins_gammaness, n_bins_theta2)
+    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 
+                                                                        1/noff * np.ones(len(final_gamma)),
+                                                                        n_bins_energy, n_bins_gammaness, 
+                                                                        n_bins_theta2)
 
     # Avoid bins which are empty or have too few events:
     min_num_events = 10
@@ -675,7 +677,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                               * obstime.to(u.s).value
 
     n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima_ebin(final_gamma, final_hadrons * noff,
-                                                                             1 / noff,
+                                                                             1 / noff * np.ones(len(final_gamma)),
                                                                              n_bins_energy)
     # Avoid bins which are empty or have too few events:
     min_num_events = 5
