@@ -29,7 +29,7 @@ def test_write_dl2_dataframe():
 @pytest.mark.run(after='test_dl0_to_dl1')
 def test_merging_check():
     # the same file should be mergeable with itself
-    io.merging_check([dl1_file, dl1_file])
+    [dl1_file, dl1_file] == io.merging_check([dl1_file, dl1_file])
 
 
 @pytest.mark.run(after='test_dl0_to_dl1')

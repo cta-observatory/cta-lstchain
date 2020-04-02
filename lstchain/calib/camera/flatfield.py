@@ -118,20 +118,20 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
+        pixel_mask = np.logical_or(
+            event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
+            event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
+
         # real data
         if event.meta['origin'] != 'hessio':
             self.trigger_time = event.r1.tel[self.tel_id].trigger_time
 
-            pixel_mask = np.logical_or(
-                event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
-                event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
         else:  # patches for MC data
             if event.trig.tels_with_trigger:
                 self.trigger_time = event.trig.gps_time.unix
             else:
                 self.trigger_time = 0
 
-            pixel_mask = np.zeros(waveform.shape[1], dtype=bool)
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
