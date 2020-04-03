@@ -67,7 +67,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands"
   ],
@@ -85,7 +84,6 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
     "leakage",
     "n_islands",
     "log_reco_energy",
@@ -98,6 +96,7 @@
   "custom_calibration": false,
   "write_pe_image": false,
   "image_extractor": "LocalPeakWindowSum",
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
@@ -107,5 +106,14 @@
      "window_shift": 4,
      "window_width":8
     },
-  "timestamps_pointing":"ucts"
+  "GlobalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "timestamps_pointing":"ucts",
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  }
 }
