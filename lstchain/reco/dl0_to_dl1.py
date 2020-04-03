@@ -27,6 +27,10 @@ from .volume_reducer import check_and_apply_volume_reduction
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
+from ..image.muon import analyze_muon_event, tag_pix_thr
+from ..image.muon import create_muon_table, fill_muon_event
+from ..visualization import plot_calib
+
 from ctapipe.image.cleaning import number_of_islands
 
 import tables
@@ -38,6 +42,7 @@ from ..io.io import add_column_table
 import pandas as pd
 from . import disp
 import astropy.units as u
+from astropy.table import Table
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -166,7 +171,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     """
     if output_filename is None:
         output_filename = (
-            'dl1_' + os.path.basename(input_filename).split('.')[0] + '.h5'
+            'dl1_' + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
         )
     if os.path.exists(output_filename):
         raise AttributeError(output_filename + ' exists, exiting.')
@@ -185,16 +190,24 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     is_simu = source.metadata['is_simulation']
 
     source.allowed_tels = config["allowed_tels"]
-    source.max_events = config["max_events"]
+    if config["max_events"] is not None:
+        source.max_events = config["max_events"]+1
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
-    cal = load_calibrator_from_config(config)
+    cal_mc = load_calibrator_from_config(config)
 
+    # minimum number of pe in a pixel to include it in calculation of muon ring time (peak sample):
+    min_pe_for_muon_t_calc = 10.
+
+    # Dictionary to store muon ring parameters
+    muon_parameters  = create_muon_table()
+
+    
     if not is_simu:
-        # TODO : add calibration config in config file, read it and pass it here
 
+        # TODO : add DRS4 calibration config in config file, read it and pass it here
         r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
                                             tel_id = 1)
 
@@ -207,6 +220,16 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                                 allowed_tels = [1],
                                                 )
 
+        # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
+        # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                               time_calibration_path = time_calibration_path,
+                                                               extractor_product = config['image_extractor_for_muons'],
+                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                               config = Config(config),
+                                                               allowed_tels = [1],)
+
+        
     dl1_container = DL1ParametersContainer()
 
     if pointing_file_path:
@@ -267,17 +290,19 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
+                if not custom_calibration:
+                    cal_mc(event)
 
-            if not custom_calibration and is_simu:
-                cal(event)
-
-            if not is_simu:
+            else:
                 r0_r1_calibrator.calibrate(event)
                 r1_dl1_calibrator(event)
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
             check_and_apply_volume_reduction(event, config)
+            # FIXME? This should be eventually done after we evaluate whether the image is
+            # a candidate muon ring. In that case the full image could be kept, or reduced
+            # only after the ring analysis is complete.
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
@@ -369,11 +394,15 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
-                            # Until the TIB trigger_type is fully reliable, we also add
-                            # the ucts_trigger_type to the data
-                            extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
 
+                        # Until the TIB trigger_type is fully reliable, we also add
+                        # the ucts_trigger_type to the data
+                        extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+
+
+                    # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m**2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
@@ -397,6 +426,64 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
                                  containers = [dl1_container, extra_im])
 
+
+                    # Muon ring analysis, for real data only (MC is done starting from DL1 files)
+                    if not is_simu:
+                        bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                        # Set to 0 unreliable pixels:
+                        image = tel.image*(~bad_pixels)
+
+                        # process only promising events, in terms of # of pixels with large signals:
+                        if tag_pix_thr(image): 
+
+                            # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
+                            numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!
+                            bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                            bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
+                            # Now set to 0 all samples in unreliable pixels. Important for global peak
+                            # integrator in case of crazy pixels!  TBD: can this be done in a simpler
+                            # way?
+                            bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
+                                                      np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+
+                            # print('hg bad pixels:',np.where(bad_pixels_hg))
+                            # print('lg bad pixels:',np.where(bad_pixels_lg))
+
+                            event.r1.tel[telescope_id].waveform *= ~bad_waveform
+                            r1_dl1_calibrator_for_muon_rings(event)
+
+                            tel = event.dl1.tel[telescope_id]
+                            image = tel.image*(~bad_pixels)
+
+                            # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
+                            # perhaps the event is no longer promising (e.g. if it has a large time evolution)
+                            if not tag_pix_thr(image):
+                                good_ring = False
+                            else:
+                                # read geometry from event.inst. But not needed for every event. FIXME?
+                                geom = event.inst.subarray.tel[telescope_id].camera
+
+                                muonintensityparam, size_outside_ring, muonringparam, good_ring, \
+                                    radial_distribution, mean_pixel_charge_around_ring = \
+                                    analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                                       mirror_area, False, '')
+                                #                      mirror_area, True, './') # (test) plot muon rings as png files
+
+                                # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
+                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:,image>min_pe_for_muon_t_calc,:]
+                                stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+                                # stacked waveforms from all bright pixels; shape (ngains, nsamples)
+                                hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
+                                lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+
+
+                            if good_ring:
+                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
+                                                muonintensityparam, muonringparam, radial_distribution,
+                                                size_outside_ring, mean_pixel_charge_around_ring,
+                                                hg_peak_sample, lg_peak_sample)
+
+
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
@@ -413,10 +500,21 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
             add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
 
-    # Write energy histogram from simtel file and extra metadata
-    if is_simu:
-        write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
-                                      metadata = metadata)
+        # Write energy histogram from simtel file and extra metadata
+        # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
+        if source.max_events is None:
+            write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
+                                          metadata = metadata)
+    else:
+        dir = os.path.dirname(output_filename)
+        name = os.path.basename(output_filename)
+        k = name.find('Run')
+        muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
+                               name[k:k+13] + '.fits'
+    
+        muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
+        table = Table(muon_parameters)
+        table.write(muon_output_filename, format='fits', overwrite=True)
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
@@ -435,6 +533,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     focal: focal of the telescope
     """
     df = pd.read_hdf(dl1_file, key = table_path)
+
     source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
                                          df.mc_az.values * u.rad,
                                          focal,

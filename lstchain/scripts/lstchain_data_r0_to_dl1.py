@@ -9,8 +9,8 @@ parser = argparse.ArgumentParser(description="R0 to DL1")
 
 parser.add_argument('--infile', '-f', type=str,
                     dest='infile',
-                    help='path to the file with simtelarray events',
-                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+                    help='path to the .fits.fz file with the raw events',
+                    default=None, required=True)
 
 parser.add_argument('--outdir', '-o', action='store', type=str,
                     dest='outdir',
@@ -26,25 +26,31 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
                     dest='pedestal_path',
                     help='Path to a pedestal file',
-                    default=None
+                    default=None, required=True
                     )
 
 parser.add_argument('--calibration_path', '-calib', action='store', type=str,
                     dest='calibration_path',
                     help='Path to a calibration file',
-                    default=None
+                    default=None, required=True
                     )
 
 parser.add_argument('--time_calibration_path', '-time_calib', action='store', type=str,
                     dest='time_calibration_path',
                     help='Path to a calibration file for pulse time correction',
-                    default=None
+                    default=None, required=True
                     )
 
 parser.add_argument('--pointing_file_path', '-pointing', action='store', type=str,
                     dest='pointing_file_path',
                     help='Path to the Drive log file with the pointing information.',
                     default=None
+                    )
+
+parser.add_argument('--max_events', '-maxevts', action='store', type=int,
+                    dest='max_events',
+                    help='Maximum number of events to be processed.',
+                    default=int(1e15)
                     )
 
 
@@ -64,6 +70,8 @@ def main():
         except("Custom configuration could not be loaded !!!"):
             pass
 
+    config["max_events"] = args.max_events
+    
     dl0_to_dl1.r0_to_dl1(args.infile,
                          output_filename=output_filename,
                          custom_config=config,
