@@ -455,7 +455,7 @@ def set_source_dependent_parameters(data, config):
             if ( 'skewness_from_source' in config['regression_features']) or ('skewness_from_source' in config['classification_features']):
                 data['skewness_from_source'] = data['skewness'] * data['disp_sign'] * -1
 
-        #For proton MC, expected source position should be written in config file(alt, az)
+        #For proton MC, nominal source position is one written in config file
         if all(data['mc_type'])!=0:
 
             if( ('dist' in config['regression_features']) or ('dist' in config['classification_features']) 
@@ -464,8 +464,9 @@ def set_source_dependent_parameters(data, config):
                 
                 focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
 
-                expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'] + config['mc_wobble_offset'])*u.deg, data['mc_az_tel']*u.deg, focal_length, 
-                                                        data['mc_alt_tel']*u.deg, data['mc_az_tel']*u.deg)
+                expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'] + config['mc_nominal_source_x_deg'])*u.deg, (data['mc_az_tel'] + config['mc_nominal_source_y_deg'])*u.deg, focal_length, 
+                                                        data['mc_alt_tel'] * u.deg, data['mc_az_tel'] * u.deg)
+                print(expected_src_pos)
                 expected_src_pos_x_m = expected_src_pos.x.to_value()
                 expected_src_pos_y_m = expected_src_pos.y.to_value()
 
