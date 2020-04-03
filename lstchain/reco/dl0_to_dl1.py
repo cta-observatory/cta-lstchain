@@ -141,8 +141,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
               calibration_path = None,
               time_calibration_path = None,
               pointing_file_path = None,
-              ucts_t0 = None,
-              dragon_counter0 = None
+              ucts_t0_dragon = math.nan,
+              dragon_counter0 = math.nan,
+              ucts_t0_tib = math.nan,
+              tib_counter0 = math.nan
               ):
     """
     Chain r0 to dl1
@@ -160,6 +162,12 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
     pointing_file_path: path to the Drive log with the pointing information
+    Arguments below are just temporal and will be removed whenever UCTS+EvB
+    is proved to stably and reliably provide timestamps.
+    ucts_t0_dragon: first valid ucts_time
+    dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
+    ucts_t0_tib: first valid ucts_time for the first valid TIB counter
+    tib_counter0: first valid TIB counter
 
     Returns
     -------
@@ -316,7 +324,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
                         # These TS are stored into ucts_time container.
-                        # TS can be alternatively calculated from the TIB and 
+                        # TS can be alternatively calculated from the TIB and
                         # Dragon modules counters based on the first valid UCTS TS
                         # as the reference point. For the time being, the three TS
                         # are stored in the DL1 files for checking purposes.
@@ -325,18 +333,24 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
                         module_id = 82  # Get counters from the central Dragon module
 
-                        if ucts_t0 and dragon_counter0:
-                            dragon_time = ((ucts_t0 - dragon_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
-                            # TODO: include tib_time with proper ucts_t0 origin
-                        else:
-                            # Dragon/TIB timestamps do not have a valid absolute reference timestamp
+                        if math.isnan(ucts_t0_dragon) and math.isnan(dragon_counter0) \
+                           and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
+                            # Dragon/TIB timestamps not based on a valid absolute reference timestamp
                             dragon_time = (event.lst.tel[telescope_id].svc.date +
                                 event.lst.tel[telescope_id].evt.pps_counter[module_id] +
                                 event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
 
                             tib_time = (event.lst.tel[telescope_id].svc.date +
+                                event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+
+                        else:
+                            # Dragon/TIB timestamps based on a valid absolute reference timestamp
+                            dragon_time = ((ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
+                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+
+                            tib_time = ((ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
                                 event.lst.tel[telescope_id].evt.tib_pps_counter +
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
@@ -356,6 +370,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                              Try ucts (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
+                            # TODO: event_timestamps are given in TAI scale. Transform them to UTC scale
+                            # to be compared with those from drive logs
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
