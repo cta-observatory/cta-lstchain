@@ -219,11 +219,9 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
 
     """
 
-    if not (len(n_excesses) == n_bins_energy and
-        len(n_background) == n_bins_energy and
-        len(alpha) == n_bins_energy):
-        print("Excess, background and alpha arrays must have the same length")
-        return
+    if any(len(a) != n_bins_energy for a in (n_excesses, n_background, alpha)):
+        raise ValueError(
+            'Excess, background and alpha arrays must have the same length')
 
     stat = WStatCountsStatistic(
         n_on=np.ones_like(n_background),
