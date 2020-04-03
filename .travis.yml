@@ -5,16 +5,13 @@ python:
     - 3.6
     - 3.7
 
-env:
-    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.4.1" PROTOZFITS_VERSION=v1.4.2
-    - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
 
 matrix:
   allow_failures:
       - env: CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
 
   include:
-      - env: CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.2" PROTOZFITS_VERSION=v1.4.2
+      - env: CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.4.1" PROTOZFITS_VERSION=v1.4.2
 
 
 before_install:
