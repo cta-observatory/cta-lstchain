@@ -1,3 +1,4 @@
+---
 language: python
 
 python:
@@ -17,7 +18,6 @@ matrix:
 
 
 before_install:
-
     # Use utf8 encoding. Should be default, but this is insurance
     # against future changes
     - export PYTHONIOENCODING=UTF8
@@ -29,16 +29,21 @@ before_install:
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda  # get latest conda version
-    - conda info -a # Useful for debugging any issues with conda
+    - conda info -a  # Useful for debugging any issues with conda
 
 install:
     - conda env create --file environment.yml
     - conda activate lst-dev
-    - pip install https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz
-    - pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz
-    - python setup.py install
+    - |
+      pip install \
+      https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz \
+      https://github.com/cta-observatory/ctapipe_io_lst/archive/$CTAPIPE_IO_LST_VERSION.tar.gz \
+      pytest-cov codecov
+    - pip install .
 
 
 script:
-    - pytest lstchain
+    - pytest --cov lstchain --cov-report=xml lstchain
 
+after_success:
+    - codecov
