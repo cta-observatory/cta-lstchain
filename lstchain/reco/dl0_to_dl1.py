@@ -198,7 +198,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     cal_mc = load_calibrator_from_config(config)
 
-    
+    # minimum number of pe in a pixel to include it in calculation of muon ring time (peak sample):
+    min_pe_for_muon_t_calc = 10.
+
     # Dictionary to store muon ring parameters
     muon_parameters  = create_muon_table()
 
@@ -222,7 +224,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
         r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
                                                                time_calibration_path = time_calibration_path,
-                                                               extractor_product = 'GlobalPeakWindowSum',
+                                                               extractor_product = config['image_extractor_for_muons'],
                                                                gain_threshold = Config(config).gain_selector_config['threshold'],
                                                                config = Config(config),
                                                                allowed_tels = [1],)
@@ -434,25 +436,52 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                         # process only promising events, in terms of # of pixels with large signals:
                         if tag_pix_thr(image): 
 
-                            # re-calibrate r1, using a better pulse integrator for muon rings:
-                            # NOTE!! As soon as we have >1 telescope we need to have one such calibrator r1_dl1_calibrator_for_muon_rings
-                            # per camera, since we do not want to re-calibrate all cameras whenever one of them has a candidate muon ring!
+                            # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
+                            numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!
+                            bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                            bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
+                            # Now set to 0 all samples in unreliable pixels. Important for global peak
+                            # integrator in case of crazy pixels!  TBD: can this be done in a simpler
+                            # way?
+                            bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
+                                                      np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+
+                            # print('hg bad pixels:',np.where(bad_pixels_hg))
+                            # print('lg bad pixels:',np.where(bad_pixels_lg))
+
+                            event.r1.tel[telescope_id].waveform *= ~bad_waveform
                             r1_dl1_calibrator_for_muon_rings(event)
+
                             tel = event.dl1.tel[telescope_id]
                             image = tel.image*(~bad_pixels)
 
-                            # read geometry from event.inst. But not needed for every event. FIXME?
-                            geom = event.inst.subarray.tel[telescope_id].camera
+                            # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
+                            # perhaps the event is no longer promising (e.g. if it has a large time evolution)
+                            if not tag_pix_thr(image):
+                                good_ring = False
+                            else:
+                                # read geometry from event.inst. But not needed for every event. FIXME?
+                                geom = event.inst.subarray.tel[telescope_id].camera
 
-                            muonintensityparam, size_outside_ring, muonringparam, good_ring, \
-                                radial_distribution, mean_pixel_charge_around_ring = analyze_muon_event(event.r0.event_id, image, geom, foclen,
-                                                                                                        mirror_area, False, '')
-                            #                                                                        mirror_area, True, './') # (test) plot muon rings as png files
+                                muonintensityparam, size_outside_ring, muonringparam, good_ring, \
+                                    radial_distribution, mean_pixel_charge_around_ring = \
+                                    analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                                       mirror_area, False, '')
+                                #                      mirror_area, True, './') # (test) plot muon rings as png files
+
+                                # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
+                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:,image>min_pe_for_muon_t_calc,:]
+                                stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+                                # stacked waveforms from all bright pixels; shape (ngains, nsamples)
+                                hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
+                                lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+
 
                             if good_ring:
-                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time, muonintensityparam, muonringparam,
-                                                radial_distribution, size_outside_ring, mean_pixel_charge_around_ring)
-
+                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
+                                                muonintensityparam, muonringparam, radial_distribution,
+                                                size_outside_ring, mean_pixel_charge_around_ring,
+                                                hg_peak_sample, lg_peak_sample)
 
 
                     # writes mc information per telescope, including photo electron image

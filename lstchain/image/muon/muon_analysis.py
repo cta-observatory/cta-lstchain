@@ -167,7 +167,6 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             cam_rad,
             muonringparam.ring_center_x,
             muonringparam.ring_center_y)
-
     
     radial_distribution = radial_light_distribution(
         muonringparam.ring_center_x,
@@ -361,6 +360,10 @@ def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
     -------
     standard_dev, skewness
     """
+
+    if np.sum(image) == 0:
+        return {'standard_dev' : np.nan*u.deg, 'skewness' : np.nan, 'excess_kurtosis' : np.nan}
+
     # Convert everything to degrees:
     x0 = center_x.to_value(u.deg)
     y0 = center_y.to_value(u.deg)
@@ -402,12 +405,15 @@ def create_muon_table():
             'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
             'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
             'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
-            'mean_pixel_charge_around_ring' : []  # Average pixel charge in pixels surrounding the outer part of the ring 
+            'mean_pixel_charge_around_ring' : [], # Average pixel charge in pixels surrounding the outer part of the ring 
+            'hg_peak_sample' : [],                # Peak sample of stacked HG waveforms of bright ring pixels
+            'lg_peak_sample' : [],                # Peak sample of stacked LG waveforms of bright ring pixels
     }
 
 
 def fill_muon_event(output_parameters, good_ring, event_id, event_time, muonintensityparam, muonringparam,
-                    radial_distribution, size_outside_ring, mean_pixel_charge_around_ring):
+                    radial_distribution, size_outside_ring, mean_pixel_charge_around_ring,
+                    hg_peak_sample=np.nan, lg_peak_sample=np.nan):
 
     output_parameters['event_id'].append(event_id)
     output_parameters['event_time'].append(event_time)
@@ -430,5 +436,6 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time, muoninte
     output_parameters['radial_excess_kurtosis'].append(radial_distribution['excess_kurtosis'])
     output_parameters['num_pixels_in_ring'].append(np.sum(muonintensityparam.mask))
     output_parameters['mean_pixel_charge_around_ring'].append(mean_pixel_charge_around_ring)
-
+    output_parameters['hg_peak_sample'].append(hg_peak_sample)
+    output_parameters['lg_peak_sample'].append(lg_peak_sample)
     return
