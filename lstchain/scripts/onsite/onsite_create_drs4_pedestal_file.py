@@ -45,7 +45,7 @@ def main():
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
         if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found\n")
+            print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
             raise NameError()
         else:
             input_file = f"{file_list[0]}"
