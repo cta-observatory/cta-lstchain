@@ -47,6 +47,23 @@ parser.add_argument('--pointing_file_path', '-pointing', action='store', type=st
                     default=None
                     )
 
+parser.add_argument('--ucts_t0', action='store', type=float,
+                    dest='ucts_t0',
+                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
+                          first event of the run with valid timestamp. If none is \
+                          passed, the start-of-the-run timestamp is provided, hence \
+                          Dragon timestmap is not reliable.',
+                    default=None
+                    )
+
+parser.add_argument('--dragon_counter0', action='store', type=float,
+                    dest='dragon_counter0',
+                    help='Dragon counter (pps + 10MHz) in nsecs corresponding \
+                          to the first reliable UCTS of the run. To be provided \
+                          along with ucts_t0.',
+                    default=None
+                    )
+
 
 args = parser.parse_args()
 
@@ -70,7 +87,9 @@ def main():
                          pedestal_path=args.pedestal_path,
                          calibration_path=args.calibration_path,
                          time_calibration_path=args.time_calibration_path,
-                         pointing_file_path=args.pointing_file_path
+                         pointing_file_path=args.pointing_file_path,
+                         ucts_t0=args.ucts_t0,
+                         dragon_counter0=args.dragon_counter0
                          )
 
 
