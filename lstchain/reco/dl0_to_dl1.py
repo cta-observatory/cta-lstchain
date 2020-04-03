@@ -140,7 +140,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
               pedestal_path = None,
               calibration_path = None,
               time_calibration_path = None,
-              pointing_file_path = None
+              pointing_file_path = None,
+              ucts_t0 = None,
+              dragon_counter0 = None
               ):
     """
     Chain r0 to dl1
@@ -314,40 +316,33 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
                         # These TS are stored into ucts_time container.
-                        # TS can be alternatively calculated from the TIB and Dragon module
-                        # counters by using the first UCTS TS as the reference point.
-                        # For the time being, the three TS are stored in the DL1 files
-                        # for checking purposes.
+                        # TS can be alternatively calculated from the TIB and 
+                        # Dragon modules counters based on the first valid UCTS TS
+                        # as the reference point. For the time being, the three TS
+                        # are stored in the DL1 files for checking purposes.
 
-                        # gps_time = event.r0.tel[telescope_id].trigger_time
-
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # nsecs
+                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
 
                         module_id = 82  # Get counters from the central Dragon module
 
-                        if i == 0:
-                            first_ucts_time = ucts_time
-
-                            initial_dragon_counter = (
+                        if ucts_t0 and dragon_counter0:
+                            dragon_time = ((ucts_t0 - dragon_counter0) * 1e-9 +  # secs
+                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+                            # TODO: include tib_time with proper ucts_t0 origin
+                        else:
+                            # Dragon/TIB timestamps do not have a valid absolute reference timestamp
+                            dragon_time = (event.lst.tel[telescope_id].svc.date +
                                 event.lst.tel[telescope_id].evt.pps_counter[module_id] +
                                 event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
 
-                            initial_tib_counter = (
+                            tib_time = (event.lst.tel[telescope_id].svc.date +
                                 event.lst.tel[telescope_id].evt.tib_pps_counter +
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
-                        dragon_time = (first_ucts_time - initial_dragon_counter +
-                            event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                            event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
-
-                        tib_time = (first_ucts_time - initial_tib_counter +
-                            event.lst.tel[telescope_id].evt.tib_pps_counter +
-                            event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
-
-                        #dl1_container.gps_time = gps_time
-                        dl1_container.tib_time = tib_time
                         dl1_container.ucts_time = ucts_time
                         dl1_container.dragon_time = dragon_time
+                        dl1_container.tib_time = tib_time
 
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
