@@ -385,12 +385,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
-                        ucts_time_tai = Time(ucts_time, format='unix', scale='tai') 
-                        ucts_time_utc = Time(ucts_time_tai.utc.jd, format='jd', scale='tai')
-                        dragon_time_tai = Time(dragon_time, format='unix', scale='tai') 
-                        dragon_time_utc = Time(dragon_time_tai.utc.jd, format='jd', scale='tai')
-                        tib_time_tai = Time(tib_time, format='unix', scale='tai') 
-                        tib_time_utc = Time(tib_time_tai.utc.jd, format='jd', scale='tai')
+                        ucts_time_utc = unix_tai_to_utc(ucts_time)
+                        dragon_time_utc = unix_tai_to_utc(dragon_time)
+                        tib_time_utc = unix_tai_to_utc(tib_time)
 
                         dl1_container.ucts_time = ucts_time_utc.unix
                         dl1_container.dragon_time = dragon_time_utc.unix
@@ -583,3 +580,9 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
         add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
+
+
+def unix_tai_to_utc(timestamp):
+    '''Workaround for unix time in scale TAI'''
+    tai = Time(timestamp, format='unix', scale='tai')
+    return Time(tai.utc.jd, format='jd', scale='tai')
