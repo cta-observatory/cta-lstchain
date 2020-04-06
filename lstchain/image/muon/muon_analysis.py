@@ -47,7 +47,7 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
         y=geom.pix_y,
         frame=CameraFrame(
             focal_length=equivalent_focal_length,
-            rotation=geom.camera_rotation,
+            rotation=geom.cam_rotation,
         )
     )
     tel_coord = camera_coord.transform_to(TelescopeFrame())
