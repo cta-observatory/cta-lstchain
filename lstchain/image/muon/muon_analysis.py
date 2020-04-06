@@ -85,21 +85,23 @@ def fit_muon(x, y, image, geom, tailcuts):
     ring = fitter.fit(x, y, image_clean)
 
     max_allowed_outliers_distance = 0.4
-    # Do an iterative fit removing pixels which are beyond max_allowed_outliers_distance*ring_radius
-    # of the ring (along the radial direction):
-    # The goal is to improve fit for good rings with very few additional non-ring bright pixels.
 
+    # Do an iterative fit removing pixels which are beyond
+    # max_allowed_outliers_distance * ring_radius of the ring
+    # (along the radial direction)
+    # The goal is to improve fit for good rings
+    # with very few additional non-ring bright pixels.
     for _ in (0, 0):  # just to iterate the fit twice more
         dist = np.sqrt(
             (x - ring.ring_center_x)**2 + (y - ring.ring_center_y)**2
         )
         ring_dist = np.abs(dist - ring.ring_radius)
-        muonringparam = fitter.fit(
+        ring = fitter.fit(
             x, y,
             image_clean * (ring_dist < ring.ring_radius * max_allowed_outliers_distance)
         )
 
-    return muonringparam, clean_mask, dist, image_clean
+    return ring, clean_mask, dist, image_clean
 
 
 def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
