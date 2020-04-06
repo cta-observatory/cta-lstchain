@@ -375,8 +375,8 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     dl2 = dl1.copy()
     #Reconstruction of Energy and disp_norm distance
-    dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
-    dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
+    dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features]) - 3
+    dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
     disp_vector = reg_disp_vector.predict(dl2[regression_features])
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
