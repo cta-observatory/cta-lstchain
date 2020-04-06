@@ -45,6 +45,7 @@ import astropy.units as u
 from astropy.table import Table
 from astropy.time import Time
 from .utils import sky_to_camera
+from .utils import unix_tai_to_utc
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
 from ..calib.camera.calibrator import LSTCameraCalibrator
@@ -580,9 +581,3 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
         add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
-
-
-def unix_tai_to_utc(timestamp):
-    '''Workaround for unix time in scale TAI'''
-    tai = Time(timestamp, format='unix', scale='tai')
-    return Time(tai.utc.jd, format='jd', scale='tai')
