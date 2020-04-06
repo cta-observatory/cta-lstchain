@@ -59,7 +59,7 @@ class DL1ParametersContainer(Container):
     tib_time = Field(None, 'TIB time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
-    log_mc_energy = Field(None, 'log of simulated energy/GeV')
+    log_mc_energy = Field(None, 'log of simulated energy/TeV')
     mc_alt = Field(None, 'Simulated altitude', unit=u.rad)
     mc_az = Field(None, 'Simulated azimuth', unit=u.rad)
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
