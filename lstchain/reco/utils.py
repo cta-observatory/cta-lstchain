@@ -470,6 +470,9 @@ def clip_alt(alt):
 
 
 def unix_tai_to_utc(timestamp):
-    '''Workaround for unix time in scale TAI'''
-    tai = Time(timestamp, format='unix', scale='tai')
-    return Time(tai.utc.jd, format='jd', scale='tai')
+    """
+    Transform unix time from TAI to UTC scale considering the leap seconds
+    by adding the timestamp in seconds to the epoch value.
+    """
+    UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
+    return UCTS_EPOCH + u.Quantity(timestamp, u.s, copy=False)
