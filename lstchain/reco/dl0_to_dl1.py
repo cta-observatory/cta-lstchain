@@ -43,6 +43,7 @@ import pandas as pd
 from . import disp
 import astropy.units as u
 from astropy.table import Table
+from astropy.time import Time
 from .utils import sky_to_camera
 from ctapipe.instrument import OpticsDescription
 from traitlets.config.loader import Config
@@ -383,24 +384,30 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                 event.lst.tel[telescope_id].evt.tib_pps_counter +
                                 event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
 
-                        dl1_container.ucts_time = ucts_time
-                        dl1_container.dragon_time = dragon_time
-                        dl1_container.tib_time = tib_time
+                        # FIXME: directly use unix_tai format whenever astropy v4.1 is out
+                        ucts_time_tai = Time(ucts_time, format='unix', scale='tai') 
+                        ucts_time_utc = Time(ucts_time_tai.utc.jd, format='jd', scale='tai')
+                        dragon_time_tai = Time(dragon_time, format='unix', scale='tai') 
+                        dragon_time_utc = Time(dragon_time_tai.utc.jd, format='jd', scale='tai')
+                        tib_time_tai = Time(tib_time, format='unix', scale='tai') 
+                        tib_time_utc = Time(tib_time_tai.utc.jd, format='jd', scale='tai')
+
+                        dl1_container.ucts_time = ucts_time_utc.unix
+                        dl1_container.dragon_time = dragon_time_utc.unix
+                        dl1_container.tib_time = tib_time_utc.unix
 
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
-                            event_timestamps = ucts_time
+                            event_timestamps = ucts_time_utc.unix
                         elif config['timestamps_pointing'] == "dragon":
-                            event_timestamps = dragon_time
+                            event_timestamps = dragon_time_utc.unix
                         elif config['timestamps_pointing'] == "tib":
-                            event_timestamps = tib_time
+                            event_timestamps = tib_time_utc.unix
                         else:
                             raise ValueError("The timestamps_pointing option is not a valid one. \
                                              Try ucts (default), dragon or tib.")
 
                         if pointing_file_path and event_timestamps > 0:
-                            # TODO: event_timestamps are given in TAI scale. Transform them to UTC scale
-                            # to be compared with those from drive logs
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
                             event.pointing[telescope_id].azimuth = azimuth
                             event.pointing[telescope_id].altitude = altitude
