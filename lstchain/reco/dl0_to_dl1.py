@@ -344,7 +344,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                     # Log10(Energy) in GeV
                     if is_simu:
                         dl1_container.mc_energy = event.mc.energy.value
-                        dl1_container.log_mc_energy = np.log10(event.mc.energy.value * 1e3)
+                        dl1_container.log_mc_energy = np.log10(event.mc.energy.value)
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
