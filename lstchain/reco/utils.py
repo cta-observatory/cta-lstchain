@@ -33,6 +33,7 @@ __all__ = [
     'polar_to_cartesian',
     'cartesian_to_polar',
     'predict_source_position_in_camera',
+    'unix_tai_to_utc'
 ]
 
 
@@ -361,8 +362,6 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
     return reco_src_x, reco_src_y
 
 
-
-
 def expand_tel_list(tel_list, max_tels):
     """
     transform for the telescope list (to turn it into a telescope pattern)
@@ -461,9 +460,16 @@ def impute_pointing(dl1_data, missing_values=np.nan):
         dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
     return dl1_data
 
+
 def clip_alt(alt):
     """
     Make sure altitude is not larger than 90 deg (it happens in some MC files for zenith=0),
     to keep astropy happy
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
+
+
+def unix_tai_to_utc(timestamp):
+    '''Workaround for unix time in scale TAI'''
+    tai = Time(timestamp, format='unix', scale='tai')
+    return Time(tai.utc.jd, format='jd', scale='tai')
