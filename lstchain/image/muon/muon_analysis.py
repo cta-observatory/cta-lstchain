@@ -39,7 +39,7 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
 
     Returns
     ---------
-    x, y:    `floats` coordinates in  the NominalFrame
+    delta_az, delta_alt:    `floats` coordinates in  the TelescopeFrame
     """
 
     camera_coord = SkyCoord(
@@ -61,7 +61,7 @@ def fit_muon(x, y, image, geom, tailcuts):
 
     Paramenters
     ---------
-    x, y:    `floats` coordinates in  the NominalFrame
+    x, y:    `floats` coordinates in  the TelescopeFrame
     image:   `np.ndarray` number of photoelectrons in each pixel
     geom:    CameraGeometry
     image:   `list` tail cuts for image cleaning
@@ -262,18 +262,17 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         good_ring = False
 
     if(plot_rings and plots_path and good_ring):
-        altaz = AltAz(alt = 70 * u.deg, az = 0 * u.deg)
         focal_length = equivalent_focal_length
-        ring_nominal = SkyCoord(
-                delta_az = muonringparam.ring_center_x,
-                delta_alt = muonringparam.ring_center_y,
-                frame = NominalFrame(origin=altaz)
-            )
+        ring_telescope = SkyCoord(
+            delta_az=muonringparam.ring_center_x,
+            delta_alt=muonringparam.ring_center_y,
+            frame=TelescopeFrame()
+        )
 
-        ring_camcoord = ring_nominal.transform_to(CameraFrame(
-                focal_length = focal_length,
-                rotation = geom.pix_rotation,
-                telescope_pointing = altaz))
+        ring_camcoord = ring_telescope.transform_to(CameraFrame(
+            focal_length=focal_length,
+            rotation=geom.cam_rotation,
+        ))
         centroid = (ring_camcoord.x.value, ring_camcoord.y.value)
         radius = muonringparam.ring_radius
         width = muonintensityoutput.ring_width
@@ -282,7 +281,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         ringrad_inner = ringrad_camcoord * (1. - ringwidthfrac)
         ringrad_outer = ringrad_camcoord * (1. + ringwidthfrac)
 
-        fig, ax = plt.subplots(figsize=(10,10))
+        fig, ax = plt.subplots(figsize=(10, 10))
         plot_muon_event(ax, geom, image * clean_mask, centroid, ringrad_camcoord,
                         ringrad_inner, ringrad_outer, event_id)
 
