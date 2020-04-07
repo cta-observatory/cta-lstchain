@@ -148,7 +148,7 @@ class LSTR0Corrections(CameraR0Calibrator):
 
             event.r1.tel[tel_id].trigger_time = event.r0.tel[tel_id].trigger_time
 
-            samples = event.r0.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
+            samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
             event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
 
@@ -178,7 +178,7 @@ class LSTR0Corrections(CameraR0Calibrator):
                                         n_modules)
 
         event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
-        event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
+        event.r1.tel[self.tel_id].trigger_time = event.r1.tel[self.tel_id].trigger_time
         event.r1.tel[self.tel_id].waveform = samples[:, :, :]
 
 
