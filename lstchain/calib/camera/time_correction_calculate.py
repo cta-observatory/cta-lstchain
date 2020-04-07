@@ -102,9 +102,9 @@ class TimeCorrectionCalculate(Component):
                                       min_charge=self.minimum_charge)
             self.sum_events += 1
 
+    @staticmethod
     @jit(parallel=True)
-    def calib_pulse_time_jit(self,
-                             charge,
+    def calib_pulse_time_jit(charge,
                              pulse_time,
                              pixel_ids,
                              first_cap_array,
