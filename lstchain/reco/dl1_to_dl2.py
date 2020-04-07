@@ -247,7 +247,7 @@ def train_sep(train, custom_config={}):
 
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
-                 energy_min=-1,
+                 energy_min=-np.inf,
                  custom_config={},
                  test_size=0.2,
                  ):
