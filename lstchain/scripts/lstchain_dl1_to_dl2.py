@@ -10,7 +10,7 @@ $> python lst-recopipe arg1 arg2 ...
 """
 
 from lstchain.reco import dl1_to_dl2
-from sklearn.externals import joblib
+import joblib
 import argparse
 import os
 import shutil
