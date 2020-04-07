@@ -49,7 +49,7 @@ true_hadroness:
              histtype=u'step',bins=100,
              label="Protons")
     plt.ylabel(r'# of events',fontsize=15)
-    plt.xlabel(r"$log_{10}E$(GeV)")
+    plt.xlabel(r'$\log_{10}(E_\mathrm{true} / \mathrm{TeV})$')
     plt.legend()
 
     #disp_ distribution
@@ -200,7 +200,7 @@ def plot_e(data, n_bins, emin, emax, true_hadroness=False):
     plt.plot(bin_centers,standard_deviations,
              marker='X',linestyle='None')
     plt.ylabel('STD',fontsize=24)
-    plt.xlabel('$log_{10}E_{true}(GeV)$',fontsize=24)
+    plt.xlabel(r'$\log_{10}(E_\mathrm{true} / \mathrm{TeV})$',fontsize=24)
 
 
     plt.subplots_adjust(hspace=.0)
@@ -432,7 +432,7 @@ def plot_e_resolution(data, n_bins, emin, emax):
     plot1 = ax1.plot(bin_centers,standard_deviations,
                      marker='X',linestyle='None')
     plt.ylabel('STD',fontsize=24)
-    plt.xlabel('$log_{10}E_{true}(GeV)$',fontsize=24)
+    plt.xlabel(r'$\log_{10}(E_\mathrm{true} / \mathrm{TeV})$',fontsize=24)
     plt.grid()
 
     subplot2 = plt.subplot(gs0[1])
