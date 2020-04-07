@@ -219,9 +219,10 @@ def test_polar_cartesian():
             p = cartesian_to_polar(x, y)
             np.testing.assert_almost_equal((x, y), polar_to_cartesian(*p))
 
+
 def test_version_not_unkown():
     """
     Test that lstchain.__version__ is not unkown
     """
     import lstchain
-    assert lstchain.__version__ is not 'unknown'
+    assert lstchain.__version__ != 'unknown'

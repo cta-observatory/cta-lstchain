@@ -32,28 +32,27 @@ def test_diff_sp():
 
 def test_rate():
     
+    shape = 'PowerLaw'
     emin = 20.     # u.GeV
     emax = 300.e3  # u.GeV
-    spectral_index = -3.
-    e0 = 300.     # u.GeV
+    param = {'f0':1.e-11, 'e0':300, 'alpha': -3}
     area = 1.e9
     cone = 0
-    norm = 1.e-11
 
-    np.testing.assert_allclose(rate(emin, emax, spectral_index, 
-                                    cone, area, norm, e0), 
+    np.testing.assert_allclose(rate(shape, emin, emax, param, 
+                                    cone, area), 
                                337.5, rtol=1e-3)
 
 def test_weight():
-    
+
+    shape = 'PowerLaw'
     emin = 10.     # u.GeV
     emax = 50.e3  # u.GeV
     sim_sp_idx = -2.
-    w_sp_idx = -2.6
-    e0 = 1000.     # u.GeV
+    w_param = {'f0':1.e-11, 'e0':1000, 'alpha': -2.6}
     rate = 8.
     nev = 1.e6
 
-    np.testing.assert_allclose(weight(emin, emax, sim_sp_idx, 
-                                      w_sp_idx, rate, nev, e0), 
+    np.testing.assert_allclose(weight(shape, emin, emax, sim_sp_idx, 
+                                      rate, nev, w_param), 
                                8.07e-7, rtol=1e-3)
