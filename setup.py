@@ -42,7 +42,8 @@ setup(
     install_requires=[
       'ctapipe',
       'h5py',
-      'seaborn'
+      'seaborn',
+      'joblib',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
