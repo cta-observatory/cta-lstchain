@@ -1,7 +1,9 @@
 import numpy as np
 from astropy.io import fits
 from ctapipe.core import Component
-from ctapipe.core.traits import Unicode, Int
+from ctapipe.core.traits import Unicode, Int, List
+from ctapipe.io.containers import MonitoringContainer
+from ctapipe.io.hdf5tableio import HDF5TableReader
 from abc import abstractmethod
 from numba import jit, prange
 
@@ -84,6 +86,17 @@ class LSTR0Corrections(CameraR0Calibrator):
                             allow_none=True,
                             help='Path to the LST pedestal binary file'
                             ).tag(config=True)
+    calibration_path = Unicode(
+        '',
+        allow_none=True,
+        help='Path to LST calibration file'
+    ).tag(config=True)
+
+    allowed_tels = List(
+        [1],
+        help = 'List of telescope to be calibrated'
+    ).tag(config = True)
+
 
     def __init__(self, **kwargs):
         """
@@ -99,6 +112,9 @@ class LSTR0Corrections(CameraR0Calibrator):
             Tool executable that is calling this component.
             Passes the correct logger to the component.
             Set to None if no Tool to pass.
+        calibration_path :
+            Path to LST calibration file to get the pedestal and flat-field corrections
+
         kwargs
         """
         super().__init__(**kwargs)
@@ -135,8 +151,10 @@ class LSTR0Corrections(CameraR0Calibrator):
         self.first_cap_old_array = np.zeros((self.n_module,
                                              self.n_gain,
                                              self.n_pix))
+        self.mon_data = MonitoringContainer()
 
         self._load_calib()
+
 
     def calibrate(self, event):
         for tel_id in event.r0.tels_with_data:
@@ -151,6 +169,9 @@ class LSTR0Corrections(CameraR0Calibrator):
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
             event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
+
+            if self.calibration_path:
+                self.convert_dc_to_pe(event, tel_id)
 
 
     def subtract_pedestal(self, event, tel_id):
@@ -289,6 +310,22 @@ class LSTR0Corrections(CameraR0Calibrator):
             event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
             event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
 
+
+    def convert_dc_to_pe(self, event, tel_id):
+        if not isinstance(event.r1.tel[tel_id].waveform, np.ndarray):
+            return
+
+        waveforms = event.r1.tel[tel_id].waveform
+        event.mon.tel[tel_id].calibration = self.mon_data.tel[tel_id].calibration
+        event.mon.tel[tel_id].pixel_status = self.mon_data.tel[tel_id].pixel_status
+
+        # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
+        #
+        pedestal_per_sample = self.mon_data.tel[tel_id].calibration.pedestal_per_sample[:, :, np.newaxis]
+        dc_to_pe = self.mon_data.tel[tel_id].calibration.dc_to_pe[:, :, np.newaxis]
+        event.r1.tel[tel_id].waveform = (waveforms - pedestal_per_sample) * dc_to_pe
+
+
     @staticmethod
     @jit(parallel=True)
     def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules):
@@ -400,9 +437,10 @@ class LSTR0Corrections(CameraR0Calibrator):
                                 interpolate_spike_A(waveform, gain, spike_A_position, pixel)
         return waveform
 
+
     def _load_calib(self):
         """
-        Function to load pedestal file.
+        Function to load pedestal and calibration files.
         """
         if self.pedestal_path:
             with fits.open(self.pedestal_path) as f:
@@ -411,6 +449,33 @@ class LSTR0Corrections(CameraR0Calibrator):
                                                     pedestal_data - self.offset
                 self.pedestal_value_array[:, :, self.size4drs:self.size4drs + 40] \
                     = pedestal_data[:, :, 0:40] - self.offset
+
+        if not self.calibration_path:
+            self.log.info("no dc to pe conversion done as no calibration file as been given")
+            return
+
+        self.mon_data.tels_with_data = self.allowed_tels
+        self.log.info(f"read {self.calibration_path}")
+        try:
+            with HDF5TableReader(self.calibration_path) as h5_table:
+                assert h5_table._h5file.isopen == True
+                for telid in self.allowed_tels:
+                    # read the calibration data for the moment only one event
+                    table = '/tel_' + str(telid) + '/calibration'
+                    next(h5_table.read(table, self.mon_data.tel[telid].calibration))
+
+                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
+                    # put to zero unusable pixels
+                    dc_to_pe[self.mon_data.tel[telid].calibration.unusable_pixels] = 0
+                    # eliminate inf values id any (should be done probably before)
+                    dc_to_pe[np.isinf(dc_to_pe)] = 0
+
+                    # read the pixel_status container
+                    table = '/tel_' + str(telid) + '/pixel_status'
+                    next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
+        except:
+            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
+
 
     def _get_first_capacitor(self, event, nr_module, tel_id):
         """

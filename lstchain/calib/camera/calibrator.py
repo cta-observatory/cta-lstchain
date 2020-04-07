@@ -4,7 +4,6 @@ from ctapipe.core.traits import Unicode, List, Int
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import *
 from ctapipe.image.extractor import *
-from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.io.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
@@ -25,12 +24,6 @@ class LSTCameraCalibrator(CameraCalibrator):
     reducer_product = Unicode(
         'NullDataVolumeReducer',
         help = 'Name of the DataVolumeReducer to use'
-    ).tag(config = True)
-
-    calibration_path = Unicode(
-        '',
-        allow_none = True,
-        help = 'Path to LST calibration file'
     ).tag(config = True)
 
     time_calibration_path = Unicode(
@@ -62,9 +55,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         extractor_product : ctapipe.image.extractor.ImageExtractor
             The ImageExtractor to use. If None, then LocalPeakWindowSum
             will be used by default.
-        calibration_path :
-            Path to LST calibration file to get the pedestal and flat-field corrections
-
 
         kwargs
         """
@@ -101,36 +91,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         # calibration data container
         self.mon_data = MonitoringContainer()
 
-        # initialize the MonitoringContainer() for the moment it reads it from a hdf5 file
-        self._initialize_correction()
-
-    def _initialize_correction(self):
-        """
-        Read the correction from hdf5 calibration file
-        """
-
-        self.mon_data.tels_with_data = self.allowed_tels
-        self.log.info(f"read {self.calibration_path}")
-
-        try:
-            with HDF5TableReader(self.calibration_path) as h5_table:
-                assert h5_table._h5file.isopen == True
-                for telid in self.allowed_tels:
-                    # read the calibration data for the moment only one event
-                    table = '/tel_' + str(telid) + '/calibration'
-                    next(h5_table.read(table, self.mon_data.tel[telid].calibration))
-
-                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
-                    # put to zero unusable pixels
-                    dc_to_pe[self.mon_data.tel[telid].calibration.unusable_pixels] = 0
-                    # eliminate inf values id any (should be done probably before)
-                    dc_to_pe[np.isinf(dc_to_pe)] = 0
-
-                    # read the pixel_status container
-                    table = '/tel_' + str(telid) + '/pixel_status'
-                    next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
-        except:
-            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
 
     def _calibrate_dl0(self, event, telid):
         """
@@ -141,17 +101,9 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
         
         event.dl0.event_id = event.r1.event_id
-        event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
-        event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
+        # subtraction of the pedestal per sample and multiplication by the calibration coefficients done at R1
+        event.dl0.tel[telid].waveform = event.r1.tel[telid].waveform
 
-
-        # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
-        #
-
-
-        event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
 
     def _calibrate_dl1(self, event, telid):
         """
@@ -173,7 +125,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # otherwise use the ff time correction (not drs4 corrected)
         else:
-            pulse_corr_array = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+            pulse_corr_array = pulse_time + event.mon.tel[telid].calibration.time_correction
 
         # perform the gain selection if the threshold is defined
 

@@ -221,11 +221,11 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
         # TODO : add DRS4 calibration config in config file, read it and pass it here
         r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
+                                            calibration_path=calibration_path,
                                             tel_id = 1)
 
         # all this will be cleaned up in a next PR related to the configuration files
-        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                time_calibration_path = time_calibration_path,
+        r1_dl1_calibrator = LSTCameraCalibrator(time_calibration_path = time_calibration_path,
                                                 extractor_product = config['image_extractor'],
                                                 gain_threshold = Config(config).gain_selector_config['threshold'],
                                                 config = Config(config),
@@ -234,8 +234,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
-        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                               time_calibration_path = time_calibration_path,
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(time_calibration_path = time_calibration_path,
                                                                extractor_product = config['image_extractor_for_muons'],
                                                                gain_threshold = Config(config).gain_selector_config['threshold'],
                                                                config = Config(config),
