@@ -1,6 +1,6 @@
 import argparse
 from ctapipe.utils import get_dataset_path
-from lstchain.reco import dl0_to_dl1
+from lstchain.reco import r0_to_dl1
 from lstchain.io.config import read_configuration_file
 import os
 
@@ -31,7 +31,7 @@ def main():
 
     os.makedirs(args.outdir, exist_ok=True)
     
-    dl0_to_dl1.allowed_tels = {1, 2, 3, 4}
+    r0_to_dl1.allowed_tels = {1, 2, 3, 4}
     output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
 
     config = {}
@@ -41,7 +41,7 @@ def main():
         except("Custom configuration could not be loaded !!!"):
             pass
 
-    dl0_to_dl1.r0_to_dl1(args.infile, output_filename=output_filename, custom_config=config)
+    r0_to_dl1.r0_to_dl1(args.infile, output_filename=output_filename, custom_config=config)
 
 
 if __name__ == '__main__':
