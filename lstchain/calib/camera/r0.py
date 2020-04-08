@@ -315,15 +315,14 @@ class LSTR0Corrections(CameraR0Calibrator):
         if not isinstance(event.r1.tel[tel_id].waveform, np.ndarray):
             return
 
-        waveforms = event.r1.tel[tel_id].waveform
-        event.mon.tel[tel_id].calibration = self.mon_data.tel[tel_id].calibration
-        event.mon.tel[tel_id].pixel_status = self.mon_data.tel[tel_id].pixel_status
+        mon_data_tel = self.mon_data.tel[tel_id]
+        event.mon.tel[tel_id].calibration = mon_data_tel.calibration
+        event.mon.tel[tel_id].pixel_status = mon_data_tel.pixel_status
 
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
-        pedestal_per_sample = self.mon_data.tel[tel_id].calibration.pedestal_per_sample[:, :, np.newaxis]
-        dc_to_pe = self.mon_data.tel[tel_id].calibration.dc_to_pe[:, :, np.newaxis]
-        event.r1.tel[tel_id].waveform = (waveforms - pedestal_per_sample) * dc_to_pe
+        event.r1.tel[tel_id].waveform -= mon_data_tel.calibration.pedestal_per_sample[:, :, np.newaxis]
+        event.r1.tel[tel_id].waveform *= mon_data_tel.calibration.dc_to_pe[:, :, np.newaxis]
 
 
     @staticmethod
