@@ -474,7 +474,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
         except:
-            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
+            self.log.exception(f"Problem in reading calibration file {self.calibration_path}")
+            raise FileNotFoundError(f"Problem in reading calibration file {self.calibration_path}")
 
 
     def _get_first_capacitor(self, event, nr_module, tel_id):
