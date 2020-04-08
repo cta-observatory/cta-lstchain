@@ -14,7 +14,7 @@ from lstchain.tests.test_lstchain import dl1_file
 # from lstchain.tests.test_lstchain import dl2_file, dl2_params_lstcam_key  # uncomment when the tests loading dl2_file are written
 
 
-@pytest.mark.run(after='test_dl0_to_dl1')
+@pytest.mark.run(after='test_r0_to_dl1')
 def test_read_sim_par():
     par = read_sim_par(dl1_file)
 
