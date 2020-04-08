@@ -57,7 +57,7 @@ if __name__ == '__main__':
     if args.config_file is not None:
         cmd_r0_to_dl1 = cmd_r0_to_dl1 + f' -conf {args.config_file}'
 
-    cmd_dl1_to_dl2 = f'lstchain_mc_dl1_to_dl2.py -f {dl1_file} -p {args.path_models} -o {args.outdir}'
+    cmd_dl1_to_dl2 = f'lstchain_dl1_to_dl2.py -f {dl1_file} -p {args.path_models} -o {args.outdir}'
     if args.config_file is not None:
         cmd_dl1_to_dl2 = cmd_dl1_to_dl2 + f' -conf {args.config_file}'
 
