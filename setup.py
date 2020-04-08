@@ -44,7 +44,6 @@ setup(
       'h5py',
       'seaborn',
       'joblib',
-      'gammapy>=0.17'
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
