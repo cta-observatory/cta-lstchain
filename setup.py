@@ -40,10 +40,16 @@ setup(
     packages=find_packages(),
     py_modules='version',
     install_requires=[
+        'astropy',
         'ctapipe',
-        'h5py',
-        'seaborn',
         'gammapy>=0.17',
+        'h5py',
+        'numba',
+        'numpy',
+        'pandas',
+        'scipy',
+        'seaborn',
+        'tables',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
