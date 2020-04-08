@@ -26,8 +26,8 @@ def test_lstchain_trainpipe():
     assert os.path.exists(file_model_energy)
 
 @pytest.mark.run(after='test_lstchain_trainpipe')
-def test_lstchain_mc_dl1_to_dl2():
-    cmd = f'lstchain_mc_dl1_to_dl2 -f {dl1_file} -p {output_dir} -o {output_dir}'
+def test_lstchain_dl1_to_dl2():
+    cmd = f'lstchain_dl1_to_dl2 -f {dl1_file} -p {output_dir} -o {output_dir}'
     os.system(cmd)
     assert os.path.exists(dl2_file)
 
