@@ -40,9 +40,10 @@ setup(
     packages=find_packages(),
     py_modules='version',
     install_requires=[
-      'ctapipe',
-      'h5py',
-      'seaborn'
+        'ctapipe',
+        'h5py',
+        'seaborn',
+        'gammapy>=0.17',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
