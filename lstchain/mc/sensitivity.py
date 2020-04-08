@@ -9,10 +9,7 @@ from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
-try:
-    from gammapy.stats import WStatCountsStatistic
-except ImportError:
-    from gammapy.stats import wstat as WStatCountsStatistic
+from gammapy.stats import WStatCountsStatistic
 
 
 __all__ = ['read_sim_par',
