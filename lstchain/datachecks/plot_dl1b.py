@@ -2,6 +2,7 @@ import argparse
 from distutils.util import strtobool
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from matplotlib import pyplot as plt
+from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
@@ -165,14 +166,14 @@ def main():
         ax = axes[2][0]
         ax.hist(df_data['r'], histtype='step')
         ax.set_ylabel('Number of events')
-        ax.set_xlabel('r (m)')
+        ax.set_xlabel(r'$r$ (m)')
         ax.set_yscale('log')
 
         # Camera (cog)
         ax = axes[2][1]
-        cog = ax.hist2d(df_data['x'], df_data['y'], bins=100)
-        ax.set_xlabel('x (m)')
-        ax.set_ylabel('y (m)')
+        cog = ax.hist2d(df_data['x'], df_data['y'], bins=50, norm=LogNorm())
+        ax.set_xlabel(r'$x$ (m)')
+        ax.set_ylabel(r'$y$ (m)')
         fig.colorbar(cog[-1], ax=ax)
 
         plt.subplots_adjust(wspace=0.25)
