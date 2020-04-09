@@ -29,13 +29,11 @@ class LSTCameraCalibrator(CameraCalibrator):
 
     calibration_path = Unicode(
         '',
-        allow_none = True,
         help = 'Path to LST calibration file'
     ).tag(config = True)
 
     time_calibration_path = Unicode(
         '',
-        allow_none = True,
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
 
@@ -114,7 +112,6 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         try:
             with HDF5TableReader(self.calibration_path) as h5_table:
-                assert h5_table._h5file.isopen == True
                 for telid in self.allowed_tels:
                     # read the calibration data for the moment only one event
                     table = '/tel_' + str(telid) + '/calibration'
@@ -130,28 +127,27 @@ class LSTCameraCalibrator(CameraCalibrator):
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
         except:
-            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
+            self.log.exception(f"Problem in reading calibration file {self.calibration_path}")
+            raise FileNotFoundError(f"Problem in reading calibration file {self.calibration_path}")
 
     def _calibrate_dl0(self, event, telid):
         """
         create dl0 level, for the moment copy the r1
         """        
         waveforms = event.r1.tel[telid].waveform
+        tel_calibration = self.mon_data.tel[telid].calibration
         if self._check_r1_empty(waveforms):
             return
         
         event.dl0.event_id = event.r1.event_id
-        event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
+        event.mon.tel[telid].calibration = tel_calibration
         event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
-
 
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
-
-
         event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+                (waveforms - tel_calibration.pedestal_per_sample[:, :, np.newaxis])
+                * tel_calibration.dc_to_pe[:, :, np.newaxis])
 
     def _calibrate_dl1(self, event, telid):
         """
