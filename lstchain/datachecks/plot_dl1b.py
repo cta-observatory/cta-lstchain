@@ -217,9 +217,12 @@ def plot_dl1_params(infile, cuts=None, min_intensity=math.nan,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Plot DL1 image parameters")
 
-    parser.add_argument("--infile", '-f', type=str,
-                        dest='infile',
-                        help="Path to the DL1 input file")
+    requiredNamed = parser.add_argument_group('required arguments')
+
+    requiredNamed.add_argument("--infile", '-f', type=str,
+                               dest='infile',
+                               help="Path to the DL1 input file",
+                               required=True)
 
     parser.add_argument("--cuts", type=lambda x: bool(strtobool(x)),
                         dest='cuts',
