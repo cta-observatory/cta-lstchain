@@ -50,7 +50,7 @@ def main():
     df_data = pd.read_hdf(args.infile, key=dl1_params_lstcam_key)
 
     # Sort events using dragon timestamps
-    df_data.sort_values('trigger_time')
+    df_data.sort_values('dragon_time')
 
     # Apply cuts
     if args.cuts:
@@ -60,7 +60,7 @@ def main():
                           (df_data['wl'] > args.wl_cut)]
 
     # Determine the duration of the total number of events in the file
-    timestamps = df_data['trigger_time'][df_data['trigger_time'] > 0]
+    timestamps = df_data['dragon_time'][df_data['dragon_time'] > 0]
     duration = timestamps.iloc[-1] - timestamps.iloc[0]
     e_bins = int(np.round(duration) / 10)  # 10 secs bin
     weight_time = np.ones_like(timestamps) * 0.1  # Beware the factor 10
@@ -215,7 +215,7 @@ def main():
         ax1.plot(df_data['event_id'][df_data['tib_time'] > 0],
                  df_data['tib_time'][df_data['tib_time'] > 0],
                  label='TIB')
-        ax1.plot(df_data['event_id'], df_data['trigger_time'],
+        ax1.plot(df_data['event_id'], df_data['dragon_time'],
                  '--', label='Dragon')
         ax1.set_ylabel('Timestamps (sec)')
         ax1.set_xlabel('Event Id')
@@ -225,7 +225,7 @@ def main():
         # Telescope altitude
         ax2 = fig.add_subplot(3, 1, 2)
         # plt.plot(df_data['ucts_time'], df_data['alt_tel'] * 180/np.pi)
-        ax2.plot(df_data['trigger_time'], df_data['alt_tel'] * 180/np.pi)
+        ax2.plot(df_data['dragon_time'], df_data['alt_tel'] * 180/np.pi)
         ax2.set_ylabel('Altitude (deg)')
 
         # Rates
