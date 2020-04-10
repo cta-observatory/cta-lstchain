@@ -16,21 +16,21 @@ import pandas as pd
 __all__ = ['plot_dl1_params']
 
 
-def plot_dl1_params():
-    input_directory = os.path.dirname(args.infile)
-    output_filename = os.path.basename(args.infile) + '.pdf'
+def plot_dl1_params(infile, cuts, min_intensity, max_intensity, leakage, wl):
+    input_directory = os.path.dirname(infile)
+    output_filename = os.path.basename(infile) + '.pdf'
 
-    df_data = pd.read_hdf(args.infile, key=dl1_params_lstcam_key)
+    df_data = pd.read_hdf(infile, key=dl1_params_lstcam_key)
 
     # Sort events using dragon timestamps
     df_data.sort_values('dragon_time')
 
     # Apply cuts
-    if args.cuts:
-        df_data = df_data[(df_data['intensity'] > args.min_intensity) &
-                          (df_data['intensity'] < args.max_intensity) &
-                          (df_data['leakage'] < args.leakage_cut) &
-                          (df_data['wl'] > args.wl_cut)]
+    if cuts:
+        df_data = df_data[(df_data['intensity'] > min_intensity) &
+                          (df_data['intensity'] < max_intensity) &
+                          (df_data['leakage'] < leakage) &
+                          (df_data['wl'] > wl)]
 
     # Determine the duration of the total number of events in the file
     timestamps = df_data['dragon_time'][df_data['dragon_time'] > 0]
@@ -50,14 +50,14 @@ def plot_dl1_params():
 
         fig, axes = plt.subplots(nrows=3, ncols=2)
 
-        if args.cuts:
-            plt.suptitle(f'Input file name: {args.infile}' + '\n' +
-                         f'Cuts: ' + f'wl > {args.wl_cut}, ' +
-                         f'{args.min_intensity:.0e} < intensity (phe) <' +
-                         f'{args.max_intensity:.0e}, ' +
-                         f'leakage < {args.leakage_cut}')
+        if cuts:
+            plt.suptitle(f'Input file name: {infile}' + '\n' +
+                         f'Cuts: ' + f'wl > {wl}, ' +
+                         f'{min_intensity:.0e} < intensity (phe) <' +
+                         f'{max_intensity:.0e}, ' +
+                         f'leakage < {leakage}')
         else:
-            plt.suptitle(f'Input file name: {args.infile}' + '\n' +
+            plt.suptitle(f'Input file name: {infile}' + '\n' +
                          f'No cuts applied')
 
         # Intensity
@@ -235,16 +235,17 @@ if __name__ == '__main__':
                         help="Maximum value of intensity (in phe)",
                         default="1e5")
 
-    parser.add_argument("--leakage_cut", action='store', type=float,
-                        dest='leakage_cut',
+    parser.add_argument("--leakage", action='store', type=float,
+                        dest='leakage',
                         help="Maximum value of leakage parameter",
                         default="0.2")
 
-    parser.add_argument("--wl_cut", '-wl', action='store', type=float,
-                        dest='wl_cut',
+    parser.add_argument("--wl", '-wl', action='store', type=float,
+                        dest='wl',
                         help="Minimum value of width/length parameter",
                         default="0.1")
 
     args = parser.parse_args()
 
-    plot_dl1_params()
+    plot_dl1_params(args.infile, args.cuts, args.min_intensity,
+            args.max_intensity, args.leakage, args.wl)
