@@ -4,7 +4,7 @@ Module for plotting image parameters from real data DL1 files.
 
 import argparse
 from distutils.util import strtobool
-from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_pdf import PdfPages
@@ -17,7 +17,6 @@ __all__ = ['plot_dl1_params']
 
 
 def plot_dl1_params(infile, cuts, min_intensity, max_intensity, leakage, wl):
-    input_directory = os.path.dirname(infile)
     output_filename = os.path.basename(infile) + '.pdf'
 
     df_data = pd.read_hdf(infile, key=dl1_params_lstcam_key)
@@ -248,4 +247,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     plot_dl1_params(args.infile, args.cuts, args.min_intensity,
-            args.max_intensity, args.leakage, args.wl)
+                    args.max_intensity, args.leakage, args.wl)
