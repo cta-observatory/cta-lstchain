@@ -1,3 +1,7 @@
+"""
+Module for plotting image parameters from real data DL1 files.
+"""
+
 import argparse
 from distutils.util import strtobool
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
@@ -9,41 +13,10 @@ import os
 import pandas as pd
 
 
-parser = argparse.ArgumentParser(description="Plots of DL1 b image parameters")
-
-parser.add_argument("--infile", '-f', type=str,
-                    dest='infile',
-                    help="Path to the DL1 input file")
-
-parser.add_argument("--cuts", type=lambda x: bool(strtobool(x)),
-                    dest='cuts',
-                    help='Apply cuts',
-                    default=False)
-
-parser.add_argument("--min_intensity", type=float,
-                    dest='min_intensity',
-                    help="Minimum value of intensity (in phe)",
-                    default="1e2")
-
-parser.add_argument("--max_intensity", type=float,
-                    dest='max_intensity',
-                    help="Maximum value of intensity (in phe)",
-                    default="1e5")
-
-parser.add_argument("--leakage_cut", action='store', type=float,
-                    dest='leakage_cut',
-                    help="Maximum value of leakage parameter",
-                    default="0.2")
-
-parser.add_argument("--wl_cut", '-wl', action='store', type=float,
-                    dest='wl_cut',
-                    help="Minimum value of width/length parameter",
-                    default="0.1")
-
-args = parser.parse_args()
+__all__ = ['plot_dl1_params']
 
 
-def main():
+def plot_dl1_params():
     input_directory = os.path.dirname(args.infile)
     output_filename = os.path.basename(args.infile) + '.pdf'
 
@@ -241,4 +214,37 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Plot DL1 image parameters")
+
+    parser.add_argument("--infile", '-f', type=str,
+                        dest='infile',
+                        help="Path to the DL1 input file")
+
+    parser.add_argument("--cuts", type=lambda x: bool(strtobool(x)),
+                        dest='cuts',
+                        help='Apply cuts',
+                        default=False)
+
+    parser.add_argument("--min_intensity", type=float,
+                        dest='min_intensity',
+                        help="Minimum value of intensity (in phe)",
+                        default="1e2")
+
+    parser.add_argument("--max_intensity", type=float,
+                        dest='max_intensity',
+                        help="Maximum value of intensity (in phe)",
+                        default="1e5")
+
+    parser.add_argument("--leakage_cut", action='store', type=float,
+                        dest='leakage_cut',
+                        help="Maximum value of leakage parameter",
+                        default="0.2")
+
+    parser.add_argument("--wl_cut", '-wl', action='store', type=float,
+                        dest='wl_cut',
+                        help="Minimum value of width/length parameter",
+                        default="0.1")
+
+    args = parser.parse_args()
+
+    plot_dl1_params()
