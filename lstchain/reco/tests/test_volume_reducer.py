@@ -7,7 +7,7 @@ from ctapipe.image.cleaning import tailcuts_clean
 from lstchain.io import get_standard_config
 
 from lstchain.reco.volume_reducer import (get_volume_reduction_method,
-                                          check_and_apply_volume_reduction,
+                                          apply_volume_reduction,
                                           zero_suppression_tailcut_dilation)
 
 
@@ -27,7 +27,7 @@ def test_check_and_apply_volume_reduction():
     config['volume_reducer']['algorithm'] = 'zero_suppression_tailcut_dilation'
 
     cal(ev)
-    check_and_apply_volume_reduction(ev, config)
+    apply_volume_reduction(ev, config)
 
     for tel_id in ev.r0.tels_with_data:
         assert 0 in ev.dl1.tel[tel_id].image
