@@ -75,7 +75,6 @@ def apply_volume_reduction(event, config):
         pass
 
     else:
-        print("Volume reduction algorithm being used: {}".format(volume_reduction_algorithm))
 
         volume_reduction_algorithm = globals()[volume_reduction_algorithm]
         parameters = config['volume_reducer']['parameters']
