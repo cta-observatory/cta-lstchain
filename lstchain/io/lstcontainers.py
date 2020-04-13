@@ -59,7 +59,7 @@ class DL1ParametersContainer(Container):
     tib_time = Field(None, 'TIB time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
-    log_mc_energy = Field(None, 'log of simulated energy/GeV')
+    log_mc_energy = Field(None, 'log of simulated energy/TeV')
     mc_alt = Field(None, 'Simulated altitude', unit=u.rad)
     mc_az = Field(None, 'Simulated azimuth', unit=u.rad)
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
@@ -195,6 +195,7 @@ class ExtraImageInfo(Container):
     """ attach the tel_id """
     tel_id = Field(0, "Telescope ID")
     trigger_type = Field(None, "trigger type")
+    ucts_trigger_type = Field(None, "UCTS trigger type")
     trigger_time = Field(None, "trigger time")
     num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
     trig_pix_id = Field(None, "pixels involved in the camera trigger")

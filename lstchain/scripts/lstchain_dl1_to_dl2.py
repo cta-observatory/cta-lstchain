@@ -94,7 +94,9 @@ def main():
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.outdir, exist_ok=True)
+
     outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
+
 
     shutil.copyfile(args.datafile, outfile)
     write_dl2_dataframe(dl2.astype(float), outfile)

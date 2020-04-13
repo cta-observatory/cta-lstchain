@@ -26,19 +26,19 @@ def test_write_dl2_dataframe():
     from lstchain.io import write_dl2_dataframe
     write_dl2_dataframe(dl2, os.path.join(test_dir, 'dl2_test.h5'))
 
-@pytest.mark.run(after='test_dl0_to_dl1')
+@pytest.mark.run(after='test_r0_to_dl1')
 def test_merging_check():
     # the same file should be mergeable with itself
-    io.merging_check([dl1_file, dl1_file])
+    [dl1_file, dl1_file] == io.merging_check([dl1_file, dl1_file])
 
 
-@pytest.mark.run(after='test_dl0_to_dl1')
+@pytest.mark.run(after='test_r0_to_dl1')
 def test_smart_merge_h5files():
     io.smart_merge_h5files([dl1_file, dl1_file], output_filename=merged_dl1_file)
     assert os.path.exists(merged_dl1_file)
 
 
-@pytest.mark.run(after='test_dl0_to_dl1')
+@pytest.mark.run(after='test_r0_to_dl1')
 def test_read_simu_info_hdf5():
     mcheader = io.read_simu_info_hdf5(dl1_file)
     assert mcheader.simtel_version == 1462392225  # simtel verion of the mc_gamma_testfile defined in test_lstchain
@@ -51,7 +51,7 @@ def test_read_simu_info_merged_hdf5():
     assert mcheader.simtel_version == 1462392225  # simtel verion of the mc_gamma_testfile defined in test_lstchain
     assert mcheader.num_showers == 40000
 
-@pytest.mark.run(after='test_dl0_to_dl1')
+@pytest.mark.run(after='test_r0_to_dl1')
 def test_trigger_type_in_dl1_params():
     from lstchain.io.io import dl1_params_lstcam_key
     params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)

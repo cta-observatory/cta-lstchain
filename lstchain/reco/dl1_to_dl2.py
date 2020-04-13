@@ -431,7 +431,9 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     return dl2
 
 
+
 def get_source_dependent_parameters(data, config):
+
     """Set parameters for source-dependent analysis .
 
     Parameters:
@@ -473,14 +475,17 @@ def get_source_dependent_parameters(data, config):
             src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
             src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
 
+
                 
     if not is_simu:
         # TODO: expected source position should be obtained by using tel_alt,az and source RA,Dec
         # For the moment, 'dist' is defined for ON observation mode
+
 
         src_dep_params['dist'] = data['r']
         src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'])
         src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'])
 
     return src_dep_params
+
 

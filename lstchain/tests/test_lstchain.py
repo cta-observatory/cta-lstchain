@@ -91,8 +91,8 @@ def test_import_lstio():
     from lstchain import io
 
 @pytest.mark.run(order=1)
-def test_dl0_to_dl1():
-    from lstchain.reco.dl0_to_dl1 import r0_to_dl1
+def test_r0_to_dl1():
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
     infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
 
@@ -219,9 +219,10 @@ def test_polar_cartesian():
             p = cartesian_to_polar(x, y)
             np.testing.assert_almost_equal((x, y), polar_to_cartesian(*p))
 
+
 def test_version_not_unkown():
     """
     Test that lstchain.__version__ is not unkown
     """
     import lstchain
-    assert lstchain.__version__ is not 'unknown'
+    assert lstchain.__version__ != 'unknown'
