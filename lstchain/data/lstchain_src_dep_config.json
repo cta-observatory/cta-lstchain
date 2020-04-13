@@ -68,7 +68,10 @@
     "r",
     "time_gradient",
     "leakage",
-    "n_islands"
+    "n_islands",
+    "time_gradient_from_source",
+    "skewness_from_source",
+    "dist"
   ],
 
   "classification_features": [
@@ -88,7 +91,8 @@
     "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
-    "reco_disp_dy"
+    "reco_disp_dy",
+    "dist"
   ],
 
   "allowed_tels": [1, 2, 3, 4],
@@ -112,8 +116,7 @@
     },
   "timestamps_pointing":"ucts",
 
-
-  "source_dependent": false,
+  "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
 
