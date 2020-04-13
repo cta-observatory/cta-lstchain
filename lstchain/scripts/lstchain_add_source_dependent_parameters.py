@@ -12,7 +12,7 @@ def main(dl1_filename, config_filename):
     config = read_configuration_file(config_filename)
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, config=config)
+    src_dep_df = get_source_dependent_parameters(dl1_params, config)
     write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key)
 
 
