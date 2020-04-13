@@ -67,8 +67,8 @@ def main():
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        data = pd.concat([data, pd.read_hdf(data, key=dl1_params_src_dep_lstcam_key)])
-
+        data = pd.concat([data, pd.read_hdf(data, key=dl1_params_src_dep_lstcam_key)], axis=1)
+  
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
             and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
