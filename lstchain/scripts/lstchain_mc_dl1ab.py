@@ -3,8 +3,7 @@
 # Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
 
 
-import os
-import shutil
+
 import tables
 import numpy as np
 import argparse
