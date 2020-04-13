@@ -33,16 +33,19 @@ __all__ = [
     'polar_to_cartesian',
     'cartesian_to_polar',
     'predict_source_position_in_camera',
+    'unix_tai_to_utc'
 ]
 
 
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m) # position of the LST1
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)  # position of the LST1
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
+UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
+
 
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
-    (angle from z-axis) for simtel array coordinate systems                                  
+    (angle from z-axis) for simtel array coordinate systems
     Parameters:
     -----------
     alt: float
@@ -50,20 +53,20 @@ def alt_to_theta(alt):
     Returns:
     --------
     float: theta
-    
+
     """
-    
+
     return (90 * u.deg - alt).to(alt.unit)
 
 
 def az_to_phi(az):
-    """Transforms azimuth (angle from north towards east)                
-    to phi (angle from x-axis towards y-axis)                            
-    for simtel array coordinate systems                                  
+    """Transforms azimuth (angle from north towards east)
+    to phi (angle from x-axis towards y-axis)
+    for simtel array coordinate systems
     Parameters:
     -----------
     az: float
-    
+
     Returns:
     --------
     az: float
@@ -72,10 +75,10 @@ def az_to_phi(az):
 
 
 @deprecated("09/07/2019", message="This is a custom implementation. Use `sky_to_camera` that relies on astropy")
-def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
+def cal_cam_source_pos(mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal_length):
     """Transform Alt-Az source position into Camera(x,y) coordinates
-    source position. 
-    
+    source position.
+
     Parameters:
     -----------
     mc_alt: float
@@ -92,7 +95,7 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
 
     focal_length: float
     Focal length of the telescope
-    
+
     Returns:
     --------
     float: source_x1,
@@ -104,44 +107,39 @@ def cal_cam_source_pos(mc_alt,mc_az,mc_alt_tel,mc_az_tel,focal_length):
     mc_az = az_to_phi(mc_az*u.rad).value
     mc_alt_tel = alt_to_theta(mc_alt_tel*u.rad).value
     mc_az_tel = az_to_phi(mc_az_tel*u.rad).value
-        
-    #Sines and cosines of direction angles
+
+    # Sines and cosines of direction angles
     cp = np.cos(mc_az)
     sp = np.sin(mc_az)
     ct = np.cos(mc_alt)
     st = np.sin(mc_alt)
-    
-     #Shower direction coordinates
 
+    # Shower direction coordinates
     sourcex = st*cp
     sourcey = st*sp
     sourcez = ct
 
-    #print(sourcex)
+    source = np.array([sourcex, sourcey, sourcez])
+    source = source.T
 
-    source = np.array([sourcex,sourcey,sourcez])
-    source=source.T
-    
-    #Rotation matrices towars the camera frame
-    
-    rot_Matrix = np.empty((0,3,3))
-            
+    # Rotation matrices towars the camera frame
+    rot_Matrix = np.empty((0, 3, 3))
+
     alttel = mc_alt_tel
     aztel = mc_az_tel
-    mat_Y = np.array([[np.cos(alttel),0,np.sin(alttel)],
-                      [0,1,0], 
-                      [-np.sin(alttel),0,np.cos(alttel)]]).T
-        
-        
-    mat_Z = np.array([[np.cos(aztel),-np.sin(aztel),0],
-                      [np.sin(aztel),np.cos(aztel),0],
-                      [0,0,1]]).T
-        
-    rot_Matrix = np.matmul(mat_Y,mat_Z)
-    
-    res = np.einsum("...ji,...i",rot_Matrix,source)
+    mat_Y = np.array([[np.cos(alttel), 0, np.sin(alttel)],
+                      [0, 1, 0],
+                      [-np.sin(alttel), 0, np.cos(alttel)]]).T
+
+    mat_Z = np.array([[np.cos(aztel), -np.sin(aztel), 0],
+                      [np.sin(aztel), np.cos(aztel), 0],
+                      [0, 0, 1]]).T
+
+    rot_Matrix = np.matmul(mat_Y, mat_Z)
+
+    res = np.einsum("...ji,...i", rot_Matrix, source)
     res = res.T
-    
+
     source_x = -focal_length*res[0]/res[2]
     source_y = -focal_length*res[1]/res[2]
     return source_x, source_y
@@ -159,11 +157,12 @@ def get_event_pos_in_camera(event, tel):
     -------
     (x, y) (float, float): position in the camera
     """
-    array_pointing = SkyCoord(alt=event.mcheader.run_array_direction[1],
+
+    array_pointing = SkyCoord(alt=clip_alt(event.mcheader.run_array_direction[1]),
                               az=event.mcheader.run_array_direction[0],
                               frame=horizon_frame)
-    
-    event_direction = SkyCoord(alt=event.mc.alt,
+
+    event_direction = SkyCoord(alt=clip_alt(event.mc.alt),
                                az=event.mc.az,
                                frame=horizon_frame)
 
@@ -225,14 +224,14 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
 
     camera_coord = SkyCoord(pos_x, pos_y, frame=camera_frame)
 
     horizon = camera_coord.transform_to(horizon_frame)
-        
+
     return horizon
 
 
@@ -251,14 +250,14 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     -------
     camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
-    pointing_direction = SkyCoord(alt=pointing_alt, az=pointing_az, frame=horizon_frame)
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
-    
-    event_direction = SkyCoord(alt=alt, az=az, frame=horizon_frame)
+
+    event_direction = SkyCoord(alt=clip_alt(alt), az=az, frame=horizon_frame)
 
     camera_pos = event_direction.transform_to(camera_frame)
-    
+
     return camera_pos
 
 
@@ -316,6 +315,7 @@ def polar_to_cartesian(norm, angle, sign):
     y = norm * sign * np.sin(angle)
     return x, y
 
+
 def cartesian_to_polar(x, y):
     """
     Cartesian to polar transformation
@@ -358,8 +358,6 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
     reco_src_x = cog_x + disp_dx
     reco_src_y = cog_y + disp_dy
     return reco_src_x, reco_src_y
-
-
 
 
 def expand_tel_list(tel_list, max_tels):
@@ -459,3 +457,19 @@ def impute_pointing(dl1_data, missing_values=np.nan):
     for k in ['alt_tel', 'az_tel']:
         dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
     return dl1_data
+
+
+def clip_alt(alt):
+    """
+    Make sure altitude is not larger than 90 deg (it happens in some MC files for zenith=0),
+    to keep astropy happy
+    """
+    return np.clip(alt, -90.*u.deg, 90.*u.deg)
+
+
+def unix_tai_to_utc(timestamp):
+    """
+    Transform unix time from TAI to UTC scale considering the leap seconds
+    by adding the timestamp in seconds to the epoch value.
+    """
+    return UCTS_EPOCH + u.Quantity(timestamp, u.s, copy=False)

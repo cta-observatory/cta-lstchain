@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
+from distutils.util import strtobool
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
@@ -47,7 +48,7 @@ parser.add_argument('--protontest', '-pt', type=str,
 parser.add_argument('--storerf', '-s', action='store', type=bool,
                     dest='storerf',
                     help='Boolean. True for storing trained RF in 3 files'
-                    'Deafult=False, any user input will be considered True',
+                    'Default=False, any user input will be considered True',
                     default=True)
 
 parser.add_argument('--opath', '-o', action='store', type=str,
@@ -63,7 +64,6 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
 
 
 args = parser.parse_args()
-
 
 def main():
 
@@ -83,6 +83,7 @@ def main():
         path_models=args.path_models,
         custom_config=config,
     )
+
 
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            config["events_filters"],

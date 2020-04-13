@@ -60,7 +60,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             NullDataVolumeReducer will be used by default, and waveforms
             will not be reduced.
         extractor_product : ctapipe.image.extractor.ImageExtractor
-            The ImageExtractor to use. If None, then NeighborPeakWindowSum
+            The ImageExtractor to use. If None, then LocalPeakWindowSum
             will be used by default.
         calibration_path :
             Path to LST calibration file to get the pedestal and flat-field corrections
@@ -119,11 +119,16 @@ class LSTCameraCalibrator(CameraCalibrator):
                     # read the calibration data for the moment only one event
                     table = '/tel_' + str(telid) + '/calibration'
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
-                    # eliminate inf values (should be done probably before)
-                    dc_to_pe = self.mon_data.tel[telid].calibration.dc_to_pe
 
+                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
+                    # put to zero unusable pixels
+                    dc_to_pe[self.mon_data.tel[telid].calibration.unusable_pixels] = 0
+                    # eliminate inf values id any (should be done probably before)
                     dc_to_pe[np.isinf(dc_to_pe)] = 0
-                    self.log.info(f"read {self.mon_data.tel[telid].calibration.dc_to_pe}")
+
+                    # read the pixel_status container
+                    table = '/tel_' + str(telid) + '/pixel_status'
+                    next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
         except:
             self.log.error(f"Problem in reading calibration file {self.calibration_path}")
 
@@ -137,9 +142,13 @@ class LSTCameraCalibrator(CameraCalibrator):
         
         event.dl0.event_id = event.r1.event_id
         event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
+        event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
+
 
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
+
+
         event.dl0.tel[telid].waveform = (
                 (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
                 * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
@@ -167,8 +176,10 @@ class LSTCameraCalibrator(CameraCalibrator):
             pulse_corr_array = pulse_time + self.mon_data.tel[telid].calibration.time_correction
 
         # perform the gain selection if the threshold is defined
+
         if self.gain_threshold:
             waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
+
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
 
