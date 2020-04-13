@@ -249,7 +249,7 @@ def train_sep(train, custom_config={}):
 
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
-                 energy_min=-1,
+                 energy_min=-np.inf,
                  custom_config={},
                  test_size=0.2,
                  ):
@@ -388,7 +388,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
       
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
-    dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
+    dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
     disp_vector = reg_disp_vector.predict(dl2[regression_features])
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]

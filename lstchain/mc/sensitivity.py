@@ -3,9 +3,9 @@ import pandas as pd
 import astropy.units as u
 from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
 from .mc import rate, weight
-from lstchain.spectra.crab import crab_hegra
+from lstchain.spectra.crab import crab_hegra,crab_magic
 from lstchain.spectra.proton import proton_bess
-from gammapy.stats.poisson import excess_matching_significance_on_off
+from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
@@ -176,9 +176,12 @@ def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n
 
     """
 
-    n_excesses_5sigma = excess_matching_significance_on_off( \
-        n_off=n_background, alpha=alpha, significance=5, method='lima')
+    stat = WStatCountsStatistic(
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
 
+    n_excesses_5sigma = stat.excess_matching_significance(5)
 
     for i in range(0, n_bins_energy):
         for j in range(0, n_bins_gammaness):
@@ -204,9 +207,9 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
     Parameters
     ---------
     n_excesses:   `numpy.ndarray` number of excess events in the signal region
-    n_background:   `numpy.ndarray` number of events in the background region
-    alpha: `float` inverse of the number of off positions
-    n_bins_energy: `int` number of bins in energy
+    n_background: `numpy.ndarray` number of events in the background region
+    alpha:        `float` inverse of the number of off positions
+    n_bins_energy:`int` number of bins in energy
 
     Returns
     ---------
@@ -215,8 +218,17 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
                 a 5 sigma significance
 
     """
-    n_excesses_5sigma = excess_matching_significance_on_off(\
-        n_off = n_background, alpha = alpha, significance = 5, method = 'lima')
+
+    if any(len(a) != n_bins_energy for a in (n_excesses, n_background, alpha)):
+        raise ValueError(
+            'Excess, background and alpha arrays must have the same length')
+
+    stat = WStatCountsStatistic(
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
+
+    n_excesses_5sigma = stat.excess_matching_significance(5)
 
     for i in range(0, n_bins_energy):
         # If the excess needed to get 5 sigma is less than 10,
@@ -226,8 +238,8 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
         # If the excess needed to get 5 sigma is less than 5%
         # of the background, we force it to be at least 5% of
         # the background
-        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha:
-            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha
+        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
+            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
 
     sensitivity = n_excesses_5sigma / n_excesses * 100  # percentage of Crab
 
@@ -291,10 +303,10 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     return contained, area
 
 def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
-         dl2_file_g, dl2_file_p,
-         nfiles_gammas, nfiles_protons,
-         n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
-         obstime = 50 * 3600 * u.s):
+                               dl2_file_g, dl2_file_p,
+                               nfiles_gammas, nfiles_protons,
+                               n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
+                               obstime = 50 * 3600 * u.s):
 
     """
     Main function to find the best cuts to calculate the sensitivity
@@ -364,21 +376,15 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
-                  mc_par_g['cone'], mc_par_g['area_sim'],
-                  crab_par['f0'], crab_par['e0'])
+    rate_g = rate("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
-    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
-                  mc_par_p['cone'], mc_par_p['area_sim'],
-                  proton_par['f0'], proton_par['e0'])
+    rate_p = rate("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g,
-                 mc_par_g['sim_ev'], crab_par['e0'])
+    w_g = weight("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+                 mc_par_g['sim_ev'], crab_par)
 
-    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p,
-                 mc_par_p['sim_ev'], proton_par['e0'])
+    w_p = weight("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
+                 mc_par_p['sim_ev'], proton_par)
 
     if (w_g.unit ==  u.Unit("sr / s")):
         print("You are using diffuse gammas to estimate point-like sensitivity")
@@ -445,8 +451,10 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
                 ngamma_per_ebin[i] = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]) * obstime
                 nhadron_per_ebin[i] = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]) * obstime
 
-    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff,
-                                                  n_bins_energy, n_bins_gammaness, n_bins_theta2)
+    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 
+                                                                        1/noff * np.ones(len(final_gamma)),
+                                                                        n_bins_energy, n_bins_gammaness, 
+                                                                        n_bins_theta2)
 
     # Avoid bins which are empty or have too few events:
     min_num_events = 10
@@ -604,22 +612,16 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     n_sim_bin = y
 
     # Rates and weights
-    rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
-                  mc_par_g['cone'], mc_par_g['area_sim'],
-                  crab_par['f0'], crab_par['e0'])
+    rate_g = rate("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
 
-    rate_p = rate(mc_par_p['emin'], mc_par_p['emax'], proton_par['alpha'],
-                  mc_par_p['cone'], mc_par_p['area_sim'],
-                  proton_par['f0'], proton_par['e0'])
+    rate_p = rate("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
 
-    w_g = weight(mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'],
-                 crab_par['alpha'], rate_g,
-                 mc_par_g['sim_ev'], crab_par['e0'])
+    w_g = weight("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
+                 mc_par_g['sim_ev'], crab_par)
 
-    w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
-                 proton_par['alpha'], rate_p,
-                 mc_par_p['sim_ev'], proton_par['e0'])
-
+    w_p = weight("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
+                 mc_par_p['sim_ev'], proton_par)
+    
     if (w_g.unit ==  u.Unit("sr / s")):
         print("You are using diffuse gammas to estimate point-like sensitivity")
         print("These results will make no sense")
@@ -673,7 +675,7 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
                               * obstime.to(u.s).value
 
     n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima_ebin(final_gamma, final_hadrons * noff,
-                                                                             1 / noff,
+                                                                             1 / noff * np.ones(len(final_gamma)),
                                                                              n_bins_energy)
     # Avoid bins which are empty or have too few events:
     min_num_events = 5

@@ -60,7 +60,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             NullDataVolumeReducer will be used by default, and waveforms
             will not be reduced.
         extractor_product : ctapipe.image.extractor.ImageExtractor
-            The ImageExtractor to use. If None, then NeighborPeakWindowSum
+            The ImageExtractor to use. If None, then LocalPeakWindowSum
             will be used by default.
         calibration_path :
             Path to LST calibration file to get the pedestal and flat-field corrections

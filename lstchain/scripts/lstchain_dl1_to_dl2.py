@@ -21,7 +21,6 @@ from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
 from lstchain.io.io import dl1_params_lstcam_key
 import numpy as np
-import astropy.units as u
 
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
@@ -91,7 +90,7 @@ def main():
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.outdir, exist_ok=True)
-    outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
+    outfile = os.path.join(args.outdir, 'dl2_' + os.path.basename(args.datafile))
 
     shutil.copyfile(args.datafile, outfile)
     write_dl2_dataframe(dl2.astype(float), outfile)

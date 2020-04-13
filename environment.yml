@@ -4,8 +4,9 @@ channels:
   - cta-observatory
   - conda-forge
 dependencies:
+  - pip
   - ctapipe=0.7.0
-  - gammapy
+  - gammapy>=0.17
   - h5py
   - pip:
       - pytest_runner

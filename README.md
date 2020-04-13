@@ -22,6 +22,11 @@ conda env create -f environment.yml
 conda activate lst-dev
 ```
 
+To update the environment (e.g. when depenencies got updated), use:
+```
+conda env update -n lst-dev -f environment.yml
+```
+
 - Install lstchain:
 
 ```

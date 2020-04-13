@@ -1,5 +1,6 @@
 from lstchain.reco import utils
 import astropy.units as u
+from astropy.time import Time
 import numpy as np
 import pandas as pd
 
@@ -52,3 +53,10 @@ def test_impute_pointing():
     df = utils.impute_pointing(df)
     np.testing.assert_allclose(df.alt_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
     np.testing.assert_allclose(df.az_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
+
+
+def test_unix_tai_to_utc():
+    timestamp_tai = 1579376359.3225002
+    leap_seconds = 37
+    utc_time = utils.unix_tai_to_utc(timestamp_tai)
+    np.testing.assert_allclose(utc_time.unix, timestamp_tai - leap_seconds, rtol=1e-12)
