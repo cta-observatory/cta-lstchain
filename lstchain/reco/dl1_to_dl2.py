@@ -19,6 +19,7 @@ from ..io import standard_config, replace_config
 import astropy.units as u
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.instrument import OpticsDescription
+from ctapipe.image.hillas import camera_to_shower_coordinates
 
 
 __all__ = [
@@ -30,7 +31,8 @@ __all__ = [
     'train_sep',
     'build_models',
     'apply_models',
-    'get_source_dependent_parameters'
+    'get_source_dependent_parameters',
+    'get_expected_source_pos'
 ]
 
 
@@ -381,9 +383,6 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     dl2 = dl1.copy()
 
-    #Set source-dependent paramters
-    get_source_dependent_parameters(dl2, config)
-
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
       
@@ -432,60 +431,83 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
 
 
-def get_source_dependent_parameters(data, config):
+def get_source_dependent_parameters(data, config={}):
 
-    """Set parameters for source-dependent analysis .
+    """Get parameters for source-dependent analysis .
 
     Parameters:
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
+    
     """
-
-    is_simu = 'mc_type' in data.columns
 
     src_dep_params = pd.DataFrame(index=data.index)
 
+    is_simu = 'mc_type' in data.columns
+    
     if is_simu:
-        #For gamma MC, expected source position is actual one for each event
         if (data['mc_type'] == 0).all():
-
-            src_dep_params['dist'] = data['disp_norm']
-
-            # disp_sign = source_position - c.o.g. position, so need to be multiplied by "-1"
-            src_dep_params['time_gradient_from_source'] = data['time_gradient'] * data['disp_sign'] * -1
-
-            src_dep_params['skewness_from_source'] = data['skewness'] * data['disp_sign'] * -1
-
-        #For proton MC, nominal source position is one written in config file
+            data_type = 'mc_gamma'
         else:
+            data_type = 'mc_proton'
+    else:
+        data_type = 'real_data'
+    
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
 
-            focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
-
-            expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'] + config['mc_nominal_source_x_deg']) * u.deg,
-                                                   (data['mc_az_tel'] + config['mc_nominal_source_y_deg']) * u.deg,
-                                                   focal_length,
-                                                   data['mc_alt_tel'] * u.deg,
-                                                   data['mc_az_tel'] * u.deg)
-            print(expected_src_pos)
-            expected_src_pos_x_m = expected_src_pos.x.to_value()
-            expected_src_pos_y_m = expected_src_pos.y.to_value()
-
-            src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
-            src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
-            src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
-
-
-                
-    if not is_simu:
-        # TODO: expected source position should be obtained by using tel_alt,az and source RA,Dec
-        # For the moment, 'dist' is defined for ON observation mode
-
-
-        src_dep_params['dist'] = data['r']
-        src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'])
-        src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'])
+    src_dep_params['expected_src_x'] = expected_src_pos_x_m
+    src_dep_params['expected_src_y'] = expected_src_pos_y_m
+    
+    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
+    src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
+    src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
+    
+    disp, miss = camera_to_shower_coordinates(expected_src_pos_x_m, expected_src_pos_y_m, data['x'], data['y'], data['psi'])
+    alpha = np.rad2deg(np.arctan2(miss, disp))
+    alpha[alpha<0] = 180 + alpha[alpha<0]
+    alpha[alpha>90] = 180 - alpha[alpha>90]
+    src_dep_params['alpha'] = alpha
 
     return src_dep_params
 
 
+def get_expected_source_pos(data, data_type, config):
+
+    """Get expected source position for source-dependent analysis .
+
+    Parameters:
+    -----------
+    data: Pandas DataFrame
+    data_type: 'mc_gamma','mc_proton','real_data'
+    config: dictionnary containing configuration
+    
+    """
+
+    #For gamma MC, expected source position is actual one for each event
+    if data_type == 'mc_gamma':
+        expected_src_pos_x_m = data['src_x'].values
+        expected_src_pos_y_m = data['src_y'].values
+
+    #For proton MC, nominal source position is one written in config file
+    if data_type == 'mc_proton':
+        
+        focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
+        
+        expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'].values + config['mc_nominal_source_x_deg']) * u.deg,
+                                               (data['mc_az_tel'].values + config['mc_nominal_source_y_deg']) * u.deg,
+                                               focal_length,
+                                               data['mc_alt_tel'].values * u.deg,
+                                               data['mc_az_tel'].values * u.deg)
+        
+        expected_src_pos_x_m = expected_src_pos.x.to_value()
+        expected_src_pos_y_m = expected_src_pos.y.to_value()
+
+    # For real data
+    # TODO: expected source position for real data should be obtained by using tel_alt,az and source RA,Dec
+    # For the moment, expected source position is defined as camera center (ON mode)
+    if data_type == 'real_data':
+        expected_src_pos_x_m = np.zeros(len(data))
+        expected_src_pos_y_m = np.zeros(len(data))
+
+    return expected_src_pos_x_m, expected_src_pos_y_m 
