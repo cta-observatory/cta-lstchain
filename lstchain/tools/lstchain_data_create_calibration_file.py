@@ -9,7 +9,7 @@ from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
-
+from ctapipe.io.containers import PixelStatusContainer
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera import CameraR0Calibrator
@@ -34,9 +34,14 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-    minimum_charge = Float(
-        800,
-        help='Temporary cut on charge till the calibox TIB do not work'
+    minimum_hg_charge_median = Float(
+        5000,
+        help='Temporary cut on HG charge till the calibox TIB do not work (default for filter 5.2)'
+    ).tag(config=True)
+
+    maximum_lg_charge_std = Float(
+        300,
+        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
     ).tag(config=True)
 
     one_event = Bool(
@@ -108,15 +113,21 @@ class CalibrationHDF5Writer(Tool):
         self.r0calibrator = None
         self.tel_id = None
         self.tot_events = 0
+        self.simulation = False
 
     def setup(self):
         kwargs = dict(parent=self)
-
+        self.log.debug(f"Open  file")
         self.eventsource = EventSource.from_config(**kwargs)
 
-        # remember how many event in the files
-        self.tot_events = len(self.eventsource.multi_file)
-        self.log.debug(f"Input file has file {self.tot_events} events")
+        # if data remember how many event in the files
+        if "LSTEventSource" in str(type(self.eventsource)):
+
+            self.tot_events = len(self.eventsource.multi_file)
+            self.log.debug(f"Input file has file {self.tot_events} events")
+        else:
+            self.tot_events = self.eventsource.max_events
+            self.simulation = True
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
@@ -167,6 +178,11 @@ class CalibrationHDF5Writer(Tool):
 
                 # save the config, to be retrieved as data.meta['config']
                 if count == 0:
+
+                    if self.simulation:
+
+                        initialize_pixel_status(event.mon.tel[self.tel_id],event.r1.tel[self.tel_id].waveform.shape)
+
                     ped_data = event.mon.tel[self.tel_id].pedestal
                     ped_data.meta['config'] = self.config
 
@@ -182,14 +198,26 @@ class CalibrationHDF5Writer(Tool):
                 # correct for low level calibration
                 self.r0calibrator.calibrate(event)
 
+                # reject event without trigger type
+                if event.r1.tel[self.tel_id].trigger_type == -1:
+                    continue
+
                 # if pedestal event
-                if event.r1.tel[self.tel_id].trigger_type == 32:
+                if event.r1.tel[self.tel_id].trigger_type == 32 or (
+                    self.simulation and
+                    np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+                    < self.minimum_hg_charge_median):
 
                     new_ped = self.pedestal.calculate_pedestals(event)
 
-                # if flat-field event: no calibration  TIB for the moment, use a cut on the charge for ff events
-                elif event.r1.tel[self.tel_id].trigger_type == 4 or np.median(
-                        np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1)) > self.minimum_charge:
+
+                # if flat-field event: no calibration  TIB for the moment,
+                # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
+                elif event.r1.tel[self.tel_id].trigger_type == 4 or (
+                        np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+                        > self.minimum_hg_charge_median
+                        and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
+                        < self.maximum_lg_charge_std):
 
                     new_ff = self.flatfield.calculate_relative_gain(event)
 
@@ -242,12 +270,25 @@ class CalibrationHDF5Writer(Tool):
                     n_pe = F2 * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
                                      ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
 
+
+
                     # fill WaveformCalibrationContainer (this is an example)
                     calib_data.time = ff_data.sample_time
                     calib_data.time_range = ff_data.sample_time_range
                     calib_data.n_pe = n_pe
-                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)
-                    calib_data.time_correction = -ff_data.relative_time_median
+
+                    # find signal median of good pixels
+                    masked_npe = np.ma.array(n_pe,mask=calib_data.unusable_pixels)
+                    npe_signal_median = np.ma.median(masked_npe, axis=1)
+
+                    # Flat field factor
+                    ff = npe_signal_median[:, np.newaxis]/n_pe
+
+                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)*ff
+
+                    # put the time around zero
+                    camera_time_median = np.median(ff_data.time_median, axis=1)
+                    calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
 
                     ped_extractor_name = self.config.get("PedestalCalculator").get("charge_product")
                     ped_width=self.config.get(ped_extractor_name).get("window_width")
@@ -273,6 +314,20 @@ class CalibrationHDF5Writer(Tool):
             role='mon.tel.calibration'
         )
         self.writer.close()
+
+def initialize_pixel_status(mon_camera_container,shape):
+    """
+    Initialize the pixel status container in the case of
+    simulation events (this should be done in the event source, but
+    added here for the moment)
+    """
+    # initialize the container
+    status_container = PixelStatusContainer()
+    status_container.hardware_failing_pixels = np.zeros((shape[0],shape[1]), dtype=bool)
+    status_container.pedestal_failing_pixels = np.zeros((shape[0],shape[1]), dtype=bool)
+    status_container.flatfield_failing_pixels = np.zeros((shape[0],shape[1]), dtype=bool)
+
+    mon_camera_container.pixel_status = status_container
 
 
 def main():

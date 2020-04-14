@@ -37,11 +37,11 @@ class CameraR0Calibrator(Component):
     offset = Int(default_value=400,
                  help='Define the offset of the baseline').tag(config=True)
 
-    r1_sample_start = Int(default_value=None,
+    r1_sample_start = Int(default_value=2,
                           help='Start sample for r1 waveform',
                           allow_none=True).tag(config=True)
 
-    r1_sample_end = Int(default_value=None,
+    r1_sample_end = Int(default_value=38,
                         help='End sample for r1 waveform',
                         allow_none=True).tag(config=True)
 
@@ -144,13 +144,14 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.time_lapse_corr(event, tel_id)
             self.interpolate_spikes(event, tel_id)
 
-            event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
+            event.r1.tel[tel_id].trigger_type = event.r0.tel[tel_id].trigger_type
 
-            event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
+            event.r1.tel[tel_id].trigger_time = event.r0.tel[tel_id].trigger_time
 
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
             event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
+
 
     def subtract_pedestal(self, event, tel_id):
         """
@@ -559,9 +560,15 @@ def ped_time(timediff):
     """
     Power law function for time lapse baseline correction.
     Coefficients from curve fitting to dragon test data
-    at temperature 30 degC
+    at temperature 20 degC
     """
-    return 27.33 * np.power(timediff, -0.24) - 10.4
+    # old values at 30 degC (used till release v0.4.5)
+    #return 27.33 * np.power(timediff, -0.24) - 10.4
+
+    # new values at 20 degC, provided by Yokiho Kobayashi 2/3/2020
+    # see also Yokiho's talk in https://indico.cta-observatory.org/event/2664/
+    return 32.99 * np.power(timediff, -0.22) - 11.9
+
 
 @jit
 def interpolate_spike_A(waveform, gain, position, pixel):

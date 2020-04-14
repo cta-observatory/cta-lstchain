@@ -118,20 +118,20 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
+        pixel_mask = np.logical_or(
+            event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
+            event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
+
         # real data
         if event.meta['origin'] != 'hessio':
             self.trigger_time = event.r1.tel[self.tel_id].trigger_time
 
-            pixel_mask = np.logical_or(
-                event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
-                event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
         else:  # patches for MC data
             if event.trig.tels_with_trigger:
                 self.trigger_time = event.trig.gps_time.unix
             else:
                 self.trigger_time = 0
 
-            pixel_mask = np.zeros(waveform.shape[1], dtype=bool)
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
@@ -175,7 +175,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # mask the part of the array not filled
         self.sample_masked_pixels[self.num_events_seen:] = 1
 
-
         relative_gain_results = self.calculate_relative_gain_results(
             self.charge_medians,
             self.charges,
@@ -201,8 +200,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                                  container.charge_std_outliers)
         event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels = \
             np.logical_or(ff_charge_failing_pixels, container.time_median_outliers)
-
-
 
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""

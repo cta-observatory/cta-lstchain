@@ -18,6 +18,7 @@ from . import disp
 from ..io import standard_config, replace_config
 import astropy.units as u
 from ..io.io import dl1_params_lstcam_key
+from ctapipe.instrument import OpticsDescription
 
 __all__ = [
     'train_energy',
@@ -246,7 +247,7 @@ def train_sep(train, custom_config={}):
 
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
-                 energy_min=-1,
+                 energy_min=-np.inf,
                  custom_config={},
                  test_size=0.2,
                  ):
@@ -375,7 +376,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     dl2 = dl1.copy()
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
-    dl2['reco_energy'] = 10**(dl2['log_reco_energy']-3)
+    dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
     disp_vector = reg_disp_vector.predict(dl2[regression_features])
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
@@ -383,18 +384,21 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     #Construction of Source position in camera coordinates from disp_norm distance.
 
     dl2['reco_src_x'], dl2['reco_src_y'] = disp.disp_to_pos(dl2.reco_disp_dx,
-                                                             dl2.reco_disp_dy,
-                                                             dl2.x,
-                                                             dl2.y,
-                                                             )
+                                                            dl2.reco_disp_dy,
+                                                            dl2.x,
+                                                            dl2.y,
+                                                            )
 
-    focal_length = 28 * u.m
+    focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
         az_tel = dl2['mc_az_tel'].values
-    else:
+    elif 'alt_tel' in dl2.columns:
         alt_tel = dl2['alt_tel'].values
         az_tel = dl2['az_tel'].values
+    else:
+        alt_tel = - np.pi/2. * np.ones(len(dl2))
+        az_tel = - np.pi/2. * np.ones(len(dl2))
 
 
     src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,

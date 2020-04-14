@@ -26,12 +26,16 @@ optional.add_argument('-m', '--max_events', help="Number of events to be process
                       type=int, default=8000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
                       type=str, default='/fefs/aswg/data/real')
+optional.add_argument('--tel_id', help="telescope id. Default = 1",
+                      type=int, default=1)
+
 
 args = parser.parse_args()
 run = args.run_number
 prod_id = 'v%02d'%args.prod_version
 max_events = args.max_events
 base_dir = args.base_dir
+tel_id = args.tel_id
 
 
 def main():
@@ -41,7 +45,7 @@ def main():
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
         if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found\n")
+            print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
             raise NameError()
         else:
             input_file = f"{file_list[0]}"
@@ -81,11 +85,9 @@ def main():
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=1, offset_value=300)
+        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=300)
 
         print("\n--> END")
-
-
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")

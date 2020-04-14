@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from ctapipe.visualization import CameraDisplay
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.instrument import  CameraGeometry
+from ctapipe_io_lst import load_camera_geometry
 
 # read back the monitoring containers written with the tool calc_camera_calibration.py
 from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer, \
@@ -23,6 +23,7 @@ status_data = PixelStatusContainer()
 channel = ['HG', 'LG']
 
 plot_dir = "none"
+
 
 def read_file(file_name, tel_id=1):
     """
@@ -62,13 +63,15 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
      calib_data: calibration container WaveformCalibrationContainer()
 
      """
-    camera = CameraGeometry.from_name("LSTCam", 2)
+    # read geometry
+    camera = load_camera_geometry()
 
     # plot open pdf
     if plot_file != "none":
         pp = PdfPages(plot_file)
 
     plt.rc('font', size=15)
+
 
     ### first figure
     fig = plt.figure(1, figsize=(12, 24))
@@ -183,7 +186,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         disp.image = image[chan]
         disp.cmap = plt.cm.coolwarm
         disp.set_limits_minmax(0.7, 1.3)
-        plt.title(f'{channel[chan]} relative gain')
+        plt.title(f'{channel[chan]} relative signal')
         #disp.axes.text(lposx, 0, f'{channel[chan]} relative gain', rotation=90)
         disp.add_colorbar()
 
@@ -263,7 +266,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         # select good pixels
         select = np.logical_not(mask[chan])
         fig = plt.figure(chan+10, figsize=(12, 18))
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.tight_layout(rect=[0, 0.0, 1, 0.95])
 
         fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)
 
@@ -313,7 +316,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         plt.subplot(325)
         plt.tight_layout()
         plt.ylabel('pixels', fontsize=20)
-        plt.xlabel('relative gain', fontsize=20)
+        plt.xlabel('relative signal', fontsize=20)
         median = np.median(gain_median[select])
         rms = np.std(gain_median[select])
         label=f"Relative gain {median:3.2f}, std {rms:5.2f}"
@@ -333,6 +336,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
         plt.subplots_adjust(top=0.92)
         if plot_file != "none":
             pp.savefig(plt.gcf())
+
 
     if plot_file != "none":
         pp.close()
