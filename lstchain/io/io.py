@@ -33,7 +33,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_subarray_tables',
            'write_metadata',
            'write_dataframe',
-           'write_dl2_dataframe'
+           'write_dl2_dataframe',
+           'write_calibration_data'
            ]
 
 
@@ -667,3 +668,33 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
+def write_calibration_data(writer,mon_index, mon_event, new_ped=False, new_calib=False):
+    mon_event.pedestal.prefix = ''
+    mon_event.flatfield.prefix = ''
+    mon_event.calibration.prefix = ''
+    mon_index.prefix = ''
+
+    if new_ped:
+        # write ped container
+        writer.write(
+            table_name=f'telescope/monitoring/pedestal',
+            containers=[mon_index, mon_event.pedestal]
+        )
+        # update index
+        mon_index.pedestal_id += 1
+
+    if new_calib:
+        # write calibration container
+        writer.write(
+            table_name="telescope/monitoring/flatfield",
+            containers=[mon_index, mon_event.flatfield]
+        )
+
+        # write ff container
+        writer.write(
+            table_name="telescope/monitoring/calibration",
+            containers=[mon_index, mon_event.calibration]
+        )
+        # update index
+        mon_index.flatfield_id += 1
+        mon_index.calibration_id += 1
