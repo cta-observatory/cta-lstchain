@@ -116,19 +116,23 @@ class LSTCameraCalibrator(CameraCalibrator):
             with HDF5TableReader(self.calibration_path) as h5_table:
                 assert h5_table._h5file.isopen == True
                 for telid in self.allowed_tels:
-                    # read the calibration data for the moment only one event
+                    # read the calibration data
                     table = '/tel_' + str(telid) + '/calibration'
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
 
-                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
-                    # put to zero unusable pixels
-                    dc_to_pe[self.mon_data.tel[telid].calibration.unusable_pixels] = 0
-                    # eliminate inf values id any (should be done probably before)
-                    dc_to_pe[np.isinf(dc_to_pe)] = 0
+                    # read pedestal data
+                    table = '/tel_' + str(telid) + '/pedestal'
+                    next(h5_table.read(table, self.mon_data.tel[telid].pedestal))
+
+                    # read flat-field data
+                    table = '/tel_' + str(telid) + '/flatfield'
+                    next(h5_table.read(table, self.mon_data.tel[telid].flatfield))
 
                     # read the pixel_status container
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
+
+
         except:
             self.log.error(f"Problem in reading calibration file {self.calibration_path}")
 
@@ -141,17 +145,22 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
         
         event.dl0.event_id = event.r1.event_id
-        event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
-        event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
+
+        # if not already done, initialize the event monitoring containers
+        if event.mon.tel[telid].calibration.dc_to_pe is None:
+            event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
+            event.mon.tel[telid].flatfield = self.mon_data.tel[telid].flatfield
+            event.mon.tel[telid].pedestal = self.mon_data.tel[telid].pedestal
+            event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
 
 
         # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
-
-
         event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+                (event.r1.tel[telid].waveform - event.mon.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
+                * event.mon.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+
+
 
     def _calibrate_dl1(self, event, telid):
         """
@@ -165,6 +174,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         if self.image_extractor.requires_neighbors():
             camera = event.inst.subarray.tel[telid].camera
             self.image_extractor.neighbors = camera.neighbor_matrix_where
+
         charge, pulse_time = self.image_extractor(waveforms)
 
         # correct time with drs4 correction if available
