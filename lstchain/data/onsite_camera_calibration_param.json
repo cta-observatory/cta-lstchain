@@ -10,20 +10,20 @@
      "r0calibrator_product": "LSTR0Corrections",
      "log_level":"DEBUG"
    },         
-  "PedestalCalculator":{
+   "PedestalCalculator":{
       "sample_duration":100000,
       "tel_id":1,
-     "charge_median_cut_outliers": [-10,10],
-     "charge_std_cut_outliers": [-10,10],
-     "charge_product":"FixedWindowSum"
+      "charge_median_cut_outliers": [-10,10],
+      "charge_std_cut_outliers": [-10,10],
+      "charge_product":"FixedWindowSum"
    },
-    "FlatFieldCalculator":{
+   "FlatFieldCalculator":{
       "sample_duration":100000,
-     "tel_id":1,
+      "tel_id":1,
       "charge_product":"LocalPeakWindowSum",
       "charge_median_cut_outliers": [-0.5,0.5],
-       "charge_std_cut_outliers": [-10,10],
-     "time_cut_outliers": [2,38]
+      "charge_std_cut_outliers": [-10,10],
+      "time_cut_outliers": [2,38]
    },
      "LSTR0Corrections": {
       "r1_sample_start": 2,
