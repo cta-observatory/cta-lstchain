@@ -102,6 +102,7 @@
   "gain_selector_config": {
     "threshold":  3500
   },
+
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
@@ -114,6 +115,39 @@
   "volume_reducer":{
     "algorithm": null,
     "parameters": {
+    }
+  },
+  "calibration_product": "LSTCalibrationCalculator",
+
+  "LSTCalibrationCalculator":{
+     "minimum_hg_charge_median": 5000,
+     "maximum_lg_charge_std": 300,
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "PedestalCalculator":{
+       "sample_size": 100,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_median_cut_outliers": [-10,10],
+       "charge_std_cut_outliers": [-10,10],
+       "charge_product":"FixedWindowSum"
+     },
+     "FlatFieldCalculator":{
+       "sample_size": 100,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_product":"LocalPeakWindowSum",
+       "charge_median_cut_outliers": [-0.5,0.5],
+       "charge_std_cut_outliers": [-10,10],
+       "time_cut_outliers": [2,38]
+     },
+      "LocalPeakWindowSum":{
+      "window_shift": 5,
+      "window_width":12
+     },
+     "FixedWindowSum":{
+       "window_start": 12,
+       "window_width":12
     }
   }
 }
