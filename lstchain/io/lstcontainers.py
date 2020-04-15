@@ -9,6 +9,7 @@ from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
 from ctapipe.image import leakage
 from ctapipe.image.cleaning import number_of_islands
+
 from ..reco import utils
 from numpy import nan
 
@@ -16,8 +17,10 @@ __all__ = [
     'DL1ParametersContainer',
     'DispContainer',
     'MetaData',
-    'ThrownEventsHistogram'
+    'ThrownEventsHistogram',
+    'DL1MonitoringEventIndexContainer'
 ]
+
 
 class DL1ParametersContainer(Container):
     """
@@ -53,6 +56,7 @@ class DL1ParametersContainer(Container):
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
+    calibration_id = Field(None, 'ID of the employed calibration event')
     gps_time = Field(None, 'GPS time event trigger')
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
@@ -81,6 +85,14 @@ class DL1ParametersContainer(Container):
     tel_pos_x = Field(None, "Telescope x position in the ground")
     tel_pos_y = Field(None, "Telescope y position in the ground")
     tel_pos_z = Field(None, "Telescope z position in the ground")
+
+    trigger_type = Field(None, "trigger type")
+    ucts_trigger_type = Field(None, "UCTS trigger type")
+    trigger_time = Field(None, "trigger time")
+
+    # info not available in data
+    #num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
+    #trig_pix_id = Field(None, "pixels involved in the camera trigger")
 
     def fill_hillas(self, hillas):
         """
@@ -194,11 +206,7 @@ class ExtraMCInfo(Container):
 class ExtraImageInfo(Container):
     """ attach the tel_id """
     tel_id = Field(0, "Telescope ID")
-    trigger_type = Field(None, "trigger type")
-    ucts_trigger_type = Field(None, "UCTS trigger type")
-    trigger_time = Field(None, "trigger time")
-    num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
-    trig_pix_id = Field(None, "pixels involved in the camera trigger")
+    low_gain_mask = Field(None, "pixels with charge from low gain channel")
 
 
 class ThrownEventsHistogram(Container):
@@ -234,3 +242,11 @@ class MetaData(Container):
     CONTACT = Field(None, "Person or institution responsible for this data product")
 
 
+class DL1MonitoringEventIndexContainer(Container):
+    """
+    Container with the calibration coefficients
+    """
+    tel_id = Field(1, 'Index of telescope')
+    calibration_id = Field(0, 'Index of calibration event for DL1 file')
+    pedestal_id = Field(0, 'Index of pedestal event for DL1 file')
+    flatfield_id = Field(0, 'Index of flat-field event for DL1 file')
