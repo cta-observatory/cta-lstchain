@@ -10,8 +10,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.io.containers import PixelStatusContainer
-from lstchain.calib.camera.flatfield import FlatFieldCalculator
-from lstchain.calib.camera.pedestals import PedestalCalculator
+from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.calib.camera import CameraR0Calibrator
 
 __all__ = [
@@ -24,7 +23,7 @@ class CalibrationHDF5Writer(Tool):
      Tool that generates a HDF5 file with camera calibration coefficients.
      This is just an example on how the monitoring containers can be filled using
      the calibration Components in calib/camera.
-     This example is based on an input file with interleaved pedestal and flat-field events
+     This example is based on an input file with pedestal and flat-field events
 
      For getting help run:
      python calc_camera_calibration.py --help
@@ -34,15 +33,6 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-    minimum_hg_charge_median = Float(
-        5000,
-        help='Temporary cut on HG charge till the calibox TIB do not work (default for filter 5.2)'
-    ).tag(config=True)
-
-    maximum_lg_charge_std = Float(
-        300,
-        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
-    ).tag(config=True)
 
     one_event = Bool(
         False,
@@ -59,14 +49,9 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the log file'
     ).tag(config=True)
 
-    pedestal_product = traits.enum_trait(
-        PedestalCalculator,
-        default='PedestalIntegrator'
-    )
-
-    flatfield_product = traits.enum_trait(
-        FlatFieldCalculator,
-        default='FlasherFlatFieldCalculator'
+    calibration_product = traits.enum_trait(
+       CalibrationCalculator,
+        default='LSTCalibrationCalculator'
     )
 
     r0calibrator_product =traits.enum_trait(
@@ -80,18 +65,15 @@ class CalibrationHDF5Writer(Tool):
         log_file='CalibrationHDF5Writer.log_file',
         max_events='EventSource.max_events',
         pedestal_file= 'LSTR0Corrections.pedestal_path',
-        flatfield_product='CalibrationHDF5Writer.flatfield_product',
-        pedestal_product='CalibrationHDF5Writer.pedestal_product',
+        calibration_product='CalibrationHDF5Writer.calibration_product',
         r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product',
     ))
 
     classes = List([EventSource,
-                    FlatFieldCalculator,
-                    PedestalCalculator
+                    CalibrationCalculator
                     ]
                    + traits.classes_with_traits(CameraR0Calibrator)
-                   + traits.classes_with_traits(FlatFieldCalculator)
-                   + traits.classes_with_traits(PedestalCalculator)
+                   + traits.classes_with_traits(CalibrationCalculator)
 
                    )
 
@@ -106,12 +88,10 @@ class CalibrationHDF5Writer(Tool):
          
         """
         self.eventsource = None
-        self.flatfield = None
-        self.pedestal = None
+        self.processor = None
         self.container = None
         self.writer = None
         self.r0calibrator = None
-        self.tel_id = None
         self.tot_events = 0
         self.simulation = False
 
@@ -129,12 +109,8 @@ class CalibrationHDF5Writer(Tool):
             self.tot_events = self.eventsource.max_events
             self.simulation = True
 
-        self.flatfield = FlatFieldCalculator.from_name(
-            self.flatfield_product,
-            **kwargs
-        )
-        self.pedestal = PedestalCalculator.from_name(
-            self.pedestal_product,
+        self.processor = CalibrationCalculator.from_name(
+            self.calibration_product,
             **kwargs
         )
 
@@ -144,12 +120,8 @@ class CalibrationHDF5Writer(Tool):
                 **kwargs
             )
 
-        msg = "tel_id not the same for all calibration components"
-        assert self.r0calibrator.tel_id == self.pedestal.tel_id == self.flatfield.tel_id, msg
 
-        self.tel_id = self.flatfield.tel_id
-
-        group_name = 'tel_' + str(self.tel_id)
+        group_name = 'tel_' + str(self.processor.tel_id)
 
         self.log.debug(f"Open output file {self.output_file}")
 
@@ -160,15 +132,16 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
+        tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
         end_of_file = False
-        try:
 
+        try:
             self.log.debug(f"Start loop")
             for count, event in enumerate(self.eventsource):
 
-                if count % 1000 == 0:
+                if count % 100 == 0:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
@@ -180,53 +153,53 @@ class CalibrationHDF5Writer(Tool):
                 if count == 0:
 
                     if self.simulation:
+                        initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
 
-                        initialize_pixel_status(event.mon.tel[self.tel_id],event.r1.tel[self.tel_id].waveform.shape)
-
-                    ped_data = event.mon.tel[self.tel_id].pedestal
+                    ped_data = event.mon.tel[tel_id].pedestal
                     ped_data.meta['config'] = self.config
 
-                    ff_data = event.mon.tel[self.tel_id].flatfield
+                    ff_data = event.mon.tel[tel_id].flatfield
                     ff_data.meta['config'] = self.config
 
-                    status_data = event.mon.tel[self.tel_id].pixel_status
+                    status_data = event.mon.tel[tel_id].pixel_status
                     status_data.meta['config'] = self.config
 
-                    calib_data = event.mon.tel[self.tel_id].calibration
+                    calib_data = event.mon.tel[tel_id].calibration
                     calib_data.meta['config'] = self.config
 
                 # correct for low level calibration
                 self.r0calibrator.calibrate(event)
 
                 # reject event without trigger type
-                if event.r1.tel[self.tel_id].trigger_type == -1:
+                if event.r1.tel[tel_id].trigger_type == -1:
                     continue
 
                 # if pedestal event
-                if event.r1.tel[self.tel_id].trigger_type == 32 or (
-                    self.simulation and
-                    np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
-                    < self.minimum_hg_charge_median):
 
-                    new_ped = self.pedestal.calculate_pedestals(event)
+                if event.r1.tel[tel_id].trigger_type == 32 or (
+                    self.simulation and
+                    np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                    < self.processor.minimum_hg_charge_median):
+
+                    new_ped = self.processor.pedestal.calculate_pedestals(event)
 
 
                 # if flat-field event: no calibration  TIB for the moment,
                 # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-                elif event.r1.tel[self.tel_id].trigger_type == 4 or (
-                        np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
-                        > self.minimum_hg_charge_median
-                        and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
-                        < self.maximum_lg_charge_std):
+                elif event.r1.tel[tel_id].trigger_type == 4 or (
+                        np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                        > self.processor.minimum_hg_charge_median
+                        and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
+                        < self.processor.maximum_lg_charge_std):
 
-                    new_ff = self.flatfield.calculate_relative_gain(event)
+                    new_ff = self.processor.flatfield.calculate_relative_gain(event)
 
                 # write pedestal results when enough statistics or end of file
                 if new_ped or end_of_file:
 
                     # update the monitoring container with the last statistics
                     if end_of_file:
-                        self.pedestal.store_results(event)
+                        self.processor.pedestal.store_results(event)
 
                     # write the event
                     self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.r0.event_id} "
@@ -242,7 +215,7 @@ class CalibrationHDF5Writer(Tool):
 
                     # update the monitoring container with the last statistics
                     if end_of_file:
-                        self.flatfield.store_results(event)
+                        self.processor.flatfield.store_results(event)
 
                     self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.r0.event_id} "
                                    f"stat = {ff_data.n_events} events")
@@ -253,49 +226,9 @@ class CalibrationHDF5Writer(Tool):
                     new_ff = False
 
                     # Then, calculate calibration coefficients
-
-                    # mask from pedestal and flat-field data
-                    monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
-                                                               status_data.flatfield_failing_pixels)
-
-                    # calibration unusable pixels are an OR of all masks
-                    calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
-                                                            status_data.hardware_failing_pixels)
-
-                    # Extract calibration coefficients with F-factor method
-                    # Assume fix F2 factor, F2=1+Var(gain)/Mean(Gain)**2 must be known from elsewhere
-                    F2 = 1.2
-
-                    # calculate photon-electrons
-                    n_pe = F2 * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
-                                     ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
-
-
-
-                    # fill WaveformCalibrationContainer (this is an example)
-                    calib_data.time = ff_data.sample_time
-                    calib_data.time_range = ff_data.sample_time_range
-                    calib_data.n_pe = n_pe
-
-                    # find signal median of good pixels
-                    masked_npe = np.ma.array(n_pe,mask=calib_data.unusable_pixels)
-                    npe_signal_median = np.ma.median(masked_npe, axis=1)
-
-                    # Flat field factor
-                    ff = npe_signal_median[:, np.newaxis]/n_pe
-
-                    calib_data.dc_to_pe = n_pe/(ff_data.charge_median-ped_data.charge_median)*ff
-
-                    # put the time around zero
-                    camera_time_median = np.median(ff_data.time_median, axis=1)
-                    calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
-
-                    ped_extractor_name = self.config.get("PedestalCalculator").get("charge_product")
-                    ped_width=self.config.get(ped_extractor_name).get("window_width")
-                    calib_data.pedestal_per_sample = ped_data.charge_median/ped_width
+                    self.processor.calculate_calibration_coefficients(event)
 
                     # write calib and pixel status
-
                     self.log.debug(f"Write pixel_status data")
                     self.writer.write('pixel_status',status_data)
 
@@ -304,7 +237,7 @@ class CalibrationHDF5Writer(Tool):
                     if self.one_event:
                         break
 
-                    #self.writer.write('mon', event.mon.tel[self.tel_id])
+                    #self.writer.write('mon', event.mon.tel[tel_id])
         except ValueError as e:
             self.log.error(e)
 
