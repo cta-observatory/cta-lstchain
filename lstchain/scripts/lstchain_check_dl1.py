@@ -16,8 +16,9 @@ from lstchain.datachecks import check_dl1
 parser = argparse.ArgumentParser()
 
 # Required arguments
+# input file(s). Wildcards can be used, but inside quotes e.g. "dl1*.h5"
 parser.add_argument('--input_file', type=str, required=True,
-                    help='Path to DL1 data file (containing pixel-wise '
+                    help='Path to DL1 data file(s) (containing pixel-wise '
                          'charge information and image parameters).'
                     )
 
