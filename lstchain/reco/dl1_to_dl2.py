@@ -463,11 +463,16 @@ def get_source_dependent_parameters(data, config={}):
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
     
-    disp, miss = camera_to_shower_coordinates(expected_src_pos_x_m, expected_src_pos_y_m, data['x'], data['y'], data['psi'])
-    alpha = np.rad2deg(np.arctan2(miss, disp))
-    alpha[alpha<0] = 180 + alpha[alpha<0]
-    alpha[alpha>90] = 180 - alpha[alpha>90]
-    src_dep_params['alpha'] = alpha
+    disp, miss = camera_to_shower_coordinates(
+        expected_src_pos_x_m,
+        expected_src_pos_y_m, 
+        data['x'],
+        data['y'],
+        data['psi']
+    )
+
+    
+    src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
     return src_dep_params
 
@@ -494,11 +499,13 @@ def get_expected_source_pos(data, data_type, config):
         
         focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
         
-        expected_src_pos = utils.sky_to_camera((data['mc_alt_tel'].values + config['mc_nominal_source_x_deg']) * u.deg,
-                                               (data['mc_az_tel'].values + config['mc_nominal_source_y_deg']) * u.deg,
-                                               focal_length,
-                                               data['mc_alt_tel'].values * u.deg,
-                                               data['mc_az_tel'].values * u.deg)
+        expected_src_pos = utils.sky_to_camera(
+            u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
+            u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
+            focal_length,
+            data['mc_alt_tel'].values * u.deg,
+            data['mc_az_tel'].values * u.deg
+        )
         
         expected_src_pos_x_m = expected_src_pos.x.to_value()
         expected_src_pos_y_m = expected_src_pos.y.to_value()
