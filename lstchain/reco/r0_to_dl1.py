@@ -3,10 +3,6 @@ calculate image parameters of the events: Hillas parameters, timing
 parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
-Usage:
-
-"import calib_dl0_to_dl1"
-
 """
 import os
 import logging
@@ -56,6 +52,7 @@ from ..pointing import PointingPosition
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
+    'add_disp_to_parameters_table',
 ]
 
 
