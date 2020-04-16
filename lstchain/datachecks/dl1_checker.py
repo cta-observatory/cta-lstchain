@@ -38,7 +38,8 @@ def check_dl1(filenames, output_path):
 
     """
 
-    dl1datacheck = DL1DataCheckContainer()
+    dl1datacheck_pedestals = DL1DataCheckContainer()
+    dl1datacheck_cosmics   = DL1DataCheckContainer()
 
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
@@ -79,7 +80,7 @@ def check_dl1(filenames, output_path):
 
                 # in order to read in the images we have to use tables,
                 # because pandas is not compatible with vector columns
-                group = file.root.dl1.event.telescope.image.LST_LSTCam
+                image_table = file.root.dl1.event.telescope.image.LST_LSTCam
 
                 # fill dummy event times with NaNs in case they do not exist
                 # (like in MC):
@@ -88,20 +89,40 @@ def check_dl1(filenames, output_path):
                     dummy_times[:] = np.nan
                     parameters['dragon_time'] = dummy_times
 
+                # create subsets of the parameters dataframes:
+                # (is this too memory consuming?)
+                pedestals = parameters.loc[parameters['ucts_trigger_type']==32]
+                cosmics = parameters.loc[parameters['ucts_trigger_type']!=32]
+
+                # create masks for the images table:
+                pedestal_mask = image_table.col('ucts_trigger_type')==32
+                cosmics_mask = ~pedestal_mask
+
                 # fill quantities which depend on event-wise (not
                 # pixel-wise) parameters:
-                dl1datacheck.fill_event_wise_info(subrun_index, parameters)
-                dl1datacheck.fill_pixel_wise_info(group)
-                writer.write("dl1datacheck", dl1datacheck)
+                dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
+                                                            pedestals)
+                dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
+                                                            cosmics)
+
+                # now fill pixel-wise information:
+                dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                            pedestal_mask)
+                dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
+                                                          cosmics_mask)
+
+                writer.write("dl1datacheck/pedestals", dl1datacheck_pedestals)
+                writer.write("dl1datacheck/cosmics", dl1datacheck_cosmics)
 
                 # loop over calibrated images
-                #images = [x['image'] for x in group.iterrows()]
+                #images = [x['image'] for x in image_table.iterrows()]
                 #for full_image, event_id, dragon_time in \
                 #zip(images, parameters['event_id'], parameters['dragon_time']):
                 #    if event_id%10000 == 0:
                 #        print(event_id)
 
-                dl1datacheck.reset()
+                dl1datacheck_pedestals.reset()
+                dl1datacheck_cosmics.reset()
 
     # we assume that camera geom is the same in all files, & write the last one:
     geom.to_table().write(out_filename,
@@ -111,6 +132,17 @@ def check_dl1(filenames, output_path):
     plot_datacheck(out_filename)
 
 def plot_datacheck(filename=''):
+    """
+
+    Parameters
+    ----------
+    filename: .h5 file produced by the method check_dl1
+
+    Returns
+    -------
+    None
+
+    """
 
     pdf_filename = filename.replace('.h5', '.pdf')
 
@@ -121,7 +153,8 @@ def plot_datacheck(filename=''):
 
     with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
 
-        table = file.root.dl1datacheck
+        # first plot some results for interleved pedestals:
+        table = file.root.dl1datacheck.pedestals
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12.,9.])
         axes[0,0].plot(table.col('subrun_index'), table.col('num_events'))
@@ -135,15 +168,27 @@ def plot_datacheck(filename=''):
         cam.show()
         pdf.savefig()
 
+        # now results for the cosmic events:
+        table = file.root.dl1datacheck.cosmics
+
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
+        axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
+        cam = CameraDisplay(engineering_geom,
+                            np.sum(table.col('num_pulses_above_10_pe'), axis=0),
+                            ax=axes[0, 0])
+        cam.add_colorbar(ax=axes[0, 0])
+        cam.show()
+        pdf.savefig()
+
 class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
     """
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
-    num_shower_events = Field(-1, 'Number of shower events')
-    num_pedestal_events = Field(-1, 'Number of pedestal events')
-    num_flatfield_events = Field(-1, 'Number of flatfield events')
     num_pulses_above_10_pe = Field(None, 'Number of >10 p.e. pulses',
                                    unit=1./u.s)
 
@@ -153,7 +198,8 @@ class DL1DataCheckContainer(Container):
 
         Parameters
         ----------
-        table: DL1 parameters, event-wise python table "image" from DL1 files
+        table: DL1 parameters, event-wise pandas dataframe, "parameters" from
+        DL1 files
 
         Returns
         -------
@@ -162,10 +208,21 @@ class DL1DataCheckContainer(Container):
         """
         self.subrun_index = subrun_index
         self.num_events = table['ucts_trigger_type'].count()
-        self.num_pedestal_events = \
-            np.sum(table['ucts_trigger_type'].between(32,32))
 
-    def fill_pixel_wise_info(self, table):
-        charge = table.col('image')
+    def fill_pixel_wise_info(self, table, mask):
+        """
+        Fills the quantities that are calculated pixel-wise
+
+        Parameters
+        ----------
+        table: DL1 parameters, event-wise python table "image" from DL1 files
+        mask: indicates rows that have to be used for filling this container
+
+        Returns
+        -------
+        None
+
+        """
+        charge = table.col('image')[mask]
         # count, for each pixel, the number of entries with charge>10pe:
         self.num_pulses_above_10_pe  = np.sum(charge > 10., axis=0)
