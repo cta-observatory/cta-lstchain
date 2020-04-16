@@ -24,6 +24,7 @@ from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 
+
 def check_dl1(filenames, output_path):
     """
 
@@ -39,13 +40,12 @@ def check_dl1(filenames, output_path):
     """
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
-    dl1datacheck_cosmics   = DL1DataCheckContainer()
+    dl1datacheck_cosmics = DL1DataCheckContainer()
 
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
     filename = filenames[0]
     run_number = int(filename[filename.find('Run')+3:][:5])
-    subrun_index = int(filename[filename.find('Run')+9:][:4])
     filename_prefix = filename[:filename.find('Run')]
 
     # define output filename (overwrite if already existing)
@@ -67,7 +67,7 @@ def check_dl1(filenames, output_path):
             subrun_index = int(filename[filename.find('Run') + 9:][:4])
 
             cam_description_table = \
-            Table.read(filename, path='instrument/telescope/camera/LSTCam')
+                Table.read(filename, path='instrument/telescope/camera/LSTCam')
             geom = CameraGeometry.from_table(cam_description_table)
 
             with tables.open_file(filename) as file:
@@ -75,8 +75,6 @@ def check_dl1(filenames, output_path):
                 # unfortunately pandas.read_hdf does not seem compatible with
                 # 'with... as...' statements
                 parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-                telescope_description = \
-                pd.read_hdf(filename, key='instrument/telescope/optics')
 
                 # in order to read in the images we have to use tables,
                 # because pandas is not compatible with vector columns
@@ -91,11 +89,12 @@ def check_dl1(filenames, output_path):
 
                 # create subsets of the parameters dataframes:
                 # (is this too memory consuming?)
-                pedestals = parameters.loc[parameters['ucts_trigger_type']==32]
-                cosmics = parameters.loc[parameters['ucts_trigger_type']!=32]
+                pedestals = \
+                    parameters.loc[parameters['ucts_trigger_type'] == 32]
+                cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
 
                 # create masks for the images table:
-                pedestal_mask = image_table.col('ucts_trigger_type')==32
+                pedestal_mask = image_table.col('ucts_trigger_type') == 32
                 cosmics_mask = ~pedestal_mask
 
                 # fill quantities which depend on event-wise (not
@@ -103,7 +102,7 @@ def check_dl1(filenames, output_path):
                 dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
                                                             pedestals)
                 dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
-                                                            cosmics)
+                                                          cosmics)
 
                 # now fill pixel-wise information:
                 dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
@@ -114,13 +113,6 @@ def check_dl1(filenames, output_path):
                 writer.write("dl1datacheck/pedestals", dl1datacheck_pedestals)
                 writer.write("dl1datacheck/cosmics", dl1datacheck_cosmics)
 
-                # loop over calibrated images
-                #images = [x['image'] for x in image_table.iterrows()]
-                #for full_image, event_id, dragon_time in \
-                #zip(images, parameters['event_id'], parameters['dragon_time']):
-                #    if event_id%10000 == 0:
-                #        print(event_id)
-
                 dl1datacheck_pedestals.reset()
                 dl1datacheck_cosmics.reset()
 
@@ -130,6 +122,7 @@ def check_dl1(filenames, output_path):
                           append=True, serialize_meta=True)
 
     plot_datacheck(out_filename)
+
 
 def plot_datacheck(filename=''):
     """
@@ -156,15 +149,16 @@ def plot_datacheck(filename=''):
         # first plot some results for interleved pedestals:
         table = file.root.dl1datacheck.pedestals
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12.,9.])
-        axes[0,0].plot(table.col('subrun_index'), table.col('num_events'))
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
+        axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
         pdf.savefig()
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12.,9.])
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
         cam = CameraDisplay(engineering_geom,
                             np.sum(table.col('num_pulses_above_10_pe'), axis=0),
-                            ax = axes[0,0])
-        cam.add_colorbar(ax = axes[0,0])
+                            ax=axes[0, 0], norm='log', title='Rate of >10 '
+                                                             'p.e. pulses')
+        cam.add_colorbar(ax=axes[0, 0])
         cam.show()
         pdf.savefig()
 
@@ -178,10 +172,12 @@ def plot_datacheck(filename=''):
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
         cam = CameraDisplay(engineering_geom,
                             np.sum(table.col('num_pulses_above_10_pe'), axis=0),
-                            ax=axes[0, 0])
+                            ax=axes[0, 0], norm='log', title='Rate of >10 '
+                                                             'p.e. pulses')
         cam.add_colorbar(ax=axes[0, 0])
         cam.show()
         pdf.savefig()
+
 
 class DL1DataCheckContainer(Container):
     """
@@ -198,6 +194,7 @@ class DL1DataCheckContainer(Container):
 
         Parameters
         ----------
+        subrun_index
         table: DL1 parameters, event-wise pandas dataframe, "parameters" from
         DL1 files
 
@@ -225,4 +222,4 @@ class DL1DataCheckContainer(Container):
         """
         charge = table.col('image')[mask]
         # count, for each pixel, the number of entries with charge>10pe:
-        self.num_pulses_above_10_pe  = np.sum(charge > 10., axis=0)
+        self.num_pulses_above_10_pe = np.sum(charge > 10., axis=0)
