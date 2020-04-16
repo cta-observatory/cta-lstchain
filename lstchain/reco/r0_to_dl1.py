@@ -186,8 +186,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                 + os.path.basename(input_filename).split('.',5)[3] + '.h5'
                 )
         else:
-             output_filename = 'dl1_' 
-             + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
+             output_filename = 'dl1_'
+             + os.path.splitext(os.path.basename(input_filename))[0] + '.h5'
 
     if os.path.exists(output_filename):
         raise AttributeError(output_filename + ' exists, exiting.')
