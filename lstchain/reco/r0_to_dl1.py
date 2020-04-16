@@ -169,9 +169,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     calibration_path: Path to the file with calibration constants and
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
-    pointing_file_path: path to the Drive log with the pointing information
-    Arguments below are just temporal and will be removed whenever UCTS+EvB
-    is proved to stably and reliably provide timestamps.
+        pointing_file_path: path to the Drive log with the pointing information
+        Arguments below are just temporal and will be removed whenever UCTS+EvB
+        is proved to stably and reliably provide timestamps.
     ucts_t0_dragon: first valid ucts_time
     dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
     ucts_t0_tib: first valid ucts_time for the first valid TIB counter
@@ -183,7 +183,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     """
     if output_filename is None:
         output_filename = (
-            'dl1_' + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
+            'dl1_' + os.path.basename(input_filename).split('.',1)[0] + '.' + \
+                os.path.basename(os.path.basename(input_filename).split('.',2)[2]).rsplit('.',1)[0] + '.h5'  
         )
     if os.path.exists(output_filename):
         raise AttributeError(output_filename + ' exists, exiting.')
