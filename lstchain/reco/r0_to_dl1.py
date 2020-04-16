@@ -179,11 +179,16 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     """
     if output_filename is None:
-        output_filename = (
-            'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' \
-                + os.path.basename(input_filename).split('.',5)[2] + '.' \
-                + os.path.basename(input_filename).split('.',5)[3] + '.h5'
-        )
+        if (input_filename.startswith('LST')):
+            output_filename = (
+                'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' \
+                    + os.path.basename(input_filename).split('.',5)[2] + '.' \
+                    + os.path.basename(input_filename).split('.',5)[3] + '.h5'
+                )
+        else:
+             output_filename = 'dl1_' \
+                 + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
+
     if os.path.exists(output_filename):
         raise AttributeError(output_filename + ' exists, exiting.')
 
