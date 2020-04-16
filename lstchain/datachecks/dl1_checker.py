@@ -16,11 +16,12 @@ import pandas as pd
 import tables
 from astropy import units as u
 from astropy.table import Table
+from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.core import Container, Field
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
+from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
-from lstchain.io.io import dl1_images_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 
 def check_dl1(filenames, output_path):
@@ -49,6 +50,8 @@ def check_dl1(filenames, output_path):
     # define output filename (overwrite if already existing)
     out_filename = output_path + '/datacheck_' + filename_prefix + 'Run' + str(
             run_number) + '.h5'
+    # patch for DL1 files which contain the "stream tag" in the name: LST-1.1:
+    out_filename = out_filename.replace('LST-1.1', 'LST-1')
     if os.path.exists(out_filename):
         os.remove(out_filename)
 
@@ -70,12 +73,13 @@ def check_dl1(filenames, output_path):
 
                 # unfortunately pandas.read_hdf does not seem compatible with
                 # 'with... as...' statements
-                parameters = pd.read_hdf(filename, key = dl1_params_lstcam_key)
+                parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
                 telescope_description = \
                 pd.read_hdf(filename, key='instrument/telescope/optics')
 
+                # in order to read in the images we have to use tables,
+                # because pandas is not compatible with vector columns
                 group = file.root.dl1.event.telescope.image.LST_LSTCam
-                images = [x['image'] for x in group.iterrows()]
 
                 # fill dummy event times with NaNs in case they do not exist
                 # (like in MC):
@@ -87,14 +91,22 @@ def check_dl1(filenames, output_path):
                 # fill quantities which depend on event-wise (not
                 # pixel-wise) parameters:
                 dl1datacheck.fill_event_wise_info(subrun_index, parameters)
+                dl1datacheck.fill_pixel_wise_info(group)
                 writer.write("dl1datacheck", dl1datacheck)
 
-                for full_image, event_id, dragon_time in \
-                zip(images, parameters['event_id'], parameters['dragon_time']):
-                    if event_id%10000 == 0:
-                        print(event_id)
+                # loop over calibrated images
+                #images = [x['image'] for x in group.iterrows()]
+                #for full_image, event_id, dragon_time in \
+                #zip(images, parameters['event_id'], parameters['dragon_time']):
+                #    if event_id%10000 == 0:
+                #        print(event_id)
 
                 dl1datacheck.reset()
+
+    # we assume that camera geom is the same in all files, & write the last one:
+    geom.to_table().write(out_filename,
+                          path=f'/instrument/telescope/camera/LSTCam',
+                          append=True, serialize_meta=True)
 
     plot_datacheck(out_filename)
 
@@ -102,21 +114,38 @@ def plot_datacheck(filename=''):
 
     pdf_filename = filename.replace('.h5', '.pdf')
 
-    dl1datacheck = pd.read_hdf(filename, key='dl1datacheck')
-    with PdfPages(pdf_filename) as pdf:
+    cam_description_table = \
+        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+    geom = CameraGeometry.from_table(cam_description_table)
+    engineering_geom = geom.transform_to(EngineeringCameraFrame())
+
+    with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
+
+        table = file.root.dl1datacheck
+
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12.,9.])
-        dl1datacheck.plot('subrun_index', 'num_events', ax=axes[0,0])
+        axes[0,0].plot(table.col('subrun_index'), table.col('num_events'))
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12.,9.])
+        cam = CameraDisplay(engineering_geom,
+                            np.sum(table.col('num_pulses_above_10_pe'), axis=0),
+                            ax = axes[0,0])
+        cam.add_colorbar(ax = axes[0,0])
+        cam.show()
         pdf.savefig()
 
 class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
     """
-    subrun_index = Field(-1, 'subrun_index')
-    num_events = Field(-1, 'num_events')
-    num_shower_events = Field(-1, 'num_shower_events')
-    num_pedestal_events = Field(-1, 'num_pedestal_events')
-    num_flatfield_events = Field(-1, 'num_flatfield_events')
+    subrun_index = Field(-1, 'Subrun index')
+    num_events = Field(-1, 'Total number of events')
+    num_shower_events = Field(-1, 'Number of shower events')
+    num_pedestal_events = Field(-1, 'Number of pedestal events')
+    num_flatfield_events = Field(-1, 'Number of flatfield events')
+    num_pulses_above_10_pe = Field(None, 'Number of >10 p.e. pulses',
+                                   unit=1./u.s)
 
     def fill_event_wise_info(self, subrun_index, table):
         """
@@ -124,7 +153,7 @@ class DL1DataCheckContainer(Container):
 
         Parameters
         ----------
-        table: DL1 parameters, event-wise pandas table DL1 files
+        table: DL1 parameters, event-wise python table "image" from DL1 files
 
         Returns
         -------
@@ -135,3 +164,8 @@ class DL1DataCheckContainer(Container):
         self.num_events = table['ucts_trigger_type'].count()
         self.num_pedestal_events = \
             np.sum(table['ucts_trigger_type'].between(32,32))
+
+    def fill_pixel_wise_info(self, table):
+        charge = table.col('image')
+        # count, for each pixel, the number of entries with charge>10pe:
+        self.num_pulses_above_10_pe  = np.sum(charge > 10., axis=0)
