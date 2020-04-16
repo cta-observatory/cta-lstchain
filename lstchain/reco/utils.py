@@ -34,11 +34,11 @@ __all__ = [
     'cartesian_to_polar',
     'predict_source_position_in_camera',
     'expand_tel_list',
-    'filter_events'
-    'linear_imputer'
+    'filter_events',
+    'linear_imputer',
     'impute_pointing',
     'clip_alt',
-    'unix_tai_to_utc'
+    'unix_tai_to_utc',
 ]
 
 
