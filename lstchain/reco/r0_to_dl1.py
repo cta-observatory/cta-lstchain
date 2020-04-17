@@ -20,7 +20,7 @@ from ctapipe.io import HDF5TableWriter
 from eventio.simtel.simtelfile import SimTelFile
 import math
 from . import utils
-from .volume_reducer import check_and_apply_volume_reduction
+from .volume_reducer import apply_volume_reduction
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
@@ -317,7 +317,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
-            check_and_apply_volume_reduction(event, config)
+            apply_volume_reduction(event, config)
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
