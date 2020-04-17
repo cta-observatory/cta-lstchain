@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Functions to check the contents of LST DL1 files and associated muon ring files
 """
@@ -137,6 +136,9 @@ def plot_datacheck(filename=''):
 
     """
 
+    # aspect ratio of pdf pages:
+    pagesize = [12., 7.5]
+
     pdf_filename = filename.replace('.h5', '.pdf')
 
     cam_description_table = \
@@ -145,38 +147,93 @@ def plot_datacheck(filename=''):
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
+        # first plot some results for interleaved pedestals:
+        table_pedestals = file.root.dl1datacheck.pedestals
+        table_cosmics = file.root.dl1datacheck.cosmics
 
-        # first plot some results for interleved pedestals:
-        table = file.root.dl1datacheck.pedestals
-
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
-        axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        axes[0, 0].plot(table_cosmics.col('subrun_index'),
+                        table_cosmics.col('num_events'))
+        axes[0, 0].plot(table_pedestals.col('subrun_index'),
+                        table_pedestals.col('num_events'))
+        axes[0, 0].set_yscale('log')
         pdf.savefig()
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
-        cam = CameraDisplay(engineering_geom,
-                            np.sum(table.col('num_pulses_above_10_pe'), axis=0),
-                            ax=axes[0, 0], norm='log', title='Rate of >10 '
-                                                             'p.e. pulses')
+        # calculate pixel-wise charge mean and standard deviation for the
+        # whole run:
+        pedestal_mean = np.sum(
+                np.multiply(table_pedestals.col('charge_mean'),
+                            table_pedestals.col('num_events')[:,None]),
+                axis=0) / np.sum(table_pedestals.col('num_events'))
+        pedestal_stddev = \
+            np.sqrt(np.sum(
+                    np.multiply(table_pedestals.col('charge_stddev')**2,
+                                table_pedestals.col('num_events')[:,None]),
+                    axis=0) / np.sum(table_pedestals.col('num_events')))
+
+        # plot mean and std dev of pedestal charge, as camera display,
+        # vs. pixel id, and as a histogram:
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
+        cam = CameraDisplay(engineering_geom, pedestal_mean, ax=axes[0, 0],
+                            norm='log', title='Pedestal mean charge (p.e.)')
         cam.add_colorbar(ax=axes[0, 0])
         cam.show()
-        pdf.savefig()
-
-        # now results for the cosmic events:
-        table = file.root.dl1datacheck.cosmics
-
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
-        axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
-        pdf.savefig()
-
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=[12., 9.])
-        cam = CameraDisplay(engineering_geom,
-                            np.sum(table.col('num_pulses_above_10_pe'), axis=0),
-                            ax=axes[0, 0], norm='log', title='Rate of >10 '
-                                                             'p.e. pulses')
-        cam.add_colorbar(ax=axes[0, 0])
+        axes[0, 1].plot(engineering_geom.pix_id, pedestal_mean)
+        axes[0, 1].set_xlabel('Pixel id')
+        axes[0, 1].set_ylabel('Pedestal mean charge (p.e.)')
+        axes[0, 2].set_yscale('log')
+        axes[0, 2].hist(pedestal_mean, bins=200)
+        axes[0, 2].set_xlabel('Pedestal mean charge (p.e.)')
+        axes[0, 2].set_ylabel('Pixels')
+        # now the standard deviation:
+        cam = CameraDisplay(engineering_geom, pedestal_stddev, ax=axes[1, 0],
+                            norm='log', title='Pedestal charge std dev (p.e.)')
+        cam.add_colorbar(ax=axes[1, 0])
         cam.show()
+        axes[1, 1].plot(engineering_geom.pix_id, pedestal_stddev)
+        axes[1, 1].set_xlabel('Pixel id')
+        axes[1, 1].set_ylabel('Pedestal charge std dev (p.e.)')
+        axes[1, 2].set_yscale('log')
+        axes[1, 2].hist(pedestal_stddev, bins=200)
+        axes[1, 2].set_xlabel('Pedestal charge std dev (p.e.)')
+        axes[1, 2].set_ylabel('Pixels')
         pdf.savefig()
+
+        # for cosmics we plot the pixel rates above a few thresholds
+        # We asume here that 5 such thresholds are present in the dl1datacheck
+        # file
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize,
+                                 sharey='row')
+        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
+        # find the thresholds (in pe) for which the event numbers are stored:
+        colnames = [str for str in table_cosmics.colnames
+                    if str.find('num_pulses_above') == 0]
+        threshold = [int(str[str.find('above_')+6:str.find('_pe')])
+                     for str in colnames]
+        # sum (for all subruns) the number of events above the different
+        # thresholds:
+        sum_events = [np.sum(table_cosmics.col(colname), axis=0)
+                      for colname in colnames]
+        for i, colname in enumerate(colnames):
+            zscale = 'log' if threshold[i] < 200 else 'lin'
+            cam = CameraDisplay(engineering_geom, sum_events[i],
+                                ax=axes.flatten()[i], norm=zscale,
+                                title='Rate of >'+str(threshold[i])+
+                                      ' p.e. pulses')
+            cam.add_colorbar(ax=axes.flatten()[i])
+            cam.show()
+        axes[1, 2].axis('off')
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
+        axes[0, 0].set_xscale('log')
+        axes[0, 0].set_yscale('log')
+        for x, y in zip(threshold, sum_events):
+            axes[0][0].plot(x*np.ones(len(y)), y, 'o')
+        pdf.savefig()
+
 
 
 class DL1DataCheckContainer(Container):
@@ -185,8 +242,23 @@ class DL1DataCheckContainer(Container):
     """
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
-    num_pulses_above_10_pe = Field(None, 'Number of >10 p.e. pulses',
+
+    # pixel-wise quantities:
+    charge_mean = Field(-1, 'Mean of pixel charge')
+    charge_stddev = Field(-1, 'Standard deviation of pixel charge')
+    # keep number of events above a few thresholds, like a low-res histogram
+    # of pulse charges (2 points per decade in charge in p.e.):
+    num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses',
                                    unit=1./u.s)
+    num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses',
+                                   unit=1./u.s)
+    num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses',
+                                   unit=1./u.s)
+    num_pulses_above_0300_pe = Field(None, 'Number of >300 p.e. pulses',
+                                   unit=1./u.s)
+    num_pulses_above_1000_pe = Field(None, 'Number of >1000 p.e. pulses',
+                                   unit=1./u.s)
+    # there must be a nicer way of doing the above...
 
     def fill_event_wise_info(self, subrun_index, table):
         """
@@ -221,5 +293,11 @@ class DL1DataCheckContainer(Container):
 
         """
         charge = table.col('image')[mask]
-        # count, for each pixel, the number of entries with charge>10pe:
-        self.num_pulses_above_10_pe = np.sum(charge > 10., axis=0)
+        self.charge_mean = charge.mean(axis=0)
+        self.charge_stddev = charge.std(axis=0)
+        # count, for each pixel, the number of entries with charge>x pe:
+        self.num_pulses_above_0010_pe = np.sum(charge > 10, axis=0)
+        self.num_pulses_above_0030_pe = np.sum(charge > 30, axis=0)
+        self.num_pulses_above_0100_pe = np.sum(charge > 100, axis=0)
+        self.num_pulses_above_0300_pe = np.sum(charge > 300, axis=0)
+        self.num_pulses_above_1000_pe = np.sum(charge > 1000, axis=0)
