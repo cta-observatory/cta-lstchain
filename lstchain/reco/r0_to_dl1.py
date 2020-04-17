@@ -7,6 +7,7 @@ full camera image is also available.
 import os
 import logging
 import numpy as np
+from pathlib import Path
 from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
@@ -48,6 +49,7 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..calib.camera.calib import combine_channels
 from ..pointing import PointingPosition
+
 
 __all__ = [
     'get_dl1',
@@ -186,8 +188,8 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                 + os.path.basename(input_filename).split('.',5)[3] + '.h5'
                 )
         else:
-             output_filename = 'dl1_'
-             + os.path.splitext(os.path.basename(input_filename))[0] + '.h5'
+            p = Path(input_filename)
+            output_filename = p.with_name('dl1_' + p.name).with_suffix('.h5')
 
     if os.path.exists(output_filename):
         raise AttributeError(output_filename + ' exists, exiting.')
