@@ -5,7 +5,7 @@ Already trained Random Forests are required.
 
 Usage:
 
-$> python lst-recopipe arg1 arg2 ...
+$> python lstchain_dl1_to_dl2.py arg1 arg2 ...
 
 """
 
@@ -94,8 +94,7 @@ def main():
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.outdir, exist_ok=True)
-
-    outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
+    outfile = os.path.join(args.outdir, os.path.basename(args.datafile).replace('dl1','dl2'))
 
 
     shutil.copyfile(args.datafile, outfile)

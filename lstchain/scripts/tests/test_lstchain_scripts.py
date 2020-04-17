@@ -4,7 +4,7 @@ from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5')
-dl2_file = os.path.join(output_dir, 'dl2_dl1_gamma_test_large.simtel.h5')
+dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.simtel.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
