@@ -5,7 +5,7 @@ Already trained Random Forests are required.
 
 Usage:
 
-$> python lst-recopipe arg1 arg2 ...
+$> python lstchain_dl1_to_dl2.py arg1 arg2 ...
 
 """
 
