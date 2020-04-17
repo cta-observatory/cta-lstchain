@@ -460,8 +460,6 @@ def get_source_dependent_parameters(data, config={}):
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
     
     src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
-    src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(data['x'] - expected_src_pos_x_m)
-    src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(data['x'] - expected_src_pos_x_m)
     
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
@@ -471,6 +469,8 @@ def get_source_dependent_parameters(data, config={}):
         data['psi']
     )
 
+    src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
+    src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
     
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
@@ -503,8 +503,8 @@ def get_expected_source_pos(data, data_type, config):
             u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
             focal_length,
-            data['mc_alt_tel'].values * u.deg,
-            data['mc_az_tel'].values * u.deg
+            u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
+            u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
         
         expected_src_pos_x_m = expected_src_pos.x.to_value()
