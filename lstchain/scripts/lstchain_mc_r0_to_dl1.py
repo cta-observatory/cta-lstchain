@@ -29,10 +29,11 @@ args = parser.parse_args()
 
 def main():
 
-    os.makedirs(args.outdir, exist_ok=True)
+    outdir = os.path.abspath(args.outdir)
+    os.makedirs(outdir, exist_ok=True)
     
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
-    output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
+    output_filename = os.path.join(outdir, 'dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5')
 
     config = {}
     if args.config_file is not None:
