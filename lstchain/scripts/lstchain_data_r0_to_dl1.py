@@ -1,8 +1,11 @@
 import argparse
-from ctapipe.utils import get_dataset_path
 from lstchain.reco import r0_to_dl1
 from lstchain.io.config import read_configuration_file
+import sys
+import logging
 import os
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
@@ -94,29 +97,34 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
-    output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
+    output_filename = os.path.join(
+        args.outdir,
+        'dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
+    )
 
     config = {}
     if args.config_file is not None:
         try:
             config = read_configuration_file(args.config_file)
-        except("Custom configuration could not be loaded !!!"):
-            pass
+        except Exception as e:
+            log.error(f'Configuration file could not be read: {e}')
+            sys.exit(1)
 
     config["max_events"] = args.max_events
-    
-    r0_to_dl1.r0_to_dl1(args.infile,
-                         output_filename=output_filename,
-                         custom_config=config,
-                         pedestal_path=args.pedestal_path,
-                         calibration_path=args.calibration_path,
-                         time_calibration_path=args.time_calibration_path,
-                         pointing_file_path=args.pointing_file_path,
-                         ucts_t0_dragon=args.ucts_t0_dragon,
-                         dragon_counter0=args.dragon_counter0,
-                         ucts_t0_tib=args.ucts_t0_tib,
-                         tib_counter0=args.tib_counter0
-                         )
+
+    r0_to_dl1.r0_to_dl1(
+        args.infile,
+        output_filename=output_filename,
+        custom_config=config,
+        pedestal_path=args.pedestal_path,
+        calibration_path=args.calibration_path,
+        time_calibration_path=args.time_calibration_path,
+        pointing_file_path=args.pointing_file_path,
+        ucts_t0_dragon=args.ucts_t0_dragon,
+        dragon_counter0=args.dragon_counter0,
+        ucts_t0_tib=args.ucts_t0_tib,
+        tib_counter0=args.tib_counter0
+    )
 
 
 if __name__ == '__main__':
