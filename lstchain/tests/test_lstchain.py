@@ -1,24 +1,22 @@
 from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
-import os
-import shutil
+import tempfile
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
-import astropy.units as u 
+import astropy.units as u
+from pathlib import Path
 
-test_dir = 'testfiles'
 
-os.makedirs(test_dir, exist_ok=True)
+mc_gamma_testfile = Path(get_dataset_path('gamma_test_large.simtel.gz'))
 
-mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
-dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
-dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
-fake_dl2_proton_file = os.path.join(test_dir, 'dl2_fake_proton.simtel.h5')
-file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
-file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
-file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
+
+@pytest.fixture(scope='session')
+def temp_dir():
+    with tempfile.TemporaryDirectory() as d:
+        yield Path(d)
+
 
 custom_config = {
     "events_filters": {
@@ -30,12 +28,11 @@ custom_config = {
         "leakage": [0, 1]
     },
     "tailcut": {
-        "picture_thresh":6,
-        "boundary_thresh":2,
+        "picture_thresh": 6,
+        "boundary_thresh": 2,
         "keep_isolated_pixels": True,
         "min_number_picture_neighbors": 1
     },
-
     "random_forest_regressor_args": {
         "max_depth": 5,
         "min_samples_leaf": 2,
@@ -69,78 +66,93 @@ custom_config = {
         "reco_disp_dy"
     ],
 
-  "allowed_tels": [1, 2, 3, 4],
-  "image_extractor": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  4094
-  }
+    "allowed_tels": [1, 2, 3, 4],
+    "image_extractor": "GlobalPeakWindowSum",
+    "image_extractor_config": {},
+    "gain_selector": "ThresholdGainSelector",
+    "gain_selector_config": {
+        "threshold":  4094
+    }
 }
 
+
 def test_import_calib():
-    from lstchain import calib
+    from lstchain import calib  # noqa
+
 
 def test_import_reco():
-    from lstchain import reco
+    from lstchain import reco  # noqa
+
 
 def test_import_visualization():
-    from lstchain import visualization
+    from lstchain import visualization  # noqa
+
 
 def test_import_lstio():
-    from lstchain import io
+    from lstchain import io  # noqa
+
 
 @pytest.mark.run(order=1)
-def test_r0_to_dl1():
+def test_r0_to_dl1(temp_dir):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
-    infile = mc_gamma_testfile
-    r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
+    r0_to_dl1(
+        str(mc_gamma_testfile),
+        custom_config=custom_config,
+        output_filename=temp_dir / ('dl1_' + mc_gamma_testfile.stem + '.h5')
+    )
+
 
 @pytest.mark.run(order=2)
-def test_build_models():
+def test_build_models(temp_dir):
     from lstchain.reco.dl1_to_dl2 import build_models
-    infile = dl1_file
+    infile = temp_dir / ('dl1_' + mc_gamma_testfile.stem + '.h5')
 
-    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=False)
+    reg_energy, reg_disp, cls_gh = build_models(
+        infile, infile, custom_config=custom_config, save_models=False
+    )
 
     from sklearn.externals import joblib
-    joblib.dump(reg_energy, file_model_energy)
-    joblib.dump(reg_disp, file_model_disp)
-    joblib.dump(cls_gh, file_model_gh_sep)
+    joblib.dump(reg_energy, temp_dir / 'energy.pkl')
+    joblib.dump(reg_disp, temp_dir / 'disp.pkl')
+    joblib.dump(cls_gh, temp_dir / 'gh.pkl')
 
 
 @pytest.mark.run(order=3)
-def test_apply_models():
+def test_apply_models(temp_dir):
     from lstchain.reco.dl1_to_dl2 import apply_models
     from sklearn.externals import joblib
+
+    dl1_file = temp_dir / ('dl1_' + mc_gamma_testfile.stem + '.h5')
+    dl2_file = dl1_file.with_name(dl1_file.name.replace('dl1', 'dl2', 1))
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(dl1, filters=custom_config["events_filters"])
 
-    reg_energy = joblib.load(file_model_energy)
-    reg_disp = joblib.load(file_model_disp)
-    reg_cls_gh = joblib.load(file_model_gh_sep)
+    reg_energy = joblib.load(temp_dir / 'energy.pkl')
+    reg_disp = joblib.load(temp_dir / 'disp.pkl')
+    reg_cls_gh = joblib.load(temp_dir / 'gh.pkl')
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
-def produce_fake_dl2_proton_file():
+
+def produce_fake_dl2_proton_file(temp_dir):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type
     """
+    dl1_file = temp_dir / ('dl1_' + mc_gamma_testfile.stem + '.h5')
+    dl2_file = dl1_file.with_name(dl1_file.name.replace('dl1', 'dl2', 1))
     events = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     events.mc_type = 101
-    events.to_hdf(fake_dl2_proton_file, key=dl2_params_lstcam_key)
+    events.to_hdf(temp_dir / 'dl2_fake_protons.h5', key=dl2_params_lstcam_key)
+
 
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
-def test_sensitivity():
+def test_sensitivity(temp_dir):
     from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
 
-    produce_fake_dl2_proton_file()
-
-    nfiles_gammas = 1
-    nfiles_protons = 1
+    produce_fake_dl2_proton_file(temp_dir)
 
     eb = 10  # Number of energy bins
     gb = 11  # Number of gammaness bins
@@ -148,31 +160,29 @@ def test_sensitivity():
     obstime = 50 * 3600 * u.s
     noff = 2
 
+    dl1_file = temp_dir / ('dl1_' + mc_gamma_testfile.stem + '.h5')
+    dl2_file = dl1_file.with_name(dl1_file.name.replace('dl1', 'dl2', 1))
+    fake_dl2_proton_file = temp_dir / 'dl2_fake_protons.h5'
 
-    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(dl1_file,
-                                                                         dl1_file,
-                                                                         dl2_file,
-                                                                         fake_dl2_proton_file,
-                                                                         1, 1,
-                                                                         eb, gb, tb, noff,
-                                                                         obstime)
+    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(
+        dl1_file,
+        dl1_file,
+        dl2_file,
+        fake_dl2_proton_file,
+        1, 1,
+        eb, gb, tb, noff,
+        obstime,
+    )
 
-    E, best_sens, result, units, dl2 = sensitivity(dl1_file,
-                                                   dl1_file,
-                                                   dl2_file,
-                                                   fake_dl2_proton_file,
-                                                   1, 1,
-                                                   eb, gcut, tcut * (u.deg ** 2), noff,
-                                                   obstime)
-
-
-@pytest.mark.last
-def test_clean_test_files():
-    """
-    Function to clean the test files created by the previous test
-    """
-    import shutil
-    shutil.rmtree(test_dir)
+    E, best_sens, result, units, dl2 = sensitivity(
+        dl1_file,
+        dl1_file,
+        dl2_file,
+        fake_dl2_proton_file,
+        1, 1,
+        eb, gcut, tcut * (u.deg ** 2), noff,
+        obstime,
+    )
 
 
 def test_disp_vector():
