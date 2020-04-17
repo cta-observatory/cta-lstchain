@@ -10,18 +10,25 @@ Usage:
 """
 import os
 import logging
+import math
+from functools import partial
 import numpy as np
+import pandas as pd
+import tables
+import astropy.units as u
+from astropy.table import Table
+from traitlets.config import Config
+
+from ctapipe.utils import get_dataset_path
+from ctapipe.io import event_source, HDF5TableWriter
+from ctapipe.instrument import OpticsDescription
 from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
+    number_of_islands,
     HillasParameterizationError,
 )
 
-from ctapipe.utils import get_dataset_path
-from ctapipe.io import event_source
-from ctapipe.io import HDF5TableWriter
-from eventio.simtel.simtelfile import SimTelFile
-import math
 from . import utils
 from .volume_reducer import apply_volume_reduction
 from ..io.lstcontainers import ExtraImageInfo
@@ -29,28 +36,24 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..visualization import plot_calib
 
-from ctapipe.image.cleaning import number_of_islands
 
-import tables
-from functools import partial
-from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
-from ..io import add_global_metadata, write_metadata, write_subarray_tables
+from ..io import (
+    write_simtel_energy_histogram,
+    write_mcheader,
+    write_array_info,
+    global_metadata,
+    add_global_metadata,
+    write_metadata,
+    write_subarray_tables,
+)
 from ..io.io import add_column_table
 
-import pandas as pd
 from . import disp
-import astropy.units as u
-from astropy.table import Table
-from astropy.time import Time
 from .utils import sky_to_camera
 from .utils import unix_tai_to_utc
-from ctapipe.instrument import OpticsDescription
-from traitlets.config.loader import Config
 from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
-from ..calib.camera.calib import combine_channels
 from ..pointing import PointingPosition
 
 __all__ = [
@@ -63,14 +66,14 @@ cleaning_method = tailcuts_clean
 
 
 filters = tables.Filters(
-    complevel=5,    # enable compression, with level 0=disabled, 9=max
-    complib='blosc:zstd',   #  compression using blosc
-    fletcher32=True,    # attach a checksum to each chunk for error correction
-    bitshuffle=False,   # for BLOSC, shuffle bits for better compression
+    complevel=5,            # enable compression, with level 0=disabled, 9=max
+    complib='blosc:zstd',   # compression using blosc
+    fletcher32=True,        # attach a checksum to each chunk for error correction
+    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container = None, 
+def get_dl1(calibrated_event, telescope_id, dl1_container = None,
             custom_config = {}, use_main_island = True):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
