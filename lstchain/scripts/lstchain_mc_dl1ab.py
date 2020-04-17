@@ -3,7 +3,6 @@
 # Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
 
 
-
 import tables
 import numpy as np
 import argparse
@@ -18,7 +17,7 @@ from ctapipe.io.containers import HillasParametersContainer
 from astropy.units import Quantity
 from distutils.util import strtobool
 from lstchain.io import get_dataset_keys, auto_merge_h5files
-from lstchain.io.io import read_array_info
+from astropy.table import Table
 
 parser = argparse.ArgumentParser(description="Recompute parameters in a DL1 HDF5 file from calibrated images"
                                              "and based on passed config file. The results are written in a new HDF5 "
@@ -55,10 +54,10 @@ def main():
 
     print(config['tailcut'])
 
-    array_info = read_array_info(args.input_file)
-
-    camera_geom = CameraGeometry.from_name(array_info['layout'][array_info['layout']['tel_id']==1]['camera_type'][0])
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
+    cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
+    camera_geom = CameraGeometry.from_table(cam_table)
+
     dl1_container = DL1ParametersContainer()
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend(['wl', 'r', 'leakage', 'n_islands', 'intercept', 'time_gradient'])
@@ -76,7 +75,7 @@ def main():
             params = output.root[dl1_params_lstcam_key].read()
 
             for ii, row in enumerate(image_table):
-                if ii%10000 == 0:
+                if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
                 pulse_time = row['pulse_time']
@@ -105,7 +104,7 @@ def main():
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
                     dl1_container.length = length.value
-                    dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
+                    dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
                     for p in parameters_to_update:
                         params[ii][p] = Quantity(dl1_container[p]).value
