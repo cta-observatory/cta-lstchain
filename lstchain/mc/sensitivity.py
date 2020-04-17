@@ -81,11 +81,13 @@ def process_mc(dl1_file, dl2_file, mc_type):
     # we use all telescopes (number of events needs to be multiplied 
     # by the number of LSTs in the simulation)
 
-    filter_good_events =  (events.leakage < 0.2) & \
-                          (events.intensity > 50)
-                          #(events.tel_id==1)
-                          #(events.wl > 0.1) 
-    
+    filter_good_events = (
+        (events.leakage2_intensity < 0.2)
+        & (events.intensity > 50)
+        # & (events.tel_id==1)
+        # & (events.wl > 0.1)
+    )
+
 
     events = events[filter_good_events]
 

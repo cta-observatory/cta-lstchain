@@ -7,7 +7,7 @@ from astropy.units import Quantity
 import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
-from ctapipe.image import leakage
+from ctapipe.image import leakage, concentration
 from ctapipe.image.cleaning import number_of_islands
 from ..reco import utils
 from numpy import nan
@@ -46,7 +46,14 @@ class DL1ParametersContainer(Container):
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
-    leakage = Field(None, 'Leakage')
+    leakage1_intensity = Field(None, 'Fraction of intensity in outermost pixels')
+    leakage2_intensity = Field(None, 'Fraction of intensity in two outermost rings of pixels')
+    leakage1_pixel = Field(None, 'Fraction of signal pixels that are border pixels')
+    leakage2_pixel = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
+    n_pixels = Field(None, 'Number of pixels after cleaning')
+    concentration_cog = Field(None, 'Fraction of intensity in three pixels closest to the cog')
+    concentration_core = Field(None, 'Fraction of intensity inside hillas ellipse')
+    concentration_pixel = Field(None, 'Fraction of intensity in brightest pixel')
     n_islands = Field(None, 'Number of Islands')
     alt_tel = Field(None, 'Telescope altitude pointing', unit=u.rad)
     az_tel = Field(None, 'Telescope azimuth pointing', unit=u.rad)
@@ -152,18 +159,27 @@ class DL1ParametersContainer(Container):
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
-        self.leakage = leakage_c.leakage2_intensity
+        self.leakage1_intensity = leakage_c.leakage1_intensity
+        self.leakage2_intensity = leakage_c.leakage2_intensity
+        self.leakage1_pixel = leakage_c.leakage1_pixel
+        self.leakage1_pixel = leakage_c.leakage2_pixel
 
-    def set_n_islands(self, geom, clean): 
+    def set_concentration(self, geom, image, hillas_parameters):
+        conc = concentration(geom, image, hillas_parameters)
+        self.concentration_cog = conc.concentration_cog
+        self.concentration_core = conc.concentration_core
+        self.concentration_pixel = conc.concentration_pixel
+
+    def set_n_islands(self, geom, clean):
         n_islands, islands_mask = number_of_islands(geom, clean)
         self.n_islands = n_islands
 
     def set_telescope_info(self, event, telescope_id):
         self.tel_id = telescope_id
         tel_pos = event.inst.subarray.positions[telescope_id]
-        self.tel_pos_x = tel_pos[0] 
-        self.tel_pos_y = tel_pos[1] 
-        self.tel_pos_z = tel_pos[2] 
+        self.tel_pos_x = tel_pos[0]
+        self.tel_pos_y = tel_pos[1]
+        self.tel_pos_z = tel_pos[2]
 
     def set_source_camera_position(self, event, telescope_id):
         tel = event.inst.subarray.tel[telescope_id]

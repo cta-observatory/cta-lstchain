@@ -20,7 +20,7 @@
       0,
       1
     ],
-    "leakage": [
+    "leakage2_intensity": [
       0,
       0.4
     ]
@@ -81,7 +81,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage",
+    "leakage2_intensity",
     "n_islands"
   ],
   "classification_features": [
@@ -97,7 +97,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage",
+    "leakage2_intensity",
     "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
