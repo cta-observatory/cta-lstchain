@@ -109,10 +109,10 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
     pulse_time = dl1.pulse_time
 
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
+    n_pixels = np.count_nonzero(signal_pixels)
 
-    if image[signal_pixels].sum() > 0:
-
-        # check the number of islands 
+    if n_pixels > 0:
+        # check the number of islands
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
 
         if use_main_island:
@@ -136,6 +136,8 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
                                           pulse_time[signal_pixels],
                                           hillas)
         dl1_container.set_leakage(camera, image, signal_pixels)
+        dl1_container.set_concentration(camera, image, hillas)
+        dl1_container.n_pixels = n_pixels
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
