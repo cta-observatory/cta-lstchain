@@ -322,7 +322,6 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
                 tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
-                tel_name = tel_name.replace('-003', '')
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
