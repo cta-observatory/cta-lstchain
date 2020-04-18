@@ -96,11 +96,6 @@ def test_r0_to_dl1():
     infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
 
-def test_get_source_dependent_parameters():
-    from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
-
-    dl1_params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, custom_config)
 
 @pytest.mark.run(order=2)
 def test_build_models():
