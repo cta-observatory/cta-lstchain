@@ -98,9 +98,9 @@ def check_dl1(filenames, output_path):
 
                 # create subsets of the parameters dataframes:
                 # (is this too memory consuming?)
-                pedestals = \
-                    parameters.loc[parameters['ucts_trigger_type'] == 32]
-                cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
+                #pedestals = \
+                #    parameters.loc[parameters['ucts_trigger_type'] == 32]
+                #cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
 
                 # create masks for the images table:
                 pedestal_mask = image_table.col('ucts_trigger_type') == 32
@@ -110,16 +110,37 @@ def check_dl1(filenames, output_path):
                                  image_table.col('image').shape[1]
                 cosmics_mask = ~(pedestal_mask | flatfield_mask)
 
+                # Now create the masks for the parameters table, just the
+                # same event_id's (i.e. we do not assume that the rows in the
+                # images and parameters tables correspond one to one, though
+                # this should be the case if all events are saved)
+                ped_indices = image_table.col('event_id')[
+                    pedestal_mask]
+                params_pedestal_mask = \
+                    np.array([(True if id in ped_indices else False)
+                              for id in parameters['event_id']])
+                ff_indices = image_table.col('event_id')[flatfield_mask]
+                params_flatfield_mask = \
+                    np.array([(True if id in ff_indices else False)
+                              for id in parameters['event_id']])
+                params_cosmics_mask = ~(params_pedestal_mask |
+                                        params_flatfield_mask)
+
                 print('   pedestals:', np.sum(pedestal_mask),
                       'flatfield:', np.sum(flatfield_mask),
                       'cosmics:', np.sum(cosmics_mask))
 
                 # fill quantities which depend on event-wise (not
                 # pixel-wise) parameters:
-                dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
-                                                            pedestals)
-                dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
-                                                          cosmics)
+                dl1datacheck_pedestals.\
+                    fill_event_wise_info(subrun_index, parameters,
+                                         params_pedestal_mask)
+                dl1datacheck_flatfield.\
+                    fill_event_wise_info(subrun_index, parameters,
+                                         params_flatfield_mask)
+                dl1datacheck_cosmics.\
+                    fill_event_wise_info(subrun_index, parameters,
+                                         params_cosmics_mask)
 
                 # now fill pixel-wise information:
                 dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
@@ -178,6 +199,8 @@ def plot_datacheck(filename='', out_path=None):
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         axes[0, 0].plot(table_cosmics.col('subrun_index'),
                         table_cosmics.col('num_events'))
+        axes[0, 0].plot(table_flatfield.col('subrun_index'),
+                        table_flatfield.col('num_events'))
         axes[0, 0].plot(table_pedestals.col('subrun_index'),
                         table_pedestals.col('num_events'))
         axes[0, 0].set_yscale('log')
@@ -291,7 +314,7 @@ class DL1DataCheckContainer(Container):
                                    unit=1./u.s)
     # there must be a nicer way of doing the above...
 
-    def fill_event_wise_info(self, subrun_index, table):
+    def fill_event_wise_info(self, subrun_index, table, mask):
         """
         Fills the container fields that depend on event-wise DL1 info
 
@@ -307,7 +330,7 @@ class DL1DataCheckContainer(Container):
 
         """
         self.subrun_index = subrun_index
-        self.num_events = table['ucts_trigger_type'].count()
+        self.num_events = table['ucts_trigger_type'][mask].count()
 
     def fill_pixel_wise_info(self, table, mask):
         """
