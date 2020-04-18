@@ -3,7 +3,8 @@ Functions to check the contents of LST DL1 files and associated muon ring files
 """
 
 __all__ = [
-    'check_dl1'
+    'check_dl1',
+    'process_dl1_file',
     'plot_datacheck',
     'plot_mean_and_stddev',
     'DL1DataCheckContainer',
@@ -23,7 +24,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
-
+from multiprocessing import Pool
 
 def check_dl1(filenames, output_path):
     """
@@ -39,16 +40,6 @@ def check_dl1(filenames, output_path):
 
     """
 
-    dl1datacheck_pedestals = DL1DataCheckContainer()
-    dl1datacheck_flatfield = DL1DataCheckContainer()
-    dl1datacheck_cosmics = DL1DataCheckContainer()
-
-    # define criteria for detecting flatfield events, since as of 20200418
-    # there is no reliable event tagging for those. We require a minimum
-    # fraction of pixels with a charge above a sufficiently large value:
-    ff_min_pixel_fraction = 0.8
-    ff_charge_threshold = 50.
-
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
     filename = filenames[0]
@@ -56,114 +47,147 @@ def check_dl1(filenames, output_path):
     filename_prefix = filename[:filename.find('Run')]
 
     # define output filename (overwrite if already existing)
-    out_filename = output_path + '/datacheck_' + filename_prefix + 'Run' + str(
-            run_number) + '.h5'
+    out_filename = output_path + '/datacheck_' + filename_prefix + 'Run' + \
+                   str(run_number) + '.h5'
     # patch for DL1 files which contain the "stream tag" in the name: LST-1.1:
     out_filename = out_filename.replace('LST-1.1', 'LST-1')
     if os.path.exists(out_filename):
         os.remove(out_filename)
 
+    # TBD: Check here that all the run_numbers coincide!
+    # new_run_number = int(filename[filename.find('Run') + 3:][:5])
+    # if new_run_number != run_number:
+    #     raise RuntimeError('Error: found different run numbers among '
+    #                       'input files. Exiting')
+
+    # the list dl1datacheck will contain one entry per subrun. Each entry is a
+    # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
+    # one for flatfield events and one for cosmics
+
+    # check that all files exist:
+    for filename in filenames:
+        if not os.path.exists(filename):
+            raise FileNotFoundError
+
+    # create the dl1_datacheck containers (one per subrun) for the three
+    # event types, and add them to the list dl1datacheck:
+    pool = Pool()
+    dl1datacheck = pool.map(process_dl1_file, filenames)
+
     with HDF5TableWriter(out_filename) as writer:
+        # write the containers to the dl1 data check output file:
+        for dcheck in dl1datacheck:
+            writer.write("dl1datacheck/pedestals", dcheck[0])
+            writer.write("dl1datacheck/flatfield", dcheck[1])
+            writer.write("dl1datacheck/cosmics", dcheck[2])
 
-        for filename in filenames:
-            if not os.path.exists(filename):
-                raise FileNotFoundError
-            print('Opening file', filename)
-            new_run_number = int(filename[filename.find('Run')+3:][:5])
-            if new_run_number != run_number:
-                raise RuntimeError('Error: found different run numbers among '
-                                   'input files. Exiting')
-            subrun_index = int(filename[filename.find('Run') + 9:][:4])
-
-            cam_description_table = \
-                Table.read(filename, path='instrument/telescope/camera/LSTCam')
-            geom = CameraGeometry.from_table(cam_description_table)
-
-            with tables.open_file(filename) as file:
-
-                # unfortunately pandas.read_hdf does not seem compatible with
-                # 'with... as...' statements
-                parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-
-                # in order to read in the images we have to use tables,
-                # because pandas is not compatible with vector columns
-                image_table = file.root.dl1.event.telescope.image.LST_LSTCam
-
-                # fill dummy event times with NaNs in case they do not exist
-                # (like in MC):
-                if 'dragon_time' not in parameters.keys():
-                    dummy_times = np.empty(len(parameters['event_id']))
-                    dummy_times[:] = np.nan
-                    parameters['dragon_time'] = dummy_times
-
-                # create subsets of the parameters dataframes:
-                # (is this too memory consuming?)
-                #pedestals = \
-                #    parameters.loc[parameters['ucts_trigger_type'] == 32]
-                #cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
-
-                # create masks for the images table:
-                pedestal_mask = image_table.col('ucts_trigger_type') == 32
-                num_bright_pixels = np.sum(image_table.col('image') >
-                                        ff_charge_threshold, axis=1)
-                flatfield_mask = num_bright_pixels > ff_min_pixel_fraction *\
-                                 image_table.col('image').shape[1]
-                cosmics_mask = ~(pedestal_mask | flatfield_mask)
-
-                # Now create the masks for the parameters table, just the
-                # same event_id's (i.e. we do not assume that the rows in the
-                # images and parameters tables correspond one to one, though
-                # this should be the case if all events are saved)
-                ped_indices = image_table.col('event_id')[
-                    pedestal_mask]
-                params_pedestal_mask = \
-                    np.array([(True if id in ped_indices else False)
-                              for id in parameters['event_id']])
-                ff_indices = image_table.col('event_id')[flatfield_mask]
-                params_flatfield_mask = \
-                    np.array([(True if id in ff_indices else False)
-                              for id in parameters['event_id']])
-                params_cosmics_mask = ~(params_pedestal_mask |
-                                        params_flatfield_mask)
-
-                print('   pedestals:', np.sum(pedestal_mask),
-                      'flatfield:', np.sum(flatfield_mask),
-                      'cosmics:', np.sum(cosmics_mask))
-
-                # fill quantities which depend on event-wise (not
-                # pixel-wise) parameters:
-                dl1datacheck_pedestals.\
-                    fill_event_wise_info(subrun_index, parameters,
-                                         params_pedestal_mask)
-                dl1datacheck_flatfield.\
-                    fill_event_wise_info(subrun_index, parameters,
-                                         params_flatfield_mask)
-                dl1datacheck_cosmics.\
-                    fill_event_wise_info(subrun_index, parameters,
-                                         params_cosmics_mask)
-
-                # now fill pixel-wise information:
-                dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                            pedestal_mask)
-                dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                            flatfield_mask)
-                dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                          cosmics_mask)
-
-                writer.write("dl1datacheck/pedestals", dl1datacheck_pedestals)
-                writer.write("dl1datacheck/flatfield", dl1datacheck_flatfield)
-                writer.write("dl1datacheck/cosmics", dl1datacheck_cosmics)
-
-                dl1datacheck_pedestals.reset()
-                dl1datacheck_cosmics.reset()
-
-    # we assume that camera geom is the same in all files, & write the last one:
+    # we assume that cam geom is the same in all files, & write the first one:
+    cam_description_table = \
+        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+    geom = CameraGeometry.from_table(cam_description_table)
     geom.to_table().write(out_filename,
                           path=f'/instrument/telescope/camera/LSTCam',
                           append=True, serialize_meta=True)
 
+    # do the plots and save them to a pdf file:
     plot_datacheck(out_filename)
 
+    return
+
+def process_dl1_file(filename):
+    """
+
+    Parameters
+    ----------
+    filename: input DL1 .h5 file to be checked
+
+    Returns:
+    -------
+    dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
+    Containers of type DL1DataCheckContainer, with info on the three types of
+    events: interleaved pedestals, interleaved flatfield events, and cosmics
+
+    """
+
+    # define criteria for detecting flatfield events, since as of 20200418
+    # there is no reliable event tagging for those. We require a minimum
+    # fraction of pixels with a charge above a sufficiently large value:
+    ff_min_pixel_fraction = 0.8
+    ff_charge_threshold = 50.
+
+    print('Opening file', filename)
+    subrun_index = int(filename[filename.find('Run') + 9:][:4])
+
+    dl1datacheck_pedestals = DL1DataCheckContainer()
+    dl1datacheck_flatfield = DL1DataCheckContainer()
+    dl1datacheck_cosmics = DL1DataCheckContainer()
+
+    with tables.open_file(filename) as file:
+
+        # unfortunately pandas.read_hdf does not seem compatible with
+        # 'with... as...' statements
+        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
+        # in order to read in the images we have to use tables,
+        # because pandas is not compatible with vector columns
+        image_table = file.root.dl1.event.telescope.image.LST_LSTCam
+
+        # fill dummy event times with NaNs in case they do not exist
+        # (like in MC):
+        if 'dragon_time' not in parameters.keys():
+            dummy_times = np.empty(len(parameters['event_id']))
+            dummy_times[:] = np.nan
+            parameters['dragon_time'] = dummy_times
+
+        # create subsets of the parameters dataframes:
+        #  (is this too memory consuming?)
+        # pedestals = \
+        #    parameters.loc[parameters['ucts_trigger_type'] == 32]
+        # cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
+
+        # create masks for the images table:
+        pedestal_mask = image_table.col('ucts_trigger_type') == 32
+        num_bright_pixels = np.sum(image_table.col('image') >
+                                   ff_charge_threshold, axis=1)
+        flatfield_mask = num_bright_pixels > ff_min_pixel_fraction * \
+                         image_table.col('image').shape[1]
+        cosmics_mask = ~(pedestal_mask | flatfield_mask)
+
+        # Now create the masks for the parameters table, just the
+        # same event_id's (i.e. we do not assume that the rows in the
+        # images and parameters tables correspond one to one, though
+        # this should be the case if all events are saved)
+        ped_indices = image_table.col('event_id')[pedestal_mask]
+        params_pedestal_mask = np.array(
+                [(True if id in ped_indices else False) for id in
+                 parameters['event_id']])
+        ff_indices = image_table.col('event_id')[flatfield_mask]
+        params_flatfield_mask = np.array(
+                [(True if id in ff_indices else False) for id in
+                 parameters['event_id']])
+        params_cosmics_mask = ~(params_pedestal_mask | params_flatfield_mask)
+
+        print('   pedestals:', np.sum(pedestal_mask), 'flatfield:',
+              np.sum(flatfield_mask), 'cosmics:', np.sum(cosmics_mask))
+
+        # fill quantities which depend on event-wise (not
+        # pixel-wise) parameters:
+        dl1datacheck_pedestals.fill_event_wise_info(subrun_index, parameters,
+                                                    params_pedestal_mask)
+        dl1datacheck_flatfield.fill_event_wise_info(subrun_index, parameters,
+                                                    params_flatfield_mask)
+        dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
+                                                  params_cosmics_mask)
+
+        # now fill pixel-wise information:
+        dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                    pedestal_mask)
+        dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
+                                                    flatfield_mask)
+        dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
+                                                  cosmics_mask)
+
+    return dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
 
 def plot_datacheck(filename='', out_path=None):
     """
