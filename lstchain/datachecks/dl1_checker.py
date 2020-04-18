@@ -5,6 +5,7 @@ Functions to check the contents of LST DL1 files and associated muon ring files
 __all__ = [
     'check_dl1'
     'plot_datacheck',
+    'plot_mean_and_stddev',
     'DL1DataCheckContainer',
 ]
 
@@ -65,6 +66,8 @@ def check_dl1(filenames, output_path):
     with HDF5TableWriter(out_filename) as writer:
 
         for filename in filenames:
+            if not os.path.exists(filename):
+                raise FileNotFoundError
             print('Opening file', filename)
             new_run_number = int(filename[filename.find('Run')+3:][:5])
             if new_run_number != run_number:
@@ -141,13 +144,13 @@ def check_dl1(filenames, output_path):
     plot_datacheck(out_filename)
 
 
-def plot_datacheck(filename=''):
+def plot_datacheck(filename='', out_path=None):
     """
 
     Parameters
     ----------
     filename: .h5 file produced by the method check_dl1
-
+    out_path: optional, if not given it will be the same of file filename
     Returns
     -------
     None
@@ -158,6 +161,8 @@ def plot_datacheck(filename=''):
     pagesize = [12., 7.5]
 
     pdf_filename = filename.replace('.h5', '.pdf')
+    if out_path != None:
+        pdf_filename = out_path+'/'+pdf_filename[pdf_filename.rfind('/')+1:]
 
     cam_description_table = \
         Table.read(filename, path='instrument/telescope/camera/LSTCam')
@@ -247,6 +252,7 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     axes[0, 2].set_xlabel(label+' mean charge (p.e.)')
     axes[0, 2].set_ylabel('Pixels')
     # now the standard deviation:
+
     cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0],
                         norm='log', title=label+' charge std dev (p.e.)')
     cam.add_colorbar(ax=axes[1, 0])
