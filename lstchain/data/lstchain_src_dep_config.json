@@ -1,37 +1,21 @@
 {
   "events_filters": {
-    "log_intensity": [
-      2,
-      Infinity
-    ],
-    "width": [
-      0.01,
-      Infinity
-    ],
-    "length": [
-      0,
-      Infinity
-    ],
-    "wl": [
-      0,
-      1
-    ],
-    "r": [
-      0,
-      1
-    ],
-    "leakage2_intensity": [
-      0,
-      0.4
-    ]
+    "intensity": [0, Infinity],
+    "width": [0, Infinity],
+    "length": [0, Infinity],
+    "wl": [0, 1],
+    "r": [0, 1],
+    "leakage": [0, 1]
   },
+
   "tailcut": {
-    "picture_thresh": 6,
-    "boundary_thresh": 3,
-    "keep_isolated_pixels": false,
-    "min_number_picture_neighbors": 1
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":1
   },
-  "random_forest_regressor_args": {
+
+    "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
     "n_jobs": 4,
@@ -49,6 +33,7 @@
     "verbose": 0,
     "warm_start": false
   },
+
   "random_forest_classifier_args": {
     "max_depth": 100,
     "min_samples_leaf": 2,
@@ -68,40 +53,32 @@
     "warm_start": false,
     "class_weight": null
   },
+
   "regression_features": [
     "log_intensity",
     "width",
     "length",
-    "x",
-    "y",
-    "psi",
-    "phi",
     "wl",
-    "skewness",
+    "skewness_from_source",
     "kurtosis",
-    "r",
-    "time_gradient",
-    "leakage2_intensity",
-    "n_islands"
+    "time_gradient_from_source",
+    "leakage",
+    "n_islands",
+    "dist"
   ],
+
   "classification_features": [
     "log_intensity",
     "width",
     "length",
-    "x",
-    "y",
-    "psi",
-    "phi",
     "wl",
-    "skewness",
+    "skewness_from_source",
     "kurtosis",
-    "r",
-    "time_gradient",
-    "leakage2_intensity",
+    "time_gradient_from_source",
+    "leakage",
     "n_islands",
     "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
+    "dist"
   ],
 
   "allowed_tels": [1, 2, 3, 4],
@@ -125,36 +102,7 @@
     },
   "timestamps_pointing":"ucts",
 
-  "source_dependent": false,
-  "mc_nominal_source_x_deg": 0.4,
-  "mc_nominal_source_y_deg": 0.0,
-
-  "volume_reducer":{
-    "algorithm": null,
-    "parameters": {
-    }
-  },"allowed_tels": [1, 2, 3, 4],
-  "max_events": null,
-  "custom_calibration": false,
-  "write_pe_image": false,
-  "image_extractor": "LocalPeakWindowSum",
-  "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  3500
-  },
-  "LocalPeakWindowSum":{
-     "window_shift": 4,
-     "window_width":8
-    },
-  "GlobalPeakWindowSum":{
-     "window_shift": 4,
-     "window_width":8
-    },
-  "timestamps_pointing":"ucts",
-
-  "source_dependent": false,
+  "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
 

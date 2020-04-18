@@ -111,6 +111,12 @@
      "window_width":8
     },
   "timestamps_pointing":"ucts",
+
+
+  "source_dependent": false,
+  "mc_nominal_source_x_deg": 0.4,
+  "mc_nominal_source_y_deg": 0.0,
+
   "volume_reducer":{
     "algorithm": null,
     "parameters": {

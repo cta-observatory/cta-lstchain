@@ -1,6 +1,8 @@
 import os
 import pytest
+import pandas as pd
 from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile
+from lstchain.io.io import dl1_params_src_dep_lstcam_key
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5')
@@ -9,11 +11,21 @@ file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
 
+
+
 def test_lstchain_mc_r0_to_dl1():
     input_file = mc_gamma_testfile
     cmd = f'lstchain_mc_r0_to_dl1 -f {input_file} -o {output_dir}'
     os.system(cmd)
     assert os.path.exists(dl1_file)
+
+
+@pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
+def test_add_source_dependent_parameters():
+    cmd = f'lstchain_add_source_dependent_parameters -f {dl1_file}'
+    os.system(cmd)
+    dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
+    assert 'alpha' in dl1_params_src_dep.columns 
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
@@ -50,3 +62,4 @@ def test_mc_r0_to_dl2():
     os.system(cmd)
     # output_file = os.path.join(output_dir, 'dl2_' + os.path.basename(mc_gamma_testfile))
     assert os.path.exists(dl2_file)
+
