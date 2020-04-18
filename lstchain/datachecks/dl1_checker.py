@@ -39,7 +39,14 @@ def check_dl1(filenames, output_path):
     """
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
+    dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
+
+    # define criteria for detecting flatfield events, since as of 20200418
+    # there is no reliable event tagging for those. We require a minimum
+    # fraction of pixels with a charge above a sufficiently large value:
+    ff_min_pixel_fraction = 0.8
+    ff_charge_threshold = 50.
 
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
@@ -94,7 +101,15 @@ def check_dl1(filenames, output_path):
 
                 # create masks for the images table:
                 pedestal_mask = image_table.col('ucts_trigger_type') == 32
-                cosmics_mask = ~pedestal_mask
+                num_bright_pixels = np.sum(image_table.col('image') >
+                                        ff_charge_threshold, axis=1)
+                flatfield_mask = num_bright_pixels > ff_min_pixel_fraction *\
+                                 image_table.col('image').shape[1]
+                cosmics_mask = ~(pedestal_mask | flatfield_mask)
+
+                print('   pedestals:', np.sum(pedestal_mask),
+                      'flatfield:', np.sum(flatfield_mask),
+                      'cosmics:', np.sum(cosmics_mask))
 
                 # fill quantities which depend on event-wise (not
                 # pixel-wise) parameters:
@@ -106,10 +121,13 @@ def check_dl1(filenames, output_path):
                 # now fill pixel-wise information:
                 dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
                                                             pedestal_mask)
+                dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
+                                                            flatfield_mask)
                 dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
                                                           cosmics_mask)
 
                 writer.write("dl1datacheck/pedestals", dl1datacheck_pedestals)
+                writer.write("dl1datacheck/flatfield", dl1datacheck_flatfield)
                 writer.write("dl1datacheck/cosmics", dl1datacheck_cosmics)
 
                 dl1datacheck_pedestals.reset()
@@ -149,6 +167,7 @@ def plot_datacheck(filename=''):
     with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
         # first plot some results for interleaved pedestals:
         table_pedestals = file.root.dl1datacheck.pedestals
+        table_flatfield = file.root.dl1datacheck.flatfield
         table_cosmics = file.root.dl1datacheck.cosmics
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
@@ -159,45 +178,12 @@ def plot_datacheck(filename=''):
         axes[0, 0].set_yscale('log')
         pdf.savefig()
 
-        # calculate pixel-wise charge mean and standard deviation for the
-        # whole run:
-        pedestal_mean = np.sum(
-                np.multiply(table_pedestals.col('charge_mean'),
-                            table_pedestals.col('num_events')[:,None]),
-                axis=0) / np.sum(table_pedestals.col('num_events'))
-        pedestal_stddev = \
-            np.sqrt(np.sum(
-                    np.multiply(table_pedestals.col('charge_stddev')**2,
-                                table_pedestals.col('num_events')[:,None]),
-                    axis=0) / np.sum(table_pedestals.col('num_events')))
+        plot_mean_and_stddev(table_pedestals, engineering_geom,
+                             'Pedestal', pagesize)
+        pdf.savefig()
 
-        # plot mean and std dev of pedestal charge, as camera display,
-        # vs. pixel id, and as a histogram:
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
-        cam = CameraDisplay(engineering_geom, pedestal_mean, ax=axes[0, 0],
-                            norm='log', title='Pedestal mean charge (p.e.)')
-        cam.add_colorbar(ax=axes[0, 0])
-        cam.show()
-        axes[0, 1].plot(engineering_geom.pix_id, pedestal_mean)
-        axes[0, 1].set_xlabel('Pixel id')
-        axes[0, 1].set_ylabel('Pedestal mean charge (p.e.)')
-        axes[0, 2].set_yscale('log')
-        axes[0, 2].hist(pedestal_mean, bins=200)
-        axes[0, 2].set_xlabel('Pedestal mean charge (p.e.)')
-        axes[0, 2].set_ylabel('Pixels')
-        # now the standard deviation:
-        cam = CameraDisplay(engineering_geom, pedestal_stddev, ax=axes[1, 0],
-                            norm='log', title='Pedestal charge std dev (p.e.)')
-        cam.add_colorbar(ax=axes[1, 0])
-        cam.show()
-        axes[1, 1].plot(engineering_geom.pix_id, pedestal_stddev)
-        axes[1, 1].set_xlabel('Pixel id')
-        axes[1, 1].set_ylabel('Pedestal charge std dev (p.e.)')
-        axes[1, 2].set_yscale('log')
-        axes[1, 2].hist(pedestal_stddev, bins=200)
-        axes[1, 2].set_xlabel('Pedestal charge std dev (p.e.)')
-        axes[1, 2].set_ylabel('Pixels')
+        plot_mean_and_stddev(table_flatfield, engineering_geom,
+                             'Flat-field', pagesize)
         pdf.savefig()
 
         # for cosmics we plot the pixel rates above a few thresholds
@@ -233,6 +219,45 @@ def plot_datacheck(filename=''):
         for x, y in zip(threshold, sum_events):
             axes[0][0].plot(x*np.ones(len(y)), y, 'o')
         pdf.savefig()
+
+
+def plot_mean_and_stddev(table, camgeom, label, pagesize):
+    # calculate pixel-wise charge mean and standard deviation for the
+    # whole run:
+    mean = np.sum(np.multiply(table.col('charge_mean'),
+                              table.col('num_events')[:,None]),
+                  axis=0) / np.sum(table.col('num_events'))
+    stddev = np.sqrt(np.sum(np.multiply(table.col('charge_stddev') ** 2,
+                                        table.col('num_events')[:, None]),
+                            axis=0) / np.sum(table.col('num_events')))
+
+    # plot mean and std dev of pedestal charge, as camera display,
+    # vs. pixel id, and as a histogram:
+    fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+    fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+    cam = CameraDisplay(camgeom, mean, ax=axes[0, 0],
+                        norm='log', title=label+' mean charge (p.e.)')
+    cam.add_colorbar(ax=axes[0, 0])
+    cam.show()
+    axes[0, 1].plot(camgeom.pix_id, mean)
+    axes[0, 1].set_xlabel('Pixel id')
+    axes[0, 1].set_ylabel(label+' mean charge (p.e.)')
+    axes[0, 2].set_yscale('log')
+    axes[0, 2].hist(mean, bins=200)
+    axes[0, 2].set_xlabel(label+' mean charge (p.e.)')
+    axes[0, 2].set_ylabel('Pixels')
+    # now the standard deviation:
+    cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0],
+                        norm='log', title=label+' charge std dev (p.e.)')
+    cam.add_colorbar(ax=axes[1, 0])
+    cam.show()
+    axes[1, 1].plot(camgeom.pix_id, stddev)
+    axes[1, 1].set_xlabel('Pixel id')
+    axes[1, 1].set_ylabel(label+' charge std dev (p.e.)')
+    axes[1, 2].set_yscale('log')
+    axes[1, 2].hist(stddev, bins=200)
+    axes[1, 2].set_xlabel(label+' charge std dev (p.e.)')
+    axes[1, 2].set_ylabel('Pixels')
 
 
 
