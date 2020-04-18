@@ -27,7 +27,7 @@ custom_config = {
         "length": [0, 10],
         "wl": [0, 1],
         "r": [0, 1],
-        "leakage": [0, 1]
+        "leakage2_intensity": [0, 1]
     },
     "tailcut": {
         "picture_thresh":6,
