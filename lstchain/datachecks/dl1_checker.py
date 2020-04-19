@@ -69,10 +69,21 @@ def check_dl1(filenames, output_path):
         if not os.path.exists(filename):
             raise FileNotFoundError
 
+    # create container for the histograms' binnings, to be saved in the hdf5
+    # output file:
+    histogram_binning = DL1DataCheckHistogramBins()
+
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
-    pool = Pool()
-    dl1datacheck = pool.map(process_dl1_file, filenames)
+    # with Pool() as pool:
+    #    dl1datacheck = pool.map(process_dl1_file, filenames)
+    # NOTE: the above does not seem to improve execution time at least on Mac
+    # OS X. Perhaps related to numpy "sharing" between the processes?
+
+    # for now we process the files sequentially:
+    dl1datacheck = [None]*len(filenames)
+    for i, filename in enumerate(filenames):
+        dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
 
     with HDF5TableWriter(out_filename) as writer:
         # write the containers to the dl1 data check output file:
@@ -80,6 +91,8 @@ def check_dl1(filenames, output_path):
             writer.write("dl1datacheck/pedestals", dcheck[0])
             writer.write("dl1datacheck/flatfield", dcheck[1])
             writer.write("dl1datacheck/cosmics", dcheck[2])
+        # write also the histogram binnings:
+        writer.write("dl1datacheck/histogram_binning", binning)
 
     # we assume that cam geom is the same in all files, & write the first one:
     cam_description_table = \
@@ -94,12 +107,13 @@ def check_dl1(filenames, output_path):
 
     return
 
-def process_dl1_file(filename):
+def process_dl1_file(filename, bins):
     """
 
     Parameters
     ----------
     filename: input DL1 .h5 file to be checked
+    bins: DL1DataCheckHistogramBins container indicating binning of histograms
 
     Returns:
     -------
@@ -173,11 +187,11 @@ def process_dl1_file(filename):
         # fill quantities which depend on event-wise (not
         # pixel-wise) parameters:
         dl1datacheck_pedestals.fill_event_wise_info(subrun_index, parameters,
-                                                    params_pedestal_mask)
+                                                    params_pedestal_mask, bins)
         dl1datacheck_flatfield.fill_event_wise_info(subrun_index, parameters,
-                                                    params_flatfield_mask)
+                                                    params_flatfield_mask, bins)
         dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
-                                                  params_cosmics_mask)
+                                                  params_cosmics_mask, bins)
 
         # now fill pixel-wise information:
         dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
@@ -215,7 +229,11 @@ def plot_datacheck(filename='', out_path=None):
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
-        # first plot some results for interleaved pedestals:
+
+        # get the binning of the stored histograms:
+        hist_binning = file.root.dl1datacheck.histogram_binning
+
+        # get the tables for each type of events:
         table_pedestals = file.root.dl1datacheck.pedestals
         table_flatfield = file.root.dl1datacheck.flatfield
         table_cosmics = file.root.dl1datacheck.cosmics
@@ -228,6 +246,15 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].plot(table_pedestals.col('subrun_index'),
                         table_pedestals.col('num_events'))
         axes[0, 0].set_yscale('log')
+
+        bins = hist_binning.col('hist_intensity')[0]
+        axes[0, 1].hist(bins[:-1], bins,
+                        weights=np.sum(table_cosmics.col('hist_intensity'),
+                                       axis=0))
+
+        axes[0, 1].set_xscale('log')
+        axes[0, 1].set_yscale('log')
+
         pdf.savefig()
 
         plot_mean_and_stddev(table_pedestals, engineering_geom,
@@ -313,13 +340,14 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     axes[1, 2].set_ylabel('Pixels')
 
 
-
 class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
     """
+
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
+    hist_intensity = Field(None, 'Histogram of image intensity')
 
     # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
@@ -338,7 +366,8 @@ class DL1DataCheckContainer(Container):
                                    unit=1./u.s)
     # there must be a nicer way of doing the above...
 
-    def fill_event_wise_info(self, subrun_index, table, mask):
+    def fill_event_wise_info(self, subrun_index, table, mask,
+                             histogram_binnings):
         """
         Fills the container fields that depend on event-wise DL1 info
 
@@ -347,6 +376,7 @@ class DL1DataCheckContainer(Container):
         subrun_index
         table: DL1 parameters, event-wise pandas dataframe, "parameters" from
         DL1 files
+        mask: defines which events in table should be considered
 
         Returns
         -------
@@ -355,6 +385,11 @@ class DL1DataCheckContainer(Container):
         """
         self.subrun_index = subrun_index
         self.num_events = table['ucts_trigger_type'][mask].count()
+
+        counts, bins, _ = \
+            plt.hist(table['intensity'][mask],
+                     bins=histogram_binnings.hist_intensity)
+        self.hist_intensity = counts
 
     def fill_pixel_wise_info(self, table, mask):
         """
@@ -379,3 +414,7 @@ class DL1DataCheckContainer(Container):
         self.num_pulses_above_0100_pe = np.sum(charge > 100, axis=0)
         self.num_pulses_above_0300_pe = np.sum(charge > 300, axis=0)
         self.num_pulses_above_1000_pe = np.sum(charge > 1000, axis=0)
+
+
+class DL1DataCheckHistogramBins(Container):
+    hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
