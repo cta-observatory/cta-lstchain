@@ -77,31 +77,12 @@ def main():
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
 
-        # define charge file names
-        output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
-        log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
-        print(f"\n--> Output file {output_file}")
-        if os.path.exists(output_file) and ff_calibration is 'yes':
-            if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
-                os.remove(output_file)
-            else:
-                print(f"\n--> Stop")
-                exit(1)
-
-        print(f"\n--> Log file {log_file}")
-
-        # define config file
-        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-        if not os.path.exists(config_file):
-            print(f">>> Config file {config_file} do not exists. \n Exit ")
-            exit(1)
-        print(f"\n--> Config file {config_file}")
 
         #
         # produce drs4 time calibration file
         #
         time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
-
+        print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
@@ -124,6 +105,28 @@ def main():
                 os.system(cmd)
 
         print(f"\n--> Time calibration file: {time_file}")
+
+        # define charge file names
+        print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
+        output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
+        log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
+        print(f"\n--> Output file {output_file}")
+        if os.path.exists(output_file) and ff_calibration is 'yes':
+            if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
+                os.remove(output_file)
+            else:
+                print(f"\n--> Stop")
+                exit(1)
+
+        print(f"\n--> Log file {log_file}")
+
+        # define config file
+        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+        if not os.path.exists(config_file):
+            print(f">>> Config file {config_file} do not exists. \n Exit ")
+            exit(1)
+        print(f"\n--> Config file {config_file}")
+
 
 
         #
