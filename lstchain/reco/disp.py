@@ -3,13 +3,14 @@ from ..io.lstcontainers import DispContainer
 from . import utils
 import astropy.units as u
 
-__all__ = ['disp',
-           'miss',
-           'disp_parameters',
-           'disp_parameters_event',
-           'disp_vector',
-           'disp_to_pos'
-           ]
+__all__ = [
+    'disp',
+    'miss',
+    'disp_parameters',
+    'disp_parameters_event',
+    'disp_vector',
+    'disp_to_pos'
+    ]
 
 
 def disp(cog_x, cog_y, src_x, src_y):
