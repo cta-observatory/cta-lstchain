@@ -5,9 +5,10 @@ Component for the estimation of the calibration coefficients  events
 
 from abc import abstractmethod
 import numpy as np
+import os
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import Int, Float, List
+from ctapipe.core.traits import Unicode, Float, List
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 
@@ -15,7 +16,6 @@ from lstchain.calib.camera.pedestals import PedestalCalculator
 __all__ = [
     'CalibrationCalculator',
     'LSTCalibrationCalculator'
-
 ]
 
 
@@ -103,9 +103,6 @@ class CalibrationCalculator(Component):
         self.log.debug(f"{self.flatfield}")
 
 
-
-
-
 class LSTCalibrationCalculator(CalibrationCalculator):
     """
     Calibration calculator for LST camera
@@ -120,6 +117,9 @@ class LSTCalibrationCalculator(CalibrationCalculator):
     maximum_lg_charge_std
              Temporary cut on LG std against Lidar events till the calibox TIB do not work
             (default for filter 5.2)
+
+    time_calibration_path:
+            Path with the drs4 time calibration corrections
     """
 
     minimum_hg_charge_median = Float(
@@ -150,9 +150,6 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         """
         super().__init__(**kwargs)
 
-
-
-
     def calculate_calibration_coefficients(self, event):
         """
         Calculate calibration coefficients from flatfield and pedestal statistics
@@ -160,6 +157,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         Parameters
         ----------
+        event: EventAndMonDataContainer
 
         """
 
@@ -168,15 +166,12 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         status_data = event.mon.tel[self.tel_id].pixel_status
         calib_data = event.mon.tel[self.tel_id].calibration
 
-
         # mask from pedestal and flat-field data
         monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                    status_data.flatfield_failing_pixels)
-
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
-
         # Extract calibration coefficients with F-factor method
         # Assume fix F2 factor, F2=1+Var(gain)/Mean(Gain)**2 must be known from elsewhere
         F2 = 1.2
@@ -222,8 +217,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         Parameters
         ----------
         """
-        new_calibration = False
         new_ped = False
+        new_ff = False
 
         # if pedestal event
         if event.r1.tel[self.tel_id].trigger_type == 32:
@@ -245,7 +240,19 @@ class LSTCalibrationCalculator(CalibrationCalculator):
             # if new ff, calculate new calibration coefficients
             if new_ff:
                 self.calculate_calibration_coefficients(event)
-                new_calibration=True
 
-        return new_calibration, new_ped
+
+        return new_ped, new_ff
+
+    def force_interleaved_results(self, event):
+        """
+        Force output
+
+        """
+        #store results
+        self.pedestal.store_results(event)
+        self.flatfield.store_results(event)
+
+        # calculates calibration values
+        self.calculate_calibration_coefficients(event)
 
