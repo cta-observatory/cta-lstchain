@@ -668,7 +668,7 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
-def write_calibration_data(writer,mon_index, mon_event, new_ped=False, new_calib=False):
+def write_calibration_data(writer,mon_index, mon_event, new_ped=False, new_ff=False):
     mon_event.pedestal.prefix = ''
     mon_event.flatfield.prefix = ''
     mon_event.calibration.prefix = ''
@@ -676,14 +676,16 @@ def write_calibration_data(writer,mon_index, mon_event, new_ped=False, new_calib
 
     if new_ped:
         # write ped container
+        mon_index.pedestal_id += 1
         writer.write(
             table_name=f'telescope/monitoring/pedestal',
             containers=[mon_index, mon_event.pedestal]
         )
-        # update index
-        mon_index.pedestal_id += 1
 
-    if new_calib:
+    if new_ff:
+        mon_index.flatfield_id += 1
+        mon_index.calibration_id += 1
+
         # write calibration container
         writer.write(
             table_name="telescope/monitoring/flatfield",
@@ -695,6 +697,3 @@ def write_calibration_data(writer,mon_index, mon_event, new_ped=False, new_calib
             table_name="telescope/monitoring/calibration",
             containers=[mon_index, mon_event.calibration]
         )
-        # update index
-        mon_index.flatfield_id += 1
-        mon_index.calibration_id += 1
