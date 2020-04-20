@@ -94,7 +94,12 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
-    output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
+
+    # if simu
+    output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).replace(".gz",".h5")
+
+    # if data
+    output_filename = args.outdir + '/dl1_' + os.path.basename(args.infile).replace(".fits.fz",".h5")
 
     config = {}
     if args.config_file is not None:
