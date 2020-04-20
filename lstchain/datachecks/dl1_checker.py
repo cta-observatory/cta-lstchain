@@ -11,6 +11,7 @@ __all__ = [
     'DL1DataCheckHistogramBins',
 ]
 
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -93,7 +94,7 @@ def check_dl1(filenames, output_path):
             writer.write("dl1datacheck/flatfield", dcheck[1])
             writer.write("dl1datacheck/cosmics", dcheck[2])
         # write also the histogram binnings:
-        writer.write("dl1datacheck/histogram_binning", binning)
+        writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
     # we assume that cam geom is the same in all files, & write the first one:
     cam_description_table = \
@@ -238,23 +239,30 @@ def plot_datacheck(filename='', out_path=None):
         table_pedestals = file.root.dl1datacheck.pedestals
         table_flatfield = file.root.dl1datacheck.flatfield
         table_cosmics = file.root.dl1datacheck.cosmics
+        param_tables = [table_cosmics, table_flatfield, table_pedestals]
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        axes[0, 0].plot(table_cosmics.col('subrun_index'),
-                        table_cosmics.col('num_events'))
-        axes[0, 0].plot(table_flatfield.col('subrun_index'),
-                        table_flatfield.col('num_events'))
-        axes[0, 0].plot(table_pedestals.col('subrun_index'),
-                        table_pedestals.col('num_events'))
+        for table in param_tables:
+            axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
         axes[0, 0].set_yscale('log')
 
         bins = hist_binning.col('hist_intensity')[0]
-        axes[0, 1].hist(bins[:-1], bins,
-                        weights=np.sum(table_cosmics.col('hist_intensity'),
-                                       axis=0))
-
+        for table in param_tables:
+            axes[0, 1].hist(bins[:-1], bins,
+                            weights=np.sum(table.col('hist_intensity'),
+                                           axis=0))
         axes[0, 1].set_xscale('log')
         axes[0, 1].set_yscale('log')
+
+        bins = hist_binning.col('hist_cog')[0]
+        x = np.array([xx for xx in bins[0][:-1] for yy in bins[1][:-1]])
+        y = np.array([yy for xx in bins[0][:-1] for yy in bins[1][:-1]])
+        _, _, _, image = axes[1, 0].\
+            hist2d(x, y, bins=bins,
+                   weights=np.sum(table_cosmics.col('hist_cog'),
+                                  axis=0).flatten(), norm=colors.LogNorm())
+        plt.colorbar(image, ax=axes[1, 0])
+        axes[1, 0].set_aspect('equal')
 
         pdf.savefig()
 
@@ -349,6 +357,7 @@ class DL1DataCheckContainer(Container):
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
     hist_intensity = Field(None, 'Histogram of image intensity')
+    hist_cog = Field(None, 'Histogram of image center of gravity')
 
     # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
@@ -387,10 +396,15 @@ class DL1DataCheckContainer(Container):
         self.subrun_index = subrun_index
         self.num_events = table['ucts_trigger_type'][mask].count()
 
-        counts, bins, _ = \
-            plt.hist(table['intensity'][mask],
-                     bins=histogram_binnings.hist_intensity)
+        counts, _, _ = plt.hist(table['intensity'][mask],
+                                bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
+
+        counts, _, _, _ = plt.hist2d(-table['y'][mask], -table['x'][mask],
+                                bins=histogram_binnings.hist_cog)
+        self.hist_cog = counts
+
+
 
     def fill_pixel_wise_info(self, table, mask):
         """
@@ -418,4 +432,6 @@ class DL1DataCheckContainer(Container):
 
 
 class DL1DataCheckHistogramBins(Container):
+    hist_cog = Field(np.array([np.linspace(-1.5, 1.5, 51),
+                               np.linspace(-1.5, 1.5, 51)]), 'hist_cog binning')
     hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
