@@ -243,10 +243,14 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                                                                config = Config(config),
                                                                allowed_tels = [1],)
 
+
         # Component to process interleaved pedestal and flat-fields
+        calib_config = Config(config[config['calibration_product']])
+        calib_config.merge({"time_calibration_path": time_calibration_path})
+
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
-            config=Config(config[config['calibration_product']])
+            config=calib_config
         )
 
 
@@ -318,30 +322,39 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
             else:
                 if i==0:
-                    # iniitalize the telescope
+                    # initialize the telescope
                     # FIXME? LST calibrator is only for one telescope
-                    # it should be inside the telescope loop
+                    # it should be inside the telescope loop (?)
 
                     tel_id = calibration_calculator.tel_id
 
-                    # write the first calibration event (initialized from h5 file)
+                    # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,
                                            calibration_index,
                                            r1_dl1_calibrator.mon_data.tel[tel_id],
-                                           new_ped=True, new_calib=True)
+                                           new_ped=True, new_ff=True)
 
                 # drs4 calibrations
                 r0_r1_calibrator.calibrate(event)
 
-                # process interleaved events (pedestals, ff, calibration)
-                new_calib_event, new_ped_event = calibration_calculator.process_interleaved(event)
+
+                if i < source.max_events-1:
+                    # process interleaved events (pedestals, ff, calibration)
+                    new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
+
+                else:
+                    # if end of file calculate results anyway
+                    calibration_calculator.force_interleaved_results(event)
+                    new_ped_event = True
+                    new_ff_event = True
+
 
                 # write monitoring containers if updated
-                if new_ped_event or new_calib_event:
+                if new_ped_event or new_ff_event:
                     write_calibration_data(writer,
                                        calibration_index,
                                        event.mon.tel[tel_id],
-                                       new_ped=new_ped_event, new_calib=new_calib_event)
+                                       new_ped=new_ped_event, new_ff=new_ff_event)
 
                 # calibrate and extract image from event
                 r1_dl1_calibrator(event)
