@@ -274,31 +274,34 @@ def plot_datacheck(filename='', out_path=None):
                              'Flat-field', pagesize)
         pdf.savefig()
 
-        # for cosmics we plot the pixel rates above a few thresholds
-        # We asume here that 5 such thresholds are present in the dl1datacheck
-        # file
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize,
-                                 sharey='row')
-        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
-        # find the thresholds (in pe) for which the event numbers are stored:
+        # We now plot the pixel rates above a few thresholds.
+        # Find the thresholds (in pe) for which the event numbers are stored:
         colnames = [str for str in table_cosmics.colnames
                     if str.find('num_pulses_above') == 0]
         threshold = [int(str[str.find('above_')+6:str.find('_pe')])
                      for str in colnames]
-        # sum (for all subruns) the number of events above the different
-        # thresholds:
-        sum_events = [np.sum(table_cosmics.col(colname), axis=0)
-                      for colname in colnames]
-        for i, colname in enumerate(colnames):
-            zscale = 'log' if threshold[i] < 200 else 'lin'
-            cam = CameraDisplay(engineering_geom, sum_events[i],
-                                ax=axes.flatten()[i], norm=zscale,
-                                title='Rate of >'+str(threshold[i])+
-                                      ' p.e. pulses')
-            cam.add_colorbar(ax=axes.flatten()[i])
-            cam.show()
-        axes[1, 2].axis('off')
-        pdf.savefig()
+
+        for table in [table_pedestals, table_cosmics]:
+            # We asume here that 5 such thresholds are present in the
+            # dl1datacheck file
+            fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize,
+                                     sharey='row')
+            fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+
+            # sum (for all subruns) the number of events above the different
+            # thresholds:
+            sum_events = [np.sum(table.col(colname), axis=0)
+                          for colname in colnames]
+            for i, colname in enumerate(colnames):
+                zscale = 'log' if threshold[i] < 200 else 'lin'
+                cam = CameraDisplay(engineering_geom, sum_events[i],
+                                    ax=axes.flatten()[i], norm=zscale,
+                                    title='Rate of >'+str(threshold[i])+
+                                          ' p.e. pulses')
+                cam.add_colorbar(ax=axes.flatten()[i])
+                cam.show()
+            axes[1, 2].axis('off')
+            pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
