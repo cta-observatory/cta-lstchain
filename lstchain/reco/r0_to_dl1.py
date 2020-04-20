@@ -3,16 +3,13 @@ calculate image parameters of the events: Hillas parameters, timing
 parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
-Usage:
-
-"import calib_dl0_to_dl1"
-
 """
 import os
 import logging
 import math
 from functools import partial
 import numpy as np
+from pathlib import Path
 import pandas as pd
 import tables
 import astropy.units as u
@@ -56,9 +53,11 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
+
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
+    'add_disp_to_parameters_table',
 ]
 
 
@@ -175,9 +174,9 @@ def r0_to_dl1(
     calibration_path: Path to the file with calibration constants and
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
-    pointing_file_path: path to the Drive log with the pointing information
-    Arguments below are just temporal and will be removed whenever UCTS+EvB
-    is proved to stably and reliably provide timestamps.
+        pointing_file_path: path to the Drive log with the pointing information
+        Arguments below are just temporal and will be removed whenever UCTS+EvB
+        is proved to stably and reliably provide timestamps.
     ucts_t0_dragon: first valid ucts_time
     dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
     ucts_t0_tib: first valid ucts_time for the first valid TIB counter
@@ -188,9 +187,16 @@ def r0_to_dl1(
 
     """
     if output_filename is None:
-        output_filename = (
-            'dl1_' + os.path.basename(input_filename).rsplit('.', 1)[0] + '.h5'
-        )
+        if (input_filename.startswith('LST')):
+            output_filename = (
+                'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' 
+                + os.path.basename(input_filename).split('.',5)[2] + '.' 
+                + os.path.basename(input_filename).split('.',5)[3] + '.h5'
+                )
+        else:
+            p = Path(input_filename)
+            output_filename = p.with_name('dl1_' + p.name).with_suffix('.h5')
+
     if os.path.exists(output_filename):
         raise IOError(output_filename + ' exists, exiting.')
 
