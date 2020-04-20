@@ -247,6 +247,6 @@ class DL1MonitoringEventIndexContainer(Container):
     Container with the calibration coefficients
     """
     tel_id = Field(1, 'Index of telescope')
-    calibration_id = Field(0, 'Index of calibration event for DL1 file')
-    pedestal_id = Field(0, 'Index of pedestal event for DL1 file')
-    flatfield_id = Field(0, 'Index of flat-field event for DL1 file')
+    calibration_id = Field(-1, 'Index of calibration event for DL1 file')
+    pedestal_id = Field(-1, 'Index of pedestal event for DL1 file')
+    flatfield_id = Field(-1, 'Index of flat-field event for DL1 file')
