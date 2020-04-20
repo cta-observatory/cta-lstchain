@@ -3,8 +3,7 @@
 # Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
 
 
-import os
-import shutil
+
 import tables
 import numpy as np
 import argparse
@@ -59,7 +58,18 @@ def main():
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     dl1_container = DL1ParametersContainer()
     parameters_to_update = list(HillasParametersContainer().keys())
-    parameters_to_update.extend(['wl', 'r', 'leakage', 'n_islands', 'intercept', 'time_gradient'])
+    parameters_to_update.extend([
+        'wl', 'r',
+        'leakage1_intensity',
+        'leakage2_intensity',
+        'leakage1_pixel',
+        'leakage2_pixel',
+        'concentration_cog',
+        'concentration_core',
+        'concentration_pixels',
+        'n_pixels',
+        'n_islands', 'intercept', 'time_gradient'
+    ])
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.noimage:
@@ -79,7 +89,8 @@ def main():
                 image = row['image']
                 pulse_time = row['pulse_time']
                 signal_pixels = tailcuts_clean(geom, image, **config['tailcut'])
-                if image[signal_pixels].shape[0] > 0:
+                n_pixels = np.count_nonzero(signal_pixels)
+                if n_pixels > 0:
                     num_islands, island_labels = number_of_islands(geom, signal_pixels)
                     hillas = hillas_parameters(geom[signal_pixels], image[signal_pixels])
 
@@ -89,8 +100,10 @@ def main():
                                                       pulse_time[signal_pixels],
                                                       hillas)
                     dl1_container.set_leakage(geom, image, signal_pixels)
+                    dl1_container.set_concentration(geom, image, hillas)
                     dl1_container.n_islands = num_islands
                     dl1_container.wl = dl1_container.width / dl1_container.length
+                    dl1_container.n_pixels = n_pixels
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value

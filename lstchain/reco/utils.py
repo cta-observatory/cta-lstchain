@@ -33,7 +33,12 @@ __all__ = [
     'polar_to_cartesian',
     'cartesian_to_polar',
     'predict_source_position_in_camera',
-    'unix_tai_to_utc'
+    'expand_tel_list',
+    'filter_events',
+    'linear_imputer',
+    'impute_pointing',
+    'clip_alt',
+    'unix_tai_to_utc',
 ]
 
 
@@ -377,7 +382,7 @@ def filter_events(events,
                                  length=[0, np.inf],
                                  wl=[0, np.inf],
                                  r=[0, np.inf],
-                                 leakage=[0, 1],
+                                 leakage2_intensity=[0, 1],
                                  ),
                   dropna=True,
                   ):

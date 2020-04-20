@@ -5,7 +5,7 @@ Already trained Random Forests are required.
 
 Usage:
 
-$> python lst-recopipe arg1 arg2 ...
+$> python lstchain_dl1_to_dl2.py arg1 arg2 ...
 
 """
 
@@ -15,12 +15,14 @@ import argparse
 import os
 import shutil
 import pandas as pd
+
 from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.io import read_configuration_file, standard_config, replace_config
 from lstchain.io import write_dl2_dataframe
-from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 import numpy as np
 import astropy.units as u
+
 
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
@@ -48,8 +50,8 @@ parser.add_argument('--config_file', '-conf', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
 
+args = parser.parse_args()
 
 def main():
 
@@ -64,6 +66,9 @@ def main():
 
     data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
 
+    if config['source_dependent']:
+        data = pd.concat([data, pd.read_hdf(data, key=dl1_params_src_dep_lstcam_key)], axis=1)
+  
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
             and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
@@ -74,7 +79,6 @@ def main():
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
     data = filter_events(data, filters=config["events_filters"])
-
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -90,7 +94,8 @@ def main():
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.outdir, exist_ok=True)
-    outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
+    outfile = os.path.join(args.outdir, os.path.basename(args.datafile).replace('dl1','dl2'))
+
 
     shutil.copyfile(args.datafile, outfile)
     write_dl2_dataframe(dl2.astype(float), outfile)
