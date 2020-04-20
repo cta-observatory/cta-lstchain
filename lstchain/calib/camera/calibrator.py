@@ -131,8 +131,6 @@ class LSTCameraCalibrator(CameraCalibrator):
                     # read the pixel_status container
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
-
-
         except:
             self.log.error(f"Problem in reading calibration file {self.calibration_path}")
 
@@ -153,8 +151,8 @@ class LSTCameraCalibrator(CameraCalibrator):
             event.mon.tel[telid].pedestal = self.mon_data.tel[telid].pedestal
             event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
 
-
-        # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
+        #
+        # subtract the pedestal per sample and multiply for the calibration coefficients
         #
         event.dl0.tel[telid].waveform = (
                 (event.r1.tel[telid].waveform - event.mon.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
@@ -179,19 +177,17 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # correct time with drs4 correction if available
         if self.time_corrector:
-            pulse_corr_array = self.time_corrector.get_corr_pulse(event, pulse_time)
+            pulse_time = self.time_corrector.get_corr_pulse(event, pulse_time)
 
-        # otherwise use the ff time correction (not drs4 corrected)
-        else:
-            pulse_corr_array = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+        # add flat-fielding time correction
+        pulse_time_ff_corrected = pulse_time + self.mon_data.tel[telid].calibration.time_correction
 
         # perform the gain selection if the threshold is defined
-
         if self.gain_threshold:
             waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
-            event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
+            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
 
             # remember the mask in the lst pixel_status array (this info is missing for the moment in the
             # r1 container). I follow the prescription given in the document
@@ -212,6 +208,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         # if threshold == None
         else:
             event.dl1.tel[telid].image = charge
-            event.dl1.tel[telid].pulse_time = pulse_corr_array
+            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
 
 
