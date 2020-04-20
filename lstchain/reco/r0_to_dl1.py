@@ -265,15 +265,6 @@ def r0_to_dl1(
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
-    writer = HDF5TableWriter(
-        filename=output_filename,
-        group_name='dl1/event',
-        mode='a',
-        filters=filters,
-        add_prefix=True,
-        # overwrite=True,
-    )
-
     event_iter = iter(source)
     first_event = next(event_iter)
 
@@ -290,6 +281,15 @@ def r0_to_dl1(
 
         subarray = first_event.inst.subarray
 
+    with HDF5TableWriter(
+        filename=output_filename,
+        group_name='dl1/event',
+        mode='a',
+        filters=filters,
+        add_prefix=True,
+        # overwrite=True,
+    ) as writer:
+
         # build a mapping of tel_id back to tel_index:
         # (note this should be part of SubarrayDescription)
         idx = np.zeros(max(subarray.tel_indices) + 1)
@@ -299,16 +299,15 @@ def r0_to_dl1(
         # the final transform then needs the mapping and the number of telescopes
         tel_list_transform = partial(
             utils.expand_tel_list,
-            max_tels = len(first_event.inst.subarray.tel) + 1,
+            max_tels=len(first_event.inst.subarray.tel) + 1,
         )
 
         writer.add_column_transform(
-            table_name = 'subarray/trigger',
-            col_name = 'tels_with_trigger',
-            transform = tel_list_transform
+            table_name='subarray/trigger',
+            col_name='tels_with_trigger',
+            transform=tel_list_transform
         )
 
-    with writer:
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
         writer._h5file.filters = filters
