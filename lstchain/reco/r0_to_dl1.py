@@ -274,7 +274,8 @@ def r0_to_dl1(
     )
 
     with writer:
-        # forcing filters for the dl1 dataset
+        # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
+        # This should be fixed in ctapipe and the corrected here
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
