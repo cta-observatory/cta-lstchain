@@ -274,6 +274,8 @@ def r0_to_dl1(
     )
 
     with writer:
+        # forcing filters for the dl1 dataset
+        writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
         for i, event in enumerate(source):
@@ -473,7 +475,7 @@ def r0_to_dl1(
                         image = tel.image*(~bad_pixels)
 
                         # process only promising events, in terms of # of pixels with large signals:
-                        if tag_pix_thr(image): 
+                        if tag_pix_thr(image):
 
                             # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
                             numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!
