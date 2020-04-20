@@ -8,6 +8,7 @@ __all__ = [
     'plot_datacheck',
     'plot_mean_and_stddev',
     'DL1DataCheckContainer',
+    'DL1DataCheckHistogramBins',
 ]
 
 import matplotlib.pyplot as plt
