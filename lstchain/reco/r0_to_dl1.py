@@ -261,8 +261,8 @@ def r0_to_dl1(
 
         # Component to process interleaved pedestal and flat-fields
         calib_config = Config(config[config['calibration_product']])
-        calib_config.merge({"time_calibration_path": time_calibration_path})
-
+        # time calibration path to flatfield trailet
+        calib_config.FlatFieldCalculator.time_calibration_path = time_calibration_path
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
             config=calib_config
@@ -592,8 +592,8 @@ def r0_to_dl1(
 
 
 
-        # at the end of event loop force calculation if interleaved statistics
-        calibration_calculator.force_interleaved_results(event)
+        # at the end of event loop ask calculation of remaining interleaved statistics
+        calibration_calculator.output_interleaved_results(event)
         # write monitoring events
         write_calibration_data(writer,
                                calibration_index,
