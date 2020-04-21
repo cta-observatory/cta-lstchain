@@ -73,8 +73,13 @@ filters = tables.Filters(
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container = None,
-            custom_config = {}, use_main_island = True):
+def get_dl1(
+    calibrated_event,
+    telescope_id,
+    dl1_container=None,
+    custom_config={},
+    use_main_island=True,
+):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -88,7 +93,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
-    use_main_island: `bool` Use only the main island 
+    use_main_island: `bool` Use only the main island
         to calculate DL1 parameters
 
     Returns
@@ -265,11 +270,12 @@ def r0_to_dl1(
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
+    # get the first event to write array info and mc header
     event_iter = iter(source)
     first_event = next(event_iter)
 
-    write_array_info(first_event, output_filename)
     # Write extra information to the DL1 file
+    write_array_info(first_event, output_filename)
     if is_simu:
         write_mcheader(
             first_event.mcheader,
@@ -278,8 +284,6 @@ def r0_to_dl1(
             filters=filters,
             metadata=metadata,
         )
-
-        subarray = first_event.inst.subarray
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -290,23 +294,25 @@ def r0_to_dl1(
         # overwrite=True,
     ) as writer:
 
-        # build a mapping of tel_id back to tel_index:
-        # (note this should be part of SubarrayDescription)
-        idx = np.zeros(max(subarray.tel_indices) + 1)
-        for key, val in subarray.tel_indices.items():
-            idx[key] = val
+        if is_simu:
+            subarray = first_event.inst.subarray
+            # build a mapping of tel_id back to tel_index:
+            # (note this should be part of SubarrayDescription)
+            idx = np.zeros(max(subarray.tel_indices) + 1)
+            for key, val in subarray.tel_indices.items():
+                idx[key] = val
 
-        # the final transform then needs the mapping and the number of telescopes
-        tel_list_transform = partial(
-            utils.expand_tel_list,
-            max_tels=len(first_event.inst.subarray.tel) + 1,
-        )
+            # the final transform then needs the mapping and the number of telescopes
+            tel_list_transform = partial(
+                utils.expand_tel_list,
+                max_tels=len(first_event.inst.subarray.tel) + 1,
+            )
 
-        writer.add_column_transform(
-            table_name='subarray/trigger',
-            col_name='tels_with_trigger',
-            transform=tel_list_transform
-        )
+            writer.add_column_transform(
+                table_name='subarray/trigger',
+                col_name='tels_with_trigger',
+                transform=tel_list_transform
+            )
 
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
