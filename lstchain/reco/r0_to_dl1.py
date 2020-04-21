@@ -358,8 +358,6 @@ def r0_to_dl1(
                 # drs4 calibrations
                 r0_r1_calibrator.calibrate(event)
 
-
-
                 # process interleaved events (pedestals, ff, calibration)
                 new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
