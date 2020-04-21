@@ -95,8 +95,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path = self.time_calibration_path)
         else:
-            self.time_corrector = None
-            self.log.info(f"File {self.time_calibration_path} not found. No drs4 time corrections")
+            raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
 
         # calibration data container
         self.mon_data = MonitoringContainer()
