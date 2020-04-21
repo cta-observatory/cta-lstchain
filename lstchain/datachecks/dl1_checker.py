@@ -246,24 +246,38 @@ def plot_datacheck(filename='', out_path=None):
         for table in param_tables:
             axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
         axes[0, 0].set_yscale('log')
+        pdf.savefig()
 
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         bins = hist_binning.col('hist_intensity')[0]
         for table in param_tables:
-            axes[0, 1].hist(bins[:-1], bins,
+            axes[0, 0].hist(bins[:-1], bins,
                             weights=np.sum(table.col('hist_intensity'),
                                            axis=0))
-        axes[0, 1].set_xscale('log')
-        axes[0, 1].set_yscale('log')
+        axes[0, 0].set_xscale('log')
+        axes[0, 0].set_yscale('log')
+        pdf.savefig()
 
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
         bins = hist_binning.col('hist_cog')[0]
         x = np.array([xx for xx in bins[0][:-1] for yy in bins[1][:-1]])
         y = np.array([yy for xx in bins[0][:-1] for yy in bins[1][:-1]])
-        _, _, _, image = axes[1, 0].\
-            hist2d(x, y, bins=bins,
-                   weights=np.sum(table_cosmics.col('hist_cog'),
-                                  axis=0).flatten(), norm=colors.LogNorm())
-        plt.colorbar(image, ax=axes[1, 0])
-        axes[1, 0].set_aspect('equal')
+
+        hists = ['hist_cog', 'hist_cog_intensity_gt_200']
+        for i, hist in enumerate(hists):
+            contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
+            _, _, _, image = axes[i, 0].hist2d(x, y, bins=bins,
+                                               weights=contents)
+            plt.colorbar(image, ax=axes[i, 0])
+            axes[i, 0].set_aspect('equal')
+            _, _, _, image = axes[i, 1].hist2d(x, y, bins=bins,
+                                               weights=contents,
+                                               norm=colors.LogNorm())
+            plt.colorbar(image, ax=axes[i, 1])
+            axes[i, 1].set_aspect('equal')
+            axes[i, 2].hist(np.log10(contents[contents>0]), bins=100,
+                            weights=np.ones(sum(contents>0))/sum(contents>0))
 
         pdf.savefig()
 
@@ -365,6 +379,8 @@ class DL1DataCheckContainer(Container):
     num_events = Field(-1, 'Total number of events')
     hist_intensity = Field(None, 'Histogram of image intensity')
     hist_cog = Field(None, 'Histogram of image center of gravity')
+    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
+                                            'gravity, intensity>200')
 
     # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
@@ -403,20 +419,26 @@ class DL1DataCheckContainer(Container):
         self.subrun_index = subrun_index
         self.num_events = table['ucts_trigger_type'][mask].count()
 
-        counts, _, _ = plt.hist(table['intensity'][mask],
+        intensity = table['intensity'][mask]
+        counts, _, _ = plt.hist(intensity,
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
 
-        # center of gravity histogram
+        # center of gravity histograms
         x = table['x'][mask]
         y = table['y'][mask]
         # Transform coordinates to engineering camera frame:
         orig = SkyCoord(x=x, y=y, unit=u.m, frame=CameraFrame())
         engi = orig.transform_to(EngineeringCameraFrame())
         counts, _, _, _ = plt.hist2d(engi.x, engi.y,
-                                bins=histogram_binnings.hist_cog)
+                                     bins=histogram_binnings.hist_cog)
         self.hist_cog = counts
 
+        select = intensity>200
+        counts, _, _, _ = \
+            plt.hist2d(engi.x[select], engi.y[select],
+                       bins=histogram_binnings.hist_cog_intensity_gt_200)
+        self.hist_cog_intensity_gt_200 = counts
 
 
     def fill_pixel_wise_info(self, table, mask):
@@ -448,4 +470,7 @@ class DL1DataCheckHistogramBins(Container):
     hist_cog = Field(np.array([np.linspace(-1.25, 1.25, 51),
                                np.linspace(-1.25, 1.25, 51)]),
                      'hist_cog binning')
+    hist_cog_intensity_gt_200 = Field(np.array([np.linspace(-1.25, 1.25, 51),
+                                                np.linspace(-1.25, 1.25, 51)]),
+                                      'hist_cog_intensity_gt_200 binning')
     hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
