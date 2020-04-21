@@ -6,7 +6,7 @@ import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Unicode
+from ctapipe.core.traits import  List, Unicode, Path
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 __all__ = [
@@ -45,7 +45,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
     time_calibration_path = Unicode(
         '',
-        allow_none = True,
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
 
@@ -84,8 +83,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path = self.time_calibration_path)
         else:
-            self.time_corrector = None
-            self.log.info(f"File {self.time_calibration_path} not found. No drs4 time corrections")
+            raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
 
 
     def _extract_charge(self, event):
