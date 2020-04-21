@@ -25,6 +25,7 @@ from ctapipe.image import (
     HillasParameterizationError,
 )
 from ctapipe.image.cleaning import number_of_islands
+from itertools import chain
 
 from . import utils
 from .volume_reducer import apply_volume_reduction
@@ -72,8 +73,13 @@ filters = tables.Filters(
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container = None,
-            custom_config = {}, use_main_island = True):
+def get_dl1(
+    calibrated_event,
+    telescope_id,
+    dl1_container=None,
+    custom_config={},
+    use_main_island=True,
+):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -87,7 +93,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
-    use_main_island: `bool` Use only the main island 
+    use_main_island: `bool` Use only the main island
         to calculate DL1 parameters
 
     Returns
@@ -264,54 +270,56 @@ def r0_to_dl1(
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
-    writer = HDF5TableWriter(
+    # get the first event to write array info and mc header
+    event_iter = iter(source)
+    first_event = next(event_iter)
+
+    # Write extra information to the DL1 file
+    write_array_info(first_event, output_filename)
+    if is_simu:
+        write_mcheader(
+            first_event.mcheader,
+            output_filename,
+            obs_id=first_event.r0.obs_id,
+            filters=filters,
+            metadata=metadata,
+        )
+
+    with HDF5TableWriter(
         filename=output_filename,
         group_name='dl1/event',
         mode='a',
         filters=filters,
         add_prefix=True,
         # overwrite=True,
-    )
+    ) as writer:
 
-    with writer:
+        if is_simu:
+            subarray = first_event.inst.subarray
+            # build a mapping of tel_id back to tel_index:
+            # (note this should be part of SubarrayDescription)
+            idx = np.zeros(max(subarray.tel_indices) + 1)
+            for key, val in subarray.tel_indices.items():
+                idx[key] = val
+
+            # the final transform then needs the mapping and the number of telescopes
+            tel_list_transform = partial(
+                utils.expand_tel_list,
+                max_tels=len(first_event.inst.subarray.tel) + 1,
+            )
+
+            writer.add_column_transform(
+                table_name='subarray/trigger',
+                col_name='tels_with_trigger',
+                transform=tel_list_transform
+            )
+
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
-        for i, event in enumerate(source):
-
-            # first event, write general info to file
-            if i == 0:
-                write_array_info(event, output_filename)
-                # Write extra information to the DL1 file
-                if is_simu:
-                    write_mcheader(
-                        event.mcheader,
-                        output_filename,
-                        obs_id=event.r0.obs_id,
-                        filters=filters,
-                        metadata=metadata,
-                    )
-                    subarray = event.inst.subarray
-
-                    # build a mapping of tel_id back to tel_index:
-                    # (note this should be part of SubarrayDescription)
-                    idx = np.zeros(max(subarray.tel_indices) + 1)
-                    for key, val in subarray.tel_indices.items():
-                        idx[key] = val
-
-                    # the final transform then needs the mapping and the number of telescopes
-                    tel_list_transform = partial(
-                        utils.expand_tel_list,
-                        max_tels = len(event.inst.subarray.tel) + 1,
-                    )
-
-                    writer.add_column_transform(
-                        table_name = 'subarray/trigger',
-                        col_name = 'tels_with_trigger',
-                        transform = tel_list_transform
-                    )
+        for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
                 print(i)
