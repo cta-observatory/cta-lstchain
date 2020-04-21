@@ -27,7 +27,7 @@ custom_config = {
         "length": [0, 10],
         "wl": [0, 1],
         "r": [0, 1],
-        "leakage": [0, 1]
+        "leakage2_intensity": [0, 1]
     },
     "tailcut": {
         "picture_thresh":6,
@@ -96,6 +96,12 @@ def test_r0_to_dl1():
     infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
 
+def test_get_source_dependent_parameters():
+    from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
+
+    dl1_params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    src_dep_df = get_source_dependent_parameters(dl1_params, custom_config)
+
 @pytest.mark.run(order=2)
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
@@ -120,6 +126,7 @@ def test_apply_models():
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
     reg_cls_gh = joblib.load(file_model_gh_sep)
+
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)

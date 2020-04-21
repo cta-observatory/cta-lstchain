@@ -17,8 +17,10 @@ from . import utils
 from . import disp
 from ..io import standard_config, replace_config
 import astropy.units as u
-from ..io.io import dl1_params_lstcam_key
+from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.instrument import OpticsDescription
+from ctapipe.image.hillas import camera_to_shower_coordinates
+
 
 __all__ = [
     'train_energy',
@@ -29,6 +31,8 @@ __all__ = [
     'train_sep',
     'build_models',
     'apply_models',
+    'get_source_dependent_parameters',
+    'get_expected_source_pos'
 ]
 
 
@@ -49,9 +53,9 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
+    regression_args = config['random_forest_regressor_args'] 
     features = config['regression_features']
-    model = RandomForestRegressor
+    model = RandomForestRegressor    
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -83,7 +87,7 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
 
     config = replace_config(standard_config, custom_config)
     regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
+    features = config['regression_features']
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -116,7 +120,7 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
 
     config = replace_config(standard_config, custom_config)
     regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
+    features = config['regression_features']
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -185,7 +189,7 @@ def train_reco(train, custom_config={}):
 
     config = replace_config(standard_config, custom_config)
     regression_args = config['random_forest_regressor_args']
-    features = config["regression_features"]
+    features = config['regression_features']
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -231,6 +235,7 @@ def train_sep(train, custom_config={}):
     classification_args = config['random_forest_classifier_args']
     features = config["classification_features"]
     model = RandomForestClassifier
+
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -295,13 +300,18 @@ def build_models(filegammas, fileprotons,
 
     config = replace_config(standard_config, custom_config)
     events_filters = config["events_filters"]
-    regression_features = config["regression_features"]
 
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
+    if config['source_dependent']:
+        df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)])
+        df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)])
+
     df_gamma = utils.filter_events(df_gamma, filters=events_filters)
     df_proton = utils.filter_events(df_proton, filters=events_filters)
+
+    regression_features = config['regression_features']
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
@@ -370,10 +380,12 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
 
     dl2 = dl1.copy()
+
+    regression_features = config["regression_features"]
+    classification_features = config["classification_features"]
+      
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
     dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
@@ -417,3 +429,92 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     dl2['gammaness'] = probs
     return dl2
 
+
+
+def get_source_dependent_parameters(data, config={}):
+
+    """Get parameters for source-dependent analysis .
+
+    Parameters:
+    -----------
+    data: Pandas DataFrame
+    config: dictionnary containing configuration
+    
+    """
+
+    src_dep_params = pd.DataFrame(index=data.index)
+
+    is_simu = 'mc_type' in data.columns
+    
+    if is_simu:
+        if (data['mc_type'] == 0).all():
+            data_type = 'mc_gamma'
+        else:
+            data_type = 'mc_proton'
+    else:
+        data_type = 'real_data'
+    
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
+
+    src_dep_params['expected_src_x'] = expected_src_pos_x_m
+    src_dep_params['expected_src_y'] = expected_src_pos_y_m
+    
+    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
+    
+    disp, miss = camera_to_shower_coordinates(
+        expected_src_pos_x_m,
+        expected_src_pos_y_m, 
+        data['x'],
+        data['y'],
+        data['psi']
+    )
+
+    src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
+    src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
+    
+    src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
+
+    return src_dep_params
+
+
+def get_expected_source_pos(data, data_type, config):
+
+    """Get expected source position for source-dependent analysis .
+
+    Parameters:
+    -----------
+    data: Pandas DataFrame
+    data_type: 'mc_gamma','mc_proton','real_data'
+    config: dictionnary containing configuration
+    
+    """
+
+    #For gamma MC, expected source position is actual one for each event
+    if data_type == 'mc_gamma':
+        expected_src_pos_x_m = data['src_x'].values
+        expected_src_pos_y_m = data['src_y'].values
+
+    #For proton MC, nominal source position is one written in config file
+    if data_type == 'mc_proton':
+        
+        focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
+        
+        expected_src_pos = utils.sky_to_camera(
+            u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
+            u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
+            focal_length,
+            u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
+            u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
+        )
+        
+        expected_src_pos_x_m = expected_src_pos.x.to_value()
+        expected_src_pos_y_m = expected_src_pos.y.to_value()
+
+    # For real data
+    # TODO: expected source position for real data should be obtained by using tel_alt,az and source RA,Dec
+    # For the moment, expected source position is defined as camera center (ON mode)
+    if data_type == 'real_data':
+        expected_src_pos_x_m = np.zeros(len(data))
+        expected_src_pos_y_m = np.zeros(len(data))
+
+    return expected_src_pos_x_m, expected_src_pos_y_m 

@@ -22,10 +22,11 @@ In the configuration file:
 """
 from ctapipe.image.cleaning import tailcuts_clean, dilate
 
-__all__ = ['get_volume_reduction_method',
-           'check_and_apply_volume_reduction',
-           'zero_suppression_tailcut_dilation'
-           ]
+__all__ = [
+    'get_volume_reduction_method',
+    'apply_volume_reduction',
+    'zero_suppression_tailcut_dilation'
+    ]
 
 
 def get_volume_reduction_method(config_file):
@@ -50,7 +51,7 @@ def get_volume_reduction_method(config_file):
     return algorithm
 
 
-def check_and_apply_volume_reduction(event, config):
+def apply_volume_reduction(event, config):
     """
     Checks the volume reduction algorithm defined in the config file, and if not None, it applies
      to a **calibrated** event the volume reduction method.
@@ -75,7 +76,6 @@ def check_and_apply_volume_reduction(event, config):
         pass
 
     else:
-        print("Volume reduction algorithm being used: {}".format(volume_reduction_algorithm))
 
         volume_reduction_algorithm = globals()[volume_reduction_algorithm]
         parameters = config['volume_reducer']['parameters']
@@ -92,7 +92,12 @@ def check_and_apply_volume_reduction(event, config):
 
             image[~pixels_to_keep] = 0
             pulse_time[~pixels_to_keep] = 0
-            waveform[~pixels_to_keep, :] = 0
+            if waveform.ndim == 2:
+                # the gain selection as been applied to DL0
+                waveform[~pixels_to_keep, :] = 0
+            elif waveform.ndim == 3:
+                # the gain selection as not been applied to DL0
+                waveform[:, ~pixels_to_keep, :] = 0
 
 
 def zero_suppression_tailcut_dilation(geom, image, number_of_dilation=3, **kwargs):
