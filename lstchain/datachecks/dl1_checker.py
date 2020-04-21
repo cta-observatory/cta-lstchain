@@ -26,7 +26,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 def check_dl1(filenames, output_path):
     """
@@ -330,6 +330,13 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
                         norm='log', title=label+' mean charge (p.e.)')
     cam.add_colorbar(ax=axes[0, 0])
     cam.show()
+    cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0],
+                        norm='log', title=label+' charge std dev (p.e.)')
+    cam.add_colorbar(ax=axes[1, 0])
+    # line below needed to get the top and bottom camera displays of equal size:
+    axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
+    cam.show()
+
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
     axes[0, 1].set_ylabel(label+' mean charge (p.e.)')
@@ -339,10 +346,6 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     axes[0, 2].set_ylabel('Pixels')
     # now the standard deviation:
 
-    cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0],
-                        norm='log', title=label+' charge std dev (p.e.)')
-    cam.add_colorbar(ax=axes[1, 0])
-    cam.show()
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
     axes[1, 1].set_ylabel(label+' charge std dev (p.e.)')
@@ -435,6 +438,7 @@ class DL1DataCheckContainer(Container):
 
 
 class DL1DataCheckHistogramBins(Container):
-    hist_cog = Field(np.array([np.linspace(-1.5, 1.5, 51),
-                               np.linspace(-1.5, 1.5, 51)]), 'hist_cog binning')
+    hist_cog = Field(np.array([np.linspace(-1.25, 1.25, 51),
+                               np.linspace(-1.25, 1.25, 51)]),
+                     'hist_cog binning')
     hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
