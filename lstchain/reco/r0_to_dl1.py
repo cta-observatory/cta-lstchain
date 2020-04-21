@@ -356,16 +356,9 @@ def r0_to_dl1(
                 r0_r1_calibrator.calibrate(event)
 
 
-                if i < source.max_events-1:
-                    # process interleaved events (pedestals, ff, calibration)
-                    new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
-                else:
-                    # if end of file calculate results anyway
-                    calibration_calculator.force_interleaved_results(event)
-                    new_ped_event = True
-                    new_ff_event = True
-
+                # process interleaved events (pedestals, ff, calibration)
+                new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
                 # write monitoring containers if updated
                 if new_ped_event or new_ff_event:
@@ -589,6 +582,17 @@ def r0_to_dl1(
                         writer.write(table_name = f'simulation/{tel_name}',
                                      containers = [event.mc.tel[telescope_id], extra_im]
                                      )
+
+
+
+        # at the end of event loop force calculation if interleaved statistics
+        calibration_calculator.force_interleaved_results(event)
+        # write monitoring events
+        write_calibration_data(writer,
+                               calibration_index,
+                               event.mon.tel[tel_id],
+                               new_ped=True, new_ff=True)
+
 
     if is_simu:
         ### Reconstruct source position from disp for all events and write the result in the output file
