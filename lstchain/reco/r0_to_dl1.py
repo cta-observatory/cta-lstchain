@@ -330,10 +330,8 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
-        for i, event in enumerate(chain([first_event],  event_iter)):
-
         ### EVENT LOOP ###
-        for i, event in enumerate(source):
+        for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
                 print(i)
