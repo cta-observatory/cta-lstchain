@@ -18,8 +18,9 @@ import os
 import pandas as pd
 import tables
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from ctapipe.coordinates import EngineeringCameraFrame
+from ctapipe.coordinates import CameraFrame, EngineeringCameraFrame
 from ctapipe.core import Container, Field
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
@@ -406,7 +407,13 @@ class DL1DataCheckContainer(Container):
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
 
-        counts, _, _, _ = plt.hist2d(-table['y'][mask], -table['x'][mask],
+        # center of gravity histogram
+        x = table['x'][mask]
+        y = table['y'][mask]
+        # Transform coordinates to engineering camera frame:
+        orig = SkyCoord(x=x, y=y, unit=u.m, frame=CameraFrame())
+        engi = orig.transform_to(EngineeringCameraFrame())
+        counts, _, _, _ = plt.hist2d(engi.x, engi.y,
                                 bins=histogram_binnings.hist_cog)
         self.hist_cog = counts
 
