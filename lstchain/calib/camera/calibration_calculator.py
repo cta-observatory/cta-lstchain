@@ -2,13 +2,10 @@
 Component for the estimation of the calibration coefficients  events
 """
 
-
-from abc import abstractmethod
 import numpy as np
-import os
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import Unicode, Float, List
+from ctapipe.core.traits import  Float, List
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 
@@ -38,6 +35,10 @@ class CalibrationCalculator(Component):
     kwargs
 
     """
+    squared_excess_noise_factor = Float(
+        1.2,
+        help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
+    ).tag(config=True)
 
     pedestal_product = traits.enum_trait(
         PedestalCalculator,
@@ -173,14 +174,13 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
         # Extract calibration coefficients with F-factor method
-        # Assume fix F2 factor, F2=1+Var(gain)/Mean(Gain)**2 must be known from elsewhere
-        F2 = 1.2
+        # Assume fixed excess noise factor must be known from elsewhere
 
         # calculate photon-electrons
-        n_pe = F2 * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
+        n_pe = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
                 ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
 
-        # fill WaveformCalibrationContainer (this is an example)
+        # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
         calib_data.time_range = ff_data.sample_time_range
         calib_data.n_pe = n_pe
@@ -244,9 +244,9 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         return new_ped, new_ff
 
-    def force_interleaved_results(self, event):
+    def output_interleaved_results(self, event):
         """
-        Force output
+        Output interleaved results on request
 
         """
         #store results
