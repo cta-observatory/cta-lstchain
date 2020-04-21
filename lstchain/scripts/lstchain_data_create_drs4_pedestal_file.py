@@ -33,9 +33,9 @@ parser.add_argument("--output_file",
 
 # Optional argument
 parser.add_argument("--max_events",
-                    help="Maximum numbers of events to read. Default = 8000",
+                    help="Maximum numbers of events to read. Default = 20000",
                     type=int,
-                    default=8000)
+                    default=20000)
 
 parser.add_argument("--start_r0_waveform",
                     help="Start sample for waveform. Default = 11",
