@@ -41,6 +41,7 @@ __all__ = ['read_simu_info_hdf5',
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
+dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 
 
 
@@ -379,7 +380,8 @@ def write_array_info(event, output_filename):
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
             camera_name = str(camera)
-            with tables.open_file(output_filename, mode='r') as f:
+
+            with tables.open_file(output_filename, mode='a') as f:
                 telescope_chidren = f.root['instrument/telescope']._v_children.keys()
                 if 'camera' in telescope_chidren:
                     cameras_name = f.root['instrument/telescope/camera']._v_children.keys()
@@ -389,6 +391,7 @@ def write_array_info(event, output_filename):
                             f'camera {camera_name} seems to be already present in the h5 file.'
                         )
                         continue
+
             camera.to_table().write(
                 output_filename,
                 path=f'/instrument/telescope/camera/{camera_name}',

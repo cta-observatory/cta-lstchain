@@ -3,59 +3,62 @@ calculate image parameters of the events: Hillas parameters, timing
 parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
-Usage:
-
-"import calib_dl0_to_dl1"
-
 """
 import os
 import logging
+import math
+from functools import partial
 import numpy as np
+from pathlib import Path
+import pandas as pd
+import tables
+import astropy.units as u
+from astropy.table import Table
+from traitlets.config import Config
+
+from ctapipe.utils import get_dataset_path
+from ctapipe.io import event_source, HDF5TableWriter
+from ctapipe.instrument import OpticsDescription
 from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
     HillasParameterizationError,
 )
+from ctapipe.image.cleaning import number_of_islands
+from itertools import chain
 
-from ctapipe.utils import get_dataset_path
-from ctapipe.io import event_source
-from ctapipe.io import HDF5TableWriter
-from eventio.simtel.simtelfile import SimTelFile
-import math
 from . import utils
-from .volume_reducer import check_and_apply_volume_reduction
+from .volume_reducer import apply_volume_reduction
 from ..io.lstcontainers import ExtraImageInfo
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..visualization import plot_calib
 
-from ctapipe.image.cleaning import number_of_islands
 
-import tables
-from functools import partial
-from ..io import write_simtel_energy_histogram, write_mcheader, write_array_info, global_metadata
-from ..io import add_global_metadata, write_metadata, write_subarray_tables
+from ..io import (
+    write_simtel_energy_histogram,
+    write_mcheader,
+    write_array_info,
+    global_metadata,
+    add_global_metadata,
+    write_metadata,
+    write_subarray_tables,
+)
 from ..io.io import add_column_table
 
-import pandas as pd
 from . import disp
-import astropy.units as u
-from astropy.table import Table
-from astropy.time import Time
 from .utils import sky_to_camera
 from .utils import unix_tai_to_utc
-from ctapipe.instrument import OpticsDescription
-from traitlets.config.loader import Config
 from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
-from ..calib.camera.calib import combine_channels
 from ..pointing import PointingPosition
+
 
 __all__ = [
     'get_dl1',
     'r0_to_dl1',
+    'add_disp_to_parameters_table',
 ]
 
 
@@ -63,15 +66,20 @@ cleaning_method = tailcuts_clean
 
 
 filters = tables.Filters(
-    complevel=5,    # enable compression, with level 0=disabled, 9=max
-    complib='blosc:zstd',   #  compression using blosc
-    fletcher32=True,    # attach a checksum to each chunk for error correction
-    bitshuffle=False,   # for BLOSC, shuffle bits for better compression
+    complevel=5,            # enable compression, with level 0=disabled, 9=max
+    complib='blosc:zstd',   # compression using blosc
+    fletcher32=True,        # attach a checksum to each chunk for error correction
+    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
 )
 
 
-def get_dl1(calibrated_event, telescope_id, dl1_container = None, 
-            custom_config = {}, use_main_island = True):
+def get_dl1(
+    calibrated_event,
+    telescope_id,
+    dl1_container=None,
+    custom_config={},
+    use_main_island=True,
+):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
     The DL1ParametersContainer can be passed to be filled if created outside the function
@@ -85,7 +93,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
-    use_main_island: `bool` Use only the main island 
+    use_main_island: `bool` Use only the main island
         to calculate DL1 parameters
 
     Returns
@@ -106,10 +114,10 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
     pulse_time = dl1.pulse_time
 
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
+    n_pixels = np.count_nonzero(signal_pixels)
 
-    if image[signal_pixels].sum() > 0:
-
-        # check the number of islands 
+    if n_pixels > 0:
+        # check the number of islands
         num_islands, island_labels = number_of_islands(camera, signal_pixels)
 
         if use_main_island:
@@ -117,7 +125,7 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
 
             for iisland in range(1, num_islands + 1):
                 n_pixels_on_island[iisland] = np.sum(island_labels == iisland)
-              
+
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
@@ -133,6 +141,8 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
                                           pulse_time[signal_pixels],
                                           hillas)
         dl1_container.set_leakage(camera, image, signal_pixels)
+        dl1_container.set_concentration(camera, image, hillas)
+        dl1_container.n_pixels = n_pixels
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
@@ -142,18 +152,19 @@ def get_dl1(calibrated_event, telescope_id, dl1_container = None,
         return None
 
 
-def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
-              output_filename = None,
-              custom_config = {},
-              pedestal_path = None,
-              calibration_path = None,
-              time_calibration_path = None,
-              pointing_file_path = None,
-              ucts_t0_dragon = math.nan,
-              dragon_counter0 = math.nan,
-              ucts_t0_tib = math.nan,
-              tib_counter0 = math.nan
-              ):
+def r0_to_dl1(
+    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    output_filename=None,
+    custom_config={},
+    pedestal_path=None,
+    calibration_path=None,
+    time_calibration_path=None,
+    pointing_file_path=None,
+    ucts_t0_dragon=math.nan,
+    dragon_counter0=math.nan,
+    ucts_t0_tib=math.nan,
+    tib_counter0=math.nan
+):
     """
     Chain r0 to dl1
     Save the extracted dl1 parameters in output_filename
@@ -169,9 +180,9 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
     calibration_path: Path to the file with calibration constants and
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
-    pointing_file_path: path to the Drive log with the pointing information
-    Arguments below are just temporal and will be removed whenever UCTS+EvB
-    is proved to stably and reliably provide timestamps.
+        pointing_file_path: path to the Drive log with the pointing information
+        Arguments below are just temporal and will be removed whenever UCTS+EvB
+        is proved to stably and reliably provide timestamps.
     ucts_t0_dragon: first valid ucts_time
     dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
     ucts_t0_tib: first valid ucts_time for the first valid TIB counter
@@ -182,97 +193,109 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
     """
     if output_filename is None:
-        output_filename = (
-            'dl1_' + os.path.basename(input_filename).rsplit('.',1)[0] + '.h5'
-        )
+        if (input_filename.startswith('LST')):
+            output_filename = (
+                'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' 
+                + os.path.basename(input_filename).split('.',5)[2] + '.' 
+                + os.path.basename(input_filename).split('.',5)[3] + '.h5'
+                )
+        else:
+            p = Path(input_filename)
+            output_filename = p.with_name('dl1_' + p.name).with_suffix('.h5')
+
     if os.path.exists(output_filename):
-        raise AttributeError(output_filename + ' exists, exiting.')
+        raise IOError(output_filename + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
 
     custom_calibration = config["custom_calibration"]
 
-    try:
-        source = event_source(input_filename, back_seekable=True)
-    except:
-        # back_seekable might not be available for other sources that eventio
-        # TODO for real data: source with calibration file and pointing file
-        source = event_source(input_filename)
+    source = event_source(input_filename)
 
     is_simu = source.metadata['is_simulation']
 
     source.allowed_tels = config["allowed_tels"]
     if config["max_events"] is not None:
-        source.max_events = config["max_events"]+1
+        source.max_events = config["max_events"]
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
     cal_mc = load_calibrator_from_config(config)
 
-    # minimum number of pe in a pixel to include it in calculation of muon ring time (peak sample):
+    # minimum number of pe in a pixel to include it
+    # in calculation of muon ring time (peak sample):
     min_pe_for_muon_t_calc = 10.
 
     # Dictionary to store muon ring parameters
     muon_parameters  = create_muon_table()
 
-    
     if not is_simu:
 
         # TODO : add DRS4 calibration config in config file, read it and pass it here
-        r0_r1_calibrator = LSTR0Corrections(pedestal_path = pedestal_path,
-                                            tel_id = 1)
+        r0_r1_calibrator = LSTR0Corrections(
+            pedestal_path=pedestal_path, tel_id=1,
+        )
 
         # all this will be cleaned up in a next PR related to the configuration files
-        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                time_calibration_path = time_calibration_path,
-                                                extractor_product = config['image_extractor'],
-                                                gain_threshold = Config(config).gain_selector_config['threshold'],
-                                                config = Config(config),
-                                                allowed_tels = [1],
-                                                )
+        r1_dl1_calibrator = LSTCameraCalibrator(
+            calibration_path=calibration_path,
+            time_calibration_path=time_calibration_path,
+            extractor_product=config['image_extractor'],
+            gain_threshold=Config(config).gain_selector_config['threshold'],
+            config=Config(config),
+            allowed_tels=[1],
+        )
 
-        # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
-        # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
-        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                               time_calibration_path = time_calibration_path,
-                                                               extractor_product = config['image_extractor_for_muons'],
-                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
-                                                               config = Config(config),
-                                                               allowed_tels = [1],)
+        # Pulse extractor for muon ring analysis.
+        # Same parameters (window_width and _shift) as the one for showers,
+        # but using GlobalPeakWindowSum, since the signal for the rings is expected to
+        # be very isochronous
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(
+            calibration_path=calibration_path,
+            time_calibration_path=time_calibration_path,
+            extractor_product=config['image_extractor_for_muons'],
+            gain_threshold=Config(config).gain_selector_config['threshold'],
+            config=Config(config),
+            allowed_tels=[1],
+        )
 
-        
     dl1_container = DL1ParametersContainer()
 
     if pointing_file_path:
         # Open drive report
-        pointings = PointingPosition()
-        pointings.drive_path = pointing_file_path
+        pointings = PointingPosition(drive_path=pointing_file_path)
         drive_data = pointings._read_drive_report()
-    
+
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
-    event = next(iter(source))
+    # get the first event to write array info and mc header
+    event_iter = iter(source)
+    first_event = next(event_iter)
 
-    write_array_info(event, output_filename)
-    ### Write extra information to the DL1 file
+    # Write extra information to the DL1 file
+    write_array_info(first_event, output_filename)
     if is_simu:
-        write_mcheader(event.mcheader, output_filename, obs_id = event.r0.obs_id, 
-                       filters = filters, metadata = metadata)
-        subarray = event.inst.subarray
+        write_mcheader(
+            first_event.mcheader,
+            output_filename,
+            obs_id=first_event.r0.obs_id,
+            filters=filters,
+            metadata=metadata,
+        )
 
-    with HDF5TableWriter(filename = output_filename,
-                         group_name = 'dl1/event',
-                         mode = 'a',
-                         filters = filters,
-                         add_prefix = True,
-                         # overwrite = True,
-                         ) as writer:
-
-        print("USING FILTERS: ", writer._h5file.filters)
+    with HDF5TableWriter(
+        filename=output_filename,
+        group_name='dl1/event',
+        mode='a',
+        filters=filters,
+        add_prefix=True,
+        # overwrite=True,
+    ) as writer:
 
         if is_simu:
+            subarray = first_event.inst.subarray
             # build a mapping of tel_id back to tel_index:
             # (note this should be part of SubarrayDescription)
             idx = np.zeros(max(subarray.tel_indices) + 1)
@@ -280,18 +303,24 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                 idx[key] = val
 
             # the final transform then needs the mapping and the number of telescopes
-            tel_list_transform = partial(utils.expand_tel_list,
-                                         max_tels = len(event.inst.subarray.tel) + 1,
-                                         )
-
-            writer.add_column_transform(
-                table_name = 'subarray/trigger',
-                col_name = 'tels_with_trigger',
-                transform = tel_list_transform
+            tel_list_transform = partial(
+                utils.expand_tel_list,
+                max_tels=len(first_event.inst.subarray.tel) + 1,
             )
 
-        ### EVENT LOOP ###
-        for i, event in enumerate(source):
+            writer.add_column_transform(
+                table_name='subarray/trigger',
+                col_name='tels_with_trigger',
+                transform=tel_list_transform
+            )
+
+        # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
+        # This should be fixed in ctapipe and then corrected here
+        writer._h5file.filters = filters
+        print("USING FILTERS: ", writer._h5file.filters)
+
+        for i, event in enumerate(chain([first_event],  event_iter)):
+
             if i % 100 == 0:
                 print(i)
 
@@ -311,7 +340,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
-            check_and_apply_volume_reduction(event, config)
+            apply_volume_reduction(event, config)
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
@@ -455,7 +484,7 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                         image = tel.image*(~bad_pixels)
 
                         # process only promising events, in terms of # of pixels with large signals:
-                        if tag_pix_thr(image): 
+                        if tag_pix_thr(image):
 
                             # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
                             numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!

@@ -44,3 +44,16 @@ script:
 
 after_success:
     - codecov
+
+deploy:
+    provider: pypi
+    user: "__token__"
+    password:
+        secure: "UHZE1CjUCAkkYB8UTFYuXZ3d+bY7Ney5myLJGbSFGMnCGOix8sCO4bkvN9JMMeCHQX1C+nIe/pck8e2C5240juRp/H88vABxhkA0l05X7o+9jGmaVNITxPoFrdwoQ2GSk9DnCEmOn4/CBMXU9maFdQ3NC7uImD/d9NgdGweSdZWJVrV9ZuCZ3E1FOONgTeAIl2wT6R2G95LIRuf1EZfvBdXCmQNbm/06ZiJy7BjMqJPpH7rJD06bxm7vPPTcMvvEh6CUh2IxmNFA7Lh6KjrYH7YhwKqWqoBEkIeiTqpMyBTNKvLbsu9jlh9WDhtIGSX1Wup0Fd/WLfX8xqEq84XSqERiKK8cuNhkztHanWza0sz+kZLPZjqLkERpkzXZCNO0d4eNkcVzSYMdu1YgjosAKB/+mqSCKpOwGMTca+rKLhcWAQCLZrI+txlIKgabcoCpRcs7qB0DUXlRJ80Dg5bt3thgZ2j11yTF14dOOk/EhJdvPM4qFCN2x/lQkwkj6549qOuQKD2gSlqFM8F3W0vKc88ys+hPVe7sszLbxv+h7XyEFYqo6/6ItCxZ0+t1jyv8d59425yCz9U5n7X8N83LBomkO7VvCo2G4YFI4r+lyEJ7VjwGcUacC1w6Bs8oCTT8QYQeFR7YxIL2w+CEd5NMInJMfpiDbpuwSTUTb3UVNpA="
+    distributions: sdist
+    skip_existing: true
+    skip_cleanup: true
+    on:
+        tags: true
+        branch: master
+        condition: $TRAVIS_PYTHON_VERSION = "3.7"
