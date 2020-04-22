@@ -31,6 +31,7 @@ before_install:
 install:
     - conda env create --file environment.yml
     - conda activate lst-dev
+    - python --version
     - |
       pip install \
       https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz \
