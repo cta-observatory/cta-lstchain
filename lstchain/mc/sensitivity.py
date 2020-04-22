@@ -11,16 +11,17 @@ from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
 
-__all__ = ['read_sim_par',
-           'process_mc',
-           'calculate_sensitivity',
-           'calculate_sensitivity_lima',
-           'calculate_sensitivity_lima_ebin',
-           'bin_definition',
-           'ring_containment',
-           'find_best_cuts_sensitivity',
-           'sensitivity',
-           ]
+__all__ = [
+    'read_sim_par',
+    'process_mc',
+    'calculate_sensitivity',
+    'calculate_sensitivity_lima',
+    'calculate_sensitivity_lima_ebin',
+    'bin_definition',
+    'ring_containment',
+    'find_best_cuts_sensitivity',
+    'sensitivity',
+    ]
 
 
 def read_sim_par(dl1_file):
