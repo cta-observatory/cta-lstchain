@@ -38,6 +38,8 @@ def check_dl1(filenames, output_path, max_cores=4):
     ----------
     filenames: _sorted_ (by growing subrun index) list of input DL1 .h5 files
     output_path: directory where output will be written
+    max_cores: maximum number of processes that the function will spawn (each
+    processing a different subrun)
 
     Returns
     -------
@@ -336,7 +338,7 @@ def plot_datacheck(filename='', out_path=None):
             plt.colorbar(image, ax=axes[i, 1])
             axes[i, 1].set_aspect('equal')
             axes[i, 2].set_xscale('log')
-            axes[i, 2].set_xlabel('fraction of total events in bin')
+            axes[i, 2].set_xlabel('fraction of all events')
             axes[i, 2].set_ylabel('number of bins')
             event_fraction = contents[contents > 0]/contents[contents > 0].sum()
             axes[i, 2].hist(event_fraction,

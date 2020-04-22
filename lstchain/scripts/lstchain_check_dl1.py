@@ -5,16 +5,15 @@ To run it, type e.g.:
 python lstchain_check_dl1.py
 --input_file dl1_LST-1.1.Run01881.0000.h5
 """
-import warnings
-# I had enough of those annoying future warnings, hence:
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
+from warnings import simplefilter
 import argparse
 import glob
-from lstchain.datachecks import check_dl1, plot_datacheck
+# I had enough of those annoying future warnings, hence:
+simplefilter(action='ignore', category=FutureWarning)
+from ..datachecks import check_dl1, plot_datacheck
 
 # noinspection PyTypeChecker
-parser = argparse.ArgumentParser(formatter_class=argparse.\
+parser = argparse.ArgumentParser(formatter_class=argparse.
                                  ArgumentDefaultsHelpFormatter)
 
 # Required arguments
@@ -39,6 +38,7 @@ parser.add_argument('--max_cores', default=4, type=int,
 
 args = parser.parse_args()
 
+
 def main():
 
     print('input files: {}'.format(args.input_file))
@@ -61,9 +61,10 @@ def main():
     filenames.sort()
     try:
         check_dl1(filenames, args.output_path, args.max_cores)
-    except Exception as str:
-        print(str)
+    except Exception as string:
+        print(string)
         exit(-1)
+
 
 if __name__ == '__main__':
     main()
