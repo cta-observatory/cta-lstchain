@@ -513,7 +513,7 @@ def r0_to_dl1(
 
                     # extra info for the image table
                     extra_im.tel_id = telescope_id
-                    extra_im.low_gain_mask = event.lst.tel[telescope_id].evt.pixel_status >> 2 & 1
+                    extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
 
                     for container in [extra_im, dl1_container, event.r0, tel]:
                         add_global_metadata(container, metadata)

@@ -189,21 +189,8 @@ class LSTCameraCalibrator(CameraCalibrator):
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
 
-            # remember the mask in the lst pixel_status array (this info is missing for the moment in the
-            # r1 container). I follow the prescription given in the document
-            # "R1 & DL0 Telescope Event Interfaces and Prototype Evaluation" of K. Kosack
-
-            # bit 2 = LG
-            gain_mask *= 4
-
-            # bit 3 = HG
-            gain_mask[np.where(gain_mask == 0)] = 8
-
-            # bit 1 = pixel broken pixel (coming from the EvB)
-            gain_mask += event.lst.tel[telid].evt.pixel_status >> 1 & 1
-
-            # update pixel status
-            event.lst.tel[telid].evt.pixel_status = gain_mask
+            # remember which channel has been selected
+            event.r1.tel[telid].selected_gain_channel = gain_mask
 
         # if threshold == None
         else:

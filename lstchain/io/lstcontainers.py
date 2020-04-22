@@ -223,7 +223,7 @@ class ExtraMCInfo(Container):
 class ExtraImageInfo(Container):
     """ attach the tel_id """
     tel_id = Field(0, "Telescope ID")
-    low_gain_mask = Field(None, "pixels with charge from low gain channel")
+    selected_gain_channel = Field(None, "Selected gain channel")
 
 
 class ThrownEventsHistogram(Container):
