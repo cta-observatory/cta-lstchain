@@ -29,6 +29,7 @@ before_install:
     - conda info -a  # Useful for debugging any issues with conda
 
 install:
+    - sed -i -e "s/- python=.*/python=$TRAVIS_PYTHON_VERSION/g" environment.yaml
     - conda env create --file environment.yml
     - conda activate lst-dev
     - python --version
