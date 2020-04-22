@@ -8,7 +8,7 @@ from ctapipe.core import traits
 from ctapipe.core.traits import  Float, List
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
-
+from lstchain.io.lstcontainers import LSTEventType
 
 __all__ = [
     'CalibrationCalculator',
@@ -221,14 +221,14 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         new_ff = False
 
         # if pedestal event
-        if event.r1.tel[self.tel_id].trigger_type == 32:
+        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type):
 
             new_ped = self.pedestal.calculate_pedestals(event)
 
 
         # if flat-field event: no calibration  TIB for the moment,
         # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-        elif event.r1.tel[self.tel_id].trigger_type == 4 or (
+        elif LSTEventType.is_calibration(event.r1.tel[self.tel_id].trigger_type) or (
                 np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
                 > self.minimum_hg_charge_median
                 and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))

@@ -18,7 +18,8 @@ __all__ = [
     'DispContainer',
     'MetaData',
     'ThrownEventsHistogram',
-    'DL1MonitoringEventIndexContainer'
+    'DL1MonitoringEventIndexContainer',
+    'LSTEventType'
 ]
 
 
@@ -266,3 +267,43 @@ class DL1MonitoringEventIndexContainer(Container):
     calibration_id = Field(-1, 'Index of calibration event for DL1 file')
     pedestal_id = Field(-1, 'Index of pedestal event for DL1 file')
     flatfield_id = Field(-1, 'Index of flat-field event for DL1 file')
+
+class LSTEventType:
+    """
+    Class to recognize event type from trigger bits
+    bit 0: Mono
+    bit 1: stereo
+    bit 2: Calibration
+    bit 3: Single Phe
+    bit 4: Softrig(from the UCTS)
+    bit 5: Pedestal
+    bit 6: slow control
+    bit 7: busy
+    """
+
+    def is_mono(trigger_type):
+        return trigger_type >> 0 & 1
+
+    def is_stereo(trigger_type):
+        return trigger_type >> 1 & 1
+
+    def is_calibration(trigger_type):
+        return trigger_type >> 2 & 1
+
+    def is_single_pe(trigger_type):
+        return trigger_type >> 3 & 1
+
+    def is_soft_trig(trigger_type):
+        return trigger_type >> 4 & 1
+
+    def is_pedestal(trigger_type):
+        return trigger_type >> 5 & 1
+
+    def is_slow_control(trigger_type):
+        return trigger_type >> 6 & 1
+
+    def is_busy(trigger_type):
+        return trigger_type >> 7 & 1
+
+    def is_unknown(trigger_type):
+        return trigger_type == -1

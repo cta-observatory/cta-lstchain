@@ -12,6 +12,7 @@ from ctapipe.io import EventSource
 from ctapipe.io.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.calib.camera import CameraR0Calibrator
+from lstchain.io.lstcontainers import LSTEventType
 
 __all__ = [
     'CalibrationHDF5Writer'
@@ -171,12 +172,12 @@ class CalibrationHDF5Writer(Tool):
                 self.r0calibrator.calibrate(event)
 
                 # reject event without trigger type
-                if event.r1.tel[tel_id].trigger_type == -1:
+                if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
                     continue
 
                 # if pedestal event
 
-                if event.r1.tel[tel_id].trigger_type == 32 or (
+                if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                     < self.processor.minimum_hg_charge_median):
@@ -186,7 +187,7 @@ class CalibrationHDF5Writer(Tool):
 
                 # if flat-field event: no calibration  TIB for the moment,
                 # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-                elif event.r1.tel[tel_id].trigger_type == 4 or (
+                elif LSTEventType.is_calibration(event.r1.tel[tel_id].trigger_type) or (
                         np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                         > self.processor.minimum_hg_charge_median
                         and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
