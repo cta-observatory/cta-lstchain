@@ -27,7 +27,8 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
-#from multiprocessing import Pool
+# from multiprocessing import Pool
+
 
 def check_dl1(filenames, output_path):
     """
@@ -64,7 +65,7 @@ def check_dl1(filenames, output_path):
     #                       'input files. Exiting')
 
     # the list dl1datacheck will contain one entry per subrun. Each entry is a
-    # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
+    # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
     # one for flatfield events and one for cosmics
 
     # check that all files exist:
@@ -84,12 +85,12 @@ def check_dl1(filenames, output_path):
     # OS X. Perhaps related to numpy "sharing" between the processes?
 
     # for now we process the files sequentially:
-    dl1datacheck = [None]*len(filenames)
+    dl1datacheck = list([None]*len(filenames))
     for i, filename in enumerate(filenames):
         dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
 
     with HDF5TableWriter(out_filename) as writer:
-        # write the containers to the dl1 data check output file:
+        # write the containers (3 per subrun) to the dl1 data check output file:
         for dcheck in dl1datacheck:
             writer.write("dl1datacheck/pedestals", dcheck[0])
             writer.write("dl1datacheck/flatfield", dcheck[1])
@@ -110,6 +111,8 @@ def check_dl1(filenames, output_path):
 
     return
 
+
+# noinspection PyTypeChecker
 def process_dl1_file(filename, bins):
     """
 
@@ -118,7 +121,7 @@ def process_dl1_file(filename, bins):
     filename: input DL1 .h5 file to be checked
     bins: DL1DataCheckHistogramBins container indicating binning of histograms
 
-    Returns:
+    Returns
     -------
     dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
     Containers of type DL1DataCheckContainer, with info on the three types of
@@ -176,11 +179,11 @@ def process_dl1_file(filename, bins):
         # this should be the case if all events are saved)
         ped_indices = image_table.col('event_id')[pedestal_mask]
         params_pedestal_mask = np.array(
-                [(True if id in ped_indices else False) for id in
+                [(True if evtid in ped_indices else False) for evtid in
                  parameters['event_id']])
         ff_indices = image_table.col('event_id')[flatfield_mask]
         params_flatfield_mask = np.array(
-                [(True if id in ff_indices else False) for id in
+                [(True if evtid in ff_indices else False) for evtid in
                  parameters['event_id']])
         params_cosmics_mask = ~(params_pedestal_mask | params_flatfield_mask)
 
@@ -206,6 +209,7 @@ def process_dl1_file(filename, bins):
 
     return dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
 
+
 def plot_datacheck(filename='', out_path=None):
     """
 
@@ -223,7 +227,7 @@ def plot_datacheck(filename='', out_path=None):
     pagesize = [12., 7.5]
 
     pdf_filename = filename.replace('.h5', '.pdf')
-    if out_path != None:
+    if out_path is not None:
         pdf_filename = out_path+'/'+pdf_filename[pdf_filename.rfind('/')+1:]
 
     cam_description_table = \
@@ -261,8 +265,8 @@ def plot_datacheck(filename='', out_path=None):
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
         bins = hist_binning.col('hist_cog')[0]
-        x = np.array([xx for xx in bins[0][:-1] for yy in bins[1][:-1]])
-        y = np.array([yy for xx in bins[0][:-1] for yy in bins[1][:-1]])
+        x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
+        y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
 
         hists = ['hist_cog', 'hist_cog_intensity_gt_200']
         for i, hist in enumerate(hists):
@@ -279,7 +283,7 @@ def plot_datacheck(filename='', out_path=None):
             axes[i, 2].set_xscale('log')
             axes[i, 2].set_xlabel('fraction of total events in bin')
             axes[i, 2].set_ylabel('number of bins')
-            event_fraction = contents[contents>0]/contents[contents>0].sum()
+            event_fraction = contents[contents > 0]/contents[contents > 0].sum()
             axes[i, 2].hist(event_fraction,
                             bins=np.logspace(np.log10(event_fraction.min()),
                                              np.log10(event_fraction.max()),
@@ -297,10 +301,10 @@ def plot_datacheck(filename='', out_path=None):
 
         # We now plot the pixel rates above a few thresholds.
         # Find the thresholds (in pe) for which the event numbers are stored:
-        colnames = [str for str in table_cosmics.colnames
-                    if str.find('num_pulses_above') == 0]
-        threshold = [int(str[str.find('above_')+6:str.find('_pe')])
-                     for str in colnames]
+        colnames = [name for name in table_cosmics.colnames
+                    if name.find('num_pulses_above') == 0]
+        threshold = [int(name[name.find('above_')+6:name.find('_pe')])
+                     for name in colnames]
 
         for table in [table_pedestals, table_cosmics]:
             # We asume here that 5 such thresholds are present in the
@@ -317,7 +321,7 @@ def plot_datacheck(filename='', out_path=None):
                 zscale = 'log' if threshold[i] < 200 else 'lin'
                 cam = CameraDisplay(engineering_geom, sum_events[i],
                                     ax=axes.flatten()[i], norm=zscale,
-                                    title='Rate of >'+str(threshold[i])+
+                                    title='Rate of >' + str(threshold[i]) +
                                           ' p.e. pulses')
                 cam.add_colorbar(ax=axes.flatten()[i])
                 cam.show()
@@ -325,7 +329,7 @@ def plot_datacheck(filename='', out_path=None):
             pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad = 3.0, h_pad=3.0, w_pad=2.0)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
         axes[0, 0].set_xscale('log')
         axes[0, 0].set_yscale('log')
         for x, y in zip(threshold, sum_events):
@@ -337,7 +341,7 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     # calculate pixel-wise charge mean and standard deviation for the
     # whole run:
     mean = np.sum(np.multiply(table.col('charge_mean'),
-                              table.col('num_events')[:,None]),
+                              table.col('num_events')[:, None]),
                   axis=0) / np.sum(table.col('num_events'))
     stddev = np.sqrt(np.sum(np.multiply(table.col('charge_stddev') ** 2,
                                         table.col('num_events')[:, None]),
@@ -376,6 +380,7 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     axes[1, 2].set_ylabel('Pixels')
 
 
+# noinspection PyUnresolvedReferences
 class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
@@ -394,17 +399,18 @@ class DL1DataCheckContainer(Container):
     # keep number of events above a few thresholds, like a low-res histogram
     # of pulse charges (2 points per decade in charge in p.e.):
     num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses',
-                                   unit=1./u.s)
+                                     unit=1./u.s)
     num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses',
-                                   unit=1./u.s)
+                                     unit=1./u.s)
     num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses',
-                                   unit=1./u.s)
+                                     unit=1./u.s)
     num_pulses_above_0300_pe = Field(None, 'Number of >300 p.e. pulses',
-                                   unit=1./u.s)
+                                     unit=1./u.s)
     num_pulses_above_1000_pe = Field(None, 'Number of >1000 p.e. pulses',
-                                   unit=1./u.s)
+                                     unit=1./u.s)
     # there must be a nicer way of doing the above...
 
+    # noinspection PyTypeChecker,PyArgumentList
     def fill_event_wise_info(self, subrun_index, table, mask,
                              histogram_binnings):
         """
@@ -416,6 +422,8 @@ class DL1DataCheckContainer(Container):
         table: DL1 parameters, event-wise pandas dataframe, "parameters" from
         DL1 files
         mask: defines which events in table should be considered
+        histogram_binnings: container of type DL1DataCheckHistogramBins which
+        defines the binning of the various histograms
 
         Returns
         -------
@@ -440,12 +448,11 @@ class DL1DataCheckContainer(Container):
                                      bins=histogram_binnings.hist_cog)
         self.hist_cog = counts
 
-        select = intensity>200
+        select = intensity > 200
         counts, _, _, _ = \
             plt.hist2d(engi.x[select], engi.y[select],
                        bins=histogram_binnings.hist_cog_intensity_gt_200)
         self.hist_cog_intensity_gt_200 = counts
-
 
     def fill_pixel_wise_info(self, table, mask):
         """
