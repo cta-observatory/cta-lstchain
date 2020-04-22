@@ -11,4 +11,5 @@ dependencies:
   - pip:
       - pytest_runner
       - pytest-ordering
-      - https://github.com/cta-observatory/ctapipe_io_lst/archive/v0.4.1.tar.gz
+      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.4.1
+
