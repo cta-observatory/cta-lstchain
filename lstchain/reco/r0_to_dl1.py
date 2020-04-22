@@ -54,6 +54,8 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
+logger = logging.getLogger(__name__)
+
 
 __all__ = [
     'get_dl1',
@@ -180,9 +182,7 @@ def r0_to_dl1(
     calibration_path: Path to the file with calibration constants and
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
-        pointing_file_path: path to the Drive log with the pointing information
-        Arguments below are just temporal and will be removed whenever UCTS+EvB
-        is proved to stably and reliably provide timestamps.
+    pointing_file_path: path to the Drive log with the pointing information
     ucts_t0_dragon: first valid ucts_time
     dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
     ucts_t0_tib: first valid ucts_time for the first valid TIB counter
@@ -193,11 +193,11 @@ def r0_to_dl1(
 
     """
     if output_filename is None:
-        if (input_filename.startswith('LST')):
+        if input_filename.startswith('LST'):
             output_filename = (
-                'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' 
-                + os.path.basename(input_filename).split('.',5)[2] + '.' 
-                + os.path.basename(input_filename).split('.',5)[3] + '.h5'
+                'dl1_' + os.path.basename(input_filename).split('.', 5)[0] + '.'
+                + os.path.basename(input_filename).split('.', 5)[2] + '.'
+                + os.path.basename(input_filename).split('.', 5)[3] + '.h5'
                 )
         else:
             p = Path(input_filename)
@@ -228,7 +228,7 @@ def r0_to_dl1(
     min_pe_for_muon_t_calc = 10.
 
     # Dictionary to store muon ring parameters
-    muon_parameters  = create_muon_table()
+    muon_parameters = create_muon_table()
 
     if not is_simu:
 
@@ -319,6 +319,16 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
+        if math.isfinite(ucts_t0_dragon) and math.isfinite(dragon_counter0) \
+                and math.isfinite(ucts_t0_tib) and math.isfinite(tib_counter0):
+            logger.info(
+                f"UCTS absolute timestamp and counters used to calculate dragon_time and tib_time \n"
+                f"ucts_t0_dragon (nsecs): {ucts_t0_dragon} \n"
+                f"dragon_counter0: {dragon_counter0} \n"
+                f"ucts_t0_tib (nsecs): {ucts_t0_tib} \n"
+                f"tib_counter0: {tib_counter0}"
+            )
+
         for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
@@ -396,23 +406,31 @@ def r0_to_dl1(
                         if math.isnan(ucts_t0_dragon) and math.isnan(dragon_counter0) \
                            and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
                             # Dragon/TIB timestamps not based on a valid absolute reference timestamp
-                            dragon_time = (event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+                            dragon_time = (
+                                    event.lst.tel[telescope_id].svc.date +
+                                    event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7)
+                            )
 
-                            tib_time = (event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+                            tib_time = (
+                                    event.lst.tel[telescope_id].svc.date +
+                                    event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7)
+                            )
 
                         else:
                             # Dragon/TIB timestamps based on a valid absolute reference timestamp
-                            dragon_time = ((ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+                            dragon_time = (
+                                    (ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
+                                    event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7)
+                            )
 
-                            tib_time = ((ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+                            tib_time = (
+                                    (ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
+                                    event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7)
+                            )
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
                         ucts_time_utc = unix_tai_to_utc(ucts_time)
@@ -444,11 +462,9 @@ def r0_to_dl1(
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
-
                         # Until the TIB trigger_type is fully reliable, we also add
                         # the ucts_trigger_type to the data
                         extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
-
 
                     # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
