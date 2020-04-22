@@ -27,7 +27,7 @@ from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
-# from multiprocessing import Pool
+from multiprocessing import Pool
 
 
 def check_dl1(filenames, output_path):
@@ -79,15 +79,15 @@ def check_dl1(filenames, output_path):
 
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
-    # with Pool() as pool:
-    #    dl1datacheck = pool.map(process_dl1_file, filenames)
+    with Pool() as pool:
+        dl1datacheck = pool.map(process_dl1_file, filenames)
     # NOTE: the above does not seem to improve execution time at least on Mac
     # OS X. Perhaps related to numpy "sharing" between the processes?
 
     # for now we process the files sequentially:
-    dl1datacheck = list([None]*len(filenames))
-    for i, filename in enumerate(filenames):
-        dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
+    # dl1datacheck = list([None]*len(filenames))
+    # for i, filename in enumerate(filenames):
+    #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
 
     with HDF5TableWriter(out_filename) as writer:
         # write the containers (3 per subrun) to the dl1 data check output file:
