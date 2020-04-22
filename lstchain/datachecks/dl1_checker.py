@@ -276,8 +276,14 @@ def plot_datacheck(filename='', out_path=None):
                                                norm=colors.LogNorm())
             plt.colorbar(image, ax=axes[i, 1])
             axes[i, 1].set_aspect('equal')
-            axes[i, 2].hist(np.log10(contents[contents>0]), bins=100,
-                            weights=np.ones(sum(contents>0))/sum(contents>0))
+            axes[i, 2].set_xscale('log')
+            axes[i, 2].set_xlabel('fraction of total events in bin')
+            axes[i, 2].set_ylabel('number of bins')
+            event_fraction = contents[contents>0]/contents[contents>0].sum()
+            axes[i, 2].hist(event_fraction,
+                            bins=np.logspace(np.log10(event_fraction.min()),
+                                             np.log10(event_fraction.max()),
+                                             101))
 
         pdf.savefig()
 
