@@ -31,7 +31,7 @@ from multiprocessing import Pool
 from sys import platform
 
 
-def check_dl1(filenames, output_path):
+def check_dl1(filenames, output_path, max_cores=4):
     """
 
     Parameters
@@ -84,7 +84,7 @@ def check_dl1(filenames, output_path):
 
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
-    with Pool() as pool:
+    with Pool(max_cores) as pool:
         func_args = [(filename, histogram_binning) for filename in filenames]
         dl1datacheck = pool.starmap(process_dl1_file, func_args)
     # NOTE: the above does not seem to improve execution time at least on Mac

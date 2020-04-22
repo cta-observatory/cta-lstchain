@@ -13,18 +13,29 @@ import argparse
 import glob
 from lstchain.datachecks import check_dl1, plot_datacheck
 
-parser = argparse.ArgumentParser()
+# noinspection PyTypeChecker
+parser = argparse.ArgumentParser(formatter_class=argparse.\
+                                 ArgumentDefaultsHelpFormatter)
 
 # Required arguments
 # input file(s). Wildcards can be used, but inside quotes e.g. "dl1*.h5"
 parser.add_argument('--input_file', type=str, required=True,
                     help='Path to DL1 data file(s) (containing pixel-wise '
-                         'charge information and image parameters).'
+                         'charge information and image parameters)'
                     )
 
+# Optional arguments
+# path for output files
 parser.add_argument('--output_path', default='.', type=str,
                     help='Path to the output files'
                     )
+# maximum number of processes to be run in parallel
+# This refers to the processes explicitly spawned by check_dl1, not to what
+# e.g. numpy may do on its own!
+parser.add_argument('--max_cores', default=4, type=int,
+                    help='Maximum number of processes spawned'
+                    )
+
 
 args = parser.parse_args()
 
@@ -49,7 +60,7 @@ def main():
     # order input files by name, i.e. by run index:
     filenames.sort()
     try:
-        check_dl1(filenames, args.output_path)
+        check_dl1(filenames, args.output_path, args.max_cores)
     except Exception as str:
         print(str)
         exit(-1)
