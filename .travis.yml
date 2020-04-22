@@ -8,17 +8,35 @@ env:
     - PYTEST_ADDOPTS='--color=yes'
 
 
-python:
-    - 3.6
-    - 3.7
-
-env:
-    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.4.1" PROTOZFITS_VERSION=v1.4.2
-    - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
-
 matrix:
+  include:
+    - name: "python=3.6, ctapipe=0.7"
+      python: 3.6
+      env:
+        - CTAPIPE_VERSION="v0.7.0"
+        - CTAPIPE_IO_LST_VERSION="v0.4.1"
+
+    - name: "python=3.7, ctapipe=0.7"
+      python: 3.7
+      env:
+        - CTAPIPE_VERSION="v0.7.0"
+        - CTAPIPE_IO_LST_VERSION="v0.4.1"
+
+    - name: "python=3.6, ctapipe=master"
+      python: 3.6
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+
+    - name: "python=3.7, ctapipe=master"
+      python: 3.7
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+
   allow_failures:
-      - env: CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
+    - name: "python=3.6, ctapipe=master"
+    - name: "python=3.7, ctapipe=master"
 
 
 before_install:
