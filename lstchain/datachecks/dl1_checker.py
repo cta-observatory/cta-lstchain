@@ -132,8 +132,8 @@ def process_dl1_file(filename, bins):
     # define criteria for detecting flatfield events, since as of 20200418
     # there is no reliable event tagging for those. We require a minimum
     # fraction of pixels with a charge above a sufficiently large value:
-    ff_min_pixel_fraction = 0.8
-    ff_charge_threshold = 50.
+    ff_min_pixel_charge_median = 40.
+    ff_max_pixel_charge_stddev = 20.
 
     print('Opening file', filename)
     subrun_index = int(filename[filename.find('Run') + 9:][:4])
@@ -165,12 +165,16 @@ def process_dl1_file(filename, bins):
         #    parameters.loc[parameters['ucts_trigger_type'] == 32]
         # cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
 
-        # create masks for the images table:
-        pedestal_mask = image_table.col('ucts_trigger_type') == 32
-        num_bright_pixels = np.sum(image_table.col('image') >
-                                   ff_charge_threshold, axis=1)
-        flatfield_mask = num_bright_pixels > ff_min_pixel_fraction * \
-                         image_table.col('image').shape[1]
+        # create masks for the images table. For the time being, trigger
+        # type tags are not reliable. We first identify flatfield events by
+        # their looks, then use ucts_trigger_type to identify pedestals:
+        image = image_table.col('image')
+        flatfield_mask = ((np.median(image, axis=1) >
+                           ff_min_pixel_charge_median) &
+                          (np.std(image, axis=1) <
+                           ff_max_pixel_charge_stddev))
+        pedestal_mask = ~flatfield_mask & \
+                        (image_table.col('ucts_trigger_type') == 32)
         cosmics_mask = ~(pedestal_mask | flatfield_mask)
 
         # Now create the masks for the parameters table, just the
@@ -252,45 +256,6 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_yscale('log')
         pdf.savefig()
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        bins = hist_binning.col('hist_intensity')[0]
-        for table in param_tables:
-            axes[0, 0].hist(bins[:-1], bins,
-                            weights=np.sum(table.col('hist_intensity'),
-                                           axis=0))
-        axes[0, 0].set_xscale('log')
-        axes[0, 0].set_yscale('log')
-        pdf.savefig()
-
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-        bins = hist_binning.col('hist_cog')[0]
-        x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
-        y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
-
-        hists = ['hist_cog', 'hist_cog_intensity_gt_200']
-        for i, hist in enumerate(hists):
-            contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
-            _, _, _, image = axes[i, 0].hist2d(x, y, bins=bins,
-                                               weights=contents)
-            plt.colorbar(image, ax=axes[i, 0])
-            axes[i, 0].set_aspect('equal')
-            _, _, _, image = axes[i, 1].hist2d(x, y, bins=bins,
-                                               weights=contents,
-                                               norm=colors.LogNorm())
-            plt.colorbar(image, ax=axes[i, 1])
-            axes[i, 1].set_aspect('equal')
-            axes[i, 2].set_xscale('log')
-            axes[i, 2].set_xlabel('fraction of total events in bin')
-            axes[i, 2].set_ylabel('number of bins')
-            event_fraction = contents[contents > 0]/contents[contents > 0].sum()
-            axes[i, 2].hist(event_fraction,
-                            bins=np.logspace(np.log10(event_fraction.min()),
-                                             np.log10(event_fraction.max()),
-                                             101))
-
-        pdf.savefig()
-
         plot_mean_and_stddev(table_pedestals, engineering_geom,
                              'Pedestal', pagesize)
         pdf.savefig()
@@ -334,6 +299,45 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_yscale('log')
         for x, y in zip(threshold, sum_events):
             axes[0][0].plot(x*np.ones(len(y)), y, 'o')
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        bins = hist_binning.col('hist_intensity')[0]
+        for table in param_tables:
+            axes[0, 0].hist(bins[:-1], bins,
+                            weights=np.sum(table.col('hist_intensity'),
+                                           axis=0))
+        axes[0, 0].set_xscale('log')
+        axes[0, 0].set_yscale('log')
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        bins = hist_binning.col('hist_cog')[0]
+        x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
+        y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
+
+        hists = ['hist_cog', 'hist_cog_intensity_gt_200']
+        for i, hist in enumerate(hists):
+            contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
+            _, _, _, image = axes[i, 0].hist2d(x, y, bins=bins,
+                                               weights=contents)
+            plt.colorbar(image, ax=axes[i, 0])
+            axes[i, 0].set_aspect('equal')
+            _, _, _, image = axes[i, 1].hist2d(x, y, bins=bins,
+                                               weights=contents,
+                                               norm=colors.LogNorm())
+            plt.colorbar(image, ax=axes[i, 1])
+            axes[i, 1].set_aspect('equal')
+            axes[i, 2].set_xscale('log')
+            axes[i, 2].set_xlabel('fraction of total events in bin')
+            axes[i, 2].set_ylabel('number of bins')
+            event_fraction = contents[contents > 0]/contents[contents > 0].sum()
+            axes[i, 2].hist(event_fraction,
+                            bins=np.logspace(np.log10(event_fraction.min()),
+                                             np.log10(event_fraction.max()),
+                                             101))
+
         pdf.savefig()
 
 
