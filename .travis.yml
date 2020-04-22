@@ -7,8 +7,17 @@ python:
 
 matrix:
   include:
-    env:
-      - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="v1.4.2"
+    - python: 3.6
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+        - PROTOZFITS_VERSION="v1.4.2"
+
+    - python: 3.7
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+        - PROTOZFITS_VERSION="v1.4.2"
 
 
 before_install:
@@ -26,8 +35,10 @@ before_install:
     - conda info -a  # Useful for debugging any issues with conda
 
 install:
+    - sed -i -e "s/- python=.*/- python=$TRAVIS_PYTHON_VERSION/g" environment.yml
     - conda env create --file environment.yml
     - conda activate lst-dev
+    - python --version
     - |
       pip install \
       https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz \
