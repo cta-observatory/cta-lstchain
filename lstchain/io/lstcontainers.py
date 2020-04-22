@@ -268,6 +268,7 @@ class DL1MonitoringEventIndexContainer(Container):
     pedestal_id = Field(-1, 'Index of pedestal event for DL1 file')
     flatfield_id = Field(-1, 'Index of flat-field event for DL1 file')
 
+@staticmethod
 class LSTEventType:
     """
     Class to recognize event type from trigger bits
