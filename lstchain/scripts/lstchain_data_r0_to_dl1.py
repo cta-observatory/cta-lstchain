@@ -55,7 +55,7 @@ parser.add_argument('--ucts_t0_dragon', action='store', type=float,
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
                           passed, the start-of-the-run timestamp is provided, hence \
-                          Dragon timestmap is not reliable.',
+                          Dragon timestamp is not reliable.',
                     default="NaN"
                     )
 
@@ -72,7 +72,7 @@ parser.add_argument('--ucts_t0_tib', action='store', type=float,
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
                           passed, the start-of-the-run timestamp is provided, hence \
-                          TIB timestmap is not reliable.',
+                          TIB timestamp is not reliable.',
                     default="NaN"
                     )
 
