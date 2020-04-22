@@ -28,6 +28,7 @@ from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
+from sys import platform
 
 
 def check_dl1(filenames, output_path):
@@ -43,6 +44,10 @@ def check_dl1(filenames, output_path):
     None
 
     """
+
+    # to allow the use of multi-processing in linux:
+    if platform == 'linux':
+        os.system("taskset -p 0xff %d" % os.getpid())
 
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
