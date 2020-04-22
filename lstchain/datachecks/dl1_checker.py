@@ -80,7 +80,8 @@ def check_dl1(filenames, output_path):
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
     with Pool() as pool:
-        dl1datacheck = pool.map(process_dl1_file, filenames)
+        func_args = [(filename, histogram_binning) for filename in filenames]
+        dl1datacheck = pool.starmap(process_dl1_file, func_args)
     # NOTE: the above does not seem to improve execution time at least on Mac
     # OS X. Perhaps related to numpy "sharing" between the processes?
 
