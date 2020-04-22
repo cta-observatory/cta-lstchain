@@ -23,7 +23,7 @@ required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
-                      type=int, default=8000)
+                      type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
                       type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
