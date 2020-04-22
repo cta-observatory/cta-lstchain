@@ -260,9 +260,11 @@ def r0_to_dl1(
 
 
         # Component to process interleaved pedestal and flat-fields
-        calib_config = Config(config[config['calibration_product']])
-        # time calibration path to flatfield trailet
-        calib_config.FlatFieldCalculator.time_calibration_path = time_calibration_path
+        calib_config = Config(config)
+
+        # set time calibration path for flatfield trailet ()
+        calib_config.FlasherFlatFieldCalculator.time_calibration_path = time_calibration_path
+
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
             config=calib_config

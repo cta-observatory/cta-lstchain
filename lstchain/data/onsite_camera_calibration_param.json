@@ -10,14 +10,14 @@
      "r0calibrator_product": "LSTR0Corrections",
      "log_level":"DEBUG"
    },         
-   "PedestalCalculator":{
+   "PedestalIntegrator":{
       "sample_duration":100000,
       "tel_id":1,
       "charge_median_cut_outliers": [-10,10],
       "charge_std_cut_outliers": [-10,10],
       "charge_product":"FixedWindowSum"
    },
-   "FlatFieldCalculator":{
+   "FlasherFlatFieldCalculator":{
       "sample_duration":100000,
       "tel_id":1,
       "charge_product":"LocalPeakWindowSum",

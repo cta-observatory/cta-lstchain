@@ -61,8 +61,9 @@ class CalibrationCalculator(Component):
 
     def __init__(
         self,
+        parent=None,
+        config=None,
         **kwargs
-
     ):
 
         """
@@ -80,19 +81,17 @@ class CalibrationCalculator(Component):
              The pedestal to use. If None, then
                PedestalCalculator will be used by default.
 
-        kwargs
-
         """
 
-        super().__init__(**kwargs)
+        super().__init__(parent=parent, config=config,**kwargs)
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
-            **kwargs
+            parent=self
         )
         self.pedestal = PedestalCalculator.from_name(
             self.pedestal_product,
-            **kwargs
+            parent=self
         )
 
         msg = "tel_id not the same for all calibration components"
@@ -133,23 +132,6 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
     ).tag(config=True)
 
-    def __init__(self, **kwargs):
-        """
-         Calibration calculator for LST camera
-         Fills the MonitoringCameraContainer on the base of calibration events
-
-         Parameters:
-         ----------
-         minimum_hg_charge_median :
-             Temporary cut on HG charge till the calibox TIB do not work
-             (default for filter 5.2)
-
-         maximum_lg_charge_std
-             Temporary cut on LG std against Lidar events till the calibox TIB do not work
-            (default for filter 5.2)
-
-        """
-        super().__init__(**kwargs)
 
     def calculate_calibration_coefficients(self, event):
         """
@@ -198,9 +180,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         camera_time_median = np.median(ff_data.time_median, axis=1)
         calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
 
-        ped_extractor_name = self.config.get("PedestalCalculator").get("charge_product")
-        ped_width = self.config.get(ped_extractor_name).get("window_width")
-        calib_data.pedestal_per_sample = ped_data.charge_median / ped_width
+        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
 
         # put to zero unusable pixels
         calib_data.dc_to_pe[calib_data.unusable_pixels] = 0
@@ -208,8 +188,6 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
-
-
 
     def process_interleaved(self, event):
         """

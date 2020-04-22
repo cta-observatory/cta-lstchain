@@ -136,8 +136,8 @@ def main():
             # run lstchain script
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
-                  f"--FlatFieldCalculator.time_calibration_path={time_file} --FlatFieldCalculator.sample_size={stat_events} "\
-                  f"--PedestalCalculator.sample_size={stat_events}  " \
+                  f"--FlasherFlatFieldCalculator.time_calibration_path={time_file} --FlasherFlatFieldCalculator.sample_size={stat_events} "\
+                  f"--PedestalIntegrator.sample_size={stat_events}  " \
                   f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
 
             print("\n--> RUNNING...")

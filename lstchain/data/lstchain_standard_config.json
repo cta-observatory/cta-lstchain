@@ -130,7 +130,7 @@
      "maximum_lg_charge_std": 300,
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
-     "PedestalCalculator":{
+     "PedestalIntegrator":{
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,
@@ -138,7 +138,7 @@
        "charge_std_cut_outliers": [-10,10],
        "charge_product":"FixedWindowSum"
      },
-     "FlatFieldCalculator":{
+     "FlasherFlatFieldCalculator":{
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,

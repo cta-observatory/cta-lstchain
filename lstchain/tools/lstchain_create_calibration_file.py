@@ -75,7 +75,6 @@ class CalibrationHDF5Writer(Tool):
                     ]
                    + traits.classes_with_traits(CameraR0Calibrator)
                    + traits.classes_with_traits(CalibrationCalculator)
-
                    )
 
     def __init__(self, **kwargs):
@@ -97,9 +96,9 @@ class CalibrationHDF5Writer(Tool):
         self.simulation = False
 
     def setup(self):
-        kwargs = dict(parent=self)
+
         self.log.debug(f"Open  file")
-        self.eventsource = EventSource.from_config(**kwargs)
+        self.eventsource = EventSource.from_config(parent=self)
 
         # if data remember how many event in the files
         if "LSTEventSource" in str(type(self.eventsource)):
@@ -112,13 +111,13 @@ class CalibrationHDF5Writer(Tool):
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,
-            **kwargs
+            parent=self
         )
 
         if self.r0calibrator_product:
             self.r0calibrator = CameraR0Calibrator.from_name(
                 self.r0calibrator_product,
-                **kwargs
+                parent=self
             )
 
 
