@@ -268,7 +268,7 @@ class DL1MonitoringEventIndexContainer(Container):
     pedestal_id = Field(-1, 'Index of pedestal event for DL1 file')
     flatfield_id = Field(-1, 'Index of flat-field event for DL1 file')
 
-@staticmethod
+
 class LSTEventType:
     """
     Class to recognize event type from trigger bits
@@ -282,29 +282,38 @@ class LSTEventType:
     bit 7: busy
     """
 
+    @staticmethod
     def is_mono(trigger_type):
         return trigger_type >> 0 & 1
 
+    @staticmethod
     def is_stereo(trigger_type):
         return trigger_type >> 1 & 1
 
+    @staticmethod
     def is_calibration(trigger_type):
         return trigger_type >> 2 & 1
 
+    @staticmethod
     def is_single_pe(trigger_type):
         return trigger_type >> 3 & 1
 
+    @staticmethod
     def is_soft_trig(trigger_type):
         return trigger_type >> 4 & 1
 
+    @staticmethod
     def is_pedestal(trigger_type):
         return trigger_type >> 5 & 1
 
+    @staticmethod
     def is_slow_control(trigger_type):
         return trigger_type >> 6 & 1
 
+    @staticmethod
     def is_busy(trigger_type):
         return trigger_type >> 7 & 1
 
+    @staticmethod
     def is_unknown(trigger_type):
         return trigger_type == -1
