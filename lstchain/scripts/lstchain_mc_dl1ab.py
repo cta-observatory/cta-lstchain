@@ -111,6 +111,7 @@ def main():
                     dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
 
                     for p in parameters_to_update:
+                        print(dl1_container[p])
                         params[ii][p] = Quantity(dl1_container[p]).value
                 else:
                     for p in parameters_to_update:
