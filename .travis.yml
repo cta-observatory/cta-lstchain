@@ -1,25 +1,45 @@
 ---
 language: python
 
-python:
-    - 3.6
-    - 3.7
-
 env:
-    - CTAPIPE_VERSION="v0.7.0" CTAPIPE_IO_LST_VERSION="v0.4.1" PROTOZFITS_VERSION=v1.4.2
-    - CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
+  global:
+    - PYTHONIOENCODING=UTF8
+    - MPLBACKEND=Agg
+    - PYTEST_ADDOPTS='--color=yes'
+
 
 matrix:
+  include:
+    - name: "python=3.6, ctapipe=0.7"
+      python: 3.6
+      env:
+        - CTAPIPE_VERSION="v0.7.0"
+        - CTAPIPE_IO_LST_VERSION="v0.4.1"
+
+    - name: "python=3.7, ctapipe=0.7"
+      python: 3.7
+      env:
+        - CTAPIPE_VERSION="v0.7.0"
+        - CTAPIPE_IO_LST_VERSION="v0.4.1"
+
+    - name: "python=3.6, ctapipe=master"
+      python: 3.6
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+
+    - name: "python=3.7, ctapipe=master"
+      python: 3.7
+      env:
+        - CTAPIPE_VERSION="master"
+        - CTAPIPE_IO_LST_VERSION="master"
+
   allow_failures:
-      - env: CTAPIPE_VERSION="master" CTAPIPE_IO_LST_VERSION="master" PROTOZFITS_VERSION="master"
+    - name: "python=3.6, ctapipe=master"
+    - name: "python=3.7, ctapipe=master"
 
 
 before_install:
-    # Use utf8 encoding. Should be default, but this is insurance
-    # against future changes
-    - export PYTHONIOENCODING=UTF8
-    - export MPLBACKEND=Agg
-
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
     - . $HOME/miniconda/etc/profile.d/conda.sh
@@ -29,8 +49,10 @@ before_install:
     - conda info -a  # Useful for debugging any issues with conda
 
 install:
+    - sed -i -e "s/- python=.*/- python=$TRAVIS_PYTHON_VERSION/g" environment.yml
     - conda env create --file environment.yml
     - conda activate lst-dev
+    - python --version
     - |
       pip install \
       https://github.com/cta-observatory/ctapipe/archive/$CTAPIPE_VERSION.tar.gz \
