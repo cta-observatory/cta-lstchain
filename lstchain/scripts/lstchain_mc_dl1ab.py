@@ -66,7 +66,7 @@ def main():
         'leakage2_pixel',
         'concentration_cog',
         'concentration_core',
-        'concentration_pixels',
+        'concentration_pixel',
         'n_pixels',
         'n_islands', 'intercept', 'time_gradient'
     ])
@@ -84,7 +84,7 @@ def main():
             params = output.root[dl1_params_lstcam_key].read()
 
             for ii, row in enumerate(image_table):
-                if ii%10000 == 0:
+                if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
                 pulse_time = row['pulse_time']
@@ -111,7 +111,6 @@ def main():
                     dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
 
                     for p in parameters_to_update:
-                        print(dl1_container[p])
                         params[ii][p] = Quantity(dl1_container[p]).value
                 else:
                     for p in parameters_to_update:
