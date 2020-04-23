@@ -11,16 +11,17 @@ from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
 
-__all__ = ['read_sim_par',
-           'process_mc',
-           'calculate_sensitivity',
-           'calculate_sensitivity_lima',
-           'calculate_sensitivity_lima_ebin',
-           'bin_definition',
-           'ring_containment',
-           'find_best_cuts_sensitivity',
-           'sensitivity',
-           ]
+__all__ = [
+    'read_sim_par',
+    'process_mc',
+    'calculate_sensitivity',
+    'calculate_sensitivity_lima',
+    'calculate_sensitivity_lima_ebin',
+    'bin_definition',
+    'ring_containment',
+    'find_best_cuts_sensitivity',
+    'sensitivity',
+    ]
 
 
 def read_sim_par(dl1_file):
@@ -81,11 +82,13 @@ def process_mc(dl1_file, dl2_file, mc_type):
     # we use all telescopes (number of events needs to be multiplied 
     # by the number of LSTs in the simulation)
 
-    filter_good_events =  (events.leakage < 0.2) & \
-                          (events.intensity > 50)
-                          #(events.tel_id==1)
-                          #(events.wl > 0.1) 
-    
+    filter_good_events = (
+        (events.leakage2_intensity < 0.2)
+        & (events.intensity > 50)
+        # & (events.tel_id==1)
+        # & (events.wl > 0.1)
+    )
+
 
     events = events[filter_good_events]
 
