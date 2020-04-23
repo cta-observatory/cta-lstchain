@@ -363,14 +363,17 @@ def plot_datacheck(filename='', out_path=None):
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
         items = ['cog_within_pixel', 'cog_within_pixel_intensity_gt_200']
+        titles = ['Image c.o.g.', 'Image c.o.g., intensity>200pe']
         for i, item in enumerate(items):
             events_per_pix = np.sum(table_cosmics.col(item), axis=0)
-            cam = CameraDisplay(engineering_geom, events_per_pix, ax=axes[i, 0],
-                                norm='lin', title='Image cog')
+            all_events = np.sum(events_per_pix)
+            event_fraction = events_per_pix / all_events
+            cam = CameraDisplay(engineering_geom, event_fraction, ax=axes[i, 0],
+                                norm='lin', title=titles[i])
             cam.add_colorbar(ax=axes[i, 0])
             cam.show()
-            camlog = CameraDisplay(engineering_geom, events_per_pix,
-                                   ax=axes[i, 1], norm='log', title='Image cog')
+            camlog = CameraDisplay(engineering_geom, event_fraction,
+                                   ax=axes[i, 1], norm='log', title=titles[i])
             camlog.add_colorbar(ax=axes[i, 1])
             # lines below needed to get all camera displays of equal size:
             axes[i, 0].set_xlim((axes[0, 0].get_xlim()))
@@ -378,12 +381,10 @@ def plot_datacheck(filename='', out_path=None):
             cam.show()
             # select pixels which are not on the edge of the camera:
             pix_inside = np.array([len(neig) == 6 for neig in geom.neighbors])
-            # plot the fraction of image cogs contained in those inner
+            # histogram the fraction of image cogs contained in those inner
             # pixels, to test homogeneity of distribution:
-            all_events = np.sum(events_per_pix)
-            event_fraction = events_per_pix / all_events
-            # only positive ones, for log-plotting:
-            gt0 = event_fraction>0
+            # (only positive ones, for log-plotting)
+            gt0 = event_fraction > 0
             min = event_fraction[pix_inside & gt0].min()
             max = event_fraction[pix_inside & gt0].max()
             axes[i, 2].set_xscale('log')
@@ -562,10 +563,12 @@ class DL1DataCheckContainer(Container):
 
 
 class DL1DataCheckHistogramBins(Container):
+    """
     hist_cog = Field(np.array([np.linspace(-1.25, 1.25, 51),
                                np.linspace(-1.25, 1.25, 51)]),
                      'hist_cog binning')
     hist_cog_intensity_gt_200 = Field(np.array([np.linspace(-1.25, 1.25, 51),
                                                 np.linspace(-1.25, 1.25, 51)]),
                                       'hist_cog_intensity_gt_200 binning')
+    """
     hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
