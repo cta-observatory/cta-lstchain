@@ -17,6 +17,8 @@ import numpy as np
 import os
 import pandas as pd
 import tables
+import warnings
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
@@ -28,6 +30,7 @@ from ctapipe.visualization import CameraDisplay
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
+from scipy.stats import poisson
 from sys import platform
 
 
@@ -89,13 +92,16 @@ def check_dl1(filenames, output_path, max_cores=4):
     with Pool(max_cores) as pool:
         func_args = [(filename, histogram_binning) for filename in filenames]
         dl1datacheck = pool.starmap(process_dl1_file, func_args)
-    # NOTE: the above does not seem to improve execution time at least on Mac
-    # OS X. Perhaps related to numpy "sharing" between the processes?
+    # NOTE: the above does not seem to improve execution time on Mac OS X.
+    # Perhaps related to numpy "sharing" between the processes?
 
-    # for now we process the files sequentially:
+    # or... process the files sequentially:
     # dl1datacheck = list([None]*len(filenames))
     # for i, filename in enumerate(filenames):
     #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
+
+    # NOTE: I do not think we may have memory problems, but if needed we could
+    # write out the containers as they are produced.
 
     with HDF5TableWriter(out_filename) as writer:
         # write the containers (3 per subrun) to the dl1 data check output file:
@@ -120,7 +126,6 @@ def check_dl1(filenames, output_path, max_cores=4):
     return
 
 
-# noinspection PyTypeChecker
 def process_dl1_file(filename, bins):
     """
 
@@ -149,6 +154,10 @@ def process_dl1_file(filename, bins):
     dl1datacheck_pedestals = DL1DataCheckContainer()
     dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
+
+    cam_description_table = \
+        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+    geom = CameraGeometry.from_table(cam_description_table)
 
     with tables.open_file(filename) as file:
 
@@ -205,11 +214,14 @@ def process_dl1_file(filename, bins):
         # fill quantities which depend on event-wise (not
         # pixel-wise) parameters:
         dl1datacheck_pedestals.fill_event_wise_info(subrun_index, parameters,
-                                                    params_pedestal_mask, bins)
+                                                    params_pedestal_mask,
+                                                    geom, bins)
         dl1datacheck_flatfield.fill_event_wise_info(subrun_index, parameters,
-                                                    params_flatfield_mask, bins)
+                                                    params_flatfield_mask,
+                                                    geom, bins)
         dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
-                                                  params_cosmics_mask, bins)
+                                                  params_cosmics_mask,
+                                                  geom, bins)
 
         # now fill pixel-wise information:
         dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
@@ -319,12 +331,12 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_yscale('log')
         pdf.savefig()
 
+        """
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
         bins = hist_binning.col('hist_cog')[0]
         x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
         y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
-
         hists = ['hist_cog', 'hist_cog_intensity_gt_200']
         for i, hist in enumerate(hists):
             contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
@@ -345,7 +357,57 @@ def plot_datacheck(filename='', out_path=None):
                             bins=np.logspace(np.log10(event_fraction.min()),
                                              np.log10(event_fraction.max()),
                                              101))
+        pdf.savefig()
+        """
 
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+        items = ['cog_within_pixel', 'cog_within_pixel_intensity_gt_200']
+        for i, item in enumerate(items):
+            events_per_pix = np.sum(table_cosmics.col(item), axis=0)
+            cam = CameraDisplay(engineering_geom, events_per_pix, ax=axes[i, 0],
+                                norm='lin', title='Image cog')
+            cam.add_colorbar(ax=axes[i, 0])
+            cam.show()
+            camlog = CameraDisplay(engineering_geom, events_per_pix,
+                                   ax=axes[i, 1], norm='log', title='Image cog')
+            camlog.add_colorbar(ax=axes[i, 1])
+            # lines below needed to get all camera displays of equal size:
+            axes[i, 0].set_xlim((axes[0, 0].get_xlim()))
+            axes[i, 1].set_xlim((axes[0, 0].get_xlim()))
+            cam.show()
+            # select pixels which are not on the edge of the camera:
+            pix_inside = np.array([len(neig) == 6 for neig in geom.neighbors])
+            # plot the fraction of image cogs contained in those inner
+            # pixels, to test homogeneity of distribution:
+            all_events = np.sum(events_per_pix)
+            event_fraction = events_per_pix / all_events
+            # only positive ones, for log-plotting:
+            gt0 = event_fraction>0
+            min = event_fraction[pix_inside & gt0].min()
+            max = event_fraction[pix_inside & gt0].max()
+            axes[i, 2].set_xscale('log')
+            _, bins, _ = axes[i, 2].\
+                hist(event_fraction[pix_inside & gt0],
+                     bins=np.logspace(np.log10(min), np.log10(max), 201))
+            # average event content:
+            mu = np.sum(events_per_pix[pix_inside])/pix_inside.sum()
+            # get distribution of contents according to Poisson, integrating
+            # the distribution within the same bins of the histogram above:
+            poiss = np.array([poisson.cdf(x2*all_events, mu) -
+                              poisson.cdf(x1*all_events, mu) for
+                              x1, x2 in zip(bins[:-1], bins[1:])])
+            # from probability to number of pixels:
+            npixels = poiss * pix_inside.sum()
+            # log bin centers:
+            k = np.sqrt(bins[:-1]*bins[1:])
+            axes[i, 2].plot(k[npixels>0], npixels[npixels>0],
+                            drawstyle='steps-mid',
+                            label='Poisson for uniform density')
+            axes[i, 2].set_ylim(top=1.2*axes[i, 2].get_ylim()[1])
+            axes[i, 2].legend(loc='best')
+            axes[i, 2].set_xlabel('Fraction of events')
+            axes[i, 2].set_ylabel('# of pixels (excluding edge pixels)')
         pdf.savefig()
 
 
@@ -392,7 +454,6 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
     axes[1, 2].set_ylabel('Pixels')
 
 
-# noinspection PyUnresolvedReferences
 class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
@@ -401,29 +462,25 @@ class DL1DataCheckContainer(Container):
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
     hist_intensity = Field(None, 'Histogram of image intensity')
-    hist_cog = Field(None, 'Histogram of image center of gravity')
-    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
-                                            'gravity, intensity>200')
+    #    hist_cog = Field(None, 'Histogram of image center of gravity')
+    #    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
+    #                                            'gravity, intensity>200')
+    cog_within_pixel = Field(None, 'Number of image cogs within pixel')
+    cog_within_pixel_intensity_gt_200 = \
+        Field(None, 'Number of image within pixel, intensity>200pe')
 
     # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
     charge_stddev = Field(-1, 'Standard deviation of pixel charge')
     # keep number of events above a few thresholds, like a low-res histogram
     # of pulse charges (2 points per decade in charge in p.e.):
-    num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses',
-                                     unit=1./u.s)
-    num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses',
-                                     unit=1./u.s)
-    num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses',
-                                     unit=1./u.s)
-    num_pulses_above_0300_pe = Field(None, 'Number of >300 p.e. pulses',
-                                     unit=1./u.s)
-    num_pulses_above_1000_pe = Field(None, 'Number of >1000 p.e. pulses',
-                                     unit=1./u.s)
-    # there must be a nicer way of doing the above...
+    num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses')
+    num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses')
+    num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses')
+    num_pulses_above_0300_pe = Field(None, 'Number of >300 p.e. pulses')
+    num_pulses_above_1000_pe = Field(None, 'Number of >1000 p.e. pulses')
 
-    # noinspection PyTypeChecker,PyArgumentList
-    def fill_event_wise_info(self, subrun_index, table, mask,
+    def fill_event_wise_info(self, subrun_index, table, mask, geom,
                              histogram_binnings):
         """
         Fills the container fields that depend on event-wise DL1 info
@@ -450,21 +507,34 @@ class DL1DataCheckContainer(Container):
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
 
-        # center of gravity histograms
         x = table['x'][mask]
         y = table['y'][mask]
+
+        """
+        # Example of 2D hists: center of gravity histograms
         # Transform coordinates to engineering camera frame:
         orig = SkyCoord(x=x, y=y, unit=u.m, frame=CameraFrame())
         engi = orig.transform_to(EngineeringCameraFrame())
         counts, _, _, _ = plt.hist2d(engi.x, engi.y,
                                      bins=histogram_binnings.hist_cog)
         self.hist_cog = counts
-
-        select = intensity > 200
         counts, _, _, _ = \
             plt.hist2d(engi.x[select], engi.y[select],
                        bins=histogram_binnings.hist_cog_intensity_gt_200)
         self.hist_cog_intensity_gt_200 = counts
+        """
+
+        # event-wise, id of camera pixel which contains the image's cog:
+        cog_pixid = geom.position_to_pix_index(np.array(x)*u.m,
+                                               np.array(y)*u.m)
+        self.cog_within_pixel = np.zeros(geom.n_pixels)
+        for pix in cog_pixid:
+            self.cog_within_pixel[pix] += 1
+        self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
+        # now the same for relatively bright images (intensity > 200 p.e.)
+        select = intensity > 200
+        for pix in cog_pixid[select]:
+            self.cog_within_pixel_intensity_gt_200[pix] += 1
 
     def fill_pixel_wise_info(self, table, mask):
         """

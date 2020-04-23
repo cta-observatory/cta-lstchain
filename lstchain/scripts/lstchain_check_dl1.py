@@ -10,9 +10,8 @@ import argparse
 import glob
 # I had enough of those annoying future warnings, hence:
 simplefilter(action='ignore', category=FutureWarning)
-from ..datachecks import check_dl1, plot_datacheck
+from lstchain.datachecks import check_dl1, plot_datacheck
 
-# noinspection PyTypeChecker
 parser = argparse.ArgumentParser(formatter_class=argparse.
                                  ArgumentDefaultsHelpFormatter)
 
