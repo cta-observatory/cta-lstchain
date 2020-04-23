@@ -4,6 +4,7 @@ from .lstcontainers import (
     DispContainer,
 )
 from .io import (
+    get_dataset_keys,
     write_simtel_energy_histogram,
     write_mcheader,
     write_array_info,
@@ -22,6 +23,7 @@ __all__ = [
     'replace_config',
     'DL1ParametersContainer',
     'DispContainer',
+    'get_dataset_keys',
     'write_simtel_energy_histogram',
     'write_mcheader',
     'write_array_info',
