@@ -1,5 +1,5 @@
 import numpy as np
-from ..io.lstcontainers import DispContainer
+from ..io import lstcontainers
 from . import utils
 import astropy.units as u
 
@@ -107,7 +107,7 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     -------
     `lstchain.io.containers.DispContainer`
     """
-    disp_container = DispContainer()
+    disp_container = lstcontainers.DispContainer()
 
     d = disp(hillas_parameters.x.to(u.m).value,
              hillas_parameters.y.to(u.m).value,
