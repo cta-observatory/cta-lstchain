@@ -593,14 +593,14 @@ def r0_to_dl1(
                                      )
 
 
-
-        # at the end of event loop ask calculation of remaining interleaved statistics
-        calibration_calculator.output_interleaved_results(event)
-        # write monitoring events
-        write_calibration_data(writer,
-                               calibration_index,
-                               event.mon.tel[tel_id],
-                               new_ped=True, new_ff=True)
+        if not is_simu:
+            # at the end of event loop ask calculation of remaining interleaved statistics
+            calibration_calculator.output_interleaved_results(event)
+            # write monitoring events
+            write_calibration_data(writer,
+                                   calibration_index,
+                                   event.mon.tel[tel_id],
+                                   new_ped=True, new_ff=True)
 
 
     if is_simu:
