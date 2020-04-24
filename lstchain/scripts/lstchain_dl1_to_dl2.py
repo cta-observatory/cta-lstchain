@@ -15,19 +15,31 @@ $> python lstchain_dl1_to_dl2.py
 
 """
 
-from lstchain.reco import dl1_to_dl2
-from sklearn.externals import joblib
 import argparse
-import os
-import shutil
-import pandas as pd
-
-from lstchain.reco.utils import filter_events, impute_pointing
-from lstchain.io import read_configuration_file, standard_config, replace_config
-from lstchain.io import write_dl2_dataframe
-from lstchain.io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
-import numpy as np
 import astropy.units as u
+import numpy as np
+import os
+import pandas as pd
+import shutil
+
+from tables import open_file
+from astropy.table import Table
+from sklearn.externals import joblib
+from lstchain.reco.utils import filter_events, impute_pointing
+from lstchain.reco import dl1_to_dl2
+from lstchain.io import (
+    read_configuration_file, 
+    standard_config, 
+    replace_config,
+    write_dl2_dataframe,
+    get_dataset_keys,
+    auto_merge_h5files,
+)
+from lstchain.io.io import (
+    dl1_params_lstcam_key, 
+    dl1_params_src_dep_lstcam_key,
+    dl1_images_lstcam_key
+)
 
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -106,9 +118,22 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
+    dl1_keys = get_dataset_keys(args.datafile)
+    dl1_keys.remove(dl1_params_lstcam_key)
+    dl1_keys.remove(dl1_images_lstcam_key)
 
+    file = open_file(args.datafile)
+    for k in dl1_keys:
+        table = Table(file.root[k][:])
+        table.write(outfile, path=k, append=True)
+    file.close()
+
+<<<<<<< HEAD
     shutil.copyfile(args.input_file, output_file)
     write_dl2_dataframe(dl2.astype(float), output_file)
+=======
+    write_dl2_dataframe(dl2.astype(float), outfile)
+>>>>>>> 8f77431... strip images and DL1 parameters from DL2 files
 
 
 if __name__ == '__main__':
