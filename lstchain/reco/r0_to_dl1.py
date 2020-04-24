@@ -430,7 +430,7 @@ def r0_to_dl1(
                                     )
                                     logger.info(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
-                                        f"Consider use the following initial values \n"
+                                        f"Consider using the following initial values \n"
                                         f"Event ID: {event.r0.event_id}, "
                                         f"First valid UCTS timestamp: {first_valid_ucts} s, "
                                         f"corresponding Dragon (module {module_id}) counter {initial_dragon_counter} s"
@@ -447,7 +447,7 @@ def r0_to_dl1(
                                     )
                                     logger.info(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
-                                        f"Consider use the following initial values \n"
+                                        f"Consider using the following initial values \n"
                                         f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
                                         f"the first valid TIB counter: {first_valid_ucts_tib} s, "
                                         f"corresponding TIB counter {initial_tib_counter} s"
