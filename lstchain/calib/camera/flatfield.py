@@ -45,6 +45,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
     time_calibration_path = Unicode(
         '',
+        allow_none = True,
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
 
@@ -78,10 +79,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-        # declare time calibrator None of MC events
-        if self.time_calibration_path ==  "None":
+        # declare time calibrator None if MC events
+        if self.time_calibration_path is None:
             self.time_corrector = None
-
         else:
         # look for calibration path otherwise
             if os.path.exists(self.time_calibration_path):
