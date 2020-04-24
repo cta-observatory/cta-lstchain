@@ -54,7 +54,10 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('lstchain.reco.r0_to_dl1')
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logging.getLogger().addHandler(handler)
 
 
 __all__ = [
@@ -323,15 +326,8 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
-        if math.isfinite(ucts_t0_dragon) and math.isfinite(dragon_counter0) \
-                and math.isfinite(ucts_t0_tib) and math.isfinite(tib_counter0):
-            logger.info(
-                f"UCTS absolute timestamp and counters used to calculate dragon_time and tib_time \n"
-                f"ucts_t0_dragon (nsecs): {ucts_t0_dragon} \n"
-                f"dragon_counter0: {dragon_counter0} \n"
-                f"ucts_t0_tib (nsecs): {ucts_t0_tib} \n"
-                f"tib_counter0: {tib_counter0}"
-            )
+        first_valid_ucts = None
+        first_valid_ucts_tib = None
 
         for i, event in enumerate(chain([first_event],  event_iter)):
 
@@ -403,38 +399,80 @@ def r0_to_dl1(
                         # as the reference point. For the time being, the three TS
                         # are stored in the DL1 files for checking purposes.
 
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
-
                         module_id = 82  # Get counters from the central Dragon module
 
                         if math.isnan(ucts_t0_dragon) and math.isnan(dragon_counter0) \
-                           and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
+                                and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
                             # Dragon/TIB timestamps not based on a valid absolute reference timestamp
+
                             dragon_time = (
                                     event.lst.tel[telescope_id].svc.date +
                                     event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7)
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
                             )
 
                             tib_time = (
                                     event.lst.tel[telescope_id].svc.date +
                                     event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7)
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                             )
 
+                            if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
+                                # UCTS presence flag is OK
+                                ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+
+                                if first_valid_ucts is None:
+                                    first_valid_ucts = ucts_time
+
+                                    initial_dragon_counter = (
+                                            event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                            event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
+                                    )
+                                    logger.info(
+                                        f"Dragon timestamps not based on a valid absolute reference timestamp. "
+                                        f"Consider use the following initial values \n"
+                                        f"Event ID: {event.r0.event_id}, "
+                                        f"First valid UCTS timestamp: {first_valid_ucts} s, "
+                                        f"corresponding Dragon (module {module_id}) counter {initial_dragon_counter} s"
+                                    )
+
+                                if first_event.lst.tel[1].evt.extdevices_presence & 1 \
+                                        and first_valid_ucts_tib is None:
+                                    # Both TIB and UCTS presence flags are OK
+                                    first_valid_ucts_tib = ucts_time
+
+                                    initial_tib_counter = (
+                                            event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                            event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
+                                    )
+                                    logger.info(
+                                        f"TIB timestamps not based on a valid absolute reference timestamp. "
+                                        f"Consider use the following initial values \n"
+                                        f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
+                                        f"the first valid TIB counter: {first_valid_ucts_tib} s, "
+                                        f"corresponding TIB counter {initial_tib_counter} s"
+                                    )
+                            else:
+                                ucts_time = math.nan
+
                         else:
-                            # Dragon/TIB timestamps based on a valid absolute reference timestamp
+                            # Dragon/TIB timestamps based on a valid absolute reference UCTS timestamp
                             dragon_time = (
                                     (ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
                                     event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7)
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
                             )
 
                             tib_time = (
                                     (ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
                                     event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7)
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                             )
+                            if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
+                                # UCTS presence flag is OK
+                                ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+                            else:
+                                ucts_time = math.nan
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
                         ucts_time_utc = unix_tai_to_utc(ucts_time)
@@ -543,13 +581,11 @@ def r0_to_dl1(
                                 hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
-
                             if good_ring:
                                 fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
                                                 muonintensityparam, muonringparam, radial_distribution,
                                                 size_outside_ring, mean_pixel_charge_around_ring,
                                                 hg_peak_sample, lg_peak_sample)
-
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
@@ -559,6 +595,12 @@ def r0_to_dl1(
                         writer.write(table_name = f'simulation/{tel_name}',
                                      containers = [event.mc.tel[telescope_id], extra_im]
                                      )
+
+    if first_valid_ucts is None:
+        logger.warning("Not valid UCTS timestamp found")
+
+    if first_valid_ucts_tib is None:
+        logger.warning("Not valid TIB counter value found")
 
     if is_simu:
         ### Reconstruct source position from disp for all events and write the result in the output file
