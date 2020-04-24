@@ -78,12 +78,19 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-        # declare time calibrator if correction file exist
-        if os.path.exists(self.time_calibration_path):
-            self.time_corrector = PulseTimeCorrection(
-                calib_file_path = self.time_calibration_path)
+        # declare time calibrator None of MC events
+        if self.time_calibration_path ==  "None":
+            self.time_corrector = None
+
         else:
-            raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
+        # look for calibration path otherwise
+            if os.path.exists(self.time_calibration_path):
+                self.time_corrector = PulseTimeCorrection(
+                calib_file_path = self.time_calibration_path)
+            else:
+                msg=f"Time calibration file {self.time_calibration_path} not found!"
+                raise IOError(msg)
+
 
 
     def _extract_charge(self, event):
