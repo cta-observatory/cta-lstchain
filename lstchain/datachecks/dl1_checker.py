@@ -225,11 +225,11 @@ def process_dl1_file(filename, bins):
 
         # now fill pixel-wise information:
         dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                    pedestal_mask)
+                                                    pedestal_mask, bins)
         dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                    flatfield_mask)
+                                                    flatfield_mask, bins)
         dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                  cosmics_mask)
+                                                  cosmics_mask, bins)
 
     return dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
 
@@ -268,10 +268,11 @@ def plot_datacheck(filename='', out_path=None):
         table_pedestals = file.root.dl1datacheck.pedestals
         table_flatfield = file.root.dl1datacheck.flatfield
         table_cosmics = file.root.dl1datacheck.cosmics
-        param_tables = [table_cosmics, table_flatfield, table_pedestals]
+        dl1dcheck_tables = [table_cosmics, table_flatfield, table_pedestals]
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        for table in param_tables:
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        for table in dl1dcheck_tables:
             axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
         axes[0, 0].set_yscale('log')
         pdf.savefig()
@@ -290,16 +291,17 @@ def plot_datacheck(filename='', out_path=None):
                              norm='log')
         pdf.savefig()
 
-        plot_mean_and_stddev(table_flatfield, engineering_geom,
-                             ['time_mean', 'time_stddev'],
-                             ['Flat-field mean time (ns)',
-                              'Flat-field time std dev (ns)'], pagesize)
-        pdf.savefig()
-
-        plot_mean_and_stddev(table_cosmics, engineering_geom,
-                             ['time_mean', 'time_stddev'],
-                             ['Cosmics mean time (ns)',
-                              'Cosmics time std dev (ns)'], pagesize)
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        bins = hist_binning.col('hist_pixelchargespectrum')[0]
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_pixelchargespectrum'), axis=0)
+            axes[0, 0].hist(bins[:-1], bins, histtype='step',
+                            weights=contents/contents.sum())
+        axes[0, 0].set_yscale('log')
+        axes[0, 0].set_xscale('log')
+        axes[0, 0].set_xlabel('Pixel charge (p.e.)')
+        axes[0, 0].set_ylabel('fraction of events of the given type')
         pdf.savefig()
 
         # We now plot the pixel rates above a few thresholds.
@@ -313,7 +315,9 @@ def plot_datacheck(filename='', out_path=None):
             # We asume here that 5 such thresholds are present in the
             # dl1datacheck file
             fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-            fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+            fig.suptitle(table.name.upper(), fontsize='xx-large')
+            fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
+                             w_pad=2.0)
 
             # sum (for all subruns) the number of events above the different
             # thresholds:
@@ -339,13 +343,29 @@ def plot_datacheck(filename='', out_path=None):
             pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
         bins = hist_binning.col('hist_intensity')[0]
-        for table in param_tables:
-            axes[0, 0].hist(bins[:-1], bins,
-                            weights=np.sum(table.col('hist_intensity'),
-                                           axis=0))
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_intensity'), axis=0)
+            axes[0, 0].hist(bins[:-1], bins, weights=contents/contents.sum(),
+                            histtype='step')
+        axes[0, 0].set_xlabel('Intensity (p.e.)')
+        axes[0, 0].set_ylabel('fraction of events of the given type')
         axes[0, 0].set_xscale('log')
         axes[0, 0].set_yscale('log')
+        pdf.savefig()
+
+        # Some plots on pulse times:
+        plot_mean_and_stddev(table_flatfield, engineering_geom,
+                             ['time_mean', 'time_stddev'],
+                             ['Flat-field mean time (ns)',
+                              'Flat-field time std dev (ns)'], pagesize)
+        pdf.savefig()
+
+        plot_mean_and_stddev(table_cosmics, engineering_geom,
+                             ['time_mean', 'time_stddev'],
+                             ['Cosmics mean time (ns)',
+                              'Cosmics time std dev (ns)'], pagesize)
         pdf.savefig()
 
         """
@@ -378,7 +398,8 @@ def plot_datacheck(filename='', out_path=None):
         """
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+        fig.suptitle('COSMICS', fontsize='xx-large')
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0, w_pad=3.0)
         items = ['cog_within_pixel', 'cog_within_pixel_intensity_gt_200']
         titles = ['Image c.o.g.', 'Image c.o.g., intensity>200pe']
         for i, item in enumerate(items):
@@ -429,7 +450,9 @@ def plot_datacheck(filename='', out_path=None):
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+        fig.suptitle('COSMICS', fontsize='xx-large')
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
+                         w_pad=3.0)
         histos = ['hist_dist0', 'hist_dist0_intensity_gt_200']
         for i, hist in enumerate(histos):
             bins = hist_binning.col(hist)[0]
@@ -464,8 +487,10 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
 
     # plot mean and std dev of pedestal charge, as camera display,
     # vs. pixel id, and as a histogram:
-    fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-    fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+    fig, axes = plt.subplots(nrows=2, ncols=3,
+                             figsize=pagesize)
+    fig.suptitle(table.name.upper(), fontsize='xx-large')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.98], pad=3.0, h_pad=3.0, w_pad=2.0)
     cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
                         title=labels[0])
     cam.add_colorbar(ax=axes[0, 0])
@@ -509,6 +534,7 @@ class DL1DataCheckContainer(Container):
     #    hist_cog = Field(None, 'Histogram of image center of gravity')
     #    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
     #                                            'gravity, intensity>200')
+    hist_pixelchargespectrum = Field(None, 'Histogram of pixel charges')
     cog_within_pixel = Field(None, 'Number of image cogs within pixel')
     cog_within_pixel_intensity_gt_200 = \
         Field(None, 'Number of image within pixel, intensity>200pe')
@@ -594,7 +620,7 @@ class DL1DataCheckContainer(Container):
         for pix in cog_pixid[select]:
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
-    def fill_pixel_wise_info(self, table, mask):
+    def fill_pixel_wise_info(self, table, mask, histogram_binnings):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -655,6 +681,9 @@ class DL1DataCheckContainer(Container):
         self.num_pulses_above_0300_pe = np.sum(charge > 300, axis=0)
         self.num_pulses_above_1000_pe = np.sum(charge > 1000, axis=0)
 
+        counts, _, _ = plt.hist(charge[charge>0].flatten(),
+                                bins=histogram_binnings.hist_pixelchargespectrum)
+        self.hist_pixelchargespectrum = counts
 
 class DL1DataCheckHistogramBins(Container):
     """
@@ -665,6 +694,7 @@ class DL1DataCheckHistogramBins(Container):
                                                 np.linspace(-1.25, 1.25, 51)]),
                                       'hist_cog_intensity_gt_200 binning')
     """
+    hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121))
     hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
     hist_dist0 = Field(np.linspace(0., 1.3, 50), 'hist_dist0 binning')
     hist_dist0_intensity_gt_200 = Field(np.linspace(0., 1.3, 25),
