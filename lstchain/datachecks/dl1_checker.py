@@ -169,13 +169,6 @@ def process_dl1_file(filename, bins):
         # because pandas is not compatible with vector columns
         image_table = file.root.dl1.event.telescope.image.LST_LSTCam
 
-        # fill dummy event times with NaNs in case they do not exist
-        # (like in MC):
-        if 'dragon_time' not in parameters.keys():
-            dummy_times = np.empty(len(parameters['event_id']))
-            dummy_times[:] = np.nan
-            parameters['dragon_time'] = dummy_times
-
         # create subsets of the parameters dataframes:
         #  (is this too memory consuming?)
         # pedestals = \
@@ -275,6 +268,11 @@ def plot_datacheck(filename='', out_path=None):
         for table in dl1dcheck_tables:
             axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
         axes[0, 0].set_yscale('log')
+
+        for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
+            axes[0, 1].plot(table_cosmics.col('sampled_event_ids').flatten(),
+                            table_cosmics.col(time_type).flatten(),
+                            drawstyle='steps-mid')
         pdf.savefig()
 
         plot_mean_and_stddev(table_pedestals, engineering_geom,
@@ -526,6 +524,12 @@ class DL1DataCheckContainer(Container):
 
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
+
+    sampled_event_ids = Field(None, 'sampled event ids')
+    ucts_time = Field(None, 'ucts time')
+    tib_time = Field(None, 'tib_time')
+    dragon_time = Field(None, 'dragon_time')
+
     hist_intensity = Field(None, 'Histogram of image intensity')
     hist_dist0 = Field(None, 'Histogram of squared cog-camera center '
                              'distance')
@@ -577,6 +581,13 @@ class DL1DataCheckContainer(Container):
         """
         self.subrun_index = subrun_index
         self.num_events = table['ucts_trigger_type'][mask].count()
+
+        n_jump = 1000
+        # keep some info every n-jump-th event:
+        self.sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
+        self.tib_time = np.array(table['tib_time'][mask][0::n_jump])
+        self.ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
+        self.dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
 
         intensity = table['intensity'][mask]
         counts, _, _ = plt.hist(intensity,
