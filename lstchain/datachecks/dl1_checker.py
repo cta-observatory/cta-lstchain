@@ -277,11 +277,29 @@ def plot_datacheck(filename='', out_path=None):
         pdf.savefig()
 
         plot_mean_and_stddev(table_pedestals, engineering_geom,
-                             'Pedestal', pagesize)
+                             ['charge_mean', 'charge_stddev'],
+                             ['Pedestal mean charge (p.e.)',
+                              'Pedestal charge std dev (p.e.)'], pagesize,
+                             norm='log')
         pdf.savefig()
 
         plot_mean_and_stddev(table_flatfield, engineering_geom,
-                             'Flat-field', pagesize)
+                             ['charge_mean', 'charge_stddev'],
+                             ['Flat-field mean charge (p.e.)',
+                              'Flat-field charge std dev (p.e.)'], pagesize,
+                             norm='log')
+        pdf.savefig()
+
+        plot_mean_and_stddev(table_cosmics, engineering_geom,
+                             ['time_mean', 'time_stddev'],
+                             ['Cosmics mean time (ns)',
+                              'Cosmics time std dev (ns)'], pagesize)
+        pdf.savefig()
+
+        plot_mean_and_stddev(table_flatfield, engineering_geom,
+                             ['time_mean', 'time_stddev'],
+                             ['Flat-field mean time (ns)',
+                              'Flat-field time std dev (ns)'], pagesize)
         pdf.savefig()
 
         # We now plot the pixel rates above a few thresholds.
@@ -412,26 +430,31 @@ def plot_datacheck(filename='', out_path=None):
         pdf.savefig()
 
 
-def plot_mean_and_stddev(table, camgeom, label, pagesize):
-    # calculate pixel-wise charge mean and standard deviation for the
-    # whole run:
-    mean = np.sum(np.multiply(table.col('charge_mean'),
+def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
+
+    # calculate pixel-wise mean and standard deviation for the whole run,
+    # from the subrun-wise values:
+    mean = np.sum(np.multiply(table.col(columns[0]),
                               table.col('num_events')[:, None]),
                   axis=0) / np.sum(table.col('num_events'))
-    stddev = np.sqrt(np.sum(np.multiply(table.col('charge_stddev') ** 2,
+    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
                                         table.col('num_events')[:, None]),
                             axis=0) / np.sum(table.col('num_events')))
+
+    if np.isnan(mean).sum() > 0:
+        print('Pixels with NaNs in '+columns[0]+':',
+              np.array(camgeom.pix_id.tolist())[np.isnan(mean)])
 
     # plot mean and std dev of pedestal charge, as camera display,
     # vs. pixel id, and as a histogram:
     fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
     fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-    cam = CameraDisplay(camgeom, mean, ax=axes[0, 0],
-                        norm='log', title=label+' mean charge (p.e.)')
+    cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
+                        title=labels[0])
     cam.add_colorbar(ax=axes[0, 0])
     cam.show()
-    cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0],
-                        norm='log', title=label+' charge std dev (p.e.)')
+    cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0], norm=norm,
+                        title=labels[1])
     cam.add_colorbar(ax=axes[1, 0])
     # line below needed to get the top and bottom camera displays of equal size:
     axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
@@ -439,19 +462,18 @@ def plot_mean_and_stddev(table, camgeom, label, pagesize):
 
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
-    axes[0, 1].set_ylabel(label+' mean charge (p.e.)')
+    axes[0, 1].set_ylabel(labels[0])
     axes[0, 2].set_yscale('log')
     axes[0, 2].hist(mean, bins=200)
-    axes[0, 2].set_xlabel(label+' mean charge (p.e.)')
+    axes[0, 2].set_xlabel(labels[0])
     axes[0, 2].set_ylabel('Pixels')
     # now the standard deviation:
-
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
-    axes[1, 1].set_ylabel(label+' charge std dev (p.e.)')
+    axes[1, 1].set_ylabel(labels[1])
     axes[1, 2].set_yscale('log')
     axes[1, 2].hist(stddev, bins=200)
-    axes[1, 2].set_xlabel(label+' charge std dev (p.e.)')
+    axes[1, 2].set_xlabel(labels[1])
     axes[1, 2].set_ylabel('Pixels')
 
 
@@ -473,6 +495,11 @@ class DL1DataCheckContainer(Container):
     # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
     charge_stddev = Field(-1, 'Standard deviation of pixel charge')
+    time_mean = Field(-1, 'Mean of pulse time')
+    time_stddev = Field(-1, 'Standard deviaton of pulse time')
+    time_mean_above_030_pe = Field(-1, 'Mean of pulse time, >30 p.e. pulses')
+    time_stddev_above_030_pe = Field(-1, 'Standard deviaton of pulse time, '
+                                         '>30 p.e. pulses')
     # keep number of events above a few thresholds, like a low-res histogram
     # of pulse charges (2 points per decade in charge in p.e.):
     num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses')
@@ -552,8 +579,27 @@ class DL1DataCheckContainer(Container):
 
         """
         charge = table.col('image')[mask]
+        time = table.col('pulse_time')[mask]
         self.charge_mean = charge.mean(axis=0)
         self.charge_stddev = charge.std(axis=0)
+
+        # as of ctapipe 0.7.0, pulse times can take absurd values for pixels
+        # containing very little signal. For time plots we require at least 1
+        # p.e. We also exclude NaNs
+        charge_t = charge.transpose()
+        time_t = time.transpose()
+        # each row in the transposed matrices has all events for one pixel
+        self.time_mean = np.array([t[~np.isnan(t) & (c > 1)].mean()
+                                   for t, c in zip(time_t, charge_t)])
+        self.time_stddev = np.array([t[~np.isnan(t) & (c > 1)].std()
+                                     for t,c in zip(time_t, charge_t)])
+        self.time_mean_above_030_pe = \
+            np.array([t[~np.isnan(t) & (c > 30)].mean()
+                      for t,c in zip(time_t, charge_t)])
+        self.time_stddev_above_030_pe = \
+            np.array([t[~np.isnan(t) & (c > 30)].std()
+                      for t,c in zip(time_t, charge_t)])
+
         # count, for each pixel, the number of entries with charge>x pe:
         self.num_pulses_above_0010_pe = np.sum(charge > 10, axis=0)
         self.num_pulses_above_0030_pe = np.sum(charge > 30, axis=0)
