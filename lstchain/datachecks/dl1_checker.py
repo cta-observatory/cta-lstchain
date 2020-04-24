@@ -312,8 +312,7 @@ def plot_datacheck(filename='', out_path=None):
         for table in [table_pedestals, table_cosmics]:
             # We asume here that 5 such thresholds are present in the
             # dl1datacheck file
-            fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize,
-                                     sharey='row')
+            fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
             fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
 
             # sum (for all subruns) the number of events above the different
@@ -327,17 +326,17 @@ def plot_datacheck(filename='', out_path=None):
                                     title='Rate of >' + str(threshold[i]) +
                                           ' p.e. pulses')
                 cam.add_colorbar(ax=axes.flatten()[i])
+                # same range for all cameras:
+                axes.flatten()[i].set_xlim((axes[0, 0].get_xlim()))
                 cam.show()
-            axes[1, 2].axis('off')
+            #axes[1, 2].axis('off')
+            #pdf.savefig()
+            axes[1, 2].set_xscale('log')
+            axes[1, 2].set_yscale('log')
+            for x, y in zip(threshold, sum_events):
+                axes[1, 2].plot(x*np.ones(len(y)), y, 'o', fillstyle='none',
+                                alpha=0.1)
             pdf.savefig()
-
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-        axes[0, 0].set_xscale('log')
-        axes[0, 0].set_yscale('log')
-        for x, y in zip(threshold, sum_events):
-            axes[0][0].plot(x*np.ones(len(y)), y, 'o')
-        pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         bins = hist_binning.col('hist_intensity')[0]
@@ -429,6 +428,24 @@ def plot_datacheck(filename='', out_path=None):
             axes[i, 2].set_ylabel('# of pixels (excluding edge pixels)')
         pdf.savefig()
 
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+        histos = ['hist_dist0', 'hist_dist0_intensity_gt_200']
+        for i, hist in enumerate(histos):
+            bins = hist_binning.col(hist)[0]
+            # normalize bin content by area of the corresponding ring:
+            ringarea = np.pi*(bins[1:]**2-bins[:-1]**2)*u.m**2
+
+            axes[0, i].hist(bins[:-1], bins,
+                            weights=np.sum(table_cosmics.col(hist), axis=0)/
+                            ringarea.to_value(u.cm**2), histtype='step')
+            axes[0, i].set_xlabel('distance (m)')
+            axes[0, 1].set_ylabel('events per cm2')
+        axes[0, 0].set_title('cog radial distribution')
+        axes[0, 1].set_title('cog radial distribution, intensity>200pe')
+        pdf.savefig()
+
+
 
 def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
 
@@ -464,7 +481,7 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     axes[0, 1].set_xlabel('Pixel id')
     axes[0, 1].set_ylabel(labels[0])
     axes[0, 2].set_yscale('log')
-    axes[0, 2].hist(mean, bins=200)
+    axes[0, 2].hist(mean[~np.isnan(mean)], bins=200)
     axes[0, 2].set_xlabel(labels[0])
     axes[0, 2].set_ylabel('Pixels')
     # now the standard deviation:
@@ -472,7 +489,7 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     axes[1, 1].set_xlabel('Pixel id')
     axes[1, 1].set_ylabel(labels[1])
     axes[1, 2].set_yscale('log')
-    axes[1, 2].hist(stddev, bins=200)
+    axes[1, 2].hist(stddev[~np.isnan(stddev)], bins=200)
     axes[1, 2].set_xlabel(labels[1])
     axes[1, 2].set_ylabel('Pixels')
 
@@ -485,6 +502,10 @@ class DL1DataCheckContainer(Container):
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
     hist_intensity = Field(None, 'Histogram of image intensity')
+    hist_dist0 = Field(None, 'Histogram of squared cog-camera center '
+                             'distance')
+    hist_dist0_intensity_gt_200 = Field(None, 'Histogram of squared '
+                                             'cog-camera center distance')
     #    hist_cog = Field(None, 'Histogram of image center of gravity')
     #    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
     #                                            'gravity, intensity>200')
@@ -501,7 +522,8 @@ class DL1DataCheckContainer(Container):
     time_stddev_above_030_pe = Field(-1, 'Standard deviaton of pulse time, '
                                          '>30 p.e. pulses')
     # keep number of events above a few thresholds, like a low-res histogram
-    # of pulse charges (2 points per decade in charge in p.e.):
+    # of pulse charges (2 points per decade in charge in p.e.)
+    # This could be done in a cleaner way with a 2d hist charge vs. pixel (TBD)
     num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses')
     num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses')
     num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses')
@@ -537,6 +559,14 @@ class DL1DataCheckContainer(Container):
 
         x = table['x'][mask]
         y = table['y'][mask]
+        dist0 = np.sqrt(x**2. + y**2.)
+        counts, _, _ = plt.hist(dist0, bins=histogram_binnings.hist_dist0)
+        self.hist_dist0 = counts
+
+        counts, _, _ = \
+            plt.hist(dist0[intensity>200],
+                     bins=histogram_binnings.hist_dist0_intensity_gt_200)
+        self.hist_dist0_intensity_gt_200 = counts
 
         """
         # Example of 2D hists: center of gravity histograms
@@ -635,4 +665,7 @@ class DL1DataCheckHistogramBins(Container):
                                                 np.linspace(-1.25, 1.25, 51)]),
                                       'hist_cog_intensity_gt_200 binning')
     """
-    hist_intensity = Field(np.logspace(1., 6., 51), 'hist_intensity binning')
+    hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
+    hist_dist0 = Field(np.linspace(0., 1.3, 50), 'hist_dist0 binning')
+    hist_dist0_intensity_gt_200 = Field(np.linspace(0., 1.3, 25),
+                                        'hist_pix_gt_200 binning')
