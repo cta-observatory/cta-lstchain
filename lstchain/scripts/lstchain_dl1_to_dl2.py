@@ -118,6 +118,9 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
+    if os.path.exists(outfile):
+        raise IOError(outfile + ' exists, exiting.')    
+
     dl1_keys = get_dataset_keys(args.datafile)
     dl1_keys.remove(dl1_params_lstcam_key)
     dl1_keys.remove(dl1_images_lstcam_key)
