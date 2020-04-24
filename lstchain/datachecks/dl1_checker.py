@@ -290,16 +290,16 @@ def plot_datacheck(filename='', out_path=None):
                              norm='log')
         pdf.savefig()
 
-        plot_mean_and_stddev(table_cosmics, engineering_geom,
-                             ['time_mean', 'time_stddev'],
-                             ['Cosmics mean time (ns)',
-                              'Cosmics time std dev (ns)'], pagesize)
-        pdf.savefig()
-
         plot_mean_and_stddev(table_flatfield, engineering_geom,
                              ['time_mean', 'time_stddev'],
                              ['Flat-field mean time (ns)',
                               'Flat-field time std dev (ns)'], pagesize)
+        pdf.savefig()
+
+        plot_mean_and_stddev(table_cosmics, engineering_geom,
+                             ['time_mean', 'time_stddev'],
+                             ['Cosmics mean time (ns)',
+                              'Cosmics time std dev (ns)'], pagesize)
         pdf.savefig()
 
         # We now plot the pixel rates above a few thresholds.
@@ -589,16 +589,34 @@ class DL1DataCheckContainer(Container):
         charge_t = charge.transpose()
         time_t = time.transpose()
         # each row in the transposed matrices has all events for one pixel
-        self.time_mean = np.array([t[~np.isnan(t) & (c > 1)].mean()
-                                   for t, c in zip(time_t, charge_t)])
-        self.time_stddev = np.array([t[~np.isnan(t) & (c > 1)].std()
-                                     for t,c in zip(time_t, charge_t)])
-        self.time_mean_above_030_pe = \
-            np.array([t[~np.isnan(t) & (c > 30)].mean()
-                      for t,c in zip(time_t, charge_t)])
-        self.time_stddev_above_030_pe = \
-            np.array([t[~np.isnan(t) & (c > 30)].std()
-                      for t,c in zip(time_t, charge_t)])
+
+        healthy_entries = np.array([t[~np.isnan(t) & (c > 1)]
+                                    for t, c in zip(time_t, charge_t)])
+        self.time_mean = np.array([h.mean() if len(h) > 0 else np.nan
+                                   for h in healthy_entries])
+        self.time_stddev = np.array([h.std() if len(h) > 0 else np.nan
+                                     for h in healthy_entries])
+
+        healthy_entries = np.array([t[~np.isnan(t) & (c > 30)]
+                                    for t, c in zip(time_t, charge_t)])
+        self.time_mean_above_030_pe = np.array([h.mean() if len(h) > 0
+                                                else np.nan
+                                                for h in healthy_entries])
+        self.time_stddev_above_030_pe = np.array([h.std() if len(h) > 0
+                                                  else np.nan
+                                                  for h in healthy_entries])
+
+        #self.time_mean = np.array([t[~np.isnan(t) & (c > 1)].mean() for t, c in
+        #                           zip(time_t, charge_t)])
+        #self.time_stddev = np.array([t[~np.isnan(t) & (c > 1)].std()
+        #                             for t,c in zip(time_t, charge_t)])
+
+        #self.time_mean_above_030_pe = \
+        #    np.array([t[~np.isnan(t) & (c > 30)].mean()
+        #              for t,c in zip(time_t, charge_t)])
+        #self.time_stddev_above_030_pe = \
+        #    np.array([t[~np.isnan(t) & (c > 30)].std()
+        #              for t,c in zip(time_t, charge_t)])
 
         # count, for each pixel, the number of entries with charge>x pe:
         self.num_pulses_above_0010_pe = np.sum(charge > 10, axis=0)
