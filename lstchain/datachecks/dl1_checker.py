@@ -315,29 +315,33 @@ def plot_datacheck(filename='', out_path=None):
             fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
             fig.suptitle(table.name.upper(), fontsize='xx-large')
             fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
-                             w_pad=2.0)
+                             w_pad=3.0)
 
-            # sum (for all subruns) the number of events above the different
-            # thresholds:
-            sum_events = [np.sum(table.col(colname), axis=0)
+            # sum (for all subruns) the number of events per pixel above the
+            # different thresholds:
+            pix_events = [np.sum(table.col(colname), axis=0)
                           for colname in colnames]
+            # total number of entries for this event type:
+            norm = table.col('num_events').sum()
+            fraction = pix_events/norm
             for i, colname in enumerate(colnames):
                 zscale = 'log' if threshold[i] < 200 else 'lin'
-                cam = CameraDisplay(engineering_geom, sum_events[i],
+                cam = CameraDisplay(engineering_geom, fraction[i],
                                     ax=axes.flatten()[i], norm=zscale,
-                                    title='Rate of >' + str(threshold[i]) +
+                                    title='Fraction of >' + str(threshold[i]) +
                                           ' p.e. pulses')
-                cam.add_colorbar(ax=axes.flatten()[i])
+                cam.add_colorbar(ax=axes.flatten()[i], format='%.0e', pad=0.01)
                 # same range for all cameras:
                 axes.flatten()[i].set_xlim((axes[0, 0].get_xlim()))
                 cam.show()
-            #axes[1, 2].axis('off')
-            #pdf.savefig()
+            for i in [1, 2, 4]: axes.flatten()[i].set_ylabel('')
             axes[1, 2].set_xscale('log')
             axes[1, 2].set_yscale('log')
-            for x, y in zip(threshold, sum_events):
+            for x, y in zip(threshold, fraction):
                 axes[1, 2].plot(x*np.ones(len(y)), y, 'o', fillstyle='none',
                                 alpha=0.1)
+                axes[1, 2].set_xlabel('pixel charge (p.e.)')
+                axes[1, 2].set_ylabel('fraction of events with charge>x')
             pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
