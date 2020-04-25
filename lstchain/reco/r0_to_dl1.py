@@ -541,7 +541,7 @@ def r0_to_dl1(
                         if tag_pix_thr(image):
 
                             # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                            numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!
+                            numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
                             bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                             bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
                             # Now set to 0 all samples in unreliable pixels. Important for global peak
@@ -574,7 +574,7 @@ def r0_to_dl1(
                                 #                      mirror_area, True, './') # (test) plot muon rings as png files
 
                                 # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:,image>min_pe_for_muon_t_calc,:]
+                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
                                 stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
                                 # stacked waveforms from all bright pixels; shape (ngains, nsamples)
                                 hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
@@ -602,7 +602,7 @@ def r0_to_dl1(
         logger.warning("Not valid TIB counter value found")
 
     if is_simu:
-        ### Reconstruct source position from disp for all events and write the result in the output file
+        # Reconstruct source position from disp for all events and write the result in the output file
         for tel_name in ['LST_LSTCam']:
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
@@ -614,13 +614,7 @@ def r0_to_dl1(
             write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
                                           metadata=metadata)
     else:
-        dir = os.path.dirname(output_filename)
-        name = os.path.basename(output_filename)
-        k = name.find('Run')
-        muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
-                               name[k:k+13] + '.fits'
-
-        muon_output_filename = dir+'/'+muon_output_filename.replace("dl1", "muons")
+        muon_output_filename = output_filename.replace("dl1", "muons").replace('LST-1.1', 'LST-1').replace('.h5', '')
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
