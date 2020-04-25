@@ -368,9 +368,9 @@ def r0_to_dl1(
 
                 try:
                     dl1_filled = get_dl1(event, telescope_id,
-                                         dl1_container = dl1_container,
-                                         custom_config = config,
-                                         use_main_island = True)
+                                         dl1_container=dl1_container,
+                                         custom_config=config,
+                                         use_main_island=True)
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -526,11 +526,10 @@ def r0_to_dl1(
 
                     event.r0.prefix = ''
 
-                    writer.write(table_name = f'telescope/image/{tel_name}',
-                                 containers = [event.r0, tel, extra_im])
-                    writer.write(table_name = f'telescope/parameters/{tel_name}',
-                                 containers = [dl1_container, extra_im])
-
+                    writer.write(table_name=f'telescope/image/{tel_name}',
+                                 containers=[event.r0, tel, extra_im])
+                    writer.write(table_name=f'telescope/parameters/{tel_name}',
+                                 containers=[dl1_container, extra_im])
 
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
@@ -592,8 +591,8 @@ def r0_to_dl1(
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
                             and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
-                        writer.write(table_name = f'simulation/{tel_name}',
-                                     containers = [event.mc.tel[telescope_id], extra_im]
+                        writer.write(table_name=f'simulation/{tel_name}',
+                                     containers=[event.mc.tel[telescope_id], extra_im]
                                      )
 
     if first_valid_ucts is None:
@@ -612,16 +611,16 @@ def r0_to_dl1(
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
         if source.max_events is None:
-            write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
-                                          metadata = metadata)
+            write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
+                                          metadata=metadata)
     else:
         dir = os.path.dirname(output_filename)
         name = os.path.basename(output_filename)
         k = name.find('Run')
         muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
                                name[k:k+13] + '.fits'
-    
-        muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
+
+        muon_output_filename = dir+'/'+muon_output_filename.replace("dl1", "muons")
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
@@ -641,7 +640,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     table_path: path to the parameters table in the file
     focal: focal of the telescope
     """
-    df = pd.read_hdf(dl1_file, key = table_path)
+    df = pd.read_hdf(dl1_file, key=table_path)
 
     source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
                                          df.mc_az.values * u.rad,
@@ -654,7 +653,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
                                 source_pos_in_camera.x,
                                 source_pos_in_camera.y)
 
-    with tables.open_file(dl1_file, mode = "a") as file:
+    with tables.open_file(dl1_file, mode="a") as file:
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'disp_dx', disp_parameters[0].value)
         tab = file.root[table_path]
