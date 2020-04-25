@@ -432,8 +432,8 @@ def r0_to_dl1(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.r0.event_id}, "
-                                        f"First valid UCTS timestamp: {first_valid_ucts} s, "
-                                        f"corresponding Dragon (module {module_id}) counter {initial_dragon_counter} s"
+                                        f"First valid UCTS timestamp: {first_valid_ucts:.9f} s, "
+                                        f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
 
                                 if first_event.lst.tel[1].evt.extdevices_presence & 1 \
@@ -449,8 +449,8 @@ def r0_to_dl1(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
-                                        f"the first valid TIB counter: {first_valid_ucts_tib} s, "
-                                        f"corresponding TIB counter {initial_tib_counter} s"
+                                        f"the first valid TIB counter: {first_valid_ucts_tib:.9f} s, "
+                                        f"corresponding TIB counter {initial_tib_counter:.9f} s"
                                     )
                             else:
                                 ucts_time = math.nan
