@@ -54,7 +54,7 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
-logger = logging.getLogger('lstchain.reco.r0_to_dl1')
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 logging.getLogger().addHandler(handler)
