@@ -528,6 +528,8 @@ class DL1DataCheckContainer(Container):
 
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
+    trigger_type = Field(None, 'Number of events per trigger type')
+    ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
 
     sampled_event_ids = Field(None, 'sampled event ids')
     ucts_time = Field(None, 'ucts time')
@@ -543,11 +545,11 @@ class DL1DataCheckContainer(Container):
     #    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
     #                                            'gravity, intensity>200')
     hist_pixelchargespectrum = Field(None, 'Histogram of pixel charges')
+
+    # pixel-wise quantities:
     cog_within_pixel = Field(None, 'Number of image cogs within pixel')
     cog_within_pixel_intensity_gt_200 = \
         Field(None, 'Number of image within pixel, intensity>200pe')
-
-    # pixel-wise quantities:
     charge_mean = Field(-1, 'Mean of pixel charge')
     charge_stddev = Field(-1, 'Standard deviation of pixel charge')
     time_mean = Field(-1, 'Mean of pulse time')
@@ -575,7 +577,8 @@ class DL1DataCheckContainer(Container):
         table: DL1 parameters, event-wise pandas dataframe, "parameters" from
         DL1 files
         mask: defines which events in table should be considered
-        histogram_binnings: container of type DL1DataCheckHistogramBins which
+        geom: camera geometry (in standard frame, *not* engineering one)
+        histogram_binnings: container of type DL1DataCheckHinstogramBins which
         defines the binning of the various histograms
 
         Returns
@@ -584,7 +587,11 @@ class DL1DataCheckContainer(Container):
 
         """
         self.subrun_index = subrun_index
-        self.num_events = table['ucts_trigger_type'][mask].count()
+        self.num_events = mask.sum()
+        self.ucts_trigger_type = \
+            self.count_trig_types(table['ucts_trigger_type'][mask])
+        self.trigger_type = \
+            self.count_trig_types(table['trigger_type'][mask])
 
         n_jump = 1000
         # keep some info every n-jump-th event:
@@ -699,6 +706,26 @@ class DL1DataCheckContainer(Container):
         counts, _, _ = plt.hist(charge[charge>0].flatten(),
                                 bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
+
+    def count_trig_types(self, array):
+        """
+
+        Parameters
+        ----------
+        array: ndarray of event-wise trigger types
+
+        Returns
+        -------
+        an ndarray of shape (10, 2) [i, j] means j events of type i
+
+        """
+        ucts_trig_types, counts = np.unique(array, return_counts=True)
+        # write the different trigger types, then the number of events of
+        # each type. Pad to 10 entries (more than enough for trigger types):
+        ucts_trig_types = \
+            np.append(ucts_trig_types, (10-len(ucts_trig_types))*[0])
+        counts = np.append(counts, (10 - len(counts)) * [0])
+        return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
 
 class DL1DataCheckHistogramBins(Container):
     """
