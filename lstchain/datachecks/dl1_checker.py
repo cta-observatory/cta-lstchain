@@ -6,6 +6,7 @@ __all__ = [
     'check_dl1',
     'process_dl1_file',
     'plot_datacheck',
+    'plot_trigger_types',
     'plot_mean_and_stddev',
     'DL1DataCheckContainer',
     'DL1DataCheckHistogramBins',
@@ -261,18 +262,31 @@ def plot_datacheck(filename='', out_path=None):
         table_pedestals = file.root.dl1datacheck.pedestals
         table_flatfield = file.root.dl1datacheck.flatfield
         table_cosmics = file.root.dl1datacheck.cosmics
-        dl1dcheck_tables = [table_cosmics, table_flatfield, table_pedestals]
+        dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-        for table in dl1dcheck_tables:
-            axes[0, 0].plot(table.col('subrun_index'), table.col('num_events'))
-        axes[0, 0].set_yscale('log')
+
+        plot_trigger_types(dl1dcheck_tables, 'ucts_trigger_type', axes[0, 0])
+        plot_trigger_types(dl1dcheck_tables, 'trigger_type', axes[0, 1])
+
+        labels = ['flatfield (guessed)', 'pedestals (ucts)', 'cosmics']
+        for table,label in zip(dl1dcheck_tables, labels):
+            axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
+                            label=label)
+        axes[1, 0].set_ylabel('number of events')
+        axes[1, 0].set_xlabel('subrun index')
+        axes[1, 0].set_yscale('log')
+        axes[1, 0].legend(loc='best')
 
         for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
-            axes[0, 1].plot(table_cosmics.col('sampled_event_ids').flatten(),
+            axes[1, 1].plot(table_cosmics.col('sampled_event_ids').flatten(),
                             table_cosmics.col(time_type).flatten(),
-                            drawstyle='steps-mid')
+                            drawstyle='steps-mid', label=time_type)
+        axes[1, 1].set_xlabel('event id')
+        axes[1, 1].set_ylabel('timestamp')
+        axes[1, 1].legend(loc='best')
+
         pdf.savefig()
 
         plot_mean_and_stddev(table_pedestals, engineering_geom,
@@ -343,19 +357,6 @@ def plot_datacheck(filename='', out_path=None):
                 axes[1, 2].set_xlabel('pixel charge (p.e.)')
                 axes[1, 2].set_ylabel('fraction of events with charge>x')
             pdf.savefig()
-
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-        bins = hist_binning.col('hist_intensity')[0]
-        for table in dl1dcheck_tables:
-            contents = np.sum(table.col('hist_intensity'), axis=0)
-            axes[0, 0].hist(bins[:-1], bins, weights=contents/contents.sum(),
-                            histtype='step')
-        axes[0, 0].set_xlabel('Intensity (p.e.)')
-        axes[0, 0].set_ylabel('fraction of events of the given type')
-        axes[0, 0].set_xscale('log')
-        axes[0, 0].set_yscale('log')
-        pdf.savefig()
 
         # Some plots on pulse times:
         plot_mean_and_stddev(table_flatfield, engineering_geom,
@@ -470,6 +471,41 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 1].set_title('cog radial distribution, intensity>200pe')
         pdf.savefig()
 
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        bins = hist_binning.col('hist_intensity')[0]
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_intensity'), axis=0)
+            axes[0, 0].hist(bins[:-1], bins, weights=contents/contents.sum(),
+                            histtype='step')
+        axes[0, 0].set_xlabel('Intensity (p.e.)')
+        axes[0, 0].set_ylabel('fraction of events of the given type')
+        axes[0, 0].set_xscale('log')
+        axes[0, 0].set_yscale('log')
+        pdf.savefig()
+
+def plot_trigger_types(dchecktables, trigger_name, axes):
+    # find all trigger types found in the subruns, and display histogram:
+    # first merge subrun-wise tables:
+    tt = dchecktables[0].col(trigger_name)
+    for table in dchecktables[1:]:
+        tt = np.append(tt, table.col(trigger_name), axis=0)
+    # keep only entries with number of events > 0 (existing trig types):
+    tt = tt[tt[:, :, 1]>0]
+    trig_types = np.unique(tt[:,0])
+    num_triggers = np.array([(tt[:,1][tt[:,0]==trig]).sum()
+                             for trig in trig_types])
+    x = np.arange(2+len(trig_types))
+    # for better display, leave some space on the sides of the bars:
+    y = np.append([0], np.append(num_triggers, [0]))
+    labels = ['']+[str(i) for i in trig_types]+['']
+    width = 0.3
+    axes.bar(x, y, width)
+    axes.set_xticks(x)
+    axes.set_xticklabels(labels)
+    axes.set_yscale('log')
+    axes.set_xlabel(trigger_name)
+    axes.set_ylabel('number of events')
 
 
 def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
