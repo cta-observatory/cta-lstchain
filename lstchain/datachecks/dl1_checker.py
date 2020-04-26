@@ -629,12 +629,22 @@ class DL1DataCheckContainer(Container):
         self.trigger_type = \
             self.count_trig_types(table['trigger_type'][mask])
 
-        n_jump = 1000
+        # number of time samples per subrun to be stored in the container:
+        n_samples = 50
+        n_jump = 1+int(self.num_events/n_samples)
         # keep some info every n-jump-th event:
-        self.sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
-        self.tib_time = np.array(table['tib_time'][mask][0::n_jump])
-        self.ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
-        self.dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
+        sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
+        tib_time = np.array(table['tib_time'][mask][0::n_jump])
+        ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
+        dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
+        # in case the resulting number of entries is <n_samples, we have to pad
+        # the arrays, because hdf vector columns must have the same number of
+        # elements in each row. We repeat the last value in the array
+        padding = (0, n_samples-len(sampled_event_ids))
+        self.sampled_event_ids = np.pad(sampled_event_ids, padding, mode='edge')
+        self.tib_time = np.pad(tib_time, padding, mode='edge')
+        self.ucts_time = np.pad(ucts_time, padding, mode='edge')
+        self.dragon_time = np.pad(dragon_time, padding, mode='edge')
 
         intensity = table['intensity'][mask]
         counts, _, _ = plt.hist(intensity,
@@ -743,6 +753,7 @@ class DL1DataCheckContainer(Container):
                                 bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
 
+
     def count_trig_types(self, array):
         """
 
@@ -752,7 +763,7 @@ class DL1DataCheckContainer(Container):
 
         Returns
         -------
-        an ndarray of shape (10, 2) [i, j] means j events of type i
+        an ndarray of shape (10, 2) [i, j] means we found j events of type i
 
         """
         ucts_trig_types, counts = np.unique(array, return_counts=True)
