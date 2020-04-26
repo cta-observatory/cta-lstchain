@@ -58,11 +58,7 @@ def main():
     # and the associated pdf:
     # order input files by name, i.e. by run index:
     filenames.sort()
-    try:
-        check_dl1(filenames, args.output_path, args.max_cores)
-    except Exception as string:
-        print(string)
-        exit(-1)
+    check_dl1(filenames, args.output_path, args.max_cores)
 
 
 if __name__ == '__main__':

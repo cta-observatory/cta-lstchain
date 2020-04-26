@@ -113,7 +113,8 @@ def check_dl1(filenames, output_path, max_cores=4):
         # write also the histogram binnings:
         writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
-    # we assume that cam geom is the same in all files, & write the first one:
+    # we assume that cam geom is the same in all files, & write the first one
+    # we convert units from m to deg
     cam_description_table = \
         Table.read(filename, path='instrument/telescope/camera/LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
@@ -159,22 +160,25 @@ def process_dl1_file(filename, bins):
     cam_description_table = \
         Table.read(filename, path='instrument/telescope/camera/LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
+    optics_description_table = \
+        Table.read(filename, path='instrument/telescope/optics')
+    equivalent_focal_length = \
+        optics_description_table['equivalent_focal_length']
+    m2deg = np.rad2deg(u.m/equivalent_focal_length*u.rad)/u.m
 
     with tables.open_file(filename) as file:
-
         # unfortunately pandas.read_hdf does not seem compatible with
         # 'with... as...' statements
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+        # convert parameters from linear units to degrees:
+        for var in ['r', 'width', 'length']:
+            parameters[var] *= m2deg
+        # We do not convert the x,y, cog coordinates, because only in m can
+        # CameraGeometry find the pixel where a given cog falls
 
         # in order to read in the images we have to use tables,
         # because pandas is not compatible with vector columns
         image_table = file.root.dl1.event.telescope.image.LST_LSTCam
-
-        # create subsets of the parameters dataframes:
-        #  (is this too memory consuming?)
-        # pedestals = \
-        #    parameters.loc[parameters['ucts_trigger_type'] == 32]
-        # cosmics = parameters.loc[parameters['ucts_trigger_type'] != 32]
 
         # create masks for the images table. For the time being, trigger
         # type tags are not reliable. We first identify flatfield events by
@@ -235,6 +239,7 @@ def plot_datacheck(filename='', out_path=None):
     ----------
     filename: .h5 file produced by the method check_dl1
     out_path: optional, if not given it will be the same of file filename
+
     Returns
     -------
     None
@@ -371,35 +376,6 @@ def plot_datacheck(filename='', out_path=None):
                               'Cosmics time std dev (ns)'], pagesize)
         pdf.savefig()
 
-        """
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
-        bins = hist_binning.col('hist_cog')[0]
-        x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
-        y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
-        hists = ['hist_cog', 'hist_cog_intensity_gt_200']
-        for i, hist in enumerate(hists):
-            contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
-            _, _, _, image = axes[i, 0].hist2d(x, y, bins=bins,
-                                               weights=contents)
-            plt.colorbar(image, ax=axes[i, 0])
-            axes[i, 0].set_aspect('equal')
-            _, _, _, image = axes[i, 1].hist2d(x, y, bins=bins,
-                                               weights=contents,
-                                               norm=colors.LogNorm())
-            plt.colorbar(image, ax=axes[i, 1])
-            axes[i, 1].set_aspect('equal')
-            axes[i, 2].set_xscale('log')
-            axes[i, 2].set_xlabel('fraction of all events')
-            axes[i, 2].set_ylabel('number of bins')
-            event_fraction = contents[contents > 0]/contents[contents > 0].sum()
-            axes[i, 2].hist(event_fraction,
-                            bins=np.logspace(np.log10(event_fraction.min()),
-                                             np.log10(event_fraction.max()),
-                                             101))
-        pdf.savefig()
-        """
-
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.suptitle('COSMICS', fontsize='xx-large')
         fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0, w_pad=3.0)
@@ -460,19 +436,39 @@ def plot_datacheck(filename='', out_path=None):
         for i, hist in enumerate(histos):
             bins = hist_binning.col(hist)[0]
             # normalize bin content by area of the corresponding ring:
-            ringarea = np.pi*(bins[1:]**2-bins[:-1]**2)*u.m**2
+            ringarea = np.pi*(bins[1:]**2-bins[:-1]**2)*u.deg**2
 
-            axes[0, i].hist(bins[:-1], bins,
+            axes[i, 0].hist(bins[:-1], bins,
                             weights=np.sum(table_cosmics.col(hist), axis=0)/
-                            ringarea.to_value(u.cm**2), histtype='step')
-            axes[0, i].set_xlabel('distance (m)')
-            axes[0, 1].set_ylabel('events per cm2')
+                            ringarea.value, histtype='step')
+            axes[i, 0].set_xlabel('distance (deg)')
+            axes[i, 0].set_ylabel('events per deg2')
         axes[0, 0].set_title('cog radial distribution')
-        axes[0, 1].set_title('cog radial distribution, intensity>200pe')
+        axes[1, 0].set_title('cog radial distribution, intensity>200pe')
+
+        hists = ['hist_width', 'hist_length']
+        for i, hist in enumerate(hists):
+            bins = hist_binning.col(hist)[0]
+            x = np.array([xx for xx in bins[0][:-1] for __ in bins[1][:-1]])
+            y = np.array([yy for __ in bins[0][:-1] for yy in bins[1][:-1]])
+            contents = np.sum(table_cosmics.col(hist), axis=0).flatten()
+            _, _, _, image = axes[i, 1].hist2d(x, y, bins=bins,
+                                               weights=contents,
+                                               norm=colors.LogNorm())
+            plt.colorbar(image, ax=axes[i, 1])
+            axes[i, 1].set_xscale('log')
+            axes[i, 1].set_xlabel('Intensity (p.e.)')
+        axes[0, 1].set_ylabel('Width (deg)')
+        axes[1, 1].set_ylabel('Length (deg)')
+
+
+
+
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        fig.suptitle('COSMICS', fontsize='xx-large')
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0, w_pad=2.0)
         bins = hist_binning.col('hist_intensity')[0]
         for table in dl1dcheck_tables:
             contents = np.sum(table.col('hist_intensity'), axis=0)
@@ -482,9 +478,28 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_ylabel('fraction of events of the given type')
         axes[0, 0].set_xscale('log')
         axes[0, 0].set_yscale('log')
+
         pdf.savefig()
 
 def plot_trigger_types(dchecktables, trigger_name, axes):
+    """
+
+    Parameters
+    ----------
+    dchecktables: array of python tables created with DL1DataCheckContainer
+    containers (each row is one subrun). The plotted trigger type statistics
+    will be the global ones, adding up the numbers from all the tables and
+    all the rows in each table.
+
+    trigger_name: name of the trigger type column in the tables
+    axes: where to place the plots
+
+    Returns
+    -------
+    None
+
+    """
+
     # find all trigger types found in the subruns, and display histogram:
     # first merge subrun-wise tables:
     tt = dchecktables[0].col(trigger_name)
@@ -577,9 +592,9 @@ class DL1DataCheckContainer(Container):
                              'distance')
     hist_dist0_intensity_gt_200 = Field(None, 'Histogram of squared '
                                              'cog-camera center distance')
-    #    hist_cog = Field(None, 'Histogram of image center of gravity')
-    #    hist_cog_intensity_gt_200 = Field(None, 'Histogram of image center of '
-    #                                            'gravity, intensity>200')
+    hist_width = Field(None, 'Histogram image width vs. intensity')
+    hist_length = Field(None, 'Histogram image length vs. intensity')
+
     hist_pixelchargespectrum = Field(None, 'Histogram of pixel charges')
 
     # pixel-wise quantities:
@@ -651,9 +666,7 @@ class DL1DataCheckContainer(Container):
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
 
-        x = table['x'][mask]
-        y = table['y'][mask]
-        dist0 = np.sqrt(x**2. + y**2.)
+        dist0 = table['r'][mask]
         counts, _, _ = plt.hist(dist0, bins=histogram_binnings.hist_dist0)
         self.hist_dist0 = counts
 
@@ -662,20 +675,18 @@ class DL1DataCheckContainer(Container):
                      bins=histogram_binnings.hist_dist0_intensity_gt_200)
         self.hist_dist0_intensity_gt_200 = counts
 
-        """
-        # Example of 2D hists: center of gravity histograms
-        # Transform coordinates to engineering camera frame:
-        orig = SkyCoord(x=x, y=y, unit=u.m, frame=CameraFrame())
-        engi = orig.transform_to(EngineeringCameraFrame())
-        counts, _, _, _ = plt.hist2d(engi.x, engi.y,
-                                     bins=histogram_binnings.hist_cog)
-        self.hist_cog = counts
-        counts, _, _, _ = \
-            plt.hist2d(engi.x[select], engi.y[select],
-                       bins=histogram_binnings.hist_cog_intensity_gt_200)
-        self.hist_cog_intensity_gt_200 = counts
-        """
+        counts, _, _, _ = plt.hist2d(table['intensity'][mask],
+                                     table['width'][mask],
+                                     bins=histogram_binnings.hist_width)
+        self.hist_width = counts
 
+        counts, _, _, _ = plt.hist2d(table['intensity'][mask],
+                                     table['length'][mask],
+                                     bins=histogram_binnings.hist_length)
+        self.hist_length = counts
+
+        x = table['x'][mask]
+        y = table['y'][mask]
         # event-wise, id of camera pixel which contains the image's cog:
         cog_pixid = geom.position_to_pix_index(np.array(x)*u.m,
                                                np.array(y)*u.m)
@@ -700,7 +711,7 @@ class DL1DataCheckContainer(Container):
         Returns
         -------
         None
-
+t
         """
         charge = table.col('image')[mask]
         time = table.col('pulse_time')[mask]
@@ -729,18 +740,6 @@ class DL1DataCheckContainer(Container):
         self.time_stddev_above_030_pe = np.array([h.std() if len(h) > 0
                                                   else np.nan
                                                   for h in healthy_entries])
-
-        #self.time_mean = np.array([t[~np.isnan(t) & (c > 1)].mean() for t, c in
-        #                           zip(time_t, charge_t)])
-        #self.time_stddev = np.array([t[~np.isnan(t) & (c > 1)].std()
-        #                             for t,c in zip(time_t, charge_t)])
-
-        #self.time_mean_above_030_pe = \
-        #    np.array([t[~np.isnan(t) & (c > 30)].mean()
-        #              for t,c in zip(time_t, charge_t)])
-        #self.time_stddev_above_030_pe = \
-        #    np.array([t[~np.isnan(t) & (c > 30)].std()
-        #              for t,c in zip(time_t, charge_t)])
 
         # count, for each pixel, the number of entries with charge>x pe:
         self.num_pulses_above_0010_pe = np.sum(charge > 10, axis=0)
@@ -775,16 +774,16 @@ class DL1DataCheckContainer(Container):
         return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
 
 class DL1DataCheckHistogramBins(Container):
-    """
-    hist_cog = Field(np.array([np.linspace(-1.25, 1.25, 51),
-                               np.linspace(-1.25, 1.25, 51)]),
-                     'hist_cog binning')
-    hist_cog_intensity_gt_200 = Field(np.array([np.linspace(-1.25, 1.25, 51),
-                                                np.linspace(-1.25, 1.25, 51)]),
-                                      'hist_cog_intensity_gt_200 binning')
-    """
+
     hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121))
     hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
-    hist_dist0 = Field(np.linspace(0., 1.3, 50), 'hist_dist0 binning')
-    hist_dist0_intensity_gt_200 = Field(np.linspace(0., 1.3, 25),
+    hist_dist0 = Field(np.linspace(0., 2.5, 50), 'hist_dist0 binning')
+    hist_dist0_intensity_gt_200 = Field(np.linspace(0., 2.5, 50),
                                         'hist_pix_gt_200 binning')
+
+    hist_width = Field(np.array([np.logspace(0.7, 6.3, 101),
+                                 np.linspace(0., 1.2, 101)]),
+                       'hist_width binning')
+    hist_length = Field(np.array([np.logspace(0.7, 6.3, 101),
+                                  np.linspace(0., 2., 101)]),
+                       'hist_length binning')
