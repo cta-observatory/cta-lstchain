@@ -95,10 +95,7 @@ def main():
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
-                    n_pixels_on_island = np.zeros(num_islands + 1)
-
-                    for iisland in range(1, num_islands + 1):
-                        n_pixels_on_island[iisland] = np.sum(island_labels == iisland)
+                    n_pixels_on_island = np.bincount(island_labels)
 
                     max_island_label = np.argmax(n_pixels_on_island)
                     signal_pixels[island_labels != max_island_label] = False
