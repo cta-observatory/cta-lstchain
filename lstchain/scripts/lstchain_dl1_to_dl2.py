@@ -115,11 +115,10 @@ def main():
     dl1_keys.remove(dl1_params_lstcam_key)
     dl1_keys.remove(dl1_images_lstcam_key)
 
-    file = open_file(args.datafile)
-    for k in dl1_keys:
-        table = Table(file.root[k][:])
-        table.write(outfile, path=k, append=True)
-    file.close()
+    with file as open_file(args.datafile):
+        for k in dl1_keys:
+            table = Table(file.root[k][:])
+            table.write(outfile, path=k, append=True)
 
     write_dl2_dataframe(dl2.astype(float), outfile)
 
