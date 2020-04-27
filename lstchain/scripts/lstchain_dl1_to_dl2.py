@@ -115,7 +115,7 @@ def main():
     dl1_keys.remove(dl1_params_lstcam_key)
     dl1_keys.remove(dl1_images_lstcam_key)
 
-    with file as open_file(args.datafile):
+    with open_file(args.datafile) as file:
         for k in dl1_keys:
             table = Table(file.root[k][:])
             table.write(outfile, path=k, append=True)
