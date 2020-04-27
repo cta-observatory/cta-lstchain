@@ -44,6 +44,9 @@ def test_lstchain_mc_r0_to_dl1():
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a010dd5... reverse test to its original order
 =======
 >>>>>>> a010dd5... reverse test to its original order
 def test_add_source_dependent_parameters():
@@ -54,10 +57,13 @@ def test_add_source_dependent_parameters():
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 <<<<<<< HEAD
+<<<<<<< HEAD
 def test_lstchain_mc_trainpipe():
 =======
 =======
 >>>>>>> 6585052... move src_dependent test to the endof the file
+=======
+>>>>>>> a010dd5... reverse test to its original order
 =======
 >>>>>>> a010dd5... reverse test to its original order
 def test_lstchain_trainpipe():
