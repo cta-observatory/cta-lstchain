@@ -124,6 +124,8 @@ def main():
     dl1_keys = get_dataset_keys(args.datafile)
     dl1_keys.remove(dl1_params_lstcam_key)
     dl1_keys.remove(dl1_images_lstcam_key)
+    if config['source_dependent']:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
     with open_file(args.datafile) as file:
         for k in dl1_keys:
