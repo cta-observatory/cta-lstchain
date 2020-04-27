@@ -109,8 +109,8 @@ def main():
                                                       hillas)
 
                     dl1_container.set_leakage(camera_geom, image, signal_pixels)
-                    dl1_container.set_leakage(geom, image, signal_pixels)
-                    dl1_container.set_concentration(geom, image, hillas)
+                    dl1_container.set_leakage(camera_geom, image, signal_pixels)
+                    dl1_container.set_concentration(camera_geom, image, hillas)
                     dl1_container.n_islands = num_islands
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     dl1_container.n_pixels = n_pixels
