@@ -97,7 +97,7 @@ def main():
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
                     n_pixels_on_island = np.bincount(island_labels)
 
-                    max_island_label = np.argmax(n_pixels_on_island)
+                    max_island_label = np.argmax(n_pixels_on_island[1:])
                     signal_pixels[island_labels != max_island_label] = False
 
                     hillas = hillas_parameters(camera_geom[signal_pixels], image[signal_pixels])
