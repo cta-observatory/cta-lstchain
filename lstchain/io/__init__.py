@@ -6,6 +6,7 @@ from .lstcontainers import (
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
+    smart_merge_h5files,
     write_simtel_energy_histogram,
     write_mcheader,
     write_array_info,
@@ -27,6 +28,7 @@ __all__ = [
     'DispContainer',
     'get_dataset_keys',
     'auto_merge_h5files',
+    'smart_merge_h5files',
     'write_simtel_energy_histogram',
     'write_mcheader',
     'write_array_info',
