@@ -41,6 +41,7 @@ def test_lstchain_mc_r0_to_dl1():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
+<<<<<<< HEAD
 def test_add_source_dependent_parameters():
     run_program('lstchain_add_source_dependent_parameters', '-f', dl1_file)
     dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
@@ -49,6 +50,9 @@ def test_add_source_dependent_parameters():
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_mc_trainpipe():
+=======
+def test_lstchain_trainpipe():
+>>>>>>> 6585052... move src_dependent test to the endof the file
     gamma_file = dl1_file
     proton_file = dl1_file
 
@@ -92,6 +96,12 @@ def test_lstchain_dl1_to_dl2():
     )
     assert os.path.exists(dl2_file)
 
+
+@pytest.mark.run(after='test_lstchain_dl1_to_dl2')
+def test_add_source_dependent_parameters():
+    run_program('lstchain_add_source_dependent_parameters', '-f', dl1_file)
+    dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
+    assert 'alpha' in dl1_params_src_dep.columns
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_mc_dl1ab():
