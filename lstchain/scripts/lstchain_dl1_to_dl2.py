@@ -20,7 +20,6 @@ import astropy.units as u
 import numpy as np
 import os
 import pandas as pd
-import shutil
 
 from tables import open_file
 from astropy.table import Table
@@ -28,15 +27,14 @@ from sklearn.externals import joblib
 from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.reco import dl1_to_dl2
 from lstchain.io import (
-    read_configuration_file, 
-    standard_config, 
+    read_configuration_file,
+    standard_config,
     replace_config,
     write_dl2_dataframe,
     get_dataset_keys,
-    auto_merge_h5files,
 )
 from lstchain.io.io import (
-    dl1_params_lstcam_key, 
+    dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
     dl1_images_lstcam_key
 )
@@ -119,7 +117,7 @@ def main():
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
     if os.path.exists(outfile):
-        raise IOError(outfile + ' exists, exiting.')    
+        raise IOError(outfile + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.datafile)
     dl1_keys.remove(dl1_params_lstcam_key)
