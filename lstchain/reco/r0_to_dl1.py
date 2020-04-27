@@ -122,8 +122,8 @@ def get_dl1(
 
         if use_main_island:
             n_pixels_on_island = np.bincount(island_labels)
-
-            max_island_label = np.argmax(n_pixels_on_island[1:])
+            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+            max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
         hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
