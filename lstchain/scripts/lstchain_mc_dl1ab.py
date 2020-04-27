@@ -68,7 +68,7 @@ def main():
         'leakage2_pixel',
         'concentration_cog',
         'concentration_core',
-        'concentration_pixels',
+        'concentration_pixel',
         'n_pixels',
         'n_islands', 'intercept', 'time_gradient'
     ])
