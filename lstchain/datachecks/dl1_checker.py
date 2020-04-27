@@ -297,14 +297,16 @@ def plot_datacheck(filename='', out_path=None):
         plot_mean_and_stddev(table_pedestals, engineering_geom,
                              ['charge_mean', 'charge_stddev'],
                              ['Pedestal mean charge (p.e.)',
-                              'Pedestal charge std dev (p.e.)'], pagesize,
+                              'Pedestal charge std dev (p.e.)',
+                              'PEDESTALS, pixel-wise charge info'], pagesize,
                              norm='log')
         pdf.savefig()
 
         plot_mean_and_stddev(table_flatfield, engineering_geom,
                              ['charge_mean', 'charge_stddev'],
                              ['Flat-field mean charge (p.e.)',
-                              'Flat-field charge std dev (p.e.)'], pagesize,
+                              'Flat-field charge std dev (p.e.)',
+                              'FLATFIELD, pixel-wise charge info'], pagesize,
                              norm='log')
         pdf.savefig()
 
@@ -319,6 +321,38 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_xscale('log')
         axes[0, 0].set_xlabel('Pixel charge (p.e.)')
         axes[0, 0].set_ylabel('fraction of events of the given type')
+
+        bins = hist_binning.col('hist_intensity')[0]
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_intensity'), axis=0)
+            axes[0, 1].hist(bins[:-1], bins, weights=contents / contents.sum(),
+                            histtype='step')
+        axes[0, 1].set_xlabel('Image intensity (p.e.)')
+        axes[0, 1].set_ylabel('fraction of events of the given type')
+        axes[0, 1].set_xscale('log')
+        axes[0, 1].set_yscale('log')
+
+        bins = hist_binning.col('hist_npixels')[0]
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_npixels'), axis=0)
+            axes[1, 0].hist(bins[:-1], bins, weights=contents / contents.sum(),
+                            histtype='step')
+        axes[1, 0].set_xlabel('Number of pixels in image')
+        axes[1, 0].set_ylabel('fraction of events of the given type')
+        axes[1, 0].set_xscale('log')
+        axes[1, 0].set_yscale('log')
+        bins = hist_binning.col('hist_npixels')[0]
+
+        bins = hist_binning.col('hist_nislands')[0]
+        for table in dl1dcheck_tables:
+            contents = np.sum(table.col('hist_nislands'), axis=0)
+            axes[1, 1].hist(bins[:-1], bins, weights=contents / contents.sum(),
+                            histtype='step')
+        axes[1, 1].set_xlabel('Number of islands in image')
+        axes[1, 1].set_ylabel('fraction of events of the given type')
+        axes[1, 1].set_xscale('log')
+        axes[1, 1].set_yscale('log')
+
         pdf.savefig()
 
         # We now plot the pixel rates above a few thresholds.
@@ -332,10 +366,11 @@ def plot_datacheck(filename='', out_path=None):
             # We asume here that 5 such thresholds are present in the
             # dl1datacheck file
             fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-            fig.suptitle(table.name.upper(), fontsize='xx-large')
+            fig.suptitle(table.name.upper()+
+                         ', relative frequency of pixel charges',
+                         fontsize='xx-large')
             fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
                              w_pad=3.0)
-
             # sum (for all subruns) the number of events per pixel above the
             # different thresholds:
             pix_events = [np.sum(table.col(colname), axis=0)
@@ -367,17 +402,20 @@ def plot_datacheck(filename='', out_path=None):
         plot_mean_and_stddev(table_flatfield, engineering_geom,
                              ['time_mean', 'time_stddev'],
                              ['Flat-field mean time (ns)',
-                              'Flat-field time std dev (ns)'], pagesize)
+                              'Flat-field time std dev (ns)',
+                              'FLATFIELD, pixel-wise pulse time info'],
+                             pagesize)
         pdf.savefig()
 
         plot_mean_and_stddev(table_cosmics, engineering_geom,
                              ['time_mean', 'time_stddev'],
                              ['Cosmics mean time (ns)',
-                              'Cosmics time std dev (ns)'], pagesize)
+                              'Cosmics time std dev (ns)',
+                              'COSMICS, pixel-wise pulse time info'], pagesize)
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.suptitle('COSMICS', fontsize='xx-large')
+        fig.suptitle('COSMICS, image c.o.g. position', fontsize='xx-large')
         fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0, w_pad=3.0)
         items = ['cog_within_pixel', 'cog_within_pixel_intensity_gt_200']
         titles = ['Image c.o.g.', 'Image c.o.g., intensity>200pe']
@@ -429,7 +467,7 @@ def plot_datacheck(filename='', out_path=None):
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-        fig.suptitle('COSMICS', fontsize='xx-large')
+        fig.suptitle('COSMICS, image parameters', fontsize='xx-large')
         fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
                          w_pad=3.0)
         histos = ['hist_dist0', 'hist_dist0_intensity_gt_200']
@@ -460,26 +498,8 @@ def plot_datacheck(filename='', out_path=None):
             axes[i, 1].set_xlabel('Intensity (p.e.)')
         axes[0, 1].set_ylabel('Width (deg)')
         axes[1, 1].set_ylabel('Length (deg)')
-
-
-
-
         pdf.savefig()
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        fig.suptitle('COSMICS', fontsize='xx-large')
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0, w_pad=2.0)
-        bins = hist_binning.col('hist_intensity')[0]
-        for table in dl1dcheck_tables:
-            contents = np.sum(table.col('hist_intensity'), axis=0)
-            axes[0, 0].hist(bins[:-1], bins, weights=contents/contents.sum(),
-                            histtype='step')
-        axes[0, 0].set_xlabel('Intensity (p.e.)')
-        axes[0, 0].set_ylabel('fraction of events of the given type')
-        axes[0, 0].set_xscale('log')
-        axes[0, 0].set_yscale('log')
-
-        pdf.savefig()
 
 def plot_trigger_types(dchecktables, trigger_name, axes):
     """
@@ -538,11 +558,11 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
         print('Pixels with NaNs in '+columns[0]+':',
               np.array(camgeom.pix_id.tolist())[np.isnan(mean)])
 
-    # plot mean and std dev of pedestal charge, as camera display,
-    # vs. pixel id, and as a histogram:
+    # plot mean and std dev (of e.g. pedestal charge or time), as camera
+    # display, vs. pixel id, and as a histogram:
     fig, axes = plt.subplots(nrows=2, ncols=3,
                              figsize=pagesize)
-    fig.suptitle(table.name.upper(), fontsize='xx-large')
+    fig.suptitle(labels[2], fontsize='xx-large')
     fig.tight_layout(rect=[0, 0.03, 1, 0.98], pad=3.0, h_pad=3.0, w_pad=2.0)
     cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
                         title=labels[0])
@@ -577,27 +597,44 @@ class DL1DataCheckContainer(Container):
     Container to store outcome of the DL1 data check
     """
 
+    # scalar quantities:
     subrun_index = Field(-1, 'Subrun index')
     num_events = Field(-1, 'Total number of events')
     trigger_type = Field(None, 'Number of events per trigger type')
     ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
 
+    # sampled quantities, stored every few events:
     sampled_event_ids = Field(None, 'sampled event ids')
-    ucts_time = Field(None, 'ucts time')
-    tib_time = Field(None, 'tib_time')
-    dragon_time = Field(None, 'dragon_time')
+    ucts_time = Field(None, 'ucts time', unit=u.s)
+    tib_time = Field(None, 'tib_time', unit=u.s)
+    dragon_time = Field(None, 'dragon_time', unit=u.s)
 
+    # histograms; they store arrays of counts. Binning is defined in class
+    # DL1DataCheckHistogramBins below
+    hist_npixels = Field(None, 'Histograms of number of pixels in image')
+    hist_nislands = Field(None, 'Histogram of number of islands in image')
     hist_intensity = Field(None, 'Histogram of image intensity')
-    hist_dist0 = Field(None, 'Histogram of squared cog-camera center '
-                             'distance')
-    hist_dist0_intensity_gt_200 = Field(None, 'Histogram of squared '
-                                             'cog-camera center distance')
+    hist_dist0 = Field(None, 'Histogram of cog-camera center distance')
+    hist_dist0_intensity_gt_200 = \
+        Field(None, 'Histogram of cog-camera center distance')
     hist_width = Field(None, 'Histogram image width vs. intensity')
     hist_length = Field(None, 'Histogram image length vs. intensity')
-
+    # the histogram hist_pixelchargespectrum shows the pixel charge
+    # distribution, filled from all pixels:
     hist_pixelchargespectrum = Field(None, 'Histogram of pixel charges')
 
-    # pixel-wise quantities:
+    hist_psi = Field(None, 'Histogram of image axis orientation')
+    hist_intercept = Field(None, 'Histogram of fitted pulse time for charge '
+                                 'c.o.g.')
+    hist_intercept_intensity_gt_200 = \
+        Field(None, 'Histogram of fitted pulse time for charge c.o.g., '
+                    'intensity>200pe')
+    hist_tgrad_vs_length = Field(None, 'Histogram of time gradient vs. length')
+    hist_tgrad_vs_length_intensity_gt_200 = \
+        Field(None, 'Histogram of time gradient vs. length, intensity>200pe')
+
+    # pixel-wise quantities, one entry per pixel. Used also for 2d
+    # histogramming of cog position.
     cog_within_pixel = Field(None, 'Number of image cogs within pixel')
     cog_within_pixel_intensity_gt_200 = \
         Field(None, 'Number of image within pixel, intensity>200pe')
@@ -661,6 +698,16 @@ class DL1DataCheckContainer(Container):
         self.ucts_time = np.pad(ucts_time, padding, mode='edge')
         self.dragon_time = np.pad(dragon_time, padding, mode='edge')
 
+        n_pixels = table['n_pixels'][mask]
+        counts, _, _, = plt.hist(n_pixels,
+                                bins=histogram_binnings.hist_npixels)
+        self.hist_npixels = counts
+
+        n_islands = table['n_islands'][mask]
+        counts, _, _, = plt.hist(n_islands,
+                                bins=histogram_binnings.hist_nislands)
+        self.hist_nislands = counts
+
         intensity = table['intensity'][mask]
         counts, _, _ = plt.hist(intensity,
                                 bins=histogram_binnings.hist_intensity)
@@ -684,6 +731,28 @@ class DL1DataCheckContainer(Container):
                                      table['length'][mask],
                                      bins=histogram_binnings.hist_length)
         self.hist_length = counts
+
+        intercept = table['intercept'][mask]
+        counts, _, _, _ = \
+            plt.hist2d(intensity, intercept,
+                       bins=histogram_binnings.hist_intercept)
+        self.hist_intercept = counts
+        counts, _, _, _ = \
+            plt.hist2d(intensity[intensity>200], intercept[intensity>200],
+                       bins=histogram_binnings.hist_intercept)
+        self.hist_intercept_intensity_gt_200 = counts
+
+        length = table['length'][mask]
+        tgrad = table['time_gradient'][mask]
+        counts, _, _, _ = \
+            plt.hist2d(length, tgrad,
+                       bins=histogram_binnings.hist_tgrad_vs_length)
+        self.hist_tgrad_vs_length = counts
+        counts, _, _, _ = \
+            plt.hist2d(length[intensity>200], tgrad[intensity>200],
+                       bins=histogram_binnings.\
+                       hist_tgrad_vs_length_intensity_gt_200)
+        self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
         x = table['x'][mask]
         y = table['y'][mask]
@@ -711,7 +780,7 @@ class DL1DataCheckContainer(Container):
         Returns
         -------
         None
-t
+
         """
         charge = table.col('image')[mask]
         time = table.col('pulse_time')[mask]
@@ -775,15 +844,41 @@ t
 
 class DL1DataCheckHistogramBins(Container):
 
+    # pixel charge and image intensity (units: p.e):
     hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121))
     hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
+
+    # dist0, width and length (units: degrees):
     hist_dist0 = Field(np.linspace(0., 2.5, 50), 'hist_dist0 binning')
     hist_dist0_intensity_gt_200 = Field(np.linspace(0., 2.5, 50),
-                                        'hist_pix_gt_200 binning')
+                                        'hist_dist0_intensity_gt_200 binning')
+    hist_psi = Field(np.linspace(-100., 100., 101), 'hist_psi binning')
+    hist_psi_intensity_gt_200 = Field(np.linspace(-100., 100., 101),
+                                      'hist_psi_intensity_gt_200 binning')
 
+    hist_nislands = Field(np.linspace(-0.5, 49.5, 51), 'hist_nislands binning')
+    hist_npixels = Field(np.linspace(0.5,2000.5,400), 'hist_npixels binning')
+
+    # 2d histograms
+    # width and length vs. image intensity:
     hist_width = Field(np.array([np.logspace(0.7, 6.3, 101),
                                  np.linspace(0., 1.2, 101)]),
                        'hist_width binning')
     hist_length = Field(np.array([np.logspace(0.7, 6.3, 101),
                                   np.linspace(0., 2., 101)]),
                        'hist_length binning')
+    # time gradient vs. length:
+    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 0.3, 101),
+                                           np.linspace(0., 100., 101)]),
+                                 'hist_tgrad_vs_length binning')
+    hist_tgrad_vs_length_intensity_gt_200 =\
+        Field(np.array( [np.linspace(0., 0.3, 101),np.linspace(0., 100., 101)]),
+              'hist_tgrad_vs_length_intensity_gt_200 binning')
+    # time intercept (image time @ charge c.o.g.) vs. image intensity:
+    hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),
+                                     np.linspace(-30., 40., 101)]),
+                           'hist_intercept binning')
+    hist_intercept_intensity_gt_200 = \
+        Field(np.array([np.logspace(0.7, 5.7, 101),
+                        np.linspace(-30., 40., 101)]),
+              'hist_intercept_intensity_gt_200 binning')
