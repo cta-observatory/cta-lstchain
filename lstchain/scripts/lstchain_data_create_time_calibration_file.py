@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+
+"""
+Script to create drs4 time correction coefficients
+
+- Input: fits.fz file
+- Output: time_calibration.hdf5 file
+
+Usage:
+$> python lstchain_data_create_time_calibration_file.py
+--input_file LST-1.1.Run01625.0000.fits.fz --output_file time_calibration.hdf5
+
+"""
+
 import argparse
 import numpy as np
 from traitlets.config.loader import Config
@@ -7,20 +21,16 @@ from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 
 
-''' 
-Script to create drs4 time correction coefficients
-
-'''
 
 parser = argparse.ArgumentParser()
 
 # Required arguments
 parser.add_argument("--input_file",
-                    help="Path to fitz.fz file to create pedestal file.",
+                    help="Path to fits.fz file used to create the time calibration file.",
                     type=str)
 
 parser.add_argument("--output_file",
-                    help="Path where script create pedestal file",
+                    help="Path where script creates the time calibration file",
                     type=str)
 
 # Optional argument
