@@ -126,7 +126,9 @@ def check_dl1(filenames, output_path, max_cores=4):
     # NOTE: I do not think we may have memory problems, but if needed we could
     # write out the containers as they are produced.
 
-    with HDF5TableWriter(out_filename) as writer:
+    writer_conf = tables.Filters(complevel=9, complib='blosc:zstd',
+                                 fletcher32=True)
+    with HDF5TableWriter(out_filename, filters=writer_conf) as writer:
         # write the containers (3 per subrun) to the dl1 data check output file:
         for dcheck in dl1datacheck:
             writer.write("dl1datacheck/pedestals", dcheck[0])
@@ -425,11 +427,14 @@ def plot_datacheck(filename='', out_path=None):
                 axes.flatten()[i].set_ylabel('')
             axes[1, 2].set_xscale('log')
             axes[1, 2].set_yscale('log')
-            for x, y in zip(threshold, fraction):
-                axes[1, 2].plot(x*np.ones(len(y)), y, 'o', fillstyle='none',
-                                alpha=0.1)
-                axes[1, 2].set_xlabel('pixel charge (p.e.)')
-                axes[1, 2].set_ylabel('fraction of events with charge>x')
+
+            fraction_transposed = fraction.transpose()
+            for y in fraction_transposed:
+                if y.sum() > 0:
+                    axes[1, 2].plot(threshold, y, 'o', fillstyle='none',
+                                    alpha=0.2)
+            axes[1, 2].set_xlabel('pixel charge (p.e.)')
+            axes[1, 2].set_ylabel('fraction of events with charge>x')
             pdf.savefig()
 
         # Some plots on pulse times:
@@ -553,6 +558,7 @@ def plot_datacheck(filename='', out_path=None):
                                                       norm=colors.LogNorm())
             plt.colorbar(image, ax=axes.flatten()[i])
         axes[0, 0].set_ylabel('Skewness')
+        axes[0, 0].grid(linewidth=0.3, linestyle=':')
         axes[0, 1].set_ylabel('Intercept (fitted time @ charge cog) (ns)')
         for j in [0, 1]:
             axes[0, j].set_xscale('log')
@@ -641,14 +647,14 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     # line below needed to get the top and bottom camera displays of equal size:
     axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
     cam.show()
-
+    # plot mean vs. pixe_id and as histogram:
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
     axes[0, 1].set_ylabel(labels[0])
     axes[0, 2].set_yscale('log')
     axes[0, 2].hist(mean[~np.isnan(mean)], bins=200)
     axes[0, 2].set_xlabel(labels[0])
-    axes[0, 2].set_ylabel('Pixels')
+    axes[0, 2].set_ylabel('Number of ixels')
     # now the standard deviation:
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
@@ -656,7 +662,7 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     axes[1, 2].set_yscale('log')
     axes[1, 2].hist(stddev[~np.isnan(stddev)], bins=200)
     axes[1, 2].set_xlabel(labels[1])
-    axes[1, 2].set_ylabel('Pixels')
+    axes[1, 2].set_ylabel('Number of pixels')
 
 
 def write_error_page(tablename, pagesize):
