@@ -1,4 +1,16 @@
-# script to add the source dependent parameters to a DL1 file
+#!/usr/bin/env python3
+
+"""
+Script to add the source dependent parameters to a DL1 file
+
+- Input: DL1 data file.
+- Output: DL1 data file.
+
+Usage: 
+
+$> python lstchain_add_source_dependent_parameters.py --input_file dl1_file.h5
+
+"""
 
 import os
 import argparse
@@ -11,11 +23,12 @@ from lstchain.io.io import dl1_params_src_dep_lstcam_key, write_dataframe, dl1_p
 parser = argparse.ArgumentParser(description="Add the source dependent parameters to a DL1 file")
 
 # Required arguments
-parser.add_argument('--datafile', '-f', type=str,
-                    dest='datafile',
+parser.add_argument('--input_file', '-f', type=str,
+                    dest='inpu_file',
                     help='path to a DL1 HDF5 file',
                     )
 
+# Optional arguments
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file for source dependent analysis',
@@ -26,7 +39,7 @@ args = parser.parse_args()
 
 def main():
 
-    dl1_filename = os.path.abspath(args.datafile)
+    dl1_filename = os.path.abspath(args.input_file)
 
     config = {}
     if args.config_file is not None:
