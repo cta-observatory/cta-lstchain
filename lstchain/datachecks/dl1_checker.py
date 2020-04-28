@@ -21,8 +21,7 @@ import warnings
 
 from astropy import units as u
 from astropy.table import Table
-from ctapipe.coordinates import CameraFrame, EngineeringCameraFrame
-from ctapipe.core import Container, Field
+from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
@@ -96,9 +95,9 @@ def check_dl1(filenames, output_path, max_cores=4):
             for name in trig_tags.keys():
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
     num_pedestals = {'trigger_type':
-                         (np.array(trig_tags['trigger_type'])==32).sum(),
+                         (np.array(trig_tags['trigger_type']) == 32).sum(),
                      'ucts_trigger_type':
-                         (np.array(trig_tags['ucts_trigger_type'])==32).sum()}
+                         (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
     print("Number of == 32 (pedestal) trigger tags:")
     print('   ', num_pedestals)
 
@@ -208,7 +207,7 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # time gradient from ns/m to ns/deg
         parameters['time_gradient'] /= m2deg
 
-        # We do not convert the x,y, cog coordinates, because only in m can
+        # We do not convert the x,y, cog coordinates, because only in m can
         # CameraGeometry find the pixel where a given cog falls
 
         # in order to read in the images we have to use tables,
@@ -346,7 +345,6 @@ def plot_datacheck(filename='', out_path=None):
         axes[0, 0].set_yscale('log')
         pdf.savefig()
 
-
         if len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
@@ -354,8 +352,8 @@ def plot_datacheck(filename='', out_path=None):
                                  ['charge_mean', 'charge_stddev'],
                                  ['Pedestal mean charge (p.e.)',
                                   'Pedestal charge std dev (p.e.)',
-                                  'PEDESTALS, pixel-wise charge info'], pagesize,
-                                 norm='log')
+                                  'PEDESTALS, pixel-wise charge info'],
+                                 pagesize, norm='log')
         pdf.savefig()
 
         plot_mean_and_stddev(table_flatfield, engineering_geom,
@@ -393,7 +391,7 @@ def plot_datacheck(filename='', out_path=None):
                      for name in colnames]
 
         for table in [table_pedestals, table_cosmics]:
-            if (len(table) == 0):
+            if len(table) == 0:
                 write_error_page(table.name, pagesize)
                 pdf.savefig()
                 continue
@@ -401,7 +399,7 @@ def plot_datacheck(filename='', out_path=None):
             # We asume here that 5 such thresholds are present in the
             # dl1datacheck file
             fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
-            fig.suptitle(table.name.upper()+
+            fig.suptitle(table.name.upper() +
                          ', relative frequency of pixel charges',
                          fontsize='xx-large')
             fig.tight_layout(rect=[0, 0.03, 1, 0.95], pad=3.0, h_pad=3.0,
@@ -412,7 +410,7 @@ def plot_datacheck(filename='', out_path=None):
                           for colname in colnames]
             # total number of entries for this event type:
             norm = table.col('num_events').sum()
-            fraction = pix_events/norm
+            fraction = np.array(pix_events)/norm
             for i, colname in enumerate(colnames):
                 zscale = 'log' if threshold[i] < 200 else 'lin'
                 cam = CameraDisplay(engineering_geom, fraction[i],
@@ -423,7 +421,8 @@ def plot_datacheck(filename='', out_path=None):
                 # same range for all cameras:
                 axes.flatten()[i].set_xlim((axes[0, 0].get_xlim()))
                 cam.show()
-            for i in [1, 2, 4]: axes.flatten()[i].set_ylabel('')
+            for i in [1, 2, 4]:
+                axes.flatten()[i].set_ylabel('')
             axes[1, 2].set_xscale('log')
             axes[1, 2].set_yscale('log')
             for x, y in zip(threshold, fraction):
@@ -434,7 +433,7 @@ def plot_datacheck(filename='', out_path=None):
             pdf.savefig()
 
         # Some plots on pulse times:
-        if (len(table_flatfield) == 0):
+        if len(table_flatfield) == 0:
             write_error_page(table_flatfield.name, pagesize)
         else:
             plot_mean_and_stddev(table_flatfield, engineering_geom,
@@ -478,12 +477,12 @@ def plot_datacheck(filename='', out_path=None):
             # pixels, to test homogeneity of distribution:
             # (only positive ones, for log-plotting)
             gt0 = event_fraction > 0
-            min = event_fraction[pix_inside & gt0].min()
-            max = event_fraction[pix_inside & gt0].max()
+            xmin = event_fraction[pix_inside & gt0].min()
+            xmax = event_fraction[pix_inside & gt0].max()
             axes[i, 2].set_xscale('log')
             _, bins, _ = axes[i, 2].\
                 hist(event_fraction[pix_inside & gt0],
-                     bins=np.logspace(np.log10(min), np.log10(max), 201))
+                     bins=np.logspace(np.log10(xmin), np.log10(xmax), 201))
             # average event content:
             mu = np.sum(events_per_pix[pix_inside])/pix_inside.sum()
             # get distribution of contents according to Poisson, integrating
@@ -495,7 +494,7 @@ def plot_datacheck(filename='', out_path=None):
             npixels = poiss * pix_inside.sum()
             # log bin centers:
             k = np.sqrt(bins[:-1]*bins[1:])
-            axes[i, 2].plot(k[npixels>0], npixels[npixels>0],
+            axes[i, 2].plot(k[npixels > 0], npixels[npixels > 0],
                             drawstyle='steps-mid',
                             label='Poisson for uniform density')
             axes[i, 2].set_ylim(top=1.2*axes[i, 2].get_ylim()[1])
@@ -515,7 +514,7 @@ def plot_datacheck(filename='', out_path=None):
             ringarea = np.pi*(bins[1:]**2-bins[:-1]**2)*u.deg**2
 
             axes[i, 0].hist(bins[:-1], bins,
-                            weights=np.sum(table_cosmics.col(hist), axis=0)/
+                            weights=np.sum(table_cosmics.col(hist), axis=0) /
                             ringarea.value, histtype='step')
             axes[i, 0].set_xlabel('distance (deg)')
             axes[i, 0].set_ylabel('events per deg2')
@@ -542,7 +541,7 @@ def plot_datacheck(filename='', out_path=None):
         fig.suptitle('COSMICS, image parameters', fontsize='xx-large')
         fig.tight_layout(rect=[0.05, 0.05, 1.0, 0.9],
                          pad=0., h_pad=3.0, w_pad=2.0)
-        histos = ['hist_skewness','hist_intercept', 'hist_tgrad_vs_length',
+        histos = ['hist_skewness', 'hist_intercept', 'hist_tgrad_vs_length',
                   'hist_tgrad_vs_length_intensity_gt_200']
         for i, hist in enumerate(histos):
             bins = hist_binning.col(hist)[0]
@@ -555,7 +554,7 @@ def plot_datacheck(filename='', out_path=None):
             plt.colorbar(image, ax=axes.flatten()[i])
         axes[0, 0].set_ylabel('Skewness')
         axes[0, 1].set_ylabel('Intercept (fitted time @ charge cog) (ns)')
-        for j in [0,1]:
+        for j in [0, 1]:
             axes[0, j].set_xscale('log')
             axes[0, j].set_xlabel('Intensity')
             axes[1, j].set_xlabel('Length (deg)')
@@ -563,6 +562,7 @@ def plot_datacheck(filename='', out_path=None):
         axes[1, 0].set_title('Time gradient vs. Length')
         axes[1, 1].set_title('Time gradient vs. Length, intensity>200pe')
         pdf.savefig()
+
 
 def plot_trigger_types(dchecktables, trigger_name, axes):
     """
@@ -573,6 +573,10 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
     containers (each row is one subrun). The plotted trigger type statistics
     will be the global ones, adding up the numbers from all the tables and
     all the rows in each table.
+    Inside the table the trigger type columns have shape (n,10,2). n is the
+    number of rows (one per subrun). 10 is the number of possible trigger
+    types (just fixed to a safely large value). The remaining 2 are the pairs
+    (trigger_id, number of entries with that id)
 
     trigger_name: name of the trigger type column in the tables
     axes: where to place the plots
@@ -589,9 +593,9 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
     for table in dchecktables[1:]:
         tt = np.append(tt, table.col(trigger_name), axis=0)
     # keep only entries with number of events > 0 (existing trig types):
-    tt = tt[tt[:, :, 1]>0]
-    trig_types = np.unique(tt[:,0])
-    num_triggers = np.array([(tt[:,1][tt[:,0]==trig]).sum()
+    tt = tt[tt[:, :, 1] > 0]
+    trig_types = np.unique(tt[:, 0])
+    num_triggers = np.array([(tt[:, 1][tt[:, 0] == trig]).sum()
                              for trig in trig_types])
     x = np.arange(2+len(trig_types))
     # for better display, leave some space on the sides of the bars:
@@ -653,6 +657,7 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     axes[1, 2].hist(stddev[~np.isnan(stddev)], bins=200)
     axes[1, 2].set_xlabel(labels[1])
     axes[1, 2].set_ylabel('Pixels')
+
 
 def write_error_page(tablename, pagesize):
     """

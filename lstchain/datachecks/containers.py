@@ -102,7 +102,7 @@ class DL1DataCheckContainer(Container):
         self.trigger_type = \
             self.count_trig_types(table['trigger_type'][mask])
 
-        # number of time samples per subrun to be stored in the container:
+        # number of time samples per subrun to be stored in the container:
         n_samples = 50
         n_jump = 1+int(self.num_events/n_samples)
         # keep some info every n-jump-th event:
@@ -119,7 +119,6 @@ class DL1DataCheckContainer(Container):
         self.ucts_time = np.pad(ucts_time, padding, mode='edge')
         self.dragon_time = np.pad(dragon_time, padding, mode='edge')
 
-
         delta_t = np.array(table['dragon_time'][mask][1:]) - \
                   np.array(table['dragon_time'][mask][:-1])
         counts, _, _, = plt.hist(delta_t*1.e3,
@@ -128,12 +127,12 @@ class DL1DataCheckContainer(Container):
 
         n_pixels = table['n_pixels'][mask]
         counts, _, _, = plt.hist(n_pixels,
-                                bins=histogram_binnings.hist_npixels)
+                                 bins=histogram_binnings.hist_npixels)
         self.hist_npixels = counts
 
         n_islands = table['n_islands'][mask]
         counts, _, _, = plt.hist(n_islands,
-                                bins=histogram_binnings.hist_nislands)
+                                 bins=histogram_binnings.hist_nislands)
         self.hist_nislands = counts
 
         intensity = table['intensity'][mask]
@@ -146,7 +145,7 @@ class DL1DataCheckContainer(Container):
         self.hist_dist0 = counts
 
         counts, _, _ = \
-            plt.hist(dist0[intensity>200],
+            plt.hist(dist0[intensity > 200],
                      bins=histogram_binnings.hist_dist0_intensity_gt_200)
         self.hist_dist0_intensity_gt_200 = counts
 
@@ -178,8 +177,8 @@ class DL1DataCheckContainer(Container):
                        bins=histogram_binnings.hist_tgrad_vs_length)
         self.hist_tgrad_vs_length = counts
         counts, _, _, _ = \
-            plt.hist2d(length[intensity>200], tgrad[intensity>200],
-                       bins=histogram_binnings.\
+            plt.hist2d(length[intensity > 200], tgrad[intensity > 200],
+                       bins=histogram_binnings.
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
@@ -205,6 +204,8 @@ class DL1DataCheckContainer(Container):
         ----------
         table: DL1 parameters, event-wise python table "image" from DL1 files
         mask: indicates rows that have to be used for filling this container
+        histogram_binnings: container of type DL1DataCheckHistogramBins, with
+        definition of the binnings of all the histograms
 
         Returns
         -------
@@ -246,13 +247,14 @@ class DL1DataCheckContainer(Container):
         self.num_pulses_above_0300_pe = np.sum(charge > 300, axis=0)
         self.num_pulses_above_1000_pe = np.sum(charge > 1000, axis=0)
 
-        counts, _, _ = plt.hist(charge[charge>0].flatten(),
-                                bins=histogram_binnings.hist_pixelchargespectrum)
+        counts, _, _ = \
+            plt.hist(charge[charge > 0].flatten(),
+                     bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
-
 
     def count_trig_types(self, array):
         """
+        Counts the trigger of each type inside array
 
         Parameters
         ----------
@@ -270,6 +272,7 @@ class DL1DataCheckContainer(Container):
             np.append(ucts_trig_types, (10-len(ucts_trig_types))*[0])
         counts = np.append(counts, (10 - len(counts)) * [0])
         return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
+
 
 class DL1DataCheckHistogramBins(Container):
 
@@ -290,7 +293,7 @@ class DL1DataCheckHistogramBins(Container):
                                       'hist_psi_intensity_gt_200 binning')
 
     hist_nislands = Field(np.linspace(-0.5, 29.5, 31), 'hist_nislands binning')
-    hist_npixels = Field(np.linspace(0.5,2000.5,400), 'hist_npixels binning')
+    hist_npixels = Field(np.linspace(0.5, 2000.5, 400), 'hist_npixels binning')
 
     # 2d histograms
     # width and length vs. image intensity:
@@ -299,7 +302,7 @@ class DL1DataCheckHistogramBins(Container):
                        'hist_width binning')
     hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
                                   np.linspace(0., 2., 101)]),
-                       'hist_length binning')
+                        'hist_length binning')
     hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
                                     np.linspace(-4., 4., 101)]),
                           'hist_skewness binning')
