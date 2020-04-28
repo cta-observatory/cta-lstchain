@@ -1,7 +1,9 @@
-"""Pipeline for reconstruction of Energy, disp and gamma/hadron
+"""
+Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
-Result is a dataframe with dl2 data.
-Already trained Random Forests are required.
+
+- Input: DL1 data file, Trained Random Forests.
+- Output: DL2 data file.
 
 Usage:
 
@@ -27,21 +29,21 @@ import astropy.units as u
 parser = argparse.ArgumentParser(description="Reconstruct events")
 
 # Required arguments
-parser.add_argument('--datafile', '-f', type=str,
-                    dest='datafile',
+parser.add_argument('--input_file', '-f', type=str,
+                    dest='input_file',
                     help='path to a DL1 HDF5 file',
                     )
 
-parser.add_argument('--pathmodels', '-p', action='store', type=str,
+parser.add_argument('--path_models', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
-                     default='./trained_models')
+                     default='./')
 
 # Optional argument
-parser.add_argument('--outdir', '-o', action='store', type=str,
-                     dest='outdir',
+parser.add_argument('--output_dir', '-o', action='store', type=str,
+                     dest='output_dir',
                      help='Path where to store the reco dl2 events',
-                     default='./dl2_data')
+                     default='./')
 
 
 parser.add_argument('--config_file', '-conf', action='store', type=str,
@@ -64,7 +66,7 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
         data = pd.concat([data, pd.read_hdf(data, key=dl1_params_src_dep_lstcam_key)], axis=1)
@@ -93,12 +95,12 @@ def main():
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
-    os.makedirs(args.outdir, exist_ok=True)
-    outfile = os.path.join(args.outdir, os.path.basename(args.datafile).replace('dl1','dl2'))
+    os.makedirs(args.output_dir, exist_ok=True)
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
 
-    shutil.copyfile(args.datafile, outfile)
-    write_dl2_dataframe(dl2.astype(float), outfile)
+    shutil.copyfile(args.input_file, output_file)
+    write_dl2_dataframe(dl2.astype(float), output_file)
 
 
 if __name__ == '__main__':
