@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Pipeline to calibrate and compute image parameters at single telescope 
 level for real data.
