@@ -2,6 +2,8 @@ import pytest
 import pandas as pd
 import os
 from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile
+from lstchain.io.io import dl1_params_lstcam_key
+import numpy as np
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
 
@@ -76,6 +78,13 @@ def test_mc_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
     run_program('lstchain_mc_dl1ab', dl1_file, output_file)
     assert os.path.exists(output_file)
+
+
+@pytest.mark.run(after='test_mc_dl1ab')
+def test_mc_dl1ab_validity():
+    dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5'), key=dl1_params_lstcam_key)
+    dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
+    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
 
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
