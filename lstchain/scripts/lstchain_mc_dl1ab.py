@@ -15,8 +15,6 @@ $> python lstchain_data_r0_to_dl1.py arg1 arg2 ...
 
 """
 
-
-
 import tables
 import numpy as np
 import argparse
@@ -42,9 +40,11 @@ parser = argparse.ArgumentParser(
 
 # Required arguments
 parser.add_argument('--input_file', '-f', 
+                    dest='input_file',
                     type=str, help='path to the DL1 file ')
 
-parser.add_argument('--output_file', '-o', 
+parser.add_argument('--output_file', '-o',
+                    dest='output_file',
                     type=str, help='key for the table of new parameters')
 
 # Optional arguments
