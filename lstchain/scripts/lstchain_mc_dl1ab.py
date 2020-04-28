@@ -46,7 +46,7 @@ parser.add_argument('--input_file', '-f', action='store', type=str,
 
 parser.add_argument('--output_file', '-o', action='store', type=str,
                     dest='output_file',
-                    help='key for the table of new parameters')
+                    help='key for the table of new parameters',
                     default=None, required=True)
 # Optional arguments
 parser.add_argument('--config_file', '-conf', action='store', type=str,
