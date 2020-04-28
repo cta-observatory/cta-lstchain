@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description="Add the source dependent parameter
 
 # Required arguments
 parser.add_argument('--input_file', '-f', type=str,
-                    dest='inpu_file',
+                    dest='input_file',
                     help='path to a DL1 HDF5 file',
                     )
 
