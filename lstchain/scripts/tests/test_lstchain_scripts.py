@@ -76,7 +76,10 @@ def test_lstchain_dl1_to_dl2():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_mc_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab', dl1_file, output_file)
+    run_program('lstchain_mc_dl1ab', 
+                '-f', dl1_file, 
+                '-o', output_file,
+                )
     assert os.path.exists(output_file)
 
 
