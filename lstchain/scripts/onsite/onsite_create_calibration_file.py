@@ -77,6 +77,13 @@ def main():
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
 
+        # define config file
+        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+        if not os.path.exists(config_file):
+            print(f">>> Config file {config_file} do not exists. \n Exit ")
+            exit(1)
+        print(f"\n--> Config file {config_file}")
+
 
         #
         # produce drs4 time calibration file
@@ -119,15 +126,6 @@ def main():
                 exit(1)
 
         print(f"\n--> Log file {log_file}")
-
-        # define config file
-        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-        if not os.path.exists(config_file):
-            print(f">>> Config file {config_file} do not exists. \n Exit ")
-            exit(1)
-        print(f"\n--> Config file {config_file}")
-
-
 
         #
         # produce ff calibration file

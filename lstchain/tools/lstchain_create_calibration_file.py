@@ -102,7 +102,6 @@ class CalibrationHDF5Writer(Tool):
 
         # if data remember how many event in the files
         if "LSTEventSource" in str(type(self.eventsource)):
-
             self.tot_events = len(self.eventsource.multi_file)
             self.log.debug(f"Input file has file {self.tot_events} events")
         else:
@@ -180,7 +179,6 @@ class CalibrationHDF5Writer(Tool):
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                     < self.processor.minimum_hg_charge_median):
-
                     new_ped = self.processor.pedestal.calculate_pedestals(event)
 
 
@@ -193,7 +191,6 @@ class CalibrationHDF5Writer(Tool):
                         < self.processor.maximum_lg_charge_std):
 
                     new_ff = self.processor.flatfield.calculate_relative_gain(event)
-
                 # write pedestal results when enough statistics or end of file
                 if new_ped or end_of_file:
 
