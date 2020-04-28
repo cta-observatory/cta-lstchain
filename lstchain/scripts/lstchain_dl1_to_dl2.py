@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
@@ -37,13 +39,13 @@ parser.add_argument('--input_file', '-f', type=str,
 parser.add_argument('--path_models', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
-                     default='./')
+                     default='./trained_models')
 
 # Optional argument
 parser.add_argument('--output_dir', '-o', action='store', type=str,
                      dest='output_dir',
                      help='Path where to store the reco dl2 events',
-                     default='./')
+                     default='./dl2_data')
 
 
 parser.add_argument('--config_file', '-conf', action='store', type=str,
