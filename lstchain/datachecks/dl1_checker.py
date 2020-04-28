@@ -12,7 +12,9 @@ __all__ = [
 
 import h5py
 import matplotlib.colors as colors
+import matplotlib.dates as dates
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import numpy as np
 import os
 import pandas as pd
@@ -25,6 +27,7 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
+from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
@@ -320,31 +323,59 @@ def plot_datacheck(filename='', out_path=None):
         for table, label in zip(dl1dcheck_tables, labels):
             axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
                             label=label)
+            # elapsed time better from the cosmics table, will be closer to
+            # the true one:
+            elapsed_t = table_cosmics.col('elapsed_time')
+            axes[1, 1].plot(table.col('subrun_index'),
+                            table.col('num_events') / elapsed_t,
+                            label=label)
         axes[1, 0].set_ylabel('number of events')
-        axes[1, 0].set_xlabel('subrun index')
-        axes[1, 0].set_yscale('log')
-        axes[1, 0].legend(loc='best')
-
-        for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
-            axes[1, 1].plot(table_cosmics.col('sampled_event_ids').flatten(),
-                            table_cosmics.col(time_type).flatten(),
-                            drawstyle='steps-mid', label=time_type)
-        axes[1, 1].set_xlabel('event id')
-        axes[1, 1].set_ylabel('timestamp')
-        axes[1, 1].legend(loc='best')
+        axes[1, 1].set_ylabel('rate (events/s)')
+        for j in (0,1):
+            axes[1, j].set_xlabel('subrun index')
+            axes[1, j].set_yscale('log')
+            axes[1, j].legend(loc='best')
 
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+
+        for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
+            axes[0, 0].plot(table_cosmics.col('sampled_event_ids').flatten(),
+                            table_cosmics.col(time_type).flatten(),
+                            drawstyle='steps-mid', label=time_type)
+        axes[0, 0].set_xlabel('event id')
+        axes[0, 0].set_ylabel('timestamp')
+        axes[0, 0].legend(loc='best')
+
         hist = 'hist_delta_t'
         bins = hist_binning.col(hist)[0]
-        axes[0, 0].hist(bins[:-1], bins,
+        axes[0, 1].hist(bins[:-1], bins,
                         weights=np.sum(table_cosmics.col(hist), axis=0),
                         histtype='step')
-        axes[0, 0].set_xlabel('delta_t (ms) from Dragon timestamp')
-        axes[0, 0].set_ylabel('events')
-        axes[0, 0].set_yscale('log')
+        axes[0, 1].set_xlabel('delta_t (ms) from Dragon timestamp')
+        axes[0, 1].set_ylabel('events')
+        axes[0, 1].set_yscale('log')
+
+        alt_deg = np.rad2deg(table_cosmics.col('mean_alt_tel'))
+        axes[1, 0].plot(np.rad2deg(table_cosmics.col('mean_az_tel')), alt_deg)
+        axes[1, 0].set_xlabel('telescope azimuth (deg)')
+        axes[1, 0].set_ylabel('telescope altitude (deg)')
+        axes[1, 0].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+        axes[1, 0].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+
+        dragon_time = table_cosmics.col('dragon_time')
+        # dragon_time contains for each table row a number of times sampled at
+        # regular event intervals. We get the mean per row (typically =subrun):
+        mean_dragon_time = np.mean(dragon_time, axis=1)
+        mpl_times = np.array([dates.date2num(datetime.fromtimestamp(x))
+                                             for x in mean_dragon_time])
+        axes[1, 1].plot_date(mpl_times, alt_deg, fmt='-', xdate=True,
+                             tz = 'utc')
+        axes[1, 1].set_xlabel('time')
+        axes[1, 1].set_ylabel('telescope altitude (deg)')
+        axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
         pdf.savefig()
 
         if len(table_pedestals) == 0:

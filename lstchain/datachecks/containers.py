@@ -20,9 +20,12 @@ class DL1DataCheckContainer(Container):
 
     # scalar quantities:
     subrun_index = Field(-1, 'Subrun index')
+    elapsed_time = Field(-1, 'Subrun time duration (from Dragon)')
     num_events = Field(-1, 'Total number of events')
     trigger_type = Field(None, 'Number of events per trigger type')
     ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
+    mean_alt_tel = Field(None, 'Mean telescope altitude')
+    mean_az_tel = Field(None, 'Mean telescope azimuth')
 
     # sampled quantities, stored every few events:
     sampled_event_ids = Field(None, 'sampled event ids')
@@ -96,11 +99,18 @@ class DL1DataCheckContainer(Container):
 
         """
         self.subrun_index = subrun_index
+        # the elapsed time is between first and last event of the events in
+        # table (we do not apply the mask here since we want to have all
+        # events!)
+        self.elapsed_time = table['dragon_time'][len(table)-1] - \
+                            table['dragon_time'][0]
         self.num_events = mask.sum()
         self.ucts_trigger_type = \
             self.count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
             self.count_trig_types(table['trigger_type'][mask])
+        self.mean_alt_tel = np.mean(table['alt_tel'])
+        self.mean_az_tel = np.mean(table['az_tel'])
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
@@ -119,8 +129,10 @@ class DL1DataCheckContainer(Container):
         self.ucts_time = np.pad(ucts_time, padding, mode='edge')
         self.dragon_time = np.pad(dragon_time, padding, mode='edge')
 
-        delta_t = np.array(table['dragon_time'][mask][1:]) - \
-                  np.array(table['dragon_time'][mask][:-1])
+        # for the delta_t histogram we do not apply the mask, we want to have
+        # all events present in the original table:
+        delta_t = np.array(table['dragon_time'][1:]) - \
+                  np.array(table['dragon_time'][:-1])
         counts, _, _, = plt.hist(delta_t*1.e3,
                                  bins=histogram_binnings.hist_delta_t)
         self.hist_delta_t = counts
