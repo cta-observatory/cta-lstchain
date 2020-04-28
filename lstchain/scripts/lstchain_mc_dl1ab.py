@@ -3,7 +3,6 @@
 # Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
 
 
-
 import tables
 import numpy as np
 import argparse
@@ -18,6 +17,7 @@ from ctapipe.io.containers import HillasParametersContainer
 from astropy.units import Quantity
 from distutils.util import strtobool
 from lstchain.io import get_dataset_keys, auto_merge_h5files
+from astropy.table import Table
 
 parser = argparse.ArgumentParser(description="Recompute parameters in a DL1 HDF5 file from calibrated images"
                                              "and based on passed config file. The results are written in a new HDF5 "
@@ -54,8 +54,10 @@ def main():
 
     print(config['tailcut'])
 
-    geom = CameraGeometry.from_name('LSTCam-002')
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
+    cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
+    camera_geom = CameraGeometry.from_table(cam_table)
+
     dl1_container = DL1ParametersContainer()
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend([
@@ -88,19 +90,26 @@ def main():
                     print(ii)
                 image = row['image']
                 pulse_time = row['pulse_time']
-                signal_pixels = tailcuts_clean(geom, image, **config['tailcut'])
+
+                signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
-                    num_islands, island_labels = number_of_islands(geom, signal_pixels)
-                    hillas = hillas_parameters(geom[signal_pixels], image[signal_pixels])
+                    num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    n_pixels_on_island = np.bincount(island_labels.astype(np.int))
+                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    max_island_label = np.argmax(n_pixels_on_island)
+                    signal_pixels[island_labels != max_island_label] = False
+
+                    hillas = hillas_parameters(camera_geom[signal_pixels], image[signal_pixels])
 
                     dl1_container.fill_hillas(hillas)
-                    dl1_container.set_timing_features(geom[signal_pixels],
+                    dl1_container.set_timing_features(camera_geom[signal_pixels],
                                                       image[signal_pixels],
                                                       pulse_time[signal_pixels],
                                                       hillas)
-                    dl1_container.set_leakage(geom, image, signal_pixels)
-                    dl1_container.set_concentration(geom, image, hillas)
+
+                    dl1_container.set_leakage(camera_geom, image, signal_pixels)
+                    dl1_container.set_concentration(camera_geom, image, hillas)
                     dl1_container.n_islands = num_islands
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     dl1_container.n_pixels = n_pixels
@@ -108,7 +117,7 @@ def main():
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
                     dl1_container.length = length.value
-                    dl1_container.r = np.sqrt(dl1_container.x**2 + dl1_container.y**2)
+                    dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
                     for p in parameters_to_update:
                         params[ii][p] = Quantity(dl1_container[p]).value
