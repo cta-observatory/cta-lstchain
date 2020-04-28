@@ -39,14 +39,15 @@ parser = argparse.ArgumentParser(
     "n_islands, intercept, time_gradient")
 
 # Required arguments
-parser.add_argument('--input_file', '-f', 
+parser.add_argument('--input_file', '-f', action='store', type=str,
                     dest='input_file',
-                    type=str, help='path to the DL1 file ')
+                    help='path to the DL1 file ',
+                    default=None, required=True)
 
-parser.add_argument('--output_file', '-o',
+parser.add_argument('--output_file', '-o', action='store', type=str,
                     dest='output_file',
-                    type=str, help='key for the table of new parameters')
-
+                    help='key for the table of new parameters')
+                    default=None, required=True)
 # Optional arguments
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
