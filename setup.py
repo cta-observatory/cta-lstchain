@@ -50,6 +50,7 @@ setup(
         'scipy',
         'seaborn',
         'tables',
+        'joblib',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
