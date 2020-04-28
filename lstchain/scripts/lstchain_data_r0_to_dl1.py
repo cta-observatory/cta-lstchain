@@ -1,3 +1,16 @@
+"""
+Pipeline to calibrate and compute image parameters at single telescope 
+level for real data.
+- Inputs are a protozfits input file and a drs4 pedestal/calibration/time
+calibration files
+- Output is a dataframe with dl1 data
+
+Usage: 
+
+$> python lstchain_data_r0_to_dl1.py arg1 arg2 ...
+
+"""
+
 import argparse
 from lstchain.reco import r0_to_dl1
 from lstchain.io.config import read_configuration_file
@@ -9,43 +22,44 @@ log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
-
-parser.add_argument('--infile', '-f', type=str,
-                    dest='infile',
-                    help='path to the .fits.fz file with the raw events',
+# Required arguments
+parser.add_argument('--input_file', '-f', type=str,
+                    dest='input_file',
+                    help='Path to the .fits.fz file with the raw events',
                     default=None, required=True)
 
-parser.add_argument('--outdir', '-o', action='store', type=str,
-                    dest='outdir',
-                    help='Path where to store the reco dl2 events',
+parser.add_argument('--output_dir', '-o', action='store', type=str,
+                    dest='output_dir',
+                    help='Path where to store the reco dl1 events',
                     default='./dl1_data/')
 
+parser.add_argument('--pedestal_file', '-pedestal', action='store', type=str,
+                    dest='pedestal_file',
+                    help='Path to a pedestal file',
+                    default=None, required=True
+                    )
+
+parser.add_argument('--calibration_file', '-calib', action='store', type=str,
+                    dest='calibration_file',
+                    help='Path to a calibration file',
+                    default=None, required=True
+                    )
+
+parser.add_argument('--time_calibration_file', '-time_calib', action='store', type=str,
+                    dest='time_calibration_file',
+                    help='Path to a calibration file for pulse time correction',
+                    default=None, required=True
+                    )
+
+# Optional arguments
 parser.add_argument('--config_file', '-conf', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--pedestal_path', '-pedestal', action='store', type=str,
-                    dest='pedestal_path',
-                    help='Path to a pedestal file',
-                    default=None, required=True
-                    )
-
-parser.add_argument('--calibration_path', '-calib', action='store', type=str,
-                    dest='calibration_path',
-                    help='Path to a calibration file',
-                    default=None, required=True
-                    )
-
-parser.add_argument('--time_calibration_path', '-time_calib', action='store', type=str,
-                    dest='time_calibration_path',
-                    help='Path to a calibration file for pulse time correction',
-                    default=None, required=True
-                    )
-
-parser.add_argument('--pointing_file_path', '-pointing', action='store', type=str,
-                    dest='pointing_file_path',
+parser.add_argument('--pointing_file_file', '-pointing', action='store', type=str,
+                    dest='pointing_file_file',
                     help='Path to the Drive log file with the pointing information.',
                     default=None
                     )
@@ -94,12 +108,12 @@ args = parser.parse_args()
 
 
 def main():
-    os.makedirs(args.outdir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
     output_filename = os.path.join(
-        args.outdir,
-        'dl1_' + os.path.basename(args.infile).rsplit('.', 1)[0] + '.h5'
+        args.output_dir,
+        'dl1_' + os.path.basename(args.input_file).rsplit('.', 1)[0] + '.h5'
     )
 
     config = {}
@@ -113,13 +127,13 @@ def main():
     config["max_events"] = args.max_events
 
     r0_to_dl1.r0_to_dl1(
-        args.infile,
+        args.input_file,
         output_filename=output_filename,
         custom_config=config,
-        pedestal_path=args.pedestal_path,
-        calibration_path=args.calibration_path,
-        time_calibration_path=args.time_calibration_path,
-        pointing_file_path=args.pointing_file_path,
+        pedestal_path=args.pedestal_file,
+        calibration_path=args.calibration_file,
+        time_calibration_path=args.time_calibration_file,
+        pointing_file_path=args.pointing_file_file,
         ucts_t0_dragon=args.ucts_t0_dragon,
         dragon_counter0=args.dragon_counter0,
         ucts_t0_tib=args.ucts_t0_tib,
