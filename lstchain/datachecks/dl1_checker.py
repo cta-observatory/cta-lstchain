@@ -734,7 +734,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
-                         pad=1.0, h_pad=3.0, w_pad=3.0)
+                         pad=2.0, h_pad=3.0, w_pad=3.0)
         axes[0, 0].plot(contained_muons['hg_peak_sample'],
                         contained_muons['lg_peak_sample'], 'x')
         axes[0, 0].set_xlabel('High gain peak sample in R1 waveform')
