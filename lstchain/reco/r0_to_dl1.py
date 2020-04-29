@@ -55,9 +55,6 @@ from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-logging.getLogger().addHandler(handler)
 
 
 __all__ = [

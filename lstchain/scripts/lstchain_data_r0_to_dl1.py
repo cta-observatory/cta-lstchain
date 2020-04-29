@@ -96,6 +96,10 @@ args = parser.parse_args()
 def main():
     os.makedirs(args.outdir, exist_ok=True)
 
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
+
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
     output_filename = os.path.join(
         args.outdir,
