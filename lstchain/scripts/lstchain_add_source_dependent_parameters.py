@@ -3,12 +3,12 @@
 """
 Script to add the source dependent parameters to a DL1 file.
 
-- Input: DL1 data file. The program returns the same DL1 data file with
-source-dependent parameters added
+Input: DL1 data file. Source dependent parameters will be added to this file. 
 
 Usage: 
 
-$> python lstchain_add_source_dependent_parameters.py --input-file dl1_file.h5
+$> python lstchain_add_source_dependent_parameters.py 
+--input-file dl1_LST-1.Run02033.0137.h5 
 
 """
 
