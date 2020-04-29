@@ -1,1 +1,5 @@
-from .pointings import *
+from .pointings import PointingPosition
+
+__all__ = [
+    'PointingPosition'
+]
