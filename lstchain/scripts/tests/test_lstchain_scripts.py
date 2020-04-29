@@ -46,14 +46,14 @@ def test_add_source_dependent_parameters():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-def test_lstchain_trainpipe():
+def test_lstchain_mc_trainpipe():
     gamma_file = dl1_file
     proton_file = dl1_file
 
     run_program(
         'lstchain_mc_trainpipe',
-        '-fg', gamma_file,
-        '-fp', proton_file,
+        '--fg', gamma_file,
+        '--fp', proton_file,
         '-o', output_dir
     )
 
