@@ -1,11 +1,21 @@
-'''
-Script to perform the analysis of muon events.
-To run it, type:
+#!/usr/bin/env python3
 
-python lstchain_data_muon_analysis_dl1.py
---input_file dl1_Run01566_0322.h5
---output_file Data_table.fits
-'''
+"""
+Script to perform the analysis of muon events.
+
+- Inputs are a DL1a data file (pixel information is needed) and a
+calibration file
+- Output is a table with muon parameters (to be updated to a dataframe!)
+
+Usage:
+
+$> python lstchain_muon_analysis_dl1.py
+--input-file dl1_Run01566_0322.h5
+--output-file Data_table.fits
+--calibration-file calibration.Run2029.0000.hdf5
+
+"""
+
 import argparse
 import glob
 import os
@@ -14,7 +24,10 @@ from ctapipe.instrument import CameraGeometry
 from astropy import units as u
 
 from lstchain.image.muon import (
-    analyze_muon_event, tag_pix_thr, create_muon_table, fill_muon_event
+    analyze_muon_event, 
+    create_muon_table, 
+    fill_muon_event,
+    tag_pix_thr, 
 )
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.visualization import plot_calib
@@ -27,34 +40,46 @@ parser = argparse.ArgumentParser()
 
 # Required arguments
 parser.add_argument(
-    "--input_file", type=str, required=True,
+    "--input-file", '-f', type=str,
+    dest='input_file'
+    required=True,
     help="Path to DL1a data file (containing charge information).",
 )
 
 parser.add_argument(
-    "--calib_file",
+    "--output-file", '-o', type=str, 
+    dest='output_file',
+    required=True,
+    help="Path to create the output fits table with muon parameters",
+)
+
+parser.add_argument(
+    "--calibration-file", '--calib',
+    dest='calib_file'
     type=str, default=None, required=False,
     help="Path to corresponding calibration file (containing bad pixel information).",
 )
 
-parser.add_argument(
-    "--output_file", type=str, required=True,
-    help="Path to create the output fits table with muon parameters",
-)
 
 # Optional argument
 parser.add_argument(
-    "--plot_rings", default=False, action='store_true',
+    "--plot-rings", 
+    dest='plot_rings'
+    default=False, action='store_true',
     help="Plot figures of the stored rings",
 )
 
 parser.add_argument(
-    "--plots_path", default=None, type=str,
+    "--plots-path", 
+    dest='plots_path'
+    default=None, type=str,
     help="Path to the plots",
 )
 
 parser.add_argument(
-    "--max_muons", type=int,
+    "--max-muons", 
+    dest='max_muons'
+    type=int,
     help="Maximum number of processed muon ring candidates",
 )
 
