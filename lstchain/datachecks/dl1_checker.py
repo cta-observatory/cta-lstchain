@@ -710,15 +710,15 @@ def plot_datacheck(datacheck_filename, out_path=None):
         axes[0, 0].set_xlabel('ring center, distance from camera center (m)')
         axes[0, 0].set_ylabel('number of rings')
         axes[1, 0].plot(contained_muons['impact_parameter'],
-                           contained_muons['ring_completeness'], 'x')
+                           contained_muons['ring_completeness'], 'x', alpha=0.5)
         axes[1, 0].set_xlabel('reconstructed impact parameter (m)')
         axes[1, 0].set_ylabel('ring completeness')
         axes[0, 1].plot(contained_muons['ring_radius'],
-                        contained_muons['ring_size'], 'x')
+                        contained_muons['ring_size'], 'x', alpha=0.5)
         axes[0, 1].set_xlabel('ring radius (deg)')
         axes[0, 1].set_ylabel('ring intensity (p.e.)')
         axes[1, 1].plot(contained_muons['ring_radius'],
-                        contained_muons['ring_width'], 'x')
+                        contained_muons['ring_width'], 'x', alpha=0.5)
         axes[1, 1].set_xlabel('ring radius (deg)')
         axes[1, 1].set_ylabel('ring width (deg)')
         axes[0, 2].hist(contained_muons['ring_size'],
@@ -736,7 +736,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
                          pad=2.0, h_pad=3.0, w_pad=3.0)
         axes[0, 0].plot(contained_muons['hg_peak_sample'],
-                        contained_muons['lg_peak_sample'], 'x')
+                        contained_muons['lg_peak_sample'], 'x', alpha=0.5)
         axes[0, 0].set_xlabel('High gain peak sample in R1 waveform')
         axes[0, 0].set_ylabel('Low gain peak sample in R1 waveform')
         binning = np.linspace(-0.5, 38.5, 39)
@@ -752,19 +752,19 @@ def plot_datacheck(datacheck_filename, out_path=None):
         axes[0, 1].set_xlabel('estimated telescope efficiency for muons')
         axes[0, 1].set_ylabel('number of rings')
         axes[1, 1].plot(contained_muons['ring_width'],
-                        contained_muons['muon_efficiency'], 'x')
+                        contained_muons['muon_efficiency'], 'x', alpha=0.5)
         axes[1, 1].set_ylim(0., 0.5)
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
         axes[0, 2].errorbar(subrun_list, mean_effi, yerr=sem_effi, fmt='o',
-                            markersize=6)
+                            markersize=3.)
 
         axes[0, 2].set_xlabel('subrun index')
         axes[0, 2].set_ylabel('estimated telescope efficiency for muons')
         axes[0, 2].grid(linewidth=0.3, linestyle=':')
         axes[0, 2].set_ylim(0., 0.5)
         axes[1, 2].errorbar(subrun_list, mean_width, yerr=sem_width, fmt='o',
-                            markersize=6)
+                            markersize=3.)
         axes[1, 2].set_xlabel('subrun index')
         axes[1, 2].set_ylabel('ring width (deg)')
         axes[1, 2].grid(linewidth=0.3, linestyle=':')
