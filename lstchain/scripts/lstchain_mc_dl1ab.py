@@ -1,7 +1,20 @@
-# Read a HDF5 DL1 file, recompute parameters based on calibrated images and pulse times and a config file
-# and write a new HDF5 file
-# Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, intercept, time_gradient
+#!/usr/bin/env python3
 
+"""
+Read a HDF5 DL1 file, recompute parameters based on calibrated images and 
+pulse times and a config file and write a new HDF5 file
+Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, 
+intercept, time_gradient
+
+- Input: DL1 data file.
+- Output: DL1 data file.
+
+Usage: 
+
+$> python lstchain_mc_dl1ab.py 
+--input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
+
+"""
 
 import tables
 import numpy as np
@@ -19,29 +32,34 @@ from distutils.util import strtobool
 from lstchain.io import get_dataset_keys, auto_merge_h5files
 from astropy.table import Table
 
-parser = argparse.ArgumentParser(description="Recompute parameters in a DL1 HDF5 file from calibrated images"
-                                             "and based on passed config file. The results are written in a new HDF5 "
-                                             "file."
-                                             "Updated parameters are : Hillas paramaters, wl, r, leakage, "
-                                             "n_islands, intercept, time_gradient")
+parser = argparse.ArgumentParser(
+    description="Recompute DL1b parameters from a DL1a file")
 
 # Required arguments
-parser.add_argument('input_file', type=str, help='path to the DL1 file ')
+parser.add_argument('--input-file', '-f', action='store', type=str,
+                    dest='input_file',
+                    help='path to the DL1a file ',
+                    default=None, required=True)
 
-parser.add_argument('output_file', type=str, help='key for the table of new parameters')
-
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--output-file', '-o', action='store', type=str,
+                    dest='output_file',
+                    help='key for the table of new parameters',
+                    default=None, required=True)
+# Optional arguments
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
+parser.add_argument('--no-image', action='store', 
+                    type=lambda x: bool(strtobool(x)),
                     dest='noimage',
                     help='Boolean. True to remove the images in output file',
                     default=False)
 
 args = parser.parse_args()
+
 
 
 def main():

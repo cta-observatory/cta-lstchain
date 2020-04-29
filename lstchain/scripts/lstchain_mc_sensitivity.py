@@ -1,3 +1,23 @@
+#!/usr/bin/env python3
+
+"""
+Script to compute the LST sensitivity using MC.
+
+Inputs are DL1/DL2 gamma and proton files
+
+Usage: 
+
+$> python lstchain_mc_sensitivity.py
+--gd1 dl1_gamma_20deg_180deg_cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4_merge_test.h5 
+--pd1 dl1_proton_20deg_180degcta-prod3-demo-2147m-LaPalma-baseline-mono_merge_test.h5 
+--gd2-cuts dl2_gammas_cuts.h5  
+--pd2-cuts dl2_protons_cuts.h5 
+--gd2-sens dl2_gammas_sensitivity.h5 
+--pd2-sens dl2_protons_sensitivity.h5
+
+"""
+
+
 from lstchain.mc.sensitivity import sensitivity, find_best_cuts_sensitivity
 import matplotlib.pyplot as plt
 import astropy.units as u
@@ -10,26 +30,28 @@ from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
 
-parser = argparse.ArgumentParser(description="Compute Sensitivity Curve.")
+parser = argparse.ArgumentParser(description="Compute MC Sensitivity Curve.")
 
-parser.add_argument('--gammadl1', '-gd1', type = str,
+parser.add_argument('--input-file-gamma-dl1', '--gd1', type = str,
                     dest = 'dl1file_gammas',
-                    help = 'path to gammas simtelfile')
-parser.add_argument('--protondl1', '-pd1', type = str,
+                    help = 'path to gammas DL1 file')
+parser.add_argument('--input-file-proton-dl1', '--pd1', type = str,
                     dest = 'dl1file_protons',
-                    help = 'path to protons simtelfile')
-parser.add_argument('--gammadl2-cuts', '-gd2-cuts', type = str,
+                    help = 'path to protons DL1 file')
+parser.add_argument('--input-file-gamma-dl2-cuts', '--gd2-cuts', type = str,
                     dest = 'dl2_file_g_cuts',
-                    help = 'path to reconstructed gammas dl2 file')
-parser.add_argument('--protondl2-cuts', '-pd2-cuts', type = str,
+                    help = 'path to reconstructed gammas dl2 file used to caculate the sensitivity')
+parser.add_argument('--input-file-proton-dl2-cuts', '--pd2-cuts', type = str,
                     dest = 'dl2_file_p_cuts',
-                    help = 'path to reconstructed protons dl2 file')
-parser.add_argument('--gammadl2-sens', '-gd2-sens', type = str,
+                    help = 'path to reconstructed protons dl2 file used to caculate the sensitivity')
+parser.add_argument('--input-file-gamma-dl2-sens', '--gd2-sens', type = str,
                     dest = 'dl2_file_g_sens',
-                    help = 'path to reconstructed gammas dl2 file')
-parser.add_argument('--protondl2-sens', '-pd2-sens', type = str,
+                    help = 'path to reconstructed gammas dl2 file used to caculate the optimized cuts' 
+                    'to be applied to the the sensitivity')
+parser.add_argument('--input-file-proton-dl2-sens', '--pd2-sens', type = str,
                     dest = 'dl2_file_p_sens',
-                    help = 'path to reconstructed protons dl2 file')
+                    help = 'path to reconstructed protons dl2 file used to caculate the optimized cuts'
+                    'to be applied to the the sensitivity')
 
 args = parser.parse_args()
 
