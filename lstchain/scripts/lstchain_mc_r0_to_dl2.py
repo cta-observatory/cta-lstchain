@@ -4,8 +4,8 @@
 Pipeline to calibrate and compute image parameters at single telescope 
 level for MC.
 
-- Inputs are simtelarray files and trained Random Forests.
-- Output is a dataframe with DL2 data.
+Inputs are simtelarray files and trained Random Forests.
+Output is a dataframe with DL2 data.
 
 Usage: 
 
@@ -45,7 +45,7 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                     help='Path where to store the reco dl2 events',
                     default='./dl2_data')
 
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None

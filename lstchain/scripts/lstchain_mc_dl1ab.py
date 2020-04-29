@@ -46,7 +46,7 @@ parser.add_argument('--output-file', '-o', action='store', type=str,
                     help='key for the table of new parameters',
                     default=None, required=True)
 # Optional arguments
-parser.add_argument('--config_file', '--conf', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None

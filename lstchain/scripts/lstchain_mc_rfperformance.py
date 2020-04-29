@@ -59,12 +59,17 @@ parser.add_argument('--store-rf', '-s', action='store', type=bool,
                     'Default=False, any user input will be considered True',
                     default=True)
 
+parser.add_argument('--batch', '-b', action='store', type=bool,
+                    dest='batch',
+                    help='Boolean. True for running it without plotting output',
+                    default=True)
+
 parser.add_argument('--output_dir', '-o', action='store', type=str,
                      dest='path_models',
                      help='Path to store the resulting RF',
                      default='./saved_models/')
 
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
@@ -122,19 +127,24 @@ def main():
 
 
     plot_dl2.plot_features(dl2)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
     plot_dl2.plot_e(gammas, 10, 1.5, 3.5)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
     plot_dl2.calc_resolution(gammas)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
     plot_dl2.plot_e_resolution(gammas, 10, 1.5, 3.5)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
     plot_dl2.plot_disp_vector(gammas)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
 
     try:
@@ -144,36 +154,44 @@ def main():
                             np.arctan(np.tan(src_pos_reco.az.rad)),
                             bins=50, range=(0, 1),
         )
-        plt.show()
+        if not args.batch:
+            plt.show()
         ctaplot.plot_angular_res_per_energy(src_pos_reco.alt.rad,
                                             np.arctan(np.tan(src_pos_reco.az.rad)),
                                             gammas.mc_alt,
                                             np.arctan(np.tan(gammas.mc_az)),
                                             gammas.mc_energy
         )
-        plt.show()
+        if not args.batch:
+            plt.show()
     except:
         pass
 
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
 
-
-    plt.show()
+    if not args.batch:
+        plt.show()
     plot_dl2.plot_pos(dl2)
-    plt.show()
+    if not args.batch:
+        plt.show()
     plot_dl2.plot_ROC(cls_gh, dl2, classification_features, -1)
-    plt.show()
+    if not args.batch:
+        plt.show()
     plot_dl2.plot_importances(cls_gh, classification_features)
-    plt.show()
+    if not args.batch:
+        plt.show()
     plot_dl2.plot_importances(reg_energy, regression_features)
-    plt.show()
+    if not args.batch:
+        plt.show()
     plot_dl2.plot_importances(reg_disp_vector, regression_features)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
     plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
     plt.hist(dl2[dl2['mc_type']==0]['gammaness'], bins=100)
-    plt.show()
+    if not args.batch:
+        plt.show()
 
 
 if __name__ == '__main__':

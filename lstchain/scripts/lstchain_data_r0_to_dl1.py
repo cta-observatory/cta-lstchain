@@ -59,7 +59,7 @@ parser.add_argument('--time-calibration-file', '-t', action='store', type=str,
                     )
 
 # Optional arguments
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None

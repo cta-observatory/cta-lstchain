@@ -43,13 +43,13 @@ parser.add_argument("--max-events",
                     type=int,
                     default=20000)
 
-parser.add_argument('--config_file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--pedestal_file', '-p', action='store', type=str,
+parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     dest='pedestal_file',
                     help='Path to drs4 pedestal file ',
                     default=None
