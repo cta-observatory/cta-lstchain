@@ -9,7 +9,12 @@ calibration files
 
 Usage: 
 
-$> python lstchain_data_r0_to_dl1.py arg1 arg2 ...
+$> python lstchain_data_r0_to_dl1.py 
+--input-file LST-1.1.Run02030.0000.fits.fz 
+--output-dir ./ 
+--pedestal-file drs4_pedestal.Run2028.0000.fits 
+--calibration-file calibration.Run2029.0000.hdf5 
+--time-calibration-file time_calibration.Run2029.0000.hdf5
 
 """
 
@@ -25,48 +30,48 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
 # Required arguments
-parser.add_argument('--input_file', '-f', type=str,
+parser.add_argument('--input-file', '-f', action='store', type=str,
                     dest='input_file',
                     help='Path to the .fits.fz file with the raw events',
                     default=None, required=True)
 
-parser.add_argument('--output_dir', '-o', action='store', type=str,
+parser.add_argument('--output-dir', '-o', action='store', type=str,
                     dest='output_dir',
                     help='Path where to store the reco dl1 events',
                     default='./dl1_data/')
 
-parser.add_argument('--pedestal_file', '-pedestal', action='store', type=str,
+parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     dest='pedestal_file',
                     help='Path to a pedestal file',
                     default=None, required=True
                     )
 
-parser.add_argument('--calibration_file', '-calib', action='store', type=str,
+parser.add_argument('--calibration-file', '--calib', action='store', type=str,
                     dest='calibration_file',
                     help='Path to a calibration file',
                     default=None, required=True
                     )
 
-parser.add_argument('--time_calibration_file', '-time_calib', action='store', type=str,
+parser.add_argument('--time-calibration-file', '-t', action='store', type=str,
                     dest='time_calibration_file',
                     help='Path to a calibration file for pulse time correction',
                     default=None, required=True
                     )
 
 # Optional arguments
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config-file', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--pointing_file_file', '-pointing', action='store', type=str,
-                    dest='pointing_file_file',
+parser.add_argument('--pointing-file', '--pointing', action='store', type=str,
+                    dest='pointing_file',
                     help='Path to the Drive log file with the pointing information.',
                     default=None
                     )
 
-parser.add_argument('--ucts_t0_dragon', action='store', type=float,
+parser.add_argument('--ucts-t0-dragon', action='store', type=float,
                     dest='ucts_t0_dragon',
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
@@ -75,7 +80,7 @@ parser.add_argument('--ucts_t0_dragon', action='store', type=float,
                     default="NaN"
                     )
 
-parser.add_argument('--dragon_counter0', action='store', type=float,
+parser.add_argument('--dragon-counter0', action='store', type=float,
                     dest='dragon_counter0',
                     help='Dragon counter (pps + 10MHz) in nsecs corresponding \
                           to the first reliable UCTS of the run. To be provided \
@@ -83,7 +88,7 @@ parser.add_argument('--dragon_counter0', action='store', type=float,
                     default="NaN"
                     )
 
-parser.add_argument('--ucts_t0_tib', action='store', type=float,
+parser.add_argument('--ucts-t0-tib', action='store', type=float,
                     dest='ucts_t0_tib',
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
@@ -92,7 +97,7 @@ parser.add_argument('--ucts_t0_tib', action='store', type=float,
                     default="NaN"
                     )
 
-parser.add_argument('--tib_counter0', action='store', type=float,
+parser.add_argument('--tib-counter0', action='store', type=float,
                     dest='tib_counter0',
                     help='First valid TIB counter (pps + 10MHz) in nsecs corresponding \
                           to the first reliable UCTS of the run when TIB is available. \
@@ -100,7 +105,7 @@ parser.add_argument('--tib_counter0', action='store', type=float,
                     default="NaN"
                     )
 
-parser.add_argument('--max_events', '-maxevts', action='store', type=int,
+parser.add_argument('--max-events', '--maxevts', action='store', type=int,
                     dest='max_events',
                     help='Maximum number of events to be processed.',
                     default=int(1e15)
@@ -135,7 +140,7 @@ def main():
         pedestal_path=args.pedestal_file,
         calibration_path=args.calibration_file,
         time_calibration_path=args.time_calibration_file,
-        pointing_file_path=args.pointing_file_file,
+        pointing_file_path=args.pointing_file,
         ucts_t0_dragon=args.ucts_t0_dragon,
         dragon_counter0=args.dragon_counter0,
         ucts_t0_tib=args.ucts_t0_tib,

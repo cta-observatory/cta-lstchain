@@ -12,7 +12,9 @@ not to use deltaT correction add --deltaT False
 
 Usage:
 
-$> python lstchain_data_create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file drs4_pedestal.fits 
+$> python lstchain_data_create_pedestal_file.py 
+--input-file LST-1.1.Run00097.0000.fits.fz 
+--output_file drs4_pedestalRun2028.0000.fits 
 --max_events 9000
 
 """
@@ -35,13 +37,16 @@ from lstchain.calib.camera.drs4 import DragonPedestal
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file",
+parser.add_argument("--input-file", '-f', type=str, action='store',
+                    dest='input_file',
                     help="Path to fitz.fz file to create pedestal file.",
-                    type=str)
+                    default=None, required=True)
 
-parser.add_argument("--output_file",
+parser.add_argument("--output-file", '-o', , type=str, action='store',
+                    dest='output_file',
                     help="Path where script create pedestal file",
-                    type=str)
+                    default=None, required=True)
+
 
 # Optional arguments
 parser.add_argument("--max_events",
