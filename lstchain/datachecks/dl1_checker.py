@@ -22,7 +22,7 @@ import tables
 import warnings
 
 from astropy import units as u
-from astropy.table import Table
+from astropy.table import Table, vstack
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
@@ -63,13 +63,27 @@ def check_dl1(filenames, output_path, max_cores=4):
     run_number = int(filename[filename.find('Run')+3:][:5])
     filename_prefix = filename[:filename.find('Run')]
 
+    # obtain the names of the corresponding muon .fits files:
+    muon_filenames = []
+    for filename in filenames:
+        name = filename.replace('dl1', 'muons')
+        # put the correct .fits extension (both for the XXXX.h5 and the
+        # deprecated XXXX.fits.h5 conventions of DL1 files):
+        name = name.replace('.fits.h5', '.fits')
+        name = name.replace('.h5', '.fits')
+        # patch for DL1 files which contain the "stream tag" in the name:
+        name = name.replace('LST-1.1', 'LST-1')
+        muon_filenames.append(name)
+
     # define output filename (overwrite if already existing)
-    out_filename = output_path + '/datacheck_' + filename_prefix + 'Run' + \
-                   str(run_number) + '.h5'
-    # patch for DL1 files which contain the "stream tag" in the name: LST-1.1:
-    out_filename = out_filename.replace('LST-1.1', 'LST-1')
-    if os.path.exists(out_filename):
-        os.remove(out_filename)
+    datacheck_filename = output_path + '/datacheck_' + filename_prefix + \
+    f'Run{run_number:05}.h5'
+    # patch for DL1 files which contain the "stream tag" in the name e.g.
+    # LST-1.1:
+    datacheck_filename = datacheck_filename.replace('LST-1.1', 'LST-1')
+
+    if os.path.exists(datacheck_filename):
+        os.remove(datacheck_filename)
 
     # TBD: Check here that all the run_numbers coincide!
     # new_run_number = int(filename[filename.find('Run') + 3:][:5])
@@ -84,6 +98,11 @@ def check_dl1(filenames, output_path, max_cores=4):
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
+            print ("File", filename, "not found!")
+            raise FileNotFoundError
+    for filename in muon_filenames:
+        if not os.path.exists(filename):
+            print ("File", filename, "not found!")
             raise FileNotFoundError
 
     # now try to determine which trigger_type tag is more reliable for
@@ -131,7 +150,7 @@ def check_dl1(filenames, output_path, max_cores=4):
 
     writer_conf = tables.Filters(complevel=9, complib='blosc:zstd',
                                  fletcher32=True)
-    with HDF5TableWriter(out_filename, filters=writer_conf) as writer:
+    with HDF5TableWriter(datacheck_filename, filters=writer_conf) as writer:
         # write the containers (3 per subrun) to the dl1 data check output file:
         for dcheck in dl1datacheck:
             writer.write("dl1datacheck/pedestals", dcheck[0])
@@ -145,18 +164,18 @@ def check_dl1(filenames, output_path, max_cores=4):
     cam_description_table = \
         Table.read(filename, path='instrument/telescope/camera/LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(out_filename,
+    geom.to_table().write(datacheck_filename,
                           path=f'/instrument/telescope/camera/LSTCam',
                           append=True, serialize_meta=True)
 
     # write out also which trigger tag has been used for finding pedestals:
-    file = h5py.File(out_filename, mode='a')
+    file = h5py.File(datacheck_filename, mode='a')
     file.create_dataset('/dl1datacheck/used_trigger_tag', (1,), 'S32',
                         [trigger_source.encode('ascii')])
     file.close()
 
     # do the plots and save them to a pdf file:
-    plot_datacheck(out_filename)
+    plot_datacheck(datacheck_filename, output_path)
 
     return
 
@@ -272,12 +291,15 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
     return dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
 
 
-def plot_datacheck(filename='', out_path=None):
+def plot_datacheck(datacheck_filename, out_path=None):
     """
 
     Parameters
     ----------
-    filename: .h5 file produced by the method check_dl1
+    datacheck_filename: .h5 file produced by the method check_dl1, starting
+    from DL1 event files
+    muon_filenames: list of corresponding .fits muon ring files produced in the
+    R0 to DL1 analysis
     out_path: optional, if not given it will be the same of file filename
 
     Returns
@@ -289,16 +311,19 @@ def plot_datacheck(filename='', out_path=None):
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
 
-    pdf_filename = filename.replace('.h5', '.pdf')
+    pdf_filename = datacheck_filename.replace('.h5', '.pdf')
     if out_path is not None:
         pdf_filename = out_path+'/'+pdf_filename[pdf_filename.rfind('/')+1:]
 
     cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+        Table.read(datacheck_filename,
+                   path='instrument/telescope/camera/LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
-    with PdfPages(pdf_filename) as pdf, tables.open_file(filename) as file:
+    with PdfPages(pdf_filename) as pdf:
+        # first deal with the DL1 datacheck file, created from DL1 event data:
+        file = tables.open_file(datacheck_filename)
 
         # get the binning of the stored histograms:
         hist_binning = file.root.dl1datacheck.histogram_binning
@@ -599,6 +624,26 @@ def plot_datacheck(filename='', out_path=None):
         axes[1, 0].set_title('Time gradient vs. Length')
         axes[1, 1].set_title('Time gradient vs. Length, intensity>200pe')
         pdf.savefig()
+        subrun_list = np.array(table.col('subrun_index'))
+
+        file.close()
+
+        # End of the plots created from the DL1 datacheck file
+
+        muon_filenames = []
+        for i in subrun_list:
+            name = datacheck_filename.replace('datacheck_dl1', 'muons')
+            name = name.replace('.h5', f'.{i:04}.fits')
+            muon_filenames.append(name)
+        # Now we go for the muons .fits files, created in the R0 to DL1 stage.
+        # We look for the files with the same subrun indices that have been
+        # processed.
+        muons_table = Table.read(muon_filenames[0])
+        for filename in muon_filenames[1:]:
+            muons_table = vstack([muons_table, Table.read(filename)])
+        print(muons_table)
+
+
 
 
 def plot_trigger_types(dchecktables, trigger_name, axes):

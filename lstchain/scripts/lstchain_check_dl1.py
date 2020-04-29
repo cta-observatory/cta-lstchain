@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script to check the contents of LST DL1 files and associated muon ring file
+Script to check the contents of LST DL1 files and associated muon ring files
 To run it, type e.g.:
 python lstchain_check_dl1.py
 --input_file dl1_LST-1.1.Run01881.0000.h5
