@@ -21,8 +21,12 @@ def test_write_dataframe():
     with tempfile.NamedTemporaryFile() as f:
         write_dataframe(df, f.name, 'data/awesome_table')
 
-        with tables.open_file(f.name) as file:
-            table = file.root.data.awesome_table[:]
+        with tables.open_file(f.name) as h5_file:
+            # make sure nothing else in this group
+            # (e.g. like pandas writes _i_ tables)
+            assert h5_file.root.data._v_children.keys() == {'awesome_table'}
+
+            table = h5_file.root.data.awesome_table[:]
             for col in df.columns:
                 np.testing.assert_array_equal(table[col], df[col])
 
