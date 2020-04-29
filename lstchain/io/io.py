@@ -573,7 +573,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
 
 
-def write_dataframe(dataframe, outfile, table_path):
+def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -581,14 +581,21 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    table_path: str - path to the table to write in the HDF5 file
+    table_path: str
+        path to the table to write in the HDF5 file
     """
-    with pd.HDFStore(outfile, mode='a') as store:
+    if not table_path.startswith('/'):
+        table_path = '/' + table_path
+
+    with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.append(path, dataframe,
-                     format='table',
-                     data_columns=True)
-        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+        f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+        )
 
 
 def write_dl2_dataframe(dataframe, outfile):
