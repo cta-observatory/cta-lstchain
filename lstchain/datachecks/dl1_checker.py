@@ -19,7 +19,6 @@ import numpy as np
 import os
 import pandas as pd
 import tables
-import warnings
 
 from astropy import units as u
 from astropy.table import Table, vstack
@@ -33,7 +32,7 @@ from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
-from scipy.stats import poisson
+from scipy.stats import poisson, sem
 from sys import platform
 
 
@@ -77,7 +76,7 @@ def check_dl1(filenames, output_path, max_cores=4):
 
     # define output filename (overwrite if already existing)
     datacheck_filename = output_path + '/datacheck_' + filename_prefix + \
-    f'Run{run_number:05}.h5'
+     f'Run{run_number:05}.h5'
     # patch for DL1 files which contain the "stream tag" in the name e.g.
     # LST-1.1:
     datacheck_filename = datacheck_filename.replace('LST-1.1', 'LST-1')
@@ -98,11 +97,11 @@ def check_dl1(filenames, output_path, max_cores=4):
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
-            print ("File", filename, "not found!")
+            print("File", filename, "not found!")
             raise FileNotFoundError
     for filename in muon_filenames:
         if not os.path.exists(filename):
-            print ("File", filename, "not found!")
+            print("File", filename, "not found!")
             raise FileNotFoundError
 
     # now try to determine which trigger_type tag is more reliable for
@@ -298,8 +297,6 @@ def plot_datacheck(datacheck_filename, out_path=None):
     ----------
     datacheck_filename: .h5 file produced by the method check_dl1, starting
     from DL1 event files
-    muon_filenames: list of corresponding .fits muon ring files produced in the
-    R0 to DL1 analysis
     out_path: optional, if not given it will be the same of file filename
 
     Returns
@@ -356,7 +353,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
                             label=label)
         axes[1, 0].set_ylabel('number of events')
         axes[1, 1].set_ylabel('rate (events/s)')
-        for j in (0,1):
+        for j in (0, 1):
             axes[1, j].set_xlabel('subrun index')
             axes[1, j].set_yscale('log')
             axes[1, j].legend(loc='best')
@@ -397,8 +394,8 @@ def plot_datacheck(datacheck_filename, out_path=None):
         mpl_times = np.array([dates.date2num(datetime.fromtimestamp(x))
                                              for x in mean_dragon_time])
         axes[1, 1].plot_date(mpl_times, alt_deg, fmt='-', xdate=True,
-                             tz = 'utc')
-        axes[1, 1].set_xlabel('time')
+                             tz='utc')
+        axes[1, 1].set_xlabel('time (UTC)')
         axes[1, 1].set_ylabel('telescope altitude (deg)')
         axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
         pdf.savefig()
@@ -624,26 +621,155 @@ def plot_datacheck(datacheck_filename, out_path=None):
         axes[1, 0].set_title('Time gradient vs. Length')
         axes[1, 1].set_title('Time gradient vs. Length, intensity>200pe')
         pdf.savefig()
+        # End of the plots created from the DL1 datacheck file
+        # keep some info needed for muon ring plots:
         subrun_list = np.array(table.col('subrun_index'))
-
+        elapsed_t = np.array(table_cosmics.col('elapsed_time'))
         file.close()
 
-        # End of the plots created from the DL1 datacheck file
-
+        # Now we go for the muons .fits files, created in the R0 to DL1 stage.
+        # We look for the files with the same subrun indices that have been
+        # processed.
         muon_filenames = []
         for i in subrun_list:
             name = datacheck_filename.replace('datacheck_dl1', 'muons')
             name = name.replace('.h5', f'.{i:04}.fits')
             muon_filenames.append(name)
-        # Now we go for the muons .fits files, created in the R0 to DL1 stage.
-        # We look for the files with the same subrun indices that have been
-        # processed.
+
         muons_table = Table.read(muon_filenames[0])
+        contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
+        # to get some quantities vs. subrun index:
+        num_rings = np.array([len(muons_table)])
+        num_contained_rings = np.array([len(contained_muons)])
+        mean_width = np.array(np.mean(contained_muons['ring_width']))
+        sem_width = np.array(sem(contained_muons['ring_width']))
+        mean_effi = np.array(np.mean(contained_muons['muon_efficiency']))
+        sem_effi = np.array(sem(contained_muons['muon_efficiency']))
+
         for filename in muon_filenames[1:]:
-            muons_table = vstack([muons_table, Table.read(filename)])
-        print(muons_table)
+            t = Table.read(filename)
+            tcont = t[t['ring_containment'] > 0.999]
+            # to get some quantities vs. subrun index:
+            num_rings = np.append(num_rings, len(t))
+            num_contained_rings = np.append(num_contained_rings, len(tcont))
+            mean_width = np.append(mean_width, np.mean(tcont['ring_width']))
+            sem_width = np.append(sem_width, sem(tcont['ring_width']))
+            mean_effi = np.append(mean_effi, np.mean(tcont['muon_efficiency']))
+            sem_effi = np.append(sem_effi, sem(tcont['muon_efficiency']))
+            # to get the whole muon rings tables:
+            muons_table = vstack([muons_table, t])
+            contained_muons = vstack([contained_muons, tcont])
 
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
+        fig.suptitle('MUON RINGS', fontsize='xx-large')
+        fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
+                         pad=3.0, h_pad=3.0, w_pad=2.0)
+        axes[0, 0].set_ylim(0, num_rings.max()*1.15)
+        axes[0, 0].plot(subrun_list, num_rings, '-', label='all rings in files')
+        axes[0, 0].plot(subrun_list, num_contained_rings, '-',
+                        label='contained rings')
+        axes[0, 0].set_ylabel('number of muon rings per subrun')
+        axes[0, 0].legend(loc='best')
 
+        muon_rate = num_rings / elapsed_t
+        contained_muon_rate = num_contained_rings / elapsed_t
+        axes[0, 1].set_ylim(0, muon_rate.max()*1.15)
+        axes[0, 1].plot(subrun_list, muon_rate, '-', label='all rings in files')
+        axes[0, 1].plot(subrun_list, contained_muon_rate, '-',
+                        label='contained rings')
+        axes[0, 1].set_ylabel('rate of muon rings')
+        axes[0, 1].legend(loc='best')
+        for j in (0, 1):
+            axes[0, j].set_xlabel('subrun index')
+        axes[1, 0].hist(muons_table['ring_containment'],
+                        bins=np.linspace(0., 1., 51),
+                        weights=np.ones(len(muons_table))/num_rings.sum())
+        axes[1, 0].set_xlabel('ring containment')
+        binning = np.linspace(0., 1., 31)
+        axes[1, 1].hist(muons_table['ring_completeness'],
+                        bins=binning, histtype='step',
+                        weights=np.ones(len(muons_table))/num_rings.sum(),
+                        label='all rings in files')
+        axes[1, 1].hist(contained_muons['ring_completeness'], bins=binning,
+                        histtype='step',
+                        weights=np.ones(len(contained_muons))/num_rings.sum(),
+                        label='contained rings')
+        axes[1, 1].set_xlabel('ring completeness')
+        axes[1, 1].legend(loc='best')
+        for j in (0, 1):
+            axes[1, j].set_ylabel('fraction of rings')
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
+        fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
+                         pad=3.0, h_pad=3.0, w_pad=2.0)
+        axes[0, 0].hist(np.sqrt(contained_muons['ring_center_x']**2. +
+                                contained_muons['ring_center_y']**2.),
+                        bins=np.linspace(0., 2., 51))
+        axes[0, 0].set_xlabel('ring center, distance from camera center (m)')
+        axes[0, 0].set_ylabel('number of rings')
+        axes[1, 0].plot(contained_muons['impact_parameter'],
+                           contained_muons['ring_completeness'], 'x')
+        axes[1, 0].set_xlabel('reconstructed impact parameter (m)')
+        axes[1, 0].set_ylabel('ring completeness')
+        axes[0, 1].plot(contained_muons['ring_radius'],
+                        contained_muons['ring_size'], 'x')
+        axes[0, 1].set_xlabel('ring radius (deg)')
+        axes[0, 1].set_ylabel('ring intensity (p.e.)')
+        axes[1, 1].plot(contained_muons['ring_radius'],
+                        contained_muons['ring_width'], 'x')
+        axes[1, 1].set_xlabel('ring radius (deg)')
+        axes[1, 1].set_ylabel('ring width (deg)')
+        axes[0, 2].hist(contained_muons['ring_size'],
+                        bins=np.linspace(0., 4.e3, 41))
+        axes[0, 2].set_xlabel('ring intensity (p.e.)')
+        axes[0, 2].set_ylabel('number of rings')
+        axes[1, 2].hist(contained_muons['ring_width'],
+                        bins=np.linspace(0., 0.3, 61))
+        axes[1, 2].set_xlabel('ring width (deg)')
+        axes[1, 2].set_ylabel('number of rings')
+        pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
+        fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
+        fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
+                         pad=1.0, h_pad=3.0, w_pad=3.0)
+        axes[0, 0].plot(contained_muons['hg_peak_sample'],
+                        contained_muons['lg_peak_sample'], 'x')
+        axes[0, 0].set_xlabel('High gain peak sample in R1 waveform')
+        axes[0, 0].set_ylabel('Low gain peak sample in R1 waveform')
+        binning = np.linspace(-0.5, 38.5, 39)
+        axes[1, 0].hist(contained_muons['hg_peak_sample'], bins=binning,
+                        histtype='step', label='HG')
+        axes[1, 0].hist(contained_muons['lg_peak_sample'], bins=binning,
+                        histtype='step', label='LG')
+        axes[1, 0].set_xlabel('peak sample in R1 waveform')
+        axes[1, 0].set_ylabel('number of rings')
+        axes[1, 0].legend(loc='best')
+        axes[0, 1].hist(contained_muons['muon_efficiency'],
+                        bins=np.linspace(0., 0.5, 51))
+        axes[0, 1].set_xlabel('estimated telescope efficiency for muons')
+        axes[0, 1].set_ylabel('number of rings')
+        axes[1, 1].plot(contained_muons['ring_width'],
+                        contained_muons['muon_efficiency'], 'x')
+        axes[1, 1].set_ylim(0., 0.5)
+        axes[1, 1].set_xlabel('ring width (deg)')
+        axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
+        axes[0, 2].errorbar(subrun_list, mean_effi, yerr=sem_effi, fmt='o',
+                            markersize=6)
+
+        axes[0, 2].set_xlabel('subrun index')
+        axes[0, 2].set_ylabel('estimated telescope efficiency for muons')
+        axes[0, 2].grid(linewidth=0.3, linestyle=':')
+        axes[0, 2].set_ylim(0., 0.5)
+        axes[1, 2].errorbar(subrun_list, mean_width, yerr=sem_width, fmt='o',
+                            markersize=6)
+        axes[1, 2].set_xlabel('subrun index')
+        axes[1, 2].set_ylabel('ring width (deg)')
+        axes[1, 2].grid(linewidth=0.3, linestyle=':')
+        axes[1, 2].set_ylim(0., 0.3)
+        pdf.savefig()
 
 
 def plot_trigger_types(dchecktables, trigger_name, axes):
