@@ -5,6 +5,11 @@ from numba import njit, prange
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Unicode
 
+__all__ = [
+    'PulseTimeCorrection',
+    'get_corr_time_jit'
+    ]
+
 
 high_gain = 0
 low_gain = 1
