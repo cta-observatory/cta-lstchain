@@ -6,7 +6,7 @@ import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Unicode, Path
+from ctapipe.core.traits import  List, Unicode
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 __all__ = [

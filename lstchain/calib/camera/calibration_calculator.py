@@ -95,7 +95,9 @@ class CalibrationCalculator(Component):
         )
 
         msg = "tel_id not the same for all calibration components"
-        assert self.pedestal.tel_id == self.flatfield.tel_id, msg
+        if self.pedestal.tel_id != self.flatfield.tel_id:
+            raise ValueError(msg)
+
 
         self.tel_id = self.flatfield.tel_id
 
