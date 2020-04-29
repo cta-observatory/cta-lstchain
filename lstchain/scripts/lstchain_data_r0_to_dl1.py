@@ -76,7 +76,7 @@ parser.add_argument('--ucts-t0-dragon', action='store', type=float,
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
                           passed, the start-of-the-run timestamp is provided, hence \
-                          Dragon timestmap is not reliable.',
+                          Dragon timestamp is not reliable.',
                     default="NaN"
                     )
 
@@ -93,7 +93,7 @@ parser.add_argument('--ucts-t0-tib', action='store', type=float,
                     help='UCTS timestamp in nsecs, unix format and TAI scale of the \
                           first event of the run with valid timestamp. If none is \
                           passed, the start-of-the-run timestamp is provided, hence \
-                          TIB timestmap is not reliable.',
+                          TIB timestamp is not reliable.',
                     default="NaN"
                     )
 
@@ -116,6 +116,10 @@ args = parser.parse_args()
 
 def main():
     os.makedirs(args.output_dir, exist_ok=True)
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
     output_filename = os.path.join(
