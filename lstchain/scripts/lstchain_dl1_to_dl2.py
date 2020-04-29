@@ -4,14 +4,14 @@
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
 
-- Input: DL1 data file, Trained Random Forests.
+- Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
 Usage:
 
 $> python lstchain_dl1_to_dl2.py 
 --input-file dl1_LST-1.Run02033.0137.h5
---path-models ./
+--path-models ./trained_models
 
 """
 

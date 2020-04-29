@@ -1,11 +1,17 @@
-"""Pipeline for reconstruction of Energy, disp and gamma/hadron
-separation of events stored in a simtelarray file.
-Result is a dataframe with dl2 data.
-Already trained Random Forests are required.
+#!/usr/bin/env python3
 
-Usage:
+"""
+Pipeline to calibrate and compute image parameters at single telescope 
+level for MC.
 
-$> python lst-recopipe arg1 arg2 ...
+- Inputs are simtelarray files and trained Random Forests.
+- Output is a dataframe with DL2 data.
+
+Usage: 
+
+$> python lstchain_mc_r0_to_dl2.py 
+--input-file gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
+--path-models ./trained_models
 
 """
 
@@ -14,40 +20,40 @@ import argparse
 import os
 from distutils.util import strtobool
 
+parser = argparse.ArgumentParser(description="MC Pipeline R0 to DL2.")
+
+# Required arguments
+parser.add_argument('--input-file', '-f', type=str,
+                    dest='datafile',
+                    help='path to the file with simtelarray events',
+                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+
+parser.add_argument('--path-models', '-p', action='store', type=str,
+                    dest='path_models',
+                    help='Path where to find the trained RF',
+                    default='./trained_models')
+
+# Optional argument
+parser.add_argument('--store-dl1', '-s1', action='store', type=lambda x: bool(strtobool(x)),
+                    dest='store_dl1',
+                    help='Boolean. True for storing DL1 file'
+                    'Default=False, use True otherwise',
+                    default=True)
+
+parser.add_argument('--output-dir', '-o', action='store', type=str,
+                    dest='outdir',
+                    help='Path where to store the reco dl2 events',
+                    default='./dl2_data')
+
+parser.add_argument('--config-file', '-c', action='store', type=str,
+                    dest='config_file',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied',
+                    default=None
+                    )
+
+args = parser.parse_args()
+
 def main():
-
-    parser = argparse.ArgumentParser(description="Reconstruct events")
-
-    # Required arguments
-    parser.add_argument('--datafile', '-f', type=str,
-                        dest='datafile',
-                        help='path to the file with simtelarray events',
-                        default=get_dataset_path('gamma_test_large.simtel.gz'))
-
-    parser.add_argument('--pathmodels', '-p', action='store', type=str,
-                        dest='path_models',
-                        help='Path where to find the trained RF',
-                        default='./trained_models')
-
-    # Optional argument
-    parser.add_argument('--store_dl1', '-s1', action='store', type=lambda x: bool(strtobool(x)),
-                        dest='store_dl1',
-                        help='Boolean. True for storing DL1 file'
-                             'Default=False, use True otherwise',
-                        default=True)
-
-    parser.add_argument('--outdir', '-o', action='store', type=str,
-                        dest='outdir',
-                        help='Path where to store the reco dl2 events',
-                        default='./dl2_data')
-
-    parser.add_argument('--config_file', '-conf', action='store', type=str,
-                        dest='config_file',
-                        help='Path to a configuration file. If none is given, a standard configuration is applied',
-                        default=None
-                        )
-
-    args = parser.parse_args()
 
     outdir = os.path.abspath(args.outdir)
     dl1_file = os.path.join(outdir, 'dl1_' + os.path.basename(args.datafile).rsplit('.', 1)[0] + '.h5')

@@ -1,5 +1,13 @@
-"""Pipeline for test the performance of Random Forests.
-4
+#!/usr/bin/env python3
+
+"""
+Pipeline to test train three Random Forests destinated to Energy, disp
+reconstruction and Gamma/Hadron separation and test the performance 
+of Random Forests.
+
+Inputs are DL1 files
+Outputs are the RF trained models
+
 Usage:
 
 $>python lstchain_mc_rfperformance.py
@@ -24,39 +32,39 @@ try:
 except ImportError as e:
     print("ctaplot not installed, some plotting function will be missing")
 
-parser = argparse.ArgumentParser(description="Train Random Forests.")
+parser = argparse.ArgumentParser(description="Train and Apply Random Forests.")
 
 # Required argument
-parser.add_argument('--gammafile', '-fg', type=str,
+parser.add_argument('--input-file-gamma-train', '--g-train', type=str,
                     dest='gammafile',
                     help='path to the dl1 file of gamma events for training')
 
-parser.add_argument('--protonfile', '-fp', type=str,
+parser.add_argument('--input-file-proton-train', '--p-train', type=str,
                     dest='protonfile',
                     help='path to the dl1 file of proton events for training')
 
-parser.add_argument('--gammatest', '-gt', type=str,
+parser.add_argument('--input-file-gamma-test', '--g-test', type=str,
                     dest='gammatest',
                     help='path to the dl1 file of gamma events for test')
 
-parser.add_argument('--protontest', '-pt', type=str,
+parser.add_argument('--input-file-proton-test', '--p-test', type=str,
                     dest='protontest',
                     help='path to the dl1 file of proton events for test')
 
 # Optional arguments
 
-parser.add_argument('--storerf', '-s', action='store', type=bool,
+parser.add_argument('--store-rf', '-s', action='store', type=bool,
                     dest='storerf',
                     help='Boolean. True for storing trained RF in 3 files'
                     'Default=False, any user input will be considered True',
                     default=True)
 
-parser.add_argument('--opath', '-o', action='store', type=str,
+parser.add_argument('--output_dir', '-o', action='store', type=str,
                      dest='path_models',
                      help='Path to store the resulting RF',
                      default='./saved_models/')
 
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config-file', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
