@@ -21,6 +21,16 @@ matrix:
         - CTAPIPE_VERSION="master"
         - CTAPIPE_IO_LST_VERSION="master"
 
+    - python: 3.6
+      env:
+        - CTAPIPE_VERSION="v0.8.0"
+        - CTAPIPE_IO_LST_VERSION="master"
+
+    - python: 3.7
+      env:
+        - CTAPIPE_VERSION="v0.8.0"
+        - CTAPIPE_IO_LST_VERSION="master"
+
 
 before_install:
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
