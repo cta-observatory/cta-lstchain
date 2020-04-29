@@ -33,7 +33,7 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                     help='Path where to store the reco dl2 events',
                     default='./dl1_data/')
 
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None

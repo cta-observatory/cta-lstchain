@@ -29,7 +29,7 @@ parser.add_argument('--input-file', '-f', type=str,
                     )
 
 # Optional arguments
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file for source dependent analysis',
                     default=None

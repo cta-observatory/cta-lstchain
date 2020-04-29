@@ -24,11 +24,11 @@ from lstchain.io.config import read_configuration_file
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
 # Required argument
-parser.add_argument('--input-file-gamma', '--gd1', type=str,
+parser.add_argument('--input-file-gamma', '--fg', type=str,
                     dest='gammafile',
                     help='Path to the dl1 file of gamma events for training')
 
-parser.add_argument('--input-file-proton', '--pd1', type=str,
+parser.add_argument('--input-file-proton', '--fp', type=str,
                     dest='protonfile',
                     help='Path to the dl1 file of proton events for training')
 
@@ -44,7 +44,7 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                      help='Path to store the resulting RF',
                      default='./trained_models/')
 
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None

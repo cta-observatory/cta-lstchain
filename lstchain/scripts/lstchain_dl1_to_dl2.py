@@ -50,7 +50,7 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                      default='./dl2_data')
 
 
-parser.add_argument('--config-file', '-c', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None, required=False)
