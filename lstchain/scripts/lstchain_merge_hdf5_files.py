@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+
+"""
+Merge all HDF5 files resulting 
+from parallel reconstructions present in a 
+directory. Every dataset in the files must be 
+readable with pandas.
+
+- Input: several hdf5 files.
+- Output single hdf5 file.
+
+Usage: 
+
+$> python lstchain_merge_hdf5_files.py
+--input-dir ./
+
+"""
+
 import argparse
 import os
 from distutils.util import strtobool
@@ -5,18 +23,16 @@ from distutils.util import strtobool
 from lstchain.io import get_dataset_keys
 from lstchain.io import smart_merge_h5files, auto_merge_h5files
 
-parser = argparse.ArgumentParser(description="Merge all HDF5 files resulting \
-                                 from parallel reconstructions present in a \
-                                 directory. Every dataset in the files must be \
-                                 readable with pandas.")
+parser = argparse.ArgumentParser(description='Merge HDF5 files')
 
-
-parser.add_argument('--source-dir', '-d', type=str,
+# Required arguments
+parser.add_argument('--input-dir', '-d', type=str,
                     dest='srcdir',
                     help='path to the source directory of files',
                     )
 
-parser.add_argument('--outfile', '-o', action='store', type=str,
+# Optional arguments
+parser.add_argument('--output-file', '-o', action='store', type=str,
                     dest='outfile',
                     help='Path of the resulting merged file',
                     default='merge.h5')
