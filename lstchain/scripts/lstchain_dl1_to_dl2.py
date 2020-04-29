@@ -9,7 +9,9 @@ separation of events stored in a simtelarray file.
 
 Usage:
 
-$> python lstchain_dl1_to_dl2.py arg1 arg2 ...
+$> python lstchain_dl1_to_dl2.py 
+--input-file dl1_LST-1.Run02033.0137.h5
+--path-models ./
 
 """
 
@@ -28,31 +30,31 @@ import numpy as np
 import astropy.units as u
 
 
-parser = argparse.ArgumentParser(description="Reconstruct events")
+parser = argparse.ArgumentParser(description="DL1 to DL2")
 
 # Required arguments
-parser.add_argument('--input_file', '-f', type=str,
+parser.add_argument('--input-file', '-f', type=str,
                     dest='input_file',
                     help='path to a DL1 HDF5 file',
-                    )
+                    default=None, required=True)
 
-parser.add_argument('--path_models', '-p', action='store', type=str,
+parser.add_argument('--path-models', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
                      default='./trained_models')
 
-# Optional argument
-parser.add_argument('--output_dir', '-o', action='store', type=str,
+# Optional arguments
+parser.add_argument('--output-dir', '-o', action='store', type=str,
                      dest='output_dir',
                      help='Path where to store the reco dl2 events',
                      default='./dl2_data')
 
 
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config-file', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+                    default=None, required=False)
+
 
 
 args = parser.parse_args()

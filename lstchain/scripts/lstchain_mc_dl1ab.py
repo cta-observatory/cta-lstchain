@@ -11,7 +11,8 @@ intercept, time_gradient
 
 Usage: 
 
-$> python lstchain_data_r0_to_dl1.py arg1 arg2 ...
+$> python lstchain_mc_dl1ab.py 
+--input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 
 """
 
@@ -32,30 +33,27 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from astropy.table import Table
 
 parser = argparse.ArgumentParser(
-    description="Recompute parameters in a DL1 HDF5 file from calibrated images"
-    "and based on passed config file. The results are written in a new HDF5 "
-    "file."
-    "Updated parameters are : Hillas paramaters, wl, r, leakage, "
-    "n_islands, intercept, time_gradient")
+    description="Recompute DL1b parameters from a DL1a file")
 
 # Required arguments
-parser.add_argument('--input_file', '-f', action='store', type=str,
+parser.add_argument('--input-file', '-f', action='store', type=str,
                     dest='input_file',
-                    help='path to the DL1 file ',
+                    help='path to the DL1a file ',
                     default=None, required=True)
 
-parser.add_argument('--output_file', '-o', action='store', type=str,
+parser.add_argument('--output-file', '-o', action='store', type=str,
                     dest='output_file',
                     help='key for the table of new parameters',
                     default=None, required=True)
 # Optional arguments
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config_file', '--conf', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
+parser.add_argument('--no-image', action='store', 
+                    type=lambda x: bool(strtobool(x)),
                     dest='noimage',
                     help='Boolean. True to remove the images in output file',
                     default=False)

@@ -8,7 +8,8 @@ level for MC.
 
 Usage: 
 
-$> python lstchain_mc_r0_to_dl1.py arg1 arg2 ...
+$> python lstchain_mc_r0_to_dl1.py 
+--input-file gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 
 """
 
@@ -20,18 +21,19 @@ import os
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
-
-parser.add_argument('--input_file', '-f', type=str,
+# Required arguments
+parser.add_argument('--input-file', '-f', type=str,
                     dest='input_file',
                     help='Path to the simtelarray file',
                     default=get_dataset_path('gamma_test_large.simtel.gz'))
 
-parser.add_argument('--output_dir', '-o', action='store', type=str,
+# Optional arguments
+parser.add_argument('--output-dir', '-o', action='store', type=str,
                     dest='output_dir',
                     help='Path where to store the reco dl2 events',
                     default='./dl1_data/')
 
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config-file', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
