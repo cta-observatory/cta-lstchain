@@ -277,10 +277,6 @@ def r0_to_dl1(
     event_iter = iter(source)
     first_event = next(event_iter)
 
-    for telescope_id in first_event.r0.tels_with_data:
-        foclen = first_event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
-        mirror_area = u.Quantity(first_event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
-
     # Write extra information to the DL1 file
     write_array_info(first_event, output_filename)
     if is_simu:
@@ -508,6 +504,8 @@ def r0_to_dl1(
                         # the ucts_trigger_type to the data
                         extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
 
+                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
