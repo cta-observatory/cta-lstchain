@@ -9,6 +9,7 @@
 """
 
 import argparse
+import os
 from pathlib import Path
 from lstchain.io.data_management import *
 import lstchain.visualization.plot_calib as calib

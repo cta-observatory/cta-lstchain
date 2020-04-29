@@ -11,7 +11,7 @@ from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.io.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
-from lstchain.calib.camera import CameraR0Calibrator
+from lstchain.calib.camera.r0 import CameraR0Calibrator
 from lstchain.io.lstcontainers import LSTEventType
 
 __all__ = [
