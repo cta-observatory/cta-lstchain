@@ -115,13 +115,13 @@ def main():
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
 
-    dl1_keys = get_dataset_keys(args.datafile)
+    dl1_keys = get_dataset_keys(args.input_file)
     dl1_keys.remove(dl1_params_lstcam_key)
     dl1_keys.remove(dl1_images_lstcam_key)
     if config['source_dependent']:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    with open_file(args.datafile) as file:
+    with open_file(args.input_file) as file:
         for k in dl1_keys:
             if '/_i_' not in k:
                 table = Table(file.root[k][:])
