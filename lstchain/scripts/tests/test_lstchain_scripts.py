@@ -1,3 +1,5 @@
+import matplotlib as mpl
+mpl.use('Agg')
 import pytest
 import pandas as pd
 import os
@@ -46,14 +48,32 @@ def test_add_source_dependent_parameters():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-def test_lstchain_trainpipe():
+def test_lstchain_mc_trainpipe():
     gamma_file = dl1_file
     proton_file = dl1_file
 
     run_program(
         'lstchain_mc_trainpipe',
-        '-fg', gamma_file,
-        '-fp', proton_file,
+        '--fg', gamma_file,
+        '--fp', proton_file,
+        '-o', output_dir
+    )
+
+    assert os.path.exists(file_model_gh_sep)
+    assert os.path.exists(file_model_disp)
+    assert os.path.exists(file_model_energy)
+
+@pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
+def test_lstchain_mc_rfperformance():
+    gamma_file = dl1_file
+    proton_file = dl1_file
+
+    run_program(
+        'lstchain_mc_rfperformance',
+        '--g-train', gamma_file,
+        '--g-test', gamma_file,
+        '--p-train', proton_file,
+        '--p-test', proton_file,
         '-o', output_dir
     )
 
@@ -76,7 +96,10 @@ def test_lstchain_dl1_to_dl2():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_mc_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab', dl1_file, output_file)
+    run_program('lstchain_mc_dl1ab', 
+                '-f', dl1_file, 
+                '-o', output_file,
+                )
     assert os.path.exists(output_file)
 
 
