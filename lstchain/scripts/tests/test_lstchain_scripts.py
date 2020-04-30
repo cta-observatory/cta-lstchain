@@ -41,14 +41,6 @@ def test_lstchain_mc_r0_to_dl1():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> a010dd5... reverse test to its original order
-=======
->>>>>>> a010dd5... reverse test to its original order
 def test_add_source_dependent_parameters():
     run_program('lstchain_add_source_dependent_parameters', '-f', dl1_file)
     dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
@@ -56,18 +48,7 @@ def test_add_source_dependent_parameters():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-<<<<<<< HEAD
-<<<<<<< HEAD
 def test_lstchain_mc_trainpipe():
-=======
-=======
->>>>>>> 6585052... move src_dependent test to the endof the file
-=======
->>>>>>> a010dd5... reverse test to its original order
-=======
->>>>>>> a010dd5... reverse test to its original order
-def test_lstchain_trainpipe():
->>>>>>> 6585052... move src_dependent test to the endof the file
     gamma_file = dl1_file
     proton_file = dl1_file
 
