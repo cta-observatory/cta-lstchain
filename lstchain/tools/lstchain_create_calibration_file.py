@@ -136,6 +136,9 @@ class CalibrationHDF5Writer(Tool):
         new_ff = False
         end_of_file = False
 
+        # skip the first events which are badly drs4 corrected
+        events_to_skip = 1000
+
         try:
             self.log.debug(f"Start loop")
             for count, event in enumerate(self.eventsource):
@@ -169,12 +172,15 @@ class CalibrationHDF5Writer(Tool):
                 # correct for low level calibration
                 self.r0calibrator.calibrate(event)
 
+                # skip first events which are badly drs4 corrected
+                if not self.simulation and count < events_to_skip:
+                    continue
+
                 # reject event without trigger type
                 if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
                     continue
 
                 # if pedestal event
-
                 if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
