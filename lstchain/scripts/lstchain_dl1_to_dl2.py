@@ -127,9 +127,9 @@ def main():
 
     with open_file(args.input_file) as file:
         for k in dl1_keys:
-            if '/_i_' not in k:
-                table = Table(file.root[k][:])
-                table.write(output_file, path=k, append=True)
+            #if '/_i_' not in k:
+            table = Table(file.root[k][:])
+            table.write(output_file, path=k, append=True)
 
     write_dl2_dataframe(dl2.astype(float), output_file)
 
