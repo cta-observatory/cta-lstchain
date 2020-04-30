@@ -55,6 +55,8 @@ from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
 
+logger = logging.getLogger(__name__)
+
 
 __all__ = [
     'get_dl1',
@@ -179,9 +181,7 @@ def r0_to_dl1(
     calibration_path: Path to the file with calibration constants and
         pedestals
     time_calibration_path: Path to the DRS4 time correction file
-        pointing_file_path: path to the Drive log with the pointing information
-        Arguments below are just temporal and will be removed whenever UCTS+EvB
-        is proved to stably and reliably provide timestamps.
+    pointing_file_path: path to the Drive log with the pointing information
     ucts_t0_dragon: first valid ucts_time
     dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
     ucts_t0_tib: first valid ucts_time for the first valid TIB counter
@@ -192,11 +192,11 @@ def r0_to_dl1(
 
     """
     if output_filename is None:
-        if (input_filename.startswith('LST')):
+        if input_filename.startswith('LST'):
             output_filename = (
-                'dl1_' + os.path.basename(input_filename).split('.',5)[0] + '.' 
-                + os.path.basename(input_filename).split('.',5)[2] + '.' 
-                + os.path.basename(input_filename).split('.',5)[3] + '.h5'
+                'dl1_' + os.path.basename(input_filename).split('.', 5)[0] + '.'
+                + os.path.basename(input_filename).split('.', 5)[2] + '.'
+                + os.path.basename(input_filename).split('.', 5)[3] + '.h5'
                 )
         else:
             p = Path(input_filename)
@@ -227,7 +227,7 @@ def r0_to_dl1(
     min_pe_for_muon_t_calc = 10.
 
     # Dictionary to store muon ring parameters
-    muon_parameters  = create_muon_table()
+    muon_parameters = create_muon_table()
 
     if not is_simu:
 
@@ -329,7 +329,9 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
-        ### EVENT LOOP ###
+        first_valid_ucts = None
+        first_valid_ucts_tib = None
+
         for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
@@ -400,9 +402,9 @@ def r0_to_dl1(
 
                 try:
                     dl1_filled = get_dl1(event, telescope_id,
-                                         dl1_container = dl1_container,
-                                         custom_config = config,
-                                         use_main_island = True)
+                                         dl1_container=dl1_container,
+                                         custom_config=config,
+                                         use_main_island=True)
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -431,30 +433,80 @@ def r0_to_dl1(
                         # as the reference point. For the time being, the three TS
                         # are stored in the DL1 files for checking purposes.
 
-                        ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
-
                         module_id = 82  # Get counters from the central Dragon module
 
                         if math.isnan(ucts_t0_dragon) and math.isnan(dragon_counter0) \
-                           and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
+                                and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
                             # Dragon/TIB timestamps not based on a valid absolute reference timestamp
-                            dragon_time = (event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
 
-                            tib_time = (event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+                            dragon_time = (
+                                    event.lst.tel[telescope_id].svc.date +
+                                    event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
+                            )
+
+                            tib_time = (
+                                    event.lst.tel[telescope_id].svc.date +
+                                    event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
+                            )
+
+                            if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
+                                # UCTS presence flag is OK
+                                ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+
+                                if first_valid_ucts is None:
+                                    first_valid_ucts = ucts_time
+
+                                    initial_dragon_counter = (
+                                            event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                            event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
+                                    )
+                                    logger.info(
+                                        f"Dragon timestamps not based on a valid absolute reference timestamp. "
+                                        f"Consider using the following initial values \n"
+                                        f"Event ID: {event.r0.event_id}, "
+                                        f"First valid UCTS timestamp: {first_valid_ucts:.9f} s, "
+                                        f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
+                                    )
+
+                                if first_event.lst.tel[1].evt.extdevices_presence & 1 \
+                                        and first_valid_ucts_tib is None:
+                                    # Both TIB and UCTS presence flags are OK
+                                    first_valid_ucts_tib = ucts_time
+
+                                    initial_tib_counter = (
+                                            event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                            event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
+                                    )
+                                    logger.info(
+                                        f"TIB timestamps not based on a valid absolute reference timestamp. "
+                                        f"Consider using the following initial values \n"
+                                        f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
+                                        f"the first valid TIB counter: {first_valid_ucts_tib:.9f} s, "
+                                        f"corresponding TIB counter {initial_tib_counter:.9f} s"
+                                    )
+                            else:
+                                ucts_time = math.nan
 
                         else:
-                            # Dragon/TIB timestamps based on a valid absolute reference timestamp
-                            dragon_time = ((ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10**(-7))
+                            # Dragon/TIB timestamps based on a valid absolute reference UCTS timestamp
+                            dragon_time = (
+                                    (ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
+                                    event.lst.tel[telescope_id].evt.pps_counter[module_id] +
+                                    event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
+                            )
 
-                            tib_time = ((ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10**(-7))
+                            tib_time = (
+                                    (ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
+                                    event.lst.tel[telescope_id].evt.tib_pps_counter +
+                                    event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
+                            )
+                            if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
+                                # UCTS presence flag is OK
+                                ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+                            else:
+                                ucts_time = math.nan
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
                         ucts_time_utc = unix_tai_to_utc(ucts_time)
@@ -486,7 +538,6 @@ def r0_to_dl1(
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
-
                         # Until the TIB trigger_type is fully reliable, we also add
                         # the ucts_trigger_type to the data
                         dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
@@ -494,13 +545,9 @@ def r0_to_dl1(
                     dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
 
-                    # info not available in data
-                    # dl1_container.num_trig_pix = calibrated_event.r0.tel[telescope_id].num_trig_pix
-                    # dl1_container.trig_pix_id = calibrated_event.r0.tel[telescope_id].trig_pix_id
-
                     # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
-                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m**2)
+                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
@@ -532,7 +579,7 @@ def r0_to_dl1(
                         if tag_pix_thr(image):
 
                             # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                            numsamples = event.r1.tel[telescope_id].waveform.shape[2] # not necessarily the same as in r0!
+                            numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
                             bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                             bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
                             # Now set to 0 all samples in unreliable pixels. Important for global peak
@@ -565,12 +612,11 @@ def r0_to_dl1(
                                 #                      mirror_area, True, './') # (test) plot muon rings as png files
 
                                 # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:,image>min_pe_for_muon_t_calc,:]
+                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
                                 stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
                                 # stacked waveforms from all bright pixels; shape (ngains, nsamples)
                                 hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
-
 
                             if good_ring:
                                 fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
@@ -578,14 +624,13 @@ def r0_to_dl1(
                                                 size_outside_ring, mean_pixel_charge_around_ring,
                                                 hg_peak_sample, lg_peak_sample)
 
-
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
                             and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
                             and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
-                        writer.write(table_name = f'simulation/{tel_name}',
-                                     containers = [event.mc.tel[telescope_id], extra_im]
+                        writer.write(table_name=f'simulation/{tel_name}',
+                                     containers=[event.mc.tel[telescope_id], extra_im]
                                      )
 
 
@@ -598,9 +643,14 @@ def r0_to_dl1(
                                    event.mon.tel[tel_id],
                                    new_ped=True, new_ff=True)
 
+    if first_valid_ucts is None:
+        logger.warning("Not valid UCTS timestamp found")
+
+    if first_valid_ucts_tib is None:
+        logger.warning("Not valid TIB counter value found")
 
     if is_simu:
-        ### Reconstruct source position from disp for all events and write the result in the output file
+        # Reconstruct source position from disp for all events and write the result in the output file
         for tel_name in ['LST_LSTCam']:
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
             dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
@@ -609,16 +659,10 @@ def r0_to_dl1(
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
         if source.max_events is None:
-            write_simtel_energy_histogram(source, output_filename, obs_id = event.dl0.obs_id, 
-                                          metadata = metadata)
+            write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
+                                          metadata=metadata)
     else:
-        dir = os.path.dirname(output_filename)
-        name = os.path.basename(output_filename)
-        k = name.find('Run')
-        muon_output_filename = name[0:name.find('LST-')+5] + '.' + \
-                               name[k:k+13] + '.fits'
-    
-        muon_output_filename =  dir+'/'+muon_output_filename.replace("dl1", "muons")
+        muon_output_filename = output_filename.replace("dl1", "muons").replace('LST-1.1', 'LST-1').replace('.h5', '')
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
@@ -638,7 +682,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     table_path: path to the parameters table in the file
     focal: focal of the telescope
     """
-    df = pd.read_hdf(dl1_file, key = table_path)
+    df = pd.read_hdf(dl1_file, key=table_path)
 
     source_pos_in_camera = sky_to_camera(df.mc_alt.values * u.rad,
                                          df.mc_az.values * u.rad,
@@ -651,7 +695,7 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
                                 source_pos_in_camera.x,
                                 source_pos_in_camera.y)
 
-    with tables.open_file(dl1_file, mode = "a") as file:
+    with tables.open_file(dl1_file, mode="a") as file:
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'disp_dx', disp_parameters[0].value)
         tab = file.root[table_path]
