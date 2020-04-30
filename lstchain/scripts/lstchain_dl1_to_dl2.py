@@ -3,7 +3,6 @@
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
-
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
@@ -15,19 +14,28 @@ $> python lstchain_dl1_to_dl2.py
 
 """
 
-from lstchain.reco import dl1_to_dl2
-from sklearn.externals import joblib
 import argparse
+import astropy.units as u
+import numpy as np
 import os
-import shutil
 import pandas as pd
 
+from tables import open_file
+from sklearn.externals import joblib
 from lstchain.reco.utils import filter_events, impute_pointing
-from lstchain.io import read_configuration_file, standard_config, replace_config
-from lstchain.io import write_dl2_dataframe
-from lstchain.io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
-import numpy as np
-import astropy.units as u
+from lstchain.reco import dl1_to_dl2
+from lstchain.io import (
+    read_configuration_file,
+    standard_config,
+    replace_config,
+    write_dl2_dataframe,
+    get_dataset_keys,
+)
+from lstchain.io.io import (
+    dl1_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
+    dl1_images_lstcam_key
+)
 
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -73,7 +81,11 @@ def main():
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        data = pd.concat([data, pd.read_hdf(data, key=dl1_params_src_dep_lstcam_key)], axis=1)
+        data_src_dep = pd.read_hdf(args.datafile, key=dl1_params_src_dep_lstcam_key)
+        data_src_dep = data_src_dep.set_index('index', drop=True)
+        data = pd.concat([data, data_src_dep], axis=1)
+
+
   
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
@@ -102,9 +114,33 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
+    if os.path.exists(output_file):
+        raise IOError(output_file + ' exists, exiting.')
 
-    shutil.copyfile(args.input_file, output_file)
-    write_dl2_dataframe(dl2.astype(float), output_file)
+    dl1_keys = get_dataset_keys(args.input_file)
+    dl1_keys.remove(dl1_images_lstcam_key)
+    dl1_keys.remove(dl1_params_lstcam_key)
+
+    if config['source_dependent']:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    with open_file(args.input_file, 'r') as h5in:
+        with open_file(output_file, 'a') as h5out:
+
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
+
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
 
 
 if __name__ == '__main__':
