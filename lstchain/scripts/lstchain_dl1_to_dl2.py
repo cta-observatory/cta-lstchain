@@ -3,7 +3,6 @@
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
-
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
@@ -120,17 +119,23 @@ def main():
         raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
-    dl1_keys.remove(dl1_params_lstcam_key)
-    dl1_keys.remove(dl1_images_lstcam_key)
-    if config['source_dependent']:
-        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+    with open_file(args.input_file, 'r') as h5in:
+        with open_file(output_file, 'a') as h5out:
 
-    with open_file(args.input_file) as file:
-        for k in dl1_keys:
-            table = Table(file.root[k][:])
-            table.write(output_file, path=k, append=True)
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
 
-    write_dl2_dataframe(dl2.astype(float), output_file)
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
 
 
 if __name__ == '__main__':
