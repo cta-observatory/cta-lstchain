@@ -21,7 +21,6 @@ import os
 import pandas as pd
 
 from tables import open_file
-from astropy.table import Table
 from sklearn.externals import joblib
 from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.reco import dl1_to_dl2
@@ -119,6 +118,10 @@ def main():
         raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
+    dl1_keys.remove(dl1_images_lstcam_key)
+    dl1_keys.remove(dl1_params_lstcam_key)
+    dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
     with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
 
