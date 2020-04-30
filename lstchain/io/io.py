@@ -41,6 +41,7 @@ __all__ = ['read_simu_info_hdf5',
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
+dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 
 
 
@@ -379,7 +380,8 @@ def write_array_info(event, output_filename):
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
             camera_name = str(camera)
-            with tables.open_file(output_filename, mode='r') as f:
+
+            with tables.open_file(output_filename, mode='a') as f:
                 telescope_chidren = f.root['instrument/telescope']._v_children.keys()
                 if 'camera' in telescope_chidren:
                     cameras_name = f.root['instrument/telescope/camera']._v_children.keys()
@@ -389,6 +391,7 @@ def write_array_info(event, output_filename):
                             f'camera {camera_name} seems to be already present in the h5 file.'
                         )
                         continue
+
             camera.to_table().write(
                 output_filename,
                 path=f'/instrument/telescope/camera/{camera_name}',
@@ -570,7 +573,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
 
 
-def write_dataframe(dataframe, outfile, table_path):
+def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -578,14 +581,21 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    table_path: str - path to the table to write in the HDF5 file
+    table_path: str
+        path to the table to write in the HDF5 file
     """
-    with pd.HDFStore(outfile, mode='a') as store:
+    if not table_path.startswith('/'):
+        table_path = '/' + table_path
+
+    with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.append(path, dataframe,
-                     format='table',
-                     data_columns=True)
-        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+        f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+        )
 
 
 def write_dl2_dataframe(dataframe, outfile):

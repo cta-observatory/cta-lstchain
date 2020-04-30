@@ -41,16 +41,20 @@ setup(
     py_modules='version',
     install_requires=[
         'astropy',
-        'ctapipe',
+        'ctapipe~=0.7.0',
+        'eventio~=1.0',
         'gammapy>=0.17',
         'h5py',
+        'matplotlib',
         'numba',
         'numpy',
         'pandas',
         'scipy',
         'seaborn',
+        'sklearn',
         'tables',
         'joblib',
+        'traitlets',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']

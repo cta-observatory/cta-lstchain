@@ -1,55 +1,70 @@
-"""Pipeline for reconstruction of Energy, disp and gamma/hadron
+#!/usr/bin/env python3
+
+"""
+Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a simtelarray file.
-Result is a dataframe with dl2 data.
-Already trained Random Forests are required.
+- Input: DL1 files and trained Random Forests.
+- Output: DL2 data file.
 
 Usage:
 
-$> python lst-recopipe arg1 arg2 ...
+$> python lstchain_dl1_to_dl2.py 
+--input-file dl1_LST-1.Run02033.0137.h5
+--path-models ./trained_models
 
 """
 
-from lstchain.reco import dl1_to_dl2
 import joblib
 import argparse
-import os
-import shutil
-import pandas as pd
-from lstchain.reco.utils import filter_events, impute_pointing
-from lstchain.io import read_configuration_file, standard_config, replace_config
-from lstchain.io import write_dl2_dataframe
-from lstchain.io.io import dl1_params_lstcam_key
-import numpy as np
 import astropy.units as u
+import numpy as np
+import os
+import pandas as pd
+from tables import open_file
+from lstchain.reco.utils import filter_events, impute_pointing
+from lstchain.reco import dl1_to_dl2
+from lstchain.io import (
+    read_configuration_file,
+    standard_config,
+    replace_config,
+    write_dl2_dataframe,
+    get_dataset_keys,
+)
+from lstchain.io.io import (
+    dl1_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
+    dl1_images_lstcam_key
+)
 
-parser = argparse.ArgumentParser(description="Reconstruct events")
+
+parser = argparse.ArgumentParser(description="DL1 to DL2")
 
 # Required arguments
-parser.add_argument('--datafile', '-f', type=str,
-                    dest='datafile',
+parser.add_argument('--input-file', '-f', type=str,
+                    dest='input_file',
                     help='path to a DL1 HDF5 file',
-                    )
+                    default=None, required=True)
 
-parser.add_argument('--pathmodels', '-p', action='store', type=str,
+parser.add_argument('--path-models', '-p', action='store', type=str,
                      dest='path_models',
                      help='Path where to find the trained RF',
                      default='./trained_models')
 
-# Optional argument
-parser.add_argument('--outdir', '-o', action='store', type=str,
-                     dest='outdir',
+# Optional arguments
+parser.add_argument('--output-dir', '-o', action='store', type=str,
+                     dest='output_dir',
                      help='Path where to store the reco dl2 events',
                      default='./dl2_data')
 
 
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+                    default=None, required=False)
+
+
 
 args = parser.parse_args()
-
 
 def main():
 
@@ -62,8 +77,15 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    data = pd.read_hdf(args.datafile, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
+    if config['source_dependent']:
+        data_src_dep = pd.read_hdf(args.datafile, key=dl1_params_src_dep_lstcam_key)
+        data_src_dep = data_src_dep.set_index('index', drop=True)
+        data = pd.concat([data, data_src_dep], axis=1)
+
+
+  
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
             and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
@@ -74,7 +96,6 @@ def main():
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
     data = filter_events(data, filters=config["events_filters"])
-
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -89,11 +110,36 @@ def main():
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
-    os.makedirs(args.outdir, exist_ok=True)
-    outfile = args.outdir + '/dl2_' + os.path.basename(args.datafile)
+    os.makedirs(args.output_dir, exist_ok=True)
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
-    shutil.copyfile(args.datafile, outfile)
-    write_dl2_dataframe(dl2.astype(float), outfile)
+    if os.path.exists(output_file):
+        raise IOError(output_file + ' exists, exiting.')
+
+    dl1_keys = get_dataset_keys(args.input_file)
+    dl1_keys.remove(dl1_images_lstcam_key)
+    dl1_keys.remove(dl1_params_lstcam_key)
+
+    if config['source_dependent']:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    with open_file(args.input_file, 'r') as h5in:
+        with open_file(output_file, 'a') as h5out:
+
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
+
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
 
 
 if __name__ == '__main__':
