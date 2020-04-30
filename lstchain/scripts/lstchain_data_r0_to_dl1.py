@@ -117,6 +117,7 @@ args = parser.parse_args()
 def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
+
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
