@@ -41,11 +41,12 @@ __all__ = [
     'unix_tai_to_utc',
 ]
 
-
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)  # position of the LST1
+# position of the LST1
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
+INVALID_TIME = UCTS_EPOCH
 
 
 def alt_to_theta(alt):
@@ -477,4 +478,15 @@ def unix_tai_to_utc(timestamp):
     Transform unix time from TAI to UTC scale considering the leap seconds
     by adding the timestamp in seconds to the epoch value.
     """
-    return UCTS_EPOCH + u.Quantity(timestamp, u.s, copy=False)
+    scalar = np.isscalar(timestamp)
+
+    timestamp = u.Quantity(timestamp, u.s, ndmin=1)
+    invalid = ~np.isfinite(timestamp)
+    timestamp[invalid] = 0
+
+    t = UCTS_EPOCH + timestamp
+
+    if scalar:
+        return t[0]
+
+    return t

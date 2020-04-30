@@ -56,7 +56,18 @@ def test_impute_pointing():
 
 
 def test_unix_tai_to_utc():
+    from lstchain.reco.utils import unix_tai_to_utc, INVALID_TIME
+
     timestamp_tai = 1579376359.3225002
     leap_seconds = 37
-    utc_time = utils.unix_tai_to_utc(timestamp_tai)
-    np.testing.assert_allclose(utc_time.unix, timestamp_tai - leap_seconds, rtol=1e-12)
+    utc_time = unix_tai_to_utc(timestamp_tai)
+
+    assert np.isclose(utc_time.unix, timestamp_tai - leap_seconds)
+
+    # test nan values
+    assert unix_tai_to_utc(np.nan) == INVALID_TIME
+
+    # test multiple values including nans
+    timestamps = np.array([timestamp_tai, np.nan])
+    assert np.isclose(unix_tai_to_utc(timestamps)[0].unix, timestamp_tai - leap_seconds)
+    assert unix_tai_to_utc(timestamps)[1] == INVALID_TIME
