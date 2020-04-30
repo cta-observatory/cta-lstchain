@@ -116,8 +116,8 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
-    if os.path.exists(outfile):
-        raise IOError(outfile + ' exists, exiting.')
+    if os.path.exists(output_file):
+        raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
     dl1_keys.remove(dl1_params_lstcam_key)
@@ -127,16 +127,10 @@ def main():
 
     with open_file(args.input_file) as file:
         for k in dl1_keys:
-            if '/_i_' not in k:
-                table = Table(file.root[k][:])
-                table.write(outfile, path=k, append=True)
+            table = Table(file.root[k][:])
+            table.write(output_file, path=k, append=True)
 
-<<<<<<< HEAD
-    shutil.copyfile(args.input_file, output_file)
     write_dl2_dataframe(dl2.astype(float), output_file)
-=======
-    write_dl2_dataframe(dl2.astype(float), outfile)
->>>>>>> 8f77431... strip images and DL1 parameters from DL2 files
 
 
 if __name__ == '__main__':
