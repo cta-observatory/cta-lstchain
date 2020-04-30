@@ -442,7 +442,7 @@ def r0_to_dl1(
                                         f"corresponding TIB counter {initial_tib_counter:.9f} s"
                                     )
                             else:
-                                ucts_time = math.nan
+                                ucts_time = 0.
 
                         else:
                             # Dragon/TIB timestamps based on a valid absolute reference UCTS timestamp
@@ -461,7 +461,7 @@ def r0_to_dl1(
                                 # UCTS presence flag is OK
                                 ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
                             else:
-                                ucts_time = math.nan
+                                ucts_time = 0.
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
                         ucts_time_utc = unix_tai_to_utc(ucts_time)
@@ -605,7 +605,8 @@ def r0_to_dl1(
             write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
                                           metadata=metadata)
     else:
-        muon_output_filename = output_filename.replace("dl1", "muons").replace('LST-1.1', 'LST-1').replace('.h5', '')
+        muon_output_filename = output_filename.replace("dl1_LST", "muons_LST").\
+            replace('LST-1.1', 'LST-1').replace('.h5', '')
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
