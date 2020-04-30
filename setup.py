@@ -42,7 +42,6 @@ setup(
     install_requires=[
         'astropy',
         'ctapipe~=0.7.0',
-        'distutils',
         'eventio~=1.0',
         'gammapy>=0.17',
         'h5py',
