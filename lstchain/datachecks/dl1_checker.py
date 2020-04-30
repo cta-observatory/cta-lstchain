@@ -52,10 +52,6 @@ def check_dl1(filenames, output_path, max_cores=4):
 
     """
 
-    # to allow the use of multi-processing in linux:
-    if platform == 'linux':
-        os.system("taskset -p 0xff %d" % os.getpid())
-
     # obtain run number, and first part of file name, from first file:
     # NOTE: this assumes the string RunXXXXX.YYYY
     filename = filenames[0]
@@ -428,10 +424,12 @@ def plot_datacheck(datacheck_filename, out_path=None):
             for table in dl1dcheck_tables:
                 contents = np.sum(table.col(hist), axis=0)
                 axes.flatten()[i].hist(bins[:-1], bins, histtype='step',
-                                       weights=contents/contents.sum())
+                                       weights=contents/contents.sum(),
+                                       label=table.name)
             axes.flatten()[i].set_yscale('log')
             axes.flatten()[i].set_xscale('log')
             axes.flatten()[i].set_ylabel('fraction of events of the given type')
+        axes[0, 0].legend(loc='best')
         axes[0, 0].set_xlabel('Pixel charge (p.e.)')
         axes[0, 1].set_xlabel('Image intensity (p.e.)')
         axes[1, 0].set_xlabel('Number of pixels in image')
@@ -677,7 +675,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         axes[0, 1].plot(subrun_list, muon_rate, '-', label='all rings in files')
         axes[0, 1].plot(subrun_list, contained_muon_rate, '-',
                         label='contained rings')
-        axes[0, 1].set_ylabel('rate of muon rings')
+        axes[0, 1].set_ylabel('rate of muon rings (events/s)')
         axes[0, 1].legend(loc='best')
         for j in (0, 1):
             axes[0, j].set_xlabel('subrun index')
@@ -856,7 +854,7 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     axes[0, 2].set_yscale('log')
     axes[0, 2].hist(mean[~np.isnan(mean)], bins=200)
     axes[0, 2].set_xlabel(labels[0])
-    axes[0, 2].set_ylabel('Number of ixels')
+    axes[0, 2].set_ylabel('Number of pixels')
     # now the standard deviation:
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
