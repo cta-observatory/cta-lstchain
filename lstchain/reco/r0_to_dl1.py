@@ -49,7 +49,7 @@ from ..io.io import add_column_table
 
 from . import disp
 from .utils import sky_to_camera
-from .utils import unix_tai_to_utc
+from .utils import unix_tai_to_time
 from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
 from ..pointing import PointingPosition
@@ -464,9 +464,9 @@ def r0_to_dl1(
                                 ucts_time = math.nan
 
                         # FIXME: directly use unix_tai format whenever astropy v4.1 is out
-                        ucts_time_utc = unix_tai_to_utc(ucts_time)
-                        dragon_time_utc = unix_tai_to_utc(dragon_time)
-                        tib_time_utc = unix_tai_to_utc(tib_time)
+                        ucts_time_utc = unix_tai_to_time(ucts_time)
+                        dragon_time_utc = unix_tai_to_time(dragon_time)
+                        tib_time_utc = unix_tai_to_time(tib_time)
 
                         dl1_container.ucts_time = ucts_time_utc.unix
                         dl1_container.dragon_time = dragon_time_utc.unix

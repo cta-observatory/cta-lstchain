@@ -38,7 +38,7 @@ __all__ = [
     'linear_imputer',
     'impute_pointing',
     'clip_alt',
-    'unix_tai_to_utc',
+    'unix_tai_to_time',
 ]
 
 # position of the LST1
@@ -473,10 +473,11 @@ def clip_alt(alt):
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
 
 
-def unix_tai_to_utc(timestamp):
+def unix_tai_to_time(timestamp):
     """
-    Transform unix time from TAI to UTC scale considering the leap seconds
-    by adding the timestamp in seconds to the epoch value.
+    Create an astropy.Time object for timestamps in unix tai format.
+    Unix tai format mean seconds since 1970-01-01T00:00 TAI as opposed
+    to 1970-01-01T00:00 UTC for the usual unix timestamps.
     """
     scalar = np.isscalar(timestamp)
 
