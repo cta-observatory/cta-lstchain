@@ -33,7 +33,6 @@ from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from scipy.stats import poisson, sem
-from sys import platform
 
 
 def check_dl1(filenames, output_path, max_cores=4):
@@ -464,9 +463,9 @@ def plot_datacheck(datacheck_filename, out_path=None):
             # total number of entries for this event type:
             norm = table.col('num_events').sum()
             fraction = np.array(pix_events)/norm
-            for i, colname in enumerate(colnames):
+            for i, frac in enumerate(fraction):
                 zscale = 'log' if threshold[i] < 200 else 'lin'
-                cam = CameraDisplay(engineering_geom, fraction[i],
+                cam = CameraDisplay(engineering_geom, frac,
                                     ax=axes.flatten()[i], norm=zscale,
                                     title='Fraction of >' + str(threshold[i]) +
                                           ' p.e. pulses')
@@ -876,7 +875,7 @@ def write_error_page(tablename, pagesize):
     -------
     None
     """
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
+    _, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
     plt.text(0.5, 0.5, 'Sorry, no ' + tablename + ' to plot here!',
              fontsize=44, horizontalalignment='center',
              verticalalignment='center')

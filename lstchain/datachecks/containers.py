@@ -4,6 +4,7 @@ Containers for data check
 
 __all__ = [
     'DL1DataCheckContainer',
+    'count_trig_types',
     'DL1DataCheckHistogramBins',
 ]
 
@@ -106,9 +107,9 @@ class DL1DataCheckContainer(Container):
                             table['dragon_time'][0]
         self.num_events = mask.sum()
         self.ucts_trigger_type = \
-            self.count_trig_types(table['ucts_trigger_type'][mask])
+            count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
-            self.count_trig_types(table['trigger_type'][mask])
+            count_trig_types(table['trigger_type'][mask])
         self.mean_alt_tel = np.mean(table['alt_tel'])
         self.mean_az_tel = np.mean(table['az_tel'])
 
@@ -264,27 +265,25 @@ class DL1DataCheckContainer(Container):
                      bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
 
-    def count_trig_types(self, array):
-        """
-        Counts the trigger of each type inside array
+def count_trig_types(array):
+    """
+    Counts the trigger of each type inside array
 
-        Parameters
-        ----------
-        array: ndarray of event-wise trigger types
+    Parameters
+    ----------
+    array: ndarray of event-wise trigger types
 
-        Returns
-        -------
-        an ndarray of shape (10, 2) [i, j] means we found j events of type i
+    Returns
+    -------
+    an ndarray of shape (10, 2) [i, j] means we found j events of type i
 
-        """
-        ucts_trig_types, counts = np.unique(array, return_counts=True)
-        # write the different trigger types, then the number of events of
-        # each type. Pad to 10 entries (more than enough for trigger types):
-        ucts_trig_types = \
-            np.append(ucts_trig_types, (10-len(ucts_trig_types))*[0])
-        counts = np.append(counts, (10 - len(counts)) * [0])
-        return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
-
+    """
+    ucts_trig_types, counts = np.unique(array, return_counts=True)
+    # write the different trigger types, then the number of events of
+    # each type. Pad to 10 entries (more than enough for trigger types):
+    ucts_trig_types = np.append(ucts_trig_types, (10-len(ucts_trig_types))*[0])
+    counts = np.append(counts, (10 - len(counts)) * [0])
+    return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
 
 class DL1DataCheckHistogramBins(Container):
 
