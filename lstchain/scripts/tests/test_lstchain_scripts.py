@@ -15,6 +15,25 @@ file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
 
 
+ALL_SCRIPTS = [
+    'lstchain_add_source_dependent_parameters',
+    'lstchain_data_create_pedestal_file',
+    'lstchain_dl1_muon_analysis',
+    'lstchain_mc_r0_to_dl1',
+    'lstchain_mc_sensitivity',
+    'lstchain_data_create_calibration_file',
+    'lstchain_data_create_time_calibration_file',
+    'lstchain_dl1_to_dl2',
+    'lstchain_mc_r0_to_dl2',
+    'lstchain_mc_trainpipe',
+    'lstchain_data_create_drs4_pedestal_file',
+    'lstchain_data_r0_to_dl1',
+    'lstchain_mc_dl1ab',
+    'lstchain_mc_rfperformance',
+    'lstchain_merge_hdf5_files',
+]
+
+
 def run_program(*args):
     result = sp.run(
         args,
@@ -26,6 +45,12 @@ def run_program(*args):
             f'Running {args[0]} failed with return code {result.returncode}'
             f', output: \n {result.stdout}'
         )
+
+
+@pytest.mark.parametrize('script', ALL_SCRIPTS)
+def test_all_help(script):
+    '''Test for all scripts if at least the help works'''
+    run_program(script, '--help')
 
 
 def test_lstchain_mc_r0_to_dl1():
