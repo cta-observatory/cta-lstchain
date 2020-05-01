@@ -34,7 +34,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..paths import parse_r0_filename, run_to_dl1_filename, run_to_muon_filename
+from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 
 
 from ..io import (
@@ -173,8 +173,8 @@ def r0_to_dl1(
     ----------
     input_filename: str
         path to input file, default: `gamma_test_large.simtel.gz`
-    output_filename: str
-        path to output file, default: `./` + basename(input_filename)
+    output_filename: str or None
+        path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
     pedestal_path: Path to the DRS4 pedestal file
     calibration_path: Path to the file with calibration constants and
@@ -195,8 +195,7 @@ def r0_to_dl1(
             run = parse_r0_filename(input_filename)
             output_filename = run_to_dl1_filename(run.tel_id, run.run, run.subrun)
         except ValueError:
-            p = Path(input_filename)
-            output_filename = p.with_name('dl1_' + p.name).with_suffix('.h5')
+            output_filename = r0_to_dl1_filename(Path(input_filename).name)
 
     if os.path.exists(output_filename):
         raise IOError(output_filename + ' exists, exiting.')
@@ -205,7 +204,8 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-    source = event_source(input_filename)
+    # FIXME for ctapipe 0.8, str should be removed, as Path is supported
+    source = event_source(str(input_filename))
 
     is_simu = source.metadata['is_simulation']
 
