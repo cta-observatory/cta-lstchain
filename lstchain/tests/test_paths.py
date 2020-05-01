@@ -1,10 +1,17 @@
 import pytest
+from pathlib import Path
 
 
 def test_parse_dl1():
     from lstchain.paths import parse_dl1_filename
 
     run = parse_dl1_filename('dl1_LST-1.1.Run01920.0000.fits.h5')
+    assert run.tel_id == 1
+    assert run.run == 1920
+    assert run.subrun == 0
+    assert run.stream == 1
+
+    run = parse_dl1_filename(Path('dl1_LST-1.1.Run01920.0000.fits.h5'))
     assert run.tel_id == 1
     assert run.run == 1920
     assert run.subrun == 0
@@ -46,10 +53,30 @@ def test_dl1_to_filename():
     assert run_to_dl1_filename(*run) == 'dl1_LST-2.Run00005.0001.h5'
 
 
+def test_dl2_to_filename():
+    from lstchain.paths import run_to_dl2_filename, Run
+
+    assert run_to_dl2_filename(
+        tel_id=1, run=1920, subrun=2
+    ) == 'dl2_LST-1.Run01920.0002.h5'
+    assert run_to_dl2_filename(
+        tel_id=1, run=1920, subrun=3, stream=2
+    ) == 'dl2_LST-1.2.Run01920.0003.h5'
+
+    run = Run(tel_id=2, run=5, subrun=1)
+    assert run_to_dl2_filename(*run) == 'dl2_LST-2.Run00005.0001.h5'
+
+
 def test_parse_r0():
     from lstchain.paths import parse_r0_filename
 
     run = parse_r0_filename('LST-1.1.Run01920.0000.fits.fz')
+    assert run.tel_id == 1
+    assert run.stream == 1
+    assert run.run == 1920
+    assert run.subrun == 0
+
+    run = parse_r0_filename(Path('LST-1.1.Run01920.0000.fits.fz'))
     assert run.tel_id == 1
     assert run.stream == 1
     assert run.run == 1920
