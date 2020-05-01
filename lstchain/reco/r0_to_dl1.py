@@ -605,7 +605,12 @@ def r0_to_dl1(
             write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
                                           metadata=metadata)
     else:
-        muon_output_filename = output_filename.replace("dl1", "muons").replace('LST-1.1', 'LST-1').replace('.h5', '')
+        dir = os.path.dirname(output_filename)
+        name = os.path.basename(output_filename)
+        name = name.replace('dl1', 'muons').replace('LST-1.1', 'LST-1')
+        # Consider the possibilities of DL1 files with .fits.h5 & .h5 ending:
+        name = name.replace('.fits.h5', '.fits').replace('.h5', '.fits')
+        muon_output_filename = dir + '/' + name
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
