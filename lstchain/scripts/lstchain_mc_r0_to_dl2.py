@@ -7,9 +7,9 @@ level for MC.
 Inputs are simtelarray files and trained Random Forests.
 Output is a dataframe with DL2 data.
 
-Usage: 
+Usage:
 
-$> python lstchain_mc_r0_to_dl2.py 
+$> python lstchain_mc_r0_to_dl2.py
 --input-file gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 --path-models ./trained_models
 
@@ -19,6 +19,7 @@ from ctapipe.utils import get_dataset_path
 import argparse
 import os
 from distutils.util import strtobool
+from lstschain.paths import r0_to_dl1_filename
 
 parser = argparse.ArgumentParser(description="MC Pipeline R0 to DL2.")
 
@@ -53,10 +54,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
 
 args = parser.parse_args()
 
-def main():
 
+def main():
     outdir = os.path.abspath(args.outdir)
-    dl1_file = os.path.join(outdir, 'dl1_' + os.path.basename(args.datafile).rsplit('.', 1)[0] + '.h5')
+    dl1_file = r0_to_dl1_filename(args.datafile)
 
     cmd_r0_to_dl1 = f'lstchain_mc_r0_to_dl1 -f {args.datafile} -o {outdir}'
     if args.config_file is not None:

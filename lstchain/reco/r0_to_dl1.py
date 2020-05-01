@@ -34,6 +34,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
+from ..paths import parse_r0_filename, run_to_dl1_filename, run_to_muon_filename
 
 
 from ..io import (
@@ -190,13 +191,10 @@ def r0_to_dl1(
 
     """
     if output_filename is None:
-        if input_filename.startswith('LST'):
-            output_filename = (
-                'dl1_' + os.path.basename(input_filename).split('.', 5)[0] + '.'
-                + os.path.basename(input_filename).split('.', 5)[2] + '.'
-                + os.path.basename(input_filename).split('.', 5)[3] + '.h5'
-                )
-        else:
+        try:
+            run = parse_r0_filename(input_filename)
+            output_filename = run_to_dl1_filename(run.tel_id, run.run, run.subrun)
+        except ValueError:
             p = Path(input_filename)
             output_filename = p.with_name('dl1_' + p.name).with_suffix('.h5')
 
@@ -605,12 +603,10 @@ def r0_to_dl1(
             write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
                                           metadata=metadata)
     else:
-        dir = os.path.dirname(output_filename)
-        name = os.path.basename(output_filename)
-        name = name.replace('dl1', 'muons').replace('LST-1.1', 'LST-1')
-        # Consider the possibilities of DL1 files with .fits.h5 & .h5 ending:
-        name = name.replace('.fits.h5', '.fits').replace('.h5', '.fits')
-        muon_output_filename = dir + '/' + name
+        dirname, name = os.path.split(output_filename)
+        name = name.replace('dl1', 'muons', 1)
+        muon_output_filename = os.path.join(dirname, name)
+
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 

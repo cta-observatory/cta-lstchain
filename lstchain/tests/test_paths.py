@@ -108,3 +108,11 @@ def test_muon_filename():
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3, stream=4
     ) == 'muon_LST-1.4.Run00002.0003.fits.gz'
+
+
+def test_r0_to_dl1_filename():
+    from lstchain.paths import r0_to_dl1_filename
+
+    assert str(r0_to_dl1_filename('/foo/test.simtel.gz')) == '/foo/dl1_test.h5'
+    assert str(r0_to_dl1_filename('test.simtel')) == 'dl1_test.h5'
+    assert str(r0_to_dl1_filename('LST1_custom.fits.fz')) == 'dl1_LST1_custom.h5'

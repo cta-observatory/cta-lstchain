@@ -1,6 +1,7 @@
 import re
 from collections import namedtuple
 import os
+from pathlib import Path
 
 
 Run = namedtuple('R0Path', 'tel_id run subrun stream')
@@ -18,6 +19,14 @@ DL1_RE = re.compile(
     r'(?:.fits)?'        # fits extension is optional (old files had it)
     r'.(?:h5|hdf5|hdf)'  # usual extensions for hdf5 files
 )
+
+EXTENSIONS_TO_REMOVE = {
+    '.fits',
+    '.fits.fz',
+    '.simtel',
+    '.simtel.gz',
+    '.simtel.zst',
+}
 
 
 def parse_int(string):
@@ -123,3 +132,12 @@ def run_to_muon_filename(tel_id, run, subrun, stream=None, gzip=True):
         name += '.gz'
 
     return name
+
+
+def r0_to_dl1_filename(r0_path):
+    '''Function to add dl1_ in front and replace extension with h5'''
+    for ext in EXTENSIONS_TO_REMOVE:
+        r0_path, *exts = r0_path.rsplit(ext, 1)
+
+    p = Path(r0_path)
+    return p.with_name('dl1_' + p.name).with_suffix('.h5')
