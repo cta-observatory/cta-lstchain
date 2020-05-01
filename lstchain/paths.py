@@ -98,14 +98,18 @@ def run_to_r0_filename(tel_id, run, subrun, stream=None):
     return f'LST-{tel_id}.{stream}.Run{run:05d}.{subrun:04d}.fits.fz'
 
 
+def run_to_filename(prefix, tel_id, run, subrun, stream=None, ext='.h5'):
+    if stream is None:
+        return f'{prefix}_LST-{tel_id}.Run{run:05d}.{subrun:04d}{ext}'
+    return f'{prefix}_LST-{tel_id}.{stream}.Run{run:05d}.{subrun:04d}{ext}'
+
+
 def run_to_dl1_filename(tel_id, run, subrun, stream=None):
     '''
     Create the filename for a dl1 file from telescope / run info.
     If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
     '''
-    if stream is None:
-        return f'dl1_LST-{tel_id}.Run{run:05d}.{subrun:04d}.h5'
-    return f'dl1_LST-{tel_id}.{stream}.Run{run:05d}.{subrun:04d}.h5'
+    return run_to_filename('dl1', tel_id, run, subrun, stream)
 
 
 def run_to_dl2_filename(tel_id, run, subrun, stream=None):
@@ -113,9 +117,7 @@ def run_to_dl2_filename(tel_id, run, subrun, stream=None):
     Create the filename for a dl1 file from telescope / run info.
     If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
     '''
-    dl1 = run_to_dl1_filename(tel_id, run, subrun, stream)
-    dl2 = dl1.replace('dl1', 'dl2', 1)
-    return dl2
+    return run_to_filename('dl2', tel_id, run, subrun, stream)
 
 
 def run_to_muon_filename(tel_id, run, subrun, stream=None, gzip=True):
@@ -123,15 +125,8 @@ def run_to_muon_filename(tel_id, run, subrun, stream=None, gzip=True):
     Create the filename for a muon output file from telescope / run info.
     If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
     '''
-    if stream is None:
-        name = f'muon_LST-{tel_id}.Run{run:05d}.{subrun:04d}.fits'
-    else:
-        name = f'muon_LST-{tel_id}.{stream}.Run{run:05d}.{subrun:04d}.fits'
-
-    if gzip:
-        name += '.gz'
-
-    return name
+    ext = '.fits.gz' if gzip else '.fits'
+    return run_to_filename('muon', tel_id, run, subrun, stream, ext=ext)
 
 
 def r0_to_dl1_filename(r0_path):
