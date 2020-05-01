@@ -17,7 +17,7 @@ __all__ = [
     'PedestalCalculator',
     'PedestalHDF5Writer',
     'PedestalContainer',
-    ]
+]
 
 
 class PedestalHDF5Writer(Tool):
@@ -45,7 +45,6 @@ class PedestalHDF5Writer(Tool):
 
     aliases = Dict(dict(
         input_file='EventSource.input_url',
-        output_file='CalibrationHDF5Writer.output_file',
         max_events='EventSource.max_events',
         tel_id='PedestalCalculator.tel_id',
         sample_duration='PedestalCalculator.sample_duration',
