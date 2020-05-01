@@ -1,5 +1,3 @@
-import matplotlib as mpl
-mpl.use('Agg')
 import pytest
 import pandas as pd
 import os
@@ -62,6 +60,7 @@ def test_lstchain_mc_trainpipe():
     assert os.path.exists(file_model_gh_sep)
     assert os.path.exists(file_model_disp)
     assert os.path.exists(file_model_energy)
+
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_mc_rfperformance():
