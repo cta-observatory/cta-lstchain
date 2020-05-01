@@ -10,8 +10,9 @@
 
 import argparse
 from pathlib import Path
-from lstchain.io.data_management import *
+from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
+import os
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -87,7 +88,7 @@ def main():
         output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
         log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
         print(f"\n--> Output file {output_file}")
-        if os.path.exists(output_file) and ff_calibration is 'yes':
+        if os.path.exists(output_file) and ff_calibration == 'yes':
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
             else:
@@ -103,7 +104,7 @@ def main():
             exit(1)
         print(f"\n--> Config file {config_file}")
 
-        if ff_calibration is 'yes':
+        if ff_calibration == 'yes':
             # run lstchain script
             cmd = f"lstchain_data_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
@@ -124,7 +125,7 @@ def main():
         #
         time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
 
-        if default_time_run is 0:
+        if default_time_run == 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
                   f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
