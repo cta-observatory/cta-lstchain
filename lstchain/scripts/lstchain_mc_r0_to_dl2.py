@@ -19,12 +19,13 @@ from ctapipe.utils import get_dataset_path
 import argparse
 import os
 from distutils.util import strtobool
-from lstschain.paths import r0_to_dl1_filename
+from lstchain.paths import r0_to_dl1_filename
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description="MC Pipeline R0 to DL2.")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', type=str,
+parser.add_argument('--input-file', '-f', type=Path,
                     dest='datafile',
                     help='path to the file with simtelarray events',
                     default=get_dataset_path('gamma_test_large.simtel.gz'))
@@ -41,7 +42,7 @@ parser.add_argument('--store-dl1', '-s1', action='store', type=lambda x: bool(st
                     'Default=False, use True otherwise',
                     default=True)
 
-parser.add_argument('--output-dir', '-o', action='store', type=str,
+parser.add_argument('--output-dir', '-o', type=Path,
                     dest='outdir',
                     help='Path where to store the reco dl2 events',
                     default='./dl2_data')
@@ -56,8 +57,8 @@ args = parser.parse_args()
 
 
 def main():
-    outdir = os.path.abspath(args.outdir)
-    dl1_file = r0_to_dl1_filename(args.datafile)
+    outdir = args.outdir.absolute()
+    dl1_file = outdir / r0_to_dl1_filename(args.datafile.name)
 
     cmd_r0_to_dl1 = f'lstchain_mc_r0_to_dl1 -f {args.datafile} -o {outdir}'
     if args.config_file is not None:
