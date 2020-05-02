@@ -146,7 +146,7 @@ def check_dl1(filenames, output_path, max_cores=4):
     # we assume that cam geom is the same in all files, & write the first one
     # we convert units from m to deg
     cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+        Table.read(filenames[0], path='instrument/telescope/camera/LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
     geom.to_table().write(datacheck_filename,
                           path=f'/instrument/telescope/camera/LSTCam',
@@ -624,7 +624,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         # as the datacheck_dl1*.h5 file!
         muon_filenames = []
         for i in subrun_list:
-            dir = os.path.dirname(datacheck_filename)
+            dirname = os.path.dirname(datacheck_filename)
             name = os.path.basename(datacheck_filename)
             name = name.replace('datacheck_dl1', 'muons')
             # the name may already contain the subrun index, if it is a
@@ -635,9 +635,9 @@ def plot_datacheck(datacheck_filename, out_path=None):
             else:
                 name = name.replace('.h5', '.fits')
 
-            if dir == '':
-                dir = '.'
-            muon_filenames.append(dir + '/' + name)
+            if dirname == '':
+                dirname = '.'
+            muon_filenames.append(dirname + '/' + name)
 
         muons_table = Table.read(muon_filenames[0])
         contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
@@ -887,6 +887,7 @@ def write_error_page(tablename, pagesize):
              verticalalignment='center')
     axes.axis('off')
 
+
 def get_muon_filenames(filenames):
     """
 
@@ -901,7 +902,7 @@ def get_muon_filenames(filenames):
 
     muon_filenames = []
     for filename in filenames:
-        dir = os.path.dirname(filename)
+        dirname = os.path.dirname(filename)
         name = os.path.basename(filename)
         name = name.replace('dl1_', 'muons_')
         # patch for DL1 files which contain the "stream tag" in the name:
@@ -910,9 +911,9 @@ def get_muon_filenames(filenames):
         # deprecated XXXX.fits.h5 conventions of DL1 files):
         name = name.replace('.fits.h5', '.fits')
         name = name.replace('.h5', '.fits')
-        if dir == '':
+        if dirname == '':
             muon_filenames.append(name)
         else:
-            muon_filenames.append(dir+'/'+name)
+            muon_filenames.append(dirname+'/'+name)
 
     return muon_filenames
