@@ -44,7 +44,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
     time_calibration_path = Unicode(
-        '',
+        None,
         allow_none = True,
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
@@ -79,7 +79,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-        # declare time calibrator None if MC events
+
         if self.time_calibration_path is None:
             self.time_corrector = None
         else:
