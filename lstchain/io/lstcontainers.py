@@ -9,6 +9,7 @@ from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
 from ctapipe.image import leakage, concentration
 from ctapipe.image.cleaning import number_of_islands
+
 from ..reco import utils
 from numpy import nan
 
@@ -16,8 +17,11 @@ __all__ = [
     'DL1ParametersContainer',
     'DispContainer',
     'MetaData',
-    'ThrownEventsHistogram'
+    'ThrownEventsHistogram',
+    'DL1MonitoringEventIndexContainer',
+    'LSTEventType'
 ]
+
 
 class DL1ParametersContainer(Container):
     """
@@ -60,6 +64,7 @@ class DL1ParametersContainer(Container):
 
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
+    calibration_id = Field(None, 'ID of the employed calibration event')
     gps_time = Field(None, 'GPS time event trigger')
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
@@ -88,6 +93,14 @@ class DL1ParametersContainer(Container):
     tel_pos_x = Field(None, "Telescope x position in the ground")
     tel_pos_y = Field(None, "Telescope y position in the ground")
     tel_pos_z = Field(None, "Telescope z position in the ground")
+
+    trigger_type = Field(None, "trigger type")
+    ucts_trigger_type = Field(None, "UCTS trigger type")
+    trigger_time = Field(None, "trigger time")
+
+    # info not available in data
+    #num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
+    #trig_pix_id = Field(None, "pixels involved in the camera trigger")
 
     def fill_hillas(self, hillas):
         """
@@ -210,11 +223,7 @@ class ExtraMCInfo(Container):
 class ExtraImageInfo(Container):
     """ attach the tel_id """
     tel_id = Field(0, "Telescope ID")
-    trigger_type = Field(None, "trigger type")
-    ucts_trigger_type = Field(None, "UCTS trigger type")
-    trigger_time = Field(None, "trigger time")
-    num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
-    trig_pix_id = Field(None, "pixels involved in the camera trigger")
+    selected_gain_channel = Field(None, "Selected gain channel")
 
 
 class ThrownEventsHistogram(Container):
@@ -250,3 +259,61 @@ class MetaData(Container):
     CONTACT = Field(None, "Person or institution responsible for this data product")
 
 
+class DL1MonitoringEventIndexContainer(Container):
+    """
+    Container with the calibration coefficients
+    """
+    tel_id = Field(1, 'Index of telescope')
+    calibration_id = Field(-1, 'Index of calibration event for DL1 file')
+    pedestal_id = Field(-1, 'Index of pedestal event for DL1 file')
+    flatfield_id = Field(-1, 'Index of flat-field event for DL1 file')
+
+
+class LSTEventType:
+    """
+    Class to recognize event type from trigger bits
+    bit 0: Mono
+    bit 1: stereo
+    bit 2: Calibration
+    bit 3: Single Phe
+    bit 4: Softrig(from the UCTS)
+    bit 5: Pedestal
+    bit 6: slow control
+    bit 7: busy
+    """
+
+    @staticmethod
+    def is_mono(trigger_type):
+        return trigger_type >> 0 & 1
+
+    @staticmethod
+    def is_stereo(trigger_type):
+        return trigger_type >> 1 & 1
+
+    @staticmethod
+    def is_calibration(trigger_type):
+        return trigger_type >> 2 & 1
+
+    @staticmethod
+    def is_single_pe(trigger_type):
+        return trigger_type >> 3 & 1
+
+    @staticmethod
+    def is_soft_trig(trigger_type):
+        return trigger_type >> 4 & 1
+
+    @staticmethod
+    def is_pedestal(trigger_type):
+        return trigger_type >> 5 & 1
+
+    @staticmethod
+    def is_slow_control(trigger_type):
+        return trigger_type >> 6 & 1
+
+    @staticmethod
+    def is_busy(trigger_type):
+        return trigger_type >> 7 & 1
+
+    @staticmethod
+    def is_unknown(trigger_type):
+        return trigger_type == -1
