@@ -29,13 +29,12 @@ from itertools import chain
 
 from . import utils
 from .volume_reducer import apply_volume_reduction
-from ..io.lstcontainers import ExtraImageInfo
+from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-
-
 from ..io import (
     write_simtel_energy_histogram,
     write_mcheader,
@@ -44,7 +43,9 @@ from ..io import (
     add_global_metadata,
     write_metadata,
     write_subarray_tables,
+    write_calibration_data
 )
+
 from ..io.io import add_column_table
 
 from . import disp
@@ -145,6 +146,7 @@ def get_dl1(
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
 
+
         return dl1_container
 
     else:
@@ -235,27 +237,38 @@ def r0_to_dl1(
         )
 
         # all this will be cleaned up in a next PR related to the configuration files
-        r1_dl1_calibrator = LSTCameraCalibrator(
-            calibration_path=calibration_path,
-            time_calibration_path=time_calibration_path,
-            extractor_product=config['image_extractor'],
-            gain_threshold=Config(config).gain_selector_config['threshold'],
-            config=Config(config),
-            allowed_tels=[1],
+
+        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                time_calibration_path = time_calibration_path,
+                                                extractor_product = config['image_extractor'],
+                                                gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                config = Config(config),
+                                                allowed_tels = [1],
+                                                )
+
+        # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
+        # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                               time_calibration_path = time_calibration_path,
+                                                               extractor_product = config['image_extractor_for_muons'],
+                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                               config = Config(config),
+                                                               allowed_tels = [1],)
+
+
+        # Component to process interleaved pedestal and flat-fields
+        calib_config = Config(config)
+
+        # set time calibration path for flatfield trailet ()
+        calib_config.FlasherFlatFieldCalculator.time_calibration_path = time_calibration_path
+
+        calibration_calculator = CalibrationCalculator.from_name(
+            config['calibration_product'],
+            config=calib_config
         )
 
-        # Pulse extractor for muon ring analysis.
-        # Same parameters (window_width and _shift) as the one for showers,
-        # but using GlobalPeakWindowSum, since the signal for the rings is expected to
-        # be very isochronous
-        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(
-            calibration_path=calibration_path,
-            time_calibration_path=time_calibration_path,
-            extractor_product=config['image_extractor_for_muons'],
-            gain_threshold=Config(config).gain_selector_config['threshold'],
-            config=Config(config),
-            allowed_tels=[1],
-        )
+
+    calibration_index = DL1MonitoringEventIndexContainer()
 
     dl1_container = DL1ParametersContainer()
 
@@ -328,6 +341,7 @@ def r0_to_dl1(
             event.mc.prefix = 'mc'
             event.trig.prefix = ''
 
+
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
@@ -335,8 +349,39 @@ def r0_to_dl1(
                     cal_mc(event)
 
             else:
+                if i==0:
+                    # initialize the telescope
+                    # FIXME? LST calibrator is only for one telescope
+                    # it should be inside the telescope loop (?)
+
+                    tel_id = calibration_calculator.tel_id
+
+                    # write the first calibration event (initialized from calibration h5 file)
+                    write_calibration_data(writer,
+                                           calibration_index,
+                                           r1_dl1_calibrator.mon_data.tel[tel_id],
+                                           new_ped=True, new_ff=True)
+
+                # drs4 calibrations
                 r0_r1_calibrator.calibrate(event)
+
+                # process interleaved events (pedestals, ff, calibration)
+                new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
+
+                # write monitoring containers if updated
+                if new_ped_event or new_ff_event:
+                    write_calibration_data(writer,
+                                       calibration_index,
+                                       event.mon.tel[tel_id],
+                                       new_ped=new_ped_event, new_ff=new_ff_event)
+
+                # calibrate and extract image from event
                 r1_dl1_calibrator(event)
+
+                # update the calibration index in the dl1 event container
+                dl1_container.calibration_id = calibration_index.calibration_id
+
+
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -495,32 +540,34 @@ def r0_to_dl1(
 
                         # Until the TIB trigger_type is fully reliable, we also add
                         # the ucts_trigger_type to the data
-                        extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+                        dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
 
+                    dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
+                    dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
+
+                    # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
                     dl1_container.length = length.value
-
                     dl1_container.prefix = tel.prefix
 
+                    # extra info for the image table
                     extra_im.tel_id = telescope_id
-                    extra_im.num_trig_pix = event.r0.tel[telescope_id].num_trig_pix
-                    extra_im.trigger_time = event.r0.tel[telescope_id].trigger_time
-                    extra_im.trigger_type = event.r0.tel[telescope_id].trigger_type
-                    extra_im.trig_pix_id = event.r0.tel[telescope_id].trig_pix_id
+                    extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
 
                     for container in [extra_im, dl1_container, event.r0, tel]:
                         add_global_metadata(container, metadata)
 
                     event.r0.prefix = ''
 
-                    writer.write(table_name=f'telescope/image/{tel_name}',
-                                 containers=[event.r0, tel, extra_im])
-                    writer.write(table_name=f'telescope/parameters/{tel_name}',
-                                 containers=[dl1_container, extra_im])
+                    writer.write(table_name = f'telescope/image/{tel_name}',
+                                 containers = [event.r0, tel, extra_im])
+                    writer.write(table_name = f'telescope/parameters/{tel_name}',
+                                 containers = [dl1_container])
+
 
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
@@ -585,6 +632,16 @@ def r0_to_dl1(
                         writer.write(table_name=f'simulation/{tel_name}',
                                      containers=[event.mc.tel[telescope_id], extra_im]
                                      )
+
+
+        if not is_simu:
+            # at the end of event loop ask calculation of remaining interleaved statistics
+            calibration_calculator.output_interleaved_results(event)
+            # write monitoring events
+            write_calibration_data(writer,
+                                   calibration_index,
+                                   event.mon.tel[tel_id],
+                                   new_ped=True, new_ff=True)
 
     if first_valid_ucts is None:
         logger.warning("Not valid UCTS timestamp found")
