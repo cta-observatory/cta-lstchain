@@ -6,6 +6,8 @@ from lstchain.io.io import dl1_params_lstcam_key
 import numpy as np
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
+import pkg_resources
+
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5')
@@ -15,23 +17,16 @@ file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
 
 
-ALL_SCRIPTS = [
-    'lstchain_add_source_dependent_parameters',
-    'lstchain_data_create_pedestal_file',
-    'lstchain_dl1_muon_analysis',
-    'lstchain_mc_r0_to_dl1',
-    'lstchain_mc_sensitivity',
-    'lstchain_data_create_calibration_file',
-    'lstchain_data_create_time_calibration_file',
-    'lstchain_dl1_to_dl2',
-    'lstchain_mc_r0_to_dl2',
-    'lstchain_mc_trainpipe',
-    'lstchain_data_create_drs4_pedestal_file',
-    'lstchain_data_r0_to_dl1',
-    'lstchain_mc_dl1ab',
-    'lstchain_mc_rfperformance',
-    'lstchain_merge_hdf5_files',
-]
+def find_entry_points(package_name):
+    '''from: https://stackoverflow.com/a/47383763/3838691'''
+    entrypoints = [
+        ep for ep in pkg_resources.iter_entry_points('console_scripts')
+        if ep.module_name.startswith(package_name)
+    ]
+    return entrypoints
+
+
+ALL_SCRIPTS = find_entry_points('lstchain')
 
 
 def run_program(*args):
