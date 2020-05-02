@@ -6,7 +6,7 @@ from abc import abstractmethod
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import Int, Unicode, List
+from ctapipe.core.traits import List
 
 __all__ = [
     'PedestalIntegrator'

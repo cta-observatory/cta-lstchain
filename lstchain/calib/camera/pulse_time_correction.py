@@ -152,7 +152,9 @@ class PulseTimeCorrection(Component):
 
 @njit()
 def get_corr_time_jit(first_cap, fan, fbn, n_harmonics, n_cap):
-    time = fan[0] / 2.
+
+    #time = fan[0] / 2. #commented because time flat-fielding is performed in charge calibrator
+    time = 0
     for n in prange(1, n_harmonics):
         time += fan[n] * np.cos((first_cap * n * 2 * np.pi) / n_cap)
         time += fbn[n] * np.sin((first_cap * n * 2 * np.pi) / n_cap)
