@@ -36,7 +36,7 @@ from multiprocessing import Pool
 from scipy.stats import poisson, sem
 
 
-def check_dl1(filenames, output_path, max_cores=4):
+def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     """
 
     Parameters
@@ -159,7 +159,8 @@ def check_dl1(filenames, output_path, max_cores=4):
     file.close()
 
     # do the plots and save them to a pdf file:
-    plot_datacheck(datacheck_filename, output_path)
+    if (create_pdf):
+        plot_datacheck(datacheck_filename, output_path)
 
     return
 
@@ -327,14 +328,19 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
         labels = ['flatfield (guessed)', 'pedestals (from '+trigger_source+')',
                   'cosmics']
+        fmt = '-'
+        # in case of just one subrun, to make index-wise plots visible:
+        if len(table_cosmics.col('subrun_index')) == 1:
+            fmt = 'o'
+
         for table, label in zip(dl1dcheck_tables, labels):
             axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
-                            'o-', label=label)
+                            fmt, label=label)
             # elapsed time better from the cosmics table, will be closer to
             # the true one:
             elapsed_t = table_cosmics.col('elapsed_time')
             axes[1, 1].plot(table.col('subrun_index'),
-                            table.col('num_events') / elapsed_t, 'o-',
+                            table.col('num_events') / elapsed_t, fmt,
                             label=label)
         axes[1, 0].set_ylabel('number of events')
         axes[1, 1].set_ylabel('rate (events/s)')
@@ -367,7 +373,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
         alt_deg = np.rad2deg(table_cosmics.col('mean_alt_tel'))
         axes[1, 0].plot(np.rad2deg(table_cosmics.col('mean_az_tel')), alt_deg,
-                        'o-')
+                        fmt)
         axes[1, 0].set_xlabel('telescope azimuth (deg)')
         axes[1, 0].set_ylabel('telescope altitude (deg)')
         axes[1, 0].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
@@ -379,7 +385,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         mean_dragon_time = np.mean(dragon_time, axis=1)
         mpl_times = np.array([dates.date2num(datetime.fromtimestamp(x))
                                              for x in mean_dragon_time])
-        axes[1, 1].plot_date(mpl_times, alt_deg, fmt='o-', xdate=True,
+        axes[1, 1].plot_date(mpl_times, alt_deg, fmt=fmt, xdate=True,
                              tz='utc')
         axes[1, 1].set_xlabel('time (UTC)')
         axes[1, 1].set_ylabel('telescope altitude (deg)')
