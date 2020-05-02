@@ -35,10 +35,11 @@ parser = argparse.ArgumentParser(formatter_class=argparse.
 
 # Required arguments
 # input file(s). Wildcards can be used, but inside quotes e.g. "dl1*.h5"
-parser.add_argument('--input_file', type=str, required=True,
+requiredNamed = parser.add_argument_group('required arguments')
+requiredNamed.add_argument('--input_file', type=str, required=True,
                     help='Path to DL1 data file(s) (containing pixel-wise '
                          'charge information and image parameters)'
-                    )
+                           )
 
 # Optional arguments
 # path for output files
