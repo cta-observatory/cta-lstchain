@@ -3,7 +3,8 @@ from .dl1_checker import (
     process_dl1_file,
     plot_datacheck,
     plot_trigger_types,
-    plot_mean_and_stddev
+    plot_mean_and_stddev,
+    get_muon_filenames
 )
 from .containers import (
     DL1DataCheckContainer,

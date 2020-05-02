@@ -8,6 +8,7 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
+    'get_muon_filenames'
 ]
 
 import h5py
@@ -51,39 +52,28 @@ def check_dl1(filenames, output_path, max_cores=4):
 
     """
 
-    # obtain run number, and first part of file name, from first file:
-    # NOTE: this assumes the string RunXXXXX.YYYY
-    filename = filenames[0]
-    run_number = int(filename[filename.find('Run')+3:][:5])
-    filename_prefix = filename[:filename.find('Run')]
+    # Obtain the names of the corresponding muon .fits files, assumed to be
+    # in the same directory as the DL1 event files:
+    muon_filenames = get_muon_filenames(filenames)
 
-    # obtain the names of the corresponding muon .fits files:
-    muon_filenames = []
-    for filename in filenames:
-        name = filename.replace('dl1', 'muons')
-        # put the correct .fits extension (both for the XXXX.h5 and the
-        # deprecated XXXX.fits.h5 conventions of DL1 files):
-        name = name.replace('.fits.h5', '.fits')
-        name = name.replace('.h5', '.fits')
-        # patch for DL1 files which contain the "stream tag" in the name:
-        name = name.replace('LST-1.1', 'LST-1')
-        muon_filenames.append(name)
-
-    # define output filename (overwrite if already existing)
-    datacheck_filename = output_path + '/datacheck_' + filename_prefix + \
-     f'Run{run_number:05}.h5'
-    # patch for DL1 files which contain the "stream tag" in the name e.g.
-    # LST-1.1:
-    datacheck_filename = datacheck_filename.replace('LST-1.1', 'LST-1')
+    # Define output filename (overwrite if already existing).
+    # If there is a single input file (i.e. a single subrun) then the output
+    # file name will keep the subrun index. If there is more than one file
+    # (i.e. several subruns) the output file name omit the subrun index.
+    name = os.path.basename(filenames[0])
+    name = name.replace('dl1_', 'datacheck_dl1_')
+    # patch for DL1 files which contain the "stream tag" in the name, and put
+    # the correct extension:
+    datacheck_filename = name.replace('LST-1.1', 'LST-1').\
+        replace('.fits.h5', '.h5')
+    if output_path != '':
+        datacheck_filename = output_path + '/' + datacheck_filename
+    if len(filenames) > 1:
+        # Remove subrun index (4 digits, precedes the .h5 extension):
+        datacheck_filename = datacheck_filename[:-8] + datacheck_filename[-3:]
 
     if os.path.exists(datacheck_filename):
         os.remove(datacheck_filename)
-
-    # TBD: Check here that all the run_numbers coincide!
-    # new_run_number = int(filename[filename.find('Run') + 3:][:5])
-    # if new_run_number != run_number:
-    #     raise RuntimeError('Error: found different run numbers among '
-    #                       'input files. Exiting')
 
     # the list dl1datacheck will contain one entry per subrun. Each entry is a
     # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
@@ -339,12 +329,12 @@ def plot_datacheck(datacheck_filename, out_path=None):
                   'cosmics']
         for table, label in zip(dl1dcheck_tables, labels):
             axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
-                            label=label)
+                            'o-', label=label)
             # elapsed time better from the cosmics table, will be closer to
             # the true one:
             elapsed_t = table_cosmics.col('elapsed_time')
             axes[1, 1].plot(table.col('subrun_index'),
-                            table.col('num_events') / elapsed_t,
+                            table.col('num_events') / elapsed_t, 'o-',
                             label=label)
         axes[1, 0].set_ylabel('number of events')
         axes[1, 1].set_ylabel('rate (events/s)')
@@ -376,7 +366,8 @@ def plot_datacheck(datacheck_filename, out_path=None):
         axes[0, 1].set_yscale('log')
 
         alt_deg = np.rad2deg(table_cosmics.col('mean_alt_tel'))
-        axes[1, 0].plot(np.rad2deg(table_cosmics.col('mean_az_tel')), alt_deg)
+        axes[1, 0].plot(np.rad2deg(table_cosmics.col('mean_az_tel')), alt_deg,
+                        'o-')
         axes[1, 0].set_xlabel('telescope azimuth (deg)')
         axes[1, 0].set_ylabel('telescope altitude (deg)')
         axes[1, 0].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
@@ -388,7 +379,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         mean_dragon_time = np.mean(dragon_time, axis=1)
         mpl_times = np.array([dates.date2num(datetime.fromtimestamp(x))
                                              for x in mean_dragon_time])
-        axes[1, 1].plot_date(mpl_times, alt_deg, fmt='-', xdate=True,
+        axes[1, 1].plot_date(mpl_times, alt_deg, fmt='o-', xdate=True,
                              tz='utc')
         axes[1, 1].set_xlabel('time (UTC)')
         axes[1, 1].set_ylabel('telescope altitude (deg)')
@@ -626,12 +617,27 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
         # Now we go for the muons .fits files, created in the R0 to DL1 stage.
         # We look for the files with the same subrun indices that have been
-        # processed.
+        # processed. Unfortunately we cannot use here get_muon_filenames(),
+        # because the original list of DL1 files may not be available,
+        # in case we are running directly over a datacheck_dl1 file. We also
+        # assume that the muon .fits files must be in the same directory
+        # as the datacheck_dl1*.h5 file!
         muon_filenames = []
         for i in subrun_list:
-            name = datacheck_filename.replace('datacheck_dl1', 'muons')
-            name = name.replace('.h5', f'.{i:04}.fits')
-            muon_filenames.append(name)
+            dir = os.path.dirname(datacheck_filename)
+            name = os.path.basename(datacheck_filename)
+            name = name.replace('datacheck_dl1', 'muons')
+            # the name may already contain the subrun index, if it is a
+            # check_dl1 file produced from a single DL1 file. If that is not
+            # the case, the subrun index has to be added:
+            if name.find(f'.{i:04}.h5') == -1:
+                name = name.replace('.h5', f'.{i:04}.fits')
+            else:
+                name = name.replace('.h5', '.fits')
+
+            if dir == '':
+                dir = '.'
+            muon_filenames.append(dir + '/' + name)
 
         muons_table = Table.read(muon_filenames[0])
         contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
@@ -880,3 +886,33 @@ def write_error_page(tablename, pagesize):
              fontsize=44, horizontalalignment='center',
              verticalalignment='center')
     axes.axis('off')
+
+def get_muon_filenames(filenames):
+    """
+
+    Parameters
+    ----------
+    filenames: names of the input DL1 event files
+
+    Returns
+    -------
+    List of the names of the muon files which correspond to the DL1 event files
+    """
+
+    muon_filenames = []
+    for filename in filenames:
+        dir = os.path.dirname(filename)
+        name = os.path.basename(filename)
+        name = name.replace('dl1_', 'muons_')
+        # patch for DL1 files which contain the "stream tag" in the name:
+        name = name.replace('LST-1.1', 'LST-1')
+        # put the correct .fits extension (both for the XXXX.h5 and the
+        # deprecated XXXX.fits.h5 conventions of DL1 files):
+        name = name.replace('.fits.h5', '.fits')
+        name = name.replace('.h5', '.fits')
+        if dir == '':
+            muon_filenames.append(name)
+        else:
+            muon_filenames.append(dir+'/'+name)
+
+    return muon_filenames
