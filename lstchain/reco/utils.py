@@ -38,14 +38,15 @@ __all__ = [
     'linear_imputer',
     'impute_pointing',
     'clip_alt',
-    'unix_tai_to_utc',
+    'unix_tai_to_time',
 ]
 
-
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)  # position of the LST1
+# position of the LST1
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
+INVALID_TIME = UCTS_EPOCH
 
 
 def alt_to_theta(alt):
@@ -472,9 +473,21 @@ def clip_alt(alt):
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
 
 
-def unix_tai_to_utc(timestamp):
+def unix_tai_to_time(timestamp):
     """
-    Transform unix time from TAI to UTC scale considering the leap seconds
-    by adding the timestamp in seconds to the epoch value.
+    Create an astropy.Time object for timestamps in unix tai format.
+    Unix tai format mean seconds since 1970-01-01T00:00 TAI as opposed
+    to 1970-01-01T00:00 UTC for the usual unix timestamps.
     """
-    return UCTS_EPOCH + u.Quantity(timestamp, u.s, copy=False)
+    scalar = np.isscalar(timestamp)
+
+    timestamp = u.Quantity(timestamp, u.s, ndmin=1)
+    invalid = ~np.isfinite(timestamp)
+    timestamp[invalid] = 0
+
+    t = UCTS_EPOCH + timestamp
+
+    if scalar:
+        return t[0]
+
+    return t
