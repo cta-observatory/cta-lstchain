@@ -33,6 +33,7 @@ from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
+from pathlib import Path
 from scipy.stats import poisson, sem
 
 
@@ -66,13 +67,12 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     # the correct extension:
     datacheck_filename = name.replace('LST-1.1', 'LST-1').\
         replace('.fits.h5', '.h5')
-    if output_path != '':
-        datacheck_filename = output_path + '/' + datacheck_filename
     if len(filenames) > 1:
         # Remove subrun index (4 digits, precedes the .h5 extension):
         datacheck_filename = datacheck_filename[:-8] + datacheck_filename[-3:]
+    datacheck_filename = Path(output_path, datacheck_filename)
 
-    if os.path.exists(datacheck_filename):
+    if datacheck_filename.exists():
         os.remove(datacheck_filename)
 
     # the list dl1datacheck will contain one entry per subrun. Each entry is a
@@ -281,8 +281,8 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
     Parameters
     ----------
-    datacheck_filename: .h5 file produced by the method check_dl1, starting
-    from DL1 event files
+    datacheck_filename: string or pathlib.Path, name of .h5 file produced by
+    the function check_dl1, starting from DL1 event files
     out_path: optional, if not given it will be the same of file filename
 
     Returns
@@ -294,9 +294,13 @@ def plot_datacheck(datacheck_filename, out_path=None):
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
 
-    pdf_filename = datacheck_filename.replace('.h5', '.pdf')
+    # just in case datacheck_filename is a plain string:
+    datacheck_filename = Path(datacheck_filename)
+    # put pdf extension:
+    pdf_filename = datacheck_filename.with_suffix('.pdf')
+    # set output directory if provided:
     if out_path is not None:
-        pdf_filename = out_path+'/'+pdf_filename[pdf_filename.rfind('/')+1:]
+        pdf_filename = Path(out_path, pdf_filename.name)
 
     cam_description_table = \
         Table.read(datacheck_filename,
@@ -640,10 +644,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
                 name = name.replace('.h5', f'.{i:04}.fits')
             else:
                 name = name.replace('.h5', '.fits')
-
-            if dirname == '':
-                dirname = '.'
-            muon_filenames.append(dirname + '/' + name)
+            muon_filenames.append(Path(dirname,name))
 
         muons_table = Table.read(muon_filenames[0])
         contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
@@ -917,9 +918,6 @@ def get_muon_filenames(filenames):
         # deprecated XXXX.fits.h5 conventions of DL1 files):
         name = name.replace('.fits.h5', '.fits')
         name = name.replace('.h5', '.fits')
-        if dirname == '':
-            muon_filenames.append(name)
-        else:
-            muon_filenames.append(dirname+'/'+name)
+        muon_filenames.append(Path(dirname, name))
 
     return muon_filenames
