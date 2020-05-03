@@ -9,6 +9,7 @@ from ctapipe.io.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
+
 __all__ = ['LSTCameraCalibrator']
 
 
@@ -95,8 +96,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path = self.time_calibration_path)
         else:
-            self.time_corrector = None
-            self.log.info(f"File {self.time_calibration_path} not found. No drs4 time corrections")
+            raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
 
         # calibration data container
         self.mon_data = MonitoringContainer()
@@ -116,15 +116,17 @@ class LSTCameraCalibrator(CameraCalibrator):
             with HDF5TableReader(self.calibration_path) as h5_table:
                 assert h5_table._h5file.isopen == True
                 for telid in self.allowed_tels:
-                    # read the calibration data for the moment only one event
+                    # read the calibration data
                     table = '/tel_' + str(telid) + '/calibration'
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
 
-                    dc_to_pe=self.mon_data.tel[telid].calibration.dc_to_pe
-                    # put to zero unusable pixels
-                    dc_to_pe[self.mon_data.tel[telid].calibration.unusable_pixels] = 0
-                    # eliminate inf values id any (should be done probably before)
-                    dc_to_pe[np.isinf(dc_to_pe)] = 0
+                    # read pedestal data
+                    table = '/tel_' + str(telid) + '/pedestal'
+                    next(h5_table.read(table, self.mon_data.tel[telid].pedestal))
+
+                    # read flat-field data
+                    table = '/tel_' + str(telid) + '/flatfield'
+                    next(h5_table.read(table, self.mon_data.tel[telid].flatfield))
 
                     # read the pixel_status container
                     table = '/tel_' + str(telid) + '/pixel_status'
@@ -141,17 +143,22 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
         
         event.dl0.event_id = event.r1.event_id
-        event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
-        event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
 
+        # if not already done, initialize the event monitoring containers
+        if event.mon.tel[telid].calibration.dc_to_pe is None:
+            event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
+            event.mon.tel[telid].flatfield = self.mon_data.tel[telid].flatfield
+            event.mon.tel[telid].pedestal = self.mon_data.tel[telid].pedestal
+            event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
 
-        # subtract the pedestal per sample (should we do it?) and multiply for the calibration coefficients
         #
-
-
+        # subtract the pedestal per sample and multiply for the calibration coefficients
+        #
         event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+                (event.r1.tel[telid].waveform - event.mon.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
+                * event.mon.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+
+
 
     def _calibrate_dl1(self, event, telid):
         """
@@ -165,43 +172,29 @@ class LSTCameraCalibrator(CameraCalibrator):
         if self.image_extractor.requires_neighbors():
             camera = event.inst.subarray.tel[telid].camera
             self.image_extractor.neighbors = camera.neighbor_matrix_where
+
         charge, pulse_time = self.image_extractor(waveforms)
 
         # correct time with drs4 correction if available
         if self.time_corrector:
-            pulse_corr_array = self.time_corrector.get_corr_pulse(event, pulse_time)
+            pulse_time = self.time_corrector.get_corr_pulse(event, pulse_time)
 
-        # otherwise use the ff time correction (not drs4 corrected)
-        else:
-            pulse_corr_array = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+        # add flat-fielding time correction
+        pulse_time_ff_corrected = pulse_time + self.mon_data.tel[telid].calibration.time_correction
 
         # perform the gain selection if the threshold is defined
-
         if self.gain_threshold:
             waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
             event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
-            event.dl1.tel[telid].pulse_time = pulse_corr_array[gain_mask, np.arange(pulse_corr_array.shape[1])]
+            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
 
-            # remember the mask in the lst pixel_status array (this info is missing for the moment in the
-            # r1 container). I follow the prescription given in the document
-            # "R1 & DL0 Telescope Event Interfaces and Prototype Evaluation" of K. Kosack
-
-            # bit 2 = LG
-            gain_mask *= 4
-
-            # bit 3 = HG
-            gain_mask[np.where(gain_mask == 0)] = 8
-
-            # bit 1 = pixel broken pixel (coming from the EvB)
-            gain_mask += event.lst.tel[telid].evt.pixel_status >> 1 & 1
-
-            # update pixel status
-            event.lst.tel[telid].evt.pixel_status = gain_mask
+            # remember which channel has been selected
+            event.r1.tel[telid].selected_gain_channel = gain_mask
 
         # if threshold == None
         else:
             event.dl1.tel[telid].image = charge
-            event.dl1.tel[telid].pulse_time = pulse_corr_array
+            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
 
 

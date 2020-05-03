@@ -2,12 +2,12 @@
 Factory for the estimation of the flat field coefficients
 """
 
-
+import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List
-
+from ctapipe.core.traits import  List, Unicode
+from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -43,6 +43,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         [-3, 3],
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
+    time_calibration_path = Unicode(
+        None,
+        allow_none = True,
+        help = 'Path to drs4 time calibration file'
+    ).tag(config = True)
 
     def __init__(self, **kwargs):
         """Calculates flat-field parameters from flasher data
@@ -74,6 +79,20 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
+
+        if self.time_calibration_path is None:
+            self.time_corrector = None
+        else:
+        # look for calibration path otherwise
+            if os.path.exists(self.time_calibration_path):
+                self.time_corrector = PulseTimeCorrection(
+                calib_file_path = self.time_calibration_path)
+            else:
+                msg=f"Time calibration file {self.time_calibration_path} not found!"
+                raise IOError(msg)
+
+
+
     def _extract_charge(self, event):
         """
         Extract the charge and the time from a calibration event
@@ -95,6 +114,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 self.extractor.neighbours = camera.neighbor_matrix_where
 
             charge, peak_pos = self.extractor(waveforms)
+
+            # correct time with drs4 correction if available
+            if self.time_corrector:
+                peak_pos = self.time_corrector.get_corr_pulse(event, peak_pos)
 
         return charge, peak_pos
 
@@ -140,6 +163,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
+
+        # correct pulse time with drs4 corrections
+
 
         self.collect_sample(charge, pixel_mask, arrival_time)
 
