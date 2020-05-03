@@ -32,13 +32,13 @@ parser.add_argument("--input-file", action='store', type=str,
                     default=None, required=True)
 
 parser.add_argument("--output-file", action='store', type=str,
-                    dest='output_file'
+                    dest='output_file',
                     help="Path where script creates the time calibration file",
                     default=None, required=True)
 
 # Optional argument
 parser.add_argument("--max-events",
-                    dest='max-events'
+                    dest='max_events',
                     help="Maximum numbers of events to read. Default = 20000",
                     type=int,
                     default=20000)
