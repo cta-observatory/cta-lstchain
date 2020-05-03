@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 import h5py
+import logging
 import matplotlib.colors as colors
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
@@ -53,6 +54,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
 
     """
 
+    logger = logging.getLogger(__name__)
+
     # Obtain the names of the corresponding muon .fits files, assumed to be
     # in the same directory as the DL1 event files:
     muon_filenames = get_muon_filenames(filenames)
@@ -82,11 +85,11 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
-            print("File", filename, "not found!")
+            logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
     for filename in muon_filenames:
         if not os.path.exists(filename):
-            print("File", filename, "not found!")
+            logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
 
     # now try to determine which trigger_type tag is more reliable for
@@ -104,8 +107,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
                          (np.array(trig_tags['trigger_type']) == 32).sum(),
                      'ucts_trigger_type':
                          (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
-    print("Number of == 32 (pedestal) trigger tags:")
-    print('   ', num_pedestals)
+    logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
 
     trigger_source = 'trigger_type'
     if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
@@ -183,13 +185,15 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
 
     """
 
+    logger = logging.getLogger(__name__)
+
     # define criteria for detecting flatfield events, since as of 20200418
     # there is no reliable event tagging for those. We require a minimum
     # fraction of pixels with a charge above a sufficiently large value:
     ff_min_pixel_charge_median = 40.
     ff_max_pixel_charge_stddev = 20.
 
-    print('Opening file', filename)
+    logger.info(f'Opening file {filename}')
     subrun_index = int(filename[filename.find('Run') + 9:][:4])
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
@@ -250,8 +254,9 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
                  parameters['event_id']])
         params_cosmics_mask = ~(params_pedestal_mask | params_flatfield_mask)
 
-        print('   pedestals:', np.sum(pedestal_mask), 'flatfield:',
-              np.sum(flatfield_mask), 'cosmics:', np.sum(cosmics_mask))
+        logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
+                    f' flatfield: {np.sum(flatfield_mask)}, '
+                    f' cosmics: {np.sum(cosmics_mask)}')
 
         # fill quantities which depend on event-wise (not
         # pixel-wise) parameters:
@@ -290,6 +295,8 @@ def plot_datacheck(datacheck_filename, out_path=None):
     None
 
     """
+
+    logger = logging.getLogger(__name__)
 
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
@@ -644,7 +651,12 @@ def plot_datacheck(datacheck_filename, out_path=None):
                 name = name.replace('.h5', f'.{i:04}.fits')
             else:
                 name = name.replace('.h5', '.fits')
-            muon_filenames.append(Path(dirname,name))
+            if Path(dirname, name).exists():
+                muon_filenames.append(Path(dirname,name))
+            else:
+                logger.warning(f'File {str(Path(dirname,name))} not found. '
+                               f'No muon information will be plotted!')
+                return
 
         muons_table = Table.read(muon_filenames[0])
         contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
@@ -830,6 +842,8 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
 
 def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
 
+    logger = logging.getLogger(__name__)
+
     # calculate pixel-wise mean and standard deviation for the whole run,
     # from the subrun-wise values:
     mean = np.sum(np.multiply(table.col(columns[0]),
@@ -840,8 +854,8 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
                             axis=0) / np.sum(table.col('num_events')))
 
     if np.isnan(mean).sum() > 0:
-        print('Pixels with NaNs in '+columns[0]+':',
-              np.array(camgeom.pix_id.tolist())[np.isnan(mean)])
+        logger.info(f'Pixels with NaNs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
 
     # plot mean and std dev (of e.g. pedestal charge or time), as camera
     # display, vs. pixel id, and as a histogram:

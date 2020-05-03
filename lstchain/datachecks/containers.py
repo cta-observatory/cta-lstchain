@@ -8,6 +8,7 @@ __all__ = [
     'DL1DataCheckHistogramBins',
 ]
 
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
@@ -18,6 +19,9 @@ class DL1DataCheckContainer(Container):
     """
     Container to store outcome of the DL1 data check
     """
+
+    geomlogger = logging.getLogger('ctapipe.instrument.camera')
+    geomlogger.setLevel(logging.ERROR)
 
     # scalar quantities:
     subrun_index = Field(-1, 'Subrun index')
@@ -99,6 +103,9 @@ class DL1DataCheckContainer(Container):
         None
 
         """
+
+
+
         self.subrun_index = subrun_index
         # the elapsed time is between first and last event of the events in
         # table (we do not apply the mask here since we want to have all

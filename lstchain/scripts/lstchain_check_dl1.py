@@ -26,6 +26,7 @@ type).
 from warnings import simplefilter
 import argparse
 import glob
+import logging
 # I had enough of those annoying future warnings, hence:
 simplefilter(action='ignore', category=FutureWarning)
 from lstchain.datachecks import check_dl1, plot_datacheck
@@ -64,12 +65,15 @@ args = parser.parse_args()
 
 def main():
 
-    print('input files: {}'.format(args.input_file))
-    print('output path: {}'.format(args.output_path))
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logger = logging.getLogger(__name__)
+
+    logger.info('input files: {}'.format(args.input_file))
+    logger.info('output path: {}'.format(args.output_path))
 
     filenames = glob.glob(args.input_file)
     if len(filenames) == 0:
-        print('Input files not found!')
+        logger.error('Input files not found!')
         exit(-1)
 
     # if input file is an existing dl1 datacheck .h5 file, just create the
