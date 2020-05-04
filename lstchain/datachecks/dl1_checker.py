@@ -441,7 +441,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
             axes[0, 0].plot(table_cosmics.col('sampled_event_ids').flatten(),
                             table_cosmics.col(time_type).flatten(),
-                            drawstyle='steps-mid', label=time_type)
+                            label=time_type)
         axes[0, 0].set_xlabel('event id')
         axes[0, 0].set_ylabel('timestamp')
         axes[0, 0].legend(loc='best')
