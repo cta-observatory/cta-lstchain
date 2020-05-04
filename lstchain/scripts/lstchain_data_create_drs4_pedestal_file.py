@@ -49,12 +49,12 @@ parser.add_argument("--output-file", '-o', type=str, action='store',
 
 
 # Optional arguments
-parser.add_argument("--max_events",
+parser.add_argument("--max-events",
                     help="Maximum numbers of events to read. Default = 20000",
                     type=int,
                     default=20000)
 
-parser.add_argument("--start_r0_waveform",
+parser.add_argument("--start-r0-waveform",
                     help="Start sample for waveform. Default = 11",
                     type=int,
                     default=11)

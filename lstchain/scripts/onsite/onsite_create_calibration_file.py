@@ -94,8 +94,8 @@ def main():
         print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
-            cmd = f"lstchain_data_create_time_calibration_file  --input_file {input_file} " \
-                  f"--output_file {time_file} -conf {config_file} -ped {pedestal_file} 2>&1"
+            cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
+                  f"--output-file {time_file} --config {config_file} --pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
         else:

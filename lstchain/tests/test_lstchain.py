@@ -13,8 +13,8 @@ test_dir = 'testfiles'
 os.makedirs(test_dir, exist_ok=True)
 
 mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
-dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
-dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
+dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.h5')
+dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.h5')
 fake_dl2_proton_file = os.path.join(test_dir, 'dl2_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')

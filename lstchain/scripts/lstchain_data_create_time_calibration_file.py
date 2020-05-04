@@ -38,7 +38,7 @@ parser.add_argument("--output-file", action='store', type=str,
 
 # Optional argument
 parser.add_argument("--max-events",
-                    dest='max-events',
+                    dest='max_events',
                     help="Maximum numbers of events to read. Default = 20000",
                     type=int,
                     default=20000)
