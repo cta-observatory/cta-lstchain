@@ -265,6 +265,7 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
          nfiles_gammas, nfiles_protons,
          eb, gb, tb, noff,
          obstime = 50 * 3600 * u.s):
+
     """
     Main function to calculate the sensitivity given a MC dataset
 
@@ -340,6 +341,7 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
 
 
     # Rates and weights
+
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
                      mc_par_g['cone'], mc_par_g['area_sim'],
                      crab_par['f0'], crab_par['e0'])
@@ -355,7 +357,6 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     w_p = weight(mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'],
                     proton_par['alpha'], rate_p,
                     mc_par_p['sim_ev'], proton_par['e0'])
-
 
     e_reco_gw = ((e_reco_g / crab_par['e0'])**(crab_par['alpha'] - mc_par_g['sp_idx'])) \
                 * w_g
@@ -575,6 +576,7 @@ def sens(simtelfile_gammas, simtelfile_protons,
 
 
     # Rates and weights
+
     rate_g = rate(mc_par_g['emin'], mc_par_g['emax'], crab_par['alpha'],
                      mc_par_g['cone'], mc_par_g['area_sim'],
                      crab_par['f0'], crab_par['e0'])

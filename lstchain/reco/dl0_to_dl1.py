@@ -369,6 +369,10 @@ def r0_to_dl1(input_filename = get_dataset_path('gamma_test_large.simtel.gz'),
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
+                            # Until the TIB trigger_type is fully reliable, we also add
+                            # the ucts_trigger_type to the data
+                            extra_im.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+
                     foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))

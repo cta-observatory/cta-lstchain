@@ -155,12 +155,12 @@ def em_loop(image, camera):
 
     img = image-back
     img[img<1] = 0
-    return pars, img
+    return pars, img, loglike
 
 def em_hillas_parameters(image, camera):
 
     try:
-        pars, image = em_loop(image, camera)
+        pars, image, loglike = em_loop(image, camera)
         xm = pars[0].value
         ym = pars[1].value
         xx = pars[2].value
@@ -177,7 +177,7 @@ def em_hillas_parameters(image, camera):
         disc = tr*tr-det
         if disc < 0:
             print("Negative value found, skip event")
-            return None, None
+            return None, None, None
         else:
             disc=math.sqrt(disc)
 
@@ -185,11 +185,11 @@ def em_hillas_parameters(image, camera):
 
         if width < 0:
             print("Negative value found, skip event")
-            return None, None
+            return None, None, None
 
         if xy==0:
             print("Zero value found, skip event")
-            return None, None
+            return None, None, None
 
         else:
             width=math.sqrt(width)
@@ -221,6 +221,6 @@ def em_hillas_parameters(image, camera):
             psi=Angle(psi, unit=u.rad),
             skewness=skewness_long,
             kurtosis=kurtosis_long
-        ), image
+        ), image, loglike
     except:
-        return None, None
+        return None, None, None

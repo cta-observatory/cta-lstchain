@@ -13,13 +13,13 @@ from ..reco import utils
 from numpy import nan
 
 __all__ = [
-    'DL1ParametersContainer',
+    'DL1ParametersContainerEM',
     'DispContainer',
     'MetaData',
     'ThrownEventsHistogram'
 ]
 
-class DL1ParametersContainer(Container):
+class DL1ParametersContainerEM(Container):
     """
     TODO: maybe fields could be inherited from ctapipe containers definition
         For now I have not found an elegant way to do so
@@ -44,6 +44,7 @@ class DL1ParametersContainer(Container):
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
+    likelihood=Field(None, 'likelihood of EM fit')
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
     leakage = Field(None, 'Leakage')
@@ -154,16 +155,16 @@ class DL1ParametersContainer(Container):
         leakage_c = leakage(geom, image, clean)
         self.leakage = leakage_c.leakage2_intensity
 
-    def set_n_islands(self, geom, clean): 
+    def set_n_islands(self, geom, clean):
         n_islands, islands_mask = number_of_islands(geom, clean)
         self.n_islands = n_islands
 
     def set_telescope_info(self, event, telescope_id):
         self.tel_id = telescope_id
         tel_pos = event.inst.subarray.positions[telescope_id]
-        self.tel_pos_x = tel_pos[0] 
-        self.tel_pos_y = tel_pos[1] 
-        self.tel_pos_z = tel_pos[2] 
+        self.tel_pos_x = tel_pos[0]
+        self.tel_pos_y = tel_pos[1]
+        self.tel_pos_z = tel_pos[2]
 
     def set_source_camera_position(self, event, telescope_id):
         tel = event.inst.subarray.tel[telescope_id]
@@ -232,5 +233,3 @@ class MetaData(Container):
     LSTCHAIN_VERSION = Field(None, "version of lstchain")
     CTAPIPE_VERSION = Field(None, "version of ctapipe")
     CONTACT = Field(None, "Person or institution responsible for this data product")
-
-
