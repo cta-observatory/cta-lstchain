@@ -8,7 +8,8 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
-    'get_muon_filenames'
+    'get_muon_filenames',
+    'merge_dl1datacheck_files'
 ]
 
 import h5py
@@ -286,9 +287,11 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
     Parameters
     ----------
-    datacheck_filename: string or pathlib.Path, name of .h5 file produced by
-    the function check_dl1, starting from DL1 event files
-    out_path: optional, if not given it will be the same of file filename
+    datacheck_filename: list of strings, or pathlib.Path, name(s) of .h5
+    files produced by the function check_dl1, starting from DL1 event files
+    If it is a list of file names, we expect each of the files to correspond to
+    one subrun of the same run.
+    out_path: optional; if not given, it will be the same of file filename
 
     Returns
     -------
@@ -301,14 +304,23 @@ def plot_datacheck(datacheck_filename, out_path=None):
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
 
-    # just in case datacheck_filename is a plain string:
-    datacheck_filename = Path(datacheck_filename)
-    # put pdf extension:
-    pdf_filename = datacheck_filename.with_suffix('.pdf')
+    # in case of >1 input file, we assume they correspond to subruns of a
+    # given run. We merge them before proceeding:
+    if type(datacheck_filename) == list:
+        if len(datacheck_filename) > 1:
+            merged_filename = merge_dl1datacheck_files(datacheck_filename)
+            datacheck_filename = merged_filename
+        else:
+            # just a single .h5 file:
+            datacheck_filename = datacheck_filename[0]
+
+    pdf_filename = Path(datacheck_filename).with_suffix('.pdf')
+
     # set output directory if provided:
     if out_path is not None:
         pdf_filename = Path(out_path, pdf_filename.name)
 
+    # Read camera geometry
     cam_description_table = \
         Table.read(datacheck_filename,
                    path='instrument/telescope/camera/LSTCam')
@@ -318,11 +330,9 @@ def plot_datacheck(datacheck_filename, out_path=None):
     with PdfPages(pdf_filename) as pdf:
         # first deal with the DL1 datacheck file, created from DL1 event data:
         file = tables.open_file(datacheck_filename)
-
-        # get the binning of the stored histograms:
+        # Read the binning of the stored histograms, and the info on
+        # the source from which the trigger type info has been read:
         hist_binning = file.root.dl1datacheck.histogram_binning
-
-        # read which triger tag has been used to identify pedestals:
         trigger_source = file.root.dl1datacheck.used_trigger_tag[0].decode()
 
         # get the tables for each type of events:
@@ -935,3 +945,69 @@ def get_muon_filenames(filenames):
         muon_filenames.append(Path(dirname, name))
 
     return muon_filenames
+
+
+def merge_dl1datacheck_files(file_list):
+    """
+
+    Parameters
+    ----------
+    file_list: list of strings, names of files of the kind produced by
+    function check_dl1
+
+    Returns
+    -------
+    merged_filename: name of the .h5 file which contains all the rows of the
+    files in the list (in the tables cosmics, pedestals and flatfield)
+    The camera geometry, histogram_binnings and used_trigger_tag are copied
+    just from the first file
+
+    """
+
+    logger =  logging.getLogger(__name__)
+
+    first_file_name = file_list[0]
+    first_file = tables.open_file(first_file_name)
+    # get run number and build the name of the merged file:
+    run_str = first_file_name[first_file_name.rfind('.Run'):][0:9]
+    merged_filename = 'datacheck_dl1_LST-1'+run_str+'.h5'
+
+    # The input (sub-run wise) list should never contain the name of the
+    # run-wise file that we will produce by merging. Just to avoid accidents:
+    if merged_filename in file_list:
+        file_list.remove(merged_filename)
+
+    merged_file = tables.open_file(merged_filename, 'w')
+    merged_file.create_group('/', 'dl1datacheck')
+    merged_file.create_group('/', 'instrument')
+    pedestals = first_file.copy_node('/dl1datacheck', name='pedestals',
+                                     newparent=merged_file.root.dl1datacheck)
+    flatfield = first_file.copy_node('/dl1datacheck', name='flatfield',
+                                     newparent=merged_file.root.dl1datacheck)
+    cosmics = first_file.copy_node('/dl1datacheck', name='cosmics',
+                                   newparent=merged_file.root.dl1datacheck)
+    first_file.copy_node('/dl1datacheck', name='histogram_binning',
+                         newparent=merged_file.root.dl1datacheck)
+    first_file.copy_node('/dl1datacheck', name='used_trigger_tag',
+                         newparent=merged_file.root.dl1datacheck)
+    first_file.close()
+
+    for filename in file_list[1:]:
+        file = tables.open_file(filename)
+        pedestals.append(file.root.dl1datacheck.pedestals[:])
+        flatfield.append(file.root.dl1datacheck.flatfield[:])
+        cosmics.append(file.root.dl1datacheck.cosmics[:])
+        file. close()
+
+    merged_file.close()
+
+    # For copying the camera geometry we use astropy tables to avoid s
+    # NaturalNameWarning from tables/path.py
+    cam_description_table = \
+        Table.read(first_file_name, path='instrument/telescope/camera/LSTCam')
+    geom = CameraGeometry.from_table(cam_description_table)
+    geom.to_table().write(merged_filename,
+                          path=f'/instrument/telescope/camera/LSTCam',
+                          append=True, serialize_meta=True)
+
+    return merged_filename
