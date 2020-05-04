@@ -50,6 +50,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config = True)
 
     def __init__(self, **kwargs):
+
         """Calculates flat-field parameters from flasher data
            based on the best algorithm described by S. Fegan in MST-CAM-TN-0060 (eq. 19)
            Pixels are defined as outliers on the base of a cut on the pixel charge median
@@ -78,7 +79,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.charges = None  # charge per event in sample
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
-
 
         if self.time_calibration_path is None:
             self.time_corrector = None
@@ -193,8 +193,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
          event : general event container
         """
         if self.num_events_seen == 0:
-            raise ValueError("No flat-field events in statistics, zero results")
-
+            self.log.info("No flat-field events in statistics, zero results")
+            return
 
         container = event.mon.tel[self.tel_id].flatfield
 

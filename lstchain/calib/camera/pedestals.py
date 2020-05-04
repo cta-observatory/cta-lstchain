@@ -164,7 +164,8 @@ class PedestalIntegrator(PedestalCalculator):
         """
 
         if self.num_events_seen == 0:
-            raise ValueError("No pedestal events in statistics, zero results")
+            self.log.info("No pedestal events in statistics, zero results")
+            return False
 
         container = event.mon.tel[self.tel_id].pedestal
 
@@ -192,6 +193,8 @@ class PedestalIntegrator(PedestalCalculator):
         # update pedestal mask
         event.mon.tel[self.tel_id].pixel_status.pedestal_failing_pixels = \
             np.logical_or(container.charge_median_outliers, container.charge_std_outliers)
+
+
 
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
