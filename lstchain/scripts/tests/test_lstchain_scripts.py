@@ -10,8 +10,8 @@ from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
 
 output_dir = os.path.join(test_dir, 'scripts')
-dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5')
-dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.simtel.h5')
+dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
+dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
@@ -105,7 +105,7 @@ def test_mc_dl1ab():
 
 @pytest.mark.run(after='test_mc_dl1ab')
 def test_mc_dl1ab_validity():
-    dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.simtel.h5'), key=dl1_params_lstcam_key)
+    dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.h5'), key=dl1_params_lstcam_key)
     dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
 
