@@ -543,9 +543,11 @@ def plot_datacheck(datacheck_filename, out_path=None):
                           for colname in colnames]
             # total number of entries for this event type:
             norm = table.col('num_events').sum()
-            fraction = np.array(pix_events)/norm
+            if norm > 0:
+                fraction = np.array(pix_events)/norm
             for i, frac in enumerate(fraction):
-                zscale = 'log' if threshold[i] < 200 else 'lin'
+                zscale = 'log' if threshold[i] < 200 and frac.sum() > 0 \
+                    else 'lin'
                 cam = CameraDisplay(engineering_geom, frac,
                                     ax=axes.flatten()[i], norm=zscale,
                                     title='Fraction of >' + str(threshold[i]) +
