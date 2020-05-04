@@ -11,9 +11,10 @@ from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContain
 
 from ctapipe.io.hdf5tableio import HDF5TableReader
 
-__all__ = ['read_file',
-           'plot_all'
-           ]
+__all__ = [
+    'read_file',
+    'plot_all'
+    ]
 
 ff_data = FlatFieldContainer()
 ped_data = PedestalContainer()

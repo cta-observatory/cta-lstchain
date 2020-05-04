@@ -4,12 +4,13 @@ import astropy.units as u
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra, crab_magic
 from lstchain.spectra.proton import proton_bess
-from gammapy.stats.poisson import excess_matching_significance_on_off
+from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import reco_source_position_sky
 from  astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 
 
+<<<<<<< HEAD
 __all__ = ['read_sim_par',
            'process_mc',
            'calculate_sensitivity',
@@ -20,6 +21,19 @@ __all__ = ['read_sim_par',
            'find_best_cuts_sens',
            'sens',
            ]
+=======
+__all__ = [
+    'read_sim_par',
+    'process_mc',
+    'calculate_sensitivity',
+    'calculate_sensitivity_lima',
+    'calculate_sensitivity_lima_ebin',
+    'bin_definition',
+    'ring_containment',
+    'find_best_cuts_sensitivity',
+    'sensitivity',
+    ]
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
 def read_sim_par(dl1_file):
     """
@@ -73,10 +87,20 @@ def process_mc(dl1_file, dl2_file, mc_type):
 
     #Filters:
 
+<<<<<<< HEAD
     filter_good_events =  (events.leakage < 0.2) & \
                           (events.intensity > np.log10(200)) & \
                           (events.wl > 0.1) & \
                           (events.tel_id==1)
+=======
+    filter_good_events = (
+        (events.leakage2_intensity < 0.2)
+        & (events.intensity > 50)
+        # & (events.tel_id==1)
+        # & (events.wl > 0.1)
+    )
+
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
     events = events[filter_good_events]
 
@@ -160,6 +184,7 @@ def calculate_sensitivity_lima(nex, nbg, alpha, eb, gb, tb):
     nex_5sigma = excess_matching_significance_on_off(\
         n_off=nbg,alpha=alpha,significance=5,method='lima')
 
+<<<<<<< HEAD
     for i in range(0, eb):
         for j in range(0, gb):
             for k in range(0, tb):
@@ -167,6 +192,20 @@ def calculate_sensitivity_lima(nex, nbg, alpha, eb, gb, tb):
                     nex_5sigma[i][j][k] = 10
                 if nex_5sigma[i,j,k] < 0.05 * nbg[i][j][k]/5:
                     nex_5sigma[i,j,k] = 0.05 * nbg[i][j][k]/5
+=======
+    stat = WStatCountsStatistic(
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
+
+    n_excesses_5sigma = stat.excess_matching_significance(5)
+
+    for i in range(0, n_bins_energy):
+        for j in range(0, n_bins_gammaness):
+            for k in range(0, n_bins_theta2):
+                if n_excesses_5sigma[i][j][k] < 10:
+                    n_excesses_5sigma[i][j][k] = 10
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
@@ -180,14 +219,22 @@ def calculate_sensitivity_lima_1d(nex, nbg, alpha, eb):
 
     Parameters
     ---------
+<<<<<<< HEAD
     nex:   `float` number of excess events in the signal region
     nbg:   `float` number of events in the background region
     alpha: `float` inverse of the number of off positions
+=======
+    n_excesses:   `numpy.ndarray` number of excess events in the signal region
+    n_background: `numpy.ndarray` number of events in the background region
+    alpha:        `float` inverse of the number of off positions
+    n_bins_energy:`int` number of bins in energy
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
     Returns
     ---------
     sens: `float` in percentage of Crab units
     """
+<<<<<<< HEAD
     nex_5sigma = excess_matching_significance_on_off(\
         n_off=nbg,alpha=alpha,significance=5,method='lima')
 
@@ -196,6 +243,30 @@ def calculate_sensitivity_lima_1d(nex, nbg, alpha, eb):
                     nex_5sigma[i] = 10
                 if nex_5sigma[i] < 0.05 * nbg[i]/5:
                     nex_5sigma[i] = 0.05 * nbg[i]/5
+=======
+
+    if any(len(a) != n_bins_energy for a in (n_excesses, n_background, alpha)):
+        raise ValueError(
+            'Excess, background and alpha arrays must have the same length')
+
+    stat = WStatCountsStatistic(
+        n_on=np.ones_like(n_background),
+        n_off=n_background,
+        alpha=alpha)
+
+    n_excesses_5sigma = stat.excess_matching_significance(5)
+
+    for i in range(0, n_bins_energy):
+        # If the excess needed to get 5 sigma is less than 10,
+        # we force it to be at least 10
+        if n_excesses_5sigma[i] < 10:
+            n_excesses_5sigma[i] = 10
+        # If the excess needed to get 5 sigma is less than 5%
+        # of the background, we force it to be at least 5% of
+        # the background
+        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
+            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
     sens = nex_5sigma / nex * 100  # percentage of Crab
 
@@ -382,6 +453,7 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
     nhadron_per_ebin = np.ndarray(eb)
 
     # Weight events and count number of events per bin:
+<<<<<<< HEAD
     for i in range(0,eb):  # binning in energy
         for j in range(0,gb):  # cut in gammaness
             for k in range(0,tb):  # cut in theta2
@@ -403,6 +475,43 @@ def find_best_cuts_sens(simtelfile_gammas, simtelfile_protons,
 
     nex_5sigma, sens = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff,
                                                   eb, gb, tb)
+=======
+    for i in range(0, n_bins_energy):  # binning in energy
+        total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])])
+
+        print("******** Energy bin [TeV] *****")
+        print(energy[i], energy[i + 1])
+        total_rate_proton_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])])
+        total_rate_gamma_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])])
+
+        print("**************")
+        print("Total rate triggered proton in this bin [Hz]", total_rate_proton_ebin)
+        print("Total rate triggered gamma in this bin [Hz]", total_rate_gamma_ebin)
+
+        for j in range(0, n_bins_gammaness):  #  cut in gammaness
+            for k in range(0, n_bins_theta2):  #  cut in theta2                
+                rate_g_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
+                                            & (gammaness_g > gammaness_bins[j]) & (theta2_g < theta2_bins[k])])
+
+                rate_p_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
+                                            & (gammaness_p > gammaness_bins[j]) & p_contained])
+                final_gamma[i][j][k] = rate_g_ebin * obstime
+                final_hadrons[i][j][k] = rate_p_ebin * obstime * area_ratio_p[k]
+
+                pre_gamma[i][j][k] = e_reco_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i]) \
+                                            & (gammaness_g > gammaness_bins[j]) & (theta2_g < theta2_bins[k])].shape[0]
+                pre_hadrons[i][j][k] = e_reco_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i]) \
+                                            & (gammaness_p > gammaness_bins[j]) & p_contained].shape[0]
+
+                ngamma_per_ebin[i] = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]) * obstime
+                nhadron_per_ebin[i] = np.sum(rate_weighted_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]) * obstime
+
+    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 
+                                                                        1/noff * np.ones(len(final_gamma)),
+                                                                        n_bins_energy, n_bins_gammaness, 
+                                                                        n_bins_theta2)
+
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
     # Avoid bins which are empty or have too few events:
     min_num_events = 10
     min_pre_events = 10
@@ -635,8 +744,14 @@ def sens(simtelfile_gammas, simtelfile_protons,
         ngamma_per_ebin[i] = np.sum(e_reco_gw[(e_reco_g < E[i+1]) & (e_reco_g > E[i])]) * obstime
         nhadron_per_ebin[i] = np.sum(e_reco_pw[(e_reco_p < E[i+1]) & (e_reco_p > E[i])]) * obstime
 
+<<<<<<< HEAD
     nex_5sigma, sens = calculate_sensitivity_lima_1d(final_gamma, final_hadrons * noff, 1/noff,
                                                   eb)
+=======
+    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima_ebin(final_gamma, final_hadrons * noff,
+                                                                             1 / noff * np.ones(len(final_gamma)),
+                                                                             n_bins_energy)
+>>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
     # Avoid bins which are empty or have too few events:
     min_num_events = 10
     min_pre_events = 10

@@ -1,4 +1,5 @@
 .pytest_cache
+_version_cache.py
 
 # Compiled files
 *.py[co]
