@@ -44,7 +44,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
 
     Parameters
     ----------
-    filenames: _sorted_ (by growing subrun index) list of input DL1 .h5 files
+    filenames: string, Path, or a list of them, _sorted_ (by growing subrun
+    index). Name(s) of the input DL1 .h5 file(s)
     output_path: directory where output will be written
     max_cores: maximum number of processes that the function will spawn (each
     processing a different subrun)
@@ -56,6 +57,10 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     """
 
     logger = logging.getLogger(__name__)
+
+    # convert to list if it is not yet a a list:
+    if not isinstance(filenames, list):
+        filenames = [filenames]
 
     # Obtain the names of the corresponding muon .fits files, assumed to be
     # in the same directory as the DL1 event files:
@@ -130,7 +135,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     # or... process the files sequentially:
     # dl1datacheck = list([None]*len(filenames))
     # for i, filename in enumerate(filenames):
-    #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
+    #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning,
+    #     trigger_source)
 
     # NOTE: I do not think we may have memory problems, but if needed we could
     # write out the containers as they are produced.
@@ -138,11 +144,16 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     writer_conf = tables.Filters(complevel=9, complib='blosc:zstd',
                                  fletcher32=True)
     with HDF5TableWriter(datacheck_filename, filters=writer_conf) as writer:
-        # write the containers (3 per subrun) to the dl1 data check output file:
+        # write the containers (3 per subrun) to the dl1 data check output file
+        # If container is None it means the filling was unsuccessful due to
+        # no events of the given type. Write only filled containers:
         for dcheck in dl1datacheck:
-            writer.write("dl1datacheck/pedestals", dcheck[0])
-            writer.write("dl1datacheck/flatfield", dcheck[1])
-            writer.write("dl1datacheck/cosmics", dcheck[2])
+            if dcheck[0] is not None:
+                writer.write("dl1datacheck/pedestals", dcheck[0])
+            if dcheck[1] is not None:
+                writer.write("dl1datacheck/flatfield", dcheck[1])
+            if dcheck[2] is not None:
+                writer.write("dl1datacheck/cosmics", dcheck[2])
         # write also the histogram binnings:
         writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
@@ -182,7 +193,9 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
     -------
     dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
     Containers of type DL1DataCheckContainer, with info on the three types of
-    events: interleaved pedestals, interleaved flatfield events, and cosmics
+    events: interleaved pedestals, interleaved flatfield events, and cosmics.
+    If one or more of them is None, it means they have not been filled,
+    due to lack of events if the given type in the input DL1 file.
 
     """
 
@@ -228,58 +241,81 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # because pandas is not compatible with vector columns
         image_table = file.root.dl1.event.telescope.image.LST_LSTCam
 
-        # create masks for the images table. For the time being, trigger
-        # type tags are not reliable. We first identify flatfield events by
-        # their looks, then use trigger_source (name of one of the trigger
-        # tags in the DL1 file) to identify pedestals:
+        # create flatfield mask from the images table. For the time being,
+        # trigger type tags are not reliable. We first identify flatfield events
+        # by their looks.
         image = image_table.col('image')
         flatfield_mask = ((np.median(image, axis=1) >
                            ff_min_pixel_charge_median) &
                           (np.std(image, axis=1) <
                            ff_max_pixel_charge_stddev))
-        pedestal_mask = ~flatfield_mask & \
-                        (image_table.col(trigger_source) == 32)
-        cosmics_mask = ~(pedestal_mask | flatfield_mask)
-
-        # Now create the masks for the parameters table, just the
-        # same event_id's (i.e. we do not assume that the rows in the
-        # images and parameters tables correspond one to one, though
-        # this should be the case if all events are saved)
-        ped_indices = image_table.col('event_id')[pedestal_mask]
-        params_pedestal_mask = np.array(
-                [(True if evtid in ped_indices else False) for evtid in
-                 parameters['event_id']])
+        # obtain the corresponding mask for the parameters table:
         ff_indices = image_table.col('event_id')[flatfield_mask]
         params_flatfield_mask = np.array(
                 [(True if evtid in ff_indices else False) for evtid in
                  parameters['event_id']])
+
+        # then use trigger_source (name of one of the trigger tags in the DL1
+        # file) to try to identify pedestals on the parameters table (but we
+        # trust better the above empirical identification of flatfield events):
+        params_pedestal_mask = (parameters[trigger_source] == 32) & \
+            ~params_flatfield_mask
+        # obtain the corresponding pedestal mask for the images table:
+        ped_indices = np.array(parameters['event_id'][params_pedestal_mask])
+        pedestal_mask = np.array([(True if evtid in ped_indices else False)
+                                  for evtid in image_table.col('event_id')])
+
+        # Now obtain by exclusion the masks for cosmics:
+        cosmics_mask = ~(pedestal_mask | flatfield_mask)
         params_cosmics_mask = ~(params_pedestal_mask | params_flatfield_mask)
 
         logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
                     f' flatfield: {np.sum(flatfield_mask)}, '
                     f' cosmics: {np.sum(cosmics_mask)}')
 
-        # fill quantities which depend on event-wise (not
+        # fill quantities which depend on event-wise (i.e. not
         # pixel-wise) parameters:
-        dl1datacheck_pedestals.fill_event_wise_info(subrun_index, parameters,
-                                                    params_pedestal_mask,
-                                                    geom, bins)
-        dl1datacheck_flatfield.fill_event_wise_info(subrun_index, parameters,
-                                                    params_flatfield_mask,
-                                                    geom, bins)
-        dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
-                                                  params_cosmics_mask,
-                                                  geom, bins)
+        if params_pedestal_mask.sum() > 0:
+            dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
+                                                        parameters,
+                                                        params_pedestal_mask,
+                                                        geom, bins)
+        if params_flatfield_mask.sum() > 0:
+            dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
+                                                        parameters,
+                                                        params_flatfield_mask,
+                                                        geom, bins)
+        if params_cosmics_mask.sum() > 0:
+            dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
+                                                      params_cosmics_mask,
+                                                      geom, bins)
 
         # now fill pixel-wise information:
-        dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                    pedestal_mask, bins)
-        dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                    flatfield_mask, bins)
-        dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                  cosmics_mask, bins)
+        if pedestal_mask.sum() > 0:
+            dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                        pedestal_mask, bins)
+        if flatfield_mask.sum() > 0:
+            dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
+                                                        flatfield_mask, bins)
+        if cosmics_mask.sum() > 0:
+            dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
+                                                      cosmics_mask, bins)
 
-    return dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
+        # Return None for a container that has not been completely filled,
+        # otherwise it will give trouble in the plotting stage.
+        if pedestal_mask.sum() == 0 or params_pedestal_mask.sum() == 0:
+            dl1datacheck_pedestals = None
+        if flatfield_mask.sum() == 0 or params_flatfield_mask.sum() == 0:
+            dl1datacheck_flatfield = None
+        if cosmics_mask.sum() == 0 or params_cosmics_mask.sum() == 0:
+            dl1datacheck_cosmics = None
+
+                # in case event sof some type are missing, just issue a warning and
+        # retun None for the corresponding container, to avoid catastrophic
+        # failure when trying to write it out
+
+        return dl1datacheck_pedestals, dl1datacheck_flatfield, \
+               dl1datacheck_cosmics
 
 
 def plot_datacheck(datacheck_filename, out_path=None):
@@ -382,9 +418,11 @@ def plot_datacheck(datacheck_filename, out_path=None):
         for table, label in zip(dl1dcheck_tables, labels):
             axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
                             fmt, label=label)
-            # elapsed time better from the cosmics table, will be closer to
-            # the true one:
-            elapsed_t = table_cosmics.col('elapsed_time')
+            # elapsed time: would better to take it always from the cosmics
+            # table (will be closer to the true one), but number of entries
+            # of tables can be different if e.g. pedestals or flatfield events
+            # are missing in some subruns!
+            elapsed_t = table.col('elapsed_time')
             axes[1, 1].plot(table.col('subrun_index'),
                             table.col('num_events') / elapsed_t, fmt,
                             label=label)
