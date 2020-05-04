@@ -1001,7 +1001,7 @@ def merge_dl1datacheck_files(file_list):
 
     merged_file.close()
 
-    # For copying the camera geometry we use astropy tables to avoid s
+    # For copying the camera geometry we use astropy tables to avoid a
     # NaturalNameWarning from tables/path.py
     cam_description_table = \
         Table.read(first_file_name, path='instrument/telescope/camera/LSTCam')
