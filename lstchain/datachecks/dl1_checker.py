@@ -341,6 +341,31 @@ def plot_datacheck(datacheck_filename, out_path=None):
         table_cosmics = file.root.dl1datacheck.cosmics
         dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
 
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
+        fig.tight_layout(pad=0.)
+        plt.text(0.1, 0.7, datacheck_filename,
+                 fontsize=32, horizontalalignment='left',
+                 verticalalignment='center')
+        plt.text(0.1, 0.6, 'First shower event UTC: ', fontsize=24,
+                 horizontalalignment='left', verticalalignment='center')
+        plt.text(0.1, 0.5, '    UCTS: '+
+                 str(datetime.utcfromtimestamp\
+                         (table_cosmics.col('ucts_time')[0][0])),
+                 fontsize=24, horizontalalignment='left',
+                 verticalalignment='center')
+        plt.text(0.1, 0.43, '    Dragon: '+
+                 str(datetime.utcfromtimestamp\
+                         (table_cosmics.col('dragon_time')[0][0])),
+                 fontsize=24, horizontalalignment='left',
+                 verticalalignment='center')
+        plt.text(0.1, 0.36, '    TIB: '+
+                 str(datetime.utcfromtimestamp\
+                         (table_cosmics.col('tib_time')[0][0])),
+                 fontsize=24, horizontalalignment='left',
+                 verticalalignment='center')
+        axes.axis('off')
+        pdf.savefig()
+
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=2.0)
 
@@ -404,7 +429,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
         # dragon_time contains for each table row a number of times sampled at
         # regular event intervals. We get the mean per row (typically =subrun):
         mean_dragon_time = np.mean(dragon_time, axis=1)
-        mpl_times = np.array([dates.date2num(datetime.fromtimestamp(x))
+        mpl_times = np.array([dates.date2num(datetime.utcfromtimestamp(x))
                                              for x in mean_dragon_time])
         axes[1, 1].plot_date(mpl_times, alt_deg, fmt=fmt, xdate=True,
                              tz='utc')
