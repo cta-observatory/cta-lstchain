@@ -77,8 +77,8 @@ def main():
                 exit(1)
 
         # run lstchain script
-        cmd = f"lstchain_data_create_drs4_pedestal_file --input_file {input_file} " \
-              f"--output_file {output_file} --max_events {max_events}"
+        cmd = f"lstchain_data_create_drs4_pedestal_file --input-file {input_file} " \
+              f"--output-file {output_file} --max-events {max_events}"
 
         os.system(cmd)
 

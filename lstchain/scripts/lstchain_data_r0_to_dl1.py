@@ -124,6 +124,7 @@ def main():
         log.error('Input file does not exist or is not a file')
         sys.exit(1)
 
+
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
