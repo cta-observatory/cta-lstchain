@@ -62,8 +62,8 @@ optional.add_argument('--omit-pdf', action='store_true',
 
 args, unknown = parser.parse_known_args()
 
-def main():
 
+def main():
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger(__name__)
