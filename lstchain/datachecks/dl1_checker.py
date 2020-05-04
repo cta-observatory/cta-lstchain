@@ -306,7 +306,7 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
     # in case of >1 input file, we assume they correspond to subruns of a
     # given run. We merge them before proceeding:
-    if type(datacheck_filename) == list:
+    if isinstance(datacheck_filename, list):
         if len(datacheck_filename) > 1:
             merged_filename = merge_dl1datacheck_files(datacheck_filename)
             datacheck_filename = merged_filename
@@ -963,8 +963,6 @@ def merge_dl1datacheck_files(file_list):
     just from the first file
 
     """
-
-    logger =  logging.getLogger(__name__)
 
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
