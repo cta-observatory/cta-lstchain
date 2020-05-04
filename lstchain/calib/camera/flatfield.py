@@ -173,8 +173,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # check if to create a calibration event
         if (
-            sample_age > self.sample_duration
-            or self.num_events_seen == self.sample_size
+                ( self.num_events_seen > 0 and
+                  sample_age > self.sample_duration)
+                or self.num_events_seen == self.sample_size
         ):
             # update the monitoring container
             self.store_results(event)
@@ -193,8 +194,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
          event : general event container
         """
         if self.num_events_seen == 0:
-            self.log.info("No flat-field events in statistics, zero results")
-            return
+            raise ValueError("No flat-field events in statistics, zero results")
 
         container = event.mon.tel[self.tel_id].flatfield
 
