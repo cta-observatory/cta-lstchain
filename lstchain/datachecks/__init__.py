@@ -4,7 +4,6 @@ from .dl1_checker import (
     plot_datacheck,
     plot_trigger_types,
     plot_mean_and_stddev,
-    get_muon_filenames,
     merge_dl1datacheck_files
 )
 from .containers import (

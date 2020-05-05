@@ -8,7 +8,6 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
-    'get_muon_filenames',
     'merge_dl1datacheck_files'
 ]
 
@@ -33,6 +32,8 @@ from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
+    run_to_muon_filename, run_to_datacheck_dl1_filename
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
@@ -64,25 +65,25 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
 
     # Obtain the names of the corresponding muon .fits files, assumed to be
     # in the same directory as the DL1 event files:
-    muon_filenames = get_muon_filenames(filenames)
+    muon_filenames = []
+    for filename in filenames:
+        dl1 = parse_dl1_filename(filename)
+        muon_filenames.append(run_to_muon_filename(dl1.tel_id, dl1.run,
+                                                   dl1.subrun, None, False))
 
     # Define output filename (overwrite if already existing).
     # If there is a single input file (i.e. a single subrun) then the output
     # file name will keep the subrun index. If there is more than one file
     # (i.e. several subruns) the output file name omit the subrun index.
-    name = os.path.basename(filenames[0])
-    name = name.replace('dl1_', 'datacheck_dl1_')
-    # patch for DL1 files which contain the "stream tag" in the name, and put
-    # the correct extension:
-    datacheck_filename = name.replace('LST-1.1', 'LST-1').\
-        replace('.fits.h5', '.h5')
-    if len(filenames) > 1:
-        # Remove subrun index (4 digits, precedes the .h5 extension):
-        datacheck_filename = datacheck_filename[:-8] + datacheck_filename[-3:]
-    datacheck_filename = Path(output_path, datacheck_filename)
-
-    if datacheck_filename.exists():
-        os.remove(datacheck_filename)
+    first_file = parse_dl1_filename(filenames[0])
+    if len(filenames) == 1:
+        datacheck_filename = run_to_datacheck_dl1_filename(first_file.tel_id,
+                                                           first_file.run,
+                                                           first_file.subrun)
+    else:
+        datacheck_filename = run_to_datacheck_dl1_filename(first_file.tel_id,
+                                                           first_file.run,
+                                                           None)
 
     # the list dl1datacheck will contain one entry per subrun. Each entry is a
     # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
@@ -173,7 +174,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     file.close()
 
     # do the plots and save them to a pdf file:
-    if (create_pdf):
+    if create_pdf:
         plot_datacheck(datacheck_filename, output_path)
 
     return
@@ -208,11 +209,7 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
     ff_max_pixel_charge_stddev = 20.
 
     logger.info(f'Opening file {filename}')
-
-    # convert to Path if it is not already:
-    filename = Path(filename)
-    name = filename.name
-    subrun_index = int(name[name.find('Run') + 9:][:4])
+    subrun_index = parse_dl1_filename(filename).subrun
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
     dl1datacheck_flatfield = DL1DataCheckContainer()
@@ -730,23 +727,15 @@ def plot_datacheck(datacheck_filename, out_path=None):
 
         # Now we go for the muons .fits files, created in the R0 to DL1 stage.
         # We look for the files with the same subrun indices that have been
-        # processed. Unfortunately we cannot use here get_muon_filenames(),
-        # because the original list of DL1 files may not be available,
-        # in case we are running directly over a datacheck_dl1 file. We also
-        # assume that the muon .fits files must be in the same directory
+        # processed.
+        # We assume that the muon .fits files must be in the same directory
         # as the datacheck_dl1*.h5 file!
         muon_filenames = []
+        dcfile = parse_datacheck_dl1_filename(datacheck_filename)
         for i in subrun_list:
             dirname = os.path.dirname(datacheck_filename)
-            name = os.path.basename(datacheck_filename)
-            name = name.replace('datacheck_dl1', 'muons')
-            # the name may already contain the subrun index, if it is a
-            # check_dl1 file produced from a single DL1 file. If that is not
-            # the case, the subrun index has to be added:
-            if name.find(f'.{i:04}.h5') == -1:
-                name = name.replace('.h5', f'.{i:04}.fits')
-            else:
-                name = name.replace('.h5', '.fits')
+            name = run_to_muon_filename(dcfile.tel_id, dcfile.run, i, None,
+                                        False)
             if Path(dirname, name).exists():
                 muon_filenames.append(Path(dirname,name))
             else:
@@ -1028,34 +1017,6 @@ def write_error_page(tablename, pagesize):
     axes.axis('off')
 
 
-def get_muon_filenames(filenames):
-    """
-
-    Parameters
-    ----------
-    filenames: names of the input DL1 event files
-
-    Returns
-    -------
-    List of the names of the muon files which correspond to the DL1 event files
-    """
-
-    muon_filenames = []
-    for filename in filenames:
-        dirname = os.path.dirname(filename)
-        name = os.path.basename(filename)
-        name = name.replace('dl1_', 'muons_')
-        # patch for DL1 files which contain the "stream tag" in the name:
-        name = name.replace('LST-1.1', 'LST-1')
-        # put the correct .fits extension (both for the XXXX.h5 and the
-        # deprecated XXXX.fits.h5 conventions of DL1 files):
-        name = name.replace('.fits.h5', '.fits')
-        name = name.replace('.h5', '.fits')
-        muon_filenames.append(Path(dirname, name))
-
-    return muon_filenames
-
-
 def merge_dl1datacheck_files(file_list):
     """
 
@@ -1076,9 +1037,9 @@ def merge_dl1datacheck_files(file_list):
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
     # get run number and build the name of the merged file:
-    run_str = first_file_name[first_file_name.rfind('.Run'):][0:9]
-    merged_filename = 'datacheck_dl1_LST-1'+run_str+'.h5'
-
+    file = parse_datacheck_dl1_filename(first_file_name)
+    merged_filename = run_to_datacheck_dl1_filename(file.tel_id, file.run,
+                                                    None, None)
     # The input (sub-run wise) list should never contain the name of the
     # run-wise file that we will produce by merging. Just to avoid accidents:
     if merged_filename in file_list:
