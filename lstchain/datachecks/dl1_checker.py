@@ -297,13 +297,16 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # now fill pixel-wise information:
         if pedestal_mask.sum() > 0:
             dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                        pedestal_mask, bins)
+                                                        pedestal_mask, bins,
+                                                        'pedestals')
         if flatfield_mask.sum() > 0:
             dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                        flatfield_mask, bins)
+                                                        flatfield_mask, bins,
+                                                        'flatfield')
         if cosmics_mask.sum() > 0:
             dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                      cosmics_mask, bins)
+                                                      cosmics_mask, bins,
+                                                      'cosmics')
 
         # Return None for a container that has not been completely filled,
         # otherwise it will give trouble in the plotting stage.

@@ -110,8 +110,6 @@ class DL1DataCheckContainer(Container):
 
         """
 
-
-
         self.subrun_index = subrun_index
         # the elapsed time is between first and last event of the events in
         # table (we do not apply the mask here since we want to have all
@@ -222,7 +220,8 @@ class DL1DataCheckContainer(Container):
         for pix in cog_pixid[select]:
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
-    def fill_pixel_wise_info(self, table, mask, histogram_binnings):
+    def fill_pixel_wise_info(self, table, mask, histogram_binnings,
+                             event_type = ''):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -232,6 +231,8 @@ class DL1DataCheckContainer(Container):
         mask: indicates rows that have to be used for filling this container
         histogram_binnings: container of type DL1DataCheckHistogramBins, with
         definition of the binnings of all the histograms
+        fill_time_info: fill the information on the pixel pulse times; can be
+        set to False e.g. for pedestal events
 
         Returns
         -------
@@ -257,7 +258,7 @@ class DL1DataCheckContainer(Container):
         self.hist_pixelchargespectrum = counts
 
         # for pedestal events nothing else to be done:
-        if table.name == 'pedestals':
+        if event_type == 'pedestals':
             return
 
         # as of ctapipe 0.7.0, pulse times can take absurd values for pixels
@@ -296,6 +297,9 @@ class DL1DataCheckContainer(Container):
             selected_entries = np.where(charge > 1, relative_time_t, np.nan)
             self.relative_time_mean = np.nanmean(selected_entries, axis=0)
             self.relative_time_stddev = np.nanstd(selected_entries, axis=0)
+
+            if event_type == 'flatfield':
+                return
 
             selected_entries = np.where(charge>30, time, np.nan)
             self.time_mean_above_030_pe = np.nanmean(selected_entries, axis=0)
