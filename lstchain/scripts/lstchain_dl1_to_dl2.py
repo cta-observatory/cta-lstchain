@@ -144,7 +144,7 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
-    write_dl2_dataframe(dl2.astype(float), output_file)
+    write_dl2_dataframe(dl2, output_file)
 
 if __name__ == '__main__':
     main()
