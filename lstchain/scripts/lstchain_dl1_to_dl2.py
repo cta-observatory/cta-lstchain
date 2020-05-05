@@ -34,7 +34,8 @@ from lstchain.io import (
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
-    dl1_images_lstcam_key
+    dl1_images_lstcam_key,
+    dl2_params_lstcam_key,
 )
 
 
@@ -121,12 +122,13 @@ def main():
     dl1_keys.remove(dl1_images_lstcam_key)
     dl1_keys.remove(dl1_params_lstcam_key)
 
-    if config['source_dependent']:
+    if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
     with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
 
+            # Write the selected DL1 info
             for k in dl1_keys:
                 if not k.startswith('/'):
                     k = '/' + k
@@ -142,6 +144,7 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
+    write_dl2_dataframe(dl2, output_file)
 
 if __name__ == '__main__':
     main()

@@ -2,8 +2,8 @@ import numpy as np
 import os
 from ctapipe.core.traits import Unicode, List, Int
 from ctapipe.calib.camera import CameraCalibrator
-from ctapipe.image.reducer import *
-from ctapipe.image.extractor import *
+from ctapipe.image.reducer import DataVolumeReducer
+from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.io.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
@@ -20,36 +20,36 @@ class LSTCameraCalibrator(CameraCalibrator):
     """
     extractor_product = Unicode(
         'LocalPeakWindowSum',
-        help = 'Name of the charge extractor to be used'
-    ).tag(config = True)
+        help='Name of the charge extractor to be used'
+    ).tag(config=True)
 
     reducer_product = Unicode(
         'NullDataVolumeReducer',
-        help = 'Name of the DataVolumeReducer to use'
-    ).tag(config = True)
+        help='Name of the DataVolumeReducer to use'
+    ).tag(config=True)
 
     calibration_path = Unicode(
         '',
-        allow_none = True,
-        help = 'Path to LST calibration file'
-    ).tag(config = True)
+        allow_none=True,
+        help='Path to LST calibration file'
+    ).tag(config=True)
 
     time_calibration_path = Unicode(
         '',
-        allow_none = True,
-        help = 'Path to drs4 time calibration file'
-    ).tag(config = True)
+        allow_none=True,
+        help='Path to drs4 time calibration file'
+    ).tag(config=True)
 
     allowed_tels = List(
         [1],
-        help = 'List of telescope to be calibrated'
-    ).tag(config = True)
+        help='List of telescope to be calibrated'
+    ).tag(config=True)
 
     gain_threshold = Int(
         4094,
-        allow_none = True,
-        help = 'Threshold for the gain selection in ADC'
-    ).tag(config = True)
+        allow_none=True,
+        help='Threshold for the gain selection in ADC'
+    ).tag(config=True)
 
     def __init__(self, **kwargs):
         """
@@ -74,7 +74,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         # load the waveform charge extractor
         self.image_extractor = ImageExtractor.from_name(
             self.extractor_product,
-            config = self.config
+            config=self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
 
@@ -82,19 +82,21 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         self.data_volume_reducer = DataVolumeReducer.from_name(
             self.reducer_product,
-            config = self.config
+            config=self.config
         )
         self.log.info(f" {self.reducer_product}")
 
         # declare gain selector if the threshold is defined
         if self.gain_threshold:
             self.gain_selector = gainselection.ThresholdGainSelector(
-                threshold = self.gain_threshold)
+                threshold=self.gain_threshold
+            )
 
         # declare time calibrator if correction file exist
         if os.path.exists(self.time_calibration_path):
             self.time_corrector = PulseTimeCorrection(
-                calib_file_path = self.time_calibration_path)
+                calib_file_path=self.time_calibration_path
+            )
         else:
             raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
 
@@ -114,7 +116,6 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         try:
             with HDF5TableReader(self.calibration_path) as h5_table:
-                assert h5_table._h5file.isopen == True
                 for telid in self.allowed_tels:
                     # read the calibration data
                     table = '/tel_' + str(telid) + '/calibration'
@@ -131,17 +132,20 @@ class LSTCameraCalibrator(CameraCalibrator):
                     # read the pixel_status container
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
-        except:
-            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
+        except Exception:
+            self.log.exception(
+                f"Problem in reading calibration file {self.calibration_path}"
+            )
+            raise
 
     def _calibrate_dl0(self, event, telid):
         """
         create dl0 level, for the moment copy the r1
-        """        
+        """
         waveforms = event.r1.tel[telid].waveform
         if self._check_r1_empty(waveforms):
             return
-        
+
         event.dl0.event_id = event.r1.event_id
 
         # if not already done, initialize the event monitoring containers
@@ -196,5 +200,3 @@ class LSTCameraCalibrator(CameraCalibrator):
         else:
             event.dl1.tel[telid].image = charge
             event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
-
-

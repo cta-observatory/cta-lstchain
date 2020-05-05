@@ -11,8 +11,9 @@
 import argparse
 import os
 from pathlib import Path
-from lstchain.io.data_management import *
+from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -119,7 +120,7 @@ def main():
         output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
         log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
         print(f"\n--> Output file {output_file}")
-        if os.path.exists(output_file) and ff_calibration is 'yes':
+        if os.path.exists(output_file) and ff_calibration == 'yes':
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
             else:
@@ -131,7 +132,7 @@ def main():
         #
         # produce ff calibration file
         #
-        if ff_calibration is 'yes':
+        if ff_calibration == 'yes':
             # run lstchain script
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
@@ -147,8 +148,6 @@ def main():
             print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
             calib.read_file(output_file,tel_id)
             calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
-
-
 
         print("\n--> END")
 

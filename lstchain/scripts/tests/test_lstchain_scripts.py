@@ -1,5 +1,3 @@
-import matplotlib as mpl
-mpl.use('Agg')
 import pytest
 import pandas as pd
 import os
@@ -8,6 +6,8 @@ from lstchain.io.io import dl1_params_lstcam_key
 import numpy as np
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
+import pkg_resources
+
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
@@ -15,6 +15,19 @@ dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
+
+
+def find_entry_points(package_name):
+    '''from: https://stackoverflow.com/a/47383763/3838691'''
+    entrypoints = [
+        ep.name
+        for ep in pkg_resources.iter_entry_points('console_scripts')
+        if ep.module_name.startswith(package_name)
+    ]
+    return entrypoints
+
+
+ALL_SCRIPTS = find_entry_points('lstchain')
 
 
 def run_program(*args):
@@ -28,6 +41,12 @@ def run_program(*args):
             f'Running {args[0]} failed with return code {result.returncode}'
             f', output: \n {result.stdout}'
         )
+
+
+@pytest.mark.parametrize('script', ALL_SCRIPTS)
+def test_all_help(script):
+    '''Test for all scripts if at least the help works'''
+    run_program(script, '--help')
 
 
 def test_lstchain_mc_r0_to_dl1():
@@ -62,6 +81,7 @@ def test_lstchain_mc_trainpipe():
     assert os.path.exists(file_model_gh_sep)
     assert os.path.exists(file_model_disp)
     assert os.path.exists(file_model_energy)
+
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_mc_rfperformance():

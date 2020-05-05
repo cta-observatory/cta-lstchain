@@ -24,10 +24,10 @@ from ctapipe.instrument import CameraGeometry
 from astropy import units as u
 
 from lstchain.image.muon import (
-    analyze_muon_event, 
-    create_muon_table, 
+    analyze_muon_event,
+    create_muon_table,
     fill_muon_event,
-    tag_pix_thr, 
+    tag_pix_thr,
 )
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.visualization import plot_calib
@@ -41,13 +41,13 @@ parser = argparse.ArgumentParser()
 # Required arguments
 parser.add_argument(
     "--input-file", '-f', type=str,
-    dest='input_file'
+    dest='input_file',
     required=True,
     help="Path to DL1a data file (containing charge information).",
 )
 
 parser.add_argument(
-    "--output-file", '-o', type=str, 
+    "--output-file", '-o', type=str,
     dest='output_file',
     required=True,
     help="Path to create the output fits table with muon parameters",
@@ -55,7 +55,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--calibration-file", '--calib',
-    dest='calib_file'
+    dest='calib_file',
     type=str, default=None, required=False,
     help="Path to corresponding calibration file (containing bad pixel information).",
 )
@@ -63,22 +63,22 @@ parser.add_argument(
 
 # Optional argument
 parser.add_argument(
-    "--plot-rings", 
-    dest='plot_rings'
+    "--plot-rings",
+    dest='plot_rings',
     default=False, action='store_true',
     help="Plot figures of the stored rings",
 )
 
 parser.add_argument(
-    "--plots-path", 
-    dest='plots_path'
+    "--plots-path",
+    dest='plots_path',
     default=None, type=str,
     help="Path to the plots",
 )
 
 parser.add_argument(
-    "--max-muons", 
-    dest='max_muons'
+    "--max-muons",
+    dest='max_muons',
     type=int,
     help="Maximum number of processed muon ring candidates",
 )
