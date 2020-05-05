@@ -1,10 +1,10 @@
 import numpy as np
-from ctapipe.calib.camera.pedestals import *
 from ctapipe.io.containers import EventAndMonDataContainer
 
 
 def test_pedestal_calculator():
     """ test of PedestalIntegrator """
+    from ctapipe.calib.camera.pedestals import PedestalIntegrator
 
     tel_id = 0
     n_events = 10
@@ -34,6 +34,7 @@ def test_pedestal_calculator():
 
 def test_calc_pedestals_from_traces():
     """ test calc_pedestals_from_traces """
+    from ctapipe.calib.camera.pedestals import calc_pedestals_from_traces
     # create some test data (all ones, but with a 2 stuck in for good measure):
     npix = 1000
     nsamp = 32
