@@ -98,7 +98,6 @@ class CalibrationCalculator(Component):
         if self.pedestal.tel_id != self.flatfield.tel_id:
             raise ValueError(msg)
 
-
         self.tel_id = self.flatfield.tel_id
 
         self.log.debug(f"{self.pedestal}")
@@ -157,12 +156,14 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
+
         # Extract calibration coefficients with F-factor method
         # Assume fixed excess noise factor must be known from elsewhere
 
         # calculate photon-electrons
-        n_pe = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
-                ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
+        numerator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2
+        denominator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
+        n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
@@ -174,9 +175,14 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         npe_signal_median = np.ma.median(masked_npe, axis=1)
 
         # Flat field factor
-        ff = np.ma.getdata(npe_signal_median[:, np.newaxis] / n_pe)
+        numerator = npe_signal_median[:, np.newaxis]
+        denominator = n_pe
+        ff = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
-        calib_data.dc_to_pe = n_pe / (ff_data.charge_median - ped_data.charge_median) * ff
+        # calibration coefficients
+        numerator = n_pe * ff
+        denominator = (ff_data.charge_median - ped_data.charge_median)
+        calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # put the time around zero
         camera_time_median = np.median(ff_data.time_median, axis=1)
@@ -200,8 +206,11 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         new_ped = False
         new_ff = False
 
-        # if pedestal event
-        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type):
+        # if pedestal event (check also the ucts trigger for the moment)
+        if (
+                LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type) or
+                LSTEventType.is_pedestal(event.lst.tel[self.tel_id].evt.ucts_trigger_type)
+        ) :
 
             new_ped = self.pedestal.calculate_pedestals(event)
 
