@@ -143,8 +143,9 @@ class PedestalIntegrator(PedestalCalculator):
 
         # check if to create a calibration event
         if (
-            sample_age > self.sample_duration
-            or self.num_events_seen == self.sample_size
+                (self.num_events_seen > 0 and
+                 sample_age > self.sample_duration)
+                or self.num_events_seen == self.sample_size
         ):
             # update the monitoring container
             self.store_results(event)
@@ -163,6 +164,7 @@ class PedestalIntegrator(PedestalCalculator):
          event : general event container
         """
 
+        # something wrong if you are here and no statistic is there
         if self.num_events_seen == 0:
             raise ValueError("No pedestal events in statistics, zero results")
 
