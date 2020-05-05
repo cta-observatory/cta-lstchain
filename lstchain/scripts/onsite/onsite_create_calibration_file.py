@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
-import os
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
