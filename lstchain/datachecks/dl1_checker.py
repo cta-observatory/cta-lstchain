@@ -487,12 +487,15 @@ def plot_datacheck(datacheck_filename, out_path=None):
                                  pagesize, norm='log')
         pdf.savefig()
 
-        plot_mean_and_stddev(table_flatfield, engineering_geom,
-                             ['charge_mean', 'charge_stddev'],
-                             ['Flat-field mean charge (p.e.)',
-                              'Flat-field charge std dev (p.e.)',
-                              'FLATFIELD, pixel-wise charge info'], pagesize,
-                             norm='log')
+        if len(table_flatfield) == 0:
+            write_error_page('flatfield', pagesize)
+        else:
+            plot_mean_and_stddev(table_flatfield, engineering_geom,
+                                 ['charge_mean', 'charge_stddev'],
+                                 ['Flat-field mean charge (p.e.)',
+                                 'Flat-field charge std dev (p.e.)',
+                                 'FLATFIELD, pixel-wise charge info'], pagesize,
+                                 norm='log')
         pdf.savefig()
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
@@ -580,13 +583,24 @@ def plot_datacheck(datacheck_filename, out_path=None):
                                   'Flat-field time std dev (ns)',
                                   'FLATFIELD, pixel-wise pulse time info'],
                                  pagesize)
+            pdf.savefig()
+            plot_mean_and_stddev(table_flatfield, engineering_geom,
+                                 ['relative_time_mean',
+                                  'relative_time_stddev'],
+                                 ['Flat-field mean time (ns)',
+                                  'Flat-field time std dev (ns)',
+                                  'FLATFIELD, pixel-wise pulse time relative '
+                                  'to camera mean'],
+                                 pagesize)
+
         pdf.savefig()
 
         plot_mean_and_stddev(table_cosmics, engineering_geom,
                              ['time_mean', 'time_stddev'],
                              ['Cosmics mean time (ns)',
                               'Cosmics time std dev (ns)',
-                              'COSMICS, pixel-wise pulse time info'], pagesize)
+                              'COSMICS, pixel-wise pulse time info for pixel '
+                              'charge > 1 p.e.'], pagesize)
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
@@ -761,9 +775,12 @@ def plot_datacheck(datacheck_filename, out_path=None):
         fig.suptitle('MUON RINGS', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
                          pad=3.0, h_pad=3.0, w_pad=2.0)
+        fmt = '-'
+        if len(subrun_list) == 1:
+            fmt = 'o'
         axes[0, 0].set_ylim(0, num_rings.max()*1.15)
-        axes[0, 0].plot(subrun_list, num_rings, '-', label='all rings in files')
-        axes[0, 0].plot(subrun_list, num_contained_rings, '-',
+        axes[0, 0].plot(subrun_list, num_rings, fmt, label='all rings in files')
+        axes[0, 0].plot(subrun_list, num_contained_rings, fmt,
                         label='contained rings')
         axes[0, 0].set_ylabel('number of muon rings per subrun')
         axes[0, 0].legend(loc='best')
@@ -771,8 +788,8 @@ def plot_datacheck(datacheck_filename, out_path=None):
         muon_rate = num_rings / elapsed_t
         contained_muon_rate = num_contained_rings / elapsed_t
         axes[0, 1].set_ylim(0, muon_rate.max()*1.15)
-        axes[0, 1].plot(subrun_list, muon_rate, '-', label='all rings in files')
-        axes[0, 1].plot(subrun_list, contained_muon_rate, '-',
+        axes[0, 1].plot(subrun_list, muon_rate, fmt, label='all rings in files')
+        axes[0, 1].plot(subrun_list, contained_muon_rate, fmt,
                         label='contained rings')
         axes[0, 1].set_ylabel('rate of muon rings (events/s)')
         axes[0, 1].legend(loc='best')
@@ -916,6 +933,26 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
 
 
 def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
+    """
+    Parameters
+    ----------
+    table:  python table containing pixel-wise information to be displayed
+    camgeom: camera geometry
+    columns: list of 2 strings, columns of 'table', first one is the mean and
+    the second the std deviation to be plotted
+    labels: plot titles
+    pagesize: [width, height] in cm
+    norm:  lin or log, z-scale of camera displays
+
+    Returns
+    -------
+    None
+
+    The subrun-wise mean and std dev values are used to calculate the
+    run-wise (i.e. for all processed subruns which appear in the table)
+    counterparts of the same, which are then plotted.
+
+    """
 
     logger = logging.getLogger(__name__)
 

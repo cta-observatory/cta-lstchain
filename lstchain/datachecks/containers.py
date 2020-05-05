@@ -12,6 +12,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
+import warnings
 from ctapipe.core import Container, Field
 
 
@@ -74,6 +75,11 @@ class DL1DataCheckContainer(Container):
     time_mean_above_030_pe = Field(-1, 'Mean of pulse time, >30 p.e. pulses')
     time_stddev_above_030_pe = Field(-1, 'Standard deviaton of pulse time, '
                                          '>30 p.e. pulses')
+    relative_time_mean = Field(-1, 'Mean of pulse time relative to average of '
+                                   'rest of pixels')
+    relative_time_stddev = Field(-1, 'Standard deviaton of pulse time '
+                                     'relative to average of rest of pixels')
+
     # keep number of events above a few thresholds, like a low-res histogram
     # of pulse charges (2 points per decade in charge in p.e.)
     # This could be done in a cleaner way with a 2d hist charge vs. pixel (TBD)
@@ -233,32 +239,10 @@ class DL1DataCheckContainer(Container):
 
         """
         charge = table.col('image')[mask]
-        time = table.col('pulse_time')[mask]
+
+        # average charge in each pixel through the subrun:
         self.charge_mean = charge.mean(axis=0)
         self.charge_stddev = charge.std(axis=0)
-
-        # as of ctapipe 0.7.0, pulse times can take absurd values for pixels
-        # containing very little signal. For time plots we require at least 1
-        # p.e. We also exclude NaNs
-        charge_t = charge.transpose()
-        time_t = time.transpose()
-        # each row in the transposed matrices has all events for one pixel
-
-        healthy_entries = np.array([t[~np.isnan(t) & (c > 1)]
-                                    for t, c in zip(time_t, charge_t)])
-        self.time_mean = np.array([h.mean() if len(h) > 0 else np.nan
-                                   for h in healthy_entries])
-        self.time_stddev = np.array([h.std() if len(h) > 0 else np.nan
-                                     for h in healthy_entries])
-
-        healthy_entries = np.array([t[~np.isnan(t) & (c > 30)]
-                                    for t, c in zip(time_t, charge_t)])
-        self.time_mean_above_030_pe = np.array([h.mean() if len(h) > 0
-                                                else np.nan
-                                                for h in healthy_entries])
-        self.time_stddev_above_030_pe = np.array([h.std() if len(h) > 0
-                                                  else np.nan
-                                                  for h in healthy_entries])
 
         # count, for each pixel, the number of entries with charge>x pe:
         self.num_pulses_above_0010_pe = np.sum(charge > 10, axis=0)
@@ -271,6 +255,52 @@ class DL1DataCheckContainer(Container):
             plt.hist(charge[charge > 0].flatten(),
                      bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
+
+        # for pedestal events nothing else to be done:
+        if table.name == 'pedestals':
+            return
+
+        # as of ctapipe 0.7.0, pulse times can take absurd values for pixels
+        # containing very little signal. For time plots we require at least 1
+        # p.e. We will also exclude NaNs from the calculations
+
+        time = table.col('pulse_time')[mask]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+
+            # Make nan all pulse times for charges less than 1 p.e.:
+            selected_entries = np.where(charge > 1, time, np.nan)
+            # count how many valid pixels per event:
+            n_valid_pixels = np.array([np.sum([~np.isnan(row)])
+                                       for row in selected_entries])
+            # mean and std dev for each pixel through the whole subrun:
+            self.time_mean = np.nanmean(selected_entries, axis=0)
+            self.time_stddev = np.nanstd(selected_entries, axis=0)
+            # Now the average time in the camera, for each event:
+            tmean = np.nanmean(selected_entries, axis=1)
+
+            # tile it to the same shape as time, to allow subtracting it from each
+            # pixel's pulse time:
+            camera_time_mean = np.tile(tmean, (time.shape[1], 1)).transpose()
+            # from camera mean time, to the same but excluding one pixel at a
+            # time:
+            camera_valid_pixels = np.tile(n_valid_pixels,
+                                          (time.shape[1], 1)).transpose()
+            rest_of_camera_valid_pixels = camera_valid_pixels - \
+                                          np.ones(camera_valid_pixels.shape)
+            mean_t_of_rest_of_camera = ((camera_time_mean *
+                                         camera_valid_pixels - time) /
+                                        rest_of_camera_valid_pixels)
+
+            relative_time_t = time - mean_t_of_rest_of_camera
+            selected_entries = np.where(charge > 1, relative_time_t, np.nan)
+            self.relative_time_mean = np.nanmean(selected_entries, axis=0)
+            self.relative_time_stddev = np.nanstd(selected_entries, axis=0)
+
+            selected_entries = np.where(charge>30, time, np.nan)
+            self.time_mean_above_030_pe = np.nanmean(selected_entries, axis=0)
+            self.time_stddev_above_030_pe = np.nanstd(selected_entries, axis=0)
+
 
 def count_trig_types(array):
     """
