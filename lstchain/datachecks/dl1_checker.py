@@ -184,7 +184,7 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
 
     Parameters
     ----------
-    filename: string, input DL1 .h5 file to be checked
+    filename: string, or Path, input DL1 .h5 file to be checked
     bins: DL1DataCheckHistogramBins container indicating binning of histograms
     trigger_source: string, name of one of the trigger tags present in the
     DL1 file
@@ -208,7 +208,11 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
     ff_max_pixel_charge_stddev = 20.
 
     logger.info(f'Opening file {filename}')
-    subrun_index = int(filename[filename.find('Run') + 9:][:4])
+
+    # convert to Path if it is not already:
+    filename = Path(filename)
+    name = filename.name
+    subrun_index = int(name[name.find('Run') + 9:][:4])
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
     dl1datacheck_flatfield = DL1DataCheckContainer()
