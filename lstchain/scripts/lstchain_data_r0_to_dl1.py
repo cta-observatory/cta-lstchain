@@ -134,7 +134,8 @@ def main():
     # test if this matches data file name pattern
     try:
         run = parse_r0_filename(args.input_file)
-        output_filename = output_dir / run_to_dl1_filename(*run)
+        output_filename = output_dir / run_to_dl1_filename(run.tel_id, 
+                                                           run.run, run.subrun)
     except ValueError:
         # for arbitrary filenames, including mc
         output_filename = output_dir / r0_to_dl1_filename(args.input_file.name)
