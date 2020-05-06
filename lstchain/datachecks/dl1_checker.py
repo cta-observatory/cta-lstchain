@@ -366,11 +366,37 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         hist_binning = file.root.dl1datacheck.histogram_binning
         trigger_source = file.root.dl1datacheck.used_trigger_tag[0].decode()
 
-        # get the tables for each type of events:
-        table_pedestals = file.root.dl1datacheck.pedestals
-        table_flatfield = file.root.dl1datacheck.flatfield
-        table_cosmics = file.root.dl1datacheck.cosmics
+        group = file.root.dl1datacheck
+        # get the tables for each type of events, check first in each case that
+        # the table exists
+
+        if '/dl1datacheck/pedestals' in group:
+            table_pedestals = file.root.dl1datacheck.pedestals
+        else:
+            logger.warning('No pedestals table found in ' +
+                           str(datacheck_filename))
+            table_pedestals = None
+
+        if '/dl1datacheck/flatfield' in group:
+            table_flatfield = file.root.dl1datacheck.flatfield
+        else:
+            logger.warning('No flatfield table found in ' +
+                           str(datacheck_filename))
+            table_flatfield = None
+
+        if '/dl1datacheck/cosmics' in group:
+            table_cosmics = file.root.dl1datacheck.cosmics
+        else:
+            logger.error('No cosmics table found in ' +
+                         str(datacheck_filename))
+            raise RuntimeError
+
         dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
+        labels = ['flatfield (guessed)', 'pedestals (from '+trigger_source+')',
+                  'cosmics']
+        labels = [x for i, x in enumerate(labels)
+                  if dl1dcheck_tables[i] is not None]
+        dl1dcheck_tables = [x for x in dl1dcheck_tables if x is not None]
 
         fig, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
         fig.tight_layout(pad=0.)
@@ -403,14 +429,12 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         plot_trigger_types(dl1dcheck_tables, 'ucts_trigger_type', axes[0, 0])
         plot_trigger_types(dl1dcheck_tables, 'trigger_type', axes[0, 1])
 
-        labels = ['flatfield (guessed)', 'pedestals (from '+trigger_source+')',
-                  'cosmics']
-        fmt = '-'
-        # in case of just one subrun, to make index-wise plots visible:
-        if len(table_cosmics.col('subrun_index')) == 1:
-            fmt = 'o'
-
         for table, label in zip(dl1dcheck_tables, labels):
+            fmt = '-'
+            # in case of just one subrun, to make index-wise plots visible:
+            if len(table.col('subrun_index')) == 1:
+                fmt = 'o'
+
             axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
                             fmt, label=label)
             # elapsed time: would better to take it always from the cosmics
@@ -471,7 +495,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
         pdf.savefig()
 
-        if len(table_pedestals) == 0:
+        if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
             plot_mean_and_stddev(table_pedestals, engineering_geom,
@@ -482,7 +506,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  pagesize, norm='log')
         pdf.savefig()
 
-        if len(table_flatfield) == 0:
+        if table_flatfield is None or len(table_flatfield) == 0:
             write_error_page('flatfield', pagesize)
         else:
             plot_mean_and_stddev(table_flatfield, engineering_geom,
@@ -521,9 +545,10 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         threshold = [int(name[name.find('above_')+6:name.find('_pe')])
                      for name in colnames]
 
-        for table in [table_pedestals, table_cosmics]:
-            if len(table) == 0:
-                write_error_page(table.name, pagesize)
+        for table, tname in zip([table_pedestals, table_cosmics],
+                                ['pedestals', 'flatfield']):
+            if table is None or len(table) == 0:
+                write_error_page(tname, pagesize)
                 pdf.savefig()
                 continue
 
@@ -569,8 +594,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             pdf.savefig()
 
         # Some plots on pulse times:
-        if len(table_flatfield) == 0:
-            write_error_page(table_flatfield.name, pagesize)
+        if table_flatfield is None or len(table_flatfield) == 0:
+            write_error_page('flatfield', pagesize)
         else:
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['time_mean', 'time_stddev'],
@@ -624,12 +649,26 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             # pixels, to test homogeneity of distribution:
             # (only positive ones, for log-plotting)
             gt0 = event_fraction > 0
-            xmin = event_fraction[pix_inside & gt0].min()
-            xmax = event_fraction[pix_inside & gt0].max()
             axes[i, 2].set_xscale('log')
+
+            nbins = 1001;
+            epb = (events_per_pix[pix_inside & gt0].max() -
+                   events_per_pix[pix_inside & gt0].min()) / (nbins-1)
+            epb = int(epb+1.)
+            # make sure the same number of integers in each bin (otherwise we
+            # will get "spikes" in the Poisson distributiopn later.number of
+            # bins has to be large to achieve reasonable bin width with linear
+            # binning, needed to avoid the spikes.
+            xmin = events_per_pix[pix_inside & gt0].min()-0.5
+            xmax = xmin + (nbins-1)*epb
+            # convert to event fraction:
+            xmin /= all_events
+            xmax /= all_events
+
             _, bins, _ = axes[i, 2].\
                 hist(event_fraction[pix_inside & gt0],
-                     bins=np.logspace(np.log10(xmin), np.log10(xmax), 201))
+                     bins=np.linspace(xmin, xmax, nbins))
+                     #bins=np.logspace(np.log10(xmin), np.log10(xmax), nbins))
             # average event content:
             mu = np.sum(events_per_pix[pix_inside])/pix_inside.sum()
             # get distribution of contents according to Poisson, integrating
@@ -1029,6 +1068,8 @@ def merge_dl1datacheck_files(file_list):
 
     """
 
+    logger = logging.getLogger(__name__)
+
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
     # get run number and build the name of the merged file:
@@ -1046,10 +1087,26 @@ def merge_dl1datacheck_files(file_list):
     merged_file = tables.open_file(merged_filename, 'w')
     merged_file.create_group('/', 'dl1datacheck')
     merged_file.create_group('/', 'instrument')
-    pedestals = first_file.copy_node('/dl1datacheck', name='pedestals',
-                                     newparent=merged_file.root.dl1datacheck)
-    flatfield = first_file.copy_node('/dl1datacheck', name='flatfield',
-                                     newparent=merged_file.root.dl1datacheck)
+
+    # The tables in the merged file will be copied from the first file. If a
+    # table is missing in the first file (e.g. pedestals) it will be left
+    # empty in the whole merged file.
+
+    if '/dl1datacheck/pedestals' in first_file.root.dl1datacheck:
+        pedestals = \
+            first_file.copy_node('/dl1datacheck', name='pedestals',
+                                 newparent=merged_file.root.dl1datacheck)
+    else:
+        pedestals = None
+
+    if '/dl1datacheck/flatfield' in first_file.root.dl1datacheck:
+        flatfield = \
+            first_file.copy_node('/dl1datacheck', name='flatfield',
+                                 newparent=merged_file.root.dl1datacheck)
+    else:
+        flatfield = None
+
+    # the ones below are compulsory, an exception will be raised if not present:
     cosmics = first_file.copy_node('/dl1datacheck', name='cosmics',
                                    newparent=merged_file.root.dl1datacheck)
     first_file.copy_node('/dl1datacheck', name='histogram_binning',
@@ -1060,8 +1117,19 @@ def merge_dl1datacheck_files(file_list):
 
     for filename in file_list[1:]:
         file = tables.open_file(filename)
-        pedestals.append(file.root.dl1datacheck.pedestals[:])
-        flatfield.append(file.root.dl1datacheck.flatfield[:])
+        if pedestals is not None:
+            if '/dl1datacheck/pedestals' in file.root.dl1datacheck:
+                pedestals.append(file.root.dl1datacheck.pedestals[:])
+            else:
+                logger.warning('Table pedestals is missing in file ' +
+                               str(filename))
+        if flatfield is not None:
+            if '/dl1datacheck/flatfield' in file.root.dl1datacheck:
+                flatfield.append(file.root.dl1datacheck.flatfield[:])
+            else:
+                logger.warning('Table flatfield is missing in file ' +
+                               str(filename))
+
         cosmics.append(file.root.dl1datacheck.cosmics[:])
         file. close()
 
