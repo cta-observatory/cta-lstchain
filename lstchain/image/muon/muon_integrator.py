@@ -22,7 +22,8 @@ from scipy.stats import norm
 
 import logging
 
-__all__ = ['MuonLineIntegrate']
+__all__ = ['MuonLineIntegrate',
+           'pos_to_angle']
 
 logger = logging.getLogger(__name__)
 
@@ -186,33 +187,6 @@ class MuonLineIntegrate:
 
         return ang, l
 
-    def pos_to_angle(self, centre_x, centre_y, pixel_x, pixel_y):
-        """
-        Convert pixel positions from x,y coordinates to rotation angle
-
-        Parameters
-        ----------
-        centre_x: float
-            Reconstructed image centre
-        centre_y: float
-            Reconstructed image centre
-        pixel_x: ndarray
-            Pixel x position
-        pixel_y: ndarray
-            Pixel y position
-
-        Returns
-        -------
-         ndarray:
-            Pixel rotation angle
-
-        """
-        del_x = pixel_x - centre_x
-        del_y = pixel_y - centre_y
-
-        ang = np.arctan2(del_x, del_y)
-
-        return ang
 
     def image_prediction(self, impact_parameter, phi, centre_x,
                          centre_y, radius, ring_width, pixel_x, pixel_y, ):
@@ -244,7 +218,7 @@ class MuonLineIntegrate:
         """
 
         # First produce angular position of each pixel w.r.t muon centre
-        ang = self.pos_to_angle(centre_x, centre_y, pixel_x, pixel_y)
+        ang = pos_to_angle(centre_x, centre_y, pixel_x, pixel_y)
         # Add muon rotation angle
         ang += phi
         # Produce smoothed muon profile
@@ -356,7 +330,7 @@ class MuonLineIntegrate:
 
         """
         
-        sq = 1 / np.sqrt(2 * np.pi * (ped**2 + pred * (1 + spe_width**2) ))
+        sq = 1 / np.sqrt(2 * np.pi * (ped**2 + pred * (1 + spe_width**2)))
         diff = (image - pred)**2
         denom = 2 * (ped**2 + pred * (1 + spe_width**2) )
         expo = np.exp(-diff / denom) * u.m
@@ -461,3 +435,31 @@ class MuonLineIntegrate:
         fitoutput.prediction = self.prediction
 
         return fitoutput
+
+def pos_to_angle(centre_x, centre_y, pixel_x, pixel_y):
+    """
+    Convert pixel positions from x,y coordinates to rotation angle
+
+    Parameters
+    ----------
+    centre_x: float
+      Reconstructed image centre
+    centre_y: float
+      Reconstructed image centre
+    pixel_x: ndarray
+      Pixel x position
+    pixel_y: ndarray
+      Pixel y position
+
+    Returns
+    -------
+    ndarray:
+      Pixel rotation angle
+
+    """
+    del_x = pixel_x - centre_x
+    del_y = pixel_y - centre_y
+
+    ang = np.arctan2(del_x, del_y)
+
+    return ang
