@@ -6,7 +6,7 @@ from abc import abstractmethod
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import Int, Unicode, List
+from ctapipe.core.traits import List
 
 __all__ = [
     'PedestalIntegrator'
@@ -114,11 +114,13 @@ class PedestalIntegrator(PedestalCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
+        pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+
+
         # real data
         if event.meta['origin'] != 'hessio':
 
             self.trigger_time = event.r1.tel[self.tel_id].trigger_time
-            pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         else: # patches for MC data
 
@@ -126,8 +128,6 @@ class PedestalIntegrator(PedestalCalculator):
                 self.trigger_time = event.trig.gps_time.unix
             else:
                 self.trigger_time = 0
-
-            pixel_mask = np.zeros(waveform.shape[1], dtype=bool)
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
@@ -142,9 +142,9 @@ class PedestalIntegrator(PedestalCalculator):
         sample_age = self.trigger_time - self.time_start
 
         # check if to create a calibration event
-        if (
-            sample_age > self.sample_duration
-            or self.num_events_seen == self.sample_size
+        if (self.num_events_seen > 0 and
+                (sample_age > self.sample_duration or
+                self.num_events_seen == self.sample_size)
         ):
             # update the monitoring container
             self.store_results(event)
@@ -163,6 +163,7 @@ class PedestalIntegrator(PedestalCalculator):
          event : general event container
         """
 
+        # something wrong if you are here and no statistic is there
         if self.num_events_seen == 0:
             raise ValueError("No pedestal events in statistics, zero results")
 

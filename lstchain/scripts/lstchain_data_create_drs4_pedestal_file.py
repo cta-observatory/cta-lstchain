@@ -1,3 +1,25 @@
+#!/usr/bin/env python3
+
+""" 
+Script to create pedestal file for low level calibration. 
+
+To set start sample in waveform --start_r0_waveform i (default i = 11)
+not to use deltaT correction add --deltaT False
+
+- Input: fits.fz file
+- Output: drs4_pedestal.fits file
+
+
+Usage:
+
+$> python lstchain_data_create_pedestal_file.py 
+--input-file LST-1.1.Run00097.0000.fits.fz 
+--output_file drs4_pedestalRun2028.0000.fits 
+--max_events 9000
+
+"""
+
+
 import argparse
 import numpy as np
 from astropy.io import fits
@@ -11,33 +33,28 @@ from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
-''' 
-Script to create pedestal file for low level calibration. 
-To run script in console:
-python lstchain_data_create_pedestal_file.py --input_file LST-1.1.Run00097.0000.fits.fz --output_file pedestal.fits 
---max_events 9000
-To set start sample in waveform --start_r0_waveform i (default i = 11)
-not to use deltaT correction add --deltaT False
-'''
 
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file",
+parser.add_argument("--input-file", '-f', type=str, action='store',
+                    dest='input_file',
                     help="Path to fitz.fz file to create pedestal file.",
-                    type=str)
+                    default=None, required=True)
 
-parser.add_argument("--output_file",
+parser.add_argument("--output-file", '-o', type=str, action='store',
+                    dest='output_file',
                     help="Path where script create pedestal file",
-                    type=str)
+                    default=None, required=True)
 
-# Optional argument
-parser.add_argument("--max_events",
-                    help="Maximum numbers of events to read. Default = 8000",
+
+# Optional arguments
+parser.add_argument("--max-events",
+                    help="Maximum numbers of events to read. Default = 20000",
                     type=int,
-                    default=8000)
+                    default=20000)
 
-parser.add_argument("--start_r0_waveform",
+parser.add_argument("--start-r0-waveform",
                     help="Start sample for waveform. Default = 11",
                     type=int,
                     default=11)

@@ -9,8 +9,9 @@
 
 import argparse
 from pathlib import Path
-from lstchain.io.data_management import *
+from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_drs4 as drs4
+import os
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -23,7 +24,7 @@ required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
-                      type=int, default=8000)
+                      type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
                       type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
@@ -45,7 +46,7 @@ def main():
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
         if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found\n")
+            print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
             raise NameError()
         else:
             input_file = f"{file_list[0]}"
@@ -77,8 +78,8 @@ def main():
                 exit(1)
 
         # run lstchain script
-        cmd = f"lstchain_data_create_drs4_pedestal_file --input_file {input_file} " \
-              f"--output_file {output_file} --max_events {max_events}"
+        cmd = f"lstchain_data_create_drs4_pedestal_file --input-file {input_file} " \
+              f"--output-file {output_file} --max-events {max_events}"
 
         os.system(cmd)
 

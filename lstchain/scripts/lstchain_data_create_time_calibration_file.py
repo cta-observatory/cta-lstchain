@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+
+"""
+Script to create drs4 time correction coefficients
+
+- Input: fits.fz file
+- Output: time_calibration.hdf5 file
+
+Usage:
+$> python lstchain_data_create_time_calibration_file.py
+--input-file LST-1.1.Run01625.0000.fits.fz 
+--output-file time_calibration.Run1625.0000.hdf5 
+
+"""
+
 import argparse
 import numpy as np
 from traitlets.config.loader import Config
@@ -7,35 +22,34 @@ from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 
 
-''' 
-Script to create drs4 time correction coefficients
-
-'''
 
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input_file",
-                    help="Path to fitz.fz file to create pedestal file.",
-                    type=str)
+parser.add_argument("--input-file", action='store', type=str,
+                    dest='input_file',
+                    help="Path to fits.fz file used to create the time calibration file.",
+                    default=None, required=True)
 
-parser.add_argument("--output_file",
-                    help="Path where script create pedestal file",
-                    type=str)
+parser.add_argument("--output-file", action='store', type=str,
+                    dest='output_file',
+                    help="Path where script creates the time calibration file",
+                    default=None, required=True)
 
 # Optional argument
-parser.add_argument("--max_events",
+parser.add_argument("--max-events",
+                    dest='max_events',
                     help="Maximum numbers of events to read. Default = 20000",
                     type=int,
                     default=20000)
 
-parser.add_argument('--config_file', '-conf', action='store', type=str,
+parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
 
-parser.add_argument('--pedestal_file', '-ped', action='store', type=str,
+parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     dest='pedestal_file',
                     help='Path to drs4 pedestal file ',
                     default=None

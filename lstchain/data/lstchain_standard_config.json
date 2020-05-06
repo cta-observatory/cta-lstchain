@@ -5,7 +5,7 @@
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage": [0, 1]
+    "leakage2_intensity": [0, 1]
   },
 
   "tailcut": {
@@ -67,8 +67,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
+    "leakage2_intensity",
     "n_islands"
   ],
 
@@ -85,8 +84,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
+    "leakage2_intensity",
     "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
@@ -98,14 +96,64 @@
   "custom_calibration": false,
   "write_pe_image": false,
   "image_extractor": "LocalPeakWindowSum",
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
     "threshold":  3500
   },
+
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
     },
-  "timestamps_pointing":"ucts"
+  "GlobalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "timestamps_pointing":"ucts",
+
+
+  "source_dependent": false,
+  "mc_nominal_source_x_deg": 0.4,
+  "mc_nominal_source_y_deg": 0.0,
+
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  },
+  "calibration_product": "LSTCalibrationCalculator",
+
+  "LSTCalibrationCalculator":{
+     "minimum_hg_charge_median": 5000,
+     "maximum_lg_charge_std": 300,
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "PedestalIntegrator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_median_cut_outliers": [-10,10],
+       "charge_std_cut_outliers": [-10,10],
+       "charge_product":"FixedWindowSum"
+     },
+     "FlasherFlatFieldCalculator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_product":"LocalPeakWindowSum",
+       "charge_median_cut_outliers": [-0.5,0.5],
+       "charge_std_cut_outliers": [-10,10],
+       "time_cut_outliers": [2,38]
+     },
+      "LocalPeakWindowSum":{
+      "window_shift": 5,
+      "window_width":12
+     },
+     "FixedWindowSum":{
+       "window_start": 12,
+       "window_width":12
+    }
+  }
 }

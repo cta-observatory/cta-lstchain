@@ -5,7 +5,7 @@ import tables
 from tables import open_file
 import os
 import pandas as pd
-
+import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
@@ -33,7 +33,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_subarray_tables',
            'write_metadata',
            'write_dataframe',
-           'write_dl2_dataframe'
+           'write_dl2_dataframe',
+           'write_calibration_data'
            ]
 
 
@@ -41,6 +42,7 @@ __all__ = ['read_simu_info_hdf5',
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
+dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 
 
 
@@ -87,6 +89,11 @@ def read_simu_info_merged_hdf5(filename):
 
     combined_mcheader = read_simu_info_hdf5(filename)
     combined_mcheader['num_showers'] = num_showers
+
+    for k in combined_mcheader.keys():
+        if combined_mcheader[k] is not None and combined_mcheader.fields[k].unit is not None:
+            combined_mcheader[k] = u.Quantity(combined_mcheader[k], combined_mcheader.fields[k].unit)
+
     return combined_mcheader
 
 
@@ -172,9 +179,9 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     """
 
     if nodes_keys is None:
-        keys = get_dataset_keys(file_list[0])
+        keys = set(get_dataset_keys(file_list[0]))
     else:
-        keys = nodes_keys
+        keys = set(nodes_keys)
 
     with open_file(output_filename, 'w') as merge_file:
         with open_file(file_list[0]) as f1:
@@ -196,8 +203,9 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                                 createparents=True,
                                                 obj=f1.root[k].read())
         for filename in file_list[1:]:
+            common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
-                for k in keys:
+                for k in common_keys:
                     try:
                         if merge_arrays:
                             merge_file.root[k].append(file.root[k].read())
@@ -219,23 +227,34 @@ def merging_check(file_list):
     Parameters
     ----------
     file_list: list of paths to hdf5 files
+
+    Returns
+    -------
+    list: list of paths of files that can be merged
     """
     assert len(file_list) > 1, "The list of files is too short"
+    mergeable_list = file_list.copy()
 
-    filename0 = file_list[0]
+    filename0 = mergeable_list[0]
     array_info0 = read_array_info(filename0)
     mcheader0 = read_simu_info_hdf5(filename0)
     thrown_events_hist0 = read_simtel_energy_histogram(filename0)
     metadata0 = read_metadata(filename0)
-    for filename in file_list[1:]:
-        mcheader = read_simu_info_hdf5(filename)
-        thrown_events_hist = read_simtel_energy_histogram(filename)
-        metadata = read_metadata(filename)
-        check_metadata(metadata0, metadata)
-        check_mcheader(mcheader0, mcheader)
-        check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
-        for ii, table in read_array_info(filename).items():
-            assert (table == array_info0[ii]).all()
+    for filename in mergeable_list[1:]:
+        try:
+            mcheader = read_simu_info_hdf5(filename)
+            thrown_events_hist = read_simtel_energy_histogram(filename)
+            metadata = read_metadata(filename)
+            check_metadata(metadata0, metadata)
+            check_mcheader(mcheader0, mcheader)
+            check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
+            for ii, table in read_array_info(filename).items():
+                assert (table == array_info0[ii]).all()
+        except:
+            mergeable_list.remove(filename)
+            print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
+
+    return mergeable_list
 
 
 def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
@@ -247,12 +266,12 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     file_list: list of paths to hdf5 files
     output_filename: path to the merged file
     """
-    merging_check(file_list)
-    auto_merge_h5files(file_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
+    smart_list = merging_check(file_list)
+    auto_merge_h5files(smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
 
     # Merge metadata
-    metadata0 = read_metadata(file_list[0])
-    for file in file_list[1:]:
+    metadata0 = read_metadata(smart_list[0])
+    for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
         metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
@@ -361,9 +380,22 @@ def write_array_info(event, output_filename):
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
             camera = sub.tel[tel_id].camera
+            camera_name = str(camera)
+
+            with tables.open_file(output_filename, mode='a') as f:
+                telescope_chidren = f.root['instrument/telescope']._v_children.keys()
+                if 'camera' in telescope_chidren:
+                    cameras_name = f.root['instrument/telescope/camera']._v_children.keys()
+                    if camera_name in cameras_name:
+                        print(
+                            f'WARNING during lstchain.io.write_array_info():',
+                            f'camera {camera_name} seems to be already present in the h5 file.'
+                        )
+                        continue
+
             camera.to_table().write(
                 output_filename,
-                path=f'/instrument/telescope/camera/{camera}',
+                path=f'/instrument/telescope/camera/{camera_name}',
                 append=True,
                 serialize_meta=serialize_meta,
             )
@@ -443,14 +475,14 @@ def write_metadata(metadata, output_filename):
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    metadata: `lstchain.io.MetaData()`
     output_filename: path
     """
     # One cannot write strings with ctapipe HDF5Writer and Tables can write only fixed length string
     # So this metadata is written in the file attributes
     with open_file(output_filename, mode='a') as file:
         for k, item in metadata.as_dict().items():
-            if k in file.root._v_attrs and type(item) is list:
+            if k in file.root._v_attrs and type(file.root._v_attrs) is list:
                 attribute = file.root._v_attrs[k].extend(metadata[k])
                 file.root._v_attrs[k] = attribute
             else:
@@ -542,7 +574,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
 
 
-def write_dataframe(dataframe, outfile, table_path):
+def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -550,14 +582,21 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    table_path: str - path to the table to write in the HDF5 file
+    table_path: str
+        path to the table to write in the HDF5 file
     """
-    with pd.HDFStore(outfile, mode='a') as store:
+    if not table_path.startswith('/'):
+        table_path = '/' + table_path
+
+    with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.append(path, dataframe,
-                     format='table',
-                     data_columns=True)
-        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+        f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+        )
 
 
 def write_dl2_dataframe(dataframe, outfile):
@@ -639,3 +678,38 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
+def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
+    mon_event.pedestal.prefix = ''
+    mon_event.flatfield.prefix = ''
+    mon_event.calibration.prefix = ''
+    mon_index.prefix = ''
+
+
+    # update index
+    if new_ped:
+        mon_index.pedestal_id += 1
+
+    if new_ff:
+        mon_index.flatfield_id += 1
+        mon_index.calibration_id += 1
+
+
+    if new_ped:
+        # write ped container
+        writer.write(
+            table_name=f'telescope/monitoring/pedestal',
+            containers=[mon_index, mon_event.pedestal]
+        )
+
+    if new_ff:
+        # write calibration container
+        writer.write(
+            table_name="telescope/monitoring/flatfield",
+            containers=[mon_index, mon_event.flatfield]
+        )
+
+        # write ff container
+        writer.write(
+            table_name="telescope/monitoring/calibration",
+            containers=[mon_index, mon_event.calibration]
+        )

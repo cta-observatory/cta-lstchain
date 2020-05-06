@@ -4,6 +4,7 @@ from ctapipe.core import Component
 from ctapipe_io_lst.containers import LSTMonitoringContainer, LSTDriveContainer
 from ctapipe.core.traits import Unicode, Int
 from astropy.io import ascii
+from astropy import units as u
 
 
 __all__ = [
@@ -81,8 +82,8 @@ class PointingPosition(Component):
             run_azimuth = drive_container.azimuth_avg[time_in_window]
             run_altitude = drive_container.altitude_avg[time_in_window]
 
-            ev_azimuth = np.interp(ev_time, run_times, run_azimuth)
-            ev_altitude = np.interp(ev_time, run_times, run_altitude)
+            ev_azimuth = np.interp(ev_time, run_times, run_azimuth) * u.deg
+            ev_altitude = np.interp(ev_time, run_times, run_altitude) * u.deg
             return ev_azimuth, ev_altitude
         else:
             raise Exception("No drive time in the range of event times")
