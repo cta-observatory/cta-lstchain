@@ -329,10 +329,10 @@ class MuonLineIntegrate:
         ndarray: likelihood for each pixel
 
         """
-        
+
         sq = 1 / np.sqrt(2 * np.pi * (ped**2 + pred * (1 + spe_width**2)))
         diff = (image - pred)**2
-        denom = 2 * (ped**2 + pred * (1 + spe_width**2) )
+        denom = 2 * (ped**2 + pred * (1 + spe_width**2))
         expo = np.exp(-diff / denom) * u.m
         sm = expo < 1e-300 * u.m
         expo[sm] = 1e-300 * u.m
