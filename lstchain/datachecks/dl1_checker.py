@@ -495,7 +495,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
         pdf.savefig()
 
-        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=pagesize)
+        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
 
         for i, time_type in enumerate(['ucts_time', 'tib_time', 'dragon_time']):

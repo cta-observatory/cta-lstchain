@@ -203,7 +203,7 @@ def r0_to_dl1(
             output_filename = r0_to_dl1_filename(Path(input_filename).name)
 
     if os.path.exists(output_filename):
-        raise IOError(output_filename + ' exists, exiting.')
+        raise IOError(str(output_filename) + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
 
