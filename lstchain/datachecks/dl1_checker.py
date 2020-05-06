@@ -76,6 +76,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
         datacheck_filename = run_to_datacheck_dl1_filename(first_file.tel_id,
                                                            first_file.run,
                                                            None)
+    datacheck_filename = Path(output_path, datacheck_filename)
 
     # the list dl1datacheck will contain one entry per subrun. Each entry is a
     # list of 3 containers of type DL1DataCheckContainer, one for pedestals,
