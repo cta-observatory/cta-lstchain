@@ -400,7 +400,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
 
         fig, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
         fig.tight_layout(pad=0.)
-        plt.text(0.1, 0.7, datacheck_filename,
+        plt.text(0.1, 0.7, os.path.basename(datacheck_filename),
                  fontsize=32, horizontalalignment='left',
                  verticalalignment='center')
         plt.text(0.1, 0.6, 'First shower event UTC: ', fontsize=24,
@@ -494,6 +494,19 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[1, 1].set_ylabel('telescope altitude (deg)')
         axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
         pdf.savefig()
+
+        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=pagesize)
+        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+
+        for i, time_type in enumerate(['ucts_time', 'tib_time', 'dragon_time']):
+            axes[i].plot(table_cosmics.col('sampled_event_ids').flatten(),
+                         table_cosmics.col(time_type).flatten(),
+                         label=time_type)
+            axes[i].set_xlabel('event id')
+            axes[i].set_ylabel('timestamp')
+            axes[i].legend(loc='best')
+        pdf.savefig()
+
 
         if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
