@@ -84,7 +84,6 @@ class MuonLineIntegrate:
                                  self.maxlambda**-1)  # 12165.45
         self.unit = u.deg
 
-
     @staticmethod
     def chord_length(radius, rho, phi):
         """
@@ -114,25 +113,8 @@ class MuonLineIntegrate:
 
         return chord
 
-    
     def intersect_circle(self, r, angle):
-        """Perform line integration along a given axis in the mirror frame
-        given an impact point on the mirrot
 
-        Parameters
-        ----------
-        impact_x: float
-            Impact position on mirror (tilted telescope system)
-        impact_y: float
-            Impact position on mirror (tilted telescope system)
-        angle: float
-            Angle along which to integrate mirror
-
-        Returns
-        --------
-        float: length from impact point to mirror edge
-
-        """
         mirror_length = self.chord_length(
             self.mirror_radius, r / self.mirror_radius.value, angle
         )
@@ -152,13 +134,13 @@ class MuonLineIntegrate:
             )
          
             # Should be areas not lengths here?
-            factor = mirror_length - (secondary_length)
+            factor = mirror_length - secondary_length
             factor /= (mirror_length - hole_length)
 
         if not self.sct_flag:
             return mirror_length - hole_length
         else:
-            return (mirror_length - hole_length + secondary_length)
+            return mirror_length - hole_length + secondary_length
 
     def plot_pos(self, impact_parameter, radius, phi):
         """
@@ -186,7 +168,6 @@ class MuonLineIntegrate:
         l /= self.oversample_bins
 
         return ang, l
-
 
     def image_prediction(self, impact_parameter, phi, centre_x,
                          centre_y, radius, ring_width, pixel_x, pixel_y, ):
@@ -252,7 +233,6 @@ class MuonLineIntegrate:
 
         return pred
 
-
     def likelihood(self, impact_parameter, phi, centre_x, centre_y,
                    radius, ring_width, optical_efficiency_muon):
         """
@@ -295,7 +275,7 @@ class MuonLineIntegrate:
             self.pixel_x.value,
             self.pixel_y.value,
         )
-        
+
         # TEST: extra scaling factor, HESS style (ang pix size /2piR) # NOTE: not needed! (after changes introduced in 20200331)
         # scalenpix = self.pixel_width / (2.*np.pi * radius)
         # self.prediction *= scalenpix.value
@@ -435,6 +415,7 @@ class MuonLineIntegrate:
         fitoutput.prediction = self.prediction
 
         return fitoutput
+
 
 def pos_to_angle(centre_x, centre_y, pixel_x, pixel_y):
     """
