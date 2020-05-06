@@ -27,6 +27,7 @@ from warnings import simplefilter
 import argparse
 import glob
 import logging
+import os
 # I had enough of those annoying future warnings, hence:
 simplefilter(action='ignore', category=FutureWarning)
 from lstchain.datachecks import check_dl1, plot_datacheck
@@ -49,6 +50,13 @@ required.add_argument('--input-file', type=str, required=True,
 # path for output files
 optional.add_argument('--output-dir', default='.', type=str,
                       help='Directory where the output files will be written'
+                      )
+
+# path for muons .fits files. If not given, it is asssumed that the files are
+# in the same directory of the input files (either of the dl1 type
+# or of the datacheck_dl1 type)
+optional.add_argument('--muons-dir', default=None, type=str,
+                      help='Directory where the muon .fits files are located '
                       )
 # maximum number of processes to be run in parallel
 # This refers to the processes explicitly spawned by check_dl1, not to what
@@ -90,8 +98,8 @@ def main():
     # if input files are existing dl1 datacheck .h5 files, just create the
     # output pdf with the check plots (since nothing else can be done with
     # that input, the create_pdf argument is ignored in that case:
-    if filenames[0].startswith("datacheck_dl1"):
-        plot_datacheck(filenames, args.output_dir)
+    if os.path.basename(filenames[0]).startswith("datacheck_dl1"):
+        plot_datacheck(filenames, args.output_dir, args.muons_dir)
         return
 
     # otherwise, do the full analysis to produce the dl1_datacheck h5 file

@@ -63,19 +63,11 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     if not isinstance(filenames, list):
         filenames = [filenames]
 
-    # Obtain the names of the corresponding muon .fits files, assumed to be
-    # in the same directory as the DL1 event files:
-    muon_filenames = []
-    for filename in filenames:
-        dl1 = parse_dl1_filename(filename)
-        muon_filenames.append(run_to_muon_filename(dl1.tel_id, dl1.run,
-                                                   dl1.subrun, None, False))
-
     # Define output filename (overwrite if already existing).
     # If there is a single input file (i.e. a single subrun) then the output
     # file name will keep the subrun index. If there is more than one file
     # (i.e. several subruns) the output file name omit the subrun index.
-    first_file = parse_dl1_filename(filenames[0])
+    first_file = parse_dl1_filename(os.path.basename(filenames[0]))
     if len(filenames) == 1:
         datacheck_filename = run_to_datacheck_dl1_filename(first_file.tel_id,
                                                            first_file.run,
@@ -91,10 +83,6 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
 
     # check that all files exist:
     for filename in filenames:
-        if not os.path.exists(filename):
-            logger.error(f'File {str(filename)} not found!')
-            raise FileNotFoundError
-    for filename in muon_filenames:
         if not os.path.exists(filename):
             logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
@@ -173,9 +161,12 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
                         [trigger_source.encode('ascii')])
     file.close()
 
-    # do the plots and save them to a pdf file:
+    # do the plots and save them to a pdf file. We will look for the muons fits
+    # files in the same directory as the DL1 files (assuming all of them are
+    # in the same directory as the first one!)
     if create_pdf:
-        plot_datacheck(datacheck_filename, output_path)
+        plot_datacheck(datacheck_filename, output_path,
+                       muons_dir=os.path.dirname(filenames[0]))
 
     return
 
@@ -209,7 +200,7 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
     ff_max_pixel_charge_stddev = 20.
 
     logger.info(f'Opening file {filename}')
-    subrun_index = parse_dl1_filename(filename).subrun
+    subrun_index = parse_dl1_filename(os.path.basename(filename)).subrun
 
     dl1datacheck_pedestals = DL1DataCheckContainer()
     dl1datacheck_flatfield = DL1DataCheckContainer()
@@ -322,7 +313,7 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
                dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None):
+def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
     """
 
     Parameters
@@ -355,7 +346,6 @@ def plot_datacheck(datacheck_filename, out_path=None):
             datacheck_filename = datacheck_filename[0]
 
     pdf_filename = Path(datacheck_filename).with_suffix('.pdf')
-
     # set output directory if provided:
     if out_path is not None:
         pdf_filename = Path(out_path, pdf_filename.name)
@@ -728,12 +718,16 @@ def plot_datacheck(datacheck_filename, out_path=None):
         # Now we go for the muons .fits files, created in the R0 to DL1 stage.
         # We look for the files with the same subrun indices that have been
         # processed.
-        # We assume that the muon .fits files must be in the same directory
-        # as the datacheck_dl1*.h5 file!
         muon_filenames = []
-        dcfile = parse_datacheck_dl1_filename(datacheck_filename)
+        dcfile = \
+            parse_datacheck_dl1_filename(os.path.basename(datacheck_filename))
         for i in subrun_list:
-            dirname = os.path.dirname(datacheck_filename)
+            if muons_dir is not None:
+                dirname = muons_dir
+            # if no directory is provided, we assume the muons fits files are
+            # in the same directory of the datacheck file.
+            else:
+                dirname = os.path.dirname(datacheck_filename)
             name = run_to_muon_filename(dcfile.tel_id, dcfile.run, i, None,
                                         False)
             if Path(dirname, name).exists():
@@ -1037,9 +1031,12 @@ def merge_dl1datacheck_files(file_list):
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
     # get run number and build the name of the merged file:
-    file = parse_datacheck_dl1_filename(first_file_name)
+    file = parse_datacheck_dl1_filename(os.path.basename(first_file_name))
     merged_filename = run_to_datacheck_dl1_filename(file.tel_id, file.run,
                                                     None, None)
+    # Store the merged file in the same directory as the subrun-wise files:
+    merged_filename = Path(os.path.dirname(first_file_name), merged_filename)
+
     # The input (sub-run wise) list should never contain the name of the
     # run-wise file that we will produce by merging. Just to avoid accidents:
     if merged_filename in file_list:
