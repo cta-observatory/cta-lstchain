@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'astropy',
         'ctapipe~=0.7.0',
-        'ctaplot',
+        'ctaplot~=0.5.0',
         'eventio~=0.20.3',
         'gammapy>=0.17',
         'h5py',
