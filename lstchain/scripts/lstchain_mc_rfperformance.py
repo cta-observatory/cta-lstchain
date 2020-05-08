@@ -56,7 +56,7 @@ parser.add_argument('--input-file-proton-test', '--p-test', type=str,
 parser.add_argument('--store-rf', '-s', action='store', type=bool,
                     dest='storerf',
                     help='Boolean. True for storing trained RF in 3 files'
-                    'Default=False, any user input will be considered True',
+                         'Default=False, any user input will be considered True',
                     default=True)
 
 parser.add_argument('--batch', '-b', action='store', type=bool,
@@ -65,9 +65,9 @@ parser.add_argument('--batch', '-b', action='store', type=bool,
                     default=True)
 
 parser.add_argument('--output_dir', '-o', action='store', type=str,
-                     dest='path_models',
-                     help='Path to store the resulting RF',
-                     default='./saved_models/')
+                    dest='path_models',
+                    help='Path to store the resulting RF',
+                    default='./saved_models/')
 
 parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
@@ -75,11 +75,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-
 args = parser.parse_args()
 
-def main():
 
+def main():
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -96,7 +95,6 @@ def main():
         path_models=args.path_models,
         custom_config=config,
     )
-
 
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            config["events_filters"],
@@ -137,12 +135,12 @@ def main():
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_models_features_importances(args.path_models, args.config)
+    plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
     if not args.batch:
         plt.show()
 
-    plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
-    plt.hist(dl2[dl2['mc_type']==0]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['mc_type'] == 101]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['mc_type'] == 0]['gammaness'], bins=100)
     if not args.batch:
         plt.show()
 
