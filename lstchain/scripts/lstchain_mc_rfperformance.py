@@ -111,80 +111,33 @@ def main():
 
     ####PLOT SOME RESULTS#####
 
-    gammas = dl2[dl2.gammaness >= 0.5]
-    protons = dl2[dl2.gammaness < 0.5]
-    gammas.reco_type = 0
-    protons.reco_type = 1
-
-    focal_length = 28 * u.m
-    src_pos_reco = utils.reco_source_position_sky(gammas.x.values * u.m,
-                                                  gammas.y.values * u.m,
-                                                  gammas.reco_disp_dx.values * u.m,
-                                                  gammas.reco_disp_dy.values * u.m,
-                                                  focal_length,
-                                                  gammas.mc_alt_tel.values * u.rad,
-                                                  gammas.mc_az_tel.values * u.rad)
-
+    selected_gammas = dl2.query('reco_type==0 & mc_type==0')
 
     plot_dl2.plot_features(dl2)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_e(gammas, 10, 1.5, 3.5)
+    plot_dl2.energy_results(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.calc_resolution(gammas)
+    plot_dl2.direction_results(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_e_resolution(gammas, 10, 1.5, 3.5)
+    plot_dl2.plot_disp_vector(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_disp_vector(gammas)
-    if not args.batch:
-        plt.show()
-
-
-    try:
-        ctaplot.plot_theta2(gammas.mc_alt,
-                            np.arctan(np.tan(gammas.mc_az)),
-                            src_pos_reco.alt.rad,
-                            np.arctan(np.tan(src_pos_reco.az.rad)),
-                            bins=50, range=(0, 1),
-        )
-        if not args.batch:
-            plt.show()
-        ctaplot.plot_angular_res_per_energy(src_pos_reco.alt.rad,
-                                            np.arctan(np.tan(src_pos_reco.az.rad)),
-                                            gammas.mc_alt,
-                                            np.arctan(np.tan(gammas.mc_az)),
-                                            gammas.mc_energy
-        )
-        if not args.batch:
-            plt.show()
-    except:
-        pass
-
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
-
-    if not args.batch:
-        plt.show()
     plot_dl2.plot_pos(dl2)
     if not args.batch:
         plt.show()
-    plot_dl2.plot_ROC(cls_gh, dl2, classification_features, -1)
+
+    plot_dl2.plot_roc_gamma(dl2)
     if not args.batch:
         plt.show()
-    plot_dl2.plot_importances(cls_gh, classification_features)
-    if not args.batch:
-        plt.show()
-    plot_dl2.plot_importances(reg_energy, regression_features)
-    if not args.batch:
-        plt.show()
-    plot_dl2.plot_importances(reg_disp_vector, regression_features)
+
+    plot_dl2.plot_models_features_importances(args.path_models, args.config)
     if not args.batch:
         plt.show()
 
