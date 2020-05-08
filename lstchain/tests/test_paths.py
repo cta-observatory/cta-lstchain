@@ -112,15 +112,15 @@ def test_muon_filename():
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3
-    ) == 'muon_LST-1.Run00002.0003.fits.gz'
+    ) == 'muons_LST-1.Run00002.0003.fits.gz'
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3, gzip=False
-    ) == 'muon_LST-1.Run00002.0003.fits'
+    ) == 'muons_LST-1.Run00002.0003.fits'
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3, stream=4
-    ) == 'muon_LST-1.4.Run00002.0003.fits.gz'
+    ) == 'muons_LST-1.4.Run00002.0003.fits.gz'
 
 
 def test_r0_to_dl1_filename():
