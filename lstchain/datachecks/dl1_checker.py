@@ -13,6 +13,7 @@ __all__ = [
 
 import h5py
 import logging
+import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
@@ -106,8 +107,12 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
 
     trigger_source = 'trigger_type'
-    if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
-        trigger_source = 'ucts_trigger_type'
+
+    # Commented lines below, because ucts_trigger_type seems to be
+    # systematically wrong, even when it has more "pedestal tags" (==32) than
+    # trigger_type
+    # if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
+    #    trigger_source = 'ucts_trigger_type'
 
     # create container for the histograms' binnings, to be saved in the hdf5
     # output file:
@@ -335,6 +340,10 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
 
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
+    # at some point all the font sizes etc became messed up due to other
+    # updates in lstchain, hence the line below, which brings everything back
+    # to normal:
+    mpl.rc_file_defaults()
 
     # in case of >1 input file, we assume they correspond to subruns of a
     # given run. We merge them before proceeding:
