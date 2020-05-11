@@ -12,4 +12,4 @@ from .version import get_version
 __version__ = get_version(pep440=False)
 
 import matplotlib as mpl
-mpl.use.style('default')
+mpl.style.use('default')
