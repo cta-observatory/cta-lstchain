@@ -340,10 +340,6 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
 
     # aspect ratio of pdf pages:
     pagesize = [12., 7.5]
-    # at some point all the font sizes etc became messed up due to other
-    # updates in lstchain, hence the line below, which brings everything back
-    # to normal:
-    mpl.rc_file_defaults()
 
     # in case of >1 input file, we assume they correspond to subruns of a
     # given run. We merge them before proceeding:
