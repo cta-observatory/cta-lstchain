@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 
-Run = namedtuple('R0Path', 'tel_id run subrun stream')
+Run = namedtuple('Run', 'tel_id run subrun stream')
 # set the default of stream to None,
 # should be replaced by using the `defaults` argument to namedtuple (new in 3.7)
 # when support for python 3.6 is dropped
@@ -27,6 +27,13 @@ DC_DL1_RE = re.compile(
     r'.(?:h5|hdf5|hdf)'         # usual extensions for hdf5 files
 )
 
+GENERAL_RE = re.compile(
+    r'LST-(\d+)'         # tel_id
+    r'(?:.(\d+))?'       # stream is optional
+    r'.Run(\d+)'         # run number
+    r'.(\d+)'            # subrun number
+)
+
 EXTENSIONS_TO_REMOVE = {
     '.fits',
     '.fits.fz',
@@ -40,6 +47,20 @@ def parse_int(string):
     if string is None:
         return None
     return int(string)
+
+
+def _parse_match(match):
+    values = [parse_int(v) for v in match.groups()]
+    return Run(tel_id=values[0], run=values[2], subrun=values[3], stream=values[1])
+
+
+def run_info_from_filename(filename):
+    '''Generic function to search a filename for the LST-t.s.Runxxxxx.yyyy'''
+    m = GENERAL_RE.search(os.path.basename(filename))
+    if m is None:
+        raise ValueError(f'Filename {filename} does not include pattern {GENERAL_RE}')
+
+    return _parse_match(m)
 
 
 def parse_r0_filename(filename):
@@ -66,8 +87,7 @@ def parse_r0_filename(filename):
     if m is None:
         raise ValueError(f'Filename {filename} does not match pattern {R0_RE}')
 
-    values = [parse_int(v) for v in m.groups()]
-    return Run(tel_id=values[0], run=values[2], subrun=values[3], stream=values[1])
+    return _parse_match(m)
 
 
 def parse_dl1_filename(filename):
@@ -93,8 +113,7 @@ def parse_dl1_filename(filename):
     if m is None:
         raise ValueError(f'Filename {filename} does not match pattern {DL1_RE}')
 
-    values = [parse_int(v) for v in m.groups()]
-    return Run(tel_id=values[0], run=values[2], subrun=values[3], stream=values[1])
+    return _parse_match(m)
 
 def parse_datacheck_dl1_filename(filename):
     '''
