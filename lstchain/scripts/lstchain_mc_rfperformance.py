@@ -56,7 +56,7 @@ parser.add_argument('--input-file-proton-test', '--p-test', type=str,
 parser.add_argument('--store-rf', '-s', action='store', type=bool,
                     dest='storerf',
                     help='Boolean. True for storing trained RF in 3 files'
-                    'Default=False, any user input will be considered True',
+                         'Default=False, any user input will be considered True',
                     default=True)
 
 parser.add_argument('--batch', '-b', action='store', type=bool,
@@ -65,9 +65,9 @@ parser.add_argument('--batch', '-b', action='store', type=bool,
                     default=True)
 
 parser.add_argument('--output_dir', '-o', action='store', type=str,
-                     dest='path_models',
-                     help='Path to store the resulting RF',
-                     default='./saved_models/')
+                    dest='path_models',
+                    help='Path to store the resulting RF',
+                    default='./saved_models/')
 
 parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
@@ -75,11 +75,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-
 args = parser.parse_args()
 
-def main():
 
+def main():
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -97,7 +96,6 @@ def main():
         custom_config=config,
     )
 
-
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            config["events_filters"],
                            )
@@ -111,85 +109,38 @@ def main():
 
     ####PLOT SOME RESULTS#####
 
-    gammas = dl2[dl2.gammaness >= 0.5]
-    protons = dl2[dl2.gammaness < 0.5]
-    gammas.reco_type = 0
-    protons.reco_type = 1
-
-    focal_length = 28 * u.m
-    src_pos_reco = utils.reco_source_position_sky(gammas.x.values * u.m,
-                                                  gammas.y.values * u.m,
-                                                  gammas.reco_disp_dx.values * u.m,
-                                                  gammas.reco_disp_dy.values * u.m,
-                                                  focal_length,
-                                                  gammas.mc_alt_tel.values * u.rad,
-                                                  gammas.mc_az_tel.values * u.rad)
-
+    selected_gammas = dl2.query('reco_type==0 & mc_type==0')
 
     plot_dl2.plot_features(dl2)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_e(gammas, 10, 1.5, 3.5)
+    plot_dl2.energy_results(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.calc_resolution(gammas)
+    plot_dl2.direction_results(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_e_resolution(gammas, 10, 1.5, 3.5)
+    plot_dl2.plot_disp_vector(selected_gammas)
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_disp_vector(gammas)
-    if not args.batch:
-        plt.show()
-
-
-    try:
-        ctaplot.plot_theta2(gammas.mc_alt,
-                            np.arctan(np.tan(gammas.mc_az)),
-                            src_pos_reco.alt.rad,
-                            np.arctan(np.tan(src_pos_reco.az.rad)),
-                            bins=50, range=(0, 1),
-        )
-        if not args.batch:
-            plt.show()
-        ctaplot.plot_angular_res_per_energy(src_pos_reco.alt.rad,
-                                            np.arctan(np.tan(src_pos_reco.az.rad)),
-                                            gammas.mc_alt,
-                                            np.arctan(np.tan(gammas.mc_az)),
-                                            gammas.mc_energy
-        )
-        if not args.batch:
-            plt.show()
-    except:
-        pass
-
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
-
-    if not args.batch:
-        plt.show()
     plot_dl2.plot_pos(dl2)
     if not args.batch:
         plt.show()
-    plot_dl2.plot_ROC(cls_gh, dl2, classification_features, -1)
-    if not args.batch:
-        plt.show()
-    plot_dl2.plot_importances(cls_gh, classification_features)
-    if not args.batch:
-        plt.show()
-    plot_dl2.plot_importances(reg_energy, regression_features)
-    if not args.batch:
-        plt.show()
-    plot_dl2.plot_importances(reg_disp_vector, regression_features)
+
+    plot_dl2.plot_roc_gamma(dl2)
     if not args.batch:
         plt.show()
 
-    plt.hist(dl2[dl2['mc_type']==101]['gammaness'], bins=100)
-    plt.hist(dl2[dl2['mc_type']==0]['gammaness'], bins=100)
+    plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
+    if not args.batch:
+        plt.show()
+
+    plt.hist(dl2[dl2['mc_type'] == 101]['gammaness'], bins=100)
+    plt.hist(dl2[dl2['mc_type'] == 0]['gammaness'], bins=100)
     if not args.batch:
         plt.show()
 

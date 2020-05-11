@@ -16,6 +16,7 @@ from .io import (
     write_metadata,
     write_subarray_tables,
     read_simu_info_merged_hdf5,
+    write_calibration_data
 )
 
 standard_config = get_standard_config()
@@ -38,4 +39,5 @@ __all__ = [
     'write_metadata',
     'write_subarray_tables',
     'read_simu_info_merged_hdf5',
+    'write_calibration_data'
 ]

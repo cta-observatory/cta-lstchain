@@ -3,7 +3,11 @@ from ctapipe.image.muon.features import ring_containment
 from ctapipe.image.muon.features import ring_completeness
 from ctapipe.image.muon.features import npix_above_threshold
 from ctapipe.image.muon.features import npix_composing_ring
-from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
+#from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
+# Using provisionally a fixed version of MuonLineIntegrate, imported into
+# lstchain! As soon as ctapipe 0.8 is out, we should go back to using the
+# ctapipe version.
+from lstchain.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.io.containers import MuonIntensityParameter
 
