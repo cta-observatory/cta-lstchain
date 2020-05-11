@@ -1099,8 +1099,10 @@ def merge_dl1datacheck_files(file_list):
 
     # The input (sub-run wise) list should never contain the name of the
     # run-wise file that we will produce by merging. Just to avoid accidents:
-    if merged_filename in file_list:
-        file_list.remove(merged_filename)
+    if str(merged_filename) in file_list:
+        file_list.remove(str(merged_filename))
+
+    print(file_list)
 
     merged_file = tables.open_file(merged_filename, 'w')
     merged_file.create_group('/', 'dl1datacheck')
