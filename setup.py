@@ -15,7 +15,6 @@ from version import get_version, update_release_version  # noqa
 
 update_release_version()
 version = get_version()
-print(version)
 
 
 def find_scripts(script_dir, prefix):
