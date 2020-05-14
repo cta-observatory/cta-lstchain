@@ -7,6 +7,7 @@ import numpy as np
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
 import pkg_resources
+import shutil
 
 
 output_dir = os.path.join(test_dir, 'scripts')
@@ -106,6 +107,7 @@ def test_lstchain_mc_rfperformance():
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_merge_dl1_hdf5_files():
+    shutil.copy(dl1_file, os.path.join(output_dir, 'dl1_copy.h5'))
     run_program('lstchain_merge_hdf5_files',
                 '-d', output_dir,
                 '-o', merged_dl1_file,
