@@ -21,7 +21,7 @@ import os
 import pandas as pd
 
 from tables import open_file
-from sklearn.externals import joblib
+import joblib
 from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.reco import dl1_to_dl2
 from lstchain.io import (
