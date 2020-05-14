@@ -29,6 +29,7 @@ but being much more lightwheight
 """
 from subprocess import check_output, CalledProcessError
 from os import path, name, devnull, environ, listdir
+from ast import literal_eval
 
 __all__ = ("get_version",)
 
@@ -110,13 +111,10 @@ def format_git_describe(git_str, pep440=False):
 
 def read_release_version():
     """Read version information from VERSION file"""
-    try:
-        from ._version_cache import version
-        if len(version) == 0:
-            version = None
-        return version
-    except ImportError:
-        return "unknown"
+    if not path.exists(VERSION_FILE):
+        return 'unknown'
+    with open(VERSION_FILE) as f:
+        return literal_eval(f.read().replace('version=', '', 1))
 
 
 def update_release_version(pep440=False):
@@ -159,7 +157,7 @@ def get_version(pep440=False):
 
     raw_git_version = get_git_describe_version()
     if not raw_git_version:  # not a git repository
-        return  read_release_version()
+        return read_release_version()
 
     git_version = format_git_describe(raw_git_version, pep440=pep440)
 

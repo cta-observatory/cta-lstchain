@@ -12,6 +12,7 @@ dependencies:
   - ipython
   - jupyter
   - notebook
+  - joblib
   - pip:
       - pytest_runner
       - pytest-ordering

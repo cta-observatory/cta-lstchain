@@ -110,7 +110,7 @@ def test_build_models():
 
     reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=False)
 
-    from sklearn.externals import joblib
+    import joblib
     joblib.dump(reg_energy, file_model_energy)
     joblib.dump(reg_disp, file_model_disp)
     joblib.dump(cls_gh, file_model_gh_sep)
@@ -119,7 +119,7 @@ def test_build_models():
 @pytest.mark.run(order=3)
 def test_apply_models():
     from lstchain.reco.dl1_to_dl2 import apply_models
-    from sklearn.externals import joblib
+    import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(dl1, filters=custom_config["events_filters"])

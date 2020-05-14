@@ -30,13 +30,11 @@ class LSTCameraCalibrator(CameraCalibrator):
 
     calibration_path = Unicode(
         '',
-        allow_none=True,
         help='Path to LST calibration file'
     ).tag(config=True)
 
     time_calibration_path = Unicode(
         '',
-        allow_none=True,
         help='Path to drs4 time calibration file'
     ).tag(config=True)
 
@@ -159,9 +157,8 @@ class LSTCameraCalibrator(CameraCalibrator):
         # subtract the pedestal per sample and multiply for the calibration coefficients
         #
         event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - event.mon.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * event.mon.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
-
+                (waveforms - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
+                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
 
 
     def _calibrate_dl1(self, event, telid):

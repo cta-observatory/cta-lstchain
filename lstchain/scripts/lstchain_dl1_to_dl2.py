@@ -14,14 +14,14 @@ $> python lstchain_dl1_to_dl2.py
 
 """
 
+import joblib
 import argparse
 import astropy.units as u
 import numpy as np
 import os
 import pandas as pd
-
 from tables import open_file
-from sklearn.externals import joblib
+import joblib
 from lstchain.reco.utils import filter_events, impute_pointing
 from lstchain.reco import dl1_to_dl2
 from lstchain.io import (
@@ -119,8 +119,10 @@ def main():
         raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
-    dl1_keys.remove(dl1_images_lstcam_key)
-    dl1_keys.remove(dl1_params_lstcam_key)
+    if dl1_images_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_images_lstcam_key)
+    if dl1_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_lstcam_key)
 
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
