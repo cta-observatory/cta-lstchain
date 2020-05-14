@@ -141,7 +141,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         create dl0 level, for the moment copy the r1
         """
         waveforms = event.r1.tel[telid].waveform
-        tel_calibration = self.mon_data.tel[telid].calibration
         if self._check_r1_empty(waveforms):
             return
 
@@ -149,7 +148,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # if not already done, initialize the event monitoring containers
         if event.mon.tel[telid].calibration.dc_to_pe is None:
-            event.mon.tel[telid].calibration = tel_calibration
+            event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
             event.mon.tel[telid].flatfield = self.mon_data.tel[telid].flatfield
             event.mon.tel[telid].pedestal = self.mon_data.tel[telid].pedestal
             event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
@@ -158,8 +157,8 @@ class LSTCameraCalibrator(CameraCalibrator):
         # subtract the pedestal per sample and multiply for the calibration coefficients
         #
         event.dl0.tel[telid].waveform = (
-                (waveforms - tel_calibration.pedestal_per_sample[:, :, np.newaxis])
-                * tel_calibration.dc_to_pe[:, :, np.newaxis])
+                (waveforms - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
+                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
 
 
     def _calibrate_dl1(self, event, telid):
