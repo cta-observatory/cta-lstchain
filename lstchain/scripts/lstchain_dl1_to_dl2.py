@@ -119,8 +119,10 @@ def main():
         raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
-    dl1_keys.remove(dl1_images_lstcam_key)
-    dl1_keys.remove(dl1_params_lstcam_key)
+    if dl1_images_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_images_lstcam_key)
+    if dl1_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_lstcam_key)
 
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
