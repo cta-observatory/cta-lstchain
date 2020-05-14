@@ -56,6 +56,7 @@ setup(
         'seaborn',
         'scikit-learn',
         'tables',
+        'joblib',
         'traitlets',
         'joblib',
     ],
