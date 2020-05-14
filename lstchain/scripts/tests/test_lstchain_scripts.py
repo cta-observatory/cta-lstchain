@@ -7,10 +7,12 @@ import numpy as np
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 import subprocess as sp
 import pkg_resources
+import shutil
 
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
+merged_dl1_file = os.path.join(output_dir, 'script_merged_dl1.h5')
 dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
@@ -101,6 +103,29 @@ def test_lstchain_mc_rfperformance():
     assert os.path.exists(file_model_gh_sep)
     assert os.path.exists(file_model_disp)
     assert os.path.exists(file_model_energy)
+
+
+@pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
+def test_lstchain_merge_dl1_hdf5_files():
+    shutil.copy(dl1_file, os.path.join(output_dir, 'dl1_copy.h5'))
+    run_program('lstchain_merge_hdf5_files',
+                '-d', output_dir,
+                '-o', merged_dl1_file,
+                '--no-image', 'True',
+                )
+    assert os.path.exists(merged_dl1_file)
+
+
+@pytest.mark.run(after='test_lstchain_merge_dl1_hdf5_files')
+def test_lstchain_merged_dl1_to_dl2():
+    output_file = merged_dl1_file.replace('dl1', 'dl2')
+    run_program(
+        'lstchain_dl1_to_dl2',
+        '-f', merged_dl1_file,
+        '-p', output_dir,
+        '-o', output_dir,
+    )
+    assert os.path.exists(output_file)
 
 
 @pytest.mark.run(after='test_lstchain_trainpipe')
