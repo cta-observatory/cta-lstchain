@@ -12,7 +12,7 @@ import shutil
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
-merged_dl1_file = os.path.join(output_dir, 'script_merged_d1.h5')
+merged_dl1_file = os.path.join(output_dir, 'script_merged_dl1.h5')
 dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
