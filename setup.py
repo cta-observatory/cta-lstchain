@@ -55,6 +55,7 @@ setup(
         'scikit-learn',
         'tables',
         'traitlets',
+        'joblib',
     ],
     package_data={
       'lstchain': ['data/lstchain_standard_config.json']
