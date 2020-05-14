@@ -29,6 +29,7 @@ from itertools import chain
 
 from . import utils
 from .volume_reducer import apply_volume_reduction
+from ..datachecks.dl1_checker import check_dl1
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
@@ -202,7 +203,7 @@ def r0_to_dl1(
             output_filename = r0_to_dl1_filename(Path(input_filename).name)
 
     if os.path.exists(output_filename):
-        raise IOError(output_filename + ' exists, exiting.')
+        raise IOError(str(output_filename) + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
 
@@ -669,6 +670,10 @@ def r0_to_dl1(
         muon_output_filename = Path(dir, name)
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
+
+        # Produce the dl1 datacheck .h5 file:
+        check_dl1(output_filename, Path(output_filename).parent,
+                  max_cores=1, create_pdf=False)
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
