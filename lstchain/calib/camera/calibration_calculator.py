@@ -206,11 +206,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         new_ped = False
         new_ff = False
 
-        # if pedestal event (check also the ucts trigger for the moment)
-        if (
-                LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type) or
-                LSTEventType.is_pedestal(event.lst.tel[self.tel_id].evt.ucts_trigger_type)
-        ) :
+        # if pedestal event
+        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type): 
 
             new_ped = self.pedestal.calculate_pedestals(event)
 

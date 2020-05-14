@@ -2,6 +2,19 @@ import pytest
 from pathlib import Path
 
 
+def test_generic():
+    from lstchain.paths import run_info_from_filename, Run
+
+    assert run_info_from_filename('LST-1.2.Run01920.0001') == Run(1, 1920, 1, 2)
+    assert run_info_from_filename('/foo/bar/LST-1.2.Run01920.0001') == Run(1, 1920, 1, 2)
+    assert run_info_from_filename('./foo/LST-1.2.Run01920.0001') == Run(1, 1920, 1, 2)
+    assert run_info_from_filename('foo/LST-1.2.Run01920.0001') == Run(1, 1920, 1, 2)
+    assert run_info_from_filename('fooLST-1.2.Run01920.0001.bar') == Run(1, 1920, 1, 2)
+    assert run_info_from_filename('fooLST-1.Run01920.0001.fits.gz') == Run(1, 1920, 1)
+    with pytest.raises(ValueError):
+        run_info_from_filename('MST-1.Run01920.0001.fits.gz')
+
+
 def test_parse_dl1():
     from lstchain.paths import parse_dl1_filename
 
@@ -99,15 +112,15 @@ def test_muon_filename():
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3
-    ) == 'muon_LST-1.Run00002.0003.fits.gz'
+    ) == 'muons_LST-1.Run00002.0003.fits.gz'
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3, gzip=False
-    ) == 'muon_LST-1.Run00002.0003.fits'
+    ) == 'muons_LST-1.Run00002.0003.fits'
 
     assert run_to_muon_filename(
         tel_id=1, run=2, subrun=3, stream=4
-    ) == 'muon_LST-1.4.Run00002.0003.fits.gz'
+    ) == 'muons_LST-1.4.Run00002.0003.fits.gz'
 
 
 def test_r0_to_dl1_filename():
