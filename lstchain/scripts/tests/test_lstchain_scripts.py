@@ -118,13 +118,14 @@ def test_lstchain_merge_dl1_hdf5_files():
 
 @pytest.mark.run(after='test_lstchain_merge_dl1_hdf5_files')
 def test_lstchain_merged_dl1_to_dl2():
+    output_file = merged_dl1_file.replace('dl1', 'dl2')
     run_program(
         'lstchain_dl1_to_dl2',
         '-f', merged_dl1_file,
         '-p', output_dir,
         '-o', output_dir,
     )
-    assert os.path.exists(dl2_file)
+    assert os.path.exists(output_file)
 
 
 @pytest.mark.run(after='test_lstchain_trainpipe')
