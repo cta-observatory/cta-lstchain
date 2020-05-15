@@ -10,8 +10,8 @@ Usage:
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-import joblib
 from sklearn.model_selection import train_test_split
+import joblib
 import os
 from . import utils
 from . import disp

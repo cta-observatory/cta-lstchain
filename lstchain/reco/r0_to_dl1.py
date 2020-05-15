@@ -316,7 +316,7 @@ def r0_to_dl1(
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(
                 utils.expand_tel_list,
-                max_tels=len(first_event.inst.subarray.tel) + 1,
+                max_tels=max(first_event.inst.subarray.tel) + 1,
             )
 
             writer.add_column_transform(

@@ -147,7 +147,9 @@ class CalibrationHDF5Writer(Tool):
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
-                if count == self.tot_events-1 or count == self.eventsource.max_events-1:
+                max_events_reached = (
+                        self.eventsource.max_events is not None and count == self.eventsource.max_events - 1)
+                if count == self.tot_events-1 or max_events_reached:
                     self.log.debug(f"Last event, count = {count}")
                     end_of_file = True
 
