@@ -67,16 +67,14 @@ def main():
 
     if args.run_number:
         run = f'Run{args.run_number:05d}'
-        file_list = sorted([
-            os.path.join(args.srcdir, f)
-            for f in glob(os.path.join(args.srcdir, args.pattern))
-            if run in f
-        ])
+        file_list = sorted(filter(
+            lambda f: run in f,
+            glob(os.path.join(args.srcdir, args.pattern))
+        ))
     else:
-        file_list = sorted([
-            os.path.join(args.srcdir, f)
-            for f in glob(os.path.join(args.srcdir, args.pattern))
-        ])
+        file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
+
+    print(*file_list, sep='\n')
 
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
