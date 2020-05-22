@@ -847,7 +847,6 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             sem_effi = np.append(sem_effi, sem(tcont['muon_efficiency']))
             contained_muons = vstack([contained_muons, tcont])
 
-
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         fig.suptitle('MUON RINGS', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
