@@ -74,8 +74,6 @@ def main():
     else:
         file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
 
-    print(*file_list, sep='\n')
-
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
         for k in keys:
