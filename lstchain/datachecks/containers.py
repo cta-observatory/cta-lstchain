@@ -159,7 +159,7 @@ class DL1DataCheckContainer(Container):
                                  bins=histogram_binnings.hist_nislands)
         self.hist_nislands = counts
 
-        intensity = np.array(table['intensity'][mask])
+        intensity = table.loc[mask, 'intensity'].to_numpy()
         counts, _, _ = plt.hist(intensity,
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
@@ -173,28 +173,30 @@ class DL1DataCheckContainer(Container):
                      bins=histogram_binnings.hist_dist0_intensity_gt_200)
         self.hist_dist0_intensity_gt_200 = counts
 
-        counts, _, _, _ = plt.hist2d(intensity, np.array(table['width'][mask]),
+        counts, _, _, _ = plt.hist2d(intensity,
+                                     table.loc[mask, 'width'].to_numpy(),
                                      bins=histogram_binnings.hist_width)
         self.hist_width = counts
 
-        counts, _, _, _ = plt.hist2d(intensity, np.array(table['length'][mask]),
+        counts, _, _, _ = plt.hist2d(intensity,
+                                     table.loc[mask, 'length'].to_numpy(),
                                      bins=histogram_binnings.hist_length)
         self.hist_length = counts
 
         counts, _, _, _ = plt.hist2d(intensity,
-                                     np.array(table['skewness'][mask]),
+                                     table.loc[mask, 'skewness'].to_numpy(),
                                      bins=histogram_binnings.hist_skewness)
         self.hist_skewness = counts
 
         counts, _, _, _ = \
-            plt.hist2d(intensity, np.array(table['intercept'][mask]),
+            plt.hist2d(intensity, table.loc[mask, 'intercept'].to_numpy(),
                        bins=histogram_binnings.hist_intercept)
         self.hist_intercept = counts
 
-        length = table['length'][mask]
-        tgrad = np.abs(table['time_gradient'][mask])
+        length = table.loc[mask, 'length'].to_numpy()
+        tgrad = np.abs(table.loc[mask, 'time_gradient'].to_numpy())
         counts, _, _, _ = \
-            plt.hist2d(np.array(length), np.array(tgrad),
+            plt.hist2d(length, tgrad,
                        bins=histogram_binnings.hist_tgrad_vs_length)
         self.hist_tgrad_vs_length = counts
 
@@ -203,8 +205,7 @@ class DL1DataCheckContainer(Container):
         # (instead of Pandas data series)
 
         counts, _, _, _ = \
-            plt.hist2d(np.array(length[intensity > 200]),
-                       np.array(tgrad[intensity > 200]),
+            plt.hist2d(length[intensity > 200], tgrad[intensity > 200],
                        bins=histogram_binnings.
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
