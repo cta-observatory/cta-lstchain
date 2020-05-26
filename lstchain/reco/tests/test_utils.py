@@ -15,6 +15,11 @@ def test_camera_to_sky():
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
+    # Test for real event with a time
+    obs_time = Time('2018-11-01T02:00', '2018-11-01T02:00')
+    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az, time = obs_time)
+    np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
+    np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
 def test_reco_source_position_sky():
     cog_x = np.array([2, 1]) * u.m

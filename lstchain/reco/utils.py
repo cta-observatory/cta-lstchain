@@ -203,16 +203,24 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
-def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
+def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
     """
+    Compute camera to SkyCoord. For MC assume the default ObsTime.
 
     Parameters
     ----------
-    pos_x: X coordinate in camera (distance)
-    pos_y: Y coordinate in camera (distance)
-    focal: telescope focal (distance)
-    pointing_alt: pointing altitude in angle unit
-    pointing_az: pointing altitude in angle unit
+    pos_x: `~astropy.units.Quantity`
+        X coordinate in camera (distance)
+    pos_y: `~astropy.units.Quantity`
+        Y coordinate in camera (distance)
+    focal: `~astropy.units.Quantity`
+        telescope focal (distance)
+    pointing_alt: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    pointing_az: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    time: `~astropy.time.Time`
+
 
     Returns
     -------
@@ -230,6 +238,13 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
+
+    if time:
+        horizon_frame = AltAz(location=location, obstime=time)
+    else:
+        horizon_frame = AltAz(location=location, obstime=obstime)
+        print("No time given, use default observation time. To be use only for MC data.")
+
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
