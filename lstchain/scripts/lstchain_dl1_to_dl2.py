@@ -83,7 +83,6 @@ def main():
 
     if config['source_dependent']:
         data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        #data_src_dep = data_src_dep.set_index('index', drop=True)
         data = pd.concat([data, data_src_dep], axis=1)
 
 
