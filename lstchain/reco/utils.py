@@ -19,6 +19,7 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
 from warnings import warn
+import logging
 
 __all__ = [
     'alt_to_theta',
@@ -26,7 +27,7 @@ __all__ = [
     'cal_cam_source_pos',
     'get_event_pos_in_camera',
     'reco_source_position_sky',
-    'camera_to_altaz_frame',
+    'camera_to_altaz',
     'sky_to_camera',
     'source_side',
     'source_dx_dy',
@@ -43,8 +44,8 @@ __all__ = [
 
 # position of the LST1
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
-obstime = Time('2018-11-01T02:00')
-horizon_frame = AltAz(location=location, obstime=obstime)
+obstime_mc = Time('2018-11-01T02:00')
+horizon_frame = AltAz(location=location, obstime=obstime_mc)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
 INVALID_TIME = UCTS_EPOCH
 
@@ -200,10 +201,10 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
-    return camera_to_altaz_frame(src_x, src_y, focal_length, pointing_alt, pointing_az)
+    return camera_to_altaz(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
-def camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
+def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = None):
     """
     Compute camera to Horizontal frame (Altitude-Azimuth system). For MC assume the default ObsTime.
 
@@ -219,13 +220,13 @@ def camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az, time =
         pointing altitude in angle unit
     pointing_az: `~astropy.units.Quantity`
         pointing altitude in angle unit
-    time: `~astropy.time.Time`
+    obstime: `~astropy.time.Time`
 
 
     Returns
     -------
-    sky frame: `astropy.coordinates.AltAz`
-        horizontal frame (AltAz)
+    sky frame: `astropy.coordinates.SkyCoord`
+       in AltAz frame
     Example:
     --------
     import astropy.units as u
@@ -239,11 +240,11 @@ def camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az, time =
 
     """
 
-    if time:
-        horizon_frame = AltAz(location=location, obstime=time)
-    else:
+    if obstime:
         horizon_frame = AltAz(location=location, obstime=obstime)
-        print("No time given, use default observation time. To be use only for MC data.")
+    else:
+        horizon_frame = AltAz(location=location, obstime=obstime_mc)
+        logging.warning("No time given, use default observation time. To be use only for MC data.")
 
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
