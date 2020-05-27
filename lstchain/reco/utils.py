@@ -44,8 +44,8 @@ __all__ = [
 
 # position of the LST1
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
-obstime_mc = Time('2018-11-01T02:00')
-horizon_frame = AltAz(location=location, obstime=obstime_mc)
+obstime = Time('2018-11-01T02:00')
+horizon_frame = AltAz(location=location, obstime=obstime)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
 INVALID_TIME = UCTS_EPOCH
 
@@ -239,12 +239,9 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = No
     sky_coords = utils.camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
-
-    if obstime:
-        horizon_frame = AltAz(location=location, obstime=obstime)
-    else:
-        horizon_frame = AltAz(location=location, obstime=obstime_mc)
-        logging.warning("No time given, use default observation time. To be use only for MC data.")
+    if not obstime:
+        logging.warning("No time given. To be use only for MC data.")
+    horizon_frame = AltAz(location=location, obstime=obstime)
 
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
