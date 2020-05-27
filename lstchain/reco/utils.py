@@ -26,7 +26,7 @@ __all__ = [
     'cal_cam_source_pos',
     'get_event_pos_in_camera',
     'reco_source_position_sky',
-    'camera_to_sky',
+    'camera_to_altaz_frame',
     'sky_to_camera',
     'source_side',
     'source_dx_dy',
@@ -200,12 +200,12 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
-    return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
+    return camera_to_altaz_frame(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
-def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
+def camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
     """
-    Compute camera to SkyCoord. For MC assume the default ObsTime.
+    Compute camera to Horizontal frame (Altitude-Azimuth system). For MC assume the default ObsTime.
 
     Parameters
     ----------
@@ -224,8 +224,8 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
 
     Returns
     -------
-    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
-
+    sky frame: `astropy.coordinates.AltAz`
+        horizontal frame (AltAz)
     Example:
     --------
     import astropy.units as u
@@ -235,7 +235,7 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az, time = None):
     focal = 28*u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    sky_coords = utils.camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
 
