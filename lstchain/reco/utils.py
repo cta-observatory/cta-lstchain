@@ -240,7 +240,7 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = No
 
     """
     if not obstime:
-        logging.warning("No time given. To be use only for MC data.")
+        logging.info("No time given. To be use only for MC data.")
     horizon_frame = AltAz(location=location, obstime=obstime)
 
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
