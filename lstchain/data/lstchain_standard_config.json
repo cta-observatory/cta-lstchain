@@ -1,29 +1,11 @@
 {
   "events_filters": {
-    "intensity": [
-      0,
-      Infinity
-    ],
-    "width": [
-      0,
-      Infinity
-    ],
-    "length": [
-      0,
-      Infinity
-    ],
-    "wl": [
-      0,
-      1
-    ],
-    "r": [
-      0,
-      1
-    ],
-    "leakage2_intensity": [
-      0,
-      1
-    ]
+    "intensity": [0, Infinity],
+    "width": [0, Infinity],
+    "length": [0, Infinity],
+    "wl": [0, 1],
+    "r": [0, 1],
+    "leakage2_intensity": [0, 1]
   },
   "tailcut": {
     "picture_thresh": 6,
