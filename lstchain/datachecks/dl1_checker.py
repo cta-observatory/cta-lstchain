@@ -564,7 +564,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                      for name in colnames]
 
         for table, tname in zip([table_pedestals, table_cosmics],
-                                ['pedestals', 'flatfield']):
+                                ['pedestals', 'cosmics']):
             if table is None or len(table) == 0:
                 write_error_page(tname, pagesize)
                 pdf.savefig()
@@ -769,54 +769,82 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         pdf.savefig()
         # End of the plots created from the DL1 datacheck file
         # keep some info needed for muon ring plots:
-        subrun_list = np.array(table.col('subrun_index'))
+        subrun_list = np.array(table_cosmics.col('subrun_index'))
         elapsed_t = np.array(table_cosmics.col('elapsed_time'))
         file.close()
 
         # Now we go for the muons .fits files, created in the R0 to DL1 stage.
         # We look for the files with the same subrun indices that have been
-        # processed.
-        muon_filenames = []
+        # processed. Make sure files exist and contain some rings: we keep
+        # those in files_with_muons. The files which also have rings with
+        # containment>0.999 are kept in good_files, and their
+        # indices in good_subruns. These are safeguards introduced against
+        # bad data!
+
+        files_with_rings = []
+        good_files = []
+        good_subruns = np.array([])
+        # Some quantities we want to have vs. subrun index:
+        num_rings = np.array([])
+        num_contained_rings = np.array([])
+        mean_width = np.array([])
+        sem_width = np.array([])
+        mean_effi = np.array([])
+        sem_effi = np.array([])
+
         dcfile = \
             parse_datacheck_dl1_filename(os.path.basename(datacheck_filename))
-        for i in subrun_list:
+        for subrun in subrun_list:
             if muons_dir is not None:
                 dirname = muons_dir
             # if no directory is provided, we assume the muons fits files are
             # in the same directory of the datacheck file.
             else:
                 dirname = os.path.dirname(datacheck_filename)
-            name = run_to_muon_filename(dcfile.tel_id, dcfile.run, i, None,
+            name = run_to_muon_filename(dcfile.tel_id, dcfile.run, subrun, None,
                                         False)
-            if Path(dirname, name).exists():
-                muon_filenames.append(Path(dirname,name))
+            filename = Path(dirname, name)
+            if filename.exists():
+                t = Table.read(filename)
+                if len(t) > 0:
+                    files_with_rings.append(filename)
+                tcont = t[t['ring_containment'] > 0.999]
+                num_rings = np.append(num_rings, len(t))
+                num_contained_rings = np.append(num_contained_rings, len(tcont))
+                if len(tcont) > 0:
+                    good_files.append(filename)
+                    good_subruns = np.append(good_subruns, subrun)
+                else:
+                    logger.warning(f'File {str(filename)} has no valid muon '
+                                   f'rings!')
             else:
-                logger.warning(f'File {str(Path(dirname,name))} not found. '
-                               f'No muon information will be plotted!')
-                return
+                logger.warning(f'File {str(filename)} not found. '
+                               f'No muon information will be plotted for that '
+                               f'subrun!')
+                num_rings = np.append(num_rings, 0)
+                num_contained_rings = np.append(num_contained_rings, 0)
 
-        muons_table = Table.read(muon_filenames[0])
-        contained_muons = muons_table[muons_table['ring_containment'] > 0.999]
-        # to get some quantities vs. subrun index:
-        num_rings = np.array([len(muons_table)])
-        num_contained_rings = np.array([len(contained_muons)])
-        mean_width = np.array(np.mean(contained_muons['ring_width']))
-        sem_width = np.array(sem(contained_muons['ring_width']))
-        mean_effi = np.array(np.mean(contained_muons['muon_efficiency']))
-        sem_effi = np.array(sem(contained_muons['muon_efficiency']))
+        # Now join the tables which indeed contain data (joining those
+        # without results in an error, hence all this complication!)
+        muons_table = Table.read(files_with_rings[0])
+        for filename in files_with_rings[1:]:
+            t = Table.read(filename)
+            muons_table = vstack([muons_table, t])
 
-        for filename in muon_filenames[1:]:
+        t = Table.read(good_files[0])
+        tcont = t[t['ring_containment'] > 0.999]
+        mean_width = np.mean(tcont['ring_width'])
+        sem_width = sem(tcont['ring_width'])
+        mean_effi = np.mean(tcont['muon_efficiency'])
+        sem_effi = sem(tcont['muon_efficiency'])
+        contained_muons = tcont
+        for filename in good_files[1:]:
             t = Table.read(filename)
             tcont = t[t['ring_containment'] > 0.999]
-            # to get some quantities vs. subrun index:
-            num_rings = np.append(num_rings, len(t))
-            num_contained_rings = np.append(num_contained_rings, len(tcont))
             mean_width = np.append(mean_width, np.mean(tcont['ring_width']))
             sem_width = np.append(sem_width, sem(tcont['ring_width']))
             mean_effi = np.append(mean_effi, np.mean(tcont['muon_efficiency']))
             sem_effi = np.append(sem_effi, sem(tcont['muon_efficiency']))
-            # to get the whole muon rings tables:
-            muons_table = vstack([muons_table, t])
             contained_muons = vstack([contained_muons, tcont])
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
@@ -918,14 +946,14 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[1, 1].set_ylim(0., 0.5)
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
-        axes[0, 2].errorbar(subrun_list, mean_effi, yerr=sem_effi, fmt='o',
+        axes[0, 2].errorbar(good_subruns, mean_effi, yerr=sem_effi, fmt='o',
                             markersize=3.)
 
         axes[0, 2].set_xlabel('subrun index')
         axes[0, 2].set_ylabel('estimated telescope efficiency for muons')
         axes[0, 2].grid(linewidth=0.3, linestyle=':')
         axes[0, 2].set_ylim(0., 0.5)
-        axes[1, 2].errorbar(subrun_list, mean_width, yerr=sem_width, fmt='o',
+        axes[1, 2].errorbar(good_subruns, mean_width, yerr=sem_width, fmt='o',
                             markersize=3.)
         axes[1, 2].set_xlabel('subrun index')
         axes[1, 2].set_ylabel('ring width (deg)')
