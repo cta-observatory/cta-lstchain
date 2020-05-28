@@ -31,7 +31,7 @@ def load_gain_selector_from_config(custom_config):
 
     Returns
     -------
-
+    `ctapipe.calib.camera.gainselection.GainSelector`
     """
     config = replace_config(get_standard_config(), custom_config)
     conf = Config({config['gain_selector']: config['gain_selector_config']})
@@ -51,7 +51,7 @@ def load_image_extractor_from_config(custom_config):
 
     Returns
     -------
-
+    `ctapipe.image.extractor.LocalPeakWindowSum`
     """
     config = replace_config(get_standard_config(), custom_config)
     conf = Config(config['image_extractor_config'])
@@ -74,7 +74,7 @@ def load_calibrator_from_config(custom_config):
 
     Returns
     -------
-
+    `ctapipe.calib.camera.calibrator.CameraCalibrator`
     """
 
     config = replace_config(get_standard_config(), custom_config)
