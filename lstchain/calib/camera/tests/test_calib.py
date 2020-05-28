@@ -80,10 +80,12 @@ def test_load_image_extractor_from_config():
 
     config = {'image_extractor': 'LocalPeakWindowSum',
               'image_extractor_config': {
-                          "window_shift": 1,
-                          "window_width": 10,
-                      }
-    }
+                  'LocalPeakWindowSum': {
+                      "window_shift": 1,
+                      "window_width": 10
+                  }
+              }
+              }
 
     image_extractor = load_image_extractor_from_config(config)
 

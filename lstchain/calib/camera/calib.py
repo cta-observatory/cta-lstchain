@@ -54,7 +54,7 @@ def load_image_extractor_from_config(custom_config):
 
     """
     config = replace_config(get_standard_config(), custom_config)
-    conf = Config({config['image_extractor']: config['image_extractor_config']})
+    conf = Config(config['image_extractor_config'])
     image_extractor = getattr(extractor, config['image_extractor'])
     return image_extractor(conf)
 
