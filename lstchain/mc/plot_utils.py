@@ -6,17 +6,18 @@ import numpy as np
 import astropy.units as u
 import pandas as pd
 
-__all__ = ['fill_bin_content',
-           'format_axes_ebin',
-           'format_axes_array',
-           'format_axes_sensitivity',
-           'plot_MAGIC_sensitivity',
-           'plot_Crab_SED',
-           'plot_sensitivity',
-           'sensitivity_minimization_plot',
-           'sensitivity_plot_comparison',
-           'plot_positions_survived_events',
-]
+__all__ = [
+    'fill_bin_content',
+    'format_axes_ebin',
+    'format_axes_array',
+    'format_axes_sensitivity',
+    'plot_MAGIC_sensitivity',
+    'plot_Crab_SED',
+    'plot_sensitivity',
+    'sensitivity_minimization_plot',
+    'sensitivity_plot_comparison',
+    'plot_positions_survived_events',
+    ]
 
 def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta2):
     """

@@ -14,6 +14,7 @@ from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
+from tqdm import tqdm
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -33,7 +34,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_subarray_tables',
            'write_metadata',
            'write_dataframe',
-           'write_dl2_dataframe'
+           'write_dl2_dataframe',
+           'write_calibration_data'
            ]
 
 
@@ -182,6 +184,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
+    bar = tqdm(total=len(file_list))
     with open_file(output_filename, 'w') as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
@@ -201,6 +204,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                                 os.path.basename(k),
                                                 createparents=True,
                                                 obj=f1.root[k].read())
+        bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
@@ -213,6 +217,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                 merge_file.root[k].append(file.root[k].read())
                     except:
                         print("Can't append node {} from file {}".format(k, filename))
+            bar.update(1)
 
 
 def merging_check(file_list):
@@ -573,7 +578,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
 
 
-def write_dataframe(dataframe, outfile, table_path):
+def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -581,14 +586,21 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    table_path: str - path to the table to write in the HDF5 file
+    table_path: str
+        path to the table to write in the HDF5 file
     """
-    with pd.HDFStore(outfile, mode='a') as store:
+    if not table_path.startswith('/'):
+        table_path = '/' + table_path
+
+    with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.append(path, dataframe,
-                     format='table',
-                     data_columns=True)
-        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+        f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+        )
 
 
 def write_dl2_dataframe(dataframe, outfile):
@@ -670,3 +682,38 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
+def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
+    mon_event.pedestal.prefix = ''
+    mon_event.flatfield.prefix = ''
+    mon_event.calibration.prefix = ''
+    mon_index.prefix = ''
+
+
+    # update index
+    if new_ped:
+        mon_index.pedestal_id += 1
+
+    if new_ff:
+        mon_index.flatfield_id += 1
+        mon_index.calibration_id += 1
+
+
+    if new_ped:
+        # write ped container
+        writer.write(
+            table_name=f'telescope/monitoring/pedestal',
+            containers=[mon_index, mon_event.pedestal]
+        )
+
+    if new_ff:
+        # write calibration container
+        writer.write(
+            table_name="telescope/monitoring/flatfield",
+            containers=[mon_index, mon_event.flatfield]
+        )
+
+        # write ff container
+        writer.write(
+            table_name="telescope/monitoring/calibration",
+            containers=[mon_index, mon_event.calibration]
+        )
