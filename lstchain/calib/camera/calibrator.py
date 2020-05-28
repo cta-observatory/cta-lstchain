@@ -2,6 +2,7 @@ import numpy as np
 import os
 from ctapipe.core.traits import Unicode, List, Int
 from ctapipe.calib.camera import CameraCalibrator
+from ctapipe.calib.camera.calibrator import integration_correction
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
@@ -104,6 +105,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         # initialize the MonitoringContainer() for the moment it reads it from a hdf5 file
         self._initialize_correction()
 
+
     def _initialize_correction(self):
         """
         Read the correction from hdf5 calibration file
@@ -135,6 +137,12 @@ class LSTCameraCalibrator(CameraCalibrator):
                 f"Problem in reading calibration file {self.calibration_path}"
             )
             raise
+
+        # read the pulse shape file (to be changed for ctapipe version 0.8)
+        try:
+
+
+
 
     def _calibrate_dl0(self, event, telid):
         """
@@ -197,3 +205,38 @@ class LSTCameraCalibrator(CameraCalibrator):
         else:
             event.dl1.tel[telid].image = charge
             event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
+
+
+    def _get_correction(self, event, telid):
+        """
+        Obtain the integration correction for this telescope.
+
+        Parameters
+        ----------
+        event : container
+            A `ctapipe` event container
+        telid : int
+            The telescope id.
+            The integration correction is calculated once per telescope.
+
+        Returns
+        -------
+        ndarray
+        """
+        try:
+            selected_gain_channel = event.r1.tel[telid].selected_gain_channel
+            shift = self.image_extractor.window_shift
+            width = self.image_extractor.window_width
+            shape = event.mc.tel[telid].reference_pulse_shape
+            n_chan = shape.shape[0]
+            step = event.mc.tel[telid].meta['refstep']
+            time_slice = event.mc.tel[telid].time_slice
+            correction = integration_correction(n_chan, shape, step,
+                                                time_slice, width, shift)
+            pixel_correction = correction[selected_gain_channel]
+            return pixel_correction
+        except (AttributeError, KeyError):
+            # Don't apply correction when window_shift or window_width
+            # does not exist in extractor, or when container does not have
+            # a reference pulse shape
+            return np.ones(event.dl0.tel[telid].waveform.shape[0])
