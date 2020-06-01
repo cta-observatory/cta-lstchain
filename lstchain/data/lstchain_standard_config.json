@@ -102,7 +102,8 @@
   "gain_selector_config": {
     "threshold":  3500
   },
-
+  "apply_charge_correction": false,
+  "charge_scale": [1.0,1.0],
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
@@ -130,6 +131,7 @@
      "maximum_lg_charge_std": 300,
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
+     "apply_charge_correction": false,
      "PedestalIntegrator":{
        "sample_size": 10000,
        "sample_duration":100000,
