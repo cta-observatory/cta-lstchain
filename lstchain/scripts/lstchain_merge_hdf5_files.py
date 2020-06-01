@@ -22,6 +22,7 @@ from distutils.util import strtobool
 # import tables
 from lstchain.io import get_dataset_keys
 from lstchain.io import smart_merge_h5files, auto_merge_h5files
+from glob import glob
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
 
@@ -47,11 +48,17 @@ parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(
                     help='Boolean. True to remove the images',
                     default=False)
 
-parser.add_argument('--run-number', '-r', action='store', type=str,
+parser.add_argument('--run-number', '-r', action='store', type=int,
                     dest='run_number',
                     help='Merge files run-wise if a run number is passed, \
                           otherwise merge all files in the directory',
                     default=None)
+
+parser.add_argument(
+    '--pattern', '-p',
+    help='Glob pattern to match files',
+    default='*.h5',
+)
 
 args = parser.parse_args()
 
@@ -59,11 +66,13 @@ args = parser.parse_args()
 def main():
 
     if args.run_number:
-        file_list = sorted([os.path.join(args.srcdir, f) for f in os.listdir(args.srcdir)
-                            if (f.endswith('.h5') and args.run_number in f)])
+        run = f'Run{args.run_number:05d}'
+        file_list = sorted(filter(
+            lambda f: run in f,
+            glob(os.path.join(args.srcdir, args.pattern))
+        ))
     else:
-        file_list = sorted([os.path.join(args.srcdir, f) for f in os.listdir(args.srcdir)
-                            if f.endswith('.h5')])
+        file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
 
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
