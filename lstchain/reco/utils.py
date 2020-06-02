@@ -19,6 +19,7 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
 from warnings import warn
+import pandas as pd
 
 __all__ = [
     'alt_to_theta',
@@ -412,7 +413,8 @@ def filter_events(events,
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
     if dropna:
-        return events[filter].dropna()
+        with pd.option_context('mode.use_inf_as_null', True):
+            return events[filter].dropna()
     else:
         return events[filter]
 
