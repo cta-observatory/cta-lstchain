@@ -8,7 +8,8 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
-    'merge_dl1datacheck_files'
+    'merge_dl1datacheck_files',
+    'plot_mean_and_stddev_bokeh',
 ]
 
 import h5py
@@ -25,10 +26,17 @@ import tables
 
 from astropy import units as u
 from astropy.table import Table, vstack
+from bokeh.io import output_file, show
+from bokeh.layouts import gridplot, column
+from bokeh.models import HoverTool, Div
+from bokeh.models.annotations import Title
+from bokeh.models.widgets import Tabs, Panel
+from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
+from ctapipe.visualization.bokeh import CameraDisplay as BokehCameraDisplay
 from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
@@ -527,6 +535,13 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_flatfield is None or len(table_flatfield) == 0:
             write_error_page('flatfield', pagesize)
         else:
+            output_file('lstcam.html')
+            plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
+                                 ['charge_mean', 'charge_stddev'],
+                                 ['Flat-field mean charge (p.e.)',
+                                 'Flat-field charge std dev (p.e.)',
+                                 'FLATFIELD, pixel-wise charge info'])
+
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
                                  ['Flat-field mean charge (p.e.)',
@@ -823,6 +838,11 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                f'subrun!')
                 num_rings = np.append(num_rings, 0)
                 num_contained_rings = np.append(num_contained_rings, 0)
+
+        if len(files_with_rings) == 0:
+            write_error_page('Muons', pagesize)
+            pdf.savefig()
+            return
 
         # Now join the tables which indeed contain data (joining those
         # without results in an error, hence all this complication!)
@@ -1193,3 +1213,99 @@ def merge_dl1datacheck_files(file_list):
                           append=True, serialize_meta=True)
 
     return merged_filename
+
+
+def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
+
+    """
+    Parameters
+    ----------
+    table:  python table containing pixel-wise information to be displayed
+    camgeom: camera geometry
+    columns: list of 2 strings, columns of 'table', first one is the mean and
+    the second the std deviation to be plotted
+    labels: plot titles
+
+    Returns
+    -------
+    None
+
+    The subrun-wise mean and std dev values are used to calculate the
+    run-wise (i.e. for all processed subruns which appear in the table)
+    counterparts of the same, which are then plotted.
+
+    """
+
+    logger = logging.getLogger(__name__)
+
+    # calculate pixel-wise mean and standard deviation for the whole run,
+    # from the subrun-wise values:
+    mean = np.sum(np.multiply(table.col(columns[0]),
+                              table.col('num_events')[:, None]),
+                  axis=0) / np.sum(table.col('num_events'))
+    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
+                                        table.col('num_events')[:, None]),
+                            axis=0) / np.sum(table.col('num_events')))
+
+    if np.isnan(mean).sum() > 0:
+        logger.info(f'Pixels with NaNs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
+
+    # plot mean and std dev (of e.g. pedestal charge or time), as camera
+    # display, vs. pixel id, and as a histogram:
+
+    pad_width = 350
+    pad_height = 370
+
+    cam = BokehCameraDisplay(camgeom)
+    cam.image = mean
+    camlog = BokehCameraDisplay(camgeom)
+
+    logmean = np.copy(mean)
+    for i, x in enumerate(logmean):
+        # workaround as long as log z-scale is not implemented in bokeh camera:
+        if x <= 0:
+            logmean[i] = np.log10(np.min(mean[mean>0]))
+        else:
+            logmean[i] = np.log10(mean[i])
+    camlog.image = logmean
+    for i in np.where(mean <= 0):
+        camlog.glyphs.data_source.data['image'][i] = '#ffffff'
+
+    for c in [cam, camlog]:
+        c.glyphs.data_source.add(list(c.geom.pix_id), 'pix_id')
+        c.glyphs.data_source.add(list(cam.image), 'mean')
+        c.add_colorbar()
+        c.fig.plot_width = pad_width
+        c.fig.plot_height = int(pad_height * 0.85)
+        c.fig.title = Title(text=labels[0])
+        c.fig.grid.visible = False
+        c.fig.axis.visible = True
+        c.fig.add_tools(
+            HoverTool(tooltips=[('(pix_id, mean [p.e.])', '(@pix_id, @mean)')],
+                      mode='mouse', point_policy='snap_to_data'))
+
+    tab1 = Panel(child=cam.fig, title='linear')
+    tab2 = Panel(child=camlog.fig, title='logarithmic')
+    p1 = Tabs(tabs=[tab1, tab2])
+
+    p2 = figure(background_fill_color='#ffffff',
+                y_range=(0, cam.image.max() * 1.1), x_axis_label='pix_id',
+                y_axis_label=labels[0])
+    p2.min_border_top = 60
+    glyphs = p2.circle(x=cam.geom.pix_id, y=cam.image, size=2)
+    glyphs.data_source.add(list(cam.geom.pix_id), 'pix_id')
+    glyphs.data_source.add(list(cam.image), 'mean')
+    p2.add_tools(
+        HoverTool(tooltips=[('(pix_id, mean [p.e.])', '(@pix_id, @mean)')],
+                  mode='mouse', point_policy='snap_to_data'))
+
+    hist, edges = np.histogram(cam.image, bins=200)
+    p3 = figure(background_fill_color='#ffffff',
+                y_range=(0.7, hist.max() * 1.1), x_axis_label=labels[0],
+                y_axis_label='Number of pixels', y_axis_type='log')
+    p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
+
+    grid = gridplot([[p1, p2, p3], [None, None, None]], sizing_mode=None,
+                    plot_width=pad_width, plot_height=pad_height)
+    show(column(Div(text='<h1>'+labels[2]+'</h1>'),grid))
