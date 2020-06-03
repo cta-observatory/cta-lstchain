@@ -371,6 +371,9 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
     geom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
+    page1 = Panel()
+    page2 = Panel()
+
     with PdfPages(pdf_filename) as pdf:
         # first deal with the DL1 datacheck file, created from DL1 event data:
         file = tables.open_file(datacheck_filename)
@@ -524,6 +527,16 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
+            page1.child = \
+                plot_mean_and_stddev_bokeh(table_pedestals,
+                                           engineering_geom,
+                                           ['charge_mean', 'charge_stddev'],
+                                           ['Pedestal mean charge (p.e.)',
+                                           'Pedestal charge std dev (p.e.)',
+                                           'PEDESTALS, pixel-wise charge info'])
+            page1.title = 'PEDESTALS, pixel-wise charge info'
+
+
             plot_mean_and_stddev(table_pedestals, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
                                  ['Pedestal mean charge (p.e.)',
@@ -535,12 +548,13 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_flatfield is None or len(table_flatfield) == 0:
             write_error_page('flatfield', pagesize)
         else:
-            output_file('lstcam.html')
-            plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
-                                 ['charge_mean', 'charge_stddev'],
-                                 ['Flat-field mean charge (p.e.)',
-                                 'Flat-field charge std dev (p.e.)',
-                                 'FLATFIELD, pixel-wise charge info'])
+            page2.child = \
+                plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
+                                           ['charge_mean', 'charge_stddev'],
+                                           ['Flat-field mean charge (p.e.)',
+                                           'Flat-field charge std dev (p.e.)',
+                                           'FLATFIELD, pixel-wise charge info'])
+            page2.title = 'FLATFIELD, pixel-wise charge info'
 
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
@@ -549,6 +563,11 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  'FLATFIELD, pixel-wise charge info'], pagesize,
                                  norm='log')
         pdf.savefig()
+
+        output_file(pdf_filename.with_suffix('.html'),
+                    title='LST1 DL1 data check')
+        tabs = Tabs(tabs=[page1, page2])
+        show(column(Div(text='<h1>'+datacheck_filename+'</h1>'), tabs))
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
                       'hist_npixels', 'hist_nislands']
@@ -1257,32 +1276,52 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     pad_width = 350
     pad_height = 370
 
+    p1, p2, p3 = plot_camera_display(mean, camgeom, pad_width, pad_height,
+                                     labels[0])
+    p4, p5, p6 = plot_camera_display(stddev, camgeom, pad_width, pad_height,
+                                     labels[1])
+
+    grid = gridplot([[p1, p2, p3], [p4, p5, p6]], sizing_mode=None,
+                    plot_width=pad_width, plot_height=pad_height)
+    return grid
+
+
+def plot_camera_display(content, geom, pad_width, pad_height, label):
+
+    camgeom = CameraGeometry.from_table(geom.to_table()).\
+        transform_to(geom.frame)
+    # patch to reduce gaps between bokeh's cam circular pixels:
+    camgeom.pix_area *= 1.3
+
     cam = BokehCameraDisplay(camgeom)
-    cam.image = mean
+    cam.image = content
     camlog = BokehCameraDisplay(camgeom)
 
-    logmean = np.copy(mean)
-    for i, x in enumerate(logmean):
+    logcontent = np.copy(content)
+    for i, x in enumerate(logcontent):
         # workaround as long as log z-scale is not implemented in bokeh camera:
         if x <= 0:
-            logmean[i] = np.log10(np.min(mean[mean>0]))
+            logcontent[i] = np.log10(np.min(content[content>0]))
         else:
-            logmean[i] = np.log10(mean[i])
-    camlog.image = logmean
-    for i in np.where(mean <= 0):
+            logcontent[i] = np.log10(content[i])
+    camlog.image = logcontent
+    for i in np.where(content <= 0):
         camlog.glyphs.data_source.data['image'][i] = '#ffffff'
 
     for c in [cam, camlog]:
         c.glyphs.data_source.add(list(c.geom.pix_id), 'pix_id')
-        c.glyphs.data_source.add(list(cam.image), 'mean')
+        c.glyphs.data_source.add(list(cam.image), 'value')
         c.add_colorbar()
         c.fig.plot_width = pad_width
         c.fig.plot_height = int(pad_height * 0.85)
-        c.fig.title = Title(text=labels[0])
+        c.fig.title = Title(text=label)
         c.fig.grid.visible = False
         c.fig.axis.visible = True
+        c.fig.xaxis.axis_label = 'X position (m)'
+        c.fig.yaxis.axis_label = 'Y position (m)'
         c.fig.add_tools(
-            HoverTool(tooltips=[('(pix_id, mean [p.e.])', '(@pix_id, @mean)')],
+            HoverTool(tooltips=[('(pix_id, value)',
+                                 '(@pix_id, @value)')],
                       mode='mouse', point_policy='snap_to_data'))
 
     tab1 = Panel(child=cam.fig, title='linear')
@@ -1290,22 +1329,22 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     p1 = Tabs(tabs=[tab1, tab2])
 
     p2 = figure(background_fill_color='#ffffff',
-                y_range=(0, cam.image.max() * 1.1), x_axis_label='pix_id',
-                y_axis_label=labels[0])
+                y_range=(-0.05*cam.image.max(), cam.image.max() * 1.1),
+                x_axis_label='Pixel id',
+                y_axis_label=label)
     p2.min_border_top = 60
+    p2.min_border_bottom = 70
     glyphs = p2.circle(x=cam.geom.pix_id, y=cam.image, size=2)
     glyphs.data_source.add(list(cam.geom.pix_id), 'pix_id')
-    glyphs.data_source.add(list(cam.image), 'mean')
+    glyphs.data_source.add(list(cam.image), 'value')
     p2.add_tools(
-        HoverTool(tooltips=[('(pix_id, mean [p.e.])', '(@pix_id, @mean)')],
+        HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
                   mode='mouse', point_policy='snap_to_data'))
 
     hist, edges = np.histogram(cam.image, bins=200)
     p3 = figure(background_fill_color='#ffffff',
-                y_range=(0.7, hist.max() * 1.1), x_axis_label=labels[0],
+                y_range=(0.7, hist.max() * 1.1), x_axis_label=label,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
 
-    grid = gridplot([[p1, p2, p3], [None, None, None]], sizing_mode=None,
-                    plot_width=pad_width, plot_height=pad_height)
-    show(column(Div(text='<h1>'+labels[2]+'</h1>'),grid))
+    return p1, p2, p3
