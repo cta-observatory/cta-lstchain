@@ -10,8 +10,11 @@ __all__ = [
     'plot_mean_and_stddev',
     'merge_dl1datacheck_files',
     'plot_mean_and_stddev_bokeh',
+    'bokeh_camera_display',
+    'get_pixel_location'
 ]
 
+import copy
 import h5py
 import logging
 import matplotlib as mpl
@@ -48,6 +51,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from scipy.stats import poisson, sem
 
+pixel_hardware_info = []
 
 def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     """
@@ -1276,21 +1280,39 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     pad_width = 350
     pad_height = 370
 
-    p1, p2, p3 = plot_camera_display(mean, camgeom, pad_width, pad_height,
-                                     labels[0])
-    p4, p5, p6 = plot_camera_display(stddev, camgeom, pad_width, pad_height,
-                                     labels[1])
+    row1 = bokeh_camera_display(mean, camgeom, pad_width, pad_height, labels[0])
+    row2 = bokeh_camera_display(stddev, camgeom, pad_width, pad_height,
+                                labels[1])
 
-    grid = gridplot([[p1, p2, p3], [p4, p5, p6]], sizing_mode=None,
+    grid = gridplot([row1, row2], sizing_mode=None,
                     plot_width=pad_width, plot_height=pad_height)
     return grid
 
 
-def plot_camera_display(content, geom, pad_width, pad_height, label):
+def bokeh_camera_display(content, geom, pad_width, pad_height, label):
 
-    camgeom = CameraGeometry.from_table(geom.to_table()).\
-        transform_to(geom.frame)
+    """
+
+    Parameters
+    ----------
+    content: pixel-wise quantity to be plotted, ndarray with as many entries as
+    the number of pixels
+    geom: camera geometry
+    pad_width: width in pixels of each of the 3 pads in the plot
+    pad_height: height in pixels of each of the 3 pads in the plot
+    label: label to be shown on the plots
+
+    Returns
+    -------
+    [p1, p2, p3]: three bokeh figures, intended for showing them on the same row
+    p1 is the camera display (with "content" in linear & logarithmic scale)
+    p2: content vs. pixel
+    p3: histogram of content (with one entry per pixel)
+
+    """
+
     # patch to reduce gaps between bokeh's cam circular pixels:
+    camgeom = copy.deepcopy(geom)
     camgeom.pix_area *= 1.3
 
     cam = BokehCameraDisplay(camgeom)
@@ -1308,9 +1330,22 @@ def plot_camera_display(content, geom, pad_width, pad_height, label):
     for i in np.where(content <= 0):
         camlog.glyphs.data_source.data['image'][i] = '#ffffff'
 
+    cluster_i = []
+    cluster_j = []
+    pix_id_in_cluster = []
+    for i in camgeom.pix_id:
+        data = get_pixel_location(i)
+        cluster_i.append(data[0])
+        cluster_j.append(data[1])
+        pix_id_in_cluster.append(data[2])
+
     for c in [cam, camlog]:
         c.glyphs.data_source.add(list(c.geom.pix_id), 'pix_id')
         c.glyphs.data_source.add(list(cam.image), 'value')
+        c.glyphs.data_source.add(cluster_i, 'cluster_i')
+        c.glyphs.data_source.add(cluster_j, 'cluster_j')
+        c.glyphs.data_source.add(pix_id_in_cluster, 'pix_id_in_cluster')
+
         c.add_colorbar()
         c.fig.plot_width = pad_width
         c.fig.plot_height = int(pad_height * 0.85)
@@ -1320,8 +1355,10 @@ def plot_camera_display(content, geom, pad_width, pad_height, label):
         c.fig.xaxis.axis_label = 'X position (m)'
         c.fig.yaxis.axis_label = 'Y position (m)'
         c.fig.add_tools(
-            HoverTool(tooltips=[('(pix_id, value)',
-                                 '(@pix_id, @value)')],
+            HoverTool(tooltips=[('pix_id:', '@pix_id'),
+                                ('value:', '@value'),
+                                ('cluster (i,j):', '(@cluster_i, @cluster_j)'),
+                                ('pix in cluster:', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
     tab1 = Panel(child=cam.fig, title='linear')
@@ -1347,4 +1384,42 @@ def plot_camera_display(content, geom, pad_width, pad_height, label):
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
 
-    return p1, p2, p3
+    return [p1, p2, p3]
+
+
+def get_pixel_location(pix_id):
+
+    """
+
+    Parameters
+    ----------
+    pix_id pixel id number
+
+    Returns
+    -------
+    "Hardware" parameters of the pixel:
+    [cluster_i, cluster_j, pixe_id_within_cluster]
+
+    Info from https://forge.in2p3.fr/issues/33587, stored in
+    cta-lstchain/lstchain/io/LST_pixid_to_cluster.txt
+
+    """
+    if len(pixel_hardware_info) > 0:
+        return pixel_hardware_info[pix_id]
+
+    # The first time we read in the data stored in the io directory:
+    infilename = Path(Path(os.path.dirname(__file__)).parent,'io',
+                      'LST_pixid_to_cluster.txt')
+
+    with open(infilename) as file:
+        for line in file:
+            if line.strip()[0] != '#':
+                pixel_hardware_info.append([])
+        file.seek(0)
+        for line in file:
+            if line[0] == '#':
+                continue
+            data = [int(s) for s in line.split()]
+            pixel_hardware_info[data[0]] = [data[1], data[2], data[3]]
+
+    return pixel_hardware_info[pix_id]
