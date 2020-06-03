@@ -236,7 +236,7 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = No
     focal = 28*u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_altaz_frame(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
     if not obstime:
