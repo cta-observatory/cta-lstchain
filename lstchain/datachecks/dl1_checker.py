@@ -1355,10 +1355,10 @@ def bokeh_camera_display(content, geom, pad_width, pad_height, label):
         c.fig.xaxis.axis_label = 'X position (m)'
         c.fig.yaxis.axis_label = 'Y position (m)'
         c.fig.add_tools(
-            HoverTool(tooltips=[('pix_id:', '@pix_id'),
-                                ('value:', '@value'),
-                                ('cluster (i,j):', '(@cluster_i, @cluster_j)'),
-                                ('pix in cluster:', '@pix_id_in_cluster')],
+            HoverTool(tooltips=[('pix_id', '@pix_id'),
+                                ('value', '@value'),
+                                ('cluster (i,j)', '(@cluster_i, @cluster_j)'),
+                                ('pix in cluster', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
     tab1 = Panel(child=cam.fig, title='linear')
