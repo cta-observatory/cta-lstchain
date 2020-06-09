@@ -214,7 +214,7 @@ def test_disp_to_pos():
 
 
 def test_change_frame_camera_sky():
-    from lstchain.reco.utils import sky_to_camera, camera_to_sky
+    from lstchain.reco.utils import sky_to_camera, camera_to_altaz
     import astropy.units as u
     x = np.random.rand(1) * u.m
     y = np.random.rand(1) * u.m
@@ -222,7 +222,7 @@ def test_change_frame_camera_sky():
     pointing_alt = np.pi/3. * u.rad
     pointing_az = 0. * u.rad
 
-    sky_pos = camera_to_sky(x, y, focal_length, pointing_alt, pointing_az)
+    sky_pos = camera_to_altaz(x, y, focal_length, pointing_alt, pointing_az)
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y], decimal=4)
 
