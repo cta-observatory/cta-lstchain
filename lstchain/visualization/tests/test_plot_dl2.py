@@ -22,6 +22,6 @@ def test_energy_results():
                             plot_outfile=os.path.join(test_dir, 'ene.png'))
 
 def test_plot_models_features_importances():
-    fig, axes = plt.subsplots(1, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 10))
     plot_dl2.plot_models_features_importances(output_dir, axes=axes, alpha=0.5, fill=False)
 
