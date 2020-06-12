@@ -568,11 +568,14 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  norm='log')
         pdf.savefig()
 
+        '''
+        Displaying and saving of FUTURE bokeh display, not yet active: 
         output_file(pdf_filename.with_suffix('.html'),
                     title='LST1 DL1 data check')
         tabs = Tabs(tabs=[page1, page2])
         show(column(Div(text='<h1>'+os.path.basename(datacheck_filename)+'</h1>'),
                     tabs))
+        '''
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
                       'hist_npixels', 'hist_nislands']
