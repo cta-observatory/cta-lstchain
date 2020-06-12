@@ -571,7 +571,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         output_file(pdf_filename.with_suffix('.html'),
                     title='LST1 DL1 data check')
         tabs = Tabs(tabs=[page1, page2])
-        show(column(Div(text='<h1>'+datacheck_filename+'</h1>'), tabs))
+        show(column(Div(text='<h1>'+os.path.basename(datacheck_filename)+'</h1>'),
+                    tabs))
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
                       'hist_npixels', 'hist_nislands']
@@ -648,6 +649,29 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             axes[1, 2].set_xlabel('pixel charge (p.e.)')
             axes[1, 2].set_ylabel('fraction of events with charge>x')
             pdf.savefig()
+
+            # For the pedestals table include also an evolution of the
+            # camera average (relative) rate of >10, 30 pe signals, which
+            # should be around 0 if the events are really pedestals. Whenever
+            # pedestal-tagged events are contaminated by cosmics or other
+            # events, these rates will jump up.
+            if table == table_pedestals:
+                fig, axes = plt.subplots(nrows=2, ncols=1, figsize=pagesize)
+                fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
+                fig.suptitle(
+                    table.name.upper() + ', relative frequency of pixel '
+                                         'charges, camera averages',
+                        fontsize='xx-large')
+                for i, y in enumerate(['num_pulses_above_0010_pe',
+                                       'num_pulses_above_0030_pe']):
+                    axes[i].plot(table.col('subrun_index'),
+                                 np.mean(table.col(y), axis=1) /
+                                 table.col('num_events'))
+                    axes[i].set_xlabel('subrun index')
+                    axes[i].set_ylim(bottom=0., top=1.)
+                axes[0].set_ylabel('Fraction of >10 p.e. pulses')
+                axes[1].set_ylabel('Fraction of >30 p.e. pulses')
+                pdf.savefig()
 
         # Some plots on pulse times:
         if table_flatfield is None or len(table_flatfield) == 0:
