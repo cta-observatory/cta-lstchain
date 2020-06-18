@@ -128,9 +128,9 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     threshold_clean_pe = ped_mean_pe + sigma_clean*ped_rms_pe
     # find pixels with rms = 0 and mean = 0 <=> dead pixels in interleaved
     # pedestal event likely due to stars
-    dead_pixel_ids = np.where(threshold_clean_pe[1, high_gain, :] == 0)[0]
+    dead_pixel_ids = np.where(threshold_clean_pe[interleaved_events_id, high_gain, :] == 0)[0]
     # for dead pixels set max value of threshold
     threshold_clean_pe[interleaved_events_id, high_gain, dead_pixel_ids] = \
-        max(threshold_clean_pe[1, high_gain, :])
+        max(threshold_clean_pe[interleaved_events_id, high_gain, :])
     # return pedestal interleaved threshold from data run for high gain
     return threshold_clean_pe[interleaved_events_id, high_gain, :]
