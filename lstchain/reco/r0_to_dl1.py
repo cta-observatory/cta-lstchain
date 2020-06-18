@@ -349,7 +349,7 @@ def r0_to_dl1(
                 if not custom_calibration:
                     cal_mc(event)
                 if config['mc_dl1_scaling_factor'] != 1:
-                    rescale_dl1_charge(event, config['mc_dl1_scaling_factor'])
+                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             else:
                 if i==0:
