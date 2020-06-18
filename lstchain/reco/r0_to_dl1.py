@@ -348,6 +348,7 @@ def r0_to_dl1(
                 write_subarray_tables(writer, event, metadata)
                 if not custom_calibration:
                     cal_mc(event)
+                rescale_dl1_charge(event, config['mc_dl1_scaling_factor'])
 
             else:
                 if i==0:
@@ -719,3 +720,18 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
         add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
+
+
+def rescale_dl1_charge(event, scaling_factor):
+    """
+    Rescale the charges (images) by a scaling factor.
+
+
+    Parameters
+    ----------
+    event
+    scaling_factor: float
+    """
+
+    for tel_id, tel in event.dl1.tel.items():
+        tel.image *= scaling_factor
