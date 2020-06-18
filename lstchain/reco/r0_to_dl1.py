@@ -725,12 +725,12 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
 
 def rescale_dl1_charge(event, scaling_factor):
     """
-    Rescale the charges (images) by a scaling factor.
-
+    Rescale the charges (images) by a given scaling factor.
+    The image in dl1.tel[tel_id].image is directly multiplied in place by `scaling_factor`.
 
     Parameters
     ----------
-    event
+    event: `ctapipe.io.containers.DataContainer`
     scaling_factor: float
     """
 
