@@ -1,6 +1,9 @@
 import tables
 import numpy as np
 
+from lstchain.io.io import dl1_params_tel_mon_ped_key, dl1_params_tel_mon_cal_key
+
+
 def tailcuts_clean_with_pedestal_threshold(
     geom,
     image,
@@ -82,8 +85,6 @@ def tailcuts_clean_with_pedestal_threshold(
             pixels_in_picture & pixels_with_boundary_neighbors
 )
 
-
-
 def get_bias_and_rms(dl1_file):
     """
     Function to extract bias and rms from interleaved events from dl1 file.
@@ -97,25 +98,23 @@ def get_bias_and_rms(dl1_file):
         bias and rms in p.e.
     """
     f = tables.open_file(dl1_file)
-    ped = f.root['/dl1/event/telescope/monitoring/pedestal']
+    ped = f.root[dl1_params_tel_mon_ped_key]
     ped_charge_mean = np.array(ped.cols.charge_mean)
     ped_charge_rms = np.array(ped.cols.charge_std)
-    calib = f.root['/dl1/event/telescope/monitoring/calibration']
+    calib = f.root[dl1_params_tel_mon_cal_key]
     dc_to_pe = np.array(calib.cols.dc_to_pe)
     ped_charge_mean_pe = ped_charge_mean*dc_to_pe
     ped_charge_rms_pe = ped_charge_rms*dc_to_pe
     f.close()
     return ped_charge_mean_pe, ped_charge_rms_pe
 
-def get_threshold(ped_mean_pe, ped_rms_pe, sigma_clean):
+def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     """
-    Function to calculate picture threshold from interleaved pedestal events.
+    Function to get picture threshold from dl1 from interleaved pedestal events.
     Parameters
     ----------
-    ped_mean_pe: np.ndarray
-        pedestal charge mean from interleaved pedestal events
-    ped_rms_pe: np.ndarray
-        pedestal charge rms from interleaved pedestal events
+    input_filename: str
+        path to dl1 file
     sigma_clean: float
         cleaning level
     Returns
@@ -123,5 +122,15 @@ def get_threshold(ped_mean_pe, ped_rms_pe, sigma_clean):
     picture_thresh: np.ndarray
         picture threshold calculated using interleaved pedestal events
     """
+    high_gain = 0
+    interleaved_events_id = 1
+    ped_mean_pe, ped_rms_pe = get_bias_and_rms(dl1_path)
     threshold_clean_pe = ped_mean_pe + sigma_clean*ped_rms_pe
-    return threshold_clean_pe
+    # find pixels with rms = 0 and mean = 0 <=> dead pixels in interleaved
+    # pedestal event likely due to stars
+    dead_pixel_ids = np.where(threshold_clean_pe[1, high_gain, :] == 0)[0]
+    # for dead pixels set max value of threshold
+    threshold_clean_pe[interleaved_events_id, high_gain, dead_pixel_ids] = \
+        max(threshold_clean_pe[1, high_gain, :])
+    # return pedestal interleaved threshold from data run for high gain
+    return threshold_clean_pe[interleaved_events_id, high_gain, :]
