@@ -348,7 +348,7 @@ def r0_to_dl1(
                 write_subarray_tables(writer, event, metadata)
                 if not custom_calibration:
                     cal_mc(event)
-                if config['mc_dl1_scaling_factor'] != 1:
+                if config['mc_image_scaling_factor'] != 1:
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             else:
