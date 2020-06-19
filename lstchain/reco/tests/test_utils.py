@@ -21,6 +21,18 @@ def test_camera_to_altaz():
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
+def test_radec_to_camera():
+    source_ra  = u.Quantity(83.63308333, u.deg, copy=False)
+    source_dec = u.Quantity(22.0145, u.deg, copy=False)
+    obstime = Time('2020-01-27T23:00', scale='utc')
+    pointing_alt  = u.Quantity(1.3748, u.rad, copy=False)
+    pointing_az = u.Quantity(4.0975, u.rad, copy=False)
+    focal = 28*u.m
+    expected_source_pos_camera = np.array([0.0, 0.0]) * u.m
+    source_pos_camera = utils.radec_to_camera(source_ra, source_dec, obstime, pointing_alt, pointing_az, focal)
+    np.testing.assert_allclose(source_pos_camera.x.to_value(), expected_source_pos_camera[0].to_value(), atol=0.1)
+    np.testing.assert_allclose(source_pos_camera.y.to_value(), expected_source_pos_camera[1].to_value(), atol=0.1)
+
 def test_reco_source_position_sky():
     cog_x = np.array([2, 1]) * u.m
     cog_y = np.array([-1, 1]) * u.m

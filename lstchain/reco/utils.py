@@ -280,6 +280,33 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     return camera_pos
 
+def radec_to_camera(source_ra, source_dec, obstime, pointing_alt, pointing_az, focal):
+    """
+    Coordinate transform from source coordinate (ra, dec) in degree to camera coordinates (x, y) in distance
+    Parameters
+    ----------
+    source_ra: astropy Quantity in degree
+    source_dec: astropy Quantity in degree
+    obstime: astropy.time.Time
+    pointing_alt: pointing altitude in angle unit
+    pointing_az: pointing altitude in angle unit
+    focal: astropy Quantity
+    
+    Returns
+    -------
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
+    """   
+    source_radec = SkyCoord(ra=source_ra, dec=source_dec, frame='icrs')
+    
+    horizon_frame = AltAz(location=location, obstime=obstime)
+
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
+
+    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction, obstime=obstime, location=location)
+
+    camera_pos = source_radec.transform_to(camera_frame)
+
+    return camera_pos
 
 def source_side(source_pos_x, cog_x):
     """
