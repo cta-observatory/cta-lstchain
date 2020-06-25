@@ -49,6 +49,7 @@ from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
+from pkg_resources import resource_filename
 from scipy.stats import poisson, sem
 
 pixel_hardware_info = []
@@ -1433,9 +1434,9 @@ def get_pixel_location(pix_id):
     if len(pixel_hardware_info) > 0:
         return pixel_hardware_info[pix_id]
 
-    # The first time we read in the data stored in the io directory:
-    infilename = Path(Path(os.path.dirname(__file__)).parent,'io',
-                      'LST_pixid_to_cluster.txt')
+    # The first time we read in the data stored in the resources directory:
+    infilename = resource_filename('lstchain',
+                                   'resources/LST_pixid_to_cluster.txt')
     data = np.genfromtxt(infilename, comments='#',dtype='int')
 
     pixel_hardware_info.extend([None]*(1 + data[:,0].max()))
