@@ -49,6 +49,7 @@ from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
+from pkg_resources import resource_filename
 from scipy.stats import poisson, sem
 
 pixel_hardware_info = []
@@ -101,9 +102,9 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
             logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
 
-    # now try to determine which trigger_type tag is more reliable for
-    # identifying interlaved pedestals. We choose (for now) the one which
-    # has more values == 32 which is the pedestal tag. The one called
+    # try to determine which trigger_type tag is more reliable for
+    # identifying interlaved pedestals. We check which one has
+    # more values == 32, which is the pedestal tag. The one called
     # "trigger_type" seems to be the TIB trigger type. The fastest way to do
     # this for the whole run seems to be using normal pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
@@ -118,11 +119,13 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
                          (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
     logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
 
-    trigger_source = 'trigger_type'
+    # Choose what source to use for obtaining the trigger type:
+    trigger_source = 'ucts_trigger_type'
 
-    # Commented lines below, because ucts_trigger_type seems to be
-    # systematically wrong, even when it has more "pedestal tags" (==32) than
-    # trigger_type
+    # Commented lines below, because the criterion of who has more "pedestal
+    # tags" (==32) does not seem reliable to indicate which source of the
+    # trigger type is more reliable:
+    #
     # if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
     #    trigger_source = 'ucts_trigger_type'
 
@@ -568,11 +571,14 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  norm='log')
         pdf.savefig()
 
+        '''
+        Displaying and saving of FUTURE bokeh display, not yet active: 
         output_file(pdf_filename.with_suffix('.html'),
                     title='LST1 DL1 data check')
         tabs = Tabs(tabs=[page1, page2])
         show(column(Div(text='<h1>'+os.path.basename(datacheck_filename)+'</h1>'),
                     tabs))
+        '''
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
                       'hist_npixels', 'hist_nislands']
@@ -1430,19 +1436,13 @@ def get_pixel_location(pix_id):
     if len(pixel_hardware_info) > 0:
         return pixel_hardware_info[pix_id]
 
-    # The first time we read in the data stored in the io directory:
-    infilename = Path(Path(os.path.dirname(__file__)).parent,'io',
-                      'LST_pixid_to_cluster.txt')
+    # The first time we read in the data stored in the resources directory:
+    infilename = resource_filename('lstchain',
+                                   'resources/LST_pixid_to_cluster.txt')
+    data = np.genfromtxt(infilename, comments='#',dtype='int')
 
-    with open(infilename) as file:
-        for line in file:
-            if line.strip()[0] != '#':
-                pixel_hardware_info.append([])
-        file.seek(0)
-        for line in file:
-            if line[0] == '#':
-                continue
-            data = [int(s) for s in line.split()]
-            pixel_hardware_info[data[0]] = [data[1], data[2], data[3]]
+    pixel_hardware_info.extend([None]*(1 + data[:,0].max()))
+    for d in data:
+        pixel_hardware_info[d[0]] = [d[1], d[2], d[3]]
 
     return pixel_hardware_info[pix_id]
