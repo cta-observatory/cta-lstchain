@@ -102,9 +102,9 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
             logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
 
-    # now try to determine which trigger_type tag is more reliable for
-    # identifying interlaved pedestals. We choose (for now) the one which
-    # has more values == 32 which is the pedestal tag. The one called
+    # try to determine which trigger_type tag is more reliable for
+    # identifying interlaved pedestals. We check which one has
+    # more values == 32, which is the pedestal tag. The one called
     # "trigger_type" seems to be the TIB trigger type. The fastest way to do
     # this for the whole run seems to be using normal pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
@@ -119,11 +119,13 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
                          (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
     logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
 
-    trigger_source = 'trigger_type'
+    # Choose what source to use for obtaining the trigger type:
+    trigger_source = 'ucts_trigger_type'
 
-    # Commented lines below, because ucts_trigger_type seems to be
-    # systematically wrong, even when it has more "pedestal tags" (==32) than
-    # trigger_type
+    # Commented lines below, because the criterion of who has more "pedestal
+    # tags" (==32) does not seem reliable to indicate which source of the
+    # trigger type is more reliable:
+    #
     # if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
     #    trigger_source = 'ucts_trigger_type'
 
