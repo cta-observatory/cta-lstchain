@@ -1436,16 +1436,10 @@ def get_pixel_location(pix_id):
     # The first time we read in the data stored in the io directory:
     infilename = Path(Path(os.path.dirname(__file__)).parent,'io',
                       'LST_pixid_to_cluster.txt')
+    data = np.genfromtxt(infilename, comments='#',dtype='int')
 
-    with open(infilename) as file:
-        for line in file:
-            if line.strip()[0] != '#':
-                pixel_hardware_info.append([])
-        file.seek(0)
-        for line in file:
-            if line[0] == '#':
-                continue
-            data = [int(s) for s in line.split()]
-            pixel_hardware_info[data[0]] = [data[1], data[2], data[3]]
+    pixel_hardware_info.extend([None]*(1 + data[:,0].max()))
+    for d in data:
+        pixel_hardware_info[d[0]] = [d[1], d[2], d[3]]
 
     return pixel_hardware_info[pix_id]
