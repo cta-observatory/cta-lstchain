@@ -660,6 +660,10 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             # of >10, 30 pe signals, which should be around 0 for pedestals.
             # Whenever pedestal-tagged events are contaminated by cosmics or
             # other events, these rates will jump up.
+            fmt = '-'
+            # in case of just one subrun, to make index-wise plots visible:
+            if len(table.col('subrun_index')) == 1:
+                fmt = 'o'
             figb, axesb = plt.subplots(nrows=2, ncols=1, figsize=pagesize)
             figb.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
             figb.suptitle(
@@ -671,7 +675,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                 axesb[i].set_yscale('log')
                 axesb[i].plot(table.col('subrun_index'),
                               np.mean(table.col(y), axis=1) /
-                              table.col('num_events'))
+                              table.col('num_events'), fmt)
                 axesb[i].set_xlabel('subrun index')
                 axesb[i].set_ylim(top=1.)
                 axesb[0].set_ylabel('Fraction of >10 p.e. pulses')
