@@ -61,7 +61,8 @@ setup(
         'joblib',
     ],
     package_data={
-        'lstchain': ['data/lstchain_standard_config.json'],
+        'lstchain': ['data/lstchain_standard_config.json',
+                     'resources/LST_pixid_to_cluster.txt'],
     },
     tests_require=[
         'pytest',
