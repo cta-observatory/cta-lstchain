@@ -1,16 +1,17 @@
 """Module with functions for Energy and disp_norm reconstruction and G/H
-separation. There are functions for raining random forest and for
-applying them to data. The RF can be saved into a file for later use.
+separation. There are functions for raining multi-layer perceptron and for
+applying them to data. The MLP can be saved into a file for later use.
 
 Usage:
 
-"import dl1_to_dl2"
+"import dl1_to_dl2_mod"
 """
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 import joblib
 import os
 from . import utils
@@ -39,8 +40,8 @@ __all__ = [
 
 def train_energy(train, custom_config={}):
     """
-    Train a Random Forest Regressor for the regression of the energy
-    TODO: introduce the possibility to use another model
+    Train a Multi-layer Regressor or a Random Forest for the regression of the energy
+    Which model is trained depends on which algorithm is selected on the config file
 
     Parameters
     ----------
@@ -53,13 +54,21 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args'] 
     features = config['regression_features']
-    model = RandomForestRegressor    
-
+    model = config["algorithm"].get("regressor")  
+    
+    if model == "MLPRegressor":
+      model = MLPRegressor
+      regression_args = config['mlp_regressor_args']
+    elif model == "RandomForestRegressor":
+      model = RandomForestRegressor
+      regression_args = config['random_forest_regressor_args']
+    else:
+      raise NameError("Introduce either MLPRegressor or RandomForestRegressor as regressor in the config file")
+  
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    print("Training model for Energy Reconstruction...")
 
     reg = model(**regression_args)
     reg.fit(train[features],
@@ -71,9 +80,9 @@ def train_energy(train, custom_config={}):
 
 def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy']):
     """
-    Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.
+    Train a model (MLPRegressor or RandomForestRegressor) for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
-    TODO: introduce the possibility to use another model
+    Which model is trained depends on which algorithm is selected on the config file
 
     Parameters
     ----------
@@ -86,9 +95,17 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor
+    model = config["algorithm"].get("regressor")  
+    
+    if model == "MLPRegressor":
+      model = MLPRegressor
+      regression_args = config['mlp_regressor_args']
+    elif model == "RandomForestRegressor":
+      model = RandomForestRegressor
+      regression_args = config['random_forest_regressor_args']
+    else:
+      raise NameError("Introduce either MLPRegressor or RandomForestRegressor as regressor in the config file")
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -119,9 +136,17 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor
+    model = config["algorithm"].get("regressor")  
+    
+    if model == "MLPRegressor":
+      model = MLPRegressor
+      regression_args = config['mlp_regressor_args']
+    elif model == "RandomForestRegressor":
+      model = RandomForestRegressor
+      regression_args = config['random_forest_regressor_args']
+    else:
+      raise NameError("Introduce either MLPRegressor or RandomForestRegressor as regressor in the config file")
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -152,9 +177,18 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
     features = config["classification_features"]
-    model = RandomForestClassifier
+    model = config["algorithm"].get("classifier")
+
+    if model == "MLPClassifier":
+      model = MLPClassifier
+      classification_args = config['mlp_classifier_args']
+    elif model == "RandomForestClassifier":
+      model = RandomForestClassifier
+      classification_args = config['random_forest_classifier_args']
+    else:
+      raise NameError("Introduce either MLPClassifier or RandomForestClassifier as classifier in the config file")
+
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -173,8 +207,8 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
 def train_reco(train, custom_config={}):
     """
-    Trains two Random Forest regressors for Energy and disp_norm
-    reconstruction respectively. Returns the trained RF.
+    Trains two MLP regressors or two RF Regressors for Energy and disp_norm
+    reconstruction respectively. Returns the trained RF/MLP.
 
     Parameters:
     -----------
@@ -183,70 +217,87 @@ def train_reco(train, custom_config={}):
 
     Returns:
     --------
-    RandomForestRegressor: reg_energy
-    RandomForestRegressor: reg_disp
+    Multi-layer Perceptron: reg_energy
+    Multi-layer Perceptron: reg_disp
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor
+    model = config["algorithm"].get("regressor")  
+    
+    if model == "MLPRegressor":
+      model = MLPRegressor
+      regression_args = config['mlp_regressor_args']
+    elif model == "RandomForestRegressor":
+      model = RandomForestRegressor
+      regression_args = config['random_forest_regressor_args']
+    else:
+      raise NameError("Introduce either MLPRegressor or RandomForestRegressor as regressor in the config file")
 
+    
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Regressor for Energy Reconstruction...")
+    print("Training model for Energy Reconstruction...")
 
     reg_energy = model(**regression_args)
     reg_energy.fit(train[features],
                   train['log_mc_energy'])
 
-    print("Random Forest trained!")
-    print("Training Random Forest Regressor for disp_norm Reconstruction...")
+    print("Model {} trained!".format(model))
+    print("Training model {} for disp_norm Reconstruction...".format(model))
 
-    reg_disp = RandomForestRegressor(**regression_args)
+    reg_disp = model(**regression_args)
     reg_disp.fit(train[features],
                      train['disp_norm'])
 
-    print("Random Forest trained!")
+    print("Model {} trained!".format(model))
     print("Done!")
     return reg_energy, reg_disp
 
 
 def train_sep(train, custom_config={}):
 
-    """Trains a Random Forest classifier for Gamma/Hadron separation.
-    Returns the trained RF.
+    """Trains a Multi-layer Perceptron or a Random Forest classifier for Gamma/Hadron separation.
+    Returns the trained MLP/RF.
 
     Parameters:
     -----------
     train: `pandas.DataFrame`
-    data set for training the RF
+    data set for training the MLP
     features: list of strings
-    List of features to train the RF
+    List of features to train the MLP
     classification_args: dictionnary
     config_file: str - path to a configuration file. If given, overwrite `classification_args`.
 
     Return:
     -------
-    `RandomForestClassifier`
+    `MLPClassifier/RandomForestClasifier`
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
     features = config["classification_features"]
-    model = RandomForestClassifier
+    model = config["algorithm"].get("classifier")
+
+    if model == "MLPClassifier":
+      model = MLPClassifier
+      classification_args = config['mlp_classifier_args']
+    elif model == "RandomForestClassifier":
+      model = RandomForestClassifier
+      classification_args = config['random_forest_classifier_args']
+    else:
+      raise NameError("Introduce either MLPClassifier or RandomForestClassifier as classifier in the config file")
+
 
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training Random Forest Classifier for",
-    "Gamma/Hadron separation...")
+    print("Training model {} for Gamma/Hadron separation...".format(model))
 
     clf = model(**classification_args)
 
     clf.fit(train[features],
             train['mc_type'])
-    print("Random Forest trained!")
+    print("Model trained!".format(model))
     return clf
 
 
@@ -256,8 +307,8 @@ def build_models(filegammas, fileprotons,
                  custom_config={},
                  test_size=0.2,
                  ):
-    """Uses MC data to train Random Forests for Energy and disp_norm
-    reconstruction and G/H separation. Returns 3 trained RF.
+    """Uses MC data to train Multi-layer Perceptrons or the Random Forests
+    for Energy and disp_norm reconstruction and G/H separation. Returns 3 trained MLP/RF.
     The config in config_file superseeds the one passed in argument.
 
     Parameters:
@@ -272,17 +323,17 @@ def build_models(filegammas, fileprotons,
     Cut in energy for gamma/hadron separation
 
     intensity_min: float
-    Cut in intensity of the showers for training RF. Default is 60 phe
+    Cut in intensity of the showers for training MLP. Default is 60 phe
 
     r_min: float
     Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
     in the border. Default is 80% of camera radius.
 
     save_models: boolean
-    Save the trained RF in a file to use them anytime.
+    Save the trained MLP in a file to use them anytime.
 
     path_models: string
-    path to store the trained RF
+    path to store the trained MLP
 
     regression_args: dictionnary
 
@@ -293,9 +344,9 @@ def build_models(filegammas, fileprotons,
     Returns:
     --------
     (regressor_energy, regressor_disp, classifier_gh)
-    regressor_energy: `RandomForestRegressor`
-    regressor_disp: `RandomForestRegressor`
-    classifier_gh: `RandomForestClassifier`
+    regressor_energy: `MLPRegressor/RandomForestRegressor`
+    regressor_disp: `MLPRegressor/RandomForestReegressor`
+    classifier_gh: `MLPClassifier/RandomForestClassifier`
     """
 
     config = replace_config(standard_config, custom_config)
@@ -359,7 +410,7 @@ def build_models(filegammas, fileprotons,
 
 
 def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={}):
-    """Apply previously trained Random Forests to a set of data
+    """Apply previously trained MLPs to a set of data
     depending on a set of features.
 
     Parameters:
@@ -368,14 +419,14 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     features: list
 
-    classifier: Random Forest Classifier
-    RF for Gamma/Hadron separation
+    classifier: Multi-layer Perceptron Classifier
+    MLP for Gamma/Hadron separation
 
-    reg_energy: Random Forest Regressor
-    RF for Energy reconstruction
+    reg_energy: Multi-layer Perceptron Regressor
+    MLP for Energy reconstruction
 
-    reg_disp: Random Forest Regressor
-    RF for disp_norm reconstruction
+    reg_disp: Multi-layer Perceptron Regressor
+    MLP for disp_norm reconstruction
 
     """
 
