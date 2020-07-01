@@ -32,9 +32,7 @@
      "time_cut_outliers": [2,38]
    },
    "LSTR0Corrections": {
-      "r1_sample_start": 2,
-      "tel_id":1,
-      "r1_sample_end": 38
+      "tel_id":1
    },
    "TimeCorrectionCalculate": {
        "tel_id":1,
