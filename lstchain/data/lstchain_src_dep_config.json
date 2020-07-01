@@ -5,7 +5,7 @@
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage": [0, 1]
+    "leakage2_intensity": [0, 1]
   },
 
   "tailcut": {
@@ -62,7 +62,7 @@
     "skewness_from_source",
     "kurtosis",
     "time_gradient_from_source",
-    "leakage",
+    "leakage2_intensity",
     "n_islands",
     "dist"
   ],
@@ -75,7 +75,7 @@
     "skewness_from_source",
     "kurtosis",
     "time_gradient_from_source",
-    "leakage",
+    "leakage2_intensity",
     "n_islands",
     "log_reco_energy",
     "dist"
@@ -85,6 +85,7 @@
   "max_events": null,
   "custom_calibration": false,
   "write_pe_image": false,
+  "mc_image_scaling_factor": 1,
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},
