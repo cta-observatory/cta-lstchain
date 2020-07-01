@@ -484,6 +484,8 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
 
     if axes is None:
         fig, axes = plt.subplots(1, 3, figsize=(20, 5))
+    else:
+        fig = axes[0].get_figure()
 
     fig.suptitle('Features importances')
 
@@ -506,7 +508,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)
     axes[2].set_title("classification")
 
-    plt.tight_layout()
+    fig.tight_layout()
 
     return axes
 

@@ -14,6 +14,7 @@ from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
+from tqdm import tqdm
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -183,6 +184,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
+    bar = tqdm(total=len(file_list))
     with open_file(output_filename, 'w') as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
@@ -202,6 +204,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                                 os.path.basename(k),
                                                 createparents=True,
                                                 obj=f1.root[k].read())
+        bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
@@ -214,6 +217,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                 merge_file.root[k].append(file.root[k].read())
                     except:
                         print("Can't append node {} from file {}".format(k, filename))
+            bar.update(1)
 
 
 def merging_check(file_list):

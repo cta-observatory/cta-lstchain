@@ -184,9 +184,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         denominator = (ff_data.charge_median - ped_data.charge_median)
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
-        # put the time around zero
-        camera_time_median = np.median(ff_data.time_median, axis=1)
-        calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
+        # flat-field time corrections
+        calib_data.time_correction = -ff_data.relative_time_median
 
         calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
 
