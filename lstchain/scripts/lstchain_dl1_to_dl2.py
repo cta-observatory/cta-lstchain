@@ -84,8 +84,6 @@ def main():
     if config['source_dependent']:
         data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data = pd.concat([data, data_src_dep], axis=1)
-
-
   
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
