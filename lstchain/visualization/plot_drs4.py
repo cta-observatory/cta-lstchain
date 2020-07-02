@@ -44,7 +44,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
 
     # r0 calibrator
     r0_calib = LSTR0Corrections(pedestal_path=pedestal_file, offset=offset_value,
-                                r1_sample_start=2, r1_sample_end=38, tel_id=tel_id )
+                                tel_id=tel_id )
 
     # event_reader
     reader = event_source(data_file, max_events=1000)

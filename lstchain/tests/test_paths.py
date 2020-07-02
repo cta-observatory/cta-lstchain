@@ -128,4 +128,6 @@ def test_r0_to_dl1_filename():
 
     assert str(r0_to_dl1_filename('/foo/test.simtel.gz')) == '/foo/dl1_test.h5'
     assert str(r0_to_dl1_filename('test.simtel')) == 'dl1_test.h5'
+    assert str(r0_to_dl1_filename('test.test.simtel.gz')) == 'dl1_test.test.h5'
     assert str(r0_to_dl1_filename('LST1_custom.fits.fz')) == 'dl1_LST1_custom.h5'
+    assert str(r0_to_dl1_filename('LST1_custom.test.fits.fz')) == 'dl1_LST1_custom.test.h5'
