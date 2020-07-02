@@ -243,6 +243,8 @@ def r0_to_dl1(
                                                 time_calibration_path = time_calibration_path,
                                                 extractor_product = config['image_extractor'],
                                                 gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                charge_scale = config['charge_scale'],
+                                                apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                 config = Config(config),
                                                 allowed_tels = [1],
                                                 )
@@ -253,6 +255,8 @@ def r0_to_dl1(
                                                                time_calibration_path = time_calibration_path,
                                                                extractor_product = config['image_extractor_for_muons'],
                                                                gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                               charge_scale=config['charge_scale'],
+                                                               apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                                config = Config(config),
                                                                allowed_tels = [1],)
 

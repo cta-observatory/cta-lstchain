@@ -6,7 +6,8 @@ from abc import abstractmethod
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import List
+from ctapipe.core.traits import List, Bool
+from lstchain.calib.camera.calibrator import get_charge_correction
 
 __all__ = [
     'PedestalIntegrator'
@@ -34,6 +35,7 @@ class PedestalIntegrator(PedestalCalculator):
         [-3, 3],
         help='Interval (number of std) of accepted charge values around camera median value'
     ).tag(config=True)
+
     charge_std_cut_outliers = List(
         [-3, 3],
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
@@ -68,6 +70,7 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians = None  # med. charge in camera per event in sample
         self.charges = None  # charge per event in sample
         self.sample_masked_pixels = None  # pixels tp be masked per event in sample
+
 
     def _extract_charge(self, event):
         """
