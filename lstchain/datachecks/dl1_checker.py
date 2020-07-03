@@ -288,17 +288,17 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
 
         # fill quantities which depend on event-wise (i.e. not
         # pixel-wise) parameters:
-        if params_pedestal_mask.sum() > 0:
+        if params_pedestal_mask.sum() > 1:
             dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
                                                         parameters,
                                                         params_pedestal_mask,
                                                         geom, bins)
-        if params_flatfield_mask.sum() > 0:
+        if params_flatfield_mask.sum() > 1:
             dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
                                                         parameters,
                                                         params_flatfield_mask,
                                                         geom, bins)
-        if params_cosmics_mask.sum() > 0:
+        if params_cosmics_mask.sum() > 1:
             dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
                                                       params_cosmics_mask,
                                                       geom, bins)
