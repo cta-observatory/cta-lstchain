@@ -52,12 +52,12 @@ class CalibrationHDF5Writer(Tool):
 
     calibration_product = traits.create_class_enum_trait(
        CalibrationCalculator,
-        default='LSTCalibrationCalculator'
+        default_value='LSTCalibrationCalculator'
     )
 
     r0calibrator_product =traits.create_class_enum_trait(
         CameraR0Calibrator,
-        default='NullR0Calibrator'
+        default_value='NullR0Calibrator'
     )
 
     aliases = Dict(dict(

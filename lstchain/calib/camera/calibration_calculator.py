@@ -42,12 +42,12 @@ class CalibrationCalculator(Component):
 
     pedestal_product = traits.create_class_enum_trait(
         PedestalCalculator,
-        default='PedestalIntegrator'
+        default_value='PedestalIntegrator'
     )
 
     flatfield_product = traits.create_class_enum_trait(
         FlatFieldCalculator,
-        default='FlasherFlatFieldCalculator'
+        default_value='FlasherFlatFieldCalculator'
     )
 
     classes = List([
