@@ -43,7 +43,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'astropy',
-        'ctapipe~=0.7.0',
+        'ctapipe~=0.8.0',
         'ctaplot~=0.5.3',
         'eventio~=0.20.3',
         'gammapy>=0.17',
