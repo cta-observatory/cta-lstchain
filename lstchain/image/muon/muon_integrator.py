@@ -17,7 +17,7 @@ import numpy as np
 from scipy.ndimage.filters import correlate1d
 from iminuit import Minuit
 from astropy import units as u
-from ctapipe.io.containers import MuonIntensityParameter
+from ctapipe.containers import MuonIntensityParameter
 from scipy.stats import norm
 
 import logging
