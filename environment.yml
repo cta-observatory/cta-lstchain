@@ -1,4 +1,4 @@
-name: lst-dev
+name: lst-dev-ctapipe0.8
 channels:
   - default
   - cta-observatory
