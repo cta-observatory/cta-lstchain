@@ -1,4 +1,4 @@
-name: lst-dev
+name: lst-dev-ctapipe0.8
 channels:
   - default
   - cta-observatory
@@ -6,7 +6,7 @@ channels:
 dependencies:
   - python=3.7
   - pip
-  - ctapipe=0.7.0
+  - ctapipe=0.8.0
   - gammapy>=0.17
   - h5py
   - ipython
