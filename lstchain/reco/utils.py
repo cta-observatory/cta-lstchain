@@ -159,7 +159,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
