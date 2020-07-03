@@ -8,7 +8,7 @@ import numpy as np
 from ctapipe.core import Container, Field
 from ctapipe.image import timing_parameters as time
 from ctapipe.image import leakage, concentration
-from ctapipe.image.cleaning import number_of_islands
+from ctapipe.image.morphology import number_of_islands
 
 from ..reco import utils
 from numpy import nan

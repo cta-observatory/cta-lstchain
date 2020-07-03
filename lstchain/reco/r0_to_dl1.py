@@ -24,7 +24,7 @@ from ctapipe.image import (
     tailcuts_clean,
     HillasParameterizationError,
 )
-from ctapipe.image.cleaning import number_of_islands
+from ctapipe.image.morphology import number_of_islands
 from itertools import chain
 
 from . import utils
@@ -730,7 +730,7 @@ def rescale_dl1_charge(event, scaling_factor):
 
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     scaling_factor: float
     """
 
