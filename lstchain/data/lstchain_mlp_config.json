@@ -16,8 +16,8 @@
   },
   
   "algorithm": {
-    "regressor": "MLPRegressor",
-    "classifier": "MLPClassifier"
+    "regressor": "RandomForestRegressor",
+    "classifier": "RandomForestClassifier"
   },    
   
   "random_forest_regressor_args": {
@@ -34,7 +34,7 @@
     "min_samples_split": 2,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
-    "random_state": 42,
+    "random_state": 2112,
     "verbose": 0,
     "warm_start": false
   },

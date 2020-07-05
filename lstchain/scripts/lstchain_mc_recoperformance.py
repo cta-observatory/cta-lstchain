@@ -26,6 +26,7 @@ from lstchain.reco import utils
 import astropy.units as u
 from lstchain.io import standard_config, replace_config, read_configuration_file
 from lstchain.io.io import dl1_params_lstcam_key
+import time
 
 try:
     import ctaplot
@@ -76,6 +77,7 @@ parser.add_argument('--config', '-c', action='store', type=str,
 
 args = parser.parse_args()
 
+start_time = time.time()
 
 def main():
     custom_config = {}
@@ -105,6 +107,13 @@ def main():
     data = pd.concat([gammas, proton], ignore_index=True)
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+    
+    #Displays how long it has taken to train the algorithms
+    Training_time = (time.time()-start_time)
+    Minutes = round(Training_time/60)
+    Seconds = round(Training_time%60,3)
+    
+    print("Training has taken", " %s minutes " % Minutes ,"and", "%s seconds " % Seconds) 
 
     ####PLOT SOME RESULTS#####
 
