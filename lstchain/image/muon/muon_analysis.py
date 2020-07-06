@@ -1,7 +1,6 @@
 import numpy as np
 from ctapipe.image.muon.features import ring_containment
 from ctapipe.image.muon.features import ring_completeness
-from ctapipe.image.muon.features import npix_composing_ring
 #from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
 # Using provisionally a fixed version of MuonLineIntegrate, imported into
 # lstchain! As soon as ctapipe 0.8 is out, we should go back to using the
@@ -182,7 +181,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
          radial_distribution['excess_kurtosis'] < max_radial_excess_kurtosis,
          (pix_ring > tailcuts[0]).sum() >
          min_pix_fraction_after_cleaning * min_pix,
-         npix_composing_ring(pix_ring) > min_pix,
+         np.count_nonzero(pix_ring) > min_pix,
          muonringparam.ring_radius < max_ring_radius,
          muonringparam.ring_radius > min_ring_radius
         ])
