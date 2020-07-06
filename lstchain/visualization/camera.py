@@ -74,7 +74,7 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
     ----------
     display: `ctapipe.visualization.CameraDisplay`
     disp: `DispContainer`
-    hillas: `ctapipe.io.containers.HillasParametersContainer`
+    hillas: `ctapipe.containers.HillasParametersContainer`
     kwargs: args for `matplotlib.pyplot.quiver`
 
     """
@@ -99,7 +99,7 @@ def overlay_hillas_major_axis(display, hillas, **kwargs):
     Parameters
     ----------
     display: `ctapipe.visualization.CameraDisplay`
-    hillas: `ctapipe.io.containers.HillaParametersContainer`
+    hillas: `ctapipe.containers.HillaParametersContainer`
     kwargs: args for `matplotlib.pyplot.plot`
 
     """

@@ -1,5 +1,5 @@
 import numpy as np
-from ctapipe.io.containers import EventAndMonDataContainer
+from ctapipe.containers import EventAndMonDataContainer
 
 
 def test_pedestal_calculator():

@@ -6,7 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe_io_lst import load_camera_geometry
 
 # read back the monitoring containers written with the tool calc_camera_calibration.py
-from ctapipe.io.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer, \
+from ctapipe.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer, \
     PixelStatusContainer
 
 from ctapipe.io.hdf5tableio import HDF5TableReader

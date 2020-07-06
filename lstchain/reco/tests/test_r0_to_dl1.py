@@ -1,4 +1,4 @@
-from ctapipe.io.containers import DataContainer
+from ctapipe.containers import DataContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import rescale_dl1_charge
 from copy import copy

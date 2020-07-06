@@ -169,3 +169,4 @@ def test_mc_r0_to_dl2():
         '-o', output_dir,
     )
     assert os.path.exists(dl2_file)
+

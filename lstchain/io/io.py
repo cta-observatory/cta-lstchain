@@ -4,12 +4,11 @@ from astropy.table import Table, vstack
 import tables
 from tables import open_file
 import os
-import pandas as pd
 import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
-from ctapipe.io.containers import MCHeaderContainer
+from ctapipe.containers import MCHeaderContainer
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
@@ -433,8 +432,8 @@ def check_mcheader(mcheader1, mcheader2):
 
     Parameters
     ----------
-    mcheader1: `ctapipe.io.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.io.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.MCHeaderContainer`
+    mcheader2: `ctapipe.containers.MCHeaderContainer`
 
     Returns
     -------
@@ -551,7 +550,7 @@ def add_global_metadata(container, metadata):
 
     Parameters
     ----------
-    container: `ctapipe.io.containers.Container`
+    container: `ctapipe.containers.Container`
     metadata: `lstchain.io.lstchainers.MetaData`
     """
     meta_dict = metadata.as_dict()
@@ -566,7 +565,7 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:

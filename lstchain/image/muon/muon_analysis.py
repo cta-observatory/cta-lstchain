@@ -9,7 +9,7 @@ from ctapipe.image.muon.features import npix_composing_ring
 # ctapipe version.
 from lstchain.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.io.containers import MuonIntensityParameter
+from ctapipe.containers import MuonIntensityParameter
 
 from astropy.coordinates import SkyCoord, AltAz
 from ctapipe.image.muon.muon_ring_finder import ChaudhuriKunduRingFitter

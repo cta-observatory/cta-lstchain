@@ -164,7 +164,7 @@ def combine_channels(event, tel_id, threshold):
 
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     tel_id: int
         id of the telescope
     threshold: float
