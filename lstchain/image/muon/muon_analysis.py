@@ -5,12 +5,12 @@ from ctapipe.image.muon.features import ring_completeness
 # Using provisionally a fixed version of MuonLineIntegrate, imported into
 # lstchain! As soon as ctapipe 0.8 is out, we should go back to using the
 # ctapipe version.
-from lstchain.image.muon.muon_integrator import MuonLineIntegrate
+
+#from lstchain.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.containers import MuonIntensityParameter
+from ctapipe.image.muon import MuonIntensityFitter, MuonRingFitter
 
 from astropy.coordinates import SkyCoord, AltAz
-from ctapipe.image.muon.muon_ring_finder import ChaudhuriKunduRingFitter
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
 from astropy import units as u
 
@@ -77,14 +77,15 @@ def fit_muon(x, y, image, geom, tailcuts):
     image_clean:   `np.ndarray` image after cleaning
     """
 
-    fitter = ChaudhuriKunduRingFitter()
+    fitter = MuonRingFitter(fit_method='kundu_chaudhuri')
+
     clean_mask = tailcuts_clean(
         geom, image,
         picture_thresh=tailcuts[0],
         boundary_thresh=tailcuts[1],
     )
-    image_clean = image * clean_mask
-    ring = fitter.fit(x, y, image_clean)
+
+    ring = fitter(x, y, image, clean_mask)
 
     max_allowed_outliers_distance = 0.4
 
@@ -98,11 +99,12 @@ def fit_muon(x, y, image, geom, tailcuts):
             (x - ring.ring_center_x)**2 + (y - ring.ring_center_y)**2
         )
         ring_dist = np.abs(dist - ring.ring_radius)
-        ring = fitter.fit(
-            x, y,
-            image_clean * (ring_dist < ring.ring_radius * max_allowed_outliers_distance)
-        )
 
+        clean_mask *= (ring_dist <
+                       ring.ring_radius * max_allowed_outliers_distance)
+        ring = fitter(x, y, image, clean_mask)
+
+    image_clean = image * clean_mask
     return ring, clean_mask, dist, image_clean
 
 
