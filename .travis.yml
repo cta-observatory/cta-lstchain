@@ -51,7 +51,7 @@ before_install:
 install:
     - sed -i -e "s/- python=.*/- python=$TRAVIS_PYTHON_VERSION/g" environment.yml
     - conda env create --file environment.yml
-    - conda activate lst-dev
+    - conda activate lst-dev-ctapipe0.8
     - python --version
     - |
       pip install \
