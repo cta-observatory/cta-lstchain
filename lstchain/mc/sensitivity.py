@@ -83,7 +83,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
     # by the number of LSTs in the simulation)
 
     filter_good_events = (
-        (events.leakage2_intensity < 0.2)
+        (events.intensity_width_2 < 0.2)
         & (events.intensity > 50)
         # & (events.tel_id==1)
         # & (events.wl > 0.1)
