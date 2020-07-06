@@ -50,10 +50,10 @@ class DL1ParametersContainer(Container):
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
-    leakage1_intensity = Field(None, 'Fraction of intensity in outermost pixels')
-    leakage2_intensity = Field(None, 'Fraction of intensity in two outermost rings of pixels')
-    leakage1_pixel = Field(None, 'Fraction of signal pixels that are border pixels')
-    leakage2_pixel = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
+    intensity_width_2 = Field(None, 'Fraction of intensity in outermost pixels')
+    intensity_width_2 = Field(None, 'Fraction of intensity in two outermost rings of pixels')
+    pixels_width_1 = Field(None, 'Fraction of signal pixels that are border pixels')
+    pixels_width_2 = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
     n_pixels = Field(None, 'Number of pixels after cleaning')
     concentration_cog = Field(None, 'Fraction of intensity in three pixels closest to the cog')
     concentration_core = Field(None, 'Fraction of intensity inside hillas ellipse')
@@ -172,16 +172,16 @@ class DL1ParametersContainer(Container):
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
-        self.leakage1_intensity = leakage_c.leakage1_intensity
-        self.leakage2_intensity = leakage_c.leakage2_intensity
-        self.leakage1_pixel = leakage_c.leakage1_pixel
-        self.leakage2_pixel = leakage_c.leakage2_pixel
+        self.intensity_width_1 = leakage_c.intensity_width_1
+        self.intensity_width_2 = leakage_c.intensity_width_2
+        self.pixels_width_1 = leakage_c.pixels_width_1
+        self.pixels_width_2 = leakage_c.pixels_width_2
 
     def set_concentration(self, geom, image, hillas_parameters):
         conc = concentration(geom, image, hillas_parameters)
-        self.concentration_cog = conc.concentration_cog
-        self.concentration_core = conc.concentration_core
-        self.concentration_pixel = conc.concentration_pixel
+        self.concentration_cog = conc.cog
+        self.concentration_core = conc.core
+        self.concentration_pixel = conc.pixel
 
     def set_n_islands(self, geom, clean):
         n_islands, islands_mask = number_of_islands(geom, clean)
