@@ -1,7 +1,6 @@
 import numpy as np
 from ctapipe.image.muon.features import ring_containment
 from ctapipe.image.muon.features import ring_completeness
-from ctapipe.image.muon.features import npix_above_threshold
 from ctapipe.image.muon.features import npix_composing_ring
 #from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
 # Using provisionally a fixed version of MuonLineIntegrate, imported into
@@ -181,7 +180,8 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     candidate_clean_ring = all(
         [radial_distribution['standard_dev'] < max_radial_stdev,
          radial_distribution['excess_kurtosis'] < max_radial_excess_kurtosis,
-         npix_above_threshold(pix_ring, tailcuts[0]) > min_pix_fraction_after_cleaning * min_pix,
+         (pix_ring > tailcuts[0]).sum() >
+         min_pix_fraction_after_cleaning * min_pix,
          npix_composing_ring(pix_ring) > min_pix,
          muonringparam.ring_radius < max_ring_radius,
          muonringparam.ring_radius > min_ring_radius
@@ -214,7 +214,8 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             bins=30)
 
         pix_ringwidth_im = image[dist_ringwidth_mask]
-        muonintensityoutput.ring_pix_completeness =  npix_above_threshold(pix_ringwidth_im, tailcuts[0]) / len(pix_ringwidth_im)
+        muonintensityoutput.ring_pix_completeness =  \
+            (pix_ringwidth_im > tailcuts[0]).sum() / len(pix_ringwidth_im)
 
     else:
             muonintensityoutput = MuonIntensityParameter()
