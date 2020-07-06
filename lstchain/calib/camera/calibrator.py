@@ -2,7 +2,7 @@ import numpy as np
 import os
 from ctapipe.core.traits import Unicode, List, Int, Bool
 from ctapipe.calib.camera import CameraCalibrator
-from ctapipe.calib.camera.calibrator import integration_correction
+from ctapipe.image.extractor import integration_correction
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
