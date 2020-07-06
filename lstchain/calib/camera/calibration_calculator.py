@@ -41,14 +41,14 @@ class CalibrationCalculator(Component):
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
-    pedestal_product = traits.enum_trait(
+    pedestal_product = traits.create_class_enum_trait(
         PedestalCalculator,
-        default='PedestalIntegrator'
+        default_value='PedestalIntegrator'
     )
 
-    flatfield_product = traits.enum_trait(
+    flatfield_product = traits.create_class_enum_trait(
         FlatFieldCalculator,
-        default='FlasherFlatFieldCalculator'
+        default_value='FlasherFlatFieldCalculator'
     )
 
     apply_charge_correction = Bool(

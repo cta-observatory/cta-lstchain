@@ -20,13 +20,14 @@ import tables
 import numpy as np
 import argparse
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from ctapipe.image.cleaning import tailcuts_clean, number_of_islands
+from ctapipe.image.cleaning import tailcuts_clean
+from ctapipe.image.morphology import number_of_islands
 from ctapipe.image import hillas_parameters
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.config import get_standard_config
 from ctapipe.instrument import CameraGeometry, OpticsDescription
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from ctapipe.io.containers import HillasParametersContainer
+from ctapipe.containers import HillasParametersContainer
 from astropy.units import Quantity
 from distutils.util import strtobool
 from lstchain.io import get_dataset_keys, auto_merge_h5files

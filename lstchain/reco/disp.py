@@ -97,7 +97,7 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
 
     Parameters
     ----------
-    hillas_parameters: `ctapipe.io.containers.HillasParametersContainer`
+    hillas_parameters: `ctapipe.containers.HillasParametersContainer`
     source_pos_x: `astropy.units.quantity.Quantity`
         X coordinate of the source (event) position in the camera frame
     source_pos_y: `astropy.units.quantity.Quantity`
