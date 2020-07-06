@@ -6,9 +6,6 @@ from .muon_analysis import (
     fill_muon_event,
     pixel_coords_to_telescope,
 )
-from .muon_integrator import (
-    MuonLineIntegrate,
-)
 
 __all__ = [
     'analyze_muon_event',
@@ -17,5 +14,4 @@ __all__ = [
     'fill_muon_event',
     'plot_muon_event',
     'pixel_coords_to_telescope',
-    'MuonLineIntegrate',
 ]

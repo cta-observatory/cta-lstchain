@@ -49,7 +49,7 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
     )
     tel_coord = camera_coord.transform_to(TelescopeFrame())
 
-    return tel_coord.delta_az, tel_coord.delta_alt
+    return tel_coord.fov_lon, tel_coord.fov_lat
 
 
 def fit_muon(x, y, image, geom, tailcuts):
