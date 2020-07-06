@@ -1,15 +1,10 @@
 import numpy as np
 from ctapipe.image.muon.features import ring_containment
 from ctapipe.image.muon.features import ring_completeness
-#from ctapipe.image.muon.muon_integrator import MuonLineIntegrate
-# Using provisionally a fixed version of MuonLineIntegrate, imported into
-# lstchain! As soon as ctapipe 0.8 is out, we should go back to using the
-# ctapipe version.
 
-#from lstchain.image.muon.muon_integrator import MuonLineIntegrate
 from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.image.muon import MuonIntensityFitter, MuonRingFitter
-
+from ctapipe.containers import MuonEfficiencyContainer
 from astropy.coordinates import SkyCoord, AltAz
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
 from astropy import units as u
@@ -189,19 +184,30 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         ])
 
     if  candidate_clean_ring:
+        intensity_fitter = MuonIntensityFitter()
+
+        """
         ctel = MuonLineIntegrate(
             mirror_radius, hole_radius = 0.308 * u.m,
             pixel_width=0.1 * u.deg,
             sct_flag=False,
             secondary_radius = 0. * u.m
         )
-
+        """
+        muonintensityoutput = \
+            intensity_fitter(1,
+                             muonringparam.ring_center_x,
+                             muonringparam.ring_center_y,
+                             muonringparam.ring_radius,
+                             image*dist_mask)
+        """
         muonintensityoutput = ctel.fit_muon(
             muonringparam.ring_center_x,
             muonringparam.ring_center_y,
             muonringparam.ring_radius,
             x[dist_mask], y[dist_mask],
             image[dist_mask])
+        """
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius) < (muonintensityoutput.ring_width)
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
@@ -219,7 +225,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             (pix_ringwidth_im > tailcuts[0]).sum() / len(pix_ringwidth_im)
 
     else:
-            muonintensityoutput = MuonIntensityParameter()
+            muonintensityoutput = MuonEfficiencyContainer()
             # Set default values for cases in which the muon intensity fit (with MuonLineIntegrate) is not done:
             muonintensityoutput.ring_width = np.nan*u.deg
             muonintensityoutput.impact_parameter_pos_x = np.nan*u.m
