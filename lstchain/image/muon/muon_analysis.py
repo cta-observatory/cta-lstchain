@@ -186,28 +186,12 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     if  candidate_clean_ring:
         intensity_fitter = MuonIntensityFitter()
 
-        """
-        ctel = MuonLineIntegrate(
-            mirror_radius, hole_radius = 0.308 * u.m,
-            pixel_width=0.1 * u.deg,
-            sct_flag=False,
-            secondary_radius = 0. * u.m
-        )
-        """
         muonintensityoutput = \
             intensity_fitter(1,
                              muonringparam.ring_center_x,
                              muonringparam.ring_center_y,
                              muonringparam.ring_radius,
                              image*dist_mask)
-        """
-        muonintensityoutput = ctel.fit_muon(
-            muonringparam.ring_center_x,
-            muonringparam.ring_center_y,
-            muonringparam.ring_radius,
-            x[dist_mask], y[dist_mask],
-            image[dist_mask])
-        """
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius) < (muonintensityoutput.ring_width)
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
