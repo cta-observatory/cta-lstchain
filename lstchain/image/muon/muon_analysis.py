@@ -211,7 +211,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius) < (muonintensityoutput.ring_width)
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
-        # within the "width" fitted using MuonLineIntegrate.
+        # within the "width" fitted using MuonIntensityFitter
         muonintensityoutput.ring_completeness = ring_completeness(
             x[dist_ringwidth_mask], y[dist_ringwidth_mask], image[dist_ringwidth_mask],
             muonringparam.ring_radius,
@@ -226,7 +226,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
     else:
             muonintensityoutput = MuonEfficiencyContainer()
-            # Set default values for cases in which the muon intensity fit (with MuonLineIntegrate) is not done:
+            # Set default values for cases in which the muon intensity fit is not done:
             muonintensityoutput.ring_width = np.nan*u.deg
             muonintensityoutput.impact_parameter_pos_x = np.nan*u.m
             muonintensityoutput.impact_parameter_pos_y = np.nan*u.m
@@ -247,7 +247,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
             muonintensityoutput.impact_parameter, muonintensityoutput.ring_width,
             muonringparam.ring_radius, muonintensityoutput.ring_completeness,
 ))
-    # Now add the conditions based on the detailed muon ring fit made by MuonLineIntegrate:
+    # Now add the conditions based on the detailed muon ring fit:
     conditions = [
         candidate_clean_ring,
 
