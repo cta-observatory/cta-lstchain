@@ -81,10 +81,10 @@ def main():
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend([
         'wl', 'r',
-        'intensity_width_1',
-        'intensity_width_2',
-        'pixel_width_1',
-        'pixel_width_2',
+        'leakage_intensity_width_1',
+        'leakage_intensity_width_2',
+        'leakage_pixel_width_1',
+        'leakage_pixel_width_2',
         'concentration_cog',
         'concentration_core',
         'concentration_pixel',

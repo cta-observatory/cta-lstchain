@@ -423,7 +423,7 @@ def filter_events(events,
                                  length=[0, np.inf],
                                  wl=[0, np.inf],
                                  r=[0, np.inf],
-                                 intensity_width_2=[0, 1],
+                                 leakage_intensity_width_2=[0, 1],
                                  ),
                   dropna=True,
                   ):
