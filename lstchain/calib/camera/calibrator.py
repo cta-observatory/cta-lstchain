@@ -6,7 +6,7 @@ from ctapipe.calib.camera.calibrator import integration_correction
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
-from ctapipe.io.containers import MonitoringContainer
+from ctapipe.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 

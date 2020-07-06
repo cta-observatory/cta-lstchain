@@ -4,7 +4,6 @@ from astropy.table import Table, vstack
 import tables
 from tables import open_file
 import os
-import pandas as pd
 import astropy.units as u
 import ctapipe
 import lstchain
