@@ -179,9 +179,9 @@ class DL1ParametersContainer(Container):
 
     def set_concentration(self, geom, image, hillas_parameters):
         conc = concentration(geom, image, hillas_parameters)
-        self.concentration_cog = conc.concentration_cog
-        self.concentration_core = conc.concentration_core
-        self.concentration_pixel = conc.concentration_pixel
+        self.concentration_cog = conc.cog
+        self.concentration_core = conc.core
+        self.concentration_pixel = conc.pixel
 
     def set_n_islands(self, geom, clean):
         n_islands, islands_mask = number_of_islands(geom, clean)
