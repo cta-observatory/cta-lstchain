@@ -14,13 +14,13 @@ matrix:
       python: 3.6
       env:
         - CTAPIPE_VERSION="v0.8.0"
-        - CTAPIPE_IO_LST_VERSION="v0.5.1"
+        - CTAPIPE_IO_LST_VERSION="v0.5.2"
 
     - name: "python=3.7, ctapipe=0.8"
       python: 3.7
       env:
         - CTAPIPE_VERSION="v0.8.0"
-        - CTAPIPE_IO_LST_VERSION="v0.5.1"
+        - CTAPIPE_IO_LST_VERSION="v0.5.2"
 
     - name: "python=3.6, ctapipe=master"
       python: 3.6

@@ -16,5 +16,5 @@ dependencies:
   - pip:
       - pytest_runner
       - pytest-ordering
-      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.1
+      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.2
       - ctaplot
