@@ -186,12 +186,17 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
     if  candidate_clean_ring:
         intensity_fitter = MuonIntensityFitter()
 
+        # Use same hard-coded value for pedestal fluctuations as the previous
+        # version of ctapipe:
+        pedestal_stddev = 1.1*np.ones(len(image))
+
         muonintensityoutput = \
             intensity_fitter(1,
                              muonringparam.ring_center_x,
                              muonringparam.ring_center_y,
                              muonringparam.ring_radius,
-                             image*dist_mask)
+                             image*dist_mask,
+                             pedestal_stddev)
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.ring_radius) < (muonintensityoutput.ring_width)
         # We do the calculation of the ring completeness (i.e. fraction of whole circle) using the pixels
