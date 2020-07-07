@@ -247,6 +247,7 @@ def r0_to_dl1(
                                                 apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                 config = Config(config),
                                                 allowed_tels = [1],
+                                                subarray = source.subarray
                                                 )
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
@@ -258,7 +259,8 @@ def r0_to_dl1(
                                                                charge_scale=config['charge_scale'],
                                                                apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                                config = Config(config),
-                                                               allowed_tels = [1],)
+                                                               allowed_tels = [1],
+                                                               subarray = source.subarray)
 
 
         # Component to process interleaved pedestal and flat-fields
