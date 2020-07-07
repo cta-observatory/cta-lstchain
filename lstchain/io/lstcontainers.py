@@ -3,23 +3,23 @@ Functions to handle custom containers for the mono reconstruction of LST1
 """
 
 import astropy.units as u
-from astropy.units import Quantity
 import numpy as np
+from astropy.units import Quantity
 from ctapipe.core import Container, Field
-from ctapipe.image import timing_parameters as time
 from ctapipe.image import leakage, concentration
+from ctapipe.image import timing_parameters as time
 from ctapipe.image.morphology import number_of_islands
-
-from ..reco import utils
 from numpy import nan
 
+from ..reco import utils
+
 __all__ = [
+    'DL1MonitoringEventIndexContainer',
     'DL1ParametersContainer',
     'DispContainer',
+    'LSTEventType'
     'MetaData',
     'ThrownEventsHistogram',
-    'DL1MonitoringEventIndexContainer',
-    'LSTEventType'
 ]
 
 
@@ -50,10 +50,10 @@ class DL1ParametersContainer(Container):
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(None, 'Time gradient in the camera')
     intercept = Field(None, 'Intercept')
-    intensity_width_2 = Field(None, 'Fraction of intensity in outermost pixels')
-    intensity_width_2 = Field(None, 'Fraction of intensity in two outermost rings of pixels')
-    pixels_width_1 = Field(None, 'Fraction of signal pixels that are border pixels')
-    pixels_width_2 = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
+    leakage_intensity_width_1 = Field(None, 'Fraction of intensity in outermost pixels')
+    leakage_intensity_width_2 = Field(None, 'Fraction of intensity in two outermost rings of pixels')
+    leakage_pixels_width_1 = Field(None, 'Fraction of signal pixels that are border pixels')
+    leakage_pixels_width_2 = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
     n_pixels = Field(None, 'Number of pixels after cleaning')
     concentration_cog = Field(None, 'Fraction of intensity in three pixels closest to the cog')
     concentration_core = Field(None, 'Fraction of intensity inside hillas ellipse')
@@ -172,10 +172,10 @@ class DL1ParametersContainer(Container):
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
-        self.intensity_width_1 = leakage_c.intensity_width_1
-        self.intensity_width_2 = leakage_c.intensity_width_2
-        self.pixels_width_1 = leakage_c.pixels_width_1
-        self.pixels_width_2 = leakage_c.pixels_width_2
+        self.leakage_intensity_width_1 = leakage_c.intensity_width_1
+        self.leakage_intensity_width_2 = leakage_c.intensity_width_2
+        self.leakage_pixels_width_1 = leakage_c.pixels_width_1
+        self.leakage_pixels_width_2 = leakage_c.pixels_width_2
 
     def set_concentration(self, geom, image, hillas_parameters):
         conc = concentration(geom, image, hillas_parameters)

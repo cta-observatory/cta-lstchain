@@ -16,22 +16,24 @@ $> python lstchain_mc_dl1ab.py
 
 """
 
-import tables
-import numpy as np
 import argparse
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from distutils.util import strtobool
+
+import numpy as np
+import tables
+from astropy.table import Table
+from astropy.units import Quantity
+from ctapipe.containers import HillasParametersContainer
+from ctapipe.image import hillas_parameters
 from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.image.morphology import number_of_islands
-from ctapipe.image import hillas_parameters
-from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.config import get_standard_config
 from ctapipe.instrument import CameraGeometry, OpticsDescription
-from lstchain.io.lstcontainers import DL1ParametersContainer
-from ctapipe.containers import HillasParametersContainer
-from astropy.units import Quantity
-from distutils.util import strtobool
+
 from lstchain.io import get_dataset_keys, auto_merge_h5files
-from astropy.table import Table
+from lstchain.io.config import get_standard_config
+from lstchain.io.config import read_configuration_file, replace_config
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.lstcontainers import DL1ParametersContainer
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
@@ -80,16 +82,16 @@ def main():
     dl1_container = DL1ParametersContainer()
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend([
-        'wl', 'r',
-        'intensity_width_1',
-        'intensity_width_2',
-        'pixel_width_1',
-        'pixel_width_2',
         'concentration_cog',
         'concentration_core',
         'concentration_pixel',
-        'n_pixels',
+        'leakage_intensity_width_1',
+        'leakage_intensity_width_2',
+        'leakage_pixel_width_1',
+        'leakage_pixel_width_2',
         'n_islands', 'intercept', 'time_gradient'
+        'n_pixels',
+        'wl', 'r',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
