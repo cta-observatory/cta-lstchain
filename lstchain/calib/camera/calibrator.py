@@ -61,7 +61,8 @@ class LSTCameraCalibrator(CameraCalibrator):
 
     ).tag(config=True)
 
-    def __init__(self, **kwargs):
+
+    def __init__(self, subarray, **kwargs):
         """
         Parameters
         ----------
@@ -79,12 +80,13 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         kwargs
         """
-        super().__init__(**kwargs)
+        super().__init__(subarray, **kwargs)
 
         # load the waveform charge extractor
         self.image_extractor = ImageExtractor.from_name(
             self.extractor_product,
-            config=self.config
+            subarray = self.subarray,
+            config = self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
 
@@ -92,9 +94,11 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         self.data_volume_reducer = DataVolumeReducer.from_name(
             self.reducer_product,
-            config=self.config
+            subarray=self.subarray,
+            config = self.config
         )
         self.log.info(f" {self.reducer_product}")
+
 
         # declare gain selector if the threshold is defined
         if self.gain_threshold:
