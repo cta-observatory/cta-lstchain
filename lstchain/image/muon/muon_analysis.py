@@ -5,13 +5,12 @@ from ctapipe.image.muon.features import ring_completeness
 from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.image.muon import MuonIntensityFitter, MuonRingFitter
 from ctapipe.containers import MuonEfficiencyContainer
-from astropy.coordinates import SkyCoord, AltAz
+from astropy.coordinates import SkyCoord
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
 from astropy import units as u
 
 from lstchain.image.muon import plot_muon_event
 import matplotlib.pyplot as plt
-
 
 __all__ = [
     'analyze_muon_event',
@@ -36,17 +35,12 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
 
     Returns
     ---------
-    delta_az, delta_alt:    `floats` coordinates in  the TelescopeFrame
+    fov_lon, fov_lat:    `floats` coordinates in  the TelescopeFrame
     """
 
-    camera_coord = SkyCoord(
-        x=geom.pix_x,
-        y=geom.pix_y,
-        frame=CameraFrame(
-            focal_length=equivalent_focal_length,
-            rotation=geom.cam_rotation,
-        )
-    )
+    camera_coord = SkyCoord(geom.pix_x, geom.pix_y,
+                            CameraFrame( focal_length=equivalent_focal_length,
+                                         rotation=geom.cam_rotation))
     tel_coord = camera_coord.transform_to(TelescopeFrame())
 
     return tel_coord.fov_lon, tel_coord.fov_lat
@@ -264,11 +258,9 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 
     if(plot_rings and plots_path and good_ring):
         focal_length = equivalent_focal_length
-        ring_telescope = SkyCoord(
-            delta_az=muonringparam.ring_center_x,
-            delta_alt=muonringparam.ring_center_y,
-            frame=TelescopeFrame()
-        )
+        ring_telescope = SkyCoord(muonringparam.ring_center_x,
+                                  muonringparam.ring_center_y,
+                                  TelescopeFrame())
 
         ring_camcoord = ring_telescope.transform_to(CameraFrame(
             focal_length=focal_length,
