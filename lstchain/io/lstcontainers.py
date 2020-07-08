@@ -17,7 +17,10 @@ __all__ = [
     'DL1MonitoringEventIndexContainer',
     'DL1ParametersContainer',
     'DispContainer',
-    'LSTEventType'
+    'ExtraImageInfo',
+    'ExtraMCInfo',
+    'ExtraMCInfo',
+    'LSTEventType',
     'MetaData',
     'ThrownEventsHistogram',
 ]
