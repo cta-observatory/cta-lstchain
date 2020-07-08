@@ -87,8 +87,8 @@ def main():
         'concentration_pixel',
         'leakage_intensity_width_1',
         'leakage_intensity_width_2',
-        'leakage_pixel_width_1',
-        'leakage_pixel_width_2',
+        'leakage_pixels_width_1',
+        'leakage_pixels_width_2',
         'n_islands', 'intercept', 'time_gradient'
         'n_pixels',
         'wl', 'r',
