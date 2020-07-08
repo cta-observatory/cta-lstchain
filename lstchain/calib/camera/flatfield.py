@@ -284,10 +284,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             'sample_time': (trigger_time - time_start) / 2 * u.s,
             'sample_time_min': time_start * u.s,
             'sample_time_max': trigger_time * u.s,
-            'time_mean': np.ma.getdata(pixel_mean),
-            'time_median': np.ma.getdata(pixel_median),
-            'time_std': np.ma.getdata(pixel_std),
-            'relative_time_median': np.ma.getdata(relative_median),
+            'time_mean': np.ma.getdata(pixel_mean)*u.ns,
+            'time_median': np.ma.getdata(pixel_median)*u.ns,
+            'time_std': np.ma.getdata(pixel_std)*u.ns,
+            'relative_time_median': np.ma.getdata(relative_median)*u.ns,
             'time_median_outliers': np.ma.getdata(time_median_outliers),
 
         }
