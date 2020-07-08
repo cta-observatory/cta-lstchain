@@ -7,7 +7,7 @@ import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.core.traits import List, Bool
-from lstchain.calib.camera.calibrator import get_charge_correction
+
 
 __all__ = [
     'PedestalIntegrator'
@@ -41,7 +41,7 @@ class PedestalIntegrator(PedestalCalculator):
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, subarray, **kwargs):
         """Calculates pedestal parameters integrating the charge of pedestal events:
            the pedestal value corresponds to the charge estimated with the selected
            charge extractor
@@ -58,7 +58,7 @@ class PedestalIntegrator(PedestalCalculator):
              Interval (number of std) of accepted charge standard deviation around camera median value
         """
 
-        super().__init__(**kwargs)
+        super().__init__(subarray, **kwargs)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 
@@ -84,16 +84,13 @@ class PedestalIntegrator(PedestalCalculator):
         """
 
         waveforms = event.r1.tel[self.tel_id].waveform
+        no_gain_selection= np.zeros((waveforms.shape[0],waveforms.shape[1]), dtype=np.int)
 
         # Extract charge and time
         charge = 0
         peak_pos = 0
         if self.extractor:
-            if self.extractor.requires_neighbors():
-                camera = event.inst.subarray.tel[self.tel_id].camera
-                self.extractor.neighbours = camera.neighbor_matrix_where
-
-            charge, peak_pos = self.extractor(waveforms)
+            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
 
         return charge, peak_pos
 
@@ -227,7 +224,8 @@ def calculate_time_results(
     """Calculate and return the sample time"""
     return {
         'sample_time': (trigger_time - time_start) / 2 * u.s,
-        'sample_time_range': [time_start, trigger_time] * u.s,
+        'sample_time_min': time_start * u.s,
+        'sample_time_max': trigger_time * u.s,
     }
 
 

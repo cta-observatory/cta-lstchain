@@ -68,6 +68,7 @@ class CalibrationCalculator(Component):
 
     def __init__(
         self,
+        subarray,
         parent=None,
         config=None,
         **kwargs
@@ -94,11 +95,13 @@ class CalibrationCalculator(Component):
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
         self.pedestal = PedestalCalculator.from_name(
             self.pedestal_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
 
         msg = "tel_id not the same for all calibration components"

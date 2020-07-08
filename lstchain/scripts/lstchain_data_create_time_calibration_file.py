@@ -84,8 +84,8 @@ def main():
     tel_id = timeCorr.tel_id
 
     for i, event in enumerate(reader):
-        if event.r0.event_id % 5000 == 0:
-            print(event.r0.event_id)
+        if event.index.event_id % 5000 == 0:
+            print(event.index.event_id)
 
         lst_r0.calibrate(event)
 

@@ -4,6 +4,7 @@ from ctapipe.visualization import CameraDisplay
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe_io_lst import load_camera_geometry
+from ctapipe.coordinates import EngineeringCameraFrame
 
 # read back the monitoring containers written with the tool calc_camera_calibration.py
 from ctapipe.containers import FlatFieldContainer, WaveformCalibrationContainer, PedestalContainer, \
@@ -66,6 +67,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
      """
     # read geometry
     camera = load_camera_geometry()
+    camera.transform_to(EngineeringCameraFrame())
 
     # plot open pdf
     if plot_file != "none":

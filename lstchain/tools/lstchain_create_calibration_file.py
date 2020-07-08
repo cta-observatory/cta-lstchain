@@ -110,7 +110,8 @@ class CalibrationHDF5Writer(Tool):
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,
-            parent=self
+            parent=self,
+            subarray = self.eventsource.subarray
         )
 
         if self.r0calibrator_product:
