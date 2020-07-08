@@ -116,17 +116,17 @@ def get_dl1(
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
-    camera = telescope.camera
+    camera_geometry = telescope.camera.geometry
 
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
         # check the number of islands
-        num_islands, island_labels = number_of_islands(camera, signal_pixels)
+        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
         if use_main_island:
             n_pixels_on_island = np.bincount(island_labels.astype(np.int))
@@ -134,19 +134,19 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-        hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
+        hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
 
         # Fill container
         dl1_container.fill_hillas(hillas)
         dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
         dl1_container.set_mc_type(calibrated_event)
-        dl1_container.set_timing_features(camera[signal_pixels],
+        dl1_container.set_timing_features(camera_geometry[signal_pixels],
                                           image[signal_pixels],
                                           peak_time[signal_pixels],
                                           hillas)
-        dl1_container.set_leakage(camera, image, signal_pixels)
-        dl1_container.set_concentration(camera, image, hillas)
+        dl1_container.set_leakage(camera_geometry, image, signal_pixels)
+        dl1_container.set_concentration(camera_geometry, image, hillas)
         dl1_container.n_pixels = n_pixels
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(calibrated_event, telescope_id)
