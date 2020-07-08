@@ -9,7 +9,6 @@ from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.lstcontainers import LSTEventType
-from lstchain.calib.camera.calibrator import get_charge_correction
 
 __all__ = [
     'CalibrationCalculator',
@@ -68,6 +67,7 @@ class CalibrationCalculator(Component):
 
     def __init__(
         self,
+        subarray,
         parent=None,
         config=None,
         **kwargs
@@ -94,11 +94,13 @@ class CalibrationCalculator(Component):
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
         self.pedestal = PedestalCalculator.from_name(
             self.pedestal_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
 
         msg = "tel_id not the same for all calibration components"
@@ -186,7 +188,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
-        calib_data.time_range = ff_data.sample_time_range
+        calib_data.time_min = ff_data.sample_time_min
+        calib_data.time_max = ff_data.sample_time_max
         calib_data.n_pe = n_pe
 
         # find signal median of good pixels
@@ -208,7 +211,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # flat-field time corrections
         calib_data.time_correction = -ff_data.relative_time_median
 
-        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
+        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # put to zero unusable pixels
         calib_data.dc_to_pe[calib_data.unusable_pixels] = 0

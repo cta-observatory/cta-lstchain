@@ -5,10 +5,10 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe.io import event_source
 from lstchain.calib.camera.r0 import LSTR0Corrections
-from ctapipe.instrument import  CameraGeometry
+from ctapipe.coordinates import EngineeringCameraFrame
 
 
-from ctapipe.calib.camera.pedestals import PedestalIntegrator
+from lstchain.calib.camera.pedestals import PedestalIntegrator
 from ctapipe.visualization import CameraDisplay
 
 __all__ = ['plot_pedestals',
@@ -65,7 +65,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
                                   charge_median_cut_outliers=[-10, 10],
                                   charge_std_cut_outliers=[-10, 10],
                                   charge_product="FixedWindowSum",
-                                  config=charge_config)
+                                  config=charge_config,
+                                  subarray = reader.subarray)
 
     for i, event in enumerate(reader):
         if tel_id != event.r0.tels_with_data[0]:
@@ -79,8 +80,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
             ped_data = event.mon.tel[tel_id].pedestal
             break
 
-    camera = CameraGeometry.from_name("LSTCam", 2)
-
+    camera_geometry = reader.subarray.tels[tel_id].camera.geometry
+    camera_geometry = camera_geometry.transform_to(EngineeringCameraFrame())
     # plot open pdf
     if plot_file != "none":
         pp = PdfPages(plot_file)
@@ -100,7 +101,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         pad += 1
         plt.subplot(pad)
         plt.tight_layout()
-        disp = CameraDisplay(camera)
+        disp = CameraDisplay(camera_geometry)
         mymin = np.median(image[chan]) - 2 * np.std(image[chan])
         mymax = np.median(image[chan]) + 2 * np.std(image[chan])
         disp.set_limits_minmax(mymin, mymax)
@@ -117,7 +118,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         pad += 1
         plt.subplot(pad)
         plt.tight_layout()
-        disp = CameraDisplay(camera)
+        disp = CameraDisplay(camera_geometry)
         mymin = np.median(image[chan]) - 2 * np.std(image[chan])
         mymax = np.median(image[chan]) + 2 * np.std(image[chan])
         disp.set_limits_minmax(mymin, mymax)
@@ -173,14 +174,14 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
             if pad == 420:
                 # new figure
 
-                fig = plt.figure(ev.r0.event_id, figsize=(12, 24))
+                fig = plt.figure(ev.index.event_id, figsize=(12, 24))
                 fig.suptitle(f"Run {run}, pixel {pix}", fontsize=25)
                 plt.tight_layout()
             pad += 1
             plt.subplot(pad)
 
             plt.subplots_adjust(top=0.92)
-            label = f"event {ev.r0.event_id}, {channel[chan]}: R0"
+            label = f"event {ev.index.event_id}, {channel[chan]}: R0"
             plt.step(t, ev.r0.tel[tel_id].waveform[chan, pix, 2:38], color="blue", label=label)
 
             r0_calib.subtract_pedestal(ev,tel_id)
