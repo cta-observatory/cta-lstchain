@@ -198,7 +198,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             pulse_time = self.time_corrector.get_corr_pulse(event, pulse_time)
 
         # add flat-fielding time correction
-        pulse_time_ff_corrected = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+        pulse_time_ff_corrected = pulse_time + self.mon_data.tel[telid].calibration.time_correction.value
 
         # perform the gain selection if the threshold is defined
         if self.gain_threshold:
