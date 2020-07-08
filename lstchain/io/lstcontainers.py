@@ -189,9 +189,9 @@ class DL1ParametersContainer(Container):
         n_islands, islands_mask = number_of_islands(geom, clean)
         self.n_islands = n_islands
 
-    def set_telescope_info(self, event, telescope_id):
+    def set_telescope_info(self, subarray, telescope_id):
         self.tel_id = telescope_id
-        tel_pos = event.inst.subarray.positions[telescope_id]
+        tel_pos = subarray.positions[telescope_id]
         self.tel_pos_x = tel_pos[0]
         self.tel_pos_y = tel_pos[1]
         self.tel_pos_z = tel_pos[2]

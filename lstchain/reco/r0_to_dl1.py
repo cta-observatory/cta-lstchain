@@ -150,7 +150,7 @@ def get_dl1(
         dl1_container.set_concentration(camera_geometry, image, hillas)
         dl1_container.n_pixels = n_pixels
         dl1_container.n_islands = num_islands
-        dl1_container.set_telescope_info(calibrated_event, telescope_id)
+        dl1_container.set_telescope_info(subarray, telescope_id)
 
 
         return dl1_container
