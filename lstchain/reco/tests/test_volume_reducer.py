@@ -31,7 +31,7 @@ def test_check_and_apply_volume_reduction():
 
     for tel_id in ev.r0.tels_with_data:
         assert 0 in ev.dl1.tel[tel_id].image
-        assert 0 in ev.dl1.tel[tel_id].pulse_time
+        assert 0 in ev.dl1.tel[tel_id].peak_time
         assert 0 in ev.dl0.tel[tel_id].waveform
 
 

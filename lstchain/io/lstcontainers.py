@@ -164,9 +164,9 @@ class DL1ParametersContainer(Container):
         self.disp_sign = disp.sign
         self.disp_miss = disp.miss
 
-    def set_timing_features(self, geom, image, pulse_time, hillas):
+    def set_timing_features(self, geom, image, peak_time, hillas):
         try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
-            timepars = time.timing_parameters(geom, image, pulse_time, hillas)
+            timepars = time.timing_parameters(geom, image, peak_time, hillas)
             self.time_gradient = timepars.slope.value
             self.intercept = timepars.intercept
         except ValueError:

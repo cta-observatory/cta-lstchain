@@ -32,15 +32,15 @@ def display_dl1_event(event, tel_id=1, axes=None, **kwargs):
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     image = event.dl1.tel[tel_id].image
-    pulse_time = event.dl1.tel[tel_id].pulse_time
+    peak_time = event.dl1.tel[tel_id].peak_time
 
-    if image is None or pulse_time is None:
+    if image is None or peak_time is None:
         raise Exception(f"There is no calibrated image or pulse time map for telescope {tel_id}")
 
     geom = event.inst.subarray.tel[tel_id].camera
     d1 = CameraDisplay(geom, image, ax=axes[0], **kwargs)
     d1.add_colorbar(ax=axes[0])
-    d2 = CameraDisplay(geom, pulse_time, ax=axes[1], **kwargs)
+    d2 = CameraDisplay(geom, peak_time, ax=axes[1], **kwargs)
     d2.add_colorbar(ax=axes[1])
 
     return axes

@@ -211,24 +211,24 @@ class LSTCameraCalibrator(CameraCalibrator):
             camera = event.inst.subarray.tel[telid].camera
             self.image_extractor.neighbors = camera.neighbor_matrix_where
 
-        charge, pulse_time = self.image_extractor(waveforms)
+        charge, peak_time = self.image_extractor(waveforms)
 
         # correct charge for width integration
         corrected_charge = charge * self.charge_correction[:,np.newaxis]
 
         # correct time with drs4 correction if available
         if self.time_corrector:
-            pulse_time = self.time_corrector.get_corr_pulse(event, pulse_time)
+            peak_time = self.time_corrector.get_corr_pulse(event, peak_time)
 
         # add flat-fielding time correction
-        pulse_time_ff_corrected = pulse_time + self.mon_data.tel[telid].calibration.time_correction
+        peak_time_ff_corrected = peak_time + self.mon_data.tel[telid].calibration.time_correction
 
         # perform the gain selection if the threshold is defined
         if self.gain_threshold:
             waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
             event.dl1.tel[telid].image = corrected_charge[gain_mask, np.arange(charge.shape[1])]
-            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
+            event.dl1.tel[telid].peak_time = peak_time_ff_corrected[gain_mask, np.arange(peak_time_ff_corrected.shape[1])]
 
             # remember which channel has been selected
             event.r1.tel[telid].selected_gain_channel = gain_mask
@@ -236,7 +236,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         # if threshold == None
         else:
             event.dl1.tel[telid].image = corrected_charge
-            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
+            event.dl1.tel[telid].peak_time = peak_time_ff_corrected
 
 
 def get_charge_correction(window_width, window_shift):
@@ -264,7 +264,7 @@ def get_charge_correction(window_width, window_shift):
         hg_pulse_shape = []
         lg_pulse_shape = []
         with open(pulse_ref_file, 'r') as file:
-                pulse_time_slice, pulse_time_step = file.readline().split()
+                peak_time_slice, peak_time_step = file.readline().split()
                 for line in file:
                     if "#" not in line:
                         columns = line.split()
@@ -275,8 +275,8 @@ def get_charge_correction(window_width, window_shift):
 
         pulse_correction = integration_correction(pulse_shape.shape[0],
                                                   pulse_shape,
-                                                  float(pulse_time_step),
-                                                  float(pulse_time_slice),
+                                                  float(peak_time_step),
+                                                  float(peak_time_slice),
                                                   window_width,
                                                   window_shift
                                                   )

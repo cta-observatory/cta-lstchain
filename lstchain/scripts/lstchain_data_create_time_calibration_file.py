@@ -93,7 +93,7 @@ def main():
         if event.r1.tel[tel_id].trigger_type == 4 or (
                 np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))> 300):
 
-            timeCorr.calibrate_pulse_time(event)
+            timeCorr.calibrate_peak_time(event)
     # write output
     timeCorr.finalize()
 

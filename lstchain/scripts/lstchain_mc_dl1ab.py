@@ -110,7 +110,7 @@ def main():
                 if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
-                pulse_time = row['pulse_time']
+                peak_time = row['peak_time']
 
                 signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
                 n_pixels = np.count_nonzero(signal_pixels)
@@ -126,7 +126,7 @@ def main():
                     dl1_container.fill_hillas(hillas)
                     dl1_container.set_timing_features(camera_geom[signal_pixels],
                                                       image[signal_pixels],
-                                                      pulse_time[signal_pixels],
+                                                      peak_time[signal_pixels],
                                                       hillas)
 
                     dl1_container.set_leakage(camera_geom, image, signal_pixels)

@@ -81,11 +81,12 @@ filters = tables.Filters(
 
 
 def get_dl1(
-    calibrated_event,
-    telescope_id,
-    dl1_container=None,
-    custom_config={},
-    use_main_island=True,
+        calibrated_event,
+        telescope,
+        telescope_id,
+        dl1_container=None,
+        custom_config={},
+        use_main_island=True,
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -95,6 +96,7 @@ def get_dl1(
     Parameters
     ----------
     calibrated_event: ctapipe event container
+    telescope: `ctapipe.instrument.telescope.TelescopeDescription`
     telescope_id: `int`
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
@@ -113,12 +115,11 @@ def get_dl1(
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
-    tel = calibrated_event.r0.tel[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
-    camera = tel.camera
+    camera = telescope.camera
 
     image = dl1.image
-    pulse_time = dl1.pulse_time
+    peak_time = dl1.peak_time
 
     signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
@@ -142,7 +143,7 @@ def get_dl1(
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera[signal_pixels],
                                           image[signal_pixels],
-                                          pulse_time[signal_pixels],
+                                          peak_time[signal_pixels],
                                           hillas)
         dl1_container.set_leakage(camera, image, signal_pixels)
         dl1_container.set_concentration(camera, image, hillas)
@@ -415,7 +416,9 @@ def r0_to_dl1(
                     lst_calibration(event, telescope_id)
 
                 try:
-                    dl1_filled = get_dl1(event, telescope_id,
+                    dl1_filled = get_dl1(event,
+                                         source.subarray.tel[telescope_id],
+                                         telescope_id,
                                          dl1_container=dl1_container,
                                          custom_config=config,
                                          use_main_island=True)
