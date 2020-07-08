@@ -80,7 +80,7 @@ def test_load_gain_selector_from_config_ManualGainSelector():
                   "gain_selector_config": {"channel": chan}
         }
 
-        gain_selector = load_gain_selector_from_config(config, subarray)
+        gain_selector = load_gain_selector_from_config(config)
 
         assert isinstance(gain_selector, ManualGainSelector)
         assert gain_selector.channel == chan
