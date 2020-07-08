@@ -9,7 +9,6 @@ from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.lstcontainers import LSTEventType
-from lstchain.calib.camera.calibrator import get_charge_correction
 
 __all__ = [
     'CalibrationCalculator',

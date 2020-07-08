@@ -8,7 +8,7 @@ from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.core.traits import  List, Unicode, Bool
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
-from lstchain.calib.camera.calibrator import get_charge_correction
+
 
 __all__ = [
     'FlasherFlatFieldCalculator'
