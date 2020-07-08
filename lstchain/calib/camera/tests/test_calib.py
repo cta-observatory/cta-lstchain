@@ -36,52 +36,23 @@ def test_gain_selection():
 def test_load_calibrator_from_config():
     from lstchain.io.config import get_standard_config
     from ctapipe.calib import CameraCalibrator
-    from ctapipe.calib.camera.gainselection import ThresholdGainSelector
     config = get_standard_config()
-
     cal = load_calibrator_from_config(config, subarray)
-
-    assert isinstance(cal.gain_selector, ThresholdGainSelector)
     assert isinstance(cal, CameraCalibrator)
+
 
 def test_load_calibrator_from_config_LocalPeakWindowSum():
     from ctapipe.image import LocalPeakWindowSum
     config = {"image_extractor": "LocalPeakWindowSum"}
-
     cal = load_calibrator_from_config(config, subarray)
-
     assert isinstance(cal.image_extractor, LocalPeakWindowSum)
+
 
 def test_load_calibrator_from_config_GlobalPeakWindowSum():
     from ctapipe.image import GlobalPeakWindowSum
     config = {"image_extractor": "GlobalPeakWindowSum"}
-
     cal = load_calibrator_from_config(config, subarray)
-
     assert isinstance(cal.image_extractor, GlobalPeakWindowSum)
-
-
-def test_load_calibrator_from_config_ThresholdGainSelector():
-
-    config = {"gain_selector": "ThresholdGainSelector",
-              "gain_selector_config": {"threshold": 300}}
-    cal = load_calibrator_from_config(config, subarray)
-
-    assert cal.gain_selector.threshold == 300
-
-
-def test_load_calibrator_from_config_ManualGainSelector():
-    from ctapipe.calib.camera.gainselection import ManualGainSelector
-
-    for chan in ["HIGH", "LOW"]:
-        config = {"gain_selector": "ManualGainSelector",
-                  "gain_selector_config": {"channel": chan}
-        }
-
-        cal = load_calibrator_from_config(config, subarray)
-
-        assert isinstance(cal.gain_selector, ManualGainSelector)
-        assert cal.gain_selector.channel == chan
 
 
 def test_load_image_extractor_from_config():
