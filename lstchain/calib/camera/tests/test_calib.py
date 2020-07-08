@@ -2,6 +2,15 @@ import numpy as np
 from lstchain.calib.camera.calib import gain_selection
 from astropy.utils import deprecated
 from lstchain.calib import load_calibrator_from_config, load_gain_selector_from_config, load_image_extractor_from_config
+from ctapipe.instrument import SubarrayDescription, TelescopeDescription
+
+subarray = SubarrayDescription(
+    "LST-1",
+    tel_positions={1: None},
+    tel_descriptions={
+        1: TelescopeDescription.from_name("LST", "LSTCam")
+    },
+)
 
 @deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
 def test_gain_selection():
@@ -29,8 +38,8 @@ def test_load_calibrator_from_config():
     from ctapipe.calib import CameraCalibrator
     from ctapipe.calib.camera.gainselection import ThresholdGainSelector
     config = get_standard_config()
-    cal = load_calibrator_from_config(config)
 
+    cal = load_calibrator_from_config(config, subarray)
 
     assert isinstance(cal.gain_selector, ThresholdGainSelector)
     assert isinstance(cal, CameraCalibrator)
@@ -39,7 +48,7 @@ def test_load_calibrator_from_config_LocalPeakWindowSum():
     from ctapipe.image import LocalPeakWindowSum
     config = {"image_extractor": "LocalPeakWindowSum"}
 
-    cal = load_calibrator_from_config(config)
+    cal = load_calibrator_from_config(config, subarray)
 
     assert isinstance(cal.image_extractor, LocalPeakWindowSum)
 
@@ -47,7 +56,7 @@ def test_load_calibrator_from_config_GlobalPeakWindowSum():
     from ctapipe.image import GlobalPeakWindowSum
     config = {"image_extractor": "GlobalPeakWindowSum"}
 
-    cal = load_calibrator_from_config(config)
+    cal = load_calibrator_from_config(config, subarray)
 
     assert isinstance(cal.image_extractor, GlobalPeakWindowSum)
 
@@ -56,7 +65,7 @@ def test_load_calibrator_from_config_ThresholdGainSelector():
 
     config = {"gain_selector": "ThresholdGainSelector",
               "gain_selector_config": {"threshold": 300}}
-    cal = load_calibrator_from_config(config)
+    cal = load_calibrator_from_config(config, subarray)
 
     assert cal.gain_selector.threshold == 300
 
@@ -69,7 +78,7 @@ def test_load_calibrator_from_config_ManualGainSelector():
                   "gain_selector_config": {"channel": chan}
         }
 
-        cal = load_calibrator_from_config(config)
+        cal = load_calibrator_from_config(config, subarray)
 
         assert isinstance(cal.gain_selector, ManualGainSelector)
         assert cal.gain_selector.channel == chan
@@ -85,7 +94,7 @@ def test_load_image_extractor_from_config():
                       }
     }
 
-    image_extractor = load_image_extractor_from_config(config)
+    image_extractor = load_image_extractor_from_config(config, subarray)
 
     assert isinstance(image_extractor, LocalPeakWindowSum)
     assert image_extractor.window_shift == 1
@@ -100,7 +109,7 @@ def test_load_gain_selector_from_config_ManualGainSelector():
                   "gain_selector_config": {"channel": chan}
         }
 
-        gain_selector = load_gain_selector_from_config(config)
+        gain_selector = load_gain_selector_from_config(config, subarray)
 
         assert isinstance(gain_selector, ManualGainSelector)
         assert gain_selector.channel == chan
