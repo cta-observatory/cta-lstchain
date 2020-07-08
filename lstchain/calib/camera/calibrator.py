@@ -185,7 +185,12 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
 
         # for the moment we do the gain selection afterwards
-        # use dummy gain mask
+        # use gain mask without gain selection
+
+        # TBD: - perform calibration of the R1 waveform (not DL1)
+        #      - gain selection before charge integration
+
+
         no_gain_selection= np.zeros((waveforms.shape[0],waveforms.shape[1]), dtype=np.int)
 
         charge, pulse_time = self.image_extractor(waveforms, telid, no_gain_selection)
