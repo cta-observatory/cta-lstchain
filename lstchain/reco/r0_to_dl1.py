@@ -82,7 +82,7 @@ filters = tables.Filters(
 
 def get_dl1(
         calibrated_event,
-        telescope,
+        subarray,
         telescope_id,
         dl1_container=None,
         custom_config={},
@@ -96,7 +96,7 @@ def get_dl1(
     Parameters
     ----------
     calibrated_event: ctapipe event container
-    telescope: `ctapipe.instrument.telescope.TelescopeDescription`
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     telescope_id: `int`
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
@@ -116,6 +116,7 @@ def get_dl1(
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
+    telescope = subarray.tel[telescope_id]
     camera_geometry = telescope.camera.geometry
 
     image = dl1.image
@@ -139,7 +140,7 @@ def get_dl1(
         # Fill container
         dl1_container.fill_hillas(hillas)
         dl1_container.fill_event_info(calibrated_event)
-        dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
+        dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
                                           image[signal_pixels],
@@ -417,7 +418,7 @@ def r0_to_dl1(
 
                 try:
                     dl1_filled = get_dl1(event,
-                                         source.subarray.tel[telescope_id],
+                                         subarray,
                                          telescope_id,
                                          dl1_container=dl1_container,
                                          custom_config=config,
