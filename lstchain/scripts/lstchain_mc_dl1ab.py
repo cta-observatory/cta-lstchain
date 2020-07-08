@@ -89,9 +89,12 @@ def main():
         'leakage_intensity_width_2',
         'leakage_pixels_width_1',
         'leakage_pixels_width_2',
-        'n_islands', 'intercept', 'time_gradient'
+        'n_islands',
+        'intercept',
+        'time_gradient',
         'n_pixels',
-        'wl', 'r',
+        'wl',
+        'r',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -136,8 +139,8 @@ def main():
                     dl1_container.n_pixels = n_pixels
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width.value
-                    dl1_container.length = length.value
+                    dl1_container.width = width
+                    dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
                     for p in parameters_to_update:
