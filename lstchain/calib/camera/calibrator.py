@@ -7,7 +7,7 @@ from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
-from lstchain.calib.camera.peak_time_correction import PulseTimeCorrection
+from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 
 __all__ = ['LSTCameraCalibrator']
