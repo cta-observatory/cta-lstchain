@@ -67,7 +67,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file="none"):
      """
     # read geometry
     camera = load_camera_geometry()
-    camera.transform_to(EngineeringCameraFrame())
+    camera = camera.transform_to(EngineeringCameraFrame())
 
     # plot open pdf
     if plot_file != "none":
