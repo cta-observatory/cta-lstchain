@@ -32,5 +32,5 @@ def test_display_dl1_event():
     seeker = EventSeeker(source)
     event = seeker[11]  # event 11 has telescopes 1 and 4 with data
     CameraCalibrator()(event)
-    display_dl1_event(event, tel_id=1)
-    display_dl1_event(event, tel_id=4)
+    display_dl1_event(event, source.subarray.tel[1].camera.geometry, tel_id=1)
+    display_dl1_event(event, source.subarray.tel[4].camera.geometry, tel_id=4)
