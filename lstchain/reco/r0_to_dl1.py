@@ -566,10 +566,10 @@ def r0_to_dl1(
                     # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = source.subarray.tel[telescope_id].optics.equivalent_focal_length
                     mirror_area = u.Quantity(source.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
-                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width.value
-                    dl1_container.length = length.value
+                    # width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                    # length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                    # dl1_container.width = width.value
+                    # dl1_container.length = length.value
                     dl1_container.prefix = tel.prefix
 
                     # extra info for the image table
@@ -644,7 +644,7 @@ def r0_to_dl1(
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
-                            and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
+                            and (event.mc.tel[telescope_id].true_image > 0).any() \
                             and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
                         writer.write(table_name=f'simulation/{tel_name}',
