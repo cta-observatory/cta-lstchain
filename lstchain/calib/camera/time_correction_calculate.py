@@ -59,7 +59,23 @@ class TimeCorrectionCalculate(Component):
                               help='Path to the time calibration file'
                               ).tag(config=True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, subarray, **kwargs):
+        """
+        The TimeCorrectionCalculate class to create h5py
+        file with coefficients for time correction curve of chip DRS4.
+        Description of this method: "Analysis techniques and performance
+        of the Domino Ring Sampler version 4 based readout
+        for the MAGIC telescopes [arxiv:1305.1007]
+
+        Parameters
+        ----------
+        subarray: ctapipe.instrument.SubarrayDescription
+            Description of the subarray. Provides information about the
+            camera which are useful in charge extraction, such as reference
+            pulse shape, sampling rate, neighboring pixels. Also required for
+            configuring the TelescopeParameter traitlets.
+        kwargs
+        """
         super().__init__(**kwargs)
 
         self.n_bins = int(self.n_capacitors / self.n_combine)
@@ -72,7 +88,8 @@ class TimeCorrectionCalculate(Component):
         # load the waveform charge extractor
         self.extractor = ImageExtractor.from_name(
             self.charge_product,
-            config=self.config
+            config=self.config,
+            subarray=subarray
         )
 
         self.log.info(f"extractor {self.extractor}")
@@ -90,8 +107,14 @@ class TimeCorrectionCalculate(Component):
                 self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 
             pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
-            charge, peak_time = self.extractor(event.r1.tel[self.tel_id].waveform)
-            self.calib_peak_time_jit(charge,
+            waveforms = event.r1.tel[self.tel_id].waveform
+            no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+            # select both gain
+            charge, peak_time = self.extractor(
+                    event.r1.tel[self.tel_id].waveform[:, :, :],
+                    self.tel_id,
+                    no_gain_selection)
+            self.calib_pulse_time_jit(charge,
                                       peak_time,
                                       pixel_ids,
                                       self.first_cap_array,
@@ -249,4 +272,3 @@ class TimeCorrectionCalculate(Component):
 
         except Exception as err:
             print(f"FAILED to create the file {self.calib_file_path}", err)
-
