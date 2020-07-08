@@ -51,7 +51,7 @@ def get_volume_reduction_method(config_file):
     return algorithm
 
 
-def apply_volume_reduction(event, config):
+def apply_volume_reduction(event, subarray, config):
     """
     Checks the volume reduction algorithm defined in the config file, and if not None, it applies
      to a **calibrated** event the volume reduction method.
@@ -82,13 +82,13 @@ def apply_volume_reduction(event, config):
 
         for tel_id in event.r0.tels_with_data:
 
-            camera = event.inst.subarray.tel[tel_id].camera
+            camera_geometry = subarray.tel[tel_id].camera.geometry
 
             image = event.dl1.tel[tel_id].image  # Volume reduction mask computed, to date, at dl1 level !
             peak_time = event.dl1.tel[tel_id].peak_time
             waveform = event.dl0.tel[tel_id].waveform
 
-            pixels_to_keep = volume_reduction_algorithm(camera, image, **parameters)
+            pixels_to_keep = volume_reduction_algorithm(camera_geometry, image, **parameters)
 
             image[~pixels_to_keep] = 0
             peak_time[~pixels_to_keep] = 0
