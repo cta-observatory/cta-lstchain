@@ -148,7 +148,7 @@ def gain_selection(waveform, charges, peak_time, threshold):
 
     gain_selector = gainselection.ThresholdGainSelector(threshold=threshold)
 
-    waveform, gain_mask = gain_selector(waveform)
+    gain_mask = gain_selector(waveform)
 
     combined_image = charges[gain_mask, np.arange(charges.shape[1])]
     combined_peak_time = peak_time[gain_mask, np.arange(peak_time.shape[1])]
