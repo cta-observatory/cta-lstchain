@@ -1,4 +1,4 @@
-
+from pathlib import Path
 from matplotlib import pyplot as plt
 from traitlets.config.loader import Config
 import numpy as np
@@ -23,17 +23,12 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
 
      Parameters
      ----------
-     data_file:   pedestal run
-
-     pedestal_file:   file with drs4 corrections
-
-     run: run number of data to be corrected
-
-     plot_file:  name of output pdf file
-
-     tel_id: id of the telescope
-
-     offset_value: baseline off_set
+     data_file:   `str` pedestal run
+     pedestal_file:   `str` file with drs4 corrections
+     run: `int` run number of data to be corrected
+     plot_file:  `str` name of output pdf file
+     tel_id: `int` id of the telescope
+     offset_value: `float` baseline off_set
      """
 
     # plot open pdf
@@ -47,7 +42,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
                                 tel_id=tel_id )
 
     # event_reader
-    reader = event_source(data_file, max_events=1000)
+    data_path = Path(data_file)
+    reader = event_source(data_path, max_events=1000)
     t = np.linspace(2, 37, 36)
 
     # configuration for the charge integrator

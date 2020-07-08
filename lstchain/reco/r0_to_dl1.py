@@ -210,7 +210,7 @@ def r0_to_dl1(
     custom_calibration = config["custom_calibration"]
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = event_source(str(input_filename))
+    source = event_source(Path(input_filename))
 
     is_simu = source.metadata['is_simulation']
 
