@@ -349,7 +349,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
         writer.write("run_config", [extramc, mcheader])
 
 
-def write_array_info(event, output_filename):
+def write_array_info(subarray, output_filename):
     """
     Write the array info to a HDF5 file
         - layout info is writen in '/instrument/subarray/layout'
@@ -358,31 +358,30 @@ def write_array_info(event, output_filename):
 
     Parameters
     ----------
-    event: `ctapipe.io.DataContainer`
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     output_filename: str
     """
 
     serialize_meta = True
 
-    sub = event.inst.subarray
-    sub.to_table().write(
+    subarray.to_table().write(
         output_filename,
         path="/instrument/subarray/layout",
         serialize_meta=serialize_meta,
         append=True
     )
 
-    sub.to_table(kind='optics').write(
+    subarray.to_table(kind='optics').write(
         output_filename,
         path='/instrument/telescope/optics',
         append=True,
         serialize_meta=serialize_meta
     )
-    for telescope_type in sub.telescope_types:
-        ids = set(sub.get_tel_ids_for_type(telescope_type))
+    for telescope_type in subarray.telescope_types:
+        ids = set(subarray.get_tel_ids_for_type(telescope_type))
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
-            camera = sub.tel[tel_id].camera
+            camera = subarray.tel[tel_id].camera
             camera_name = str(camera)
 
             with tables.open_file(output_filename, mode='a') as f:
@@ -396,7 +395,7 @@ def write_array_info(event, output_filename):
                         )
                         continue
 
-            camera.to_table().write(
+            camera.geometry.to_table().write(
                 output_filename,
                 path=f'/instrument/telescope/camera/{camera_name}',
                 append=True,
@@ -571,10 +570,10 @@ def write_subarray_tables(writer, event, metadata=None):
     if metadata is not None:
         add_global_metadata(event.dl0, metadata)
         add_global_metadata(event.mc, metadata)
-        add_global_metadata(event.trig, metadata)
+        add_global_metadata(event.trigger, metadata)
 
     writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
+    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trigger])
 
 
 def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
