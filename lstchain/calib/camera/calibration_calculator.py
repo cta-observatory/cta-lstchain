@@ -188,7 +188,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
-        calib_data.time_range = ff_data.sample_time_range
+        calib_data.time_min = ff_data.sample_time_min
+        calib_data.time_max = ff_data.sample_time_max
         calib_data.n_pe = n_pe
 
         # find signal median of good pixels
@@ -210,7 +211,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # flat-field time corrections
         calib_data.time_correction = -ff_data.relative_time_median
 
-        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
+        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # put to zero unusable pixels
         calib_data.dc_to_pe[calib_data.unusable_pixels] = 0
