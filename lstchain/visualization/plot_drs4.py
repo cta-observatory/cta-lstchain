@@ -1,17 +1,18 @@
 from pathlib import Path
-from matplotlib import pyplot as plt
-from traitlets.config.loader import Config
+
 import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.io import event_source
-from lstchain.calib.camera.r0 import LSTR0Corrections
-from ctapipe.instrument import  CameraGeometry
-
-
 from ctapipe.calib.camera.pedestals import PedestalIntegrator
+from ctapipe.instrument import CameraGeometry
+from ctapipe.io import event_source
 from ctapipe.visualization import CameraDisplay
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+from traitlets.config.loader import Config
 
-__all__ = ['plot_pedestals',
+from lstchain.calib.camera.r0 import LSTR0Corrections
+
+__all__ = [
+        'plot_pedestals',
            ]
 
 channel = ['HG', 'LG']
