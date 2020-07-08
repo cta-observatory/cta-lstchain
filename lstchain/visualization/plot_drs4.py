@@ -80,8 +80,8 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
             ped_data = event.mon.tel[tel_id].pedestal
             break
 
-    camera = reader.subarray.tels[tel_id].camera.geometry
-    camera = camera.transform_to(EngineeringCameraFrame())
+    camera_geometry = reader.subarray.tels[tel_id].camera.geometry
+    camera_geometry = camera_geometry.transform_to(EngineeringCameraFrame())
     # plot open pdf
     if plot_file != "none":
         pp = PdfPages(plot_file)
@@ -101,7 +101,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         pad += 1
         plt.subplot(pad)
         plt.tight_layout()
-        disp = CameraDisplay(camera)
+        disp = CameraDisplay(camera_geometry)
         mymin = np.median(image[chan]) - 2 * np.std(image[chan])
         mymax = np.median(image[chan]) + 2 * np.std(image[chan])
         disp.set_limits_minmax(mymin, mymax)
@@ -118,7 +118,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
         pad += 1
         plt.subplot(pad)
         plt.tight_layout()
-        disp = CameraDisplay(camera)
+        disp = CameraDisplay(camera_geometry)
         mymin = np.median(image[chan]) - 2 * np.std(image[chan])
         mymax = np.median(image[chan]) + 2 * np.std(image[chan])
         disp.set_limits_minmax(mymin, mymax)
