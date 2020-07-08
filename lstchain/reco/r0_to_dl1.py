@@ -113,7 +113,7 @@ def get_dl1(
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
-    tel = calibrated_event.inst.subarray.tels[telescope_id]
+    tel = calibrated_event.r0.tel[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
     camera = tel.camera
 
@@ -212,7 +212,8 @@ def r0_to_dl1(
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
     source = event_source(str(input_filename))
 
-    is_simu = source.metadata['is_simulation']
+    # is_simu = source.metadata['is_simulation']
+    is_simu = source.is_simulation
 
     source.allowed_tels = config["allowed_tels"]
     if config["max_events"] is not None:
@@ -221,7 +222,10 @@ def r0_to_dl1(
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
-    cal_mc = load_calibrator_from_config(config)
+    # cal_mc = load_calibrator_from_config(config)
+    from ctapipe.calib import CameraCalibrator
+    # from ctapipe.image.extractor import LocalPeakWindowSum
+    cal_mc = CameraCalibrator(subarray=source.subarray)
 
     # minimum number of pe in a pixel to include it
     # in calculation of muon ring time (peak sample):
@@ -292,12 +296,13 @@ def r0_to_dl1(
     first_event = next(event_iter)
 
     # Write extra information to the DL1 file
-    write_array_info(first_event, output_filename)
+    write_array_info(source.subarray, output_filename)
+
     if is_simu:
         write_mcheader(
             first_event.mcheader,
             output_filename,
-            obs_id=first_event.r0.obs_id,
+            obs_id=first_event.index.obs_id,
             filters=filters,
             metadata=metadata,
         )
@@ -312,7 +317,7 @@ def r0_to_dl1(
     ) as writer:
 
         if is_simu:
-            subarray = first_event.inst.subarray
+            subarray = source.subarray
             # build a mapping of tel_id back to tel_index:
             # (note this should be part of SubarrayDescription)
             idx = np.zeros(max(subarray.tel_indices) + 1)
@@ -322,7 +327,7 @@ def r0_to_dl1(
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(
                 utils.expand_tel_list,
-                max_tels=max(first_event.inst.subarray.tel) + 1,
+                max_tels=max(source.subarray.tel) + 1,
             )
 
             writer.add_column_transform(
@@ -346,7 +351,7 @@ def r0_to_dl1(
 
             event.dl0.prefix = ''
             event.mc.prefix = 'mc'
-            event.trig.prefix = ''
+            event.trigger.prefix = ''
 
 
             # write sub tables
@@ -404,7 +409,7 @@ def r0_to_dl1(
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
+                tel_name = str(source.subarray.tel[telescope_id])[4:]
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -432,7 +437,7 @@ def r0_to_dl1(
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trig.gps_time.value
+                    dl1_container.gps_time = event.trigger.time.value
 
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
@@ -555,8 +560,8 @@ def r0_to_dl1(
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
 
                     # FIXME: no need to read telescope characteristics like foclen for every event!
-                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
-                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+                    foclen = source.subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(source.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width.value
@@ -612,7 +617,7 @@ def r0_to_dl1(
                                 good_ring = False
                             else:
                                 # read geometry from event.inst. But not needed for every event. FIXME?
-                                geom = event.inst.subarray.tel[telescope_id].camera
+                                geom = source.subarray.tel[telescope_id].camera
 
                                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                     radial_distribution, mean_pixel_charge_around_ring = \
@@ -668,7 +673,7 @@ def r0_to_dl1(
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
         if source.max_events is None:
-            write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
+            write_simtel_energy_histogram(source, output_filename, obs_id=event.index.obs_id,
                                           metadata=metadata)
     else:
         dir, name = os.path.split(output_filename)
