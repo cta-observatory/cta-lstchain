@@ -107,12 +107,13 @@ class TimeCorrectionCalculate(Component):
                 self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 
             pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
-            selected_gain = np.zeros((2,1855), dtype=np.int8)
+            waveforms = event.r1.tel[self.tel_id].waveform
+            no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
             # select both gain
             charge, pulse_time = self.extractor(
                     event.r1.tel[self.tel_id].waveform[:, :, :],
                     self.tel_id,
-                    selected_gain)
+                    no_gain_selection)
             self.calib_pulse_time_jit(charge,
                                       pulse_time,
                                       pixel_ids,
