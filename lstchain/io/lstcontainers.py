@@ -7,7 +7,7 @@ import numpy as np
 from astropy.units import Quantity
 from ctapipe.core import Container, Field
 from ctapipe.image import leakage, concentration
-from ctapipe.image import timing_parameters as time
+from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
@@ -165,7 +165,7 @@ class DL1ParametersContainer(Container):
 
     def set_timing_features(self, geom, image, peak_time, hillas):
         try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
-            timepars = time.timing_parameters(geom, image, peak_time, hillas)
+            timepars = timing_parameters(geom, image, peak_time, hillas)
             self.time_gradient = timepars.slope.value
             self.intercept = timepars.intercept
         except ValueError:
