@@ -147,8 +147,7 @@ class DL1ParametersContainer(Container):
             for k in features_names
         ])
 
-    def set_mc_core_distance(self, event, telescope_id):
-        tel_pos = event.inst.subarray.positions[telescope_id]
+    def set_mc_core_distance(self, event, tel_pos):
         distance = np.sqrt(
             (event.mc.core_x - tel_pos[0]) ** 2 +
             (event.mc.core_y - tel_pos[1]) ** 2
