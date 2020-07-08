@@ -32,12 +32,12 @@ from .volume_reducer import apply_volume_reduction
 from ..datachecks.dl1_checker import check_dl1
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera.calib import load_gain_selector_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-
 
 from ..io import (
     write_simtel_energy_histogram,
@@ -210,11 +210,12 @@ def r0_to_dl1(
     config = replace_config(standard_config, custom_config)
 
     custom_calibration = config["custom_calibration"]
+    gain_selector = load_gain_selector_from_config(config)
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = event_source(str(input_filename))
+    source = event_source(str(input_filename), gain_selector=gain_selector)
+    subarray = source.subarray
 
-    # is_simu = source.metadata['is_simulation']
     is_simu = source.is_simulation
 
     source.allowed_tels = config["allowed_tels"]
@@ -224,10 +225,7 @@ def r0_to_dl1(
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
-    # cal_mc = load_calibrator_from_config(config)
-    from ctapipe.calib import CameraCalibrator
-    # from ctapipe.image.extractor import LocalPeakWindowSum
-    cal_mc = CameraCalibrator(subarray=source.subarray)
+    cal_mc = load_calibrator_from_config(config, subarray)
 
     # minimum number of pe in a pixel to include it
     # in calculation of muon ring time (peak sample):
@@ -253,7 +251,7 @@ def r0_to_dl1(
                                                 apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                 config = Config(config),
                                                 allowed_tels = [1],
-                                                subarray = source.subarray
+                                                subarray = subarray
                                                 )
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
@@ -266,7 +264,7 @@ def r0_to_dl1(
                                                                apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                                config = Config(config),
                                                                allowed_tels = [1],
-                                                               subarray = source.subarray)
+                                                               subarray = subarray)
 
 
         # Component to process interleaved pedestal and flat-fields
@@ -298,7 +296,7 @@ def r0_to_dl1(
     first_event = next(event_iter)
 
     # Write extra information to the DL1 file
-    write_array_info(source.subarray, output_filename)
+    write_array_info(subarray, output_filename)
 
     if is_simu:
         write_mcheader(
@@ -319,7 +317,7 @@ def r0_to_dl1(
     ) as writer:
 
         if is_simu:
-            subarray = source.subarray
+            subarray = subarray
             # build a mapping of tel_id back to tel_index:
             # (note this should be part of SubarrayDescription)
             idx = np.zeros(max(subarray.tel_indices) + 1)
@@ -329,7 +327,7 @@ def r0_to_dl1(
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(
                 utils.expand_tel_list,
-                max_tels=max(source.subarray.tel) + 1,
+                max_tels=max(subarray.tel) + 1,
             )
 
             writer.add_column_transform(
@@ -401,7 +399,7 @@ def r0_to_dl1(
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
-            apply_volume_reduction(event, source.subarray, config)
+            apply_volume_reduction(event, subarray, config)
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
@@ -411,7 +409,7 @@ def r0_to_dl1(
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                tel_name = str(source.subarray.tel[telescope_id])[4:]
+                tel_name = str(subarray.tel[telescope_id])[4:]
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -564,8 +562,8 @@ def r0_to_dl1(
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
 
                     # FIXME: no need to read telescope characteristics like foclen for every event!
-                    foclen = source.subarray.tel[telescope_id].optics.equivalent_focal_length
-                    mirror_area = u.Quantity(source.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+                    foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width
@@ -621,7 +619,7 @@ def r0_to_dl1(
                                 good_ring = False
                             else:
                                 # read geometry from event.inst. But not needed for every event. FIXME?
-                                geom = source.subarray.tel[telescope_id].camera
+                                geom = subarray.tel[telescope_id].camera
 
                                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                     radial_distribution, mean_pixel_charge_around_ring = \
