@@ -110,7 +110,8 @@ class CalibrationHDF5Writer(Tool):
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,
-            parent=self
+            parent=self,
+            subarray = self.eventsource.subarray
         )
 
         if self.r0calibrator_product:
@@ -207,7 +208,7 @@ class CalibrationHDF5Writer(Tool):
                         self.processor.pedestal.store_results(event)
 
                     # write the event
-                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.r0.event_id} "
+                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.index.event_id} "
                                    f"stat = {ped_data.n_events} events")
 
                     # write on file
@@ -222,7 +223,7 @@ class CalibrationHDF5Writer(Tool):
                     if end_of_file:
                         self.processor.flatfield.store_results(event)
 
-                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.r0.event_id} "
+                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.index.event_id} "
                                    f"stat = {ff_data.n_events} events")
 
                     # write on file
