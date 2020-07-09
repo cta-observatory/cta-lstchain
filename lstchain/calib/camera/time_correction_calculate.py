@@ -114,7 +114,7 @@ class TimeCorrectionCalculate(Component):
                     event.r1.tel[self.tel_id].waveform[:, :, :],
                     self.tel_id,
                     no_gain_selection)
-            self.calib_pulse_time_jit(charge,
+            self.calib_peak_time_jit(charge,
                                       peak_time,
                                       pixel_ids,
                                       self.first_cap_array,
