@@ -95,7 +95,7 @@ class TimeCorrectionCalculate(Component):
         self.log.info(f"extractor {self.extractor}")
         self.sum_events = 0
 
-    def calibrate_pulse_time(self, event):
+    def calibrate_peak_time(self, event):
         """
         Fill bins using time pulse from LocalPeakWindowSum.
         Parameters
@@ -110,12 +110,12 @@ class TimeCorrectionCalculate(Component):
             waveforms = event.r1.tel[self.tel_id].waveform
             no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
             # select both gain
-            charge, pulse_time = self.extractor(
+            charge, peak_time = self.extractor(
                     event.r1.tel[self.tel_id].waveform[:, :, :],
                     self.tel_id,
                     no_gain_selection)
             self.calib_pulse_time_jit(charge,
-                                      pulse_time,
+                                      peak_time,
                                       pixel_ids,
                                       self.first_cap_array,
                                       self.mean_values_per_bin,
@@ -127,8 +127,8 @@ class TimeCorrectionCalculate(Component):
 
     @staticmethod
     @jit(parallel=True)
-    def calib_pulse_time_jit(charge,
-                             pulse_time,
+    def calib_peak_time_jit(charge,
+                             peak_time,
                              pixel_ids,
                              first_cap_array,
                              mean_values_per_bin,
@@ -176,7 +176,7 @@ class TimeCorrectionCalculate(Component):
                         fc = first_cap_array[nr_module, :, :]
                         first_cap = (fc[gain, pix]) % n_cap
                         bin = int(first_cap / n_combine)
-                        mean_values_per_bin[gain, pixel, bin] += pulse_time[gain, pixel]
+                        mean_values_per_bin[gain, pixel, bin] += peak_time[gain, pixel]
                         entries_per_bin[gain, pixel, bin] += 1
 
     def finalize(self):

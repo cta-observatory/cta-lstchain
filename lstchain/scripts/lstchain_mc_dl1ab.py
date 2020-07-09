@@ -87,11 +87,14 @@ def main():
         'concentration_pixel',
         'leakage_intensity_width_1',
         'leakage_intensity_width_2',
-        'leakage_pixel_width_1',
-        'leakage_pixel_width_2',
-        'n_islands', 'intercept', 'time_gradient'
+        'leakage_pixels_width_1',
+        'leakage_pixels_width_2',
+        'n_islands',
+        'intercept',
+        'time_gradient',
         'n_pixels',
-        'wl', 'r',
+        'wl',
+        'r',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -110,7 +113,7 @@ def main():
                 if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
-                pulse_time = row['pulse_time']
+                peak_time = row['peak_time']
 
                 signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
                 n_pixels = np.count_nonzero(signal_pixels)
@@ -126,7 +129,7 @@ def main():
                     dl1_container.fill_hillas(hillas)
                     dl1_container.set_timing_features(camera_geom[signal_pixels],
                                                       image[signal_pixels],
-                                                      pulse_time[signal_pixels],
+                                                      peak_time[signal_pixels],
                                                       hillas)
 
                     dl1_container.set_leakage(camera_geom, image, signal_pixels)
@@ -136,8 +139,8 @@ def main():
                     dl1_container.n_pixels = n_pixels
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width.value
-                    dl1_container.length = length.value
+                    dl1_container.width = width
+                    dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
                     for p in parameters_to_update:

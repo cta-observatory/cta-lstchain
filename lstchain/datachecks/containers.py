@@ -269,7 +269,7 @@ class DL1DataCheckContainer(Container):
         # containing very little signal. For time plots we require at least 1
         # p.e. We will also exclude NaNs from the calculations
 
-        time = table.col('pulse_time')[mask]
+        time = table.col('peak_time')[mask]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 

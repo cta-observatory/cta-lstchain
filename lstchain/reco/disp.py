@@ -36,14 +36,14 @@ def disp(cog_x, cog_y, src_x, src_y):
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
     disp_norm = np.sqrt(disp_dx**2 + disp_dy**2)
-    if type(disp_dx) == float:
+    if hasattr(disp_dx, '__len__'):
+        disp_angle = np.arctan(disp_dy / disp_dx)
+        disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
+    else:
         if disp_dx == 0:
             disp_angle = np.pi/2. * np.sign(disp_dy)
         else:
             disp_angle = np.arctan(disp_dy/disp_dx)
-    else:
-        disp_angle = np.arctan(disp_dy / disp_dx)
-        disp_angle[disp_dx==0] = np.pi/2. * disp_angle.unit * np.sign(disp_dy[disp_dx==0])
 
     disp_sign = np.sign(disp_dx)
 
