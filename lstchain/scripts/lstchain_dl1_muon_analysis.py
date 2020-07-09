@@ -155,8 +155,9 @@ def main():
                 #    continue
 
                 (
-                    muonintensityparam, size_outside_ring, muonringparam, good_ring,
-                    radial_distribution, mean_pixel_charge_around_ring,
+                    muonintensityparam, size, size_outside_ring, muonringparam,
+                    good_ring, radial_distribution,
+                    mean_pixel_charge_around_ring,
                 ) = analyze_muon_event(
                     event_id, image, geom, equivalent_focal_length,
                     mirror_area, args.plot_rings, args.plots_path
@@ -171,7 +172,7 @@ def main():
                 fill_muon_event(
                     output_parameters, good_ring, event_id, dragon_time,
                     muonintensityparam, muonringparam, radial_distribution,
-                    size_outside_ring, mean_pixel_charge_around_ring,
+                    size, size_outside_ring, mean_pixel_charge_around_ring,
                 )
 
                 if max_muons is not None and num_muons == max_muons:
