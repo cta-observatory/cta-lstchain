@@ -225,9 +225,12 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
         #     (pix_ringwidth_im > tailcuts[0]).sum() / len(pix_ringwidth_im)
 
     else:
-        # just to have the default values:
+        # just to have the default values with units:
         muonintensityoutput = MuonEfficiencyContainer()
-
+        muonintensityoutput.width = u.Quantity(np.nan, u.deg)
+        muonintensityoutput.impact = u.Quantity(np.nan, u.m)
+        muonintensityoutput.impact_x = u.Quantity(np.nan, u.m)
+        muonintensityoutput.impact_y = u.Quantity(np.nan, u.m)
 
     # muonintensityoutput.mask = dist_mask
     ring_size = np.sum(pix_ring)
