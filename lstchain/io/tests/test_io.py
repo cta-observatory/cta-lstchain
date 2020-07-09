@@ -115,4 +115,5 @@ def test_read_subarray_description():
     source = event_source(mc_gamma_testfile)
     dl1_subarray = read_subarray_description(dl1_file)
     dl1_subarray.peek()
-    assert(dl1_subarray.info() == source.subarray.info())
+    dl1_subarray.info()
+    assert len(dl1_subarray.tels) ==  len(source.subarray.tels)
