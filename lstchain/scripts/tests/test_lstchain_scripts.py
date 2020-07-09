@@ -88,8 +88,12 @@ def test_lstchain_mc_trainpipe():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_mc_rfperformance():
     gamma_file = dl1_file
-    produce_fake_dl1_proton_file()
+    produce_fake_dl1_proton_file(dl1_file)
+    #produce_fake_dl1_proton_file()
     proton_file = fake_dl1_proton_file
+
+    print('proton_file', proton_file)
+    print('gamma_file', gamma_file)
 
     run_program(
         'lstchain_mc_rfperformance',
