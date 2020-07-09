@@ -409,14 +409,16 @@ def create_muon_table():
             'muon_efficiency': [],
             'ring_containment': [],
             'ring_completeness': [],
-            'ring_pixel_completeness': [],
+            #  missing in ctapipe 0.8:
+            # 'ring_pixel_completeness': [],
             'impact_parameter': [],
             'impact_x_array': [],
             'impact_y_array': [],
             'radial_stdev' : [],                  # Standard deviation of (cleaned) light distribution along ring radius
             'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
             'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
-            'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
+            #  missing in ctapipe 0.8:
+            #  'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
             'mean_pixel_charge_around_ring' : [], # Average pixel charge in pixels surrounding the outer part of the ring
             'hg_peak_sample' : [],                # Peak sample of stacked HG waveforms of bright ring pixels
             'lg_peak_sample' : [],                # Peak sample of stacked LG waveforms of bright ring pixels
@@ -441,6 +443,7 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time,
     output_parameters['muon_efficiency'].append(muonintensityparam.optical_efficiency)
     output_parameters['ring_containment'].append(muonparameters.containment)
     output_parameters['ring_completeness'].append(muonparameters.completeness)
+    #  missing in ctapipe 0.8:
     # output_parameters['ring_pixel_completeness'].append(muonintensityparam.ring_pix_completeness)
     output_parameters['impact_parameter'].append(muonintensityparam.impact.value)
     output_parameters['impact_x_array'].append(muonintensityparam.impact_x.value)
@@ -448,6 +451,7 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time,
     output_parameters['radial_stdev'].append(radial_distribution['standard_dev'].value)
     output_parameters['radial_skewness'].append(radial_distribution['skewness'])
     output_parameters['radial_excess_kurtosis'].append(radial_distribution['excess_kurtosis'])
+    #  missing in ctapipe 0.8:
     #output_parameters['num_pixels_in_ring'].append(np.sum(muonintensityparam.mask))
     output_parameters['mean_pixel_charge_around_ring'].append(mean_pixel_charge_around_ring)
     output_parameters['hg_peak_sample'].append(hg_peak_sample)
