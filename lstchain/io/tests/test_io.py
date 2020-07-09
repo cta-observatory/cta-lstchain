@@ -117,3 +117,4 @@ def test_read_subarray_description():
     dl1_subarray.peek()
     dl1_subarray.info()
     assert len(dl1_subarray.tels) ==  len(source.subarray.tels)
+    assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
