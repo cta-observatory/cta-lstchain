@@ -114,4 +114,5 @@ def test_read_subarray_description():
     from ctapipe.io import event_source
     source = event_source(mc_gamma_testfile)
     dl1_subarray = read_subarray_description(dl1_file)
+    dl1_subarray.peek()
     assert(dl1_subarray.info() == source.subarray.info())
