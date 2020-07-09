@@ -212,9 +212,9 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
         muonparameters.completeness = ring_completeness(
             x[dist_ringwidth_mask], y[dist_ringwidth_mask],
                 image[dist_ringwidth_mask],
-            muonringparam.ring_radius,
-            muonringparam.ring_center_x,
-            muonringparam.ring_center_y,
+            muonringparam.radius,
+            muonringparam.center_x,
+            muonringparam.center_y,
             threshold=30,
             bins=30)
 
@@ -242,7 +242,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
               "ring completeness={:.3f}".format(
                 muonintensityoutput.impact,
                 muonintensityoutput.width,
-                muonringparam.ring_radius,
+                muonringparam.radius,
                 muonparameters.completeness,))
     # Now add the conditions based on the detailed muon ring fit:
     conditions = [
@@ -277,7 +277,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
             rotation=geom.cam_rotation,
         ))
         centroid = (ring_camcoord.x.value, ring_camcoord.y.value)
-        radius = muonringparam.ring_radius
+        radius = muonringparam.radius
         width = muonintensityoutput.width
         ringrad_camcoord = 2 * radius.to(u.rad) * focal_length
         ringwidthfrac = width / radius
@@ -430,15 +430,15 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time,
     output_parameters['event_time'].append(event_time)
     output_parameters['ring_size'].append(size)
     output_parameters['size_outside'].append(size_outside_ring)
-    output_parameters['ring_center_x'].append(muonringparam.ring_center_x.value)
-    output_parameters['ring_center_y'].append(muonringparam.ring_center_y.value)
-    output_parameters['ring_radius'].append(muonringparam.ring_radius.value)
-    output_parameters['ring_width'].append(muonintensityparam.ring_width.value)
+    output_parameters['ring_center_x'].append(muonringparam.center_x.value)
+    output_parameters['ring_center_y'].append(muonringparam.center_y.value)
+    output_parameters['ring_radius'].append(muonringparam.radius.value)
+    output_parameters['ring_width'].append(muonintensityparam.width.value)
     output_parameters['good_ring'].append(good_ring)
     output_parameters['muon_efficiency'].append(muonintensityparam.optical_efficiency_muon)
     output_parameters['ring_containment'].append(muonparameters.containment)
     output_parameters['ring_completeness'].append(muonparameters.completeness)
-    output_parameters['ring_pixel_completeness'].append(muonintensityparam.ring_pix_completeness)
+    # output_parameters['ring_pixel_completeness'].append(muonintensityparam.ring_pix_completeness)
     output_parameters['impact_parameter'].append(muonintensityparam.impact_parameter.value)
     output_parameters['impact_x_array'].append(muonintensityparam.impact_parameter_pos_x.value)
     output_parameters['impact_y_array'].append(muonintensityparam.impact_parameter_pos_y.value)
