@@ -656,8 +656,9 @@ def read_telescopes_positions(filename):
     """
     subarray_table = read_subarray_table(filename)
     pos_dict = {}
-    for row in subarray_table['tel_id', 'pos_x', 'pos_y', 'pos_z'].iterrows():
-        pos_dict[row[0]] = row[1], row[2], row[3]
+    pos_unit = subarray_table['pos_x'].unit
+    for row in subarray_table:
+        pos_dict[row['tel_id']] = np.array([row['pos_x'], row['pos_y'], row['pos_z']]) * pos_unit
     return pos_dict
 
 
