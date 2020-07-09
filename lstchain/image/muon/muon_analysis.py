@@ -229,7 +229,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
         muonintensityoutput = MuonEfficiencyContainer()
 
 
-    muonintensityoutput.mask = dist_mask
+    # muonintensityoutput.mask = dist_mask
     ring_size = np.sum(pix_ring)
     size_outside_ring = np.sum(pix_outside_ring * clean_mask)
 
