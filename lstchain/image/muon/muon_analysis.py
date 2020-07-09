@@ -96,7 +96,7 @@ def fit_muon(x, y, image, geom, tailcuts):
     return ring, clean_mask, dist, image_clean
 
 
-def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
+def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
                        mirror_area, plot_rings, plots_path):
     """
     Analyze an event to fit a muon ring
@@ -164,7 +164,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
 #    nom_dist = np.sqrt(np.power(muonringparam.center_x,2)
 #                    + np.power(muonringparam.center_y, 2))
 
-    muonparameters = MuonParametersContainer()
+    muonparameters = MuonParametersContainer(subarray)
     muonparameters.containment = ring_containment(
             muonringparam.radius,
             cam_rad,
@@ -190,7 +190,7 @@ def analyze_muon_event(event_id, image, geom, equivalent_focal_length,
         ])
 
     if  candidate_clean_ring:
-        intensity_fitter = MuonIntensityFitter()
+        intensity_fitter = MuonIntensityFitter(subarray)
 
         # Use same hard-coded value for pedestal fluctuations as the previous
         # version of ctapipe:
