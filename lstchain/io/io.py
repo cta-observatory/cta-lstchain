@@ -15,6 +15,7 @@ from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
 from ctapipe.tools.stage1 import Stage1ProcessorTool
+from astropy.utils import deprecated
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -350,6 +351,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
         writer.write("run_config", [extramc, mcheader])
 
 
+@deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
@@ -364,6 +366,7 @@ def write_array_info_08(subarray, output_filename):
     stage1._write_instrument_configuration(subarray)
 
 
+@deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
 def write_array_info(subarray, output_filename):
     """
     Write the array info to a HDF5 file
