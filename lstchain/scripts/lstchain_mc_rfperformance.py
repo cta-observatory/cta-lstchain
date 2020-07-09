@@ -14,6 +14,8 @@ $>python lstchain_mc_rfperformance.py
 
 """
 
+import logging
+import sys
 import numpy as np
 import pandas as pd
 import argparse
@@ -31,6 +33,8 @@ try:
     import ctaplot
 except ImportError as e:
     print("ctaplot not installed, some plotting function will be missing")
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Train and Apply Random Forests.")
 
@@ -110,6 +114,10 @@ def main():
     ####PLOT SOME RESULTS#####
 
     selected_gammas = dl2.query('reco_type==0 & mc_type==0')
+
+    if(len(selected_gammas) == 0):
+        log.warning('No gammas selected, I will not plot any output') 
+        sys.exit()
 
     plot_dl2.plot_features(dl2)
     if not args.batch:
