@@ -164,7 +164,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
 #    nom_dist = np.sqrt(np.power(muonringparam.center_x,2)
 #                    + np.power(muonringparam.center_y, 2))
 
-    muonparameters = MuonParametersContainer(subarray)
+    muonparameters = MuonParametersContainer()
     muonparameters.containment = ring_containment(
             muonringparam.radius,
             cam_rad,
