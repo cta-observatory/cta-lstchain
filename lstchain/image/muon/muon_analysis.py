@@ -85,12 +85,11 @@ def fit_muon(x, y, image, geom, tailcuts):
     # with very few additional non-ring bright pixels.
     for _ in (0, 0):  # just to iterate the fit twice more
         dist = np.sqrt(
-            (x - ring.ring_center_x)**2 + (y - ring.ring_center_y)**2
+            (x - ring.center_x)**2 + (y - ring.center_y)**2
         )
         ring_dist = np.abs(dist - ring.ring_radius)
 
-        clean_mask *= (ring_dist <
-                       ring.ring_radius * max_allowed_outliers_distance)
+        clean_mask *= (ring_dist < ring.radius * max_allowed_outliers_distance)
         ring = fitter(x, y, image, clean_mask)
 
     image_clean = image * clean_mask
