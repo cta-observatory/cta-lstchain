@@ -38,7 +38,7 @@ from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-
+from ..io.io import write_array_info_08
 from ..io import (
     write_simtel_energy_histogram,
     write_mcheader,
@@ -297,6 +297,7 @@ def r0_to_dl1(
 
     # Write extra information to the DL1 file
     write_array_info(subarray, output_filename)
+    write_array_info_08(subarray, output_filename)
 
     if is_simu:
         write_mcheader(
