@@ -8,8 +8,8 @@ Script to create drs4 time correction coefficients
 
 Usage:
 $> python lstchain_data_create_time_calibration_file.py
---input-file LST-1.1.Run01625.0000.fits.fz 
---output-file time_calibration.Run1625.0000.hdf5 
+--input-file LST-1.1.Run01625.0000.fits.fz
+--output-file time_calibration.Run1625.0000.hdf5
 
 """
 
@@ -79,13 +79,14 @@ def main():
 
     # declare the time corrector
     timeCorr = TimeCorrectionCalculate(calib_file_path=args.output_file,
-                                       config=config)
+                                       config=config,
+                                       subarray=reader.subarray)
 
     tel_id = timeCorr.tel_id
 
     for i, event in enumerate(reader):
-        if event.r0.event_id % 5000 == 0:
-            print(event.r0.event_id)
+        if event.index.event_id % 5000 == 0:
+            print(event.index.event_id)
 
         lst_r0.calibrate(event)
 
@@ -93,11 +94,10 @@ def main():
         if event.r1.tel[tel_id].trigger_type == 4 or (
                 np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))> 300):
 
-            timeCorr.calibrate_pulse_time(event)
+            timeCorr.calibrate_peak_time(event)
     # write output
     timeCorr.finalize()
 
 
 if __name__ == '__main__':
     main()
-

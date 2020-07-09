@@ -32,13 +32,13 @@ from .volume_reducer import apply_volume_reduction
 from ..datachecks.dl1_checker import check_dl1
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera.calib import load_gain_selector_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-
-
+from ..io.io import write_array_info_08
 from ..io import (
     write_simtel_energy_histogram,
     write_mcheader,
@@ -81,11 +81,12 @@ filters = tables.Filters(
 
 
 def get_dl1(
-    calibrated_event,
-    telescope_id,
-    dl1_container=None,
-    custom_config={},
-    use_main_island=True,
+        calibrated_event,
+        subarray,
+        telescope_id,
+        dl1_container=None,
+        custom_config={},
+        use_main_island=True,
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -95,6 +96,7 @@ def get_dl1(
     Parameters
     ----------
     calibrated_event: ctapipe event container
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     telescope_id: `int`
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
@@ -113,19 +115,19 @@ def get_dl1(
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
-    tel = calibrated_event.inst.subarray.tels[telescope_id]
     dl1 = calibrated_event.dl1.tel[telescope_id]
-    camera = tel.camera
+    telescope = subarray.tel[telescope_id]
+    camera_geometry = telescope.camera.geometry
 
     image = dl1.image
-    pulse_time = dl1.pulse_time
+    peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
         # check the number of islands
-        num_islands, island_labels = number_of_islands(camera, signal_pixels)
+        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
         if use_main_island:
             n_pixels_on_island = np.bincount(island_labels.astype(np.int))
@@ -133,22 +135,22 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-        hillas = hillas_parameters(camera[signal_pixels], image[signal_pixels])
+        hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
 
         # Fill container
         dl1_container.fill_hillas(hillas)
         dl1_container.fill_event_info(calibrated_event)
-        dl1_container.set_mc_core_distance(calibrated_event, telescope_id)
+        dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
-        dl1_container.set_timing_features(camera[signal_pixels],
+        dl1_container.set_timing_features(camera_geometry[signal_pixels],
                                           image[signal_pixels],
-                                          pulse_time[signal_pixels],
+                                          peak_time[signal_pixels],
                                           hillas)
-        dl1_container.set_leakage(camera, image, signal_pixels)
-        dl1_container.set_concentration(camera, image, hillas)
+        dl1_container.set_leakage(camera_geometry, image, signal_pixels)
+        dl1_container.set_concentration(camera_geometry, image, hillas)
         dl1_container.n_pixels = n_pixels
         dl1_container.n_islands = num_islands
-        dl1_container.set_telescope_info(calibrated_event, telescope_id)
+        dl1_container.set_telescope_info(subarray, telescope_id)
 
 
         return dl1_container
@@ -208,11 +210,13 @@ def r0_to_dl1(
     config = replace_config(standard_config, custom_config)
 
     custom_calibration = config["custom_calibration"]
+    gain_selector = load_gain_selector_from_config(config)
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = event_source(str(input_filename))
+    source = event_source(str(input_filename), gain_selector=gain_selector)
+    subarray = source.subarray
 
-    is_simu = source.metadata['is_simulation']
+    is_simu = source.is_simulation
 
     source.allowed_tels = config["allowed_tels"]
     if config["max_events"] is not None:
@@ -221,7 +225,7 @@ def r0_to_dl1(
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
 
-    cal_mc = load_calibrator_from_config(config)
+    cal_mc = load_calibrator_from_config(config, subarray)
 
     # minimum number of pe in a pixel to include it
     # in calculation of muon ring time (peak sample):
@@ -247,6 +251,7 @@ def r0_to_dl1(
                                                 apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                 config = Config(config),
                                                 allowed_tels = [1],
+                                                subarray = subarray
                                                 )
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
@@ -258,7 +263,8 @@ def r0_to_dl1(
                                                                charge_scale=config['charge_scale'],
                                                                apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                                config = Config(config),
-                                                               allowed_tels = [1],)
+                                                               allowed_tels = [1],
+                                                               subarray = subarray)
 
 
         # Component to process interleaved pedestal and flat-fields
@@ -290,12 +296,14 @@ def r0_to_dl1(
     first_event = next(event_iter)
 
     # Write extra information to the DL1 file
-    write_array_info(first_event, output_filename)
+    write_array_info(subarray, output_filename)
+    write_array_info_08(subarray, output_filename)
+
     if is_simu:
         write_mcheader(
             first_event.mcheader,
             output_filename,
-            obs_id=first_event.r0.obs_id,
+            obs_id=first_event.index.obs_id,
             filters=filters,
             metadata=metadata,
         )
@@ -310,7 +318,7 @@ def r0_to_dl1(
     ) as writer:
 
         if is_simu:
-            subarray = first_event.inst.subarray
+            subarray = subarray
             # build a mapping of tel_id back to tel_index:
             # (note this should be part of SubarrayDescription)
             idx = np.zeros(max(subarray.tel_indices) + 1)
@@ -320,7 +328,7 @@ def r0_to_dl1(
             # the final transform then needs the mapping and the number of telescopes
             tel_list_transform = partial(
                 utils.expand_tel_list,
-                max_tels=max(first_event.inst.subarray.tel) + 1,
+                max_tels=max(subarray.tel) + 1,
             )
 
             writer.add_column_transform(
@@ -344,7 +352,7 @@ def r0_to_dl1(
 
             event.dl0.prefix = ''
             event.mc.prefix = 'mc'
-            event.trig.prefix = ''
+            event.trigger.prefix = ''
 
 
             # write sub tables
@@ -392,7 +400,7 @@ def r0_to_dl1(
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
-            apply_volume_reduction(event, config)
+            apply_volume_reduction(event, subarray, config)
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
@@ -402,13 +410,15 @@ def r0_to_dl1(
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                tel_name = str(event.inst.subarray.tel[telescope_id])[4:]
+                tel_name = str(subarray.tel[telescope_id])[4:]
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
 
                 try:
-                    dl1_filled = get_dl1(event, telescope_id,
+                    dl1_filled = get_dl1(event,
+                                         subarray,
+                                         telescope_id,
                                          dl1_container=dl1_container,
                                          custom_config=config,
                                          use_main_island=True)
@@ -430,7 +440,7 @@ def r0_to_dl1(
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trig.gps_time.value
+                    dl1_container.gps_time = event.trigger.time.value
 
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
@@ -553,12 +563,12 @@ def r0_to_dl1(
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
 
                     # FIXME: no need to read telescope characteristics like foclen for every event!
-                    foclen = event.inst.subarray.tel[telescope_id].optics.equivalent_focal_length
-                    mirror_area = u.Quantity(event.inst.subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+                    foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+                    mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width.value
-                    dl1_container.length = length.value
+                    dl1_container.width = width
+                    dl1_container.length = length
                     dl1_container.prefix = tel.prefix
 
                     # extra info for the image table
@@ -610,7 +620,7 @@ def r0_to_dl1(
                                 good_ring = False
                             else:
                                 # read geometry from event.inst. But not needed for every event. FIXME?
-                                geom = event.inst.subarray.tel[telescope_id].camera
+                                geom = subarray.tel[telescope_id].camera
 
                                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                     radial_distribution, mean_pixel_charge_around_ring = \
@@ -633,7 +643,7 @@ def r0_to_dl1(
 
                     # writes mc information per telescope, including photo electron image
                     if is_simu \
-                            and (event.mc.tel[telescope_id].photo_electron_image > 0).any() \
+                            and (event.mc.tel[telescope_id].true_image > 0).any() \
                             and config['write_pe_image']:
                         event.mc.tel[telescope_id].prefix = ''
                         writer.write(table_name=f'simulation/{tel_name}',
@@ -666,7 +676,7 @@ def r0_to_dl1(
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
         if source.max_events is None:
-            write_simtel_energy_histogram(source, output_filename, obs_id=event.dl0.obs_id,
+            write_simtel_energy_histogram(source, output_filename, obs_id=event.index.obs_id,
                                           metadata=metadata)
     else:
         dir, name = os.path.split(output_filename)
