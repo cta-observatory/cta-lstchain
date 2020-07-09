@@ -14,6 +14,7 @@ from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
+from ctapipe.tools.stage1 import Stage1ProcessorTool
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -347,6 +348,20 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
     with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
         extramc.obs_id = obs_id
         writer.write("run_config", [extramc, mcheader])
+
+
+def write_array_info_08(subarray, output_filename):
+    """
+    Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
+
+    Parameters
+    ----------
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    output_filename: str
+    """
+    stage1 = Stage1ProcessorTool()
+    stage1.output_path = output_filename
+    stage1._write_instrument_configuration(subarray)
 
 
 def write_array_info(subarray, output_filename):
