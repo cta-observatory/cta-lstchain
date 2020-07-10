@@ -50,12 +50,6 @@ class CalibrationCalculator(Component):
         default_value='FlasherFlatFieldCalculator'
     )
 
-    apply_charge_correction = Bool(
-        False,
-        help='Apply charge pulse shape charge correction'
-
-    ).tag(config=True)
-
     classes = List([
                     FlatFieldCalculator,
                     PedestalCalculator
@@ -111,18 +105,6 @@ class CalibrationCalculator(Component):
 
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
-
-        # initialize the pulse shape  corrections
-        if self.apply_charge_correction:
-
-            # get the integration window corrections
-            self.charge_correction = get_charge_correction(
-                self.flatfield.extractor.window_width,
-                self.flatfield.extractor.window_shift,
-            )
-        else:
-            # no pulse shape correction by default
-            self.charge_correction = np.ones(2)
 
 
 class LSTCalibrationCalculator(CalibrationCalculator):
@@ -205,7 +187,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         numerator = n_pe * ff
 
         # correct the signal for the integration window
-        denominator = (ff_data.charge_median - ped_data.charge_median) * self.charge_correction[:, np.newaxis]
+        denominator = (ff_data.charge_median - ped_data.charge_median) 
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # flat-field time corrections
