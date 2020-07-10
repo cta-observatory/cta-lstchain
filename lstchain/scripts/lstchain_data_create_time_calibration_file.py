@@ -95,7 +95,6 @@ def main():
         log.info(f'File {i+1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
         reader = LSTEventSource(input_url=path, max_events=args.max_events)
-        log.info(f'Number of files in this subrun: {reader.multi_file.num_inputs()}')
         for event in reader:
             if event.index.event_id % 5000 == 0:
                 log.info(f'event id = {event.index.event_id}')
