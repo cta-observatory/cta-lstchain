@@ -15,6 +15,7 @@ $> python lstchain_data_create_time_calibration_file.py
 
 import argparse
 import glob
+import logging
 import numpy as np
 from traitlets.config.loader import Config
 from ctapipe_io_lst import LSTEventSource
@@ -22,7 +23,7 @@ from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 
-
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
 
@@ -61,10 +62,14 @@ args = parser.parse_args()
 
 
 def main():
-    print("--> Input file: {}".format(args.input_file))
-    print("--> Number of events: {}".format(args.max_events))
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
+
+    log.info(f'Input file: {args.input_file}')
+    log.info(f'Number of events in each subrun: {args.max_events}')
     path_list = sorted(glob.glob(args.input_file))
-    print("--> Path list: {}".format(path_list))
+    log.info(f'list of files: {path_list}')
 
     config_dic = {}
     if args.config_file is not None:
@@ -86,13 +91,14 @@ def main():
 
     tel_id = timeCorr.tel_id
 
-    for path in path_list:
-        print("--> Processing: {}".format(path))
+    for i, path in enumerate(path_list):
+        log.info(f'File {i+1} out of {len(path_list)}')
+        log.info(f'Processing: {path}')
         reader = LSTEventSource(input_url=path, max_events=args.max_events)
-        print("--> Number of files", reader.multi_file.num_inputs())
-        for i, event in enumerate(reader):
+        log.info(f'Number of files in this subrun: {reader.multi_file.num_inputs()}')
+        for event in reader:
             if event.index.event_id % 5000 == 0:
-                print(event.index.event_id)
+                log.info(f'event id = {event.index.event_id}')
             lst_r0.calibrate(event)
 
             # Cut in signal to avoid cosmic events
