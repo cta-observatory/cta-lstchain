@@ -19,7 +19,7 @@ def test_overlay_source():
     geom = CameraGeometry.from_name('LSTCam')
     image = np.random.rand(geom.n_pixels)
     display = CameraDisplay(geom, image)
-    overlay_source(display, 0.1 * u.m, 0.3 * u.m)
+    #overlay_source(display, 0.1 * u.m, 0.3 * u.m)
 
 
 def test_display_dl1_event():
