@@ -43,7 +43,7 @@ def test_flasherflatfieldcalculator():
     data.mon.tel[tel_id].pixel_status.hardware_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
     data.mon.tel[tel_id].pixel_status.pedestal_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
     data.mon.tel[tel_id].pixel_status.flatfield_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
-    data.r1.tel[tel_id].waveform = np.zeros((n_gain, n_pixels, 40))
+    data.r1.tel[tel_id].waveform = np.zeros((n_gain, n_pixels, 40), dtype=np.float32)
     data.r1.tel[tel_id].trigger_time = 1000
     
     # flat-field signal put == delta function of height ff_level at sample 20
