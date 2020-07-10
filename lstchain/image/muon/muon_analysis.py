@@ -271,8 +271,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
 
     if(plot_rings and plots_path and good_ring):
         focal_length = equivalent_focal_length
-        ring_telescope = SkyCoord(muonringparam.ring_center_x,
-                                  muonringparam.ring_center_y,
+        ring_telescope = SkyCoord(muonringparam.center_x,
+                                  muonringparam.center_y,
                                   TelescopeFrame())
 
         ring_camcoord = ring_telescope.transform_to(CameraFrame(
