@@ -402,6 +402,7 @@ def r0_to_dl1(
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
             apply_volume_reduction(event, subarray, config)
+
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.

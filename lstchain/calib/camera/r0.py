@@ -150,8 +150,7 @@ class LSTR0Corrections(CameraR0Calibrator):
 
             samples = event.r1.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]
 
-            event.r1.tel[tel_id].waveform = samples.astype('int16') - self.offset
-
+            event.r1.tel[tel_id].waveform = (samples - self.offset).astype(np.float32)
 
     def subtract_pedestal(self, event, tel_id):
         """
@@ -168,8 +167,7 @@ class LSTR0Corrections(CameraR0Calibrator):
             self.first_cap_array[nr_module, :, :] = self._get_first_capacitor(event, nr_module, tel_id)
 
         expected_pixel_id = event.lst.tel[tel_id].svc.pixel_ids
-        samples = np.copy(event.r0.tel[tel_id].waveform)
-        samples.astype('int16')
+        samples = event.r0.tel[tel_id].waveform.astype(np.float32)
 
         samples = subtract_pedestal_jit(samples,
                                         expected_pixel_id,
