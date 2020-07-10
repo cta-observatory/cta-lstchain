@@ -481,7 +481,7 @@ def r0_to_dl1(
                                     logger.info(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
-                                        f"Event ID: {event.r0.event_id}, "
+                                        f"Event ID: {event.index.event_id}, "
                                         f"First valid UCTS timestamp: {first_valid_ucts:.9f} s, "
                                         f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
@@ -498,7 +498,7 @@ def r0_to_dl1(
                                     logger.info(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
-                                        f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
+                                        f"Event ID: {event.index.event_id}, UCTS timestamp corresponding to "
                                         f"the first valid TIB counter: {first_valid_ucts_tib:.9f} s, "
                                         f"corresponding TIB counter {initial_tib_counter:.9f} s"
                                     )
@@ -623,7 +623,7 @@ def r0_to_dl1(
 
                                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                     radial_distribution, mean_pixel_charge_around_ring = \
-                                    analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                    analyze_muon_event(event.index.event_id, image, geom, foclen,
                                                        mirror_area, False, '')
                                 #                      mirror_area, True, './') # (test) plot muon rings as png files
 
@@ -635,7 +635,7 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
+                                fill_muon_event(muon_parameters, good_ring, event.index.event_id, dragon_time,
                                                 muonintensityparam, muonringparam, radial_distribution,
                                                 size_outside_ring, mean_pixel_charge_around_ring,
                                                 hg_peak_sample, lg_peak_sample)
