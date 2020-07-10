@@ -16,6 +16,8 @@ from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
 from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
+from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
+    TelescopeDescription, SubarrayDescription
 
 
 __all__ = ['read_simu_info_hdf5',
@@ -420,7 +422,7 @@ def write_array_info(subarray, output_filename):
                 serialize_meta=serialize_meta,
             )
 
-
+@deprecated('09/07/2020', message='will be removed in lstchain v0.7')
 def read_array_info(filename):
     """
     Read array information from HDF5 file.
@@ -441,6 +443,240 @@ def read_array_info(filename):
             if type(camera) is tables.table.Table:
                 array_info[camera.name] = Table(camera.read())
     return array_info
+
+
+def read_single_optics(filename, telescope_name):
+    """
+    Read a specific telescope optics from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    telescope_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.optics.OpticsDescription`
+    """
+    from astropy.units import Quantity
+    telescope_optics_path = "/configuration/instrument/telescope/optics"
+    telescope_optic_table = Table.read(filename, path=telescope_optics_path)
+    row = telescope_optic_table[np.where(telescope_name == telescope_optic_table['name'])[0][0]]
+    optics_description = OpticsDescription(
+        name=row['name'],
+        num_mirrors=row['num_mirrors'],
+        equivalent_focal_length=row['equivalent_focal_length'] * telescope_optic_table['equivalent_focal_length'].unit,
+        mirror_area=row['mirror_area'] * telescope_optic_table['mirror_area'].unit,
+        num_mirror_tiles=Quantity(row['num_mirror_tiles']),
+    )
+    return optics_description
+
+
+def read_optics(filename):
+    """
+    Read all telescope optics from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dictionnary of ctapipe.instrument.optics.OpticsDescription by telescope names
+    """
+    telescope_optics_path = "/configuration/instrument/telescope/optics"
+    telescope_optics_table = Table.read(filename, path=telescope_optics_path)
+    optics_dict = {}
+    for telescope_name in telescope_optics_table['name']:
+        optics_dict[telescope_name] = read_single_optics(filename, telescope_name)
+    return optics_dict
+
+
+def read_single_camera_geometry(filename, camera_name):
+    """
+    Read a specific camera geometry from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.geometry.CameraGeometry`
+    """
+    camera_geometry_path = f"/configuration/instrument/telescope/camera/geometry_{camera_name}"
+    camera_geometry = CameraGeometry.from_table(Table.read(filename, camera_geometry_path))
+    return camera_geometry
+
+
+def read_camera_geometries(filename):
+    """
+    Read all camera geometries from a DL1 file
+
+    Parameters
+    ----------
+    filename
+
+    Returns
+    -------
+    dictionnary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    camera_geoms = {}
+    for camera_name in set(Table.read(filename, path=subarray_layout_path)['camera_type']):
+        camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
+    return camera_geoms
+
+
+def read_single_camera_readout(filename, camera_name):
+    """
+    Read a specific camera readout from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.readout.CameraReadout`
+    """
+    camera_readout_path = f"/configuration/instrument/telescope/camera/readout_{camera_name}"
+    return CameraReadout.from_table(Table.read(filename, path=camera_readout_path))
+
+
+def read_camera_readouts(filename):
+    """
+    Read  all camera readouts from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dict of `ctapipe.instrument.camera.description.CameraDescription` by tel_id
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    camera_readouts = {}
+    for row in Table.read(filename, path=subarray_layout_path):
+        camera_name = row['camera_type']
+        camera_readouts[row['tel_id']] = read_single_camera_readout(filename, camera_name)
+    return camera_readouts
+
+
+def read_single_camera_description(filename, camera_name):
+    """
+    Read a specific camera description from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.description.CameraDescription`
+    """
+    geom = read_single_camera_geometry(filename, camera_name)
+    readout = read_single_camera_readout(filename, camera_name)
+    return CameraDescription(camera_name, geometry=geom, readout=readout)
+
+
+def read_single_telescope_description(filename, telescope_name, telescope_type, camera_name):
+    """
+    Read a specific telescope description from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    telescope_name: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.telescope.TelescopeDescription`
+    """
+    optics = read_single_optics(filename, telescope_name)
+    camera_descr = read_single_camera_description(filename, camera_name)
+    return TelescopeDescription(telescope_name, telescope_type, optics=optics, camera=camera_descr)
+
+
+def read_subarray_table(filename):
+    """
+    Read the subarray as a table from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    `astropy.table.table.Table`
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    return Table.read(filename, path=subarray_layout_path)
+
+
+def read_telescopes_descriptions(filename):
+    """
+    Read telescopes descriptions from DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dict of `ctapipe.instrument.telescope.TelescopeDescription` by tel_id
+    """
+    subarray_table = read_subarray_table(filename)
+    descriptions = {}
+    for row in subarray_table:
+        tel_name = row['name']
+        camera_type = row['camera_type']
+        optics = read_single_optics(filename, tel_name)
+        camera = read_single_camera_description(filename, camera_type)
+        descriptions[row['tel_id']] = TelescopeDescription(row['name'], row['type'], optics=optics, camera=camera)
+    return descriptions
+
+
+def read_telescopes_positions(filename):
+    """
+    Read telescopes positions from DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dictionnary of telescopes positions by tel_id
+    """
+    subarray_table = read_subarray_table(filename)
+    pos_dict = {}
+    pos_unit = subarray_table['pos_x'].unit
+    for row in subarray_table:
+        pos_dict[row['tel_id']] = np.array([row['pos_x'], row['pos_y'], row['pos_z']]) * pos_unit
+    return pos_dict
+
+
+def read_subarray_description(filename, subarray_name='LST-1'):
+    """
+    Read subarray description from an HDF5 DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    `ctapipe.instrument.subarray.SubarrayDescription`
+    """
+    tel_pos = read_telescopes_positions(filename)
+    tel_descrp = read_telescopes_descriptions(filename)
+    return SubarrayDescription(subarray_name, tel_positions=tel_pos, tel_descriptions=tel_descrp)
 
 
 def check_mcheader(mcheader1, mcheader2):
