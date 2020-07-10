@@ -17,7 +17,7 @@ import argparse
 import glob
 import numpy as np
 from traitlets.config.loader import Config
-from ctapipe.io import event_source
+from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
@@ -78,7 +78,7 @@ def main():
     # declare the pedestal calibrator
     lst_r0 = LSTR0Corrections(pedestal_path=args.pedestal_file, config=config)
 
-    reader = event_source(input_url=path_list[0], max_events=args.max_events)
+    reader = LSTEventSource(input_url=path_list[0], max_events=args.max_events)
     # declare the time corrector
     timeCorr = TimeCorrectionCalculate(calib_file_path=args.output_file,
                                        config=config,
@@ -88,7 +88,7 @@ def main():
 
     for path in path_list:
         print("--> Processing: {}".format(path))
-        reader = event_source(input_url=path, max_events=args.max_events)
+        reader = LSTEventSource(input_url=path, max_events=args.max_events)
         print("--> Number of files", reader.multi_file.num_inputs())
         for i, event in enumerate(reader):
             if event.index.event_id % 5000 == 0:
