@@ -17,8 +17,9 @@ import pandas as pd
 import tables
 from astropy.table import Table
 from ctapipe.image import (
-    hillas_parameters,
     HillasParameterizationError,
+    hillas_parameters,
+    tailcuts_clean,
 )
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.instrument import OpticsDescription
