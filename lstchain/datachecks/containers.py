@@ -129,9 +129,9 @@ class DL1DataCheckContainer(Container):
         n_jump = 1+int(self.num_events/n_samples)
         # keep some info every n-jump-th event:
         sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
-        tib_time = np.array(table['tib_time'][mask][0::n_jump])
-        ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
-        dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
+        tib_time = np.array(table['tib_time'][mask][0::n_jump])*u.s
+        ucts_time = np.array(table['ucts_time'][mask][0::n_jump])*u.s
+        dragon_time = np.array(table['dragon_time'][mask][0::n_jump])*u.s
         # in case the resulting number of entries is <n_samples, we have to pad
         # the arrays, because hdf vector columns must have the same number of
         # elements in each row. We repeat the last value in the array
