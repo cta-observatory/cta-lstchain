@@ -549,8 +549,8 @@ def r0_to_dl1(
 
                         if pointing_file_path and event_timestamps > 0:
                             azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
-                            event.pointing[telescope_id].azimuth = azimuth
-                            event.pointing[telescope_id].altitude = altitude
+                            event.pointing.tel[telescope_id].azimuth = azimuth
+                            event.pointing.tel[telescope_id].altitude = altitude
                             dl1_container.az_tel = azimuth
                             dl1_container.alt_tel = altitude
                         else:
@@ -623,13 +623,20 @@ def r0_to_dl1(
                                 good_ring = False
                             else:
                                 # read geometry from event.inst. But not needed for every event. FIXME?
-                                geom = subarray.tel[telescope_id].camera
+                                geom = subarray.tel[telescope_id].\
+                                    camera.geometry
 
-                                muonintensityparam, size_outside_ring, muonringparam, good_ring, \
-                                    radial_distribution, mean_pixel_charge_around_ring = \
-                                    analyze_muon_event(event.index.event_id, image, geom, foclen,
+                                muonintensityparam, \
+                                ring_size, size_outside_ring, muonringparam, \
+                                good_ring, radial_distribution, \
+                                mean_pixel_charge_around_ring,\
+                                muonpars = \
+                                    analyze_muon_event(subarray,
+                                                       event.index.event_id,
+                                                       image, geom, foclen,
                                                        mirror_area, False, '')
-                                #                      mirror_area, True, './') # (test) plot muon rings as png files
+                                #                      mirror_area, True, './')
+                                #           (test) plot muon rings as png files
 
                                 # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
                                 bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
@@ -639,9 +646,17 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(muon_parameters, good_ring, event.index.event_id, dragon_time,
-                                                muonintensityparam, muonringparam, radial_distribution,
-                                                size_outside_ring, mean_pixel_charge_around_ring,
+                                fill_muon_event(muon_parameters,
+                                                good_ring,
+                                                event.index.event_id,
+                                                dragon_time,
+                                                muonintensityparam,
+                                                muonringparam,
+                                                radial_distribution,
+                                                ring_size,
+                                                size_outside_ring,
+                                                mean_pixel_charge_around_ring,
+                                                muonpars,
                                                 hg_peak_sample, lg_peak_sample)
 
                     # writes mc information per telescope, including photo electron image
