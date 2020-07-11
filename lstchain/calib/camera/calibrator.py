@@ -156,7 +156,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         """
         waveforms = event.r1.tel[telid].waveform
 
-
         if self._check_r1_empty(waveforms):
             return
 
@@ -172,7 +171,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         #
         event.dl0.tel[telid].waveform = (
                 (waveforms - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
+                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis]).astype(np.float32)
 
 
     def _calibrate_dl1(self, event, telid):
@@ -191,12 +190,12 @@ class LSTCameraCalibrator(CameraCalibrator):
         #      - gain selection before charge integration
 
 
-        no_gain_selection= np.zeros((waveforms.shape[0],waveforms.shape[1]), dtype=np.int)
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
 
         charge, peak_time = self.image_extractor(waveforms, telid, no_gain_selection)
 
         # correct charge for global scale
-        corrected_charge = charge * np.array(self.charge_scale)[:,np.newaxis]
+        corrected_charge = charge * np.array(self.charge_scale, dtype=np.float32)[:, np.newaxis]
 
         # correct time with drs4 correction if available
         if self.time_corrector:
@@ -210,7 +209,8 @@ class LSTCameraCalibrator(CameraCalibrator):
             gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
             event.dl1.tel[telid].image = corrected_charge[gain_mask, np.arange(charge.shape[1])]
-            event.dl1.tel[telid].peak_time = peak_time_ff_corrected[gain_mask, np.arange(peak_time_ff_corrected.shape[1])]
+            event.dl1.tel[telid].peak_time = \
+                peak_time_ff_corrected[gain_mask, np.arange(peak_time_ff_corrected.shape[1])].astype(np.float32)
 
             # remember which channel has been selected
             event.r1.tel[telid].selected_gain_channel = gain_mask

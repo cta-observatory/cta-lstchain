@@ -445,7 +445,7 @@ def read_array_info(filename):
     return array_info
 
 
-def read_optic(filename, telescope_name):
+def read_single_optics(filename, telescope_name):
     """
     Read a specific telescope optics from a DL1 file
 
@@ -488,11 +488,11 @@ def read_optics(filename):
     telescope_optics_table = Table.read(filename, path=telescope_optics_path)
     optics_dict = {}
     for telescope_name in telescope_optics_table['name']:
-        optics_dict[telescope_name] = read_optic(filename, telescope_name)
+        optics_dict[telescope_name] = read_single_optics(filename, telescope_name)
     return optics_dict
 
 
-def read_camera_geometry(filename, camera_name):
+def read_single_camera_geometry(filename, camera_name):
     """
     Read a specific camera geometry from a DL1 file
 
@@ -525,11 +525,11 @@ def read_camera_geometries(filename):
     subarray_layout_path = 'configuration/instrument/subarray/layout'
     camera_geoms = {}
     for camera_name in set(Table.read(filename, path=subarray_layout_path)['camera_type']):
-        camera_geoms[camera_name] = read_camera_geometry(filename, camera_name)
+        camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
     return camera_geoms
 
 
-def read_camera_readout(filename, camera_name):
+def read_single_camera_readout(filename, camera_name):
     """
     Read a specific camera readout from a DL1 file
 
@@ -562,11 +562,11 @@ def read_camera_readouts(filename):
     camera_readouts = {}
     for row in Table.read(filename, path=subarray_layout_path):
         camera_name = row['camera_type']
-        camera_readouts[row['tel_id']] = read_camera_readout(filename, camera_name)
+        camera_readouts[row['tel_id']] = read_single_camera_readout(filename, camera_name)
     return camera_readouts
 
 
-def read_camera_description(filename, camera_name):
+def read_single_camera_description(filename, camera_name):
     """
     Read a specific camera description from a DL1 file
 
@@ -579,12 +579,12 @@ def read_camera_description(filename, camera_name):
     -------
     `ctapipe.instrument.camera.description.CameraDescription`
     """
-    geom = read_camera_geometry(filename, camera_name)
-    readout = read_camera_readout(filename, camera_name)
+    geom = read_single_camera_geometry(filename, camera_name)
+    readout = read_single_camera_readout(filename, camera_name)
     return CameraDescription(camera_name, geometry=geom, readout=readout)
 
 
-def read_telescope_description(filename, telescope_name, telescope_type, camera_name):
+def read_single_telescope_description(filename, telescope_name, telescope_type, camera_name):
     """
     Read a specific telescope description from a DL1 file
 
@@ -598,8 +598,8 @@ def read_telescope_description(filename, telescope_name, telescope_type, camera_
     -------
     `ctapipe.instrument.telescope.TelescopeDescription`
     """
-    optics = read_optic(filename, telescope_name)
-    camera_descr = read_camera_description(filename, camera_name)
+    optics = read_single_optics(filename, telescope_name)
+    camera_descr = read_single_camera_description(filename, camera_name)
     return TelescopeDescription(telescope_name, telescope_type, optics=optics, camera=camera_descr)
 
 
@@ -636,8 +636,8 @@ def read_telescopes_descriptions(filename):
     for row in subarray_table:
         tel_name = row['name']
         camera_type = row['camera_type']
-        optics = read_optic(filename, tel_name)
-        camera = read_camera_description(filename, camera_type)
+        optics = read_single_optics(filename, tel_name)
+        camera = read_single_camera_description(filename, camera_type)
         descriptions[row['tel_id']] = TelescopeDescription(row['name'], row['type'], optics=optics, camera=camera)
     return descriptions
 
@@ -656,8 +656,9 @@ def read_telescopes_positions(filename):
     """
     subarray_table = read_subarray_table(filename)
     pos_dict = {}
-    for row in subarray_table['tel_id', 'pos_x', 'pos_y', 'pos_z'].iterrows():
-        pos_dict[row[0]] = row[1], row[2], row[3]
+    pos_unit = subarray_table['pos_x'].unit
+    for row in subarray_table:
+        pos_dict[row['tel_id']] = np.array([row['pos_x'], row['pos_y'], row['pos_z']]) * pos_unit
     return pos_dict
 
 

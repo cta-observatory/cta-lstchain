@@ -4,68 +4,70 @@ parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
 """
-import os
 import logging
 import math
+import os
 from functools import partial
-import numpy as np
+from itertools import chain
 from pathlib import Path
+
+import astropy.units as u
+import numpy as np
 import pandas as pd
 import tables
-import astropy.units as u
 from astropy.table import Table
-from traitlets.config import Config
-
-from ctapipe.utils import get_dataset_path
-from ctapipe.io import event_source, HDF5TableWriter
-from ctapipe.instrument import OpticsDescription
 from ctapipe.image import (
+    HillasParameterizationError,
     hillas_parameters,
     tailcuts_clean,
-    HillasParameterizationError,
 )
 from ctapipe.image.morphology import number_of_islands
-from itertools import chain
+from ctapipe.instrument import OpticsDescription
+from ctapipe.io import event_source, HDF5TableWriter
+from ctapipe.utils import get_dataset_path
+from traitlets.config import Config
 
+from . import disp
 from . import utils
+from .utils import sky_to_camera
+from .utils import unix_tai_to_time
 from .volume_reducer import apply_volume_reduction
-from ..datachecks.dl1_checker import check_dl1
-from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calib import load_gain_selector_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..io import DL1ParametersContainer, standard_config, replace_config
-from ..image.muon import analyze_muon_event, tag_pix_thr
-from ..image.muon import create_muon_table, fill_muon_event
-from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-from ..io.io import write_array_info_08
-from ..io import (
-    write_simtel_energy_histogram,
-    write_mcheader,
-    write_array_info,
-    global_metadata,
-    add_global_metadata,
-    write_metadata,
-    write_subarray_tables,
-    write_calibration_data
-)
-
-from ..io.io import add_column_table
-
-from . import disp
-from .utils import sky_to_camera
-from .utils import unix_tai_to_time
 from ..calib.camera.calibrator import LSTCameraCalibrator
 from ..calib.camera.r0 import LSTR0Corrections
+from ..datachecks.dl1_checker import check_dl1
+from ..image.muon import analyze_muon_event, tag_pix_thr
+from ..image.muon import create_muon_table, fill_muon_event
+from ..io import (
+    DL1ParametersContainer,
+    replace_config,
+    standard_config,
+)
+from ..io import (
+    add_global_metadata,
+    global_metadata,
+    write_array_info,
+    write_calibration_data,
+    write_mcheader,
+    write_metadata,
+    write_simtel_energy_histogram,
+    write_subarray_tables,
+)
+from ..io.io import add_column_table
+from ..io.io import write_array_info_08
+from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
+from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..pointing import PointingPosition
 
 logger = logging.getLogger(__name__)
 
 
 __all__ = [
+    'add_disp_to_parameters_table',
     'get_dl1',
     'r0_to_dl1',
-    'add_disp_to_parameters_table',
 ]
 
 
@@ -400,6 +402,7 @@ def r0_to_dl1(
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
             apply_volume_reduction(event, subarray, config)
+
             # FIXME? This should be eventually done after we evaluate whether the image is
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
@@ -481,7 +484,7 @@ def r0_to_dl1(
                                     logger.info(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
-                                        f"Event ID: {event.r0.event_id}, "
+                                        f"Event ID: {event.index.event_id}, "
                                         f"First valid UCTS timestamp: {first_valid_ucts:.9f} s, "
                                         f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
@@ -498,7 +501,7 @@ def r0_to_dl1(
                                     logger.info(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
-                                        f"Event ID: {event.r0.event_id}, UCTS timestamp corresponding to "
+                                        f"Event ID: {event.index.event_id}, UCTS timestamp corresponding to "
                                         f"the first valid TIB counter: {first_valid_ucts_tib:.9f} s, "
                                         f"corresponding TIB counter {initial_tib_counter:.9f} s"
                                     )
@@ -579,6 +582,7 @@ def r0_to_dl1(
 
                     event.r0.prefix = ''
 
+
                     writer.write(table_name = f'telescope/image/{tel_name}',
                                  containers = [event.r0, tel, extra_im])
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
@@ -623,7 +627,7 @@ def r0_to_dl1(
 
                                 muonintensityparam, size_outside_ring, muonringparam, good_ring, \
                                     radial_distribution, mean_pixel_charge_around_ring = \
-                                    analyze_muon_event(event.r0.event_id, image, geom, foclen,
+                                    analyze_muon_event(event.index.event_id, image, geom, foclen,
                                                        mirror_area, False, '')
                                 #                      mirror_area, True, './') # (test) plot muon rings as png files
 
@@ -635,7 +639,7 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(muon_parameters, good_ring, event.r0.event_id, dragon_time,
+                                fill_muon_event(muon_parameters, good_ring, event.index.event_id, dragon_time,
                                                 muonintensityparam, muonringparam, radial_distribution,
                                                 size_outside_ring, mean_pixel_charge_around_ring,
                                                 hg_peak_sample, lg_peak_sample)

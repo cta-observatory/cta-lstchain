@@ -115,18 +115,18 @@ class TimeCorrectionCalculate(Component):
                     self.tel_id,
                     no_gain_selection)
             self.calib_peak_time_jit(charge,
-                                      peak_time,
-                                      pixel_ids,
-                                      self.first_cap_array,
-                                      self.mean_values_per_bin,
-                                      self.entries_per_bin,
-                                      n_cap=self.n_capacitors,
-                                      n_combine=self.n_combine,
-                                      min_charge=self.minimum_charge)
+                                     peak_time,
+                                     pixel_ids,
+                                     self.first_cap_array,
+                                     self.mean_values_per_bin,
+                                     self.entries_per_bin,
+                                     n_cap=self.n_capacitors,
+                                     n_combine=self.n_combine,
+                                     min_charge=self.minimum_charge)
             self.sum_events += 1
 
     @staticmethod
-    @jit(parallel=True)
+    @njit(parallel=True)
     def calib_peak_time_jit(charge,
                              peak_time,
                              pixel_ids,
