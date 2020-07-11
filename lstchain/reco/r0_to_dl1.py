@@ -215,7 +215,7 @@ def r0_to_dl1(
     gain_selector = load_gain_selector_from_config(config)
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = event_source(str(input_filename), gain_selector=gain_selector)
+    source = event_source(str(input_filename))
     subarray = source.subarray
 
     is_simu = source.is_simulation
@@ -250,7 +250,6 @@ def r0_to_dl1(
                                                 extractor_product = config['image_extractor'],
                                                 gain_threshold = Config(config).gain_selector_config['threshold'],
                                                 charge_scale = config['charge_scale'],
-                                                apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                 config = Config(config),
                                                 allowed_tels = [1],
                                                 subarray = subarray
@@ -263,7 +262,6 @@ def r0_to_dl1(
                                                                extractor_product = config['image_extractor_for_muons'],
                                                                gain_threshold = Config(config).gain_selector_config['threshold'],
                                                                charge_scale=config['charge_scale'],
-                                                               apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
                                                                config = Config(config),
                                                                allowed_tels = [1],
                                                                subarray = subarray)
@@ -277,7 +275,8 @@ def r0_to_dl1(
 
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
-            config=calib_config
+            config=calib_config,
+            subarray=source.subarray
         )
 
 
