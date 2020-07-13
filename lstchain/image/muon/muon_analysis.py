@@ -422,13 +422,7 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time,
     output_parameters['ring_radius'].append(muonringparam.ring_radius.value)
     output_parameters['ring_width'].append(muonintensityparam.ring_width.value)
     output_parameters['good_ring'].append(good_ring)
-
-    # WARNING!! BELOW WE INTRODUCE A FACTOR 2 CORRECTION BECAUSE OF AN ERROR
-    # IN ctapipe 0.8, see https://github.com/cta-observatory/ctapipe/issues/1377
-    # THIS HAS TO BE REMOVED AS SOON AS IT IS FIXED IN A NEW VERSION OF CTAPIPE!
-    output_parameters['muon_efficiency'].append(
-            2.0 * muonintensityparam.optical_efficiency_muon)
-
+    output_parameters['muon_efficiency'].append(muonintensityparam.optical_efficiency_muon)
     output_parameters['ring_containment'].append(muonringparam.ring_containment)
     output_parameters['ring_completeness'].append(muonintensityparam.ring_completeness)
     output_parameters['ring_pixel_completeness'].append(muonintensityparam.ring_pix_completeness)
