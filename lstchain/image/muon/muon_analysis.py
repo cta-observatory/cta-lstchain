@@ -3,7 +3,12 @@ from ctapipe.image.muon.features import ring_containment
 from ctapipe.image.muon.features import ring_completeness
 
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.muon import MuonIntensityFitter, MuonRingFitter
+from ctapipe.image.muon import MuonRingFitter
+
+# TEMPORAL PATCH until ctapipe's MuonIntensityFitter allows using pixel masks:
+#from ctapipe.image.muon import MuonIntensityFitter
+from lstchain.image.muon import MuonIntensityFitter
+
 from ctapipe.containers import MuonEfficiencyContainer, MuonParametersContainer
 from astropy.coordinates import SkyCoord
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
@@ -115,6 +120,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     ---------
 
     muonintensityoutput MuonEfficiencyContainer
+    dist_mask           ndarray, pixels used in ring intensity likelihood fit
     ring_size           float, in p.e. total intensity in ring
     size_outside_ring   float, in p.e. to check for "shower contamination"
     muonringparam       MuonParametersContainer
@@ -201,8 +207,9 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
                              muonringparam.center_x,
                              muonringparam.center_y,
                              muonringparam.radius,
-                             image*dist_mask,
-                             pedestal_stddev)
+                             image,
+                             pedestal_stddev,
+                             dist_mask)
 
         dist_ringwidth_mask = np.abs(dist - muonringparam.radius) < \
                               muonintensityoutput.width
@@ -232,7 +239,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
         muonintensityoutput.impact_x = u.Quantity(np.nan, u.m)
         muonintensityoutput.impact_y = u.Quantity(np.nan, u.m)
 
-    # muonintensityoutput.mask = dist_mask
+    # muonintensityoutput.mask = dist_mask # no longer there in ctapipe 0.8
     ring_size = np.sum(pix_ring)
     size_outside_ring = np.sum(pix_outside_ring * clean_mask)
 
@@ -305,9 +312,9 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     if(plot_rings and not plots_path):
         print("You are trying to plot without giving a path!")
 
-    return muonintensityoutput, ring_size, size_outside_ring, muonringparam, \
-           good_ring, radial_distribution, mean_pixel_charge_around_ring, \
-           muonparameters
+    return muonintensityoutput, dist_mask, ring_size, size_outside_ring, \
+           muonringparam, good_ring, radial_distribution, \
+           mean_pixel_charge_around_ring, muonparameters
 
 
 def muon_filter(image, thr_low = 0, thr_up = 1.e10):
@@ -426,10 +433,10 @@ def create_muon_table():
 
 
 def fill_muon_event(output_parameters, good_ring, event_id, event_time,
-                    muonintensityparam, muonringparam, radial_distribution,
-                    size, size_outside_ring, mean_pixel_charge_around_ring,
-                    muonparameters, hg_peak_sample=np.nan,
-                    lg_peak_sample=np.nan):
+                    muonintensityparam, dist_mask, muonringparam,
+                    radial_distribution, size, size_outside_ring,
+                    mean_pixel_charge_around_ring, muonparameters,
+                    hg_peak_sample=np.nan, lg_peak_sample=np.nan):
 
     output_parameters['event_id'].append(event_id)
     output_parameters['event_time'].append(event_time)
@@ -457,9 +464,9 @@ def fill_muon_event(output_parameters, good_ring, event_id, event_time,
     output_parameters['radial_stdev'].append(radial_distribution['standard_dev'].value)
     output_parameters['radial_skewness'].append(radial_distribution['skewness'])
     output_parameters['radial_excess_kurtosis'].append(radial_distribution['excess_kurtosis'])
-    #  missing in ctapipe 0.8:
-    #output_parameters['num_pixels_in_ring'].append(np.sum(muonintensityparam.mask))
+    output_parameters['num_pixels_in_ring'].append(np.sum(dist_mask))
     output_parameters['mean_pixel_charge_around_ring'].append(mean_pixel_charge_around_ring)
     output_parameters['hg_peak_sample'].append(hg_peak_sample)
     output_parameters['lg_peak_sample'].append(lg_peak_sample)
+
     return

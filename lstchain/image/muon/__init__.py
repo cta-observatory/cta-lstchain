@@ -6,6 +6,9 @@ from .muon_analysis import (
     fill_muon_event,
     pixel_coords_to_telescope,
 )
+from .intensity_fitter import (
+    MuonIntensityFitter
+)
 
 __all__ = [
     'analyze_muon_event',

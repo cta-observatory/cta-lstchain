@@ -626,7 +626,7 @@ def r0_to_dl1(
                                 geom = subarray.tel[telescope_id].\
                                     camera.geometry
 
-                                muonintensityparam, \
+                                muonintensityparam, dist_mask, \
                                 ring_size, size_outside_ring, muonringparam, \
                                 good_ring, radial_distribution, \
                                 mean_pixel_charge_around_ring,\
@@ -651,6 +651,7 @@ def r0_to_dl1(
                                                 event.index.event_id,
                                                 dragon_time,
                                                 muonintensityparam,
+                                                dist_mask,
                                                 muonringparam,
                                                 radial_distribution,
                                                 ring_size,

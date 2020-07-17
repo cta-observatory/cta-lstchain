@@ -158,8 +158,8 @@ def main():
                 #    continue
 
                 (
-                    muonintensityparam, size, size_outside_ring, muonringparam,
-                    good_ring, radial_distribution,
+                    muonintensityparam, dist_mask, size, size_outside_ring,
+                    muonringparam, good_ring, radial_distribution,
                     mean_pixel_charge_around_ring, muonparameters
                 ) = analyze_muon_event(subarray,
                     event_id, image, geom, equivalent_focal_length,
