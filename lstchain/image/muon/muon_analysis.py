@@ -173,9 +173,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     muonparameters = MuonParametersContainer()
     muonparameters.containment = ring_containment(
             muonringparam.radius,
-            cam_rad,
-            muonringparam.center_x,
-            muonringparam.center_y)
+            muonringparam.center_x, muonringparam.center_y, cam_rad)
 
     radial_distribution = radial_light_distribution(
         muonringparam.center_x,
