@@ -340,7 +340,6 @@ def build_negative_log_likelihood(
     pixel_x = tel_coords.fov_lon.to_value(u.rad)[mask]
     pixel_y = tel_coords.fov_lat.to_value(u.rad)[mask]
     image = image[mask]
-    spe_width = spe_width[mask]
     pedestal = pedestal[mask]
 
     pixel_diameter = 2 * (
