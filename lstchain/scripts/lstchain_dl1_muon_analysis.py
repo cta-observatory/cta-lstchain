@@ -122,10 +122,8 @@ def main():
         geom = CameraGeometry.from_table(cam_description_table)
 
         subarray = read_subarray_description(filename, subarray_name='LST-1')
-        import pdb;
-        pdb.set_trace()
 
-        images = Table.read(filename, path=dl1_images_lstcam_key)
+        images = Table.read(filename, path=dl1_images_lstcam_key)['image']
 
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
         telescope_description = read_telescopes_descriptions(filename)[lst1_tel_id]
