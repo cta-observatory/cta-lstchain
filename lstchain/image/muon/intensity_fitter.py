@@ -255,7 +255,7 @@ def image_prediction_no_units(
     pred *= pixel_diameter_rad / radius_rad
     # multiply by angle (in radians) subtended by pixel width as seen from ring center
 
-    pred *= np.sin(2 * radius_rad)
+    pred *= 0.5*np.sin(2 * radius_rad)
 
     # multiply by gaussian weight, to account for "fraction of muon ring" which falls
     # within the pixel
