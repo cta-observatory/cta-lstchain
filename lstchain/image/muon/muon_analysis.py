@@ -425,7 +425,7 @@ def create_muon_table():
             'radial_skewness' : [],               # Skewness of (cleaned) light distribution along ring radius
             'radial_excess_kurtosis' : [],        # Excess kurtosis of (cleaned) light distribution along ring radius
             #  missing in ctapipe 0.8:
-            #  'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
+            'num_pixels_in_ring' : [],            # pixels inside the integration area around the ring
             'mean_pixel_charge_around_ring' : [], # Average pixel charge in pixels surrounding the outer part of the ring
             'hg_peak_sample' : [],                # Peak sample of stacked HG waveforms of bright ring pixels
             'lg_peak_sample' : [],                # Peak sample of stacked LG waveforms of bright ring pixels
