@@ -134,9 +134,12 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     TODO: several hard-coded quantities that can go into a configuration file
     """
 
+    lst1_tel_id = 1
+    lst1_description = subarray.tels[lst1_tel_id]
+
     tailcuts = [10, 5]
 
-    cam_rad = 2.26 * u.deg
+    cam_rad = (lst1_description.camera.geometry.guess_radius()/lst1_description.optics.equivalent_focal_length)*u.rad
 
     # some cuts for good ring selection:
     min_pix = 148                              # (8%) minimum number of pixels in the ring with >0 signal
