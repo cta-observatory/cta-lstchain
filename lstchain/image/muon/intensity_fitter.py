@@ -462,8 +462,6 @@ class MuonIntensityFitter(TelescopeComponent):
         help="Hole radius of the reflector in m",
         default_value=[
             ("type", "LST_*", 0.308),
-            ("type", "MST_*", 0.244),
-            ("type", "SST_1M_*", 0.130),
         ],
     ).tag(config=True)
 
