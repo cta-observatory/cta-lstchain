@@ -112,7 +112,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     image:      `np.ndarray` number of photoelectrons in each pixel
     geom:       CameraGeometry
     equivalent_focal_length: `float` focal length of the telescope
-    mirror_area: `float` mirror area of the telescope
+    mirror_area: `float` mirror area of the telescope in square meters
     plot_rings: `bool` plot the muon ring
     plots_path: `string` path to store the figures
 
@@ -157,7 +157,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom,
                                                             tailcuts)
 
-    mirror_radius = np.sqrt(mirror_area / np.pi)
+    mirror_radius = np.sqrt(mirror_area / np.pi) # meters
     dist_mask = np.abs(dist - muonringparam.radius
                     ) < muonringparam.radius * ring_integration_width
     pix_ring = image * dist_mask
