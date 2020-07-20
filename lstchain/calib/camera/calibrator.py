@@ -192,8 +192,10 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
 
-        charge = np.zeros(waveforms.shape[0])
-        peak_time = np.zeros(waveforms.shape[0])
+        charge = np.zeros((waveforms.shape[0], waveforms.shape[1]),
+                          dtype='float32')
+        peak_time = np.zeros((waveforms.shape[0], waveforms.shape[1]),
+                             dtype='float32')
         # image extraction for each channel:
         for i in range(waveforms.shape[0]):
             charge[i], peak_time[i] = self.image_extractor(waveforms[i], telid, no_gain_selection[i])
