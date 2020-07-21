@@ -277,49 +277,44 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
                     f' flatfield: {np.sum(flatfield_mask)}, '
                     f' cosmics: {np.sum(cosmics_mask)}')
 
-        # fill quantities which depend on event-wise (i.e. not
-        # pixel-wise) parameters:
+        # Fill quantities which depend on event-wise (i.e. not
+        # pixel-wise) parameters.
+        # Set None for a container that has not been filled,
+        # otherwise it will give trouble in the plotting stage.
+
         if pedestal_mask.sum() > 1:
             dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
                                                         parameters,
                                                         pedestal_mask,
                                                         geom, bins)
+            dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                        pedestal_mask, bins,
+                                                        'pedestals')
+        else:
+            dl1datacheck_pedestals = None
+
         if flatfield_mask.sum() > 1:
             dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
                                                         parameters,
                                                         flatfield_mask,
                                                         geom, bins)
-        if cosmics_mask.sum() > 1:
-            dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
-                                                      cosmics_mask,
-                                                      geom, bins)
-
-        # now fill pixel-wise information:
-        if pedestal_mask.sum() > 0:
-            dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                        pedestal_mask, bins,
-                                                        'pedestals')
-        if flatfield_mask.sum() > 0:
             dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
                                                         flatfield_mask, bins,
                                                         'flatfield')
-        if cosmics_mask.sum() > 0:
+        else:
+            dl1datacheck_flatfield = None
+
+        if cosmics_mask.sum() > 1:
+            dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
+                                                      parameters,
+                                                      cosmics_mask,
+                                                      geom, bins)
             dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
                                                       cosmics_mask, bins,
                                                       'cosmics')
-
-        # Return None for a container that has not been completely filled,
-        # otherwise it will give trouble in the plotting stage.
-        if pedestal_mask.sum() == 0:
-            dl1datacheck_pedestals = None
-        if flatfield_mask.sum() == 0:
-            dl1datacheck_flatfield = None
-        if cosmics_mask.sum() == 0:
+        else:
             dl1datacheck_cosmics = None
 
-        # in case events of some type are missing, just issue a warning and
-        # retun None for the corresponding container, to avoid catastrophic
-        # failure when trying to write it out
 
         return dl1datacheck_pedestals, dl1datacheck_flatfield, \
                dl1datacheck_cosmics
