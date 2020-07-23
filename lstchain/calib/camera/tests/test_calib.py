@@ -77,6 +77,13 @@ def test_load_calibrator_from_config_ManualGainSelector():
 
 def test_load_image_extractor_from_config():
     from ctapipe.image import LocalPeakWindowSum
+    from lstchain.io import get_standard_config
+
+    std_conf = get_standard_config()
+    image_extractor = load_image_extractor_from_config(std_conf)
+    assert isinstance(image_extractor, LocalPeakWindowSum)
+    assert image_extractor.window_shift == 4
+    assert image_extractor.window_width == 8
 
     config = {'image_extractor': 'LocalPeakWindowSum',
               'image_extractor_config': {
