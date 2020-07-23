@@ -44,7 +44,7 @@ setup(
     install_requires=[
         'astropy',
         'ctapipe~=0.7.0',
-        'ctaplot~=0.5.2',
+        'ctaplot~=0.5.3',
         'eventio~=0.20.3',
         'gammapy>=0.17',
         'h5py',
@@ -61,7 +61,8 @@ setup(
         'joblib',
     ],
     package_data={
-        'lstchain': ['data/lstchain_standard_config.json'],
+        'lstchain': ['data/lstchain_standard_config.json',
+                     'resources/LST_pixid_to_cluster.txt'],
     },
     tests_require=[
         'pytest',

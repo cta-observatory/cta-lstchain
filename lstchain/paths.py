@@ -204,4 +204,4 @@ def r0_to_dl1_filename(r0_path):
         r0_path, *exts = r0_path.rsplit(ext, 1)
 
     p = Path(r0_path)
-    return p.with_name('dl1_' + p.name).with_suffix('.h5')
+    return p.with_name('dl1_' + p.name + '.h5')

@@ -7,13 +7,15 @@
     "r": [0, 1],
     "leakage2_intensity": [0, 1]
   },
+
   "tailcut": {
-    "picture_thresh": 6,
-    "boundary_thresh": 3,
-    "keep_isolated_pixels": false,
-    "min_number_picture_neighbors": 1
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":1
   },
-  "random_forest_regressor_args": {
+
+    "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
     "n_jobs": 4,
@@ -31,6 +33,7 @@
     "verbose": 0,
     "warm_start": false
   },
+
   "random_forest_classifier_args": {
     "max_depth": 100,
     "min_samples_leaf": 2,
@@ -50,6 +53,7 @@
     "warm_start": false,
     "class_weight": null
   },
+
   "regression_features": [
     "log_intensity",
     "width",
@@ -66,6 +70,7 @@
     "leakage2_intensity",
     "n_islands"
   ],
+
   "classification_features": [
     "log_intensity",
     "width",
@@ -85,15 +90,12 @@
     "reco_disp_dx",
     "reco_disp_dy"
   ],
-  "allowed_tels": [
-    1,
-    2,
-    3,
-    4
-  ],
+
+  "allowed_tels": [1, 2, 3, 4],
   "max_events": null,
   "custom_calibration": false,
   "write_pe_image": false,
+  "mc_image_scaling_factor": 1,
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_config": {
     "LocalPeakWindowSum": {
@@ -105,75 +107,56 @@
       "window_width": 8
     }
   },
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
-    "threshold": 3500
+    "threshold":  3500
   },
-  "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "image_extractor_for_muons_config": {
-    "LocalPeakWindowSum": {
-      "window_shift": 4,
-      "window_width": 8
-    },
-    "GlobalPeakWindowSum": {
-      "window_shift": 4,
-      "window_width": 8
-    }
-  },
-  "timestamps_pointing": "ucts",
+  "apply_charge_correction": false,
+  "charge_scale": [1.0,1.0],
+  "timestamps_pointing":"ucts",
+
   "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
-  "volume_reducer": {
+
+  "volume_reducer":{
     "algorithm": null,
     "parameters": {
     }
   },
   "calibration_product": "LSTCalibrationCalculator",
-  "LSTCalibrationCalculator": {
-    "minimum_hg_charge_median": 5000,
-    "maximum_lg_charge_std": 300,
-    "flatfield_product": "FlasherFlatFieldCalculator",
-    "pedestal_product": "PedestalIntegrator",
-    "PedestalIntegrator": {
-      "sample_size": 10000,
-      "sample_duration": 100000,
-      "tel_id": 1,
-      "charge_median_cut_outliers": [
-        -10,
-        10
-      ],
-      "charge_std_cut_outliers": [
-        -10,
-        10
-      ],
-      "charge_product": "FixedWindowSum"
-    },
-    "FlasherFlatFieldCalculator": {
-      "sample_size": 10000,
-      "sample_duration": 100000,
-      "tel_id": 1,
-      "charge_product": "LocalPeakWindowSum",
-      "charge_median_cut_outliers": [
-        -0.5,
-        0.5
-      ],
-      "charge_std_cut_outliers": [
-        -10,
-        10
-      ],
-      "time_cut_outliers": [
-        2,
-        38
-      ]
-    },
-    "LocalPeakWindowSum": {
+
+  "LSTCalibrationCalculator":{
+     "minimum_hg_charge_median": 5000,
+     "maximum_lg_charge_std": 300,
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "apply_charge_correction": false,
+     "PedestalIntegrator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_median_cut_outliers": [-10,10],
+       "charge_std_cut_outliers": [-10,10],
+       "charge_product":"FixedWindowSum"
+     },
+     "FlasherFlatFieldCalculator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "charge_product":"LocalPeakWindowSum",
+       "charge_median_cut_outliers": [-0.5,0.5],
+       "charge_std_cut_outliers": [-10,10],
+       "time_cut_outliers": [2,38]
+     },
+      "LocalPeakWindowSum":{
       "window_shift": 5,
-      "window_width": 12
-    },
-    "FixedWindowSum": {
-      "window_start": 12,
-      "window_width": 12
+      "window_width":12
+     },
+     "FixedWindowSum":{
+       "window_start": 12,
+       "window_width":12
     }
   }
 }

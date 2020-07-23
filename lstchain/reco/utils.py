@@ -19,6 +19,8 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from . import disp
 from warnings import warn
+import pandas as pd
+import logging
 
 __all__ = [
     'alt_to_theta',
@@ -26,8 +28,9 @@ __all__ = [
     'cal_cam_source_pos',
     'get_event_pos_in_camera',
     'reco_source_position_sky',
-    'camera_to_sky',
+    'camera_to_altaz',
     'sky_to_camera',
+    'radec_to_camera',
     'source_side',
     'source_dx_dy',
     'polar_to_cartesian',
@@ -200,24 +203,32 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
-    return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
+    return camera_to_altaz(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
-def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
+def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = None):
     """
+    Compute camera to Horizontal frame (Altitude-Azimuth system). For MC assume the default ObsTime.
 
     Parameters
     ----------
-    pos_x: X coordinate in camera (distance)
-    pos_y: Y coordinate in camera (distance)
-    focal: telescope focal (distance)
-    pointing_alt: pointing altitude in angle unit
-    pointing_az: pointing altitude in angle unit
+    pos_x: `~astropy.units.Quantity`
+        X coordinate in camera (distance)
+    pos_y: `~astropy.units.Quantity`
+        Y coordinate in camera (distance)
+    focal: `~astropy.units.Quantity`
+        telescope focal (distance)
+    pointing_alt: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    pointing_az: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    obstime: `~astropy.time.Time`
+
 
     Returns
     -------
-    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
-
+    sky frame: `astropy.coordinates.SkyCoord`
+       in AltAz frame
     Example:
     --------
     import astropy.units as u
@@ -227,9 +238,13 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     focal = 28*u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
+    if not obstime:
+        logging.info("No time given. To be use only for MC data.")
+    horizon_frame = AltAz(location=location, obstime=obstime)
+
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
@@ -266,6 +281,31 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     return camera_pos
 
+def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
+    """
+    Coordinate transform from sky coordinate to camera coordinates (x, y) in distance
+    Parameters
+    ----------
+    sky_coordinate: astropy.coordinates.sky_coordinate.SkyCoord
+    obstime: astropy.time.Time
+    pointing_alt: pointing altitude in angle unit
+    pointing_az: pointing altitude in angle unit
+    focal: astropy Quantity
+    
+    Returns
+    -------
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
+    """   
+    
+    horizon_frame = AltAz(location=location, obstime=obstime)
+
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
+
+    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction, obstime=obstime, location=location)
+
+    camera_pos = sky_coordinate.transform_to(camera_frame)
+
+    return camera_pos
 
 def source_side(source_pos_x, cog_x):
     """
@@ -412,7 +452,8 @@ def filter_events(events,
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
     if dropna:
-        return events[filter].dropna()
+        with pd.option_context('mode.use_inf_as_null', True):
+            return events[filter].dropna()
     else:
         return events[filter]
 

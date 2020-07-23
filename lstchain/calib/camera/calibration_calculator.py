@@ -5,10 +5,11 @@ Component for the estimation of the calibration coefficients  events
 import numpy as np
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List
+from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.lstcontainers import LSTEventType
+from lstchain.calib.camera.calibrator import get_charge_correction
 
 __all__ = [
     'CalibrationCalculator',
@@ -49,6 +50,12 @@ class CalibrationCalculator(Component):
         FlatFieldCalculator,
         default='FlasherFlatFieldCalculator'
     )
+
+    apply_charge_correction = Bool(
+        False,
+        help='Apply charge pulse shape charge correction'
+
+    ).tag(config=True)
 
     classes = List([
                     FlatFieldCalculator,
@@ -102,6 +109,18 @@ class CalibrationCalculator(Component):
 
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
+
+        # initialize the pulse shape  corrections
+        if self.apply_charge_correction:
+
+            # get the integration window corrections
+            self.charge_correction = get_charge_correction(
+                self.flatfield.extractor.window_width,
+                self.flatfield.extractor.window_shift,
+            )
+        else:
+            # no pulse shape correction by default
+            self.charge_correction = np.ones(2)
 
 
 class LSTCalibrationCalculator(CalibrationCalculator):
@@ -181,12 +200,13 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # calibration coefficients
         numerator = n_pe * ff
-        denominator = (ff_data.charge_median - ped_data.charge_median)
+
+        # correct the signal for the integration window
+        denominator = (ff_data.charge_median - ped_data.charge_median) * self.charge_correction[:, np.newaxis]
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
-        # put the time around zero
-        camera_time_median = np.median(ff_data.time_median, axis=1)
-        calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
+        # flat-field time corrections
+        calib_data.time_correction = -ff_data.relative_time_median
 
         calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
 

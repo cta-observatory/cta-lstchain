@@ -233,25 +233,28 @@ def r0_to_dl1(
 
         # all this will be cleaned up in a next PR related to the configuration files
 
-        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path=calibration_path,
-                                                time_calibration_path=time_calibration_path,
-                                                extractor_product=config['image_extractor'],
-                                                gain_threshold=Config(config).gain_selector_config['threshold'],
-                                                config=Config(config),
-                                                allowed_tels=[1],
+        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                time_calibration_path = time_calibration_path,
+                                                extractor_product = config['image_extractor'],
+                                                gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                charge_scale = config['charge_scale'],
+                                                apply_charge_correction = Config(config).LSTCalibrationCalculator.apply_charge_correction,
+                                                config = Config(config),
+                                                allowed_tels = [1],
                                                 )
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
-        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path=calibration_path,
-                                                               time_calibration_path=time_calibration_path,
-                                                               extractor_product=config['image_extractor_for_muons'],
-                                                               gain_threshold=Config(config).gain_selector_config[
-                                                                   'threshold'],
-                                                               config=Config(
-                                                                   config['image_extractor_for_muons_config']),
-                                                               allowed_tels=[1],
-                                                               )
+
+        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
+                                                               time_calibration_path = time_calibration_path,
+                                                               extractor_product = config['image_extractor_for_muons'],
+                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
+                                                               charge_scale=config['charge_scale'],
+                                                               apply_charge_correction=Config(config).LSTCalibrationCalculator.apply_charge_correction,
+                                                               config = Config(config),
+                                                               allowed_tels = [1],)
+
 
         # Component to process interleaved pedestal and flat-fields
         calib_config = Config(config[config['calibration_product']])
@@ -342,6 +345,8 @@ def r0_to_dl1(
                 write_subarray_tables(writer, event, metadata)
                 if not custom_calibration:
                     cal_mc(event)
+                if config['mc_image_scaling_factor'] != 1:
+                    rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             else:
                 if i == 0:
@@ -711,3 +716,18 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
         add_column_table(tab, tables.Float32Col, 'src_x', source_pos_in_camera.x.value)
         tab = file.root[table_path]
         add_column_table(tab, tables.Float32Col, 'src_y', source_pos_in_camera.y.value)
+
+
+def rescale_dl1_charge(event, scaling_factor):
+    """
+    Rescale the charges (images) by a given scaling factor.
+    The images in dl1.tel[tel_id].image is directly multiplied in place by `scaling_factor`.
+
+    Parameters
+    ----------
+    event: `ctapipe.io.containers.DataContainer`
+    scaling_factor: float
+    """
+
+    for tel_id, tel in event.dl1.tel.items():
+        tel.image *= scaling_factor

@@ -1,7 +1,8 @@
 import numpy as np
 import os
-from ctapipe.core.traits import Unicode, List, Int
+from ctapipe.core.traits import Unicode, List, Int, Bool
 from ctapipe.calib.camera import CameraCalibrator
+from ctapipe.calib.camera.calibrator import integration_correction
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.io.hdf5tableio import HDF5TableReader
@@ -10,7 +11,7 @@ from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 
 
-__all__ = ['LSTCameraCalibrator']
+__all__ = ['LSTCameraCalibrator','get_charge_correction']
 
 
 class LSTCameraCalibrator(CameraCalibrator):
@@ -47,6 +48,17 @@ class LSTCameraCalibrator(CameraCalibrator):
         4094,
         allow_none=True,
         help='Threshold for the gain selection in ADC'
+    ).tag(config=True)
+
+    charge_scale = List(
+        [1,1],
+        help='Multiplicative correction factor for charge estimation [HG,LG]'
+    ).tag(config=True)
+
+    apply_charge_correction = Bool(
+        False,
+        help='Apply charge pulse shape charge correction'
+
     ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -104,6 +116,26 @@ class LSTCameraCalibrator(CameraCalibrator):
         # initialize the MonitoringContainer() for the moment it reads it from a hdf5 file
         self._initialize_correction()
 
+        # initialize the pulse shape  corrections
+        if self.apply_charge_correction:
+
+            # get the pulse shape  corrections
+            pulse_correction = get_charge_correction(
+                self.image_extractor.window_width,
+                self.image_extractor.window_shift,
+            )
+        else:
+            # no pulse shape correction by default
+            pulse_correction = np.ones(2)
+
+        self.log.info(f"Pulse shape charge correction {pulse_correction}")
+
+        # global charge corrections : pulse shape * scale
+        self.charge_correction = pulse_correction * self.charge_scale
+
+        self.log.info(f"Total charge correction {self.charge_correction}")
+
+
     def _initialize_correction(self):
         """
         Read the correction from hdf5 calibration file
@@ -135,6 +167,7 @@ class LSTCameraCalibrator(CameraCalibrator):
                 f"Problem in reading calibration file {self.calibration_path}"
             )
             raise
+
 
     def _calibrate_dl0(self, event, telid):
         """
@@ -176,6 +209,9 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         charge, pulse_time = self.image_extractor(waveforms)
 
+        # correct charge for width integration
+        corrected_charge = charge * self.charge_correction[:,np.newaxis]
+
         # correct time with drs4 correction if available
         if self.time_corrector:
             pulse_time = self.time_corrector.get_corr_pulse(event, pulse_time)
@@ -187,7 +223,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         if self.gain_threshold:
             waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
-            event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
+            event.dl1.tel[telid].image = corrected_charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
 
             # remember which channel has been selected
@@ -195,5 +231,54 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # if threshold == None
         else:
-            event.dl1.tel[telid].image = charge
+            event.dl1.tel[telid].image = corrected_charge
             event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
+
+
+def get_charge_correction(window_width, window_shift):
+    """
+    Obtain charge correction from the reference pulse shape,
+    this function is will be not necessary in ctapipe 0.8
+
+    Parameters
+    ----------
+    window_width: width of the integration window
+
+    window_shift: shift of the integration window
+
+    Returns
+    -------
+    pulse_correction: pulse correction for HG and LG, np.array(2)
+
+    """
+    # read the pulse shape file (to be changed for ctapipe version 0.8)
+    try:
+        # read pulse shape from oversampled file
+        pulse_ref_file = (os.path.join(os.path.dirname(__file__),
+                    "../../data/oversampled_pulse_LST_8dynode_pix6_20200204.dat")
+                    )
+        hg_pulse_shape = []
+        lg_pulse_shape = []
+        with open(pulse_ref_file, 'r') as file:
+                pulse_time_slice, pulse_time_step = file.readline().split()
+                for line in file:
+                    if "#" not in line:
+                        columns = line.split()
+                        hg_pulse_shape.append(float(columns[0]))
+                        lg_pulse_shape.append(float(columns[1]))
+
+        pulse_shape = np.array((hg_pulse_shape, lg_pulse_shape))
+
+        pulse_correction = integration_correction(pulse_shape.shape[0],
+                                                  pulse_shape,
+                                                  float(pulse_time_step),
+                                                  float(pulse_time_slice),
+                                                  window_width,
+                                                  window_shift
+                                                  )
+
+    except:
+        print(f"Problem in reading calibration file {self.calibration_path}")
+        raise
+
+    return np.array(pulse_correction)
