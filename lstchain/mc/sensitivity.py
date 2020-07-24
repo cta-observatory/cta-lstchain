@@ -362,7 +362,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
 
     mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.m ** 2)
-    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u. ** 2)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.m ** 2)
 
     # Set binning for sensitivity calculation
     # TODO: This information should be read from the files
