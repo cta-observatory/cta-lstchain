@@ -68,7 +68,6 @@ class DL1ParametersContainer(Container):
     obs_id = Field(None, 'Observation ID')
     event_id = Field(None, 'Event ID')
     calibration_id = Field(None, 'ID of the employed calibration event')
-    gps_time = Field(None, 'GPS time event trigger')
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
     tib_time = Field(None, 'TIB time event trigger')
@@ -135,7 +134,6 @@ class DL1ParametersContainer(Container):
             print("mc information not filled")
 
     def fill_event_info(self, event):
-        self.gps_time = event.trigger.time
         self.obs_id = event.index.obs_id
         self.event_id = event.index.event_id
 
