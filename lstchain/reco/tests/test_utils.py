@@ -88,3 +88,11 @@ def test_unix_tai_to_utc():
     timestamps = np.array([timestamp_tai, np.nan])
     assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
     assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
+
+
+def test_filter_events():
+    data = pd.DataFrame(pd.DataFrame(np.array([[np.nan, 2, 3], [4, 5, 6], [7, np.nan, 9]]),
+                                     columns=['a', 'b', 'c']))
+
+    filtered_data = utils.filter_events(data, subset=['b', 'c'])
+    np.testing.assert_array_equal(data.iloc[0:2], filtered_data)
