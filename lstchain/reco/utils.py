@@ -426,6 +426,7 @@ def filter_events(events,
                                  leakage2_intensity=[0, 1],
                                  ),
                   dropna=True,
+                  subset=None,
                   ):
     """
     Apply data filtering to a pandas dataframe.
@@ -439,6 +440,8 @@ def filter_events(events,
     filters: dict containing events features names and their filtering range
     dropna: bool
         if True (default), `dropna()` is applied to the dataframe.
+    subset: to be used with `dropna=True`
+        see `pandas.DataFrame.dropna`
 
     Returns
     -------
@@ -453,7 +456,7 @@ def filter_events(events,
 
     if dropna:
         with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
+            return events[filter].dropna(subset=subset)
     else:
         return events[filter]
 
