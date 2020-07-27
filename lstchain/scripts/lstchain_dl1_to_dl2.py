@@ -94,7 +94,8 @@ def main():
         else:
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
-    data = filter_events(data, filters=config["events_filters"])
+
+    data = filter_events(data, filters=config["events_filters"], subset=config['regression_features'])
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -110,7 +111,7 @@ def main():
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
