@@ -36,6 +36,7 @@ from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..io import DL1ParametersContainer, standard_config, replace_config
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
+from ..image import time_constrained_clean
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 
 
@@ -69,7 +70,7 @@ __all__ = [
 ]
 
 
-cleaning_method = tailcuts_clean
+cleaning_method = time_constrained_clean
 
 
 filters = tables.Filters(
@@ -109,7 +110,7 @@ def get_dl1(
     """
 
     config = replace_config(standard_config, custom_config)
-    cleaning_parameters = config["tailcut"]
+    cleaning_parameters = config["time_constrained"]
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -120,7 +121,7 @@ def get_dl1(
     image = dl1.image
     pulse_time = dl1.pulse_time
 
-    signal_pixels = cleaning_method(camera, image, **cleaning_parameters)
+    signal_pixels = cleaning_method(camera, image, pulse_time, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
