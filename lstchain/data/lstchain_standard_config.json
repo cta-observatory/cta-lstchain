@@ -15,6 +15,15 @@
     "min_number_picture_neighbors":1
   },
 
+  "time_constrained": {
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "time_limit_core":4.5,
+    "time_limit_boundary":1.5,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":1
+  },
+
     "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
