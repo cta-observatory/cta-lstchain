@@ -971,6 +971,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[0, 1].set_ylabel('ring intensity (p.e.)')
         axes[1, 1].plot(contained_muons['ring_radius'],
                         contained_muons['ring_width'], 'x', alpha=0.5)
+        axes[1, 1].set_ylim(0., 0.3)
         axes[1, 1].set_xlabel('ring radius (deg)')
         axes[1, 1].set_ylabel('ring width (deg)')
         axes[0, 2].hist(contained_muons['ring_size'],
@@ -1005,6 +1006,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[0, 1].set_ylabel('number of rings')
         axes[1, 1].plot(contained_muons['ring_width'],
                         contained_muons['muon_efficiency'], 'x', alpha=0.5)
+        axes[1, 1].set_xlim(0., 0.3)
         axes[1, 1].set_ylim(0., 0.5)
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
