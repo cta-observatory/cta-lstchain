@@ -442,7 +442,6 @@ def r0_to_dl1(
                         dl1_container.fill_mc(event)
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
-                    dl1_container.gps_time = event.trigger.time.value
 
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
