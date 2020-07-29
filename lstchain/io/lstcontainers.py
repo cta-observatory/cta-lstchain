@@ -169,6 +169,9 @@ class DL1ParametersContainer(Container):
         except ValueError:
             self.time_gradient = np.nan
             self.intercept = np.nan
+        except np.linalg.LinAlgError: # if sum(clean) == 1
+            self.time_gradient = np.nan
+            self.intercept = np.nan
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
