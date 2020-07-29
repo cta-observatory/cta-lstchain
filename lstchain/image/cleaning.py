@@ -62,11 +62,11 @@ def select_core(
 
 
 def select_timing_close_to_average(
-    geom, mask_core, arrival_times, time_limit=4.5
+    geom, mask_core, image, arrival_times, time_limit=4.5
 ):
     pixels_to_remove = []
     mask_core = mask_core.copy()
-    time_ave = np.average(arrival_times[np.where(mask_core)[0]])
+    time_ave = np.average(arrival_times[np.where(mask_core)[0]], weights=image[np.where(mask_core)[0]])
     for pixel in np.where(mask_core)[0]:
         time_diff = np.abs(arrival_times[pixel] - time_ave)
         if time_diff > time_limit:
@@ -76,7 +76,7 @@ def select_timing_close_to_average(
 
 
 def select_boundary(
-    geom, image, mask_core, boundary_thresh=5
+    geom, mask_core, image, boundary_thresh=5
 ):
     pixels_above_boundary = image >= boundary_thresh
     pixels_with_picture_neighbors = geom.neighbor_matrix_sparse.dot(mask_core)
@@ -101,9 +101,17 @@ def time_constrained_clean(
     geom, image, arrival_times, picture_thresh=7, boundary_thresh=5, time_limit_core=4.5, time_limit_boundary=1.5, keep_isolated_pixels=False, min_number_picture_neighbors=0
 ):
 
+    # find core pixels that pass a picture threshold
     mask_core = select_core(geom, image, picture_thresh, keep_isolated_pixels, min_number_picture_neighbors)
-    mask_core = select_timing_close_to_average(geom, mask_core, arrival_times, time_limit_core)
-    mask_boundary = select_boundary(geom, image, mask_core, boundary_thresh)
-    mask_boundary = select_timing_close_to_core(geom, mask_core, mask_boundary, arrival_times, time_limit_boundary)
 
+    # keep core pixels whose arrival times are within a certain time limit of the average
+    if sum(mask_core) > 0:
+        mask_core = select_timing_close_to_average(geom, mask_core, image, arrival_times, time_limit_core)
+    
+    # find boundary pixels that pass a boundary threshold
+    mask_boundary = select_boundary(geom, mask_core, image, boundary_thresh)
+
+    # keep boundary pixels whose arrival times are within a certain time limit of the neighboring core pixels
+    mask_boundary = select_timing_close_to_core(geom, mask_core, mask_boundary, arrival_times, time_limit_boundary)
+        
     return mask_core | mask_boundary
