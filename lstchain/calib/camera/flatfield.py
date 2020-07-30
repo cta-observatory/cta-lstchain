@@ -8,7 +8,7 @@ from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.core.traits import  List, Unicode, Bool
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
-from lstchain.calib.camera.calibrator import get_charge_correction
+
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -50,7 +50,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, subarray, **kwargs):
 
         """Calculates flat-field parameters from flasher data
            based on the best algorithm described by S. Fegan in MST-CAM-TN-0060 (eq. 19)
@@ -67,7 +67,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
              Interval (in waveform samples) of accepted time values
 
         """
-        super().__init__(**kwargs)
+        super().__init__(subarray, **kwargs)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 
@@ -104,16 +104,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
 
         waveforms = event.r1.tel[self.tel_id].waveform
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
 
         # Extract charge and time
         charge = 0
         peak_pos = 0
         if self.extractor:
-            if self.extractor.requires_neighbors():
-                camera = event.inst.subarray.tel[self.tel_id].camera
-                self.extractor.neighbours = camera.neighbor_matrix_where
-
-            charge, peak_pos = self.extractor(waveforms)
+            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
 
             # correct time with drs4 correction if available
             if self.time_corrector:
@@ -285,11 +282,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         return {
             'sample_time': (trigger_time - time_start) / 2 * u.s,
-            'sample_time_range': [time_start, trigger_time] * u.s,
-            'time_mean': np.ma.getdata(pixel_mean),
-            'time_median': np.ma.getdata(pixel_median),
-            'time_std': np.ma.getdata(pixel_std),
-            'relative_time_median': np.ma.getdata(relative_median),
+            'sample_time_min': time_start * u.s,
+            'sample_time_max': trigger_time * u.s,
+            'time_mean': np.ma.getdata(pixel_mean)*u.ns,
+            'time_median': np.ma.getdata(pixel_median)*u.ns,
+            'time_std': np.ma.getdata(pixel_std)*u.ns,
+            'relative_time_median': np.ma.getdata(relative_median)*u.ns,
             'time_median_outliers': np.ma.getdata(time_median_outliers),
 
         }

@@ -1,14 +1,15 @@
-import pytest
-import pandas as pd
 import os
-from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file, fake_dl1_proton_file
-from lstchain.io.io import dl1_params_lstcam_key
-import numpy as np
-from lstchain.io.io import dl1_params_src_dep_lstcam_key
-import subprocess as sp
-import pkg_resources
 import shutil
+import subprocess as sp
 
+import numpy as np
+import pandas as pd
+import pkg_resources
+import pytest
+
+from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.io.io import dl1_params_src_dep_lstcam_key
+from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file, fake_dl1_proton_file
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
@@ -88,7 +89,7 @@ def test_lstchain_mc_trainpipe():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_lstchain_mc_rfperformance():
     gamma_file = dl1_file
-    produce_fake_dl1_proton_file()
+    produce_fake_dl1_proton_file(dl1_file)
     proton_file = fake_dl1_proton_file
 
     run_program(
@@ -169,3 +170,4 @@ def test_mc_r0_to_dl2():
         '-o', output_dir,
     )
     assert os.path.exists(dl2_file)
+

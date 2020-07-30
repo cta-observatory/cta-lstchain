@@ -16,21 +16,24 @@ $> python lstchain_mc_dl1ab.py
 
 """
 
-import tables
-import numpy as np
 import argparse
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from ctapipe.image.cleaning import tailcuts_clean, number_of_islands
-from ctapipe.image import hillas_parameters
-from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.config import get_standard_config
-from ctapipe.instrument import CameraGeometry, OpticsDescription
-from lstchain.io.lstcontainers import DL1ParametersContainer
-from ctapipe.io.containers import HillasParametersContainer
-from astropy.units import Quantity
 from distutils.util import strtobool
-from lstchain.io import get_dataset_keys, auto_merge_h5files
+
+import numpy as np
+import tables
 from astropy.table import Table
+from astropy.units import Quantity
+from ctapipe.containers import HillasParametersContainer
+from ctapipe.image import hillas_parameters
+from ctapipe.image.cleaning import tailcuts_clean
+from ctapipe.image.morphology import number_of_islands
+from ctapipe.instrument import CameraGeometry, OpticsDescription
+
+from lstchain.io import get_dataset_keys, auto_merge_h5files
+from lstchain.io.config import get_standard_config
+from lstchain.io.config import read_configuration_file, replace_config
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.lstcontainers import DL1ParametersContainer
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
@@ -79,16 +82,19 @@ def main():
     dl1_container = DL1ParametersContainer()
     parameters_to_update = list(HillasParametersContainer().keys())
     parameters_to_update.extend([
-        'wl', 'r',
-        'leakage1_intensity',
-        'leakage2_intensity',
-        'leakage1_pixel',
-        'leakage2_pixel',
         'concentration_cog',
         'concentration_core',
         'concentration_pixel',
+        'leakage_intensity_width_1',
+        'leakage_intensity_width_2',
+        'leakage_pixels_width_1',
+        'leakage_pixels_width_2',
+        'n_islands',
+        'intercept',
+        'time_gradient',
         'n_pixels',
-        'n_islands', 'intercept', 'time_gradient'
+        'wl',
+        'r',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -107,7 +113,7 @@ def main():
                 if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
-                pulse_time = row['pulse_time']
+                peak_time = row['peak_time']
 
                 signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
                 n_pixels = np.count_nonzero(signal_pixels)
@@ -123,7 +129,7 @@ def main():
                     dl1_container.fill_hillas(hillas)
                     dl1_container.set_timing_features(camera_geom[signal_pixels],
                                                       image[signal_pixels],
-                                                      pulse_time[signal_pixels],
+                                                      peak_time[signal_pixels],
                                                       hillas)
 
                     dl1_container.set_leakage(camera_geom, image, signal_pixels)
@@ -133,8 +139,8 @@ def main():
                     dl1_container.n_pixels = n_pixels
                     width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width.value
-                    dl1_container.length = length.value
+                    dl1_container.width = width
+                    dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
                     for p in parameters_to_update:

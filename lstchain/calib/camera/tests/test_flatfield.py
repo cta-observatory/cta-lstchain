@@ -1,7 +1,9 @@
 import numpy as np
+import astropy.units as u
 from ctapipe.calib.camera.flatfield import *
-from ctapipe.io.containers import EventAndMonDataContainer
+from ctapipe.containers import EventAndMonDataContainer
 from traitlets.config.loader import Config
+from ctapipe.instrument import SubarrayDescription, TelescopeDescription
 
 
 def test_flasherflatfieldcalculator():
@@ -12,13 +14,25 @@ def test_flasherflatfieldcalculator():
     n_pixels = 1855
     ff_level = 10000
 
+    subarray = SubarrayDescription(
+        "test array",
+        tel_positions={0: np.zeros(3) * u.m},
+        tel_descriptions={
+            0: TelescopeDescription.from_name(
+                optics_name="SST-ASTRI", camera_name="CHEC"
+            ),
+        },
+    )
+    subarray.tel[0].camera.readout.reference_pulse_shape = np.ones((1, 2))
+    subarray.tel[0].camera.readout.reference_pulse_sample_width = u.Quantity(1, u.ns)
+
     config = Config({
         "FixedWindowSum": {
             "window_start": 15,
             "window_width": 10
         }
     })
-    ff_calculator = FlasherFlatFieldCalculator(charge_product="FixedWindowSum",
+    ff_calculator = FlasherFlatFieldCalculator(subarray=subarray, charge_product="FixedWindowSum",
                                                sample_size=n_events,
                                                tel_id=tel_id, config=config)
     # create one event
@@ -29,7 +43,7 @@ def test_flasherflatfieldcalculator():
     data.mon.tel[tel_id].pixel_status.hardware_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
     data.mon.tel[tel_id].pixel_status.pedestal_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
     data.mon.tel[tel_id].pixel_status.flatfield_failing_pixels = np.zeros((n_gain, n_pixels), dtype=bool)
-    data.r1.tel[tel_id].waveform = np.zeros((n_gain, n_pixels, 40))
+    data.r1.tel[tel_id].waveform = np.zeros((n_gain, n_pixels, 40), dtype=np.float32)
     data.r1.tel[tel_id].trigger_time = 1000
     
     # flat-field signal put == delta function of height ff_level at sample 20
