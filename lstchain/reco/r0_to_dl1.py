@@ -337,6 +337,8 @@ def r0_to_dl1(
         first_valid_ucts = None
         first_valid_ucts_tib = None
         previous_ucts_time_unix = np.array([])
+        previous_ucts_trigger_type = np.array([], dtype='int')
+        previous_event_ids = np.array([], dtype='int')
 
         for i, event in enumerate(chain([first_event],  event_iter)):
 
@@ -525,6 +527,11 @@ def r0_to_dl1(
                         dl1_container.dragon_time = dragon_time_utc.unix
                         dl1_container.tib_time = tib_time_utc.unix
 
+                        # Until the TIB trigger_type is fully reliable, we also add
+                        # the ucts_trigger_type to the data
+                        dl1_container.ucts_trigger_type = \
+                            event.lst.tel[telescope_id].evt.ucts_trigger_type
+
                         # Due to a DAQ bug, sometimes there are 'jumps' in the
                         # UCTS info reaching the DAQ. After one such jump,
                         # all the UCTS info attached to an event actually
@@ -544,6 +551,15 @@ def r0_to_dl1(
                         # current event's (wrong) ucts info is placed last in
                         # the array. Each time the first array element is
                         # used, it is removed and the rest move up in the list.
+                        # NOTE: it might eventually happen that there are
+                        # events which are missing altogether, i.e. the event_id
+                        # jumps by more than one unit from one event to the
+                        # next. Hence we also keep track of event_id's to
+                        # make sure we attach the right ucts info to each event.
+                        # Of course, this would meand that after the first
+                        # jump in ucts, one could not correct all subsequent
+                        # events, because their ucts info is lost (with one of
+                        # the missing event_id's)
 
                         if len(previous_ucts_time_unix) > 0:
                             # keep the time read for this event (which really
@@ -551,14 +567,39 @@ def r0_to_dl1(
                             current_ucts_time = dl1_container.ucts_time
                             # put in dl1_container the proper time for this
                             # event:
-                            dl1_container.ucts_time = previous_ucts_time_unix[0]
-                            # move the rest of times (if any) up in the list:
+                            skipped = 0
+                            for i, id in enumerate(previous_event_ids):
+                                if id < event.r0.event_id:
+                                    skipped += 1
+                                    continue
+                                dl1_container.ucts_time = \
+                                previous_ucts_time_unix[i]
+                                dl1_container.ucts_trigger_type = \
+                                previous_ucts_trigger_type[i]
+                                break
+                            # remove from top of the lists all elements that
+                            # had event_id < than the current one
+                            for i in range(skipped):
+                                previous_ucts_time_unix = np.delete(
+                                        previous_ucts_time_unix, 0)
+                                previous_event_ids = np.delete(
+                                        previous_event_ids, 0)
+                                previous_ucts_trigger_type = np.delete(
+                                        previous_ucts_trigger_type, 0)
+                            # move the rest of times (if any) up in the list,
+                            # as well as the corresponding event_id's
                             for i in range(0, len(previous_ucts_time_unix)-1):
                                 previous_ucts_time_unix[i] = \
                                     previous_ucts_time_unix[i+1]
-                            # and finally, add to the list the time that was
-                            # wrongly attached to this event:
+                                previous_event_ids[i] = previous_event_ids[i+1]
+                                previous_ucts_trigger_type[i] = \
+                                    previous_ucts_trigger_type[i+1]
+                            # and finally, add to the end of the list the time
+                            # that was wrongly attached to this event:
                             previous_ucts_time_unix[-1] = current_ucts_time
+                            previous_event_ids[-1] = event.r0.event_id
+                            previous_ucts_trigger_type[-1] = event.lst.tel[
+                                telescope_id].evt.ucts_trigger_type
 
                         # Now check consistency of UCTS and Dragon times. If
                         # UCTS time is ahead of Dragon time by more than
@@ -570,11 +611,15 @@ def r0_to_dl1(
                         # move the other elements down in the list, which now
                         # must be one element longer.
                         # We leave the current event with the same time, which
-                        # will be approximately correct.
+                        # will be approximately correct (depending on event
+                        # rate).
                         if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
                             previous_ucts_time_unix = \
                                 np.insert(previous_ucts_time_unix, 0,
                                           dl1_container.ucts_time)
+                            np.insert(previous_event_ids, 0, event.r0.event_id)
+                            np.insert(previous_ucts_trigger_type, 0, event.lst.tel[
+                                telescope_id].evt.ucts_trigger_type)
 
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
@@ -596,10 +641,6 @@ def r0_to_dl1(
                         else:
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
-
-                        # Until the TIB trigger_type is fully reliable, we also add
-                        # the ucts_trigger_type to the data
-                        dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
 
                     dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
