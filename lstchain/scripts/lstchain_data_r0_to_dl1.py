@@ -19,13 +19,13 @@ $> python lstchain_data_r0_to_dl1.py
 """
 
 import argparse
-from lstchain.reco import r0_to_dl1
+import logging
+import sys
+from pathlib import Path
+
 from lstchain.io.config import read_configuration_file
 from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-from pathlib import Path
-import sys
-import logging
-import os
+from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
 

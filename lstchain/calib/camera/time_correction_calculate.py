@@ -59,7 +59,23 @@ class TimeCorrectionCalculate(Component):
                               help='Path to the time calibration file'
                               ).tag(config=True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, subarray, **kwargs):
+        """
+        The TimeCorrectionCalculate class to create h5py
+        file with coefficients for time correction curve of chip DRS4.
+        Description of this method: "Analysis techniques and performance
+        of the Domino Ring Sampler version 4 based readout
+        for the MAGIC telescopes [arxiv:1305.1007]
+
+        Parameters
+        ----------
+        subarray: ctapipe.instrument.SubarrayDescription
+            Description of the subarray. Provides information about the
+            camera which are useful in charge extraction, such as reference
+            pulse shape, sampling rate, neighboring pixels. Also required for
+            configuring the TelescopeParameter traitlets.
+        kwargs
+        """
         super().__init__(**kwargs)
 
         self.n_bins = int(self.n_capacitors / self.n_combine)
@@ -72,13 +88,14 @@ class TimeCorrectionCalculate(Component):
         # load the waveform charge extractor
         self.extractor = ImageExtractor.from_name(
             self.charge_product,
-            config=self.config
+            config=self.config,
+            subarray=subarray
         )
 
         self.log.info(f"extractor {self.extractor}")
         self.sum_events = 0
 
-    def calibrate_pulse_time(self, event):
+    def calibrate_peak_time(self, event):
         """
         Fill bins using time pulse from LocalPeakWindowSum.
         Parameters
@@ -90,22 +107,28 @@ class TimeCorrectionCalculate(Component):
                 self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 
             pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
-            charge, pulse_time = self.extractor(event.r1.tel[self.tel_id].waveform)
-            self.calib_pulse_time_jit(charge,
-                                      pulse_time,
-                                      pixel_ids,
-                                      self.first_cap_array,
-                                      self.mean_values_per_bin,
-                                      self.entries_per_bin,
-                                      n_cap=self.n_capacitors,
-                                      n_combine=self.n_combine,
-                                      min_charge=self.minimum_charge)
+            waveforms = event.r1.tel[self.tel_id].waveform
+            no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+            # select both gain
+            charge, peak_time = self.extractor(
+                    event.r1.tel[self.tel_id].waveform[:, :, :],
+                    self.tel_id,
+                    no_gain_selection)
+            self.calib_peak_time_jit(charge,
+                                     peak_time,
+                                     pixel_ids,
+                                     self.first_cap_array,
+                                     self.mean_values_per_bin,
+                                     self.entries_per_bin,
+                                     n_cap=self.n_capacitors,
+                                     n_combine=self.n_combine,
+                                     min_charge=self.minimum_charge)
             self.sum_events += 1
 
     @staticmethod
-    @jit(parallel=True)
-    def calib_pulse_time_jit(charge,
-                             pulse_time,
+    @njit(parallel=True)
+    def calib_peak_time_jit(charge,
+                             peak_time,
                              pixel_ids,
                              first_cap_array,
                              mean_values_per_bin,
@@ -153,7 +176,7 @@ class TimeCorrectionCalculate(Component):
                         fc = first_cap_array[nr_module, :, :]
                         first_cap = (fc[gain, pix]) % n_cap
                         bin = int(first_cap / n_combine)
-                        mean_values_per_bin[gain, pixel, bin] += pulse_time[gain, pixel]
+                        mean_values_per_bin[gain, pixel, bin] += peak_time[gain, pixel]
                         entries_per_bin[gain, pixel, bin] += 1
 
     def finalize(self):
@@ -249,4 +272,3 @@ class TimeCorrectionCalculate(Component):
 
         except Exception as err:
             print(f"FAILED to create the file {self.calib_file_path}", err)
-

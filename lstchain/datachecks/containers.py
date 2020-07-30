@@ -129,9 +129,12 @@ class DL1DataCheckContainer(Container):
         n_jump = 1+int(self.num_events/n_samples)
         # keep some info every n-jump-th event:
         sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
-        tib_time = np.array(table['tib_time'][mask][0::n_jump])
-        ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
-        dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
+        tib_time = u.Quantity(np.array(table['tib_time'][mask][0::n_jump]),
+                              u.s, copy=False)
+        ucts_time = u.Quantity(np.array(table['ucts_time'][mask][0::n_jump]),
+                               u.s, copy=False)
+        dragon_time = u.Quantity(np.array(table['dragon_time'][mask][
+                                          0::n_jump]), u.s, copy=False)
         # in case the resulting number of entries is <n_samples, we have to pad
         # the arrays, because hdf vector columns must have the same number of
         # elements in each row. We repeat the last value in the array
@@ -269,7 +272,7 @@ class DL1DataCheckContainer(Container):
         # containing very little signal. For time plots we require at least 1
         # p.e. We will also exclude NaNs from the calculations
 
-        time = table.col('pulse_time')[mask]
+        time = table.col('peak_time')[mask]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 

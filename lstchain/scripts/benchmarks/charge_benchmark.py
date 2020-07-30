@@ -84,17 +84,17 @@ def main():
     pdf_filename = os.path.join(args.output_dir, f"charge_bench_{os.path.basename(output_file).replace('.h5', '')}.pdf")
     with PdfPages(pdf_filename) as pdf:
 
-        plot_pixels_pe_spectrum(sim_table['photo_electron_image'], im_table['image'])
+        plot_pixels_pe_spectrum(sim_table['true_image'], im_table['image'])
         plt.tight_layout()
         pdf.savefig()
         plt.close()
 
-        plot_photoelectron_true_reco(sim_table['photo_electron_image'], im_table['image'])
+        plot_photoelectron_true_reco(sim_table['true_image'], im_table['image'])
         plt.tight_layout()
         pdf.savefig()
         plt.close()
 
-        ax = plot_charge_resolution(sim_table['photo_electron_image'], im_table['image'])
+        ax = plot_charge_resolution(sim_table['true_image'], im_table['image'])
         ax.set_ylim(-1, 10)
         plt.tight_layout()
         pdf.savefig()

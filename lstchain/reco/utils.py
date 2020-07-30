@@ -11,36 +11,38 @@ Usage:
 "import utils"
 """
 
-import numpy as np
-from ctapipe.coordinates import CameraFrame
+import logging
+from warnings import warn
+
 import astropy.units as u
-from astropy.utils import deprecated
+import numpy as np
+import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
+from astropy.utils import deprecated
+from ctapipe.coordinates import CameraFrame
+
 from . import disp
-from warnings import warn
-import pandas as pd
-import logging
 
 __all__ = [
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
-    'get_event_pos_in_camera',
-    'reco_source_position_sky',
     'camera_to_altaz',
-    'sky_to_camera',
-    'radec_to_camera',
-    'source_side',
-    'source_dx_dy',
-    'polar_to_cartesian',
     'cartesian_to_polar',
-    'predict_source_position_in_camera',
+    'clip_alt',
     'expand_tel_list',
     'filter_events',
-    'linear_imputer',
+    'get_event_pos_in_camera',
     'impute_pointing',
-    'clip_alt',
+    'linear_imputer',
+    'polar_to_cartesian',
+    'predict_source_position_in_camera',
+    'radec_to_camera',
+    'reco_source_position_sky',
+    'sky_to_camera',
+    'source_dx_dy',
+    'source_side',
     'unix_tai_to_time',
 ]
 
@@ -159,7 +161,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
@@ -423,7 +425,7 @@ def filter_events(events,
                                  length=[0, np.inf],
                                  wl=[0, np.inf],
                                  r=[0, np.inf],
-                                 leakage2_intensity=[0, 1],
+                                 leakage_intensity_width_2=[0, 1],
                                  ),
                   dropna=True,
                   ):
