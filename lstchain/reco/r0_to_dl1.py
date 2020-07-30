@@ -336,7 +336,6 @@ def r0_to_dl1(
 
         first_valid_ucts = None
         first_valid_ucts_tib = None
-        previous_ucts_time_unix = np.array([])
 
         for i, event in enumerate(chain([first_event],  event_iter)):
 
@@ -525,60 +524,9 @@ def r0_to_dl1(
                         dl1_container.dragon_time = dragon_time_utc.unix
                         dl1_container.tib_time = tib_time_utc.unix
 
-                        # Due to a DAQ bug, sometimes there are 'jumps' in the
-                        # UCTS info reaching the DAQ. After one such jump,
-                        # all the UCTS info attached to an event actually
-                        # corresponds to the next event. This one-event
-                        # shift stays like that until there is another jump
-                        # (then it becomes a 2-event shift and so on). We will
-                        # keep track of those jumps, by storing the UCTS info
-                        # of the previously read events in the list
-                        # previous_ucts_time_unix. The list has one element
-                        # for each of the jumps, so if there has been just
-                        # one jump we have the UCTS info of the previous
-                        # event only (which truly corresponds to the
-                        # current event). If there have been n jumps, we keep
-                        # the past n events. The info to be used for
-                        # the current event is always the first element of
-                        # the array, previous_ucts_time_unix[0], whereas the
-                        # current event's (wrong) ucts info is placed last in
-                        # the array. Each time the first array element is
-                        # used, it is removed and the rest move up in the list.
-
-                        if len(previous_ucts_time_unix) > 0:
-                            # keep the time read for this event (which really
-                            # corresponds to a later event):
-                            current_ucts_time = dl1_container.ucts_time
-                            # put in dl1_container the proper time for this
-                            # event:
-                            dl1_container.ucts_time = previous_ucts_time_unix[0]
-                            # move the rest of times (if any) up in the list:
-                            for i in range(0, len(previous_ucts_time_unix)-1):
-                                previous_ucts_time_unix[i] = \
-                                    previous_ucts_time_unix[i+1]
-                            # and finally, add to the list the time that was
-                            # wrongly attached to this event:
-                            previous_ucts_time_unix[-1] = current_ucts_time
-
-                        # Now check consistency of UCTS and Dragon times. If
-                        # UCTS time is ahead of Dragon time by more than
-                        # 1.e-6 s, most likely the UCTS info has been lost for
-                        # this event (i.e. there has been another 'jump' of
-                        # those described above), and the one we have actually
-                        # corresponds to the next event. So we put it back first
-                        # in the list, to assign it to the next event. We also
-                        # move the other elements down in the list, which now
-                        # must be one element longer.
-                        # We leave the current event with the same time, which
-                        # will be approximately correct.
-                        if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
-                            previous_ucts_time_unix = \
-                                np.insert(previous_ucts_time_unix, 0,
-                                          dl1_container.ucts_time)
-
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
-                            event_timestamps = dl1_container.ucts_time
+                            event_timestamps = ucts_time_utc.unix
                         elif config['timestamps_pointing'] == "dragon":
                             event_timestamps = dragon_time_utc.unix
                         elif config['timestamps_pointing'] == "tib":
