@@ -156,9 +156,12 @@ def get_dl1(
 
     else:
         # No image was parametrized, but we put nans (instead of the default
-        # Nones) in parameters that are later used in operations:
-        dl1_container.width  = u.Quantity(np.nan, u.deg)
-        dl1_container.length = u.Quantity(np.nan, u.deg)
+        # Nones) in parameters that are later used in operations.
+        # Width and length are given units of length because later they are
+        # converted to angles by dividing by focal length - even if they are
+        # nans, it will complain and exit...
+        dl1_container.width  = u.Quantity(np.nan, u.m)
+        dl1_container.length = u.Quantity(np.nan, u.m)
         dl1_container.intensity = np.nan
 
     return dl1_container
