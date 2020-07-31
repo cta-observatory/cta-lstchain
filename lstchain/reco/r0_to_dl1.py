@@ -159,6 +159,8 @@ def get_dl1(
         # Width and length are given units of length because later they are
         # converted to angles by dividing by focal length - even if they are
         # nans, it will complain and exit...
+        dl1_container.reset()
+        dl1_container.n_pixels = 0
         dl1_container.width  = u.Quantity(np.nan, u.m)
         dl1_container.length = u.Quantity(np.nan, u.m)
         dl1_container.intensity = np.nan
