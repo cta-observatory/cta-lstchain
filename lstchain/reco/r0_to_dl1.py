@@ -161,7 +161,6 @@ def get_dl1(
         dl1_container.length = u.Quantity(np.nan, u.deg)
         dl1_container.intensity = np.nan
 
-
     return dl1_container
 
 def r0_to_dl1(
