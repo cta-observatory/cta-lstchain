@@ -141,7 +141,6 @@ def get_dl1(
 
         # Fill container
         dl1_container.fill_hillas(hillas)
-        dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
@@ -437,7 +436,12 @@ def r0_to_dl1(
                         'HillasParameterizationError in get_dl1()'
                     )
 
+                # The condition below should now be true for all events, this
+                # is a relic of previous approach in which only survivors of
+                # cleaning and parametrization were further processed.
                 if dl1_filled is not None:
+
+                    dl1_container.fill_event_info(event)
 
                     # Some custom def
                     dl1_container.wl = dl1_container.width / dl1_container.length
@@ -580,7 +584,7 @@ def r0_to_dl1(
                                 previous_ucts_trigger_type[0]
 
                             # move the rest of times (if any) up in the list,
-                            # as well as the corresponding event_id's
+                            # as well as the corresponding trigger types
                             for i in range(0, len(previous_ucts_time_unix)-1):
                                 previous_ucts_time_unix[i] = \
                                     previous_ucts_time_unix[i+1]
