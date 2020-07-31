@@ -154,12 +154,15 @@ def get_dl1(
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(subarray, telescope_id)
 
-
-        return dl1_container
-
     else:
-        return None
+        # No image was parametrized, but we put nans (instead of the default
+        # Nones) in parameters that are later used in operations:
+        dl1_container.width  = np.nan
+        dl1_container.length = np.nan
+        dl1_container.intensity = np.nan
 
+
+    return dl1_container
 
 def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
@@ -431,7 +434,6 @@ def r0_to_dl1(
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
-                    continue
 
                 if dl1_filled is not None:
 
