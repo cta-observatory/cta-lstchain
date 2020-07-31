@@ -425,6 +425,10 @@ def r0_to_dl1(
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
 
+                write_event = True
+                # Will determine whether this event has to be written to the
+                # DL1 output or not.
+
                 try:
                     dl1_filled = get_dl1(event,
                                          subarray,
@@ -437,6 +441,7 @@ def r0_to_dl1(
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
+                    write_event = False
 
                 # The condition below should now be true for all events, this
                 # is a relic of previous approach in which only survivors of
@@ -444,6 +449,16 @@ def r0_to_dl1(
                 if dl1_filled is not None:
 
                     dl1_container.fill_event_info(event)
+
+                    # Would be nice to write out also events which did not
+                    # survive cleaning, but this brings all sorts of
+                    # trouble... if one does just dl1_container.reset() as it
+                    # is done in get_dl1 for that case, the event cannot be
+                    # written because the default values do not have correct
+                    # units or contents edible to the writer...
+
+                    if dl1_container.n_pixels == 0:
+                        write_event = False
 
                     # Some custom def
                     dl1_container.wl = dl1_container.width / dl1_container.length
@@ -659,6 +674,8 @@ def r0_to_dl1(
 
                     event.r0.prefix = ''
 
+                    if write_event == False:
+                        continue
 
                     writer.write(table_name = f'telescope/image/{tel_name}',
                                  containers = [event.r0, tel, extra_im])

@@ -148,10 +148,6 @@ def main():
                 else:
                     for p in parameters_to_update:
                         params[ii][p] = 0
-                    # for consistency with r0_to_dl1.py:
-                    dl1_container.width = u.Quantity(np.nan, u.m)
-                    dl1_container.length = u.Quantity(np.nan, u.m)
-                    dl1_container.intensity = np.nan
 
             output.root[dl1_params_lstcam_key][:] = params
 
