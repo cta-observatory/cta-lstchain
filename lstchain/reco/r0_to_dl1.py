@@ -360,8 +360,8 @@ def r0_to_dl1(
 
         first_valid_ucts = None
         first_valid_ucts_tib = None
-        previous_ucts_time_unix = np.array([])
-        previous_ucts_trigger_type = np.array([], dtype='int')
+        previous_ucts_time_unix = []
+        previous_ucts_trigger_type = []
 
         for i, event in enumerate(chain([first_event],  event_iter)):
 
@@ -594,21 +594,15 @@ def r0_to_dl1(
                             # put in dl1_container the proper time for this
                             # event:
                             dl1_container.ucts_time = \
-                                previous_ucts_time_unix[0]
+                                previous_ucts_time_unix.pop(0)
                             dl1_container.ucts_trigger_type = \
-                                previous_ucts_trigger_type[0]
+                                previous_ucts_trigger_type.pop(0)
 
-                            # move the rest of times (if any) up in the list,
-                            # as well as the corresponding trigger types
-                            for i in range(0, len(previous_ucts_time_unix)-1):
-                                previous_ucts_time_unix[i] = \
-                                    previous_ucts_time_unix[i+1]
-                                previous_ucts_trigger_type[i] = \
-                                    previous_ucts_trigger_type[i+1]
                             # now put the current values last in the list,
                             # for later use:
-                            previous_ucts_time_unix[-1] = current_ucts_time
-                            previous_ucts_trigger_type[-1] = current_ucts_trigger_type
+                            previous_ucts_time_unix.append(current_ucts_time)
+                            previous_ucts_trigger_type.\
+                                append(current_ucts_trigger_type)
 
                         # Now check consistency of UCTS and Dragon times. If
                         # UCTS time is ahead of Dragon time by more than
@@ -624,11 +618,11 @@ def r0_to_dl1(
                         # event rate).
 
                         if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
-                            previous_ucts_time_unix = np.insert(
-                                    previous_ucts_time_unix, 0, dl1_container.ucts_time)
-                            previous_ucts_trigger_type = np.insert(
-                                    previous_ucts_trigger_type, 0,
-                                    event.lst.tel[telescope_id].evt.ucts_trigger_type)
+                            previous_ucts_time_unix.\
+                                insert( 0, dl1_container.ucts_time)
+                            previous_ucts_trigger_type.\
+                                insert(0, event.lst.tel[
+                                telescope_id].evt.ucts_trigger_type)
 
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
