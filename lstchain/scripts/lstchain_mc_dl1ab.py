@@ -21,8 +21,8 @@ from distutils.util import strtobool
 
 import numpy as np
 import tables
+import astropy.units as u
 from astropy.table import Table
-from astropy.units import Quantity
 from ctapipe.containers import HillasParametersContainer
 from ctapipe.image import hillas_parameters
 from ctapipe.image.cleaning import tailcuts_clean
@@ -143,11 +143,18 @@ def main():
                     dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
-                    for p in parameters_to_update:
-                        params[ii][p] = Quantity(dl1_container[p]).value
                 else:
-                    for p in parameters_to_update:
-                        params[ii][p] = 0
+                    # for consistency with r0_to_dl1.py:
+                    for key in dl1_container.keys():
+                        dl1_container[key] = \
+                            u.Quantity(0, dl1_container.fields[key].unit)
+
+                    dl1_container.width = u.Quantity(np.nan, u.m)
+                    dl1_container.length = u.Quantity(np.nan, u.m)
+                    dl1_container.wl  = u.Quantity(np.nan, u.m)
+
+            for p in parameters_to_update:
+                params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
 

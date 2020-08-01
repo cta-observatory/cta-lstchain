@@ -154,16 +154,25 @@ def get_dl1(
         dl1_container.set_telescope_info(subarray, telescope_id)
 
     else:
-        # No image was parametrized, but we put nans (instead of the default
-        # Nones) in parameters that are later used in operations.
-        # Width and length are given units of length because later they are
-        # converted to angles by dividing by focal length - even if they are
-        # nans, it will complain and exit...
-        dl1_container.reset()
-        dl1_container.n_pixels = 0
-        dl1_container.width  = u.Quantity(np.nan, u.m)
+        # No image was parametrized, so we put zeros (instead of the default
+        # Nones) in all parameters: a container reset() is not an option because
+        # the default None values prevent the container to be written out. We
+        # cannot use np.nan either, because upon writing it complains for the
+        # integer parameters.
+        #
+        for key in dl1_container.keys():
+            dl1_container[key] = u.Quantity(0, dl1_container.fields[key].unit)
+
+        # Fields width and length do not have in their declaration the units
+        # that are actually expected later in the program, so we set them here.
+        # We now use nans since these are floats, and will be later used to
+        # calculate W/L...
+        dl1_container.width = u.Quantity(np.nan, u.m)
         dl1_container.length = u.Quantity(np.nan, u.m)
-        dl1_container.intensity = np.nan
+
+        # We set other fields which still make sense for a non-parametrized
+        # image:
+        dl1_container.set_telescope_info(subarray, telescope_id)
 
     return dl1_container
 
@@ -441,7 +450,6 @@ def r0_to_dl1(
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
-                    write_event = False
 
                 # The condition below should now be true for all events, this
                 # is a relic of previous approach in which only survivors of
@@ -449,16 +457,6 @@ def r0_to_dl1(
                 if dl1_filled is not None:
 
                     dl1_container.fill_event_info(event)
-
-                    # Would be nice to write out also events which did not
-                    # survive cleaning, but this brings all sorts of
-                    # trouble... if one does just dl1_container.reset() as it
-                    # is done in get_dl1 for that case, the event cannot be
-                    # written because the default values do not have correct
-                    # units or contents edible to the writer...
-
-                    if dl1_container.n_pixels == 0:
-                        write_event = False
 
                     # Some custom def
                     dl1_container.wl = dl1_container.width / dl1_container.length
@@ -673,9 +671,6 @@ def r0_to_dl1(
                         add_global_metadata(container, metadata)
 
                     event.r0.prefix = ''
-
-                    if write_event == False:
-                        continue
 
                     writer.write(table_name = f'telescope/image/{tel_name}',
                                  containers = [event.r0, tel, extra_im])
