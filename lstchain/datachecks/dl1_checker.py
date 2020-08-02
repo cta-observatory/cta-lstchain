@@ -658,7 +658,9 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                     fontsize='xx-large')
             for i, y in enumerate(['num_pulses_above_0010_pe',
                                    'num_pulses_above_0030_pe']):
-                axesb[i].set_yscale('log')
+                if np.mean(table.col('num_pulses_above_0010_pe'),
+                           axis=1).max() > 0:
+                    axesb[i].set_yscale('log')
                 axesb[i].plot(table.col('subrun_index'),
                               np.mean(table.col(y), axis=1) /
                               table.col('num_events'), fmt)
