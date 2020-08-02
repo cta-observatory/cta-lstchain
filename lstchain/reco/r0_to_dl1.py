@@ -612,17 +612,19 @@ def r0_to_dl1(
                         # actually corresponds to the next event. So we put it
                         # back first in the list, to assign it to the next
                         # event. We also move the other elements down in the
-                        # list,  which now must be one element longer.
+                        # list,  which will now be one element longer.
                         # We leave the current event with the same time,
                         # which will be approximately correct (depending on
-                        # event rate).
+                        # event rate), and set its ucts_trigger_type to -1,
+                        # which will tell us a jump happened and hence this
+                        # event does not have proper UCTS info.
 
                         if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
                             previous_ucts_time_unix.\
                                 insert( 0, dl1_container.ucts_time)
                             previous_ucts_trigger_type.\
-                                insert(0, event.lst.tel[
-                                telescope_id].evt.ucts_trigger_type)
+                                insert(0, dl1_container.ucts_trigger_type)
+                            dl1_container.ucts_trigger_type = -1
 
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
