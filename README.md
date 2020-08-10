@@ -1,9 +1,20 @@
-# cta-lstchain
+=======
+cta-lstchain |buildstatus| |codacy| |coverage|
+=======
+
+.. |buildstatus| image:: https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain) 
+    :target: https://travis-ci.org/cta-observatory/cta-lstchain
+    :alt: Build Status
+.. |codacy| image:: https://codecov.io/gh/cta-observatory/cta-lstchain/branch/master/graph/badge.svg
+
+.. |coverage| image:: 
+  :target: https://codecov.io/gh/cta-observatory/cta-lstchain
+
 
 Repository for the high level analysis of the LST.    
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
 
-master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain)
+master branch status: 
 
   
 Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
