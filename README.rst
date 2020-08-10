@@ -6,7 +6,8 @@ cta-lstchain |buildstatus| |codacy| |coverage| |pypi|
     :target: https://travis-ci.org/cta-observatory/cta-lstchain
     :alt: Travis Build Status
 
-.. |codacy| image:: https://app.codacy.com/project/badge/Grade/c28d5fdc326e43b2961015b199f02d90)](https://www.codacy.com/gh/cta-observatory/cta-lstchain?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/cta-lstchain&amp;utm_campaign=Badge_Grade
+.. |codacy| image:: https://app.codacy.com/project/badge/Grade/c28d5fdc326e43b2961015b199f02d90)
+    :target: https://www.codacy.com/gh/cta-observatory/cta-lstchain?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/cta-lstchain&amp;utm_campaign=Badge_Grade 
     :alt: Code Quality
 
 .. |coverage| image:: https://codecov.io/gh/cta-observatory/cta-lstchain/branch/master/graph/badge.svg 
