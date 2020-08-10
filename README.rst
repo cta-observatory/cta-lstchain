@@ -34,35 +34,31 @@ are unit tested and should be working as long as the build status is passing.
 - You will need to install `anaconda <https://www.anaconda.com/distribution/#download-section>`_ first. 
 
 - Create and activate the conda environment:
-```
-git clone https://github.com/cta-observatory/cta-lstchain.git
-cd cta-lstchain
-conda env create -f environment.yml
-conda activate lst-dev
-```
+
+  git clone https://github.com/cta-observatory/cta-lstchain.git
+  cd cta-lstchain
+  conda env create -f environment.yml
+  conda activate lst-dev
+
 
 To update the environment (e.g. when depenencies got updated), use:
-```
-conda env update -n lst-dev -f environment.yml
-```
+  conda env update -n lst-dev -f environment.yml
 
 - Install lstchain:
+  pip install -e .
 
-```
-pip install -e .
-```
 
 
 ## Contributing
 
 All contribution are welcomed.
 
-Guidelines are the same as [ctapipe's ones](https://cta-observatory.github.io/ctapipe/development/index.html)    
-See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.html) how to make a pull request to contribute.
+Guidelines are the same as `ctapipe's ones <https://cta-observatory.github.io/ctapipe/development/index.html>`_    
+See `here <https://cta-observatory.github.io/ctapipe/development/pullrequests.html>`_ how to make a pull request to contribute.
 
 
 ## Report issue / Ask a question
 
-Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
+Use `GitHub Issues <https://github.com/cta-observatory/cta-lstchain/issues>`_.
 
 
