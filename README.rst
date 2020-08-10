@@ -26,8 +26,8 @@ Note that notebooks are currently not tested and not guaranteed to be up-to-date
 In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
 are unit tested and should be working as long as the build status is passing.
 
-## Install
-
+Install
+--------------------
 You will need to install `anaconda <https://www.anaconda.com/distribution/#download-section>`_ first. 
 
 Create and activate the conda environment::
@@ -47,16 +47,16 @@ Install lstchain:
 
 
 
-## Contributing
-
+Contributing
+--------------------
 All contribution are welcomed.
 
 Guidelines are the same as `ctapipe's ones <https://cta-observatory.github.io/ctapipe/development/index.html>`_    
 See `here <https://cta-observatory.github.io/ctapipe/development/pullrequests.html>`_ how to make a pull request to contribute.
 
 
-## Report issue / Ask a question
-
+Report issue / Ask a question
+--------------------
 Use `GitHub Issues <https://github.com/cta-observatory/cta-lstchain/issues>`_.
 
 
