@@ -2,13 +2,16 @@
 cta-lstchain |buildstatus| |codacy| |coverage| |pypi|
 =======
 
-.. |buildstatus| image:: https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain) 
+.. |buildstatus| image:: https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master
     :target: https://travis-ci.org/cta-observatory/cta-lstchain
-    :alt: Build Status
-.. |codacy| image:: https://codecov.io/gh/cta-observatory/cta-lstchain/branch/master/graph/badge.svg
+    :alt: Travis Build Status
 
-.. |coverage| image:: 
-  :target: https://codecov.io/gh/cta-observatory/cta-lstchain
+.. |codacy| image:: https://app.codacy.com/project/badge/Grade/c28d5fdc326e43b2961015b199f02d90)](https://www.codacy.com/gh/cta-observatory/cta-lstchain?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/cta-lstchain&amp;utm_campaign=Badge_Grade
+    :alt: Code Quality
+
+.. |coverage| image:: https://codecov.io/gh/cta-observatory/cta-lstchain/branch/master/graph/badge.svg 
+     :target: https://codecov.io/gh/cta-observatory/cta-lstchain
+     :alt: Code Coverage
 
 .. |pypi| image:: https://img.shields.io/pypi/v/lstchain.svg
     :target: https://pypi.python.org/pypi/cta-lstchain
