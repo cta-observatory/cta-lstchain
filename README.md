@@ -1,5 +1,5 @@
 =======
-cta-lstchain |buildstatus| |codacy| |coverage|
+cta-lstchain |buildstatus| |codacy| |coverage| |pypi|
 =======
 
 .. |buildstatus| image:: https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain) 
@@ -9,6 +9,10 @@ cta-lstchain |buildstatus| |codacy| |coverage|
 
 .. |coverage| image:: 
   :target: https://codecov.io/gh/cta-observatory/cta-lstchain
+
+.. |pypi| image:: https://img.shields.io/pypi/v/lstchain.svg
+    :target: https://pypi.python.org/pypi/cta-lstchain
+    :alt: cta-lstchain's PyPI Status
 
 
 Repository for the high level analysis of the LST.    
