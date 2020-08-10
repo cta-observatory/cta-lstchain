@@ -6,7 +6,7 @@ cta-lstchain |buildstatus| |codacy| |coverage| |pypi|
     :target: https://travis-ci.org/cta-observatory/cta-lstchain
     :alt: Travis Build Status
 
-.. |codacy| image:: https://app.codacy.com/project/badge/Grade/c28d5fdc326e43b2961015b199f02d90)
+.. |codacy| image:: https://app.codacy.com/project/badge/Grade/c28d5fdc326e43b2961015b199f02d90
     :target: https://www.codacy.com/gh/cta-observatory/cta-lstchain?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/cta-lstchain&amp;utm_campaign=Badge_Grade 
     :alt: Code Quality
 
@@ -20,7 +20,7 @@ cta-lstchain |buildstatus| |codacy| |coverage| |pypi|
 
 
 Repository for the high level analysis of the LST.    
-The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
+The analysis is heavily based on `ctapipe <https://github.com/cta-observatory/ctapipe>`_, adding custom code for mono reconstruction.
 
 master branch status: 
 
@@ -31,7 +31,7 @@ are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-- You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
+- You will need to install `anaconda <https://www.anaconda.com/distribution/#download-section>`_ first. 
 
 - Create and activate the conda environment:
 ```
