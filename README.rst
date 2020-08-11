@@ -37,11 +37,11 @@ Create and activate the conda environment::
   conda env create -f environment.yml
   conda activate lst-dev
 
-To update the environment (e.g. when depenencies got updated), use::
+To update the environment (e.g. when dependencies got updated), use::
 
   conda env update -n lst-dev -f environment.yml
 
-Install lstchain:
+Install lstchain::
 
   pip install -e .
 
@@ -51,8 +51,7 @@ Contributing
 --------------------
 All contribution are welcomed.
 
-Guidelines are the same as `ctapipe's ones <https://cta-observatory.github.io/ctapipe/development/index.html>`_    
-See `here <https://cta-observatory.github.io/ctapipe/development/pullrequests.html>`_ how to make a pull request to contribute.
+Guidelines are the same as `ctapipe's ones <https://cta-observatory.github.io/ctapipe/development/index.html>`_. See `here <https://cta-observatory.github.io/ctapipe/development/pullrequests.html>`_ how to make a pull request to contribute.
 
 
 Report issue / Ask a question
