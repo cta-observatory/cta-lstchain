@@ -9,7 +9,7 @@ import pandas as pd
 def test_camera_to_altaz():
     pos_x = np.array([0, 0]) * u.m
     pos_y = np.array([0, 0]) * u.m
-    focal = 28*u.m
+    focal = 28 * u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
@@ -17,7 +17,7 @@ def test_camera_to_altaz():
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
     # Test for real event with a time
-    obs_time = Time('2018-11-01T02:00', '2018-11-01T02:00')
+    obs_time = Time(['2018-11-01T02:00', '2018-11-01T02:00'])
     sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = obs_time)
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)

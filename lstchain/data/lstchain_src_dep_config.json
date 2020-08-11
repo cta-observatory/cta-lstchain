@@ -5,7 +5,7 @@
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage2_intensity": [0, 1]
+    "leakage_intensity_width_2": [0, 1]
   },
 
   "tailcut": {
@@ -62,7 +62,7 @@
     "skewness_from_source",
     "kurtosis",
     "time_gradient_from_source",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands",
     "dist"
   ],
@@ -75,7 +75,7 @@
     "skewness_from_source",
     "kurtosis",
     "time_gradient_from_source",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands",
     "log_reco_energy",
     "dist"

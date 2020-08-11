@@ -5,7 +5,7 @@
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage2_intensity": [0, 1]
+    "leakage_intensity_width_2": [0, 1]
   },
 
   "tailcut": {
@@ -67,7 +67,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands"
   ],
 
@@ -84,7 +84,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
@@ -132,7 +132,6 @@
      "maximum_lg_charge_std": 300,
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
-     "apply_charge_correction": false,
      "PedestalIntegrator":{
        "sample_size": 10000,
        "sample_duration":100000,
