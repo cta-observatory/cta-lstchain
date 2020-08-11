@@ -435,11 +435,9 @@ def r0_to_dl1(
                     dl1_container.wl = dl1_container.width / dl1_container.length
                     # Log10(Energy) in TeV
                     if is_simu:
-                        dl1_container.set_mc_core_distance(event, subarray.positions[telescope_id])
-                        dl1_container.set_mc_type(event)
                         dl1_container.mc_energy = event.mc.energy.to_value(u.TeV)
                         dl1_container.log_mc_energy = np.log10(event.mc.energy.to_value(u.TeV))
-                        dl1_container.fill_mc(event)
+                        dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
