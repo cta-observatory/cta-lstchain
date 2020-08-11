@@ -153,7 +153,7 @@ def calculate_sensitivity(n_excesses, n_background, alpha):
 
     return sensitivity
 
-def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n_bins_gammaness, n_bins_theta2):
+def calculate_sensitivity_lima(n_on_events, n_background, alpha, n_bins_energy, n_bins_gammaness, n_bins_theta2):
     """
     Sensitivity calculation using the Li & Ma formula
     eq. 17 of Li & Ma (1983).
@@ -164,7 +164,7 @@ def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n
 
     Parameters
     ---------
-    n_excesses:   `numpy.ndarray` number of excess events in the signal region
+    n_on_events:   `numpy.ndarray` number of ON events in the signal region
     n_background:   `numpy.ndarray` number of events in the background region
     alpha: `float` inverse of the number of off positions
     n_bins_energy: `int` number of bins in energy
@@ -179,15 +179,15 @@ def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n
 
     """
 
-    if any(len(a) != n_bins_energy for a in (n_excesses, n_background, alpha)):
+    if any(len(a) != n_bins_energy for a in (n_on_events, n_background, alpha)):
         raise ValueError(
             'Excess, background and alpha arrays must have the same length')
            
     
     stat = WStatCountsStatistic(
-        n_on = n_excesses,  
-        n_off = n_background,
-        alpha = alpha*np.ones_like(n_background)
+        n_on=n_on_events,  
+        n_off=n_background,
+        alpha=alpha
         )
 
 
@@ -203,12 +203,12 @@ def calculate_sensitivity_lima(n_excesses, n_background, alpha, n_bins_energy, n
                     n_excesses_5sigma[i, j, k] = 0.05 * n_background[i][j][k] / 5
 
 
-    sensitivity = n_excesses_5sigma / n_excesses * 100  # percentage of Crab
+    sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
 
     return n_excesses_5sigma, sensitivity
 
 
-def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_energy):
+def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_energy):
     """
     Sensitivity calculation using the Li & Ma formula
     eq. 17 of Li & Ma (1983).
@@ -216,7 +216,7 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
 
     Parameters
     ---------
-    n_excesses:   `numpy.ndarray` number of excess events in the signal region
+    n_on_events:   `numpy.ndarray` number of ON events in the signal region
     n_background: `numpy.ndarray` number of events in the background region
     alpha:        `float` inverse of the number of off positions
     n_bins_energy:`int` number of bins in energy
@@ -229,14 +229,15 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
 
     """
 
-    if any(len(a) != n_bins_energy for a in (n_excesses, n_background, alpha)):
+    if any(len(a) != n_bins_energy for a in (n_on_events, n_background, alpha)):
         raise ValueError(
             'Excess, background and alpha arrays must have the same length')
 
     stat = WStatCountsStatistic(
-        n_on = n_excesses,
-        n_off = n_background,
-        alpha = alpha*np.ones_like(n_background))
+        n_on=n_on_events,
+        n_off=n_background,
+        alpha=alpha 
+        )
         
 
 
@@ -253,7 +254,7 @@ def calculate_sensitivity_lima_ebin(n_excesses, n_background, alpha, n_bins_ener
         if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
             n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
 
-    sensitivity = n_excesses_5sigma / n_excesses * 100  # percentage of Crab
+    sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
 
     return n_excesses_5sigma, sensitivity
 
@@ -361,8 +362,8 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['emin'] = mc_par_p['emin'].to(u.TeV)
     mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
 
-    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.m ** 2)
-    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.m ** 2)
+    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
     # TODO: This information should be read from the files
@@ -469,8 +470,8 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff * np.ones_like(final_gamma), n_bins_energy, n_bins_gammaness, n_bins_theta2)
     
     # Avoid bins which are empty or have too few events:
-    min_num_events = 10
-    min_pre_events = 10
+    min_num_events = 5
+    min_pre_events = 5
 
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
     for i in range(0, n_bins_energy):
@@ -601,8 +602,8 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     mc_par_p['emin'] = mc_par_p['emin'].to(u.TeV)
     mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
 
-    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.m ** 2)
-    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.m ** 2)
+    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
+    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
 
     # Set binning for sensitivity calculation
     emin_sensitivity = 0.01 * u.TeV  # mc_par_g['emin'] 
@@ -745,7 +746,6 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
 
     egeom = np.sqrt(energy[1:] * energy[:-1])
     dFdE, par = crab_hegra(egeom)
-    #sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.TeV / (u.cm ** 2 * u.s))
     sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.erg / (u.cm ** 2 * u.s))
     
     print("\n******** Energy [TeV] *********\n")
@@ -787,4 +787,4 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
 
         dl2 = pd.concat((dl2, df_bin))
 
-    return energy, sensitivity_flux, result, units, dl2
+    return energy, sensitivity, result, units, dl2
