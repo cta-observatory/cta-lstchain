@@ -1,25 +1,25 @@
+import astropy.units as u
 import numpy as np
 import pandas as pd
-import astropy.units as u
-from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
-from .mc import rate, weight
-from lstchain.spectra.crab import crab_hegra,crab_magic
-from lstchain.spectra.proton import proton_bess
-from gammapy.stats import WStatCountsStatistic
-from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
+from gammapy.stats import WStatCountsStatistic
+
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
+from lstchain.reco.utils import reco_source_position_sky
+from lstchain.spectra.crab import crab_hegra
+from lstchain.spectra.proton import proton_bess
+from .mc import rate, weight
 
 __all__ = [
-    'read_sim_par',
-    'process_mc',
+    'bin_definition',
     'calculate_sensitivity',
     'calculate_sensitivity_lima',
     'calculate_sensitivity_lima_ebin',
-    'bin_definition',
-    'ring_containment',
     'find_best_cuts_sensitivity',
+    'process_mc',
+    'read_sim_par',
+    'ring_containment',
     'sensitivity',
     ]
 
@@ -83,7 +83,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
     # by the number of LSTs in the simulation)
 
     filter_good_events = (
-        (events.leakage2_intensity < 0.2)
+        (events.leakage_intensity_width_2 < 0.2)
         & (events.intensity > 50)
         # & (events.tel_id==1)
         # & (events.wl > 0.1)

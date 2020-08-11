@@ -11,8 +11,7 @@
      "minimum_hg_charge_median": 5000,
      "maximum_lg_charge_std": 300,
      "flatfield_product": "FlasherFlatFieldCalculator",
-     "pedestal_product": "PedestalIntegrator",
-     "apply_charge_correction": false
+     "pedestal_product": "PedestalIntegrator"
    },
    "PedestalIntegrator":{
      "sample_size": 10000,

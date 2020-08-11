@@ -6,7 +6,7 @@ channels:
 dependencies:
   - python=3.7
   - pip
-  - ctapipe=0.7.0
+  - ctapipe=0.8.0
   - gammapy>=0.17
   - h5py
   - ipython
@@ -16,5 +16,5 @@ dependencies:
   - pip:
       - pytest_runner
       - pytest-ordering
-      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.4.1
+      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
       - ctaplot
