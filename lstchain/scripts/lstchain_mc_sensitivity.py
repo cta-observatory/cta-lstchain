@@ -29,6 +29,12 @@ from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
+from lstchain.spectra.crab import crab_hegra
+
+import warnings
+warnings.filterwarnings("ignore",category=DeprecationWarning)
+warnings.filterwarnings("ignore",category=FutureWarning)
+warnings.filterwarnings("ignore",category=RuntimeWarning)
 
 ctaplot.set_style()
 
@@ -60,27 +66,27 @@ args = parser.parse_args()
 
 
 def main():
-    ntelescopes_gamma = 1
+    ntelescopes_gamma = 4
     ntelescopes_protons = 1
-    n_bins_energy = 10  #  Number of energy bins
+    n_bins_energy = 20  #  Number of energy bins
     n_bins_gammaness = 10  #  Number of gammaness bins
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
-    noff = 3
+    noff = 5
     
     # Finds the best cuts for the computation of the sensitivity
-    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
+    '''energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
                                                                               args.dl1file_protons,
-                                                                              args.dl2_file_g_cuts,
-                                                                              args.dl2_file_p_cuts,
+                                                                              args.dl2_file_g_sens,
+                                                                              args.dl2_file_p_sens,
                                                                               ntelescopes_gamma, ntelescopes_protons,
                                                                               n_bins_energy, n_bins_gammaness,
                                                                               n_bins_theta2, noff,
                                                                               obstime)
-                                                                              
+    '''                                                                          
     #For testing using fixed cuts
-    #gcut = np.ones(n_bins_energy) * 0.8 
-    #tcut = np.ones(n_bins_energy) * 0.01
+    gcut = np.ones(n_bins_energy) * 0.8 
+    tcut = np.ones(n_bins_energy) * 0.01
     
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
@@ -89,11 +95,18 @@ def main():
     # Computes the sensitivity
     energy, best_sens, result, units, dl2 = sensitivity(args.dl1file_gammas,
                                                         args.dl1file_protons,
-                                                        args.dl2_file_g_sens, 
-                                                        args.dl2_file_p_sens,
+                                                        args.dl2_file_g_cuts, 
+                                                        args.dl2_file_p_cuts,
                                                         1, 1,
                                                         n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
                                                         obstime)
+                                                        
+    egeom = np.sqrt(energy[1:] * energy[:-1])
+    dFdE, par = crab_hegra(egeom)
+    sensitivity_flux = best_sens / 100 * (dFdE * egeom * egeom).to(u.erg / (u.cm ** 2 * u.s))
+    
+    
+    
     # Saves the results
     dl2.to_hdf('test_sens.h5', key='data')
     result.to_hdf('test_sens.h5', key='results')
@@ -105,8 +118,6 @@ def main():
         if key=='sensitivity':
             continue
         tab[key].format = '8f'
-
-    egeom = np.sqrt(energy[1:] * energy[:-1])
     
     
     # Plots
@@ -153,7 +164,6 @@ def main():
     plt.savefig("theta2.png")
     
     plt.figure(figsize=(12, 8))
-    #ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, 10 ** (gammas_mc.reco_energy - 3)  )
     ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, gammas_mc.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
     
@@ -171,7 +181,6 @@ def main():
     plt.savefig("effective_area.png")
 
     plt.figure(figsize=(12, 8))
-    #ctaplot.plot_energy_bias(10 ** (gammas_mc.mc_energy - 3), 10 ** (gammas_mc.reco_energy - 3))
     ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
     plt.show()
     plt.savefig("energy_bias.png")
@@ -184,7 +193,6 @@ def main():
     spectral_index = gamma_ps_simu_info.spectral_index
     area = (gamma_ps_simu_info.max_scatter_range.value - gamma_ps_simu_info.min_scatter_range.value) ** 2 * np.pi
     ctaplot.plot_effective_area_per_energy_power_law(emin, emax, total_number_of_events, spectral_index,
-                                                     #10 ** (gammas_mc.reco_energy - 3)[gammas_mc.tel_id == 1],
                                                      gammas_mc.reco_energy[gammas_mc.tel_id == 1],
                                                      area,
                                                      label='selected gammas',
@@ -199,8 +207,7 @@ def main():
     plt.savefig("effective_area.png")
     
     plt.figure(figsize=(12, 8))
-    plt.plot( energy[0:len(best_sens)], best_sens , '-', color='red', markersize=0, label='LST mono')
-    #ctaplot.plot_sensitivity_cta_requirement('north', color='black')  # is it already in erg ? 
+    plt.plot( energy[0:len(sensitivity_flux)], sensitivity_flux , '-', color='red', markersize=0, label='LST mono')
     plt.xscale('log')
     plt.yscale('log')
 
