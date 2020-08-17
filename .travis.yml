@@ -88,5 +88,5 @@ deploy:
     skip_cleanup: true
     token: $GITHUB_TOKEN
     edge: true
-    local_dir: ./docs/build/html/
+    local_dir: docbuild
     keep_history: true
