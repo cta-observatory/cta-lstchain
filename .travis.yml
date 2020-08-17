@@ -65,7 +65,6 @@ install:
 script:
     - pytest --cov lstchain --cov-report=xml lstchain
     - travis-sphinx -v --outdir=docbuild build --source=docs/
-    - touch docs/_build/html/.nojekyll
 
 after_success:
     - travis-sphinx -v --outdir=docbuild deploy
@@ -84,3 +83,9 @@ deploy:
         branch: master
         condition: $TRAVIS_PYTHON_VERSION = "3.7"
 
+    provider: pages:git
+    verbose: true
+    token: $GITHUB_TOKEN
+    edge: true
+    local_dir: ./docs/build/html/
+    keep_history: true
