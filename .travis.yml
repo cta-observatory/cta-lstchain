@@ -82,3 +82,11 @@ deploy:
         tags: true
         branch: master
         condition: $TRAVIS_PYTHON_VERSION = "3.7"
+
+    provider: pages:git
+    verbose: true
+    skip_cleanup: true
+    token: $GITHUB_TOKEN
+    edge: true
+    local_dir: ./docs/build/html/
+    keep_history: true
