@@ -65,6 +65,7 @@ install:
 script:
     - pytest --cov lstchain --cov-report=xml lstchain
     - travis-sphinx -v --outdir=docbuild build --source=docs/
+    - travis-sphinx -v --outdir=docbuild deploy
 
 after_success:
     - travis-sphinx -v --outdir=docbuild deploy
