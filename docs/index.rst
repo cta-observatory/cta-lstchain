@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-=====================================================
+========================================================================
  Repository for the high level analysis of the LST (:mod:`cta-lstchain`)
-=====================================================
+========================================================================
 
 .. currentmodule:: cta-lstchain
 
