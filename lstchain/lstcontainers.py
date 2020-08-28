@@ -11,7 +11,7 @@ from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
-from ..reco import utils
+from .reco import utils
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',

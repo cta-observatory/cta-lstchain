@@ -8,7 +8,7 @@ from ctapipe.core import traits
 from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
-from lstchain.io.lstcontainers import LSTEventType
+from lstchain.lstcontainers import LSTEventType
 
 __all__ = [
     'CalibrationCalculator',

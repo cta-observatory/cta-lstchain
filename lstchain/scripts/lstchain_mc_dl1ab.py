@@ -33,7 +33,7 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.lstcontainers import DL1ParametersContainer
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
