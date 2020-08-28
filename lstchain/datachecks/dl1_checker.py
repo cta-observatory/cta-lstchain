@@ -262,73 +262,59 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
                            ff_min_pixel_charge_median) &
                           (np.std(image, axis=1) <
                            ff_max_pixel_charge_stddev))
-        # obtain the corresponding mask for the parameters table:
-        ff_indices = image_table.col('event_id')[flatfield_mask]
-        params_flatfield_mask = np.array(
-                [(True if evtid in ff_indices else False) for evtid in
-                 parameters['event_id']])
+        # The same mask should be valid for image_table, since the entry in
+        # the two tables correspond one to one.
 
         # then use trigger_source (name of one of the trigger tags in the DL1
         # file) to try to identify pedestals on the parameters table (but we
         # trust better the above empirical identification of flatfield events):
-        params_pedestal_mask = (parameters[trigger_source] == 32) & \
-            ~params_flatfield_mask
-        # obtain the corresponding pedestal mask for the images table:
-        ped_indices = np.array(parameters['event_id'][params_pedestal_mask])
-        pedestal_mask = np.array([(True if evtid in ped_indices else False)
-                                  for evtid in image_table.col('event_id')])
+        pedestal_mask = (parameters[trigger_source] == 32) & ~flatfield_mask
 
         # Now obtain by exclusion the masks for cosmics:
         cosmics_mask = ~(pedestal_mask | flatfield_mask)
-        params_cosmics_mask = ~(params_pedestal_mask | params_flatfield_mask)
 
         logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
                     f' flatfield: {np.sum(flatfield_mask)}, '
                     f' cosmics: {np.sum(cosmics_mask)}')
 
-        # fill quantities which depend on event-wise (i.e. not
-        # pixel-wise) parameters:
-        if params_pedestal_mask.sum() > 1:
+        # Fill quantities which depend on event-wise (i.e. not
+        # pixel-wise) parameters.
+        # Set None for a container that has not been filled,
+        # otherwise it will give trouble in the plotting stage.
+
+        if pedestal_mask.sum() > 1:
             dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
                                                         parameters,
-                                                        params_pedestal_mask,
+                                                        pedestal_mask,
                                                         geom, bins)
-        if params_flatfield_mask.sum() > 1:
-            dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
-                                                        parameters,
-                                                        params_flatfield_mask,
-                                                        geom, bins)
-        if params_cosmics_mask.sum() > 1:
-            dl1datacheck_cosmics.fill_event_wise_info(subrun_index, parameters,
-                                                      params_cosmics_mask,
-                                                      geom, bins)
-
-        # now fill pixel-wise information:
-        if pedestal_mask.sum() > 0:
             dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
                                                         pedestal_mask, bins,
                                                         'pedestals')
-        if flatfield_mask.sum() > 0:
+        else:
+            dl1datacheck_pedestals = None
+
+        if flatfield_mask.sum() > 1:
+            dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
+                                                        parameters,
+                                                        flatfield_mask,
+                                                        geom, bins)
             dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
                                                         flatfield_mask, bins,
                                                         'flatfield')
-        if cosmics_mask.sum() > 0:
+        else:
+            dl1datacheck_flatfield = None
+
+        if cosmics_mask.sum() > 1:
+            dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
+                                                      parameters,
+                                                      cosmics_mask,
+                                                      geom, bins)
             dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
                                                       cosmics_mask, bins,
                                                       'cosmics')
-
-        # Return None for a container that has not been completely filled,
-        # otherwise it will give trouble in the plotting stage.
-        if pedestal_mask.sum() == 0 or params_pedestal_mask.sum() == 0:
-            dl1datacheck_pedestals = None
-        if flatfield_mask.sum() == 0 or params_flatfield_mask.sum() == 0:
-            dl1datacheck_flatfield = None
-        if cosmics_mask.sum() == 0 or params_cosmics_mask.sum() == 0:
+        else:
             dl1datacheck_cosmics = None
 
-                # in case event sof some type are missing, just issue a warning and
-        # retun None for the corresponding container, to avoid catastrophic
-        # failure when trying to write it out
 
         return dl1datacheck_pedestals, dl1datacheck_flatfield, \
                dl1datacheck_cosmics
@@ -985,6 +971,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[0, 1].set_ylabel('ring intensity (p.e.)')
         axes[1, 1].plot(contained_muons['ring_radius'],
                         contained_muons['ring_width'], 'x', alpha=0.5)
+        axes[1, 1].set_ylim(0., 0.3)
         axes[1, 1].set_xlabel('ring radius (deg)')
         axes[1, 1].set_ylabel('ring width (deg)')
         axes[0, 2].hist(contained_muons['ring_size'],
@@ -1019,6 +1006,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         axes[0, 1].set_ylabel('number of rings')
         axes[1, 1].plot(contained_muons['ring_width'],
                         contained_muons['muon_efficiency'], 'x', alpha=0.5)
+        axes[1, 1].set_xlim(0., 0.3)
         axes[1, 1].set_ylim(0., 0.5)
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')

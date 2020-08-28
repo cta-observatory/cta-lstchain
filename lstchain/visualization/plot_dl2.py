@@ -4,27 +4,29 @@ Usage:
 "import plot_dl2"
 """
 import os
-import numpy as np
-import joblib
-import matplotlib.pyplot as plt
-from scipy.stats import norm
-from ..io.config import get_standard_config, read_configuration_file
-import ctaplot
+
 import astropy.units as u
-from astropy.table import Table
-from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
+import ctaplot
+import joblib
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
+from astropy.table import Table
+from scipy.stats import norm
+
+from ..io.config import get_standard_config, read_configuration_file
 
 __all__ = [
-    'plot_features',
+    'direction_results',
+    'energy_results',
     'plot_disp',
     'plot_disp_vector',
+    'plot_energy_resolution',
+    'plot_features',
+    'plot_importances',
     'plot_pos',
     'plot_roc_gamma',
-    'plot_importances',
-    'plot_energy_resolution',
-    'energy_results',
-    'direction_results'
 ]
 
 

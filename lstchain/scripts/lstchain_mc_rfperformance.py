@@ -14,23 +14,25 @@ $>python lstchain_mc_rfperformance.py
 
 """
 
-import numpy as np
-import pandas as pd
 import argparse
+import logging
+import sys
+
 import matplotlib.pyplot as plt
-from distutils.util import strtobool
+import pandas as pd
+
+from lstchain.io import standard_config, replace_config, read_configuration_file
+from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
-from lstchain.reco import utils
-import astropy.units as u
-from lstchain.io import standard_config, replace_config, read_configuration_file
-from lstchain.io.io import dl1_params_lstcam_key
 
 try:
     import ctaplot
 except ImportError as e:
     print("ctaplot not installed, some plotting function will be missing")
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Train and Apply Random Forests.")
 
@@ -110,6 +112,10 @@ def main():
     ####PLOT SOME RESULTS#####
 
     selected_gammas = dl2.query('reco_type==0 & mc_type==0')
+
+    if(len(selected_gammas) == 0):
+        log.warning('No gammas selected, I will not plot any output') 
+        sys.exit()
 
     plot_dl2.plot_features(dl2)
     if not args.batch:

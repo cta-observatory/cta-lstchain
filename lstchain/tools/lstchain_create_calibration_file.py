@@ -9,7 +9,7 @@ from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
-from ctapipe.io.containers import PixelStatusContainer
+from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.calib.camera.r0 import CameraR0Calibrator
 from lstchain.io.lstcontainers import LSTEventType
@@ -50,14 +50,14 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the log file'
     ).tag(config=True)
 
-    calibration_product = traits.enum_trait(
+    calibration_product = traits.create_class_enum_trait(
        CalibrationCalculator,
-        default='LSTCalibrationCalculator'
+        default_value='LSTCalibrationCalculator'
     )
 
-    r0calibrator_product =traits.enum_trait(
+    r0calibrator_product =traits.create_class_enum_trait(
         CameraR0Calibrator,
-        default='NullR0Calibrator'
+        default_value='NullR0Calibrator'
     )
 
     aliases = Dict(dict(
@@ -110,7 +110,8 @@ class CalibrationHDF5Writer(Tool):
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,
-            parent=self
+            parent=self,
+            subarray = self.eventsource.subarray
         )
 
         if self.r0calibrator_product:
@@ -207,7 +208,7 @@ class CalibrationHDF5Writer(Tool):
                         self.processor.pedestal.store_results(event)
 
                     # write the event
-                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.r0.event_id} "
+                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.index.event_id} "
                                    f"stat = {ped_data.n_events} events")
 
                     # write on file
@@ -222,7 +223,7 @@ class CalibrationHDF5Writer(Tool):
                     if end_of_file:
                         self.processor.flatfield.store_results(event)
 
-                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.r0.event_id} "
+                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.index.event_id} "
                                    f"stat = {ff_data.n_events} events")
 
                     # write on file
