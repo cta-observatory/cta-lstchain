@@ -8,9 +8,9 @@ import os
 import pandas as pd
 
 from astropy.coordinates import SkyCoord
+from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, reco_source_position_sky, radec_to_camera, rotate
 import fast_alps.utils.plotting as plotting
-from fast_alps.utils.statistics import sigma_lima
 from fast_alps.utils.logger import LOGGER
 
 
@@ -47,11 +47,14 @@ def analyze_wobble(config):
                            pd.to_datetime(selected_data.dragon_time.iat[0], unit='s')
                            
     observation_seconds = np.sum(observation_duration).total_seconds()
-    lima_significance = sigma_lima(n_on, n_off, 1./(n_points - 1))
+    stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
+    lima_significance = stat.significance
+    lima_excess = stat.excess
     LOGGER.info('Observation time %s', observation_time)
     LOGGER.info('Number of "ON" events %s', n_on)
     LOGGER.info('Number of "OFF" events %s', n_off)
     LOGGER.info('ON/OFF observation time ratio %s', 1./(n_points - 1))
+    LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut)
 
@@ -89,7 +92,10 @@ def analyze_on_off(config):
     n_norm_on = np.sum((theta2_on > theta2_norm_min) & (theta2_on < theta2_norm_max))
     n_norm_off = np.sum((theta2_off > theta2_norm_min) & (theta2_off < theta2_norm_max))
     lima_norm = n_norm_on / n_norm_off
-    lima_significance = sigma_lima(n_on, n_off, lima_norm)
+    stat = WStatCountsStatistic(n_on, n_off, lima_norm)
+    lima_significance = stat.significance
+    lima_excess = stat.excess
+    LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off,  lima_norm)], lima_significance,
                             r'$\theta^2$ [deg$^2$]', theta2_cut)
@@ -109,7 +115,10 @@ def analyze_on_off(config):
     n_norm_on = np.sum((alpha_on > alpha_norm_min) & (alpha_on < alpha_norm_max))
     n_norm_off = np.sum((alpha_off > alpha_norm_min) & (alpha_off < alpha_norm_max))
     lima_norm = n_norm_on / n_norm_off
-    lima_significance = sigma_lima(n_on, n_off, lima_norm)
+    stat = WStatCountsStatistic(n_on, n_off, lima_norm)
+    lima_significance = stat.significance
+    lima_excess = stat.excess
+    LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, 0, 90, 90)
