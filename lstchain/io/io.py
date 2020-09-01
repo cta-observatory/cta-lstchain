@@ -1,5 +1,7 @@
 import h5py
+from multiprocessing import Pool
 import numpy as np
+import pandas as pd
 from astropy.table import Table, vstack
 import tables
 from tables import open_file
@@ -42,6 +44,9 @@ __all__ = ['read_simu_info_hdf5',
            'write_dl2_dataframe',
            'write_calibration_data',
            'read_dl2_to_pyirf',
+           'read_dl2_sub_run',
+           'extract_observation_time',
+           'merge_dl2_runs'
            ]
 
 
@@ -1022,3 +1027,65 @@ def read_dl2_to_pyirf(filename):
         events[k] *= v
 
     return events, pyirf_simu_info
+
+
+def read_dl2_sub_run(t_filename):
+    '''
+    Read a file with DL2 data
+
+    Parameters
+    ----------
+    t_filename: Input file name
+
+    Returns
+    -------
+    Pandas dataframe with DL2 data
+    '''
+    return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)
+
+
+def extract_observation_time(t_df):
+    '''
+    Calculate observation time
+
+    Parameters
+    ----------
+    pandas.DataFrame t_df: Recorded data
+
+    Returns
+    -------
+    Observation duration in seconds
+    '''
+    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
+           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
+
+
+def merge_dl2_runs(data_path, runs, n_process=4):
+    """
+    Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.
+
+    Parameters
+    ----------
+    data_path: Path to data location
+    runs: List of run numbers
+    n_process: Number of parallel read processes to use
+
+    Returns
+    -------
+    Pair (observation time, data)
+    """
+    LOGGER.info("Reading runs\n %s\n from path\n %s\n using %s cores", runs, data_path, n_process)
+    pool = Pool(n_process)
+    filelist = []
+    # Create a list of files with matching run numbers
+    for filename in sorted(os.listdir(data_path)):
+        if any(str(run) in filename for run in runs):
+            filelist.append(f'{data_path}/{filename}')
+
+    df_list = pool.map(read_dl2_sub_run, filelist)
+
+    observation_times = pool.map(extract_observation_time, df_list)
+
+    observation_time = np.sum(observation_times).total_seconds()
+    df = pd.concat(df_list)
+    return observation_time, df
