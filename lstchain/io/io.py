@@ -1029,19 +1029,23 @@ def read_dl2_to_pyirf(filename):
     return events, pyirf_simu_info
 
 
-def read_dl2_sub_run(t_filename):
+def read_dl2_sub_run(t_filename, columns_to_read=None):
     '''
     Read a file with DL2 data
 
     Parameters
     ----------
     t_filename: Input file name
+    columns_to_read: List of interesting columns, optional. If None, then all columns will be read
 
     Returns
     -------
     Pandas dataframe with DL2 data
     '''
-    return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)
+    if columns_to_read is not None:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)[columns_to_read]
+    else:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)
 
 
 def extract_observation_time(t_df):
@@ -1060,7 +1064,7 @@ def extract_observation_time(t_df):
            pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
 
 
-def merge_dl2_runs(data_path, runs, n_process=4):
+def merge_dl2_runs(data_path, runs, columns_to_read=None, n_process=4):
     """
     Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.
 
@@ -1074,7 +1078,8 @@ def merge_dl2_runs(data_path, runs, n_process=4):
     -------
     Pair (observation time, data)
     """
-    LOGGER.info("Reading runs\n %s\n from path\n %s\n using %s cores", runs, data_path, n_process)
+    from functools import partial
+
     pool = Pool(n_process)
     filelist = []
     # Create a list of files with matching run numbers
@@ -1082,7 +1087,7 @@ def merge_dl2_runs(data_path, runs, n_process=4):
         if any(str(run) in filename for run in runs):
             filelist.append(f'{data_path}/{filename}')
 
-    df_list = pool.map(read_dl2_sub_run, filelist)
+    df_list = pool.map(partial(read_dl2_sub_run, columns_to_read=columns_to_read), filelist)
 
     observation_times = pool.map(extract_observation_time, df_list)
 

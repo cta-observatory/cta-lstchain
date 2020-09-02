@@ -5,36 +5,7 @@ Run fast-alps analysis
 import argparse
 import logging
 import toml
-from lstchain.analysis.fast_alps import analyze_on_off, analyze_wobble
-
-
-LOGGER = logging.getLogger('fast_alps')
-LOGGER.setLevel(logging.DEBUG)
-LOGGING_LEVELS = {0: logging.ERROR, 1: logging.INFO, 2: logging.DEBUG}
-
-
-def setup_logging(verbosity=1):
-    """
-    Setup logger console and file descriptors
-
-    Two log stream handlers are added, one for file-based logging and one for console output.
-    Logging level to file is always set to DEBUG and console verbosity can be controlled.
-    Verbosity levels {0,1,2} correspond to {ERROR, INFO, DEBUG}.
-
-    :param int verbosity: Verbosity level used for console output
-    """
-    fh = logging.FileHandler('/tmp/fast_alps.log')
-    fh.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    # define a Handler which writes INFO messages or higher to the sys.stderr
-    console = logging.StreamHandler()
-    console.setLevel(LOGGING_LEVELS[verbosity])
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    LOGGER.addHandler(console)
-    LOGGER.addHandler(fh)
+from lstchain.analysis.fast_alps import analyze_on_off, analyze_wobble, LOGGER, setup_logging
 
 
 def get_parser():
