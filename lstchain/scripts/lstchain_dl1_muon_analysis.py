@@ -20,7 +20,6 @@ import argparse
 import glob
 import numpy as np
 from ctapipe.instrument import CameraGeometry
-from astropy import units as u
 
 from lstchain.image.muon import (
     analyze_muon_event,

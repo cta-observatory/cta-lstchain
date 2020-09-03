@@ -222,9 +222,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
             threshold=30,
             bins=30)
 
-        pix_ringwidth_im = image[dist_ringwidth_mask]
-
         # No longer existing in ctapipe 0.8:
+        # pix_ringwidth_im = image[dist_ringwidth_mask]
         # muonintensityoutput.ring_pix_completeness =  \
         #     (pix_ringwidth_im > tailcuts[0]).sum() / len(pix_ringwidth_im)
 
