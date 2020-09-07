@@ -12,7 +12,7 @@ from ctapipe.io import EventSource
 from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.calib.camera.r0 import CameraR0Calibrator
-from lstchain.io.lstcontainers import LSTEventType
+from lstchain.lstcontainers import LSTEventType
 
 __all__ = [
     'CalibrationHDF5Writer'

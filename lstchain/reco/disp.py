@@ -1,5 +1,5 @@
 import numpy as np
-from ..io import lstcontainers
+from .. import lstcontainers
 from . import utils
 import astropy.units as u
 

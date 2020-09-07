@@ -12,7 +12,7 @@ from ctapipe.containers import MCHeaderContainer
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
+from ..lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
 from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
@@ -324,7 +324,7 @@ def read_simtel_energy_histogram(filename):
 
     Returns
     -------
-    `lstchain.io.lstcontainers.ThrownEventsHistogram`
+    `lstchain.lstcontainers.ThrownEventsHistogram`
     """
     with HDF5TableReader(filename=filename) as reader:
         histtab = reader.read('/simulation/thrown_event_distribution', ThrownEventsHistogram())
@@ -715,8 +715,8 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
 
     Parameters
     ----------
-    thrown_events_hist1: `lstchain.io.lstcontainers.ThrownEventsHistogram`
-    thrown_events_hist2: `lstchain.io.lstcontainers.ThrownEventsHistogram`
+    thrown_events_hist1: `lstchain.lstcontainers.ThrownEventsHistogram`
+    thrown_events_hist2: `lstchain.lstcontainers.ThrownEventsHistogram`
     """
     assert thrown_events_hist1.keys() == thrown_events_hist2.keys()
     # It does not matter that the number of simulated showers is the same
@@ -786,7 +786,7 @@ def global_metadata(source):
 
     Returns
     -------
-    `lstchain.io.lstcontainers.MetaData`
+    `lstchain.lstcontainers.MetaData`
     """
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
@@ -819,7 +819,7 @@ def write_subarray_tables(writer, event, metadata=None):
     ----------
     writer: `ctapipe.io.HDF5Writer`
     event: `ctapipe.containers.DataContainer`
-    metadata: `lstchain.io.lstcontainers.MetaData`
+    metadata: `lstchain.lstcontainers.MetaData`
     """
     if metadata is not None:
         add_global_metadata(event.dl0, metadata)
