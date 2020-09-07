@@ -2,17 +2,14 @@
 Collection of core analysis methods
 """
 
-import astropy.units as u
 import logging
 import numpy as np
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from astropy.coordinates import SkyCoord
 from gammapy.stats import WStatCountsStatistic
 from lstchain.io.io import merge_dl2_runs
-from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, reco_source_position_sky, radec_to_camera, rotate
+from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, radec_to_camera, rotate
 import lstchain.visualization.plot_dl2 as plotting
 from fast_alps.utils.logger import LOGGER
 
@@ -85,8 +82,7 @@ def analyze_wobble(config):
 
     observation_duration = pd.to_datetime(selected_data.dragon_time.iat[len(selected_data)-1], unit='s') -\
                            pd.to_datetime(selected_data.dragon_time.iat[0], unit='s')
-                           
-    observation_seconds = np.sum(observation_duration).total_seconds()
+
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
     lima_significance = stat.significance.item()
     lima_excess = stat.excess
@@ -109,7 +105,7 @@ def analyze_on_off(config):
     LOGGER.info("Running ON/OFF analysis")
     LOGGER.info("ON data runs: %s", config['analysis']['runs_on'])
     observation_time_on, data_on = merge_dl2_runs(config['input']['data_path'],
-                                                  config['analysis']['runs_on'], 
+                                                  config['analysis']['runs_on'],
                                                   config['input']['columns_to_read'], 4)
     LOGGER.info("ON observation time: %s", observation_time_on)
     LOGGER.info("OFF data runs: %s", config['analysis']['runs_off'])

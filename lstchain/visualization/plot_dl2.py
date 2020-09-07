@@ -744,7 +744,7 @@ def plot_1d_excess(named_datasets, lima_significance,
 
     hists = []
     for label, data, factor in named_datasets:
-        hists.append(ax.hist(data, label=label, weights=factor*np.ones_like(data), 
+        hists.append(ax.hist(data, label=label, weights=factor*np.ones_like(data),
                      bins=n_bins, alpha=opacity, range=[x_range_min, x_range_max]))
 
     ax.annotate(text=f'Significance Li&Ma = {lima_significance:.2f} $\sigma$\n',

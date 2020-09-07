@@ -3,7 +3,6 @@
 Run fast-alps analysis
 """
 import argparse
-import logging
 import toml
 from lstchain.analysis.fast_alps import analyze_on_off, analyze_wobble, LOGGER, setup_logging
 
