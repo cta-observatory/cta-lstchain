@@ -127,7 +127,7 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
 
 def compute_alpha(data):
     """
-    Computes the angle between the shower major axis and polar angle of the shower centroid 
+    Computes the angle between the shower major axis and polar angle of the shower centroid
 
     Parameters:
     -----------

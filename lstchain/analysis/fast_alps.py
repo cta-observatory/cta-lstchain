@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from gammapy.stats import WStatCountsStatistic
 from lstchain.io.io import merge_dl2_runs
-from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, radec_to_camera, rotate
+from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, rotate
 import lstchain.visualization.plot_dl2 as plotting
 from fast_alps.utils.logger import LOGGER
 
@@ -79,9 +79,6 @@ def analyze_wobble(config):
         t_off_data['reco_src_y'] = [xy[1] for xy in off_xy]
         named_datasets.append((f'OFF {rotation_angle * _}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
-
-    observation_duration = pd.to_datetime(selected_data.dragon_time.iat[len(selected_data)-1], unit='s') -\
-                           pd.to_datetime(selected_data.dragon_time.iat[0], unit='s')
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
     lima_significance = stat.significance.item()
