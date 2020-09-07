@@ -132,16 +132,16 @@ def test_apply_models():
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
-def produce_fake_dl1_proton_file():
+def produce_fake_dl1_proton_file(dl1_file):
     """
-    Produce a fake dl2 proton file by copying the dl2 gamma test file
+    Produce a fake dl1 proton file by copying the dl2 gamma test file
     and changing mc_type
     """
     events = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     events.mc_type = 101
     events.to_hdf(fake_dl1_proton_file, key=dl1_params_lstcam_key)
 
-def produce_fake_dl2_proton_file():
+def produce_fake_dl2_proton_file(dl2_file):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type
@@ -154,7 +154,7 @@ def produce_fake_dl2_proton_file():
 def test_sensitivity():
     from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
 
-    produce_fake_dl2_proton_file()
+    produce_fake_dl2_proton_file(dl2_file)
 
     nfiles_gammas = 1
     nfiles_protons = 1
@@ -214,7 +214,7 @@ def test_disp_to_pos():
 
 
 def test_change_frame_camera_sky():
-    from lstchain.reco.utils import sky_to_camera, camera_to_sky
+    from lstchain.reco.utils import sky_to_camera, camera_to_altaz
     import astropy.units as u
     x = np.random.rand(1) * u.m
     y = np.random.rand(1) * u.m
@@ -222,7 +222,7 @@ def test_change_frame_camera_sky():
     pointing_alt = np.pi/3. * u.rad
     pointing_az = 0. * u.rad
 
-    sky_pos = camera_to_sky(x, y, focal_length, pointing_alt, pointing_az)
+    sky_pos = camera_to_altaz(x, y, focal_length, pointing_alt, pointing_az)
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y], decimal=4)
 
