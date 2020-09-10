@@ -173,7 +173,7 @@ def plot_Crab_SED(ax, percentage, emin, emax, **kwargs):
 
     """
 
-    En = np.logspace(np.log10(emin.to_value()), np.log10(emax.to_value()), 40) * u.GeV
+    En = np.logspace(np.log10(emin), np.log10(emax), 40) * u.GeV
 
     dFdE = percentage / 100. * crab_magic(En)[0]
     ax.loglog(En, (dFdE * En * En).to(u.TeV / (u.cm * u.cm * u.s)), color = 'gray', **kwargs)
@@ -197,7 +197,8 @@ def plot_sensitivity(energy, sensitivity, ax = None):
     """
     ax = plt.gca() if ax is None else ax
 
-    mask = sensitivity < 1e100
+    #mask = sensitivity < 1e100
+    mask = sensitivity > 0
     egeom = np.sqrt(energy[1:] * energy[:-1])
     binsize = (energy[1:] - energy[:-1]) / 2
 

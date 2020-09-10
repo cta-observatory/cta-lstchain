@@ -30,6 +30,7 @@ from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.spectra.crab import crab_hegra
+from lstchain.mc import plot_utils
 
 import warnings
 warnings.filterwarnings("ignore",category=DeprecationWarning)
@@ -67,15 +68,15 @@ args = parser.parse_args()
 
 def main():
     ntelescopes_gamma = 4
-    ntelescopes_protons = 1
+    ntelescopes_protons = 4
     n_bins_energy = 20  #  Number of energy bins
     n_bins_gammaness = 10  #  Number of gammaness bins
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    
+    '''
     # Finds the best cuts for the computation of the sensitivity
-    '''energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
+    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
                                                                               args.dl1file_protons,
                                                                               args.dl2_file_g_sens,
                                                                               args.dl2_file_p_sens,
@@ -121,8 +122,21 @@ def main():
     
     
     # Plots
+
+    fig=plt.figure(figsize=(12, 8))
+
+    ax=plt.axes()
+    plot_utils.format_axes_sensitivity(ax)
+    plot_utils.plot_MAGIC_sensitivity(ax)
+    plot_utils.plot_Crab_SED(ax, 100, 100, 1e5, label="100% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 10, 100, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 1, 100, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
+    plot_utils.plot_sensitivity(energy*1000, best_sens, ax)
+    plt.legend()
+    plt.show()
+
+
     
-    plt.figure(figsize=(12, 8))
     plt.plot(egeom[:-1], tab['hadron_rate'], label='Hadron rate', marker='o')
     plt.plot(egeom[:-1], tab['gamma_rate'], label='Gamma rate', marker='o')
     plt.legend()
@@ -132,7 +146,7 @@ def main():
     plt.show()
     plt.savefig("rates.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     gammas_mc = dl2[dl2.mc_type == 0]
     protons_mc = dl2[dl2.mc_type == 101]
     sns.distplot(gammas_mc.gammaness, label='gammas')
@@ -142,7 +156,7 @@ def main():
     plt.show()
     plt.savefig("distplot_gammaness.png")    
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     sns.distplot(gammas_mc.mc_energy, label='gammas');
     sns.distplot(protons_mc.mc_energy, label='protons');
     plt.legend()
@@ -150,7 +164,7 @@ def main():
     plt.show()
     plt.savefig("distplot_mc_energy.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     sns.distplot(gammas_mc.reco_energy.apply(np.log10), label='gammas')
     sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons')
     plt.legend()
@@ -158,12 +172,12 @@ def main():
     plt.show()
     plt.savefig("distplot_energy_apply.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_theta2(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, range=(0, 1), bins=100)
     plt.show()
     plt.savefig("theta2.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, gammas_mc.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
     
@@ -172,7 +186,7 @@ def main():
     plt.show()
     plt.savefig("angular_resolution.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
@@ -180,12 +194,12 @@ def main():
     plt.show()
     plt.savefig("effective_area.png")
 
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
     plt.show()
     plt.savefig("energy_bias.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl1file_gammas)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
@@ -206,7 +220,7 @@ def main():
     plt.show()
     plt.savefig("effective_area.png")
     
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     plt.plot( energy[0:len(sensitivity_flux)], sensitivity_flux , '-', color='red', markersize=0, label='LST mono')
     plt.xscale('log')
     plt.yscale('log')
@@ -219,7 +233,7 @@ def main():
     plt.savefig('sensitivity.png')
 
 
-    plt.figure(figsize=(12, 8))
+    #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy, percentile=68.27, confidence_level=0.95, bias_correction=False)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.xscale('log')
