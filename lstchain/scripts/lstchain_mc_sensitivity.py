@@ -74,7 +74,7 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    '''
+    
     # Finds the best cuts for the computation of the sensitivity
     energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
                                                                               args.dl1file_protons,
@@ -84,10 +84,10 @@ def main():
                                                                               n_bins_energy, n_bins_gammaness,
                                                                               n_bins_theta2, noff,
                                                                               obstime)
-    '''                                                                          
+                                                                              
     #For testing using fixed cuts
-    gcut = np.ones(n_bins_energy) * 0.8 
-    tcut = np.ones(n_bins_energy) * 0.01
+    #gcut = np.ones(n_bins_energy) * 0.8 
+    #tcut = np.ones(n_bins_energy) * 0.01
     
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
@@ -137,8 +137,8 @@ def main():
 
 
     
-    plt.plot(egeom[:-1], tab['hadron_rate'], label='Hadron rate', marker='o')
-    plt.plot(egeom[:-1], tab['gamma_rate'], label='Gamma rate', marker='o')
+    plt.plot(egeom, tab['hadron_rate'], label='Hadron rate', marker='o')
+    plt.plot(egeom, tab['gamma_rate'], label='Gamma rate', marker='o')
     plt.legend()
     plt.xscale('log')
     plt.xlabel('Energy (TeV)')

@@ -754,22 +754,30 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     print("\nsensitivity[%]:\n", sensitivity)
     print("\n**************\n")
     
-    list_of_tuples = list(zip(energy[:energy.shape[0] - 2].to_value(), energy[1:].to_value(), gcut, tcut,
+    list_of_tuples = list(zip(energy[:energy.shape[0]-1].to_value(),
+                              energy[1:].to_value(), gcut, tcut,
                               ngammas, nhadrons,
                               gammarate, hadronrate,
-                              n_excesses_min, sensitivity_flux.to_value(), eff_area,
-                              eff_g, eff_p, nevents_gamma, nevents_proton))
+                              n_excesses_min,
+                              sensitivity_flux.to_value(),
+                              eff_area,
+                              eff_g, eff_p,
+                              nevents_gamma, nevents_proton))
     result = pd.DataFrame(list_of_tuples,
-                          columns=['ebin_low', 'ebin_up', 'gammaness_cut', 'theta2_cut',
+                          columns=['ebin_low', 'ebin_up',
+                                   'gammaness_cut', 'theta2_cut',
                                    'n_gammas', 'n_hadrons',
                                    'gamma_rate', 'hadron_rate',
-                                   'n_excesses_min', 'sensitivity', 'eff_area',
+                                   'n_excesses_min', 'sensitivity',
+                                   'eff_area',
                                    'eff_gamma', 'eff_hadron',
                                    'nevents_g', 'nevents_p'])
 
     units = [energy.unit, energy.unit, "", tcut.unit, "", "",
              u.min ** -1, u.min ** -1, "",
-             sensitivity_flux.unit, mc_par_g['area_sim'].to(u.cm ** 2).unit, "", "", "", ""]
+             sensitivity_flux.unit,
+             mc_par_g['area_sim'].to(u.cm ** 2).unit,
+             "", "", "", ""]
 
     # sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity)
     # plot_positions_survived_events(events_g,
