@@ -273,7 +273,7 @@ def bin_definition(n_bins_gammaness, n_bins_theta2):
     gammaness_bins, theta2_bins: `numpy.ndarray` binning of gammaness and theta2
 
     """
-    max_gam = 1
+    max_gam = 0.9
     max_th2 = 0.05 * u.deg * u.deg
     min_th2 = 0.005 * u.deg * u.deg
 
