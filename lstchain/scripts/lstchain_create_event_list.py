@@ -108,7 +108,7 @@ def main():
     directory_fits_file=args.output_fits_dir
 
     # Assuming the nomenclature of merged DL2 file to be
-    #dl2_Run_{#run_number}_merged_{#version}.h5
+    #dl2_LST-1_{#run_number}_merged_{#version}.h5
     start_name = 'dl2_Run'
     file = glob(args.input_data_dir+'dl2*'+str(args.run_number)+'*.h5')
 
