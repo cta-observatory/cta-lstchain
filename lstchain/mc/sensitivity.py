@@ -52,14 +52,13 @@ def read_sim_par(dl1_file):
     return par
 
 
-def process_mc(dl1_file, dl2_file, mc_type):
+def process_mc(dl2_file, mc_type):
     """
     Process the MC simulated and reconstructed to extract the relevant
     parameters to compute the sensitivity
 
     Paramenters
     ---------
-    dl1_file: `pandas.DataFrame` dl1 parameters
     dl2_file: `pandas.DataFrame` dl2 parameters
     mc_type: 'string' type of particle
 
@@ -72,7 +71,7 @@ def process_mc(dl1_file, dl2_file, mc_type):
     mc_par:    `dict` with simulated parameters
 
     """
-    sim_par = read_sim_par(dl1_file)
+    sim_par = read_sim_par(dl2_file)
 
     events = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
 
@@ -88,8 +87,6 @@ def process_mc(dl1_file, dl2_file, mc_type):
         # & (events.tel_id==1)
         # & (events.wl > 0.1)
     )
-
-
     events = events[filter_good_events]
 
     e_reco = events.reco_energy.to_numpy() * u.TeV
@@ -315,8 +312,7 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
 
     return contained, area
 
-def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
-                               dl2_file_g, dl2_file_p,
+def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
                                nfiles_gammas, nfiles_protons,
                                n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
                                obstime = 50 * 3600 * u.s):
@@ -327,8 +323,6 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
 
     Parameters
     ---------
-    simtelfile_gammas: `string` path to simtelfile of gammas with mc info
-    simtelfile_protons: `string` path to simtelfile of protons with mc info
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed protons
     nfiles_gammas: `int` number of simtel gamma files reconstructed
@@ -347,10 +341,8 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     """
 
     # Read simulated and reconstructed values
-    gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(simtelfile_gammas,
-                                                                               dl2_file_g, 'gamma')
-    gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(simtelfile_protons,
-                                                                                 dl2_file_p, 'proton')
+    gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, 'gamma')
+    gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, 'proton')
 
     mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
@@ -557,8 +549,7 @@ def find_best_cuts_sensitivity(simtelfile_gammas, simtelfile_protons,
     return energy, sensitivity, result, units, gcut, tcut
 
 
-def sensitivity(simtelfile_gammas, simtelfile_protons,
-                dl2_file_g, dl2_file_p,
+def sensitivity(dl2_file_g, dl2_file_p,
                 nfiles_gammas, nfiles_protons,
                 n_bins_energy, gcut, tcut, noff,
                 obstime=50 * 3600 * u.s):
@@ -567,8 +558,6 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
 
     Parameters
     ---------
-    simtelfile_gammas: `string` path to simtelfile of gammas with mc info
-    simtelfile_protons: `string` path to simtelfile of protons with mc info
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed protons
     nfiles_gammas: `int` number of simtel gamma files reconstructed
@@ -587,10 +576,8 @@ def sensitivity(simtelfile_gammas, simtelfile_protons,
     """
 
     # Read simulated and reconstructed values
-    gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(simtelfile_gammas,
-                                                                               dl2_file_g, 'gamma')
-    gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(simtelfile_protons,
-                                                                                 dl2_file_p, 'proton')
+    gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, 'gamma')
+    gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, 'proton')
 
     mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
     mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons

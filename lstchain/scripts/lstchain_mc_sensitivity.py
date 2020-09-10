@@ -8,8 +8,6 @@ Inputs are DL1/DL2 gamma and proton files
 Usage: 
 
 $> python lstchain_mc_sensitivity.py
---gd1 dl1_gamma_20deg_180deg_cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4_merge_test.h5 
---pd1 dl1_proton_20deg_180degcta-prod3-demo-2147m-LaPalma-baseline-mono_merge_test.h5 
 --gd2-cuts dl2_gammas_cuts.h5  
 --pd2-cuts dl2_protons_cuts.h5 
 --gd2-sens dl2_gammas_sensitivity.h5 
@@ -42,12 +40,6 @@ ctaplot.set_style()
 
 parser = argparse.ArgumentParser(description="Compute MC sensitivity curve.")
 
-parser.add_argument('--input-file-gamma-dl1', '--gd1', type = str,
-                    dest = 'dl1file_gammas',
-                    help = 'path to gammas DL1 file')
-parser.add_argument('--input-file-proton-dl1', '--pd1', type = str,
-                    dest = 'dl1file_protons',
-                    help = 'path to protons DL1 file')
 parser.add_argument('--input-file-gamma-dl2-cuts', '--gd2-cuts', type = str,
                     dest = 'dl2_file_g_cuts',
                     help = 'path to reconstructed gammas dl2 file used to calculate the sensitivity')
@@ -76,13 +68,14 @@ def main():
     noff = 5
     
     # Finds the best cuts for the computation of the sensitivity
-    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl1file_gammas,
-                                                                              args.dl1file_protons,
-                                                                              args.dl2_file_g_sens,
+    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g_sens,
                                                                               args.dl2_file_p_sens,
-                                                                              ntelescopes_gamma, ntelescopes_protons,
-                                                                              n_bins_energy, n_bins_gammaness,
-                                                                              n_bins_theta2, noff,
+                                                                              ntelescopes_gamma,
+                                                                              ntelescopes_protons,
+                                                                              n_bins_energy,
+                                                                              n_bins_gammaness,
+                                                                              n_bins_theta2,
+                                                                              noff,
                                                                               obstime)
                                                                               
     #For testing using fixed cuts
@@ -94,9 +87,7 @@ def main():
 
 
     # Computes the sensitivity
-    energy, best_sens, result, units, dl2 = sensitivity(args.dl1file_gammas,
-                                                        args.dl1file_protons,
-                                                        args.dl2_file_g_cuts, 
+    energy, best_sens, result, units, dl2 = sensitivity(args.dl2_file_g_cuts, 
                                                         args.dl2_file_p_cuts,
                                                         1, 1,
                                                         n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
@@ -131,7 +122,7 @@ def main():
     plot_utils.plot_Crab_SED(ax, 100, 100, 1e5, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 100, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 100, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
-    plot_utils.plot_sensitivity(energy*1000, best_sens, ax)
+    plot_utils.plot_sensitivity(energy, best_sens, ax)
     plt.legend()
     plt.show()
 

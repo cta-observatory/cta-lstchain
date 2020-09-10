@@ -150,7 +150,7 @@ def plot_MAGIC_sensitivity(ax):
     """
 
     s = np.loadtxt('../spectra/data/magic_sensitivity.txt', skiprows = 1)   
-    ax.loglog(s[:,0], s[:,3] * np.power(s[:,0] / 1.e3, 2), 
+    ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/ 1e3, 2), 
               color = 'C0', label = 'MAGIC (Aleksic et al. 2014)')
     
     return ax
@@ -206,9 +206,9 @@ def plot_sensitivity(energy, sensitivity, ax = None):
 
     ax.set_yscale("log")
     ax.set_xscale("log")
-    ax.errorbar(egeom[mask].to_value(), 
+    ax.errorbar(egeom[mask].to_value()*1000, 
                 (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
-                                                * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
+                * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
                 xerr=binsize[mask].to_value(), marker = 'o', color = 'C3', label = 'Sensitivity')
 
 def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity_3Darray):
