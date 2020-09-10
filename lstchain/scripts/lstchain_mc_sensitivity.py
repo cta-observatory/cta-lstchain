@@ -124,9 +124,8 @@ def main():
     plot_utils.plot_Crab_SED(ax, 1, 100, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
     plot_utils.plot_sensitivity(energy, best_sens, ax)
     plt.legend()
+    plt.savefig('sensitivity.png')
     plt.show()
-
-
     
     plt.plot(egeom, tab['hadron_rate'], label='Hadron rate', marker='o')
     plt.plot(egeom, tab['gamma_rate'], label='Gamma rate', marker='o')
@@ -134,9 +133,9 @@ def main():
     plt.xscale('log')
     plt.xlabel('Energy (TeV)')
     plt.ylabel('events / min')
-    plt.show()
     plt.savefig("rates.png")
-    
+    plt.show()
+
     #fig=plt.figure(figsize=(12, 8))
     gammas_mc = dl2[dl2.mc_type == 0]
     protons_mc = dl2[dl2.mc_type == 101]
@@ -144,29 +143,29 @@ def main():
     sns.distplot(protons_mc.gammaness, label='protons')
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("distplot_gammaness.png")    
+    plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     sns.distplot(gammas_mc.mc_energy, label='gammas');
     sns.distplot(protons_mc.mc_energy, label='protons');
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("distplot_mc_energy.png")
+    plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     sns.distplot(gammas_mc.reco_energy.apply(np.log10), label='gammas')
     sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons')
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("distplot_energy_apply.png")
+    plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_theta2(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, range=(0, 1), bins=100)
-    plt.show()
     plt.savefig("theta2.png")
+    plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, gammas_mc.reco_energy  )
@@ -174,24 +173,24 @@ def main():
     
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("angular_resolution.png")
+    plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("effective_area.png")
-
-    #fig=plt.figure(figsize=(12, 8))
-    ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
     plt.show()
-    plt.savefig("energy_bias.png")
     
     #fig=plt.figure(figsize=(12, 8))
-    gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl1file_gammas)
+    ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
+    plt.savefig("energy_bias.png")
+    plt.show()
+
+    #fig=plt.figure(figsize=(12, 8))
+    gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl2_file_g_sens)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
     total_number_of_events = gamma_ps_simu_info.num_showers * gamma_ps_simu_info.shower_reuse
@@ -208,21 +207,23 @@ def main():
     plt.ylim([2*10**3, 10**6])
     plt.legend()
     plt.tight_layout()
-    plt.show()
     plt.savefig("effective_area.png")
+    plt.show()
     
+
+    '''
     #fig=plt.figure(figsize=(12, 8))
     plt.plot( energy[0:len(sensitivity_flux)], sensitivity_flux , '-', color='red', markersize=0, label='LST mono')
     plt.xscale('log')
     plt.yscale('log')
-
     plt.ylabel('$\mathsf{E^2 F \; [erg \, cm^{-2} s^{-1}]}$', fontsize = 16)
     plt.xlabel('E [TeV]')
     plt.xlim([10**-2, 100])
     plt.ylim([10**-14, 10**-9])
     plt.tight_layout()
+    plt.show()
     plt.savefig('sensitivity.png')
-
+    
 
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy, percentile=68.27, confidence_level=0.95, bias_correction=False)
@@ -233,8 +234,8 @@ def main():
     plt.xlim([10**-2, 100])
     plt.ylim([0.08, 0.48])
     plt.tight_layout()
-
     plt.savefig('energy_resolution.png', dpi=100)
-
+    plt.show()
+    '''
 if __name__ == '__main__':
     main()
