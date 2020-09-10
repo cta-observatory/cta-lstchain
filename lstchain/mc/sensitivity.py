@@ -24,20 +24,20 @@ __all__ = [
     ]
 
 
-def read_sim_par(dl1_file):
+def read_sim_par(file):
     """
     Read MC simulated parameters
 
     Parameters
     ---------
-    dl1_file: `pandas.DataFrame` dl1 parameters
+    file: `hdf5 file` 
 
     Returns
     ---------
     par: `dict` with simulated parameters
 
     """
-    simu_info = read_simu_info_merged_hdf5(dl1_file)
+    simu_info = read_simu_info_merged_hdf5(file)
     emin = simu_info.energy_range_min
     emax = simu_info.energy_range_max
     sp_idx = simu_info.spectral_index
@@ -313,7 +313,7 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     return contained, area
 
 def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
-                               nfiles_gammas, nfiles_protons,
+                               ntelescopes_gammas, ntelescopes_protons,
                                n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
                                obstime = 50 * 3600 * u.s):
 
@@ -325,8 +325,8 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     ---------
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed protons
-    nfiles_gammas: `int` number of simtel gamma files reconstructed
-    nfiles_protons: `int` number of simtel proton files reconstructed
+    ntelescopes_gammas: `int` number of telescopes used
+    ntelescopes_protons: `int` number of telescopes used
     n_bins_energy: `int` number of bins in energy
     n_bins_gammaness: `int` number of bins in gammaness
     n_bins_theta2: `int` number of bins in theta2
@@ -344,8 +344,8 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, 'gamma')
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, 'proton')
 
-    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
-    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
+    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas
+    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons
 
     # Pass units to TeV and cm2
     mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
@@ -550,7 +550,7 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
 
 
 def sensitivity(dl2_file_g, dl2_file_p,
-                nfiles_gammas, nfiles_protons,
+                ntelescopes_gammas, ntelescopes_protons,
                 n_bins_energy, gcut, tcut, noff,
                 obstime=50 * 3600 * u.s):
     """
@@ -560,8 +560,8 @@ def sensitivity(dl2_file_g, dl2_file_p,
     ---------
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed protons
-    nfiles_gammas: `int` number of simtel gamma files reconstructed
-    nfiles_protons: `int` number of simtel proton files reconstructed
+    ntelescopes_gammas: `int` number of telescopes used
+    ntelescopes_protons: `int` number of telescopes used
     n_bins_energy: `int` number of bins in energy
     n_bins_gammaness: `int` number of bins in gammaness
     n_bins_theta2: `int` number of bins in theta2
