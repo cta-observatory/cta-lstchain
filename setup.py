@@ -48,6 +48,7 @@ setup(
         "eventio>=1.1.1,<2.0.0a0",  # at least 1.1.1, but not 2
         'gammapy>=0.17',
         'h5py',
+        'joblib',
         'matplotlib',
         'numba',
         'numpy',
@@ -56,9 +57,7 @@ setup(
         'seaborn',
         'scikit-learn',
         'tables',
-        'joblib',
         'traitlets',
-        'joblib',
     ],
     package_data={
         'lstchain': ['data/lstchain_standard_config.json',
