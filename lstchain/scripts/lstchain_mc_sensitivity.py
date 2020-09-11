@@ -55,6 +55,10 @@ parser.add_argument('--input-file-proton-dl2-sens', '--pd2-sens', type = str,
                     help = 'path to reconstructed protons dl2 file used to calculate the optimized cuts'
                     ' to be applied to the sensitivity')
 
+parser.add_argument('--output_path', '--o', type = str,
+                    dest = 'output_path',
+                    help = 'path where to save plot images')
+
 args = parser.parse_args()
 
 
@@ -100,8 +104,8 @@ def main():
     
     
     # Saves the results
-    dl2.to_hdf('test_sens.h5', key='data')
-    result.to_hdf('test_sens.h5', key='results')
+    dl2.to_hdf(args.output_path+'test_sens.h5', key='data')
+    result.to_hdf(args.output_path+'test_sens.h5', key='results')
 
     tab = Table.from_pandas(result)
 
@@ -119,12 +123,12 @@ def main():
     ax=plt.axes()
     plot_utils.format_axes_sensitivity(ax)
     plot_utils.plot_MAGIC_sensitivity(ax)
-    plot_utils.plot_Crab_SED(ax, 100, 100, 1e5, label="100% Crab") #Energy in GeV
-    plot_utils.plot_Crab_SED(ax, 10, 100, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
-    plot_utils.plot_Crab_SED(ax, 1, 100, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 100, 5, 1e5, label="100% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 10, 5, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 1, 5, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
     plot_utils.plot_sensitivity(energy, best_sens, ax)
     plt.legend()
-    plt.savefig('sensitivity.png')
+    plt.savefig(args.output_path+"/sensitivity.png")
     plt.show()
     
     plt.plot(egeom, tab['hadron_rate'], label='Hadron rate', marker='o')
@@ -133,7 +137,7 @@ def main():
     plt.xscale('log')
     plt.xlabel('Energy (TeV)')
     plt.ylabel('events / min')
-    plt.savefig("rates.png")
+    plt.savefig(args.output_path+"/rates.png")
     plt.show()
 
     #fig=plt.figure(figsize=(12, 8))
@@ -143,7 +147,7 @@ def main():
     sns.distplot(protons_mc.gammaness, label='protons')
     plt.legend()
     plt.tight_layout()
-    plt.savefig("distplot_gammaness.png")    
+    plt.savefig(args.output_path+"/distplot_gammaness.png")    
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
@@ -151,7 +155,7 @@ def main():
     sns.distplot(protons_mc.mc_energy, label='protons');
     plt.legend()
     plt.tight_layout()
-    plt.savefig("distplot_mc_energy.png")
+    plt.savefig(args.output_path+"/distplot_mc_energy.png")
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
@@ -159,12 +163,12 @@ def main():
     sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons')
     plt.legend()
     plt.tight_layout()
-    plt.savefig("distplot_energy_apply.png")
+    plt.savefig(args.output_path+"/distplot_energy_apply.png")
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_theta2(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, range=(0, 1), bins=100)
-    plt.savefig("theta2.png")
+    plt.savefig(args.output_path+"/theta2.png")
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
@@ -173,7 +177,7 @@ def main():
     
     plt.legend()
     plt.tight_layout()
-    plt.savefig("angular_resolution.png")
+    plt.savefig(args.output_path+"/angular_resolution.png")
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
@@ -181,12 +185,12 @@ def main():
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
     plt.tight_layout()
-    plt.savefig("effective_area.png")
+    plt.savefig(args.output_path+"/effective_area.png")
     plt.show()
     
     #fig=plt.figure(figsize=(12, 8))
     ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
-    plt.savefig("energy_bias.png")
+    plt.savefig(args.output_path+"/energy_bias.png")
     plt.show()
 
     #fig=plt.figure(figsize=(12, 8))
@@ -207,7 +211,7 @@ def main():
     plt.ylim([2*10**3, 10**6])
     plt.legend()
     plt.tight_layout()
-    plt.savefig("effective_area.png")
+    plt.savefig(args.output_path+"/effective_area.png")
     plt.show()
     
 

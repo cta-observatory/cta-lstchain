@@ -579,8 +579,8 @@ def sensitivity(dl2_file_g, dl2_file_p,
     gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, 'gamma')
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, 'proton')
 
-    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * nfiles_gammas
-    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * nfiles_protons
+    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas
+    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons
 
     # Pass units to TeV and cm2
     mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
