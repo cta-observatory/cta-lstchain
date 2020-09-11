@@ -12,6 +12,7 @@ $> python lstchain_mc_sensitivity.py
 --pd2-cuts dl2_protons_cuts.h5 
 --gd2-sens dl2_gammas_sensitivity.h5 
 --pd2-sens dl2_protons_sensitivity.h5
+--o /output/path
 
 """
 
@@ -21,12 +22,14 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
 import numpy as np
+import pandas as pd
 import argparse
 import ctaplot
 from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
+from lstchain.io.io import dl2_params_lstcam_key
 from lstchain.spectra.crab import crab_hegra
 from lstchain.mc import plot_utils
 
@@ -40,21 +43,12 @@ ctaplot.set_style()
 
 parser = argparse.ArgumentParser(description="Compute MC sensitivity curve.")
 
-parser.add_argument('--input-file-gamma-dl2-cuts', '--gd2-cuts', type = str,
-                    dest = 'dl2_file_g_cuts',
-                    help = 'path to reconstructed gammas dl2 file used to calculate the sensitivity')
-parser.add_argument('--input-file-proton-dl2-cuts', '--pd2-cuts', type = str,
-                    dest = 'dl2_file_p_cuts',
-                    help = 'path to reconstructed protons dl2 file used to calculate the sensitivity')
-parser.add_argument('--input-file-gamma-dl2-sens', '--gd2-sens', type = str,
-                    dest = 'dl2_file_g_sens',
-                    help = 'path to reconstructed gammas dl2 file used to calculate the optimized cuts' 
-                    ' to be applied to the sensitivity')
-parser.add_argument('--input-file-proton-dl2-sens', '--pd2-sens', type = str,
-                    dest = 'dl2_file_p_sens',
-                    help = 'path to reconstructed protons dl2 file used to calculate the optimized cuts'
-                    ' to be applied to the sensitivity')
-
+parser.add_argument('--input-file-gamma-dl2', '--gdl2', type = str,
+                    dest = 'dl2_file_g',
+                    help = 'path to reconstructed gammas dl2 file')
+parser.add_argument('--input-file-proton-dl2', '--pdl2', type = str,
+                    dest = 'dl2_file_p',
+                    help = 'path to reconstructed protons dl2 file')
 parser.add_argument('--output_path', '--o', type = str,
                     dest = 'output_path',
                     help = 'path where to save plot images')
@@ -70,10 +64,63 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
+
+    #Divide the event set in two:
+    #First half for calculating the best sensitivity cuts
+    #Second half for calcularing the sensitivity
+
+    df_gammas=pd.read_hdf(args.dl2_file_g,
+                          key=dl2_params_lstcam_key)
+    df_protons=pd.read_hdf(args.dl2_file_p,
+                          key=dl2_params_lstcam_key)
+
+    #Must be a better way but I can't check the internet...
+    gammas_array=df_gammas.to_numpy()
+    protons_array=df_protons.to_numpy()
+
+    half_size_gammas=round(gammas_array.shape[0]/2)
+    half_size_protons=round(protons_array.shape[0]/2)
+    
+    gamma_events_for_cuts=gammas_array[:half_size_gammas]
+    gamma_events_for_sens=gammas_array[half_size_gammas:]
+
+    proton_events_for_cuts=protons_array[:half_size_protons]
+    proton_events_for_sens=protons_array[half_size_protons:]
+
+    #Check that the sizes are correct
+    if gamma_events_for_cuts.shape[0]+gamma_events_for_sens.shape[0]!=gammas_array.shape[0]:
+        print("Oops! The total is not the sum of the halves!")
+        return
+    
+    if proton_events_for_cuts.shape[0]+proton_events_for_sens.shape[0]!=protons_array.shape[0]:
+        print("Oops! The total is not the sum of the halves!")
+        return
+
+    #Create dataframes with the new two data sets
+    df_gamma_events_for_cuts=pd.DataFrame(
+        data=gamma_events_for_cuts,
+        columns=df_gammas.keys())
+
+    df_gamma_events_for_sens=pd.DataFrame(
+        data=gamma_events_for_sens,
+        columns=df_gammas.keys())
+    
+    df_proton_events_for_cuts=pd.DataFrame(
+        data=proton_events_for_cuts,
+        columns=df_protons.keys())
+
+    df_proton_events_for_sens=pd.DataFrame(
+        data=proton_events_for_sens,
+        columns=df_protons.keys())
+    
+    ######################################################
+
     
     # Finds the best cuts for the computation of the sensitivity
-    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g_sens,
-                                                                              args.dl2_file_p_sens,
+    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
+                                                                              args.dl2_file_p,
+                                                                              df_gamma_events_for_cuts,
+                                                                              df_proton_events_for_cuts,
                                                                               ntelescopes_gamma,
                                                                               ntelescopes_protons,
                                                                               n_bins_energy,
@@ -91,9 +138,12 @@ def main():
 
 
     # Computes the sensitivity
-    energy, best_sens, result, units, dl2 = sensitivity(args.dl2_file_g_cuts, 
-                                                        args.dl2_file_p_cuts,
-                                                        1, 1,
+    energy, best_sens, result, units, dl2 = sensitivity(args.dl2_file_g, 
+                                                        args.dl2_file_p,
+                                                        df_gamma_events_for_cuts,
+                                                        df_proton_events_for_cuts,
+                                                        ntelescopes_gamma,
+                                                        ntelescopes_protons,
                                                         n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
                                                         obstime)
                                                         
@@ -194,7 +244,7 @@ def main():
     plt.show()
 
     #fig=plt.figure(figsize=(12, 8))
-    gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl2_file_g_sens)
+    gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl2_file_g)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
     total_number_of_events = gamma_ps_simu_info.num_showers * gamma_ps_simu_info.shower_reuse
