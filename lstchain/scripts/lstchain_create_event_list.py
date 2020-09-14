@@ -33,14 +33,12 @@ $> python lstchain_create_event_list.py
 import os
 import yaml
 import re
-from glob import glob
 from distutils.util import strtobool
 import numpy as np
 import argparse
 from pathlib import Path
 import logging
 import sys
-
 
 from lstchain.clean import read_and_update_dl2, mc_filter, data_filter
 from lstchain.hdu import create_event_list

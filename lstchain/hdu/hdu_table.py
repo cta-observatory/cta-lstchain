@@ -5,7 +5,6 @@ from lstchain.reco.utils import camera_to_altaz
 import astropy.units as u
 from astropy.table import Table, Column, vstack
 from astropy.io import fits
-from astropy.coordinates import AltAz, SkyCoord, SkyOffsetFrame
 from astropy.time import Time
 
 __all__ = [
@@ -115,107 +114,65 @@ def create_obs_hdu_index(filename_list, fits_dir):
         hdu_class_2 = ['']
         hdu_class_3 = ['']
         hdu_class_4 = ['']
-        obs_id_hdu_table = len(hdu_type_name) * [event_table.meta["OBS_ID"]]
-        file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [file]
+        obs_id_hdu_table = [event_table.meta["OBS_ID"]]
+        file_dir = [fits_dir]
+        file_name = [file]
         hdu_name = ['events']
 
-        t_1 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
+        t_events = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
                     file_dir, file_name, hdu_name],
                 names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
                     'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
                 dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
                 meta={'name': 'HDU_INDEX'}
                 )
-        hdu_tables.append(t_1)
+        hdu_tables.append(t_events)
 
         ###############################################
         #GTI
-        hdu_type_name = ['gti']
-        hdu_class_1 = ['gti']
-        hdu_class_2 = ['']
-        hdu_class_3 = ['']
-        hdu_class_4 = ['']
-        obs_id_hdu_table = len(hdu_type_name) * [gti_table.meta["OBS_ID"]]
-        file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [file]
-        hdu_name = ['gti']
+        t_gti = t_events.copy()
 
-        t_2 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
-                    file_dir, file_name, hdu_name],
-                names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
-                       'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
-                meta={'name': 'HDU_INDEX'}
-                )
-        hdu_tables.append(t_2)
+        t_gti['HDU_TYPE'] = ['gti']
+        t_gti['HDU_CLASS'] = ['gti']
+        t_gti['HDU_NAME'] = ['gti']
+
+        hdu_tables.append(t_gti)
 
         ###############################################
         #POINTING
-        hdu_type_name = ['pointing']
-        hdu_class_1 = ['pointing']
-        hdu_class_2 = ['']
-        hdu_class_3 = ['']
-        hdu_class_4 = ['']
-        obs_id_hdu_table = len(hdu_type_name) * [pointing_table.meta["OBS_ID"]]
-        file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [file]
-        hdu_name = ['pointing']
+        t_pnt = t_events.copy()
+        t_pnt['HDU_TYPE'] = ['pointing']
+        t_pnt['HDU_CLASS'] = ['pointing']
+        t_pnt['HDU_NAME'] = ['pointing']
 
-        t_3 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
-                   file_dir, file_name, hdu_name],
-                names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
-                       'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
-                meta={'name': 'HDU_INDEX'}
-                )
-        hdu_tables.append(t_3)
+        hdu_tables.append(t_gti)
 
         ###############################################
         #Energy Dispersion
         if Table.read(str(fits_dir)+"/"+file, hdu="ENERGY DISPERSION"):
-            hdu_type_name = ['edisp']
-            hdu_class_1 = ['edisp_2d']
-            hdu_class_2 = ['EDISP']
-            hdu_class_3 = ['POINT-LIKE']
-            hdu_class_4 = ['EDISP_2D']
-            obs_id_hdu_table = len(hdu_type_name) * [event_table.meta['OBS_ID']]
-            file_dir = len(hdu_type_name) * [fits_dir]
-            file_name = len(hdu_type_name) * [file]
-            hdu_name = ['ENERGY DISPERSION']
+            t_edisp = t_events.copy()
+            t_edisp['HDU_TYPE'] = ['edisp']
+            t_edisp['HDU_CLASS'] = ['edisp_2d']
+            t_edisp['HDU_CLASS2'] = ['EDISP']
+            t_edisp['HDU_CLASS3'] = ['POINT-LIKE']
+            t_edisp['HDU_CLASS4'] = ['EDISP_2D']
+            t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
 
-            e = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
-                    file_dir, file_name, hdu_name],
-                names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
-                    'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
-                meta={'name': 'HDU_INDEX'}
-                )
-            hdu_tables.append(e)
+            hdu_tables.append(t_edisp)
         else:
             print('Energy Dispersion HDU not found')
 
         ###############################################
         #Effective Area
         if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
-            hdu_type_name = ['aeff']
-            hdu_class_1 = ['aeff_2d']
-            hdu_class_2 = ['AEFF']
-            hdu_class_3 = ['POINT-LIKE']
-            hdu_class_4 = ['AEFF_2D']
-            obs_id_hdu_table = len(hdu_type_name) * [event_table.meta['OBS_ID']]
-            file_dir = len(hdu_type_name) * [fits_dir]
-            file_name = len(hdu_type_name) * [file]
-            hdu_name = ['EFFECTIVE AREA']
+            t_aeff = t_edisp.copy()
+            t_aeff['HDU_TYPE'] = ['aeff']
+            t_aeff['HDU_CLASS'] = ['aeff_2d']
+            t_aeff['HDU_CLASS2'] = ['AEFF']
+            t_aeff['HDU_CLASS4'] = ['AEFF_2D']
+            t_aeff['HDU_NAME'] = ['EFFECTIVE AREA']
 
-            a = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
-                    file_dir, file_name, hdu_name],
-                names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
-                   'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
-                meta={'name': 'HDU_INDEX'}
-                )
-            hdu_tables.append(a)
+            hdu_tables.append(t_aeff)
         else:
             print('Effective Area HDU not found')
 
@@ -319,7 +276,6 @@ def create_event_list(data, run_number, Source_name):
     pointing_table = Table()
 
     lam = 1000 #Average rate of triggered events, taken by hand for now
-    
     # Timing parameters
     t_start = data.dragon_time.values[0]
     t_stop = data.dragon_time.values[-1]
