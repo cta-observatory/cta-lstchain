@@ -200,7 +200,7 @@ def generate_irf(dl2_file):
     im = IrfMaker(config = config, evt_dict = dict(gamma=mc_dl2), outdir='.')
     aeff = im.make_effective_area()
     edisp = im.make_energy_dispersion()
-    print(len(dl2))
+
     dl2['dragon_time']= [1.000, 1.001, 1.002]
     dl2['alt_tel'] = [1.355,1.355,1.355]
     dl2['az_tel'] = [2.22,2.22,2.22]
