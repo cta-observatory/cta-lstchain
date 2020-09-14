@@ -18,7 +18,9 @@ dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
-
+dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large.h5')
+dl3_hdu_index = os.path.join(output_dir, 'hdu-index.fits.gz')
+dl3_obs_index = os.path.join(output_dir, 'obs-index.fits.gz')
 
 def find_entry_points(package_name):
     '''from: https://stackoverflow.com/a/47383763/3838691'''
@@ -143,8 +145,8 @@ def test_lstchain_dl1_to_dl2():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_mc_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab', 
-                '-f', dl1_file, 
+    run_program('lstchain_mc_dl1ab',
+                '-f', dl1_file,
                 '-o', output_file,
                 )
     assert os.path.exists(output_file)
@@ -155,6 +157,27 @@ def test_mc_dl1ab_validity():
     dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.h5'), key=dl1_params_lstcam_key)
     dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
+
+
+@pytest.mark.run(after='test_lstchain_dl1_to_dl2')
+def test_dl3():
+    run_program(
+            'lstchain_create_event_list',
+            '-d', dl2_file,
+            '-o', output_dir,
+            '-fg', dl2_file,
+            '-irf', 'True'
+    )
+    assert os.path.exists(dl3_file)
+
+@pytest.mark.run(after='test_dl3')
+def test_dl3_index():
+    run_program(
+            'lstchain_create_dl3_index_files',
+            '-d', output_dir
+    )
+    assert os.path.exists(dl3_hdu_index)
+    assert os.path.exists(dl3_obs_index)
 
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
@@ -170,4 +193,3 @@ def test_mc_r0_to_dl2():
         '-o', output_dir,
     )
     assert os.path.exists(dl2_file)
-

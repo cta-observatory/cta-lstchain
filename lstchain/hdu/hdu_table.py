@@ -42,7 +42,7 @@ def make_hdu(hdu_name, table):
     return hdu
 
 #IRF should be separate?
-def create_obs_hdu_index(obs_id_list, fits_dir):
+def create_obs_hdu_index(filename_list, fits_dir):
     """
     Create the obs table and hdu table (below some explanation)
 
@@ -64,8 +64,8 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
 
     Parameters
     ----------
-    obs_id_list : list
-        list of obs ids
+    filename_list : list
+        list of filenames
     fits_dir : str
         directory containing the fits file
     """
@@ -97,23 +97,20 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
 
 
     # loop through the files
-    for irun,run in enumerate(obs_id_list):
+    for file in filename_list:
 
-        # Standard naming, maybe modified later
-        filename = f"dl3_LST-1_0{run}_merged.fits"
-
-        if os.path.exists(fits_dir+filename):
+        if os.path.exists(str(fits_dir)+"/"+file):
             try:
-                event_table = Table.read(f"{fits_dir}{filename}", hdu="EVENTS")
-                gti_table = Table.read(f"{fits_dir}{filename}", hdu="GTI")
-                pointing_table = Table.read(f"{fits_dir}{filename}", hdu="POINTING")
+                event_table = Table.read(str(fits_dir)+"/"+file, hdu="EVENTS")
+                gti_table = Table.read(str(fits_dir)+"/"+file, hdu="GTI")
+                pointing_table = Table.read(str(fits_dir)+"/"+file, hdu="POINTING")
             #edisp_table = Table.read(edisp, hdu="ENERGY DISPERSION")
             #aeff_table = Table.read(aeff, hdu="EFFECTIVE AREA")
             except Exception:
-                print(f"fits corrupted for file {filename}")
+                print(f"fits corrupted for file {file}")
                 continue
         else:
-            print(f"fits {filename} doesn't exist")
+            print(f"fits {file} doesn't exist")
             continue
 
         #The column names for the table follows the scheme as shown in
@@ -130,7 +127,7 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
         hdu_class_4 = ['']
         obs_id_hdu_table = len(hdu_type_name) * [event_table.meta["OBS_ID"]]
         file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [filename]
+        file_name = len(hdu_type_name) * [file]
         hdu_name = ['events']
 
         t_1 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
@@ -151,7 +148,7 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
         hdu_class_4 = ['']
         obs_id_hdu_table = len(hdu_type_name) * [gti_table.meta["OBS_ID"]]
         file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [filename]
+        file_name = len(hdu_type_name) * [file]
         hdu_name = ['gti']
 
         t_2 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
@@ -172,7 +169,7 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
         hdu_class_4 = ['']
         obs_id_hdu_table = len(hdu_type_name) * [pointing_table.meta["OBS_ID"]]
         file_dir = len(hdu_type_name) * [fits_dir]
-        file_name = len(hdu_type_name) * [filename]
+        file_name = len(hdu_type_name) * [file]
         hdu_name = ['pointing']
 
         t_3 = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
@@ -186,15 +183,15 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
 
         ###############################################
         #Energy Dispersion
-        if Table.read(f"{fits_dir}{filename}", hdu="ENERGY DISPERSION"):
+        if Table.read(str(fits_dir)+"/"+file, hdu="ENERGY DISPERSION"):
             hdu_type_name = ['edisp']
             hdu_class_1 = ['edisp_2d']
             hdu_class_2 = ['EDISP']
             hdu_class_3 = ['POINT-LIKE']
             hdu_class_4 = ['EDISP_2D']
             obs_id_hdu_table = len(hdu_type_name) * [event_table.meta['OBS_ID']]
-            file_dir = len(hdu_type_name) * ['']
-            file_name = len(hdu_type_name) * ['']
+            file_dir = len(hdu_type_name) * [fits_dir]
+            file_name = len(hdu_type_name) * [file]
             hdu_name = ['ENERGY DISPERSION']
 
             e = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
@@ -210,15 +207,15 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
 
         ###############################################
         #Effective Area
-        if Table.read(f"{fits_dir}{filename}", hdu="EFFECTIVE AREA"):
+        if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
             hdu_type_name = ['aeff']
             hdu_class_1 = ['aeff_2d']
             hdu_class_2 = ['AEFF']
             hdu_class_3 = ['POINT-LIKE']
             hdu_class_4 = ['AEFF_2D']
             obs_id_hdu_table = len(hdu_type_name) * [event_table.meta['OBS_ID']]
-            file_dir = len(hdu_type_name) * ['']
-            file_name = len(hdu_type_name) * ['']
+            file_dir = len(hdu_type_name) * [fits_dir]
+            file_name = len(hdu_type_name) * [file]
             hdu_name = ['EFFECTIVE AREA']
 
             a = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
@@ -261,11 +258,16 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
     hdu_table.meta["HDUVERS"] = "0.2"
     hdu_table.meta["HDUCLAS1"] = "INDEX"
     hdu_table.meta["HDUCLAS2"] = "HDU"
+    hdu_table.meta["TELESCOP"] = "CTA"
+    hdu_table.meta["INSTRUME"] = "LST-1"
 
     filename_hdu_table = 'hdu-index.fits.gz'
-    #hdu = fits.BinTableHDU(hdu_table)
+    hdu = fits.BinTableHDU(hdu_table)
+    hdu_name='HDU_INDEX'
+    hdu_list = fits.HDUList()
+    hdu_list.append(hdu)
     #fits.append(fits_dir+filename_hdu_table, hdu_table, header='HDU_INDEX')
-    hdu_table.write(fits_dir+filename_hdu_table, overwrite=True)
+    hdu_list.writeto(str(fits_dir)+"/"+filename_hdu_table, overwrite=True)
 
     #Complete OBS table
     obs_table = Table(
@@ -284,20 +286,24 @@ def create_obs_hdu_index(obs_id_list, fits_dir):
     obs_table.meta["HDUVERS"] = "0.2"
     obs_table.meta["HDUCLAS1"] = "INDEX"
     obs_table.meta["HDUCLAS2"] = "OBS"
+    obs_table.meta["TELESCOP"] = "CTA"
+    obs_table.meta["INSTRUME"] = "LST-1"
 
     obs_table.meta['MJDREFI'] = event_table.meta['MJDREFI']
     obs_table.meta['MJDREFF'] = event_table.meta['MJDREFF']
 
     filename_obs_table = 'obs-index.fits.gz'
-    #obs = fits.BinTableHDU(obs_table)
+    obs = fits.BinTableHDU(obs_table)
+    hdu_list = fits.HDUList()
+    hdu_list.append(obs)
     #fits.append(fits_dir+filename_obs_table, obs_table, header='OBS_INDEX')
-    obs_table.write(fits_dir+filename_obs_table, overwrite=True) #Make it to update
+    hdu_list.writeto(str(fits_dir)+"/"+filename_obs_table, overwrite=True) #Make it to update
 
     return
 
 
 
-def create_event_list(data, Run, Source_name):
+def create_event_list(data, run_number, Source_name):
 
     """Create the event_list HDUs from the given data and fill it up with the relevant values
 
@@ -385,7 +391,7 @@ def create_event_list(data, Run, Source_name):
     ### Adding the meta data
     ### Event table metadata
 
-    event_table.meta["OBS_ID"]=Run
+    event_table.meta["OBS_ID"]=run_number#data.obs_id
     event_table.meta["MJDREFI"]=int(mjd)
     event_table.meta["MJDREFF"]=mjd-int(mjd)
     event_table.meta["OBJECT"]=name
@@ -412,13 +418,13 @@ def create_event_list(data, Run, Source_name):
 
     ##########################################################################
     ### GTI table metadata
-    gti_table.meta["OBS_ID"]=Run
+    gti_table.meta["OBS_ID"]=run_number#data.obs_id
     gti_table.meta["MJDREFI"] = event_table.meta["MJDREFI"]
     gti_table.meta["MJDREFF"] = event_table.meta["MJDREFF"]
 
     ##########################################################################
     ### Pointing table metadata
-    pointing_table.meta["OBS_ID"]=Run
+    pointing_table.meta["OBS_ID"]=run_number#data.obs_id
     pointing_table.meta["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
     pointing_table.meta["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
     pointing_table.meta["ALT_PNT"]=event_table.meta["ALT_PNT"]

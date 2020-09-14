@@ -24,7 +24,7 @@ def read_and_update_dl2(filepath, tel_id=1):
 
     is_simu = 'mc_type' in data.columns
 
-    if is_simu:
+    if is_simu and data.mc_type.any() >=0:
         # angles are in degrees in protopipe
         #Xi is the angular distance to the source
         data['xi'] = pd.Series(angular_separation(data.reco_az.values * u.rad,
@@ -51,6 +51,7 @@ def read_and_update_dl2(filepath, tel_id=1):
                                    index=data.index)
 
     return data
+
 file = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.yml")
 with open(file, 'r') as check:
     data_cut = yaml.load(check, Loader=yaml.FullLoader)

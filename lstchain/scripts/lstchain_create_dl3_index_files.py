@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 A sseparate script to index the HDU tables and Observation tables of the DL3 files
 in a particular directory.
@@ -8,20 +10,29 @@ There is a small issue of combining the Table data as BinTableHDUs to the
 compressed index fits files as it prepends a PrimaryHDU while writing it.
 For now, the tables are directly written to the compressed index fits file.
 
+
+Usage:
+$> python lstchain_create_dl3_index_files.py
+--input-dl3-dir ./DL3/
+--num-files n
 """
 
 
 import os
+from pathlib import Path
+import logging
+import sys
 
 import argparse
 import numpy as np
 from lstchain.hdu import create_obs_hdu_index
 
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Creating DL3 index files")
 
 # Required arguments
-parser.add_argument('--input-dl3-dir', '-d', type=str,
+parser.add_argument('--input-dl3-dir', '-d', type=Path,
                     dest='input_dl3_dir',
                     help='path to DL3 files',
                     default=None, required=True
@@ -36,19 +47,27 @@ args = parser.parse_args()
 
 def main():
 
-    file_list = []
-    Run = []
+    if not args.input_dl3_dir.is_dir():
+        log.error('Input dir does not exist')
+        sys.exit(1)
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
+
+    filename_list = []
     for file in os.listdir(args.input_dl3_dir):
         # Assuming the nomenclature is 'dl3_LST-1_{#Run number}_merged.fits'
         if file.startswith('dl3_'):
-            file_list.append(file)
-            Run.append(int(file.split('_')[2]))
-    file_list = (np.sort(file_list))
-    Run = (np.sort(Run))
+            filename_list.append(file)
 
-    list_obs_id = Run[:args.number_of_files]
+    if len(filename_list) < args.number_of_files:
+        log.error('Number of files given exceeds the number of files')
+        sys.exit(1)
 
-    create_obs_hdu_index(list_obs_id, args.input_dl3_dir)
+    filename_list = np.sort(filename_list)[:args.number_of_files]
+
+    create_obs_hdu_index(filename_list, args.input_dl3_dir)
 
 if __name__ == '__main__':
     main()
