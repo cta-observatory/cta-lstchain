@@ -190,17 +190,13 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha, n_bins_energy, 
 
 
     n_excesses_5sigma = stat.excess_matching_significance(5)
-
-    for i in range(0, n_bins_energy):
-        for j in range(0, n_bins_gammaness):
-            for k in range(0, n_bins_theta2):
-                if n_excesses_5sigma[i][j][k] < 10:
-                    n_excesses_5sigma[i][j][k] = 10
-
-                if n_excesses_5sigma[i, j, k] < 0.05 * n_background[i][j][k] / 5:
-                    n_excesses_5sigma[i, j, k] = 0.05 * n_background[i][j][k] / 5
-
-
+    
+    for value_excesses, value_bkg in np.nditer([n_excesses_5sigma, n_background], op_flags=['readwrite']):
+        if value_excesses < 10:
+            value_excesses[...] = 10
+        if value_excesses < 0.05 * value_bkg/5:
+            value_excesses[...]=0.05 * value_bkg/5
+    
     sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
 
     return n_excesses_5sigma, sensitivity
