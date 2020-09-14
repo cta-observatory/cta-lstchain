@@ -81,12 +81,12 @@ class PedestalIntegrator(PedestalCalculator):
         self.sample_masked_pixels = None  # pixels tp be masked per event in sample
 
         # declare the charge sampling corrector
-        # search the file in resources if not found
-        if not os.path.exists(self.time_sampling_correction_path):
-            self.time_sampling_correction_path = resource_filename('lstchain',
-                                                           f"resources/{self.time_sampling_correction_path}")
-
         if self.time_sampling_correction_path is not None:
+            # search the file in resources if not found
+            if not os.path.exists(self.time_sampling_correction_path):
+                self.time_sampling_correction_path = resource_filename('lstchain',
+                                                                       f"resources/{self.time_sampling_correction_path}")
+
             if os.path.exists(self.time_sampling_correction_path):
                 self.time_sampling_corrector = TimeSamplingCorrection(
                     time_sampling_correction_path=self.time_sampling_correction_path

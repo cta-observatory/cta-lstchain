@@ -101,12 +101,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 raise IOError(msg)
 
         # declare the charge sampling corrector
-        # search the file in resources if not found
-        if not os.path.exists(self.time_sampling_correction_path):
-            self.time_sampling_correction_path = resource_filename('lstchain',
-                                                           f"resources/{self.time_sampling_correction_path}")
-
         if self.time_sampling_correction_path is not None:
+            # search the file in resources if not found
+            if not os.path.exists(self.time_sampling_correction_path):
+                self.time_sampling_correction_path = resource_filename('lstchain',
+                                                                       f"resources/{self.time_sampling_correction_path}")
+
             if os.path.exists(self.time_sampling_correction_path):
                 self.time_sampling_corrector = TimeSamplingCorrection(
                     time_sampling_correction_path=self.time_sampling_correction_path
@@ -144,8 +144,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         peak_pos = 0
         if self.extractor:
             charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
-
-
 
             # correct time with drs4 correction if available
             if self.time_corrector:

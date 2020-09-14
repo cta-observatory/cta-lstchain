@@ -103,6 +103,7 @@
   "gain_selector_config": {
     "threshold":  3500
   },
+  "time_sampling_correction_path": "sampling_interval_coefficient_july_2020.hdf5",
   "apply_charge_correction": false,
   "charge_scale": [1.0,1.0],
   "LocalPeakWindowSum":{
@@ -136,6 +137,7 @@
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,
+       "time_sampling_correction_path": "sampling_interval_coefficient_july_2020.hdf5",
        "charge_median_cut_outliers": [-10,10],
        "charge_std_cut_outliers": [-10,10],
        "charge_product":"FixedWindowSum"
@@ -144,6 +146,7 @@
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,
+       "time_sampling_correction_path": "sampling_interval_coefficient_july_2020.hdf5",
        "charge_product":"LocalPeakWindowSum",
        "charge_median_cut_outliers": [-0.5,0.5],
        "charge_std_cut_outliers": [-10,10],
