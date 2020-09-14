@@ -458,8 +458,8 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_hadrons * noff, 1/noff * np.ones_like(final_gamma), n_bins_energy, n_bins_gammaness, n_bins_theta2)
     
     # Avoid bins which are empty or have too few events:
-    min_num_events = 5
-    min_pre_events = 5
+    min_num_events = 10
+    min_pre_events = 10
 
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
         
