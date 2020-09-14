@@ -1,14 +1,11 @@
-import pandas as pd
 import numpy as np
 import os
 from lstchain.reco.utils import camera_to_altaz
-from lstchain.io.io import dl2_params_lstcam_key
 
 import astropy.units as u
 from astropy.table import Table, Column, vstack
 from astropy.io import fits
-from astropy.coordinates.angle_utilities import angular_separation
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, SkyOffsetFrame
+from astropy.coordinates import AltAz, SkyCoord, SkyOffsetFrame
 from astropy.time import Time
 
 __all__ = [
@@ -84,16 +81,9 @@ def create_obs_hdu_index(filename_list, fits_dir):
     deadc = []
     tstart = []
     tstop = []
-    object = []
+    source = []
     N_TELS = []
     TELLIST = []
-    etrue_lo = []
-    etrue_hi = []
-    theta_lo = []
-    theta_hi = []
-    migr_lo = []
-    migr_hi = []
-    matrix = []
 
 
     # loop through the files
@@ -233,7 +223,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         # Filling up the remainng quantities
         obs_id.append(event_table.meta['OBS_ID'])
-        object.append(event_table.meta['OBJECT'])
+        source.append(event_table.meta['OBJECT'])
         N_TELS.append(event_table.meta["N_TELS"])
         TELLIST.append(event_table.meta["TELLIST"])
 
@@ -271,7 +261,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     #Complete OBS table
     obs_table = Table(
-        [obs_id, ra_pnt, dec_pnt, zen_pnt, alt_pnt, az_pnt, ontime, livetime, deadc, tstart, tstop, object, N_TELS, TELLIST],
+        [obs_id, ra_pnt, dec_pnt, zen_pnt, alt_pnt, az_pnt, ontime, livetime, deadc, tstart, tstop, source, N_TELS, TELLIST],
         names=(
             'OBS_ID', 'RA_PNT', 'DEC_PNT', 'ZEN_PNT', 'ALT_PNT', 'AZ_PNT', 'ONTIME', 'LIVETIME', 'DEADC', 'TSTART',
             'TSTOP', 'OBJECT','N_TELS', 'TELLIST'),
@@ -329,7 +319,7 @@ def create_event_list(data, run_number, Source_name):
     pointing_table = Table()
 
     lam = 1000 #Average rate of triggered events, taken by hand for now
-    n_event=len(data.event_id)
+    
     # Timing parameters
     t_start = data.dragon_time.values[0]
     t_stop = data.dragon_time.values[-1]

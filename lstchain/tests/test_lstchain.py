@@ -189,14 +189,13 @@ def test_sensitivity():
 def generate_irf(dl2_file):
     from pyirf.perf.irf_maker import IrfMaker
     from lstchain.clean import read_and_update_dl2, mc_filter, data_filter
-    import numpy as np
     import yaml
 
     dl2 = read_and_update_dl2(dl2_file)
     dl2 = data_filter(dl2)
     mc_dl2 = mc_filter(dl2)
     with open(os.path.join('../data/', 'pyirf_config.yml'), "r") as cfg:
-        config = yaml.load(cfg, Loader=yaml.FullLoader)
+        config = yaml.safe_load(cfg, Loader=yaml.FullLoader)
     im = IrfMaker(config = config, evt_dict = dict(gamma=mc_dl2), outdir='.')
     aeff = im.make_effective_area()
     edisp = im.make_energy_dispersion()
@@ -210,7 +209,7 @@ def generate_irf(dl2_file):
 @pytest.mark.run(order=4)
 def test_create_dl3():
 
-    from lstchain.hdu import create_event_list, create_obs_hdu_index
+    from lstchain.hdu import create_event_list
     from astropy.io import fits
 
     dl2, aeff, edisp = generate_irf(dl2_file)

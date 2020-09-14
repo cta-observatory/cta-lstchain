@@ -1,5 +1,5 @@
 import pandas as pd
-#from pyirf.io.io import load_config
+
 import os
 import yaml
 from copy import deepcopy
@@ -54,7 +54,7 @@ def read_and_update_dl2(filepath, tel_id=1):
 
 file = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.yml")
 with open(file, 'r') as check:
-    data_cut = yaml.load(check, Loader=yaml.FullLoader)
+    data_cut = yaml.safe_load(check, Loader=yaml.FullLoader)
 
 def mc_filter(data):
 

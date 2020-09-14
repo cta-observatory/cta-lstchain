@@ -168,7 +168,6 @@ def test_dl3():
             '-fg', dl2_file,
             '-irf', 'True'
     )
-    assert os.path.exists(dl3_file)
 
 @pytest.mark.run(after='test_dl3')
 def test_dl3_index():
@@ -176,9 +175,6 @@ def test_dl3_index():
             'lstchain_create_dl3_index_files',
             '-d', output_dir
     )
-    assert os.path.exists(dl3_hdu_index)
-    assert os.path.exists(dl3_obs_index)
-
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
 def test_mc_r0_to_dl2():

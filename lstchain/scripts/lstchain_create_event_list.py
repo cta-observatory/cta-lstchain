@@ -30,23 +30,20 @@ $> python lstchain_create_event_list.py
 --pyirf-config ./config.yml
 """
 
-import pandas as pd
 import os
 import yaml
 import re
 from glob import glob
 from distutils.util import strtobool
-import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 from pathlib import Path
 import logging
 import sys
 
-from lstchain.reco.utils import camera_to_altaz
-from lstchain.io.io import dl2_params_lstcam_key
+
 from lstchain.clean import read_and_update_dl2, mc_filter, data_filter
-from lstchain.hdu import create_event_list, create_obs_hdu_index
+from lstchain.hdu import create_event_list
 
 from pyirf.perf.irf_maker import IrfMaker
 from astropy.io import fits
@@ -158,11 +155,11 @@ def main():
         # be edited accordingly
         if args.pyirf_config is not None:
             with open(args.pyirf_config, 'r') as check:
-                config = yaml.load(check, Loader=yaml.FullLoader)
+                config = yaml.safe_load(check, Loader=yaml.FullLoader)
         else:
             cfg = os.path.join(os.path.dirname(__file__),'../data/pyirf_config.yml')
             with open(cfg, 'r') as check:
-                config = yaml.load(check, Loader=yaml.FullLoader)
+                config = yaml.safe_load(check, Loader=yaml.FullLoader)
 
         evt_dict = dict(gamma=gamma) # proton=proton, electron=electron)
 
