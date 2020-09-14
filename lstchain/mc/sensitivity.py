@@ -232,9 +232,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
         n_off=n_background,
         alpha=alpha 
         )
-        
-
-
+    
     n_excesses_5sigma = stat.excess_matching_significance(5)
 
     for i in range(0, n_bins_energy):
@@ -464,16 +462,21 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     min_pre_events = 5
 
     # Minimum number of gamma and proton events in a bin to be taken into account for minimization
-    for i in range(0, n_bins_energy):
-        for j in range(0, n_bins_gammaness):
-            for k in range(0, n_bins_theta2):
-                conditions = (not np.isfinite(sensitivity_3Darray[i,j,k])) or (sensitivity_3Darray[i,j,k]<=0) \
-                             or (final_hadrons[i,j,k] < min_num_events) \
-                             or (pre_gamma[i,j,k] < min_pre_events) \
-                             or (pre_hadrons[i,j,k] < min_pre_events)
-                if conditions:
-                    sensitivity_3Darray[i][j][k] = np.inf
-
+        
+    for sens_value, \
+        final_hadrons_value, \
+        pre_gamma_value, \
+        pre_hadrons_value in np.nditer([sensitivity_3Darray, \
+                                        final_hadrons, pre_gamma, \
+                                        pre_hadrons], op_flags=['readwrite']):
+        
+        conditions = (not np.isfinite(sens_value)) or (sens_value<=0) \
+                     or (final_hadrons_value < min_num_events) \
+                     or (pre_gamma_value < min_pre_events) \
+                     or (pre_hadrons_value < min_pre_events)
+        if conditions:
+            sens_value[...] = np.inf
+        
     # Quantities to show in the results
     sensitivity = np.ndarray(shape = n_bins_energy)
     n_excesses_min = np.ndarray(shape = n_bins_energy)
