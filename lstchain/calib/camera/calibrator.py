@@ -1,7 +1,7 @@
 import numpy as np
 import os
-import h5py
-from ctapipe.core.traits import Unicode, List, Int, Bool
+from pkg_resources import resource_filename
+from ctapipe.core.traits import Unicode, List, Int
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
@@ -9,11 +9,10 @@ from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.containers import MonitoringContainer
 from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
+from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
 __all__ = ['LSTCameraCalibrator']
 
-# this should be accessible from the data or meta-data
-n_pixels = 1855
 
 class LSTCameraCalibrator(CameraCalibrator):
     """
@@ -40,6 +39,12 @@ class LSTCameraCalibrator(CameraCalibrator):
         help='Path to drs4 time calibration file'
     ).tag(config=True)
 
+    time_sampling_correction_path = Unicode(
+        '',
+        help='Path to time sampling correction file',
+        allow_none = True,
+    ).tag(config=True)
+
     allowed_tels = List(
         [1],
         help='List of telescope to be calibrated'
@@ -55,6 +60,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         [1,1],
         help='Multiplicative correction factor for charge estimation [HG,LG]'
     ).tag(config=True)
+
 
 
     def __init__(self, subarray, **kwargs):
@@ -102,12 +108,30 @@ class LSTCameraCalibrator(CameraCalibrator):
             )
 
         # declare time calibrator if correction file exist
+
         if os.path.exists(self.time_calibration_path):
+
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path=self.time_calibration_path
             )
         else:
             raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
+
+        # initialise time sampling coefficients
+        # search file in resources if not found
+        if not os.path.exists(self.time_sampling_correction_path):
+            self.time_sampling_correction_path = resource_filename('lstchain',
+                                                           f"resources/{self.time_sampling_correction_path}")
+
+        if self.time_sampling_correction_path is not None:
+            if os.path.exists(self.time_sampling_correction_path):
+                self.time_sampling_corrector = TimeSamplingCorrection(
+                    time_sampling_correction_path=self.time_sampling_correction_path
+                )
+            else:
+                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
+        else:
+            self.time_sampling_corrector = None
 
         # calibration data container
         self.mon_data = MonitoringContainer()
@@ -207,14 +231,19 @@ class LSTCameraCalibrator(CameraCalibrator):
         """
         create calibrated dl1 image and calibrate it
         """
-        waveforms = event.dl0.tel[telid].waveform
+
+        n_pixels = self.subarray.tels[telid].camera.geometry.n_pixels
+
+        # copy the waveform be cause I do not want to change it
+        waveforms = np.copy(event.dl0.tel[telid].waveform)
         gain_mask = event.dl0.tel[telid].selected_gain_channel
 
         if self._check_dl0_empty(waveforms):
             return
 
-        # TBD:
         # correct the dl0 waveform for the sampling time corrections
+        if self.time_sampling_corrector:
+            waveforms*= self.time_sampling_corrector.get_corrections(event,telid)[gain_mask, np.arange(n_pixels)]
 
         # extract the charge
         charge, peak_time = self.image_extractor(waveforms, telid, gain_mask)
