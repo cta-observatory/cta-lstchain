@@ -2,11 +2,13 @@
 Factory for the estimation of the flat field coefficients
 """
 
-from abc import abstractmethod
+import os
 import numpy as np
+from pkg_resources import resource_filename
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import List, Bool
+from ctapipe.core.traits import List, Unicode
+from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
 
 __all__ = [
@@ -41,6 +43,13 @@ class PedestalIntegrator(PedestalCalculator):
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
 
+    time_sampling_correction_path = Unicode(
+        '',
+        help='Path to time sampling correction file',
+        allow_none = True,
+    ).tag(config=True)
+
+
     def __init__(self, subarray, **kwargs):
         """Calculates pedestal parameters integrating the charge of pedestal events:
            the pedestal value corresponds to the charge estimated with the selected
@@ -71,6 +80,21 @@ class PedestalIntegrator(PedestalCalculator):
         self.charges = None  # charge per event in sample
         self.sample_masked_pixels = None  # pixels tp be masked per event in sample
 
+        # declare the charge sampling corrector
+        # search the file in resources if not found
+        if not os.path.exists(self.time_sampling_correction_path):
+            self.time_sampling_correction_path = resource_filename('lstchain',
+                                                           f"resources/{self.time_sampling_correction_path}")
+
+        if self.time_sampling_correction_path is not None:
+            if os.path.exists(self.time_sampling_correction_path):
+                self.time_sampling_corrector = TimeSamplingCorrection(
+                    time_sampling_correction_path=self.time_sampling_correction_path
+                )
+            else:
+                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
+        else:
+            self.time_sampling_corrector = None
 
     def _extract_charge(self, event):
         """
@@ -82,9 +106,18 @@ class PedestalIntegrator(PedestalCalculator):
         event : general event container
 
         """
+        # copy the waveform be cause we do not want to change it for the moment
+        waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
-        waveforms = event.r1.tel[self.tel_id].waveform
-        no_gain_selection= np.zeros((waveforms.shape[0],waveforms.shape[1]), dtype=np.int)
+        # pedestal event do not have gain selection
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+        no_gain_selection[1] = 1
+        n_pixels = 1855
+
+        # correct the r1 waveform for the sampling time corrections
+        if self.time_sampling_corrector:
+            waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
+            [no_gain_selection, np.arange(n_pixels)])
 
         # Extract charge and time
         charge = 0
