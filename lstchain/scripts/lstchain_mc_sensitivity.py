@@ -154,8 +154,8 @@ def main():
     
     
     # Saves the results
-    dl2.to_hdf(args.output_path+'test_sens.h5', key='data')
-    result.to_hdf(args.output_path+'test_sens.h5', key='results')
+    dl2.to_hdf(args.output_path+'/test_sens.h5', key='data')
+    result.to_hdf(args.output_path+'/test_sens.h5', key='results')
 
     tab = Table.from_pandas(result)
 

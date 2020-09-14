@@ -11,6 +11,8 @@ from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 from .mc import rate, weight
 
+from ctapipe.instrument import OpticsDescription
+
 __all__ = [
     'bin_definition',
     'calculate_sensitivity',
@@ -94,10 +96,8 @@ def process_mc(dl2_file, events, mc_type):
     e_true = events.mc_energy.to_numpy() * u.TeV
 
     gammaness = events.gammaness
-
-    # TO DO: Focal length should be read from file
-    #focal_length = source.telescope_descriptions[1]['camera_settings']['focal_length'] * u.m
-    focal_length = 28 * u.m
+    
+    focal_length = OpticsDescription.from_name("LST").equivalent_focal_length
 
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
