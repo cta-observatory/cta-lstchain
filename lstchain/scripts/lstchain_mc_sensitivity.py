@@ -64,6 +64,8 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
+    fraction_of_events_for_cuts = 0.8 # Fraction of the total number
+    #of events to be used to calculate the best sensitivity cuts
 
     #Divide the event set in two:
     #First half for calculating the best sensitivity cuts
@@ -78,8 +80,8 @@ def main():
     gammas_array=df_gammas.to_numpy()
     protons_array=df_protons.to_numpy()
 
-    half_size_gammas=round(gammas_array.shape[0]/2)
-    half_size_protons=round(protons_array.shape[0]/2)
+    half_size_gammas=round(gammas_array.shape[0]*fraction_of_events_for_cuts)
+    half_size_protons=round(protons_array.shape[0]*fraction_of_events_for_cuts)
     
     gamma_events_for_cuts=gammas_array[:half_size_gammas]
     gamma_events_for_sens=gammas_array[half_size_gammas:]
@@ -127,7 +129,9 @@ def main():
                                                                               n_bins_gammaness,
                                                                               n_bins_theta2,
                                                                               noff,
+                                                                              fraction_of_events_for_cuts,
                                                                               obstime)
+                                                                              
                                                                               
     #For testing using fixed cuts
     #gcut = np.ones(n_bins_energy) * 0.8 
@@ -145,6 +149,7 @@ def main():
                                                         ntelescopes_gamma,
                                                         ntelescopes_protons,
                                                         n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
+                                                        fraction_of_events_for_cuts,
                                                         obstime)
                                                         
     egeom = np.sqrt(energy[1:] * energy[:-1])

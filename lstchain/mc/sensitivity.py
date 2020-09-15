@@ -304,7 +304,9 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
                                events_g, events_p,
                                ntelescopes_gammas, ntelescopes_protons,
                                n_bins_energy, n_bins_gammaness, n_bins_theta2, noff,
-                               obstime = 50 * 3600 * u.s):
+                               fraction_of_events_for_cuts,
+                               obstime = 50 * 3600 * u.s
+                               ):
 
     """
     Main function to find the best cuts to calculate the sensitivity
@@ -333,8 +335,8 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, events_g,  'gamma')
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, events_p, 'proton')
 
-    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas * 0.5
-    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons * 0.5
+    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas * fraction_of_events_for_cuts
+    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons * fraction_of_events_for_cuts
 
     # Pass units to TeV and cm2
     mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
@@ -547,6 +549,7 @@ def sensitivity(dl2_file_g, dl2_file_p,
                 events_g, events_p,
                 ntelescopes_gammas, ntelescopes_protons,
                 n_bins_energy, gcut, tcut, noff,
+                fraction_of_events_for_cuts,
                 obstime=50 * 3600 * u.s):
     """
     Main function to calculate the sensitivity given a MC dataset
@@ -574,8 +577,8 @@ def sensitivity(dl2_file_g, dl2_file_p,
     gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, events_g, 'gamma')
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, events_p, 'proton')
 
-    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas * 0.5
-    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons * 0.5
+    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas * (1-fraction_of_events_for_cuts)
+    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons * (1-fraction_of_events_for_cuts)
 
     # Pass units to TeV and cm2
     mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
