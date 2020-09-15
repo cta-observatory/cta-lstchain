@@ -53,6 +53,7 @@ setup(
         'numba',
         'numpy',
         'pandas',
+        'pyirf',
         'scipy',
         'seaborn',
         'scikit-learn',
@@ -61,6 +62,8 @@ setup(
     ],
     package_data={
         'lstchain': ['data/lstchain_standard_config.json',
+                     'data/data_selection_cuts.yml',
+                     'pyirf_config.yml',
                      'resources/LST_pixid_to_cluster.txt'],
     },
     tests_require=[

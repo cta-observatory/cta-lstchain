@@ -14,6 +14,7 @@ from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile, produce_fa
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
 merged_dl1_file = os.path.join(output_dir, 'script_merged_dl1.h5')
+merged_dl2_file = os.path.join(output_dir, 'script_merged_dl2.h5')
 dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
@@ -121,13 +122,15 @@ def test_lstchain_merge_dl1_hdf5_files():
 
 @pytest.mark.run(after='test_lstchain_merge_dl1_hdf5_files')
 def test_lstchain_merged_dl1_to_dl2():
+    os.remove(dl2_file)
+    os.remove(merged_dl2_file)
     output_file = merged_dl1_file.replace('dl1', 'dl2')
     run_program(
         'lstchain_dl1_to_dl2',
         '-f', merged_dl1_file,
         '-p', output_dir,
         '-o', output_dir,
-    )
+        )
     assert os.path.exists(output_file)
 
 
@@ -138,7 +141,7 @@ def test_lstchain_dl1_to_dl2():
         '-f', dl1_file,
         '-p', output_dir,
         '-o', output_dir,
-    )
+        )
     assert os.path.exists(dl2_file)
 
 
@@ -159,22 +162,29 @@ def test_mc_dl1ab_validity():
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
 
 
-@pytest.mark.run(after='test_lstchain_dl1_to_dl2')
+@pytest.mark.run(after='test_lstchain_merged_dl1_to_dl2')
 def test_dl3():
+    #Gamma='.'
     run_program(
-            'lstchain_create_event_list',
-            '-d', dl2_file,
+            'lstchain_dl2_to_dl3',
+            '-d', merged_dl2_file,
             '-o', output_dir,
-            '-fg', dl2_file,
-            '-irf', 'True'
-    )
+            '-fg', merged_dl2_file,
+            '-irf', 'True',
+            #'-s', Gamma,
+            )
+    assert os.path.exists(dl3_file)
 
 @pytest.mark.run(after='test_dl3')
 def test_dl3_index():
+    #num=int(1)
     run_program(
             'lstchain_create_dl3_index_files',
-            '-d', output_dir
-    )
+            '-d', output_dir,
+            #'-n', '1'
+            )
+    assert os.path.exists(dl3_hdu_index)
+    assert os.path.exists(dl3_obs_index)
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
 def test_mc_r0_to_dl2():

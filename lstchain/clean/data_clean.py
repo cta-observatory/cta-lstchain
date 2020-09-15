@@ -14,7 +14,6 @@ __all__ = [
         'data_filter'
 ]
 
-
 def read_and_update_dl2(filepath, tel_id=1):
     """
     read DL2 files and update MC to be compliant with irf_maker
@@ -54,7 +53,7 @@ def read_and_update_dl2(filepath, tel_id=1):
 
 file = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.yml")
 with open(file, 'r') as check:
-    data_cut = yaml.safe_load(check, Loader=yaml.FullLoader)
+    data_cut = yaml.safe_load(check)
 
 def mc_filter(data):
 
