@@ -141,7 +141,6 @@ def get_dl1(
 
         # Fill container
         dl1_container.fill_hillas(hillas)
-        dl1_container.fill_event_info(calibrated_event)
         dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
@@ -154,12 +153,28 @@ def get_dl1(
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(subarray, telescope_id)
 
-
-        return dl1_container
-
     else:
-        return None
+        # No image was parametrized, so we put zeros (instead of the default
+        # Nones) in all parameters: a container reset() is not an option because
+        # the default None values prevent the container to be written out. We
+        # cannot use np.nan either, because upon writing it complains for the
+        # integer parameters.
+        #
+        for key in dl1_container.keys():
+            dl1_container[key] = u.Quantity(0, dl1_container.fields[key].unit)
 
+        # Fields width and length do not have in their declaration the units
+        # that are actually expected later in the program, so we set them here.
+        # We now use nans since these are floats, and will be later used to
+        # calculate W/L...
+        dl1_container.width = u.Quantity(np.nan, u.m)
+        dl1_container.length = u.Quantity(np.nan, u.m)
+
+        # We set other fields which still make sense for a non-parametrized
+        # image:
+        dl1_container.set_telescope_info(subarray, telescope_id)
+
+    return dl1_container
 
 def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
@@ -345,6 +360,8 @@ def r0_to_dl1(
 
         first_valid_ucts = None
         first_valid_ucts_tib = None
+        previous_ucts_time_unix = []
+        previous_ucts_trigger_type = []
 
         for i, event in enumerate(chain([first_event],  event_iter)):
 
@@ -417,6 +434,10 @@ def r0_to_dl1(
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
 
+                write_event = True
+                # Will determine whether this event has to be written to the
+                # DL1 output or not.
+
                 try:
                     dl1_filled = get_dl1(event,
                                          subarray,
@@ -429,9 +450,13 @@ def r0_to_dl1(
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
-                    continue
 
+                # The condition below should now be true for all events, this
+                # is a relic of previous approach in which only survivors of
+                # cleaning and parametrization were further processed.
                 if dl1_filled is not None:
+
+                    dl1_container.fill_event_info(event)
 
                     # Some custom def
                     dl1_container.wl = dl1_container.width / dl1_container.length
@@ -535,9 +560,75 @@ def r0_to_dl1(
                         dl1_container.dragon_time = dragon_time_utc.unix
                         dl1_container.tib_time = tib_time_utc.unix
 
+                        # Until the TIB trigger_type is fully reliable, we also add
+                        # the ucts_trigger_type to the data
+                        dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+
+                        # Due to a DAQ bug, sometimes there are 'jumps' in the
+                        # UCTS info in the raw files. After one such jump,
+                        # all the UCTS info attached to an event actually
+                        # corresponds to the next event. This one-event
+                        # shift stays like that until there is another jump
+                        # (then it becomes a 2-event shift and so on). We will
+                        # keep track of those jumps, by storing the UCTS info
+                        # of the previously read events in the list
+                        # previous_ucts_time_unix. The list has one element
+                        # for each of the jumps, so if there has been just
+                        # one jump we have the UCTS info of the previous
+                        # event only (which truly corresponds to the
+                        # current event). If there have been n jumps, we keep
+                        # the past n events. The info to be used for
+                        # the current event is always the first element of
+                        # the array, previous_ucts_time_unix[0], whereas the
+                        # current event's (wrong) ucts info is placed last in
+                        # the array. Each time the first array element is
+                        # used, it is removed and the rest move up in the
+                        # list. We have another similar array for the trigger
+                        # types, previous_ucts_trigger_type
+                        #
+                        if len(previous_ucts_time_unix) > 0:
+                            # keep the time & trigger type read for this
+                            # event (which really correspond to a later event):
+                            current_ucts_time = dl1_container.ucts_time
+                            current_ucts_trigger_type = dl1_container.ucts_trigger_type
+                            # put in dl1_container the proper time for this
+                            # event:
+                            dl1_container.ucts_time = \
+                                previous_ucts_time_unix.pop(0)
+                            dl1_container.ucts_trigger_type = \
+                                previous_ucts_trigger_type.pop(0)
+
+                            # now put the current values last in the list,
+                            # for later use:
+                            previous_ucts_time_unix.append(current_ucts_time)
+                            previous_ucts_trigger_type.\
+                                append(current_ucts_trigger_type)
+
+                        # Now check consistency of UCTS and Dragon times. If
+                        # UCTS time is ahead of Dragon time by more than
+                        # 1.e-6 s, most likely the UCTS info has been
+                        # lost for this event (i.e. there has been another
+                        # 'jump' of those described above), and the one we have
+                        # actually corresponds to the next event. So we put it
+                        # back first in the list, to assign it to the next
+                        # event. We also move the other elements down in the
+                        # list,  which will now be one element longer.
+                        # We leave the current event with the same time,
+                        # which will be approximately correct (depending on
+                        # event rate), and set its ucts_trigger_type to -1,
+                        # which will tell us a jump happened and hence this
+                        # event does not have proper UCTS info.
+
+                        if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
+                            previous_ucts_time_unix.\
+                                insert( 0, dl1_container.ucts_time)
+                            previous_ucts_trigger_type.\
+                                insert(0, dl1_container.ucts_trigger_type)
+                            dl1_container.ucts_trigger_type = -1
+
                         # Select the timestamps to be used for pointing interpolation
                         if config['timestamps_pointing'] == "ucts":
-                            event_timestamps = ucts_time_utc.unix
+                            event_timestamps = dl1_container.ucts_time
                         elif config['timestamps_pointing'] == "dragon":
                             event_timestamps = dragon_time_utc.unix
                         elif config['timestamps_pointing'] == "tib":
@@ -555,10 +646,6 @@ def r0_to_dl1(
                         else:
                             dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                             dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
-
-                        # Until the TIB trigger_type is fully reliable, we also add
-                        # the ucts_trigger_type to the data
-                        dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
 
                     dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
                     dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
@@ -580,7 +667,6 @@ def r0_to_dl1(
                         add_global_metadata(container, metadata)
 
                     event.r0.prefix = ''
-
 
                     writer.write(table_name = f'telescope/image/{tel_name}',
                                  containers = [event.r0, tel, extra_im])
@@ -645,7 +731,8 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(muon_parameters,
+                                fill_muon_event(None,
+                                                muon_parameters,
                                                 good_ring,
                                                 event.index.event_id,
                                                 dragon_time,
