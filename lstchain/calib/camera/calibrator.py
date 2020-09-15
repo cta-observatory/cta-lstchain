@@ -191,6 +191,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
 
         no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+        no_gain_selection[1] = 1
 
         charge = np.zeros((waveforms.shape[0], waveforms.shape[1]),
                           dtype='float32')
