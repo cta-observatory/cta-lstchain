@@ -64,7 +64,7 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.8 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
 
     #Divide the event set in two:
