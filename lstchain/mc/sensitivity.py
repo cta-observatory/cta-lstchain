@@ -177,10 +177,6 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha, n_bins_energy, 
 
     """
 
-    if any(len(a) != n_bins_energy for a in (n_on_events, n_background, alpha)):
-        raise ValueError(
-            'Excess, background and alpha arrays must have the same length')
-           
     
     stat = WStatCountsStatistic(
         n_on=n_on_events,  
