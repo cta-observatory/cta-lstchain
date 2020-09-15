@@ -437,7 +437,10 @@ def fill_muon_event(parameters, output_parameters, good_ring, event_id,
                     muonparameters, hg_peak_sample=np.nan, lg_peak_sample=np.nan):
     output_parameters['event_id'].append(event_id)
     output_parameters['event_time'].append(event_time)
-    output_parameters['mc_energy'].append(parameters.mc_energy)
+    if parameters is not None:
+        output_parameters['mc_energy'].append(parameters.mc_energy)
+    else:
+        output_parameters['mc_energy'].append(-1.)
     output_parameters['ring_size'].append(size)
     output_parameters['size_outside'].append(size_outside_ring)
     output_parameters['ring_center_x'].append(muonringparam.center_x.value)
