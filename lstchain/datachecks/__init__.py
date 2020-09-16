@@ -6,13 +6,16 @@ from .dl1_checker import (
     plot_mean_and_stddev,
     merge_dl1datacheck_files,
     plot_mean_and_stddev_bokeh,
-    bokeh_camera_display,
+    show_camera,
     get_pixel_location
 )
 from .containers import (
     DL1DataCheckContainer,
     count_trig_types,
     DL1DataCheckHistogramBins
+)
+from .bokehcamdisplay import (
+    CameraDisplay
 )
 
 

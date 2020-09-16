@@ -10,7 +10,7 @@ __all__ = [
     'plot_mean_and_stddev',
     'merge_dl1datacheck_files',
     'plot_mean_and_stddev_bokeh',
-    'bokeh_camera_display',
+    'show_camera',
     'get_pixel_location'
 ]
 
@@ -32,6 +32,7 @@ from astropy.table import Table, vstack
 from bokeh.io import output_file, show
 from bokeh.layouts import gridplot, column
 from bokeh.models import HoverTool, Div
+from bokeh.models import ColumnDataSource, CustomJS, Slider
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
@@ -39,7 +40,8 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
-from ctapipe.visualization.bokeh import CameraDisplay as BokehCameraDisplay
+#from ctapipe.visualization.bokeh import CameraDisplay as BokehCameraDisplay
+from lstchain.datachecks.bokehcamdisplay import CameraDisplay as BokehCameraDisplay
 from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
@@ -1302,8 +1304,8 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     pad_width = 350
     pad_height = 370
 
-    row1 = bokeh_camera_display(mean, camgeom, pad_width, pad_height, labels[0])
-    row2 = bokeh_camera_display(stddev, camgeom, pad_width, pad_height,
+    row1 = show_camera(mean, camgeom, pad_width, pad_height, labels[0])
+    row2 = show_camera(stddev, camgeom, pad_width, pad_height,
                                 labels[1])
 
     grid = gridplot([row1, row2], sizing_mode=None,
@@ -1311,7 +1313,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     return grid
 
 
-def bokeh_camera_display(content, geom, pad_width, pad_height, label):
+def show_camera(content, geom, pad_width, pad_height, label):
 
     """
 
@@ -1335,11 +1337,16 @@ def bokeh_camera_display(content, geom, pad_width, pad_height, label):
 
     # patch to reduce gaps between bokeh's cam circular pixels:
     camgeom = copy.deepcopy(geom)
-    camgeom.pix_area *= 1.3
+    #camgeom.pix_area *= 1.3
 
-    cam = BokehCameraDisplay(camgeom)
+    numframes = 1000
+    allcams = [content]
+    for i in range(2,numframes+1):
+        allcams.append(i*content)
+
+    cam = BokehCameraDisplay(camgeom, np.min(allcams), np.max(allcams),
+                             use_notebook=False, autoshow=False)
     cam.image = content
-    camlog = BokehCameraDisplay(camgeom)
 
     logcontent = np.copy(content)
     for i, x in enumerate(logcontent):
@@ -1348,9 +1355,12 @@ def bokeh_camera_display(content, geom, pad_width, pad_height, label):
             logcontent[i] = np.log10(np.min(content[content>0]))
         else:
             logcontent[i] = np.log10(content[i])
+    camlog = BokehCameraDisplay(camgeom, logcontent.min(), logcontent.max(),
+                                use_notebook=False, autoshow=False)
     camlog.image = logcontent
+
     for i in np.where(content <= 0):
-        camlog.glyphs.data_source.data['image'][i] = '#ffffff'
+        camlog.datasource.data['image'][i] = 1.e-6
 
     cluster_i = []
     cluster_j = []
@@ -1362,30 +1372,26 @@ def bokeh_camera_display(content, geom, pad_width, pad_height, label):
         pix_id_in_cluster.append(data[2])
 
     for c in [cam, camlog]:
-        c.glyphs.data_source.add(list(c.geom.pix_id), 'pix_id')
-        c.glyphs.data_source.add(list(cam.image), 'value')
-        c.glyphs.data_source.add(cluster_i, 'cluster_i')
-        c.glyphs.data_source.add(cluster_j, 'cluster_j')
-        c.glyphs.data_source.add(pix_id_in_cluster, 'pix_id_in_cluster')
+        c.datasource.add(list(c.geom.pix_id), 'pix_id')
+        c.datasource.add(cluster_i, 'cluster_i')
+        c.datasource.add(cluster_j, 'cluster_j')
+        c.datasource.add(pix_id_in_cluster, 'pix_id_in_cluster')
 
-        c.add_colorbar()
-        c.fig.plot_width = pad_width
-        c.fig.plot_height = int(pad_height * 0.85)
-        c.fig.title = Title(text=label)
-        c.fig.grid.visible = False
-        c.fig.axis.visible = True
-        c.fig.xaxis.axis_label = 'X position (m)'
-        c.fig.yaxis.axis_label = 'Y position (m)'
-        c.fig.add_tools(
+        # c.add_colorbar()
+        c.figure.plot_width = pad_width
+        c.figure.plot_height = int(pad_height * 0.85)
+        c.figure.title = Title(text=label)
+        c.figure.grid.visible = False
+        c.figure.axis.visible = True
+        c.figure.xaxis.axis_label = 'X position (m)'
+        c.figure.yaxis.axis_label = 'Y position (m)'
+        c.figure.add_tools(
             HoverTool(tooltips=[('pix_id', '@pix_id'),
-                                ('value', '@value'),
+                                ('value', '@image'),
                                 ('cluster (i,j)', '(@cluster_i, @cluster_j)'),
                                 ('pix in cluster', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
-    tab1 = Panel(child=cam.fig, title='linear')
-    tab2 = Panel(child=camlog.fig, title='logarithmic')
-    p1 = Tabs(tabs=[tab1, tab2])
 
     p2 = figure(background_fill_color='#ffffff',
                 y_range=(-0.05*cam.image.max(), cam.image.max() * 1.1),
@@ -1393,21 +1399,47 @@ def bokeh_camera_display(content, geom, pad_width, pad_height, label):
                 y_axis_label=label)
     p2.min_border_top = 60
     p2.min_border_bottom = 70
-    glyphs = p2.circle(x=cam.geom.pix_id, y=cam.image, size=2)
-    glyphs.data_source.add(list(cam.geom.pix_id), 'pix_id')
-    glyphs.data_source.add(list(cam.image), 'value')
+
+    source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                         value=cam.image))
+    glyphs = p2.circle(x='pix_id', y='value', size=2, source=source2)
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
                   mode='mouse', point_policy='snap_to_data'))
 
+    # allcams must be a list, an ndarray does not work
+    zz = ColumnDataSource(data=dict(z=allcams))
+    callback = CustomJS(args=dict(source1=cam.datasource,
+                                  source2=glyphs.data_source, zz=zz),
+    code="""
+        var data = source1.data;
+        var slider_value = cb_obj.value
+        var image = data['image']
+        var z = zz.data['z']
+        for (var i = 0; i < image.length; i++) {
+             image[i] = z[slider_value-1][i]
+             source2.data['value'][i] = image[i]
+        }
+        source1.change.emit();
+        source2.change.emit();
+    """)
+
+    slider = Slider(start=1, end=numframes, value=1, step=1, title="factor")
+    slider.js_on_change('value', callback)
+
+    #tab1 = Panel(child=cam.figure, title='linear')
+    tab1 = Panel(child=cam.figure, title='linear')
+    tab2 = Panel(child=camlog.figure, title='logarithmic')
+
+    p1 = Tabs(tabs=[tab1, tab2])
     hist, edges = np.histogram(cam.image, bins=200)
     p3 = figure(background_fill_color='#ffffff',
                 y_range=(0.7, hist.max() * 1.1), x_axis_label=label,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
 
-    return [p1, p2, p3]
-
+    # return [p1, p2, p3]
+    return [p1, p2, p3, slider]
 
 def get_pixel_location(pix_id):
 
