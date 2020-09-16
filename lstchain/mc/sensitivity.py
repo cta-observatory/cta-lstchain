@@ -731,7 +731,7 @@ def sensitivity(dl2_file_g, dl2_file_p,
 
     egeom = np.sqrt(energy[1:] * energy[:-1])
     dFdE, par = crab_hegra(egeom)
-    sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.erg / (u.cm ** 2 * u.s))
+    sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.TeV / (u.cm ** 2 * u.s))
     
     print("\n******** Energy [TeV] *********\n")
     print(egeom)

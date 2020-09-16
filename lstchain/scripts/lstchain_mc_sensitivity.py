@@ -8,10 +8,8 @@ Inputs are DL1/DL2 gamma and proton files
 Usage: 
 
 $> python lstchain_mc_sensitivity.py
---gd2-cuts dl2_gammas_cuts.h5  
---pd2-cuts dl2_protons_cuts.h5 
---gd2-sens dl2_gammas_sensitivity.h5 
---pd2-sens dl2_protons_sensitivity.h5
+--gdl2-cuts dl2_gammas.h5  
+--pdl2-cuts dl2_protons.h5 
 --o /output/path
 
 """
@@ -64,7 +62,7 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 2/3 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
 
     #Divide the event set in two:
@@ -84,17 +82,7 @@ def main():
 
     df_proton_events_for_cuts=df_protons[:half_size_protons]
     df_proton_events_for_sens=df_protons[half_size_protons:]
-    
-    
-    #Check that the sizes are correct
-    if df_gamma_events_for_cuts.shape[0]+df_gamma_events_for_sens.shape[0]!=df_gammas.shape[0]:
-        print("Oops! The total is not the sum of the parts!")
-        return
-    
-    if df_proton_events_for_cuts.shape[0]+df_proton_events_for_sens.shape[0]!=df_protons.shape[0]:
-        print("Oops! The total is not the sum of the parts!")
-        return
-        
+            
     # Finds the best cuts for the computation of the sensitivity
     energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
                                                                               args.dl2_file_p,
@@ -134,7 +122,7 @@ def main():
     
     
     # Saves the results
-    dl2.to_hdf(args.output_path+'/test_sens.h5', key='data')
+    dl2.to_hdf(args.output_path+'/test_sens.h5', key='data', mode='w')
     result.to_hdf(args.output_path+'/test_sens.h5', key='results')
 
     tab = Table.from_pandas(result)
@@ -153,6 +141,7 @@ def main():
     ax=plt.axes()
     plot_utils.format_axes_sensitivity(ax)
     plot_utils.plot_MAGIC_sensitivity(ax)
+    plot_utils.plot_LST_preliminary_sensitivity(ax)
     plot_utils.plot_Crab_SED(ax, 100, 5, 1e5, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 5, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 5, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
