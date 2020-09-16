@@ -64,7 +64,7 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
+    fraction_of_events_for_cuts = 2/3 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
 
     #Divide the event set in two:
@@ -76,48 +76,25 @@ def main():
     df_protons=pd.read_hdf(args.dl2_file_p,
                           key=dl2_params_lstcam_key)
 
-    #Must be a better way but I can't check the internet...
-    gammas_array=df_gammas.to_numpy()
-    protons_array=df_protons.to_numpy()
+    half_size_gammas=round(df_gammas.shape[0]*fraction_of_events_for_cuts)
+    half_size_protons=round(df_protons.shape[0]*fraction_of_events_for_cuts)
 
-    half_size_gammas=round(gammas_array.shape[0]*fraction_of_events_for_cuts)
-    half_size_protons=round(protons_array.shape[0]*fraction_of_events_for_cuts)
+    df_gamma_events_for_cuts=df_gammas[:half_size_gammas]
+    df_gamma_events_for_sens=df_gammas[half_size_gammas:]
+
+    df_proton_events_for_cuts=df_protons[:half_size_protons]
+    df_proton_events_for_sens=df_protons[half_size_protons:]
     
-    gamma_events_for_cuts=gammas_array[:half_size_gammas]
-    gamma_events_for_sens=gammas_array[half_size_gammas:]
-
-    proton_events_for_cuts=protons_array[:half_size_protons]
-    proton_events_for_sens=protons_array[half_size_protons:]
-
+    
     #Check that the sizes are correct
-    if gamma_events_for_cuts.shape[0]+gamma_events_for_sens.shape[0]!=gammas_array.shape[0]:
-        print("Oops! The total is not the sum of the halves!")
+    if df_gamma_events_for_cuts.shape[0]+df_gamma_events_for_sens.shape[0]!=df_gammas.shape[0]:
+        print("Oops! The total is not the sum of the parts!")
         return
     
-    if proton_events_for_cuts.shape[0]+proton_events_for_sens.shape[0]!=protons_array.shape[0]:
-        print("Oops! The total is not the sum of the halves!")
+    if df_proton_events_for_cuts.shape[0]+df_proton_events_for_sens.shape[0]!=df_protons.shape[0]:
+        print("Oops! The total is not the sum of the parts!")
         return
-
-    #Create dataframes with the new two data sets
-    df_gamma_events_for_cuts=pd.DataFrame(
-        data=gamma_events_for_cuts,
-        columns=df_gammas.keys())
-
-    df_gamma_events_for_sens=pd.DataFrame(
-        data=gamma_events_for_sens,
-        columns=df_gammas.keys())
-    
-    df_proton_events_for_cuts=pd.DataFrame(
-        data=proton_events_for_cuts,
-        columns=df_protons.keys())
-
-    df_proton_events_for_sens=pd.DataFrame(
-        data=proton_events_for_sens,
-        columns=df_protons.keys())
-    
-    ######################################################
-
-    
+        
     # Finds the best cuts for the computation of the sensitivity
     energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
                                                                               args.dl2_file_p,
@@ -131,11 +108,9 @@ def main():
                                                                               noff,
                                                                               fraction_of_events_for_cuts,
                                                                               obstime)
-                                                                              
-                                                                              
-    #For testing using fixed cuts
-    #gcut = np.ones(n_bins_energy) * 0.8 
-    #tcut = np.ones(n_bins_energy) * 0.01
+                                                                            #For testing using fixed cuts
+   #gcut = np.ones(n_bins_energy) * 0.3 
+   #tcut = np.ones(n_bins_energy) * 0.01
     
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
@@ -144,8 +119,8 @@ def main():
     # Computes the sensitivity
     energy, best_sens, result, units, dl2 = sensitivity(args.dl2_file_g, 
                                                         args.dl2_file_p,
-                                                        df_gamma_events_for_cuts,
-                                                        df_proton_events_for_cuts,
+                                                        df_gamma_events_for_sens,
+                                                        df_proton_events_for_sens,
                                                         ntelescopes_gamma,
                                                         ntelescopes_protons,
                                                         n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
