@@ -5,7 +5,7 @@ Component for the estimation of the calibration coefficients  events
 import numpy as np
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List
+from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.lstcontainers import LSTEventType
@@ -40,14 +40,14 @@ class CalibrationCalculator(Component):
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
-    pedestal_product = traits.enum_trait(
+    pedestal_product = traits.create_class_enum_trait(
         PedestalCalculator,
-        default='PedestalIntegrator'
+        default_value='PedestalIntegrator'
     )
 
-    flatfield_product = traits.enum_trait(
+    flatfield_product = traits.create_class_enum_trait(
         FlatFieldCalculator,
-        default='FlasherFlatFieldCalculator'
+        default_value='FlasherFlatFieldCalculator'
     )
 
     classes = List([
@@ -61,6 +61,7 @@ class CalibrationCalculator(Component):
 
     def __init__(
         self,
+        subarray,
         parent=None,
         config=None,
         **kwargs
@@ -87,17 +88,18 @@ class CalibrationCalculator(Component):
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
         self.pedestal = PedestalCalculator.from_name(
             self.pedestal_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
 
         msg = "tel_id not the same for all calibration components"
         if self.pedestal.tel_id != self.flatfield.tel_id:
             raise ValueError(msg)
-
 
         self.tel_id = self.flatfield.tel_id
 
@@ -157,16 +159,19 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
+
         # Extract calibration coefficients with F-factor method
         # Assume fixed excess noise factor must be known from elsewhere
 
         # calculate photon-electrons
-        n_pe = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2 / (
-                ff_data.charge_std ** 2 - ped_data.charge_std ** 2)
+        numerator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2
+        denominator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
+        n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
-        calib_data.time_range = ff_data.sample_time_range
+        calib_data.time_min = ff_data.sample_time_min
+        calib_data.time_max = ff_data.sample_time_max
         calib_data.n_pe = n_pe
 
         # find signal median of good pixels
@@ -174,15 +179,21 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         npe_signal_median = np.ma.median(masked_npe, axis=1)
 
         # Flat field factor
-        ff = np.ma.getdata(npe_signal_median[:, np.newaxis] / n_pe)
+        numerator = npe_signal_median[:, np.newaxis]
+        denominator = n_pe
+        ff = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
-        calib_data.dc_to_pe = n_pe / (ff_data.charge_median - ped_data.charge_median) * ff
+        # calibration coefficients
+        numerator = n_pe * ff
 
-        # put the time around zero
-        camera_time_median = np.median(ff_data.time_median, axis=1)
-        calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
+        # correct the signal for the integration window
+        denominator = (ff_data.charge_median - ped_data.charge_median) 
+        calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
-        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
+        # flat-field time corrections
+        calib_data.time_correction = -ff_data.relative_time_median
+
+        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # put to zero unusable pixels
         calib_data.dc_to_pe[calib_data.unusable_pixels] = 0
@@ -201,7 +212,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         new_ff = False
 
         # if pedestal event
-        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type):
+        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type): 
 
             new_ped = self.pedestal.calculate_pedestals(event)
 
@@ -229,10 +240,19 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         Output interleaved results on request
 
         """
-        #store results
-        self.pedestal.store_results(event)
-        self.flatfield.store_results(event)
+        new_ped = False
+        new_ff = False
 
-        # calculates calibration values
-        self.calculate_calibration_coefficients(event)
+        # store results
+        if self.pedestal.num_events_seen > 0:
+            self.pedestal.store_results(event)
+            new_ped = True
 
+            if self.flatfield.num_events_seen > 0:
+                self.flatfield.store_results(event)
+
+                # calculates calibration values
+                self.calculate_calibration_coefficients(event)
+                new_ff = True
+
+        return new_ped, new_ff

@@ -13,9 +13,10 @@ test_dir = 'testfiles'
 os.makedirs(test_dir, exist_ok=True)
 
 mc_gamma_testfile = get_dataset_path('gamma_test_large.simtel.gz')
-dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.simtel.h5')
-dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.simtel.h5')
+dl1_file = os.path.join(test_dir, 'dl1_gamma_test_large.h5')
+dl2_file = os.path.join(test_dir, 'dl2_gamma_test_large.h5')
 fake_dl2_proton_file = os.path.join(test_dir, 'dl2_fake_proton.simtel.h5')
+fake_dl1_proton_file = os.path.join(test_dir, 'dl1_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
@@ -109,7 +110,7 @@ def test_build_models():
 
     reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=False)
 
-    from sklearn.externals import joblib
+    import joblib
     joblib.dump(reg_energy, file_model_energy)
     joblib.dump(reg_disp, file_model_disp)
     joblib.dump(cls_gh, file_model_gh_sep)
@@ -118,7 +119,7 @@ def test_build_models():
 @pytest.mark.run(order=3)
 def test_apply_models():
     from lstchain.reco.dl1_to_dl2 import apply_models
-    from sklearn.externals import joblib
+    import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(dl1, filters=custom_config["events_filters"])
@@ -131,7 +132,16 @@ def test_apply_models():
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
-def produce_fake_dl2_proton_file():
+def produce_fake_dl1_proton_file(dl1_file):
+    """
+    Produce a fake dl1 proton file by copying the dl2 gamma test file
+    and changing mc_type
+    """
+    events = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
+    events.mc_type = 101
+    events.to_hdf(fake_dl1_proton_file, key=dl1_params_lstcam_key)
+
+def produce_fake_dl2_proton_file(dl2_file):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type
@@ -144,7 +154,7 @@ def produce_fake_dl2_proton_file():
 def test_sensitivity():
     from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
 
-    produce_fake_dl2_proton_file()
+    produce_fake_dl2_proton_file(dl2_file)
 
     nfiles_gammas = 1
     nfiles_protons = 1
@@ -204,7 +214,7 @@ def test_disp_to_pos():
 
 
 def test_change_frame_camera_sky():
-    from lstchain.reco.utils import sky_to_camera, camera_to_sky
+    from lstchain.reco.utils import sky_to_camera, camera_to_altaz
     import astropy.units as u
     x = np.random.rand(1) * u.m
     y = np.random.rand(1) * u.m
@@ -212,7 +222,7 @@ def test_change_frame_camera_sky():
     pointing_alt = np.pi/3. * u.rad
     pointing_az = 0. * u.rad
 
-    sky_pos = camera_to_sky(x, y, focal_length, pointing_alt, pointing_az)
+    sky_pos = camera_to_altaz(x, y, focal_length, pointing_alt, pointing_az)
     cam_pos = sky_to_camera(sky_pos.alt, sky_pos.az, focal_length, pointing_alt, pointing_az)
     np.testing.assert_almost_equal([x, y], [cam_pos.x, cam_pos.y], decimal=4)
 

@@ -1,41 +1,43 @@
 #!/usr/bin/env python3
 
 """
-Pipeline to calibrate and compute image parameters at single telescope 
+Pipeline to calibrate and compute image parameters at single telescope
 level for real data.
 - Inputs are a protozfits input file and a drs4 pedestal/calibration/time
 calibration files
 - Output is a dataframe with dl1 data
 
-Usage: 
+Usage:
 
-$> python lstchain_data_r0_to_dl1.py 
---input-file LST-1.1.Run02030.0000.fits.fz 
---output-dir ./ 
---pedestal-file drs4_pedestal.Run2028.0000.fits 
---calibration-file calibration.Run2029.0000.hdf5 
+$> python lstchain_data_r0_to_dl1.py
+--input-file LST-1.1.Run02030.0000.fits.fz
+--output-dir ./
+--pedestal-file drs4_pedestal.Run2028.0000.fits
+--calibration-file calibration.Run2029.0000.hdf5
 --time-calibration-file time_calibration.Run2029.0000.hdf5
 
 """
 
 import argparse
-from lstchain.reco import r0_to_dl1
-from lstchain.io.config import read_configuration_file
-import sys
 import logging
-import os
+import sys
+from pathlib import Path
+
+from lstchain.io.config import read_configuration_file
+from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', action='store', type=str,
+parser.add_argument('--input-file', '-f', type=Path,
                     dest='input_file',
                     help='Path to the .fits.fz file with the raw events',
                     default=None, required=True)
 
-parser.add_argument('--output-dir', '-o', action='store', type=str,
+parser.add_argument('--output-dir', '-o', type=Path,
                     dest='output_dir',
                     help='Path where to store the reco dl1 events',
                     default='./dl1_data/')
@@ -115,8 +117,12 @@ args = parser.parse_args()
 
 
 def main():
-    os.makedirs(args.output_dir, exist_ok=True)
+    output_dir = args.output_dir.absolute()
+    output_dir.mkdir(exist_ok=True)
 
+    if not args.input_file.is_file():
+        log.error('Input file does not exist or is not a file')
+        sys.exit(1)
 
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
@@ -124,10 +130,14 @@ def main():
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
 
-    output_filename = os.path.join(
-        args.output_dir,
-        'dl1_' + os.path.basename(args.input_file).rsplit('.', 1)[0] + '.h5'
-    )
+    # test if this matches data file name pattern
+    try:
+        run = parse_r0_filename(args.input_file)
+        output_filename = output_dir / run_to_dl1_filename(run.tel_id,
+                                                           run.run, run.subrun)
+    except ValueError:
+        # for arbitrary filenames, including mc
+        output_filename = output_dir / r0_to_dl1_filename(args.input_file.name)
 
     config = {}
     if args.config_file is not None:

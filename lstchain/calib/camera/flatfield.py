@@ -6,8 +6,9 @@ import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Unicode
+from ctapipe.core.traits import  List, Unicode, Bool
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
+
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -49,7 +50,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         help = 'Path to drs4 time calibration file'
     ).tag(config = True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, subarray, **kwargs):
+
         """Calculates flat-field parameters from flasher data
            based on the best algorithm described by S. Fegan in MST-CAM-TN-0060 (eq. 19)
            Pixels are defined as outliers on the base of a cut on the pixel charge median
@@ -65,7 +67,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
              Interval (in waveform samples) of accepted time values
 
         """
-        super().__init__(**kwargs)
+        super().__init__(subarray, **kwargs)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 
@@ -79,7 +81,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-
         if self.time_calibration_path is None:
             self.time_corrector = None
         else:
@@ -90,7 +91,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             else:
                 msg=f"Time calibration file {self.time_calibration_path} not found!"
                 raise IOError(msg)
-
 
 
     def _extract_charge(self, event):
@@ -104,16 +104,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
 
         waveforms = event.r1.tel[self.tel_id].waveform
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
 
         # Extract charge and time
         charge = 0
         peak_pos = 0
         if self.extractor:
-            if self.extractor.requires_neighbors():
-                camera = event.inst.subarray.tel[self.tel_id].camera
-                self.extractor.neighbours = camera.neighbor_matrix_where
-
-            charge, peak_pos = self.extractor(waveforms)
+            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
 
             # correct time with drs4 correction if available
             if self.time_corrector:
@@ -172,9 +169,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         sample_age = self.trigger_time - self.time_start
 
         # check if to create a calibration event
-        if (
-            sample_age > self.sample_duration
-            or self.num_events_seen == self.sample_size
+        if (self.num_events_seen > 0 and
+                (sample_age > self.sample_duration or
+                self.num_events_seen == self.sample_size)
         ):
             # update the monitoring container
             self.store_results(event)
@@ -194,7 +191,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
         if self.num_events_seen == 0:
             raise ValueError("No flat-field events in statistics, zero results")
-
 
         container = event.mon.tel[self.tel_id].flatfield
 
@@ -286,11 +282,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         return {
             'sample_time': (trigger_time - time_start) / 2 * u.s,
-            'sample_time_range': [time_start, trigger_time] * u.s,
-            'time_mean': np.ma.getdata(pixel_mean),
-            'time_median': np.ma.getdata(pixel_median),
-            'time_std': np.ma.getdata(pixel_std),
-            'relative_time_median': np.ma.getdata(relative_median),
+            'sample_time_min': time_start * u.s,
+            'sample_time_max': trigger_time * u.s,
+            'time_mean': np.ma.getdata(pixel_mean)*u.ns,
+            'time_median': np.ma.getdata(pixel_median)*u.ns,
+            'time_std': np.ma.getdata(pixel_std)*u.ns,
+            'relative_time_median': np.ma.getdata(relative_median)*u.ns,
             'time_median_outliers': np.ma.getdata(time_median_outliers),
 
         }

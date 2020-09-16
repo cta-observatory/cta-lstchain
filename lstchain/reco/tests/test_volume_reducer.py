@@ -22,16 +22,16 @@ def test_get_volume_reduction_method():
 def test_check_and_apply_volume_reduction():
     source = event_source(get_dataset_path('gamma_test.simtel.gz'))
     ev = next(iter(source))
-    cal = CameraCalibrator()
+    cal = CameraCalibrator(subarray=source.subarray)
     config = get_standard_config()
     config['volume_reducer']['algorithm'] = 'zero_suppression_tailcut_dilation'
 
     cal(ev)
-    apply_volume_reduction(ev, config)
+    apply_volume_reduction(ev, source.subarray, config)
 
     for tel_id in ev.r0.tels_with_data:
         assert 0 in ev.dl1.tel[tel_id].image
-        assert 0 in ev.dl1.tel[tel_id].pulse_time
+        assert 0 in ev.dl1.tel[tel_id].peak_time
         assert 0 in ev.dl0.tel[tel_id].waveform
 
 
@@ -45,13 +45,13 @@ def test_zero_suppression_tailcut_dilation():
                 continue
         break
 
-    cal = CameraCalibrator()
+    cal = CameraCalibrator(subarray=source.subarray)
     cal(event)
-    camera = event.inst.subarray.tel[tel_id].camera
+    camera_geometry = source.subarray.tel[tel_id].camera.geometry
     imag = event.dl1.tel[tel_id].image
 
-    pixels_zero_supp = zero_suppression_tailcut_dilation(camera, imag)
-    pixels_tailcut = tailcuts_clean(camera, imag,
+    pixels_zero_supp = zero_suppression_tailcut_dilation(camera_geometry, imag)
+    pixels_tailcut = tailcuts_clean(camera_geometry, imag,
                                     picture_thresh=8,
                                     boundary_thresh=4,
                                     keep_isolated_pixels=True,
@@ -64,7 +64,7 @@ def test_zero_suppression_tailcut_dilation():
     reduced_imag[~pixels_zero_supp] = 0
     cleaned_imag[~pixels_tailcut] = 0
 
-    pixels_cleaned_after_reduction = tailcuts_clean(camera, reduced_imag,
+    pixels_cleaned_after_reduction = tailcuts_clean(camera_geometry, reduced_imag,
                                                     picture_thresh=8,
                                                     boundary_thresh=4,
                                                     keep_isolated_pixels=True,
