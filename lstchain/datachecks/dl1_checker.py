@@ -1319,8 +1319,11 @@ def show_camera(content, geom, pad_width, pad_height, label):
 
     Parameters
     ----------
-    content: pixel-wise quantity to be plotted, ndarray with as many entries as
-    the number of pixels
+    content: pixel-wise quantity to be plotted, ndarray with shape (N,
+    number_of_pixels) where N is the number of different sets of pixel
+    values, for example N different data runs or whatever. The shape can also
+    be just (number_of_pixels), in case a single camera display is to be shown
+
     geom: camera geometry
     pad_width: width in pixels of each of the 3 pads in the plot
     pad_height: height in pixels of each of the 3 pads in the plot
@@ -1339,28 +1342,40 @@ def show_camera(content, geom, pad_width, pad_height, label):
     camgeom = copy.deepcopy(geom)
     #camgeom.pix_area *= 1.3
 
-    numframes = 1000
-    allcams = [content]
-    for i in range(2,numframes+1):
-        allcams.append(i*content)
+    numsets = 1
+    if np.ndim(content) > 1:
+        numsets = content.shape[0]
+    # numsets is the number of different sets of pixel data to be displayed
 
-    cam = BokehCameraDisplay(camgeom, np.min(allcams), np.max(allcams),
+    allimages = []
+    if np.ndim(content) == 1:
+        np.nan_to_num(content, copy=False)
+        allimages.append(content)
+    else:
+        for i in range(1,numsets+1):
+            np.nan_to_num(content[i-1], copy=False)
+            allimages.append(content[i-1])
+
+    cam = BokehCameraDisplay(camgeom, np.min(allimages), np.max(allimages),
                              use_notebook=False, autoshow=False)
-    cam.image = content
+    cam.image = allimages[0]
 
-    logcontent = np.copy(content)
-    for i, x in enumerate(logcontent):
-        # workaround as long as log z-scale is not implemented in bokeh camera:
-        if x <= 0:
-            logcontent[i] = np.log10(np.min(content[content>0]))
-        else:
-            logcontent[i] = np.log10(content[i])
-    camlog = BokehCameraDisplay(camgeom, logcontent.min(), logcontent.max(),
+    allimageslog = []
+
+    for image in allimages:
+        logcontent = np.copy(image)
+        for i, x in enumerate(logcontent):
+            # workaround as long as log z-scale is not implemented in bokeh camera:
+            if x <= 0:
+                logcontent[i] = -3.
+            else:
+                logcontent[i] = np.log10(image[i])
+            allimageslog.append(logcontent)
+
+    camlog = BokehCameraDisplay(camgeom, np.min(allimageslog),
+                                np.max(allimageslog),
                                 use_notebook=False, autoshow=False)
-    camlog.image = logcontent
-
-    for i in np.where(content <= 0):
-        camlog.datasource.data['image'][i] = 1.e-6
+    camlog.image = allimageslog[0]
 
     cluster_i = []
     cluster_j = []
@@ -1394,7 +1409,7 @@ def show_camera(content, geom, pad_width, pad_height, label):
 
 
     p2 = figure(background_fill_color='#ffffff',
-                y_range=(-0.05*cam.image.max(), cam.image.max() * 1.1),
+                y_range=(-0.05*np.max(allimages), np.max(allimages) * 1.1),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
     p2.min_border_top = 60
@@ -1408,7 +1423,7 @@ def show_camera(content, geom, pad_width, pad_height, label):
                   mode='mouse', point_policy='snap_to_data'))
 
     # allcams must be a list, an ndarray does not work
-    zz = ColumnDataSource(data=dict(z=allcams))
+    zz = ColumnDataSource(data=dict(z=allimages))
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source2=glyphs.data_source, zz=zz),
     code="""
@@ -1424,8 +1439,10 @@ def show_camera(content, geom, pad_width, pad_height, label):
         source2.change.emit();
     """)
 
-    slider = Slider(start=1, end=numframes, value=1, step=1, title="factor")
-    slider.js_on_change('value', callback)
+    slider = None
+    if numsets > 1:
+        slider = Slider(start=1, end=numsets, value=1, step=1, title="run")
+        slider.js_on_change('value', callback)
 
     #tab1 = Panel(child=cam.figure, title='linear')
     tab1 = Panel(child=cam.figure, title='linear')
@@ -1438,7 +1455,6 @@ def show_camera(content, geom, pad_width, pad_height, label):
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
 
-    # return [p1, p2, p3]
     return [p1, p2, p3, slider]
 
 def get_pixel_location(pix_id):

@@ -328,23 +328,22 @@ def plot(filename='longterm_dl1_check.h5'):
     page1 = Panel()
     page2 = Panel()
 
-    mean = np.nanmean(file.root.pixwise_runsummary.col(
-            'ff_pix_charge_mean'), axis=0)
-    stddev = np.nanmean(file.root.pixwise_runsummary.col(
-            'ff_pix_charge_stddev'), axis=0)
-
-    print(mean)
-    print(stddev)
+    mean = []
+    stddev = []
+    for item in file.root.pixwise_runsummary.col('ff_pix_charge_mean'):
+        mean.append(item)
+    for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
+        stddev.append(item)
 
     pad_width = 350
     pad_height = 370
     row1 = []
     row2 = []
 
-    row1.append(show_camera(mean, engineering_geom, pad_width, pad_height,
-                            'ff mean'))
-    row2.append(show_camera(stddev, engineering_geom, pad_width, pad_height,
-                            'ff std dev'))
+    row1.append(show_camera(np.array(mean), engineering_geom, pad_width,
+                            pad_height, 'ff mean'))
+    row2.append(show_camera(np.array(stddev), engineering_geom, pad_width,
+                            pad_height, 'ff std dev'))
 
     grid = gridplot([row1[0], row2[0]], sizing_mode=None, plot_width=pad_width,
                     plot_height=pad_height)
