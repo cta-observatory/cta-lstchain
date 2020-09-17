@@ -72,7 +72,8 @@ class CameraDisplay:
         )
 
         self._color_mapper = bokeh.models.mappers.LinearColorMapper(
-            palette=bokeh.palettes.Viridis256, low=zlow, high=zhigh
+                palette=bokeh.palettes.Viridis256, low=zlow, high=zhigh,
+                nan_color='white'
         )
 
         self.figure = figure(

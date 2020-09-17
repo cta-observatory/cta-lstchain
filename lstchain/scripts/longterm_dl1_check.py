@@ -334,7 +334,11 @@ def plot(filename='longterm_dl1_check.h5'):
         mean.append(item)
     for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
         stddev.append(item)
-
+    '''
+    mean = file.root.pixwise_runsummary.col('ff_pix_charge_mean')[0]
+    stddev = file.root.pixwise_runsummary.col('ff_pix_charge_stddev')[0]
+    mean[500] = np.nan
+    '''
     pad_width = 350
     pad_height = 370
     row1 = []

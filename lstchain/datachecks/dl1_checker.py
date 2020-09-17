@@ -1349,14 +1349,15 @@ def show_camera(content, geom, pad_width, pad_height, label):
 
     allimages = []
     if np.ndim(content) == 1:
-        np.nan_to_num(content, copy=False)
+        #np.nan_to_num(content, copy=False)
         allimages.append(content)
     else:
         for i in range(1,numsets+1):
-            np.nan_to_num(content[i-1], copy=False)
+            #np.nan_to_num(content[i-1], copy=False)
             allimages.append(content[i-1])
 
-    cam = BokehCameraDisplay(camgeom, np.min(allimages), np.max(allimages),
+    cam = BokehCameraDisplay(camgeom, np.nanmin(allimages),
+                             np.nanmax(allimages),
                              use_notebook=False, autoshow=False)
     cam.image = allimages[0]
 
@@ -1367,13 +1368,13 @@ def show_camera(content, geom, pad_width, pad_height, label):
         for i, x in enumerate(logcontent):
             # workaround as long as log z-scale is not implemented in bokeh camera:
             if x <= 0:
-                logcontent[i] = -3.
+                logcontent[i] = np.nan
             else:
                 logcontent[i] = np.log10(image[i])
-            allimageslog.append(logcontent)
+        allimageslog.append(logcontent)
 
-    camlog = BokehCameraDisplay(camgeom, np.min(allimageslog),
-                                np.max(allimageslog),
+    camlog = BokehCameraDisplay(camgeom, np.nanmin(allimageslog),
+                                np.nanmax(allimageslog),
                                 use_notebook=False, autoshow=False)
     camlog.image = allimageslog[0]
 
@@ -1408,8 +1409,15 @@ def show_camera(content, geom, pad_width, pad_height, label):
                       mode='mouse', point_policy='snap_to_data'))
 
 
+    tab1 = Panel(child=cam.figure, title='linear')
+    tab2 = Panel(child=camlog.figure, title='logarithmic')
+
+    p1 = Tabs(tabs=[tab1, tab2])
+    p1.margin = (0, 0, 0, 25)
+
     p2 = figure(background_fill_color='#ffffff',
-                y_range=(-0.05*np.max(allimages), np.max(allimages) * 1.1),
+                y_range=(-0.05*np.nanmax(allimages),
+                         np.nanmax(allimages) * 1.1),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
     p2.min_border_top = 60
@@ -1417,45 +1425,66 @@ def show_camera(content, geom, pad_width, pad_height, label):
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
-    glyphs = p2.circle(x='pix_id', y='value', size=2, source=source2)
+    p2.circle(x='pix_id', y='value', size=2, source=source2)
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
                   mode='mouse', point_policy='snap_to_data'))
 
-    # allcams must be a list, an ndarray does not work
-    zz = ColumnDataSource(data=dict(z=allimages))
+    allhists = []
+    alledges = []
+    for image in allimages:
+        hist, edges = np.histogram(image[~np.isnan(image)], bins=200)
+        allhists.append(hist)
+        alledges.append(edges)
+
+    source3 = ColumnDataSource(data=dict(top=allhists[0],
+                                         bottom=0.7*np.ones_like(allhists[0]),
+                                         left=alledges[0][:-1],
+                                         right=alledges[0][1:]))
+    p3 = figure(background_fill_color='#ffffff',
+                y_range=(0.7, np.max(allhists) * 1.1), x_axis_label=label,
+                y_axis_label='Number of pixels', y_axis_type='log')
+    p3.quad(top='top', bottom='bottom', left='left', right='right',
+            source=source3)
+
+    cds_allimages = ColumnDataSource(data=dict(z=allimages, zlog=allimageslog,
+                                               hist=allhists, edges=alledges))
+
     callback = CustomJS(args=dict(source1=cam.datasource,
-                                  source2=glyphs.data_source, zz=zz),
+                                  source1log = camlog.datasource,
+                                  source2=source2, source3=source3,
+                                  zz=cds_allimages),
     code="""
-        var data = source1.data;
         var slider_value = cb_obj.value
-        var image = data['image']
         var z = zz.data['z']
-        for (var i = 0; i < image.length; i++) {
-             image[i] = z[slider_value-1][i]
-             source2.data['value'][i] = image[i]
+        var zlog = zz.data['zlog']
+        var edges = zz.data['edges']
+        var hist = zz.data['hist']
+        for (var i = 0; i < source1.data['image'].length; i++) {
+             source1.data['image'][i] = z[slider_value-1][i]
+             source1log.data['image'][i] = zlog[slider_value-1][i]
+             source2.data['value'][i] = source1.data['image'][i]
+        }
+        for (var i = 0; i < source3.data['top'].length; i++) {
+             source3.data['top'][i] = hist[slider_value-1][i]
+             source3.data['left'][i] = edges[slider_value-1][i]
+             source3.data['right'][i] = edges[slider_value-1][i+1]
         }
         source1.change.emit();
+        source1log.change.emit();
         source2.change.emit();
+        source3.change.emit();
     """)
 
     slider = None
     if numsets > 1:
-        slider = Slider(start=1, end=numsets, value=1, step=1, title="run")
+        slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
+                        orientation='vertical')
+        slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
-    #tab1 = Panel(child=cam.figure, title='linear')
-    tab1 = Panel(child=cam.figure, title='linear')
-    tab2 = Panel(child=camlog.figure, title='logarithmic')
 
-    p1 = Tabs(tabs=[tab1, tab2])
-    hist, edges = np.histogram(cam.image, bins=200)
-    p3 = figure(background_fill_color='#ffffff',
-                y_range=(0.7, hist.max() * 1.1), x_axis_label=label,
-                y_axis_label='Number of pixels', y_axis_type='log')
-    p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
-
-    return [p1, p2, p3, slider]
+    return [slider, p1, p2, p3]
 
 def get_pixel_location(pix_id):
 
