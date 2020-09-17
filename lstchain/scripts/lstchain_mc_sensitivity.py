@@ -62,7 +62,7 @@ def main():
     n_bins_theta2 = 10  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.6 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
 
     #Divide the event set in two:
@@ -82,7 +82,7 @@ def main():
 
     df_proton_events_for_cuts=df_protons[:half_size_protons]
     df_proton_events_for_sens=df_protons[half_size_protons:]
-            
+    
     # Finds the best cuts for the computation of the sensitivity
     energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
                                                                               args.dl2_file_p,
@@ -96,9 +96,10 @@ def main():
                                                                               noff,
                                                                               fraction_of_events_for_cuts,
                                                                               obstime)
-                                                                            #For testing using fixed cuts
-   #gcut = np.ones(n_bins_energy) * 0.3 
-   #tcut = np.ones(n_bins_energy) * 0.01
+    
+    #For testing using fixed cuts
+    #gcut = np.ones(n_bins_energy) * 0.2
+    #tcut = np.ones(n_bins_energy) * 0.005
     
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
@@ -120,10 +121,10 @@ def main():
     sensitivity_flux = best_sens / 100 * (dFdE * egeom * egeom).to(u.erg / (u.cm ** 2 * u.s))
     
     
-    
+    print(result)
     # Saves the results
     dl2.to_hdf(args.output_path+'/test_sens.h5', key='data', mode='w')
-    result.to_hdf(args.output_path+'/test_sens.h5', key='results')
+    result.to_hdf(args.output_path+'/test_sens.h5', key='results', mode='w')
 
     tab = Table.from_pandas(result)
 
