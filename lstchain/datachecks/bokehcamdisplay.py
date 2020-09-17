@@ -12,7 +12,7 @@ __all__ = [
     'CameraDisplay'
 ]
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Title
 from bokeh.plotting import figure
 
 from ctapipe.instrument import CameraGeometry
@@ -54,7 +54,8 @@ class CameraDisplay:
     """
 
     def __init__(self, geom: CameraGeometry, zlow = 0., zhigh = 1.,
-        use_notebook=True, autoshow=True):
+                 label='Camera display', title='', use_notebook=True,
+                 autoshow=True):
 
         self._geom = geom
         self._use_notebook = use_notebook
@@ -76,11 +77,9 @@ class CameraDisplay:
                 nan_color='white'
         )
 
-        self.figure = figure(
-            title=f"{geom} ({geom.frame.__class__.__name__})",
-            match_aspect=True,
-            aspect_scale=1,
-        )
+        self.figure = figure(title=title, match_aspect=True, aspect_scale=1)
+        self.label = label
+
         # nmodifies the BoxZoomTool. May be better way to get it than by index
         self.figure.toolbar.tools[2].match_aspect = True
         self._setup_camera(geom)
@@ -106,6 +105,7 @@ class CameraDisplay:
             location=(0, 0),
         )
         self.figure.add_layout(self._color_bar, "right")
+        self.figure.add_layout(Title(text=self.label, align='left'), 'above')
 
     def update(self):
         if self._use_notebook and self._handle:

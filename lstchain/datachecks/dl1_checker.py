@@ -32,7 +32,7 @@ from astropy.table import Table, vstack
 from bokeh.io import output_file, show
 from bokeh.layouts import gridplot, column
 from bokeh.models import HoverTool, Div
-from bokeh.models import ColumnDataSource, CustomJS, Slider
+from bokeh.models import ColumnDataSource, CustomJS, Slider, RangeSlider
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
@@ -1313,7 +1313,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     return grid
 
 
-def show_camera(content, geom, pad_width, pad_height, label):
+def show_camera(content, geom, pad_width, pad_height, label, titles=None):
 
     """
 
@@ -1327,7 +1327,10 @@ def show_camera(content, geom, pad_width, pad_height, label):
     geom: camera geometry
     pad_width: width in pixels of each of the 3 pads in the plot
     pad_height: height in pixels of each of the 3 pads in the plot
-    label: label to be shown on the plots
+    label: string to label the quantity which is displayed, the same for the N
+    sets of pixels inside "content"
+    titles: list of N strings, with the title specific to each of the sets
+    of pixel values to be displayed: for example, indicating run numbers
 
     Returns
     -------
@@ -1349,17 +1352,19 @@ def show_camera(content, geom, pad_width, pad_height, label):
 
     allimages = []
     if np.ndim(content) == 1:
-        #np.nan_to_num(content, copy=False)
         allimages.append(content)
     else:
         for i in range(1,numsets+1):
-            #np.nan_to_num(content[i-1], copy=False)
             allimages.append(content[i-1])
 
+    if titles is None:
+        titles = [None]*numsets
+
     cam = BokehCameraDisplay(camgeom, np.nanmin(allimages),
-                             np.nanmax(allimages),
+                             np.nanmax(allimages), label, titles[0],
                              use_notebook=False, autoshow=False)
     cam.image = allimages[0]
+    cam.figure.title.text = titles[0]
 
     allimageslog = []
 
@@ -1374,9 +1379,10 @@ def show_camera(content, geom, pad_width, pad_height, label):
         allimageslog.append(logcontent)
 
     camlog = BokehCameraDisplay(camgeom, np.nanmin(allimageslog),
-                                np.nanmax(allimageslog),
+                                np.nanmax(allimageslog), label, titles[0],
                                 use_notebook=False, autoshow=False)
     camlog.image = allimageslog[0]
+    camlog.figure.title.text = titles[0]
 
     cluster_i = []
     cluster_j = []
@@ -1396,7 +1402,6 @@ def show_camera(content, geom, pad_width, pad_height, label):
         # c.add_colorbar()
         c.figure.plot_width = pad_width
         c.figure.plot_height = int(pad_height * 0.85)
-        c.figure.title = Title(text=label)
         c.figure.grid.visible = False
         c.figure.axis.visible = True
         c.figure.xaxis.axis_label = 'X position (m)'
@@ -1441,19 +1446,26 @@ def show_camera(content, geom, pad_width, pad_height, label):
                                          bottom=0.7*np.ones_like(allhists[0]),
                                          left=alledges[0][:-1],
                                          right=alledges[0][1:]))
+
     p3 = figure(background_fill_color='#ffffff',
                 y_range=(0.7, np.max(allhists) * 1.1), x_axis_label=label,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
 
+    if titles is None:
+        titles = [None]*len(allimages)
+
     cds_allimages = ColumnDataSource(data=dict(z=allimages, zlog=allimageslog,
-                                               hist=allhists, edges=alledges))
+                                               hist=allhists, edges=alledges,
+                                               titles=titles))
 
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log = camlog.datasource,
                                   source2=source2, source3=source3,
-                                  zz=cds_allimages),
+                                  zz=cds_allimages,
+                                  title=cam.figure.title,
+                                  titlelog=camlog.figure.title),
     code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
@@ -1470,6 +1482,8 @@ def show_camera(content, geom, pad_width, pad_height, label):
              source3.data['left'][i] = edges[slider_value-1][i]
              source3.data['right'][i] = edges[slider_value-1][i+1]
         }
+        title.text = zz.data['titles'][slider_value-1]
+        titlelog.text = title.text
         source1.change.emit();
         source1log.change.emit();
         source2.change.emit();
@@ -1483,8 +1497,28 @@ def show_camera(content, geom, pad_width, pad_height, label):
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
+    callback2 = CustomJS(args=dict(color_mapper=cam._color_mapper,
+                                   color_mapper_log=camlog._color_mapper),
+    code="""
+        var range = cb_obj.value
+        color_mapper.low = range[0]
+        color_mapper.high = range[1]
+        if (range[0] > 0.)
+            color_mapper_log.low = Math.log(range[0])/Math.LN10    
+        color_mapper_log.high = Math.log(range[1])/Math.LN10
+        color_mapper.change.emit();
+        color_mapper_log.change.emit();
+    """)
+    step = (np.nanmax(allimages) - np.nanmin(allimages))/100.
+    range_slider = RangeSlider(start=np.nanmin(allimages),
+                               end=np.nanmax(allimages),
+                               value=(np.nanmin(allimages),
+                                      np.nanmax(allimages)), step=step,
+                               title="z_range", orientation='vertical',
+                               direction='rtl', show_value=False)
+    range_slider.js_on_change('value', callback2)
 
-    return [slider, p1, p2, p3]
+    return [slider, p1, range_slider, p2, p3]
 
 def get_pixel_location(pix_id):
 

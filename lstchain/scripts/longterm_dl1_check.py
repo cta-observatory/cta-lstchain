@@ -334,20 +334,20 @@ def plot(filename='longterm_dl1_check.h5'):
         mean.append(item)
     for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
         stddev.append(item)
-    '''
-    mean = file.root.pixwise_runsummary.col('ff_pix_charge_mean')[0]
-    stddev = file.root.pixwise_runsummary.col('ff_pix_charge_stddev')[0]
-    mean[500] = np.nan
-    '''
+
+    run_titles = []
+    for run in file.root.pixwise_runsummary.col('runnumber'):
+        run_titles.append('Run {0:05d}'.format(run))
+
     pad_width = 350
     pad_height = 370
     row1 = []
     row2 = []
 
     row1.append(show_camera(np.array(mean), engineering_geom, pad_width,
-                            pad_height, 'ff mean'))
+                            pad_height, 'FF mean charge', run_titles))
     row2.append(show_camera(np.array(stddev), engineering_geom, pad_width,
-                            pad_height, 'ff std dev'))
+                            pad_height, 'FF charge std dev', run_titles))
 
     grid = gridplot([row1[0], row2[0]], sizing_mode=None, plot_width=pad_width,
                     plot_height=pad_height)
