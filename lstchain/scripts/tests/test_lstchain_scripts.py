@@ -170,7 +170,7 @@ def test_dl3():
             '-d', merged_dl2_file,
             '-o', output_dir,
             '-fg', merged_dl2_file,
-            '-irf', 'True',
+            '-irf', 'False',
             #'-s', Gamma,
             )
     assert os.path.exists(dl3_file)
@@ -183,6 +183,8 @@ def test_dl3_index():
             '-d', output_dir,
             #'-n', '1'
             )
+    #assert Table.read(dl3_hdu_index, hdu='events')["ENERGY"][0]
+    #assert Table.read(dl3_obs_index)
     assert os.path.exists(dl3_hdu_index)
     assert os.path.exists(dl3_obs_index)
 

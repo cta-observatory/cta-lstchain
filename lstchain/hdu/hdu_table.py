@@ -280,7 +280,7 @@ def create_event_list(data, run_number, Source_name):
     t_start = data.dragon_time.values[0]
     t_stop = data.dragon_time.values[-1]
     time = Time(data.dragon_time, format='unix', scale="utc")
-    mjd = time.mjd.mean()
+
     obs_time = t_stop-t_start
 
     #Position parameters
@@ -297,9 +297,6 @@ def create_event_list(data, run_number, Source_name):
     coord_pointing = camera_to_altaz(pos_x = 0 * u.m, pos_y=0 * u.m, focal = focal,
                 pointing_alt = pointing_alt[0], pointing_az = pointing_az[0],
                 obstime = time[0])
-
-
-    #Number of events selected
 
     ##########################################################################
     ### Event table columns
@@ -337,12 +334,16 @@ def create_event_list(data, run_number, Source_name):
     ### Adding the meta data
     ### Event table metadata
 
-    event_table.meta["OBS_ID"]=run_number#data.obs_id
-    event_table.meta["MJDREFI"]=int(mjd)
-    event_table.meta["MJDREFF"]=mjd-int(mjd)
-    event_table.meta["OBJECT"]=name
-    event_table.meta["TELLIST"]='LST-1'
-    event_table.meta["N_TELS"]=1
+    event_table.meta["OBS_ID"] = run_number
+    event_table.meta["TSTART"] = t_start
+    event_table.meta["TSTOP"] = t_stop
+    event_table.meta["MJDREFI"] = Time(40587, format='unix', scale="utc") # Unix 01/01/1970 0h0m0
+    event_table.meta["MJDREFF"] = Time(0,format='unix',scale='utc')
+    event_table.meta["TIMEUNIT"] = 's'
+    event_table.meta["TIMESYS"] = "UTC"
+    event_table.meta["OBJECT"] = name
+    event_table.meta["TELLIST"] = 'LST-1'
+    event_table.meta["N_TELS"] = 1
 
     event_table.meta["HDUCLASS"] = "GADF"
     event_table.meta["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
@@ -367,6 +368,8 @@ def create_event_list(data, run_number, Source_name):
     gti_table.meta["OBS_ID"]=run_number#data.obs_id
     gti_table.meta["MJDREFI"] = event_table.meta["MJDREFI"]
     gti_table.meta["MJDREFF"] = event_table.meta["MJDREFF"]
+    gti_table.meta["TIMESYS"] = event_table.meta["TIMESYS"]
+    gti_table.meta["TIMEUNIT"] = event_table.meta["TIMEUNIT"]
 
     ##########################################################################
     ### Pointing table metadata
