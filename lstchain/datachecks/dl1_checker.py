@@ -1410,7 +1410,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
             HoverTool(tooltips=[('pix_id', '@pix_id'),
                                 ('value', '@image'),
                                 ('cluster (i,j)', '(@cluster_i, @cluster_j)'),
-                                ('pix in cluster', '@pix_id_in_cluster')],
+                                ('pix # in cluster', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
 
@@ -1493,7 +1493,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
     slider = None
     if numsets > 1:
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical')
+                        orientation='vertical', show_value=False)
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
