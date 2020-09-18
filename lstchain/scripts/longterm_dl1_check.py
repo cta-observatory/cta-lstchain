@@ -272,9 +272,10 @@ def main():
             runsummary['ff_charge_stddev'].extend([np.nan])
             pixwise_runsummary['ff_pix_charge_mean'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ff_pix_charge_stddev'].extend([numpixels*[np.nan]])
-            pixwise_runsummary['ff_rel_time_mean'].extend([numpixels * [np.nan]])
-            pixwise_runsummary['ff_rel_time_stddev'].extend([numpixels * [np.nan]])
-
+            pixwise_runsummary['ff_pix_rel_time_mean'].extend(
+                    [numpixels * [np.nan]])
+            pixwise_runsummary['ff_pix_rel_time_stddev'].extend(
+                    [numpixels * [np.nan]])
 
         a.close()
 
