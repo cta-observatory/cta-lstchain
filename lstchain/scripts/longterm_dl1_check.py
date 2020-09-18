@@ -16,17 +16,14 @@ from astropy.table import Table
 import copy
 import glob
 import numpy as np
-import os
 import pandas as pd
 import tables
 
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
-from bokeh.models import HoverTool, Div
-from bokeh.models.annotations import Title
+from bokeh.models import Div
 from bokeh.models.widgets import Tabs, Panel
-from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
 from ctapipe.coordinates import EngineeringCameraFrame
 from lstchain.datachecks import show_camera
@@ -345,9 +342,10 @@ def plot(filename='longterm_dl1_check.h5'):
     row2 = []
 
     row1.append(show_camera(np.array(mean), engineering_geom, pad_width,
-                            pad_height, 'FF mean charge', run_titles))
+                            pad_height, 'Flat-Field mean charge', run_titles))
     row2.append(show_camera(np.array(stddev), engineering_geom, pad_width,
-                            pad_height, 'FF charge std dev', run_titles))
+                            pad_height, 'Flat-Field charge std dev',
+                            run_titles))
 
     grid = gridplot([row1[0], row2[0]], sizing_mode=None, plot_width=pad_width,
                     plot_height=pad_height)

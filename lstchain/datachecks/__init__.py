@@ -5,9 +5,7 @@ from .dl1_checker import (
     plot_trigger_types,
     plot_mean_and_stddev,
     merge_dl1datacheck_files,
-    plot_mean_and_stddev_bokeh,
-    show_camera,
-    get_pixel_location
+    plot_mean_and_stddev_bokeh
 )
 from .containers import (
     DL1DataCheckContainer,
@@ -15,7 +13,9 @@ from .containers import (
     DL1DataCheckHistogramBins
 )
 from .bokehcamdisplay import (
-    CameraDisplay
+    CameraDisplay,
+    show_camera,
+    get_pixel_location
 )
 
 
