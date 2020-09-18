@@ -253,9 +253,10 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
     p1 = Tabs(tabs=[tab1, tab2])
     p1.margin = (0, 0, 0, 25)
 
+    minmax = np.nanmax(allimages) - np.nanmin(allimages)
     p2 = figure(background_fill_color='#ffffff',
-                y_range=(-0.05*np.nanmax(allimages),
-                         np.nanmax(allimages) * 1.1),
+                y_range=(np.nanmin(allimages)-0.1*minmax,
+                         np.nanmax(allimages)+0.1*minmax),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
     p2.min_border_top = 60
@@ -281,7 +282,10 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
                                          right=alledges[0][1:]))
 
     p3 = figure(background_fill_color='#ffffff',
-                y_range=(0.7, np.max(allhists) * 1.1), x_axis_label=label,
+                y_range=(0.7, np.max(allhists) * 1.1),
+                x_range=(np.nanmin(allimages)-0.1*minmax,
+                         np.nanmax(allimages)+0.1*minmax),
+                x_axis_label=label,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
@@ -326,7 +330,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
     slider = None
     if numsets > 1:
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical', show_value=False)
+                        orientation='vertical', show_value=False, height=300)
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
@@ -348,7 +352,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
                                value=(np.nanmin(allimages),
                                       np.nanmax(allimages)), step=step,
                                title="z_range", orientation='vertical',
-                               direction='rtl', show_value=False)
+                               direction='rtl', height=300,
+                               show_value=False)
     range_slider.js_on_change('value', callback2)
 
     return [slider, p1, range_slider, p2, p3]

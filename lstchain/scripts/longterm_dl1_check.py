@@ -35,6 +35,9 @@ def main():
     files = glob.glob('datacheck_dl1_LST-1.Run?????.h5')
     files.sort()
 
+    # hardcoded for now, to be eventually read from data:
+    numpixels = 1855
+
     # subrun-wise tables: cosmics, pedestals, flatfield. One dictionary per each:
 
     cosmics = {'runnumber': [],
@@ -62,13 +65,18 @@ def main():
     cosmics['mu_hg_peak_sample_stddev'] = []
     cosmics['mu_lg_peak_sample'] = []
     cosmics['mu_lg_peak_sample_stddev'] = []
+    cosmics['fraction_pulses_above10'] = [] # fraction of >10 pe pulses
+    cosmics['fraction_pulses_above30'] = [] # fraction of >30 pe pulses
 
     pedestals['fraction_pulses_above10'] = [] # fraction of >10 pe pulses
     pedestals['fraction_pulses_above30'] = [] # fraction of >30 pe pulses
+    pedestals['charge_mean'] = []
+    pedestals['charge_stddev'] = []
 
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
-    flatfield['rel_time_stdev'] = []
+    flatfield['rel_time_mean'] = []
+    flatfield['rel_time_stddev'] = []
 
     # now another dictionary for a run-wise table, with no pixel-wise info:
 
@@ -82,6 +90,8 @@ def main():
                   'ff_charge_stddev': [], # in whole camera
                   'ped_fraction_pulses_above10': [], # in whole camera
                   'ped_fraction_pulses_above30': [], # in whole camera
+                  'cosmics_fraction_pulses_above10': [], # in whole camera
+                  'cosmics_fraction_pulses_above30': [], # in whole camera
                   'mu_effi_mean': [],
                   'mu_effi_stddev': [],
                   'mu_width_mean': [],
@@ -92,16 +102,29 @@ def main():
     # and another one for pixel-wise run averages:
     pixwise_runsummary = {'ff_pix_charge_mean': [],
                           'ff_pix_charge_stddev': [],
+                          'ff_pix_rel_time_mean': [],
+                          'ff_pix_rel_time_stddev': [],
+                          'ped_pix_charge_mean': [],
+                          'ped_pix_charge_stddev': [],
                           'ped_pix_fraction_pulses_above10': [],
-                          'ped_pix_fraction_pulses_above30': []}
+                          'ped_pix_fraction_pulses_above30': [],
+                          'cosmics_pix_fraction_pulses_above10': [],
+                          'cosmics_pix_fraction_pulses_above30': []}
+
     # Needed for the table description for writing it out to the hdf5 file. Because
     # of the vector columns we cannot write this out using pandas:
     class pixwise_info(tables.IsDescription):
         runnumber = tables.Int32Col()
-        ff_pix_charge_mean = tables.Float32Col(shape=(1855))
-        ff_pix_charge_stddev = tables.Float32Col(shape=(1855))
-        ped_pix_fraction_pulses_above10 = tables.Float32Col(shape=(1855))
-        ped_pix_fraction_pulses_above30 = tables.Float32Col(shape=(1855))
+        ff_pix_charge_mean = tables.Float32Col(shape=(numpixels))
+        ff_pix_charge_stddev = tables.Float32Col(shape=(numpixels))
+        ff_pix_rel_time_mean = tables.Float32Col(shape=(numpixels))
+        ff_pix_rel_time_stddev = tables.Float32Col(shape=(numpixels))
+        ped_pix_charge_mean = tables.Float32Col(shape=(numpixels))
+        ped_pix_charge_stddev = tables.Float32Col(shape=(numpixels))
+        ped_pix_fraction_pulses_above10 = tables.Float32Col(shape=(numpixels))
+        ped_pix_fraction_pulses_above30 = tables.Float32Col(shape=(numpixels))
+        cosmics_pix_fraction_pulses_above10 = tables.Float32Col(shape=(numpixels))
+        cosmics_pix_fraction_pulses_above30 = tables.Float32Col(shape=(numpixels))
 
     dicts = [cosmics, pedestals, flatfield]
 
@@ -131,29 +154,42 @@ def main():
 
         subruns = None
 
+        # fill data which are common to all tables:
         for table, dict in zip(datatables, dicts):
             if table is None:
                 continue
-
             dict['runnumber'].extend(len(table)*[runnumber])
             dict['subrun'].extend(table.col('subrun_index'))
             dict['elapsed_time'].extend(table.col('elapsed_time'))
             dict['events'].extend(table.col('num_events'))
             dict['time'].extend(table.col('dragon_time').mean(axis=1))
-
             dict['azimuth'].extend(table.col('mean_az_tel'))
             dict['altitude'].extend(table.col('mean_alt_tel'))
 
-        # now fill table-specific quantities:
+        # now fill table-specific quantities. In some cases they are
+        # pixel-averaged values:
+
+        if datatables[0] is not None:
+            table = a.root.dl1datacheck.cosmics
+            cosmics['fraction_pulses_above10'].extend(
+                    table.col('num_pulses_above_0010_pe').mean(axis=1) /
+                    table.col('num_events'))
+            cosmics['fraction_pulses_above30'].extend(
+                    table.col('num_pulses_above_0030_pe').mean(axis=1) /
+                    table.col('num_events'))
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
             pedestals['fraction_pulses_above10'].extend(
-                    table.col('num_pulses_above_0010_pe').mean(axis=1)/
+                    table.col('num_pulses_above_0010_pe').mean(axis=1) /
                     table.col('num_events'))
             pedestals['fraction_pulses_above30'].extend(
-                    table.col('num_pulses_above_0030_pe').mean(axis=1)/
+                    table.col('num_pulses_above_0030_pe').mean(axis=1) /
                     table.col('num_events'))
+            pedestals['charge_mean'].extend(
+                    table.col('charge_mean').mean(axis=1))
+            pedestals['charge_stddev'].extend(
+                    table.col('charge_stddev').mean(axis=1))
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
@@ -161,7 +197,9 @@ def main():
                     table.col('charge_mean').mean(axis=1))
             flatfield['charge_stddev'].extend(
                     table.col('charge_stddev').mean(axis=1))
-            flatfield['rel_time_stdev'].extend(
+            flatfield['rel_time_mean'].extend(
+                    table.col('relative_time_mean').mean(axis=1))
+            flatfield['rel_time_stddev'].extend(
                     table.col('relative_time_stddev').mean(axis=1))
 
 
@@ -170,46 +208,73 @@ def main():
         # needed later for the muons:
         subruns = table.col('subrun_index')
 
-
         # now fill the run-wise table:
         runsummary['runnumber'].extend([runnumber])
         runsummary['elapsed_time'].extend([table.col('elapsed_time').sum()])
         runsummary['num_cosmics'].extend([table.col('num_events').sum()])
+        runsummary['cosmics_fraction_pulses_above10'].extend(
+                [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
+                 runsummary['num_cosmics'][-1]])
+        runsummary['cosmics_fraction_pulses_above30'].extend(
+                [(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum() /
+                 runsummary['num_cosmics'][-1]])
+        pixwise_runsummary['cosmics_pix_fraction_pulses_above10'].extend(
+                [table.col('num_pulses_above_0010_pe').sum(axis=0) /
+                 runsummary['num_cosmics'][-1]])
+        pixwise_runsummary['cosmics_pix_fraction_pulses_above30'].extend(
+                [table.col('num_pulses_above_0030_pe').sum(axis=0) /
+                 runsummary['num_cosmics'][
+                                                                          -1]])
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
             runsummary['num_pedestals'].extend([table.col('num_events').sum()])
 
             runsummary['ped_fraction_pulses_above10'].extend([(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum()/
-                                                             runsummary['num_cosmics'][-1]])
+                                                             runsummary['num_pedestals'][-1]])
             runsummary['ped_fraction_pulses_above30'].extend([(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum()/
-                                                              runsummary['num_cosmics'][-1]])
+                                                              runsummary['num_pedestals'][-1]])
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([table.col('num_pulses_above_0010_pe').sum(axis=0)/
                                                                           runsummary['num_pedestals'][-1]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([table.col('num_pulses_above_0030_pe').sum(axis=0)/
                                                                           runsummary['num_pedestals'][-1]])
+            pixwise_runsummary['ped_pix_charge_mean'].extend(
+                    [table.col('charge_mean').mean(axis=0)])
+            pixwise_runsummary['ped_pix_charge_stddev'].extend(
+                    [table.col('charge_stddev').mean(axis=0)])
 
         else:
             runsummary['num_pedestals'].extend([np.nan])
             runsummary['ped_fraction_pulses_above10'].extend([np.nan])
             runsummary['ped_fraction_pulses_above30'].extend([np.nan])
-            pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([1855*[np.nan]])
-            pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([1855*[np.nan]])
+            pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([numpixels*[np.nan]])
+            pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([numpixels*[np.nan]])
+            pixwise_runsummary['ped_pix_charge_mean'].extend([numpixels*[np.nan]])
+            pixwise_runsummary['ped_pix_charge_stddev'].extend([numpixels*[np.nan]])
+
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
             runsummary['num_flatfield'].extend([table.col('num_events').sum()])
             runsummary['ff_charge_mean'].extend([table.col('charge_mean').mean()])  # mean for all pixels and subruns of the subrun-pixel-mean
             runsummary['ff_charge_stddev'].extend([table.col('charge_stddev').mean()]) # mean for all pixels and subruns of the subrun-pixel-stddev
-            pixwise_runsummary['ff_pix_charge_mean'].extend([table.col('charge_mean').mean(axis=0)])
-            pixwise_runsummary['ff_pix_charge_stddev'].extend([table.col('charge_stddev').mean(axis=0)]) # mean of subrun-wise std devs
-
+            pixwise_runsummary['ff_pix_charge_mean'].extend(
+                    [table.col('charge_mean').mean(axis=0)])
+            pixwise_runsummary['ff_pix_charge_stddev'].extend(
+                    [table.col('charge_stddev').mean(axis=0)])
+            pixwise_runsummary['ff_pix_rel_time_mean'].extend(
+                    [table.col('relative_time_mean').mean(axis=0)])
+            pixwise_runsummary['ff_pix_rel_time_stddev'].extend(
+                    [table.col('relative_time_stddev').mean(axis=0)])
         else:
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
-            pixwise_runsummary['ff_pix_charge_mean'].extend([1855*[np.nan]])
-            pixwise_runsummary['ff_pix_charge_stddev'].extend([1855*[np.nan]])
+            pixwise_runsummary['ff_pix_charge_mean'].extend([numpixels*[np.nan]])
+            pixwise_runsummary['ff_pix_charge_stddev'].extend([numpixels*[np.nan]])
+            pixwise_runsummary['ff_rel_time_mean'].extend([numpixels * [np.nan]])
+            pixwise_runsummary['ff_rel_time_stddev'].extend([numpixels * [np.nan]])
+
 
         a.close()
 
@@ -322,36 +387,67 @@ def plot(filename='longterm_dl1_check.h5'):
 
     bokeh_output_file(Path(filename).with_suffix('.html'),
                       title='LST1 long-term DL1 data check')
-    page1 = Panel()
-    page2 = Panel()
 
+    pad_width = 350
+    pad_height = 370
+
+    run_titles = []
+    for run in file.root.pixwise_runsummary.col('runnumber'):
+        run_titles.append('Run {0:05d}'.format(run))
+
+    page1 = Panel()
+    mean = []
+    stddev = []
+    for item in file.root.pixwise_runsummary.col('ped_pix_charge_mean'):
+        mean.append(item)
+    for item in file.root.pixwise_runsummary.col('ped_pix_charge_stddev'):
+        stddev.append(item)
+    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
+                       pad_height, 'Pedestals mean charge',
+                       run_titles)
+    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
+                       pad_height, 'Pedestals charge std dev',
+                       run_titles)
+    grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page1.child = grid1
+    page1.title = 'Interleaved pedestal events'
+
+    page2 = Panel()
     mean = []
     stddev = []
     for item in file.root.pixwise_runsummary.col('ff_pix_charge_mean'):
         mean.append(item)
     for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
         stddev.append(item)
+    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
+                       pad_height, 'Flat-Field mean charge (pe)', run_titles)
+    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
+                       pad_height, 'Flat-Field charge std dev (pe)', run_titles)
+    grid2 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page2.child = grid2
+    page2.title = 'Interleaved flat field events, charge'
 
-    run_titles = []
-    for run in file.root.pixwise_runsummary.col('runnumber'):
-        run_titles.append('Run {0:05d}'.format(run))
+    page3 = Panel()
+    mean = []
+    stddev = []
+    for item in file.root.pixwise_runsummary.col('ff_pix_rel_time_mean'):
+        mean.append(item)
+    for item in file.root.pixwise_runsummary.col('ff_pix_rel_time_stddev'):
+        stddev.append(item)
+    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
+                       pad_height, 'Flat-Field mean relative time (ns)',
+                       run_titles)
+    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
+                       pad_height, 'Flat-Field rel. time std dev (ns)',
+                       run_titles)
+    grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page3.child = grid3
+    page3.title = 'Interleaved flat field events, time'
 
-    pad_width = 350
-    pad_height = 370
-    row1 = []
-    row2 = []
-
-    row1.append(show_camera(np.array(mean), engineering_geom, pad_width,
-                            pad_height, 'Flat-Field mean charge', run_titles))
-    row2.append(show_camera(np.array(stddev), engineering_geom, pad_width,
-                            pad_height, 'Flat-Field charge std dev',
-                            run_titles))
-
-    grid = gridplot([row1[0], row2[0]], sizing_mode=None, plot_width=pad_width,
-                    plot_height=pad_height)
-    page1.child = grid
-
-    tabs = Tabs(tabs=[page1])
+    tabs = Tabs(tabs=[page1, page2, page3])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 if __name__ == '__main__':
