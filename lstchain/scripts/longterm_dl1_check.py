@@ -118,6 +118,7 @@ def main():
     # of the vector columns we cannot write this out using pandas:
     class pixwise_info(tables.IsDescription):
         runnumber = tables.Int32Col()
+        time = tables.Float32Col()
         ff_pix_charge_mean = tables.Float32Col(shape=(numpixels))
         ff_pix_charge_stddev = tables.Float32Col(shape=(numpixels))
         ff_pix_rel_time_mean = tables.Float32Col(shape=(numpixels))
@@ -357,7 +358,9 @@ def main():
     table = h5file.create_table('/', 'pixwise_runsummary', pixwise_info)
     row = table.row
     for i in range(len(pixwise_runsummary['ff_pix_charge_mean'])):
+        # we add run number and time info also to this pixwise table:
         row['runnumber'] = runsummary['runnumber'][i]
+        row['time'] = runsummary['time'][i]
         for key in pixwise_runsummary:
             row[key] = pixwise_runsummary[key][i]
         row.append()
