@@ -89,6 +89,7 @@ def main():
                   'num_cosmics': [],
                   'num_pedestals': [],
                   'num_flatfield': [],
+                  'num_contained_mu_rings': [],
                   'ff_charge_mean': [],   # in whole camera
                   'ff_charge_stddev': [], # in whole camera
                   'ped_fraction_pulses_above10': [], # in whole camera
@@ -289,6 +290,7 @@ def main():
         empty_files = 0
 
         contained_mu_wholerun = None
+        num_contained_mu_rings_in_run = 0
 
         for subrun in subruns:
             mufile = 'muons_LST-1.Run{0:05d}.{1:04d}.fits'.format(runnumber, subrun)
@@ -315,6 +317,8 @@ def main():
             # contained and clean muon rings:
             contained_mu = df_muons[(df_muons['ring_containment']>0.99)&(df_muons['size_outside']<1.)]
 
+            num_contained_mu_rings_in_run += len(contained_mu)
+
             cosmics['num_contained_mu_rings'].extend([len(contained_mu)])
             cosmics['mu_effi_mean'].extend([contained_mu['muon_efficiency'].mean()])
             cosmics['mu_effi_stddev'].extend([contained_mu['muon_efficiency'].std()])
@@ -339,12 +343,15 @@ def main():
 
         # fill the runsummary muons part:
         if contained_mu_wholerun is not None:
+            runsummary['num_contained_mu_rings'].extend(
+                    [num_contained_mu_rings_in_run])
             runsummary['mu_effi_mean'].extend([contained_mu_wholerun['muon_efficiency'].mean()])
             runsummary['mu_effi_stddev'].extend([contained_mu_wholerun['muon_efficiency'].std()])
             runsummary['mu_width_mean'].extend([contained_mu_wholerun['ring_width'].mean()])
             runsummary['mu_width_stddev'].extend([contained_mu_wholerun['ring_width'].std()])
             runsummary['mu_intensity_mean'].extend([contained_mu_wholerun['ring_size'].mean()])
         else:
+            runsummary['num_contained_mu_rings'].extend([np.nan])
             runsummary['mu_effi_mean'].extend([np.nan])
             runsummary['mu_effi_stddev'].extend([np.nan])
             runsummary['mu_width_mean'].extend([np.nan])
