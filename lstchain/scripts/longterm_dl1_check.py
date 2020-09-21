@@ -22,8 +22,9 @@ import tables
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
-from bokeh.models import Div
+from bokeh.models import Div, ColumnDataSource
 from bokeh.models.widgets import Tabs, Panel
+from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
 from ctapipe.coordinates import EngineeringCameraFrame
 from lstchain.datachecks import show_camera
@@ -38,7 +39,8 @@ def main():
     # hardcoded for now, to be eventually read from data:
     numpixels = 1855
 
-    # subrun-wise tables: cosmics, pedestals, flatfield. One dictionary per each:
+    # subrun-wise tables: cosmics, pedestals, flatfield. One dictionary per
+    # each. Note that the cosmics table contains also muon ring information!
 
     cosmics = {'runnumber': [],
                'subrun': [],
@@ -81,6 +83,7 @@ def main():
     # now another dictionary for a run-wise table, with no pixel-wise info:
 
     runsummary = {'runnumber': [],
+                  'time': [],
                   'elapsed_time': [],
                    # currently (as of lstchain 0.5.3) event numbers are post-cleaning!:
                   'num_cosmics': [],
@@ -210,6 +213,7 @@ def main():
 
         # now fill the run-wise table:
         runsummary['runnumber'].extend([runnumber])
+        runsummary['time'].extend([table.col('dragon_time').mean()])
         runsummary['elapsed_time'].extend([table.col('elapsed_time').sum()])
         runsummary['num_cosmics'].extend([table.col('num_events').sum()])
         runsummary['cosmics_fraction_pulses_above10'].extend(
@@ -412,7 +416,7 @@ def plot(filename='longterm_dl1_check.h5'):
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page1.child = grid1
-    page1.title = 'Interleaved pedestal events'
+    page1.title = 'Interleaved pedestals'
 
     page2 = Panel()
     mean = []
@@ -428,7 +432,7 @@ def plot(filename='longterm_dl1_check.h5'):
     grid2 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page2.child = grid2
-    page2.title = 'Interleaved flat field events, charge'
+    page2.title = 'Interleaved flat field, charge'
 
     page3 = Panel()
     mean = []
@@ -446,10 +450,60 @@ def plot(filename='longterm_dl1_check.h5'):
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page3.child = grid3
-    page3.title = 'Interleaved flat field events, time'
+    page3.title = 'Interleaved flat field, time'
 
-    tabs = Tabs(tabs=[page1, page2, page3])
+    page4 = Panel()
+    pulse_fraction_above_10 = []
+    pulse_fraction_above_30 = []
+    for item in file.root.pixwise_runsummary.col(
+            'cosmics_pix_fraction_pulses_above10'):
+        pulse_fraction_above_10.append(item)
+    for item in file.root.pixwise_runsummary.col(
+            'cosmics_pix_fraction_pulses_above30'):
+        pulse_fraction_above_30.append(item)
+
+    row1 = show_camera(np.array(pulse_fraction_above_10), engineering_geom,
+                       pad_width, pad_height,
+                       'Cosmics, fraction of >10pe pulses', run_titles)
+    row2 = show_camera(np.array(pulse_fraction_above_30), engineering_geom,
+                       pad_width, pad_height,
+                       'Cosmics, fraction of >30pe pulses', run_titles)
+
+    grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page4.child = grid4
+    page4.title = 'Cosmics'
+
+    file.close()
+
+    cosmics = pd.read_hdf(filename, 'cosmics')
+    runsummary = pd.read_hdf(filename, 'runsummary')
+
+    page5 = Panel()
+    fig = figure(background_fill_color='#ffffff',
+                y_range=(0., 0.5),
+                #x_axis_label='Run number',
+                x_axis_label='date', x_axis_type='datetime',
+                y_axis_label='telescope efficiency from mu-rings')
+
+    y = runsummary['mu_effi_mean'] # cosmics['mu_effi_mean']
+    #x = pd.to_datetime(cosmics['time'], origin='unix', unit='s')
+    x = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
+
+
+    source = ColumnDataSource(data=dict(date=x, mu_effi_mean=y))
+    fig.circle(x='date', y='mu_effi_mean', size=2, source=source)
+    #    p2.add_tools(
+#        HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
+#                  mode='mouse', point_policy='snap_to_data'))
+    grid5 = gridplot([[fig]])
+    page5.child = grid5
+    page5.title = "Muons"
+
+    tabs = Tabs(tabs=[page1, page2, page3, page4, page5])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
+
+
 
 if __name__ == '__main__':
     main()
