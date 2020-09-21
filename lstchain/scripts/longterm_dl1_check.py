@@ -400,8 +400,12 @@ def plot(filename='longterm_dl1_check.h5'):
     pad_height = 370
 
     run_titles = []
-    for run in file.root.pixwise_runsummary.col('runnumber'):
-        run_titles.append('Run {0:05d}'.format(run))
+    for i, run in enumerate(file.root.pixwise_runsummary.col('runnumber')):
+        date = pd.to_datetime(file.root.pixwise_runsummary.col('time')[i],
+                              origin='unix', unit='s')
+        run_titles.append('Run {0:05d}, {date}'.\
+                          format(run,
+                                 date = date.strftime("%b %d %Y %H:%M:%S")))
 
     page1 = Panel()
     mean = []
@@ -490,7 +494,6 @@ def plot(filename='longterm_dl1_check.h5'):
                 y_axis_label='telescope efficiency from mu-rings')
 
     y = runsummary['mu_effi_mean'] # cosmics['mu_effi_mean']
-    #x = pd.to_datetime(cosmics['time'], origin='unix', unit='s')
     x = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
 
 
