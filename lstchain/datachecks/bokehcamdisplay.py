@@ -83,6 +83,7 @@ class CameraDisplay:
 
         self._color_mapper = bokeh.models.mappers.LinearColorMapper(
                 palette=bokeh.palettes.Viridis256, low=zlow, high=zhigh,
+                low_color='grey', high_color='red',
                 nan_color='white'
         )
 
@@ -147,8 +148,8 @@ class CameraDisplay:
         self.datasource.data["image"] = new_image
         self.update()
 
-def show_camera(content, geom, pad_width, pad_height, label, titles=None):
-
+def show_camera(content, geom, pad_width, pad_height, label, titles=None,
+                showlog=True):
     """
 
     Parameters
@@ -194,28 +195,42 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
     if titles is None:
         titles = [None]*numsets
 
-    cam = CameraDisplay(camgeom, np.nanmin(allimages), np.nanmax(allimages),
+    # We plot the range which contains 99.8 of all events, so that
+    # outliers do not prevent us from seing the bulk of the data:
+    display_min = np.nanquantile(allimages,0.001)
+    display_max = np.nanquantile(allimages, 0.999)
+
+    cam = CameraDisplay(camgeom, display_min, display_max,
                         label, titles[0], use_notebook=False, autoshow=False)
     cam.image = allimages[0]
     cam.figure.title.text = titles[0]
 
     allimageslog = []
+    camlog = None
+    source1log = None
+    color_mapper_log = None
+    titlelog = None
 
-    for image in allimages:
-        logcontent = np.copy(image)
-        for i, x in enumerate(logcontent):
-            # workaround as long as log z-scale is not implemented in bokeh camera:
-            if x <= 0:
-                logcontent[i] = np.nan
-            else:
-                logcontent[i] = np.log10(image[i])
-        allimageslog.append(logcontent)
+    if showlog:
+        for image in allimages:
+            logcontent = np.copy(image)
+            for i, x in enumerate(logcontent):
+                # workaround as long as log z-scale is not implemented in bokeh camera:
+                if x <= 0:
+                    logcontent[i] = np.nan
+                else:
+                    logcontent[i] = np.log10(image[i])
+            allimageslog.append(logcontent)
 
-    camlog = CameraDisplay(camgeom, np.nanmin(allimageslog),
-                           np.nanmax(allimageslog), label, titles[0],
-                           use_notebook=False, autoshow=False)
-    camlog.image = allimageslog[0]
-    camlog.figure.title.text = titles[0]
+        camlog = CameraDisplay(camgeom, np.nanquantile(allimageslog,0.001),
+                               np.nanquantile(allimageslog, 0.999),
+                               label, titles[0], use_notebook=False,
+                               autoshow=False)
+        camlog.image = allimageslog[0]
+        camlog.figure.title.text = titles[0]
+        source1log = camlog.datasource
+        color_mapper_log = camlog._color_mapper
+        titlelog = camlog.figure.title
 
     cluster_i = []
     cluster_j = []
@@ -227,6 +242,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
         pix_id_in_cluster.append(data[2])
 
     for c in [cam, camlog]:
+        if c is None:
+            continue
         c.datasource.add(list(c.geom.pix_id), 'pix_id')
         c.datasource.add(cluster_i, 'cluster_i')
         c.datasource.add(cluster_j, 'cluster_j')
@@ -248,15 +265,15 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
 
 
     tab1 = Panel(child=cam.figure, title='linear')
-    tab2 = Panel(child=camlog.figure, title='logarithmic')
-
-    p1 = Tabs(tabs=[tab1, tab2])
+    if showlog:
+        tab2 = Panel(child=camlog.figure, title='logarithmic')
+        p1 = Tabs(tabs=[tab1, tab2])
+    else:
+        p1 = Tabs(tabs=[tab1])
     p1.margin = (0, 0, 0, 25)
 
-    minmax = np.nanmax(allimages) - np.nanmin(allimages)
     p2 = figure(background_fill_color='#ffffff',
-                y_range=(np.nanmin(allimages)-0.1*minmax,
-                         np.nanmax(allimages)+0.1*minmax),
+                y_range=(display_min, display_max),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
     p2.min_border_top = 60
@@ -271,8 +288,14 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
 
     allhists = []
     alledges = []
+
+    # We define 50 bins between display_min and display_max
+    # Note that values beyond that range won't be histogrammed and hence will
+    # not appear on the "p3" figure below.
+    nbins = 50
     for image in allimages:
-        hist, edges = np.histogram(image[~np.isnan(image)], bins=200)
+        hist, edges = np.histogram(image[~np.isnan(image)], bins=nbins,
+                                   range=(display_min, display_max))
         allhists.append(hist)
         alledges.append(edges)
 
@@ -283,8 +306,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
 
     p3 = figure(background_fill_color='#ffffff',
                 y_range=(0.7, np.max(allhists) * 1.1),
-                x_range=(np.nanmin(allimages)-0.1*minmax,
-                         np.nanmax(allimages)+0.1*minmax),
+                x_range=(display_min, display_max),
                 x_axis_label=label,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
@@ -293,38 +315,45 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
     if titles is None:
         titles = [None]*len(allimages)
 
-    cds_allimages = ColumnDataSource(data=dict(z=allimages, zlog=allimageslog,
-                                               hist=allhists, edges=alledges,
-                                               titles=titles))
+    cdsdata = dict(z=allimages, hist=allhists, edges=alledges, titles=titles)
+    if showlog:
+        cdsdata['zlog'] = allimageslog
+
+    cds_allimages = ColumnDataSource(data=cdsdata)
 
     callback = CustomJS(args=dict(source1=cam.datasource,
-                                  source1log = camlog.datasource,
+                                  source1log = source1log,
                                   source2=source2, source3=source3,
                                   zz=cds_allimages,
                                   title=cam.figure.title,
-                                  titlelog=camlog.figure.title),
+                                  titlelog=titlelog,
+                                  showlog=showlog),
     code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
-        var zlog = zz.data['zlog']
         var edges = zz.data['edges']
         var hist = zz.data['hist']
         for (var i = 0; i < source1.data['image'].length; i++) {
              source1.data['image'][i] = z[slider_value-1][i]
-             source1log.data['image'][i] = zlog[slider_value-1][i]
+             if (showlog) {
+                 var zlog = zz.data['zlog']
+                 source1log.data['image'][i] = zlog[slider_value-1][i]
+             }
              source2.data['value'][i] = source1.data['image'][i]
         }
         for (var i = 0; i < source3.data['top'].length; i++) {
-             source3.data['top'][i] = hist[slider_value-1][i]
-             source3.data['left'][i] = edges[slider_value-1][i]
-             source3.data['right'][i] = edges[slider_value-1][i+1]
+            source3.data['top'][i] = hist[slider_value-1][i]
+            source3.data['left'][i] = edges[slider_value-1][i]
+            source3.data['right'][i] = edges[slider_value-1][i+1]
         }
         title.text = zz.data['titles'][slider_value-1]
-        titlelog.text = title.text
-        source1.change.emit();
-        source1log.change.emit();
-        source2.change.emit();
-        source3.change.emit();
+        source1.change.emit()
+        if (showlog) {
+            titlelog.text = title.text
+            source1log.change.emit()
+        }
+        source2.change.emit()
+        source3.change.emit()
     """)
 
     slider = None
@@ -335,22 +364,23 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None):
         slider.js_on_change('value', callback)
 
     callback2 = CustomJS(args=dict(color_mapper=cam._color_mapper,
-                                   color_mapper_log=camlog._color_mapper),
+                                   color_mapper_log=color_mapper_log,
+                                   showlog=showlog),
     code="""
         var range = cb_obj.value
         color_mapper.low = range[0]
         color_mapper.high = range[1]
-        if (range[0] > 0.)
-            color_mapper_log.low = Math.log(range[0])/Math.LN10    
-        color_mapper_log.high = Math.log(range[1])/Math.LN10
-        color_mapper.change.emit();
-        color_mapper_log.change.emit();
+        color_mapper.change.emit()
+        if (showlog) {
+            if (range[0] > 0.)
+                color_mapper_log.low = Math.log(range[0])/Math.LN10    
+            color_mapper_log.high = Math.log(range[1])/Math.LN10
+            color_mapper_log.change.emit()
+        }
     """)
-    step = (np.nanmax(allimages) - np.nanmin(allimages))/100.
-    range_slider = RangeSlider(start=np.nanmin(allimages),
-                               end=np.nanmax(allimages),
-                               value=(np.nanmin(allimages),
-                                      np.nanmax(allimages)), step=step,
+    step = (display_max - display_min)/100.
+    range_slider = RangeSlider(start=display_min, end=display_max,
+                               value=(display_min, display_max), step=step,
                                title="z_range", orientation='vertical',
                                direction='rtl', height=300,
                                show_value=False)

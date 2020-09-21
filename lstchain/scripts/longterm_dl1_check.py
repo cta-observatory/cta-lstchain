@@ -439,10 +439,10 @@ def plot(filename='longterm_dl1_check.h5'):
         stddev.append(item)
     row1 = show_camera(np.array(mean), engineering_geom, pad_width,
                        pad_height, 'Flat-Field mean relative time (ns)',
-                       run_titles)
+                       run_titles, showlog=False)
     row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
-                       run_titles)
+                       run_titles, showlog=False)
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page3.child = grid3
