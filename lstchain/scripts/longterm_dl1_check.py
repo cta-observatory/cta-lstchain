@@ -22,7 +22,7 @@ import tables
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
-from bokeh.models import Div, ColumnDataSource
+from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
@@ -498,18 +498,31 @@ def plot(filename='longterm_dl1_check.h5'):
                 y_range=(0., 0.5),
                 #x_axis_label='Run number',
                 x_axis_label='date', x_axis_type='datetime',
-                y_axis_label='telescope efficiency from mu-rings')
+                y_axis_label='telescope efficiency from mu-rings (mean & std '
+                             'dev)')
 
     y = runsummary['mu_effi_mean'] # cosmics['mu_effi_mean']
+    ylow = y - runsummary['mu_effi_stddev']
+    yhigh = y + runsummary['mu_effi_stddev']
     x = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
 
-
-    source = ColumnDataSource(data=dict(date=x, mu_effi_mean=y))
+    source = ColumnDataSource(data=dict(date=x, mu_effi_mean=y,
+                                        run_titles=run_titles))
+    source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
     fig.circle(x='date', y='mu_effi_mean', size=2, source=source)
-    #    p2.add_tools(
-#        HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
-#                  mode='mouse', point_policy='snap_to_data'))
-    grid5 = gridplot([[fig]])
+    error_bars = Whisker(source=source_error, base="base", lower="lower",
+                         upper="upper")
+    error_bars.line_color = 'steelblue'
+    error_bars.upper_head.line_color = 'steelblue'
+    error_bars.lower_head.line_color = 'steelblue'
+    error_bars.upper_head.size = 4
+    error_bars.lower_head.size = 4
+    fig.add_layout(error_bars)
+    fig.add_tools(HoverTool(tooltips=[('efficiency:', '@mu_effi_mean'),
+                                      ('Run', '@run_titles')],
+                            mode='mouse', point_policy='snap_to_data'))
+    grid5 = gridplot([[fig]], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
     page5.child = grid5
     page5.title = "Muons"
 
