@@ -14,6 +14,7 @@ some run-wise summary values for plotting long-term evolution of the DL1 data.
 
 from astropy.table import Table
 import copy
+import datetime
 import glob
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ import tables
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
-from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool
+from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool, Range1d
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
@@ -490,38 +491,22 @@ def plot(filename='longterm_dl1_check.h5'):
 
     file.close()
 
-    cosmics = pd.read_hdf(filename, 'cosmics')
+    pad_width = 550
+    pad_height = 350
+
     runsummary = pd.read_hdf(filename, 'runsummary')
-
     page5 = Panel()
-    fig = figure(background_fill_color='#ffffff',
-                y_range=(0., 0.5),
-                #x_axis_label='Run number',
-                x_axis_label='date', x_axis_type='datetime',
-                y_axis_label='telescope efficiency from mu-rings (mean & std '
-                             'dev)')
-
-    y = runsummary['mu_effi_mean'] # cosmics['mu_effi_mean']
-    ylow = y - runsummary['mu_effi_stddev']
-    yhigh = y + runsummary['mu_effi_stddev']
-    x = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
-
-    source = ColumnDataSource(data=dict(date=x, mu_effi_mean=y,
-                                        run_titles=run_titles))
-    source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
-    fig.circle(x='date', y='mu_effi_mean', size=2, source=source)
-    error_bars = Whisker(source=source_error, base="base", lower="lower",
-                         upper="upper")
-    error_bars.line_color = 'steelblue'
-    error_bars.upper_head.line_color = 'steelblue'
-    error_bars.lower_head.line_color = 'steelblue'
-    error_bars.upper_head.size = 4
-    error_bars.lower_head.size = 4
-    fig.add_layout(error_bars)
-    fig.add_tools(HoverTool(tooltips=[('efficiency:', '@mu_effi_mean'),
-                                      ('Run', '@run_titles')],
-                            mode='mouse', point_policy='snap_to_data'))
-    grid5 = gridplot([[fig]], sizing_mode=None, plot_width=pad_width,
+    fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
+                                              unit='s'),
+                             y=runsummary['mu_effi_mean'],
+                             ey=runsummary['mu_effi_stddev'],
+                             xlabel='date',
+                             ylabel='telescope efficiency from mu-rings (mean & std dev)',
+                             xtype='datetime', ytype='linear',
+                             point_labels=run_titles)
+    fig_mu_effi.y_range = Range1d(0.,1.1*np.max(runsummary['mu_effi_mean']))
+    row1 = [fig_mu_effi]
+    grid5 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page5.child = grid5
     page5.title = "Muons"
@@ -530,6 +515,50 @@ def plot(filename='longterm_dl1_check.h5'):
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 
+def show_graph(x, y, ey, xlabel, ylabel, xtype='linear', ytype='linear',
+               point_labels=None):
+    '''
+    Function to display a simple "y vs. x" graph, with y error bars
+    Parameters
+    ----------
+    x
+    y
+    ey
+    xlabel
+    ylabel
+    xtype:
+    ytype:  'log', 'linear', 'datetime'
+    point_labels
+
+    Returns
+    -------
+    A bokeh.plotting.figure with the y vs. x graph
+    '''
+
+    fig = figure(background_fill_color='#ffffff', x_axis_label=xlabel,
+                 x_axis_type=xtype, y_axis_type=ytype, y_axis_label=ylabel)
+    ylow = y - ey
+    yhigh = y + ey
+    source = ColumnDataSource(data=dict(x=x, y=y))
+    if point_labels is not None:
+        source.data['point_labels'] = point_labels
+    source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
+    fig.circle(x='x', y='y', size=2, source=source)
+    error_bars = Whisker(source=source_error, base="base", lower="lower",
+                         upper="upper")
+    error_bars.line_color = 'steelblue'
+    error_bars.upper_head.line_color = 'steelblue'
+    error_bars.lower_head.line_color = 'steelblue'
+    error_bars.upper_head.size = 4
+    error_bars.lower_head.size = 4
+    fig.add_layout(error_bars)
+    if point_labels is not None:
+        fig.add_tools(HoverTool(tooltips=[('value', '@y'),
+                                          ('point id', '@point_labels')],
+                                mode='mouse',
+                                point_policy='snap_to_data'))
+
+    return fig
 
 if __name__ == '__main__':
     main()
