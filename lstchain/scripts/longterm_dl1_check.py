@@ -91,8 +91,9 @@ def main():
                   'num_pedestals': [],
                   'num_flatfield': [],
                   'num_contained_mu_rings': [],
-                  'ff_charge_mean': [],   # in whole camera
-                  'ff_charge_stddev': [], # in whole camera
+                  'ff_charge_mean': [],   # camera average of mean pix FF charge
+                  'ff_charge_mean_err': [], # uncertainty of the above
+                  'ff_charge_stddev': [], # camera average
                   'ped_fraction_pulses_above10': [], # in whole camera
                   'ped_fraction_pulses_above30': [], # in whole camera
                   'cosmics_fraction_pulses_above10': [], # in whole camera
@@ -262,9 +263,27 @@ def main():
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
-            runsummary['num_flatfield'].extend([table.col('num_events').sum()])
-            runsummary['ff_charge_mean'].extend([table.col('charge_mean').mean()])  # mean for all pixels and subruns of the subrun-pixel-mean
-            runsummary['ff_charge_stddev'].extend([table.col('charge_stddev').mean()]) # mean for all pixels and subruns of the subrun-pixel-stddev
+            nevents = table.col('num_events') # events per subrun
+            events_in_run = nevents.sum()
+            runsummary['num_flatfield'].extend([events_in_run])
+
+            # Mean charge through a run, for each pixel:
+            charge_mean = np.sum(table.col('charge_mean')*nevents[:, None],
+                                 axis=0) / events_in_run
+            # Now store the pixel-averaged mean charge:
+            runsummary['ff_charge_mean'].extend([np.nanmean(charge_mean)])
+            npixels=len(charge_mean)
+            runsummary['ff_charge_mean_err'].extend([np.nanstd(charge_mean) /
+                                                     np.sqrt(npixels)])
+
+            npixels = table.col('charge_mean').shape[1]
+            # Charge std dev through a run, for each pixel:
+            charge_stddev =\
+                np.sqrt(np.sum((table.col('charge_stddev')**2)*nevents[:, None],
+                               axis=0) / events_in_run)
+            # Store the pixel-averaged std dev:
+            runsummary['ff_charge_stddev'].extend([np.nanmean(charge_stddev)])
+
             pixwise_runsummary['ff_pix_charge_mean'].extend(
                     [table.col('charge_mean').mean(axis=0)])
             pixwise_runsummary['ff_pix_charge_stddev'].extend(
@@ -276,6 +295,7 @@ def main():
         else:
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
+            runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
             pixwise_runsummary['ff_pix_charge_mean'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ff_pix_charge_stddev'].extend([numpixels*[np.nan]])
@@ -346,6 +366,8 @@ def main():
         if contained_mu_wholerun is not None:
             runsummary['num_contained_mu_rings'].extend(
                     [num_contained_mu_rings_in_run])
+            # The values below are mean and std dev for all contained muon
+            # rings in a run:
             runsummary['mu_effi_mean'].extend([contained_mu_wholerun['muon_efficiency'].mean()])
             runsummary['mu_effi_stddev'].extend([contained_mu_wholerun['muon_efficiency'].std()])
             runsummary['mu_width_mean'].extend([contained_mu_wholerun['ring_width'].mean()])
@@ -496,10 +518,12 @@ def plot(filename='longterm_dl1_check.h5'):
 
     runsummary = pd.read_hdf(filename, 'runsummary')
     page5 = Panel()
+
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
                                               unit='s'),
                              y=runsummary['mu_effi_mean'],
-                             ey=runsummary['mu_effi_stddev'],
+                             ey=runsummary['mu_effi_stddev']/np.sqrt(
+                                     runsummary['num_contained_mu_rings']),
                              xlabel='date',
                              ylabel='telescope efficiency from mu-rings (mean & std dev)',
                              xtype='datetime', ytype='linear',
@@ -512,14 +536,13 @@ def plot(filename='longterm_dl1_check.h5'):
     page5.title = "Muons"
 
     page6 = Panel()
-    # noinspection PyTypeChecker
     fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
                                                 origin='unix',
                                                 unit='s'),
                              y=runsummary['ff_charge_mean'],
-                             ey=runsummary['ff_charge_stddev'],
+                             ey=runsummary['ff_charge_mean_err'],
                              xlabel='date',
-                             ylabel='Flat-field charge, p.e. (mean & std dev)',
+                             ylabel='Camera-averaged flat-field charge (pe/pixel)',
                              xtype='datetime', ytype='linear',
                              point_labels=run_titles)
     fig_flatfield.y_range = Range1d(0.,1.1*np.max(runsummary['ff_charge_mean']))
