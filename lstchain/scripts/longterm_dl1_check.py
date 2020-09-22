@@ -511,7 +511,25 @@ def plot(filename='longterm_dl1_check.h5'):
     page5.child = grid5
     page5.title = "Muons"
 
-    tabs = Tabs(tabs=[page1, page2, page3, page4, page5])
+    page6 = Panel()
+    # noinspection PyTypeChecker
+    fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix',
+                                                unit='s'),
+                             y=runsummary['ff_charge_mean'],
+                             ey=runsummary['ff_charge_stddev'],
+                             xlabel='date',
+                             ylabel='Flat-field charge, p.e. (mean & std dev)',
+                             xtype='datetime', ytype='linear',
+                             point_labels=run_titles)
+    fig_flatfield.y_range = Range1d(0.,1.1*np.max(runsummary['ff_charge_mean']))
+    row1 = [fig_flatfield]
+    grid6 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page6.child = grid6
+    page6.title = "Interleaved FF, average charge"
+
+    tabs = Tabs(tabs=[page1, page2, page3, page4, page5, page6])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 
@@ -521,14 +539,15 @@ def show_graph(x, y, ey, xlabel, ylabel, xtype='linear', ytype='linear',
     Function to display a simple "y vs. x" graph, with y error bars
     Parameters
     ----------
-    x
-    y
-    ey
-    xlabel
-    ylabel
-    xtype:
-    ytype:  'log', 'linear', 'datetime'
-    point_labels
+    x: ndarray, x coordinates
+    y: ndarray, y coordinates
+    ey: ndarray, size of y error bars
+    xlabel: x-axis label
+    ylabel: y-axis label
+    xtype: 'log', 'linear', 'datetime'
+    ytype: 'log', 'linear', 'datetime'
+    point_labels: one label per point, to be displayed when mouse overs near
+                  point
 
     Returns
     -------
