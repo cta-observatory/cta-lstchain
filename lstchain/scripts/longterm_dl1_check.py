@@ -94,6 +94,9 @@ def main():
                   'ff_charge_mean': [],   # camera average of mean pix FF charge
                   'ff_charge_mean_err': [], # uncertainty of the above
                   'ff_charge_stddev': [], # camera average
+                  'ped_charge_mean': [], # camera average of mean pix ped charge
+                  'ped_charge_mean_err':[],  # uncertainty of the above
+                  'ped_charge_stddev': [],  # camera average
                   'ped_fraction_pulses_above10': [], # in whole camera
                   'ped_fraction_pulses_above30': [], # in whole camera
                   'cosmics_fraction_pulses_above10': [], # in whole camera
@@ -236,12 +239,30 @@ def main():
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
-            runsummary['num_pedestals'].extend([table.col('num_events').sum()])
+            nevents = table.col('num_events') # events per subrun
+            events_in_run = nevents.sum()
 
+            runsummary['num_pedestals'].extend([table.col('num_events').sum()])
             runsummary['ped_fraction_pulses_above10'].extend([(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum()/
                                                              runsummary['num_pedestals'][-1]])
             runsummary['ped_fraction_pulses_above30'].extend([(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum()/
                                                               runsummary['num_pedestals'][-1]])
+
+            # Mean pedestal charge through a run, for each pixel:
+            charge_mean = np.sum(table.col('charge_mean')*nevents[:, None],
+                                 axis=0) / events_in_run
+            # Now store the pixel-averaged mean pedestal charge:
+            runsummary['ped_charge_mean'].extend([np.nanmean(charge_mean)])
+            npixels=len(charge_mean)
+            runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
+                                                     np.sqrt(npixels)])
+            # Pedestal charge std dev through a run, for each pixel:
+            charge_stddev =\
+                np.sqrt(np.sum((table.col('charge_stddev')**2)*nevents[:, None],
+                               axis=0) / events_in_run)
+            # Store the pixel-averaged pedestal charge std dev:
+            runsummary['ped_charge_stddev'].extend([np.nanmean(charge_stddev)])
+
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([table.col('num_pulses_above_0010_pe').sum(axis=0)/
                                                                           runsummary['num_pedestals'][-1]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([table.col('num_pulses_above_0030_pe').sum(axis=0)/
@@ -255,6 +276,9 @@ def main():
             runsummary['num_pedestals'].extend([np.nan])
             runsummary['ped_fraction_pulses_above10'].extend([np.nan])
             runsummary['ped_fraction_pulses_above30'].extend([np.nan])
+            runsummary['ped_charge_mean'].extend([np.nan])
+            runsummary['ped_charge_mean_err'].extend([np.nan])
+            runsummary['ped_charge_stddev'].extend([np.nan])
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ped_pix_charge_mean'].extend([numpixels*[np.nan]])
@@ -267,7 +291,7 @@ def main():
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
 
-            # Mean charge through a run, for each pixel:
+            # Mean flat field charge through a run, for each pixel:
             charge_mean = np.sum(table.col('charge_mean')*nevents[:, None],
                                  axis=0) / events_in_run
             # Now store the pixel-averaged mean charge:
@@ -275,13 +299,11 @@ def main():
             npixels=len(charge_mean)
             runsummary['ff_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                      np.sqrt(npixels)])
-
-            npixels = table.col('charge_mean').shape[1]
-            # Charge std dev through a run, for each pixel:
+            # FF charge std dev through a run, for each pixel:
             charge_stddev =\
                 np.sqrt(np.sum((table.col('charge_stddev')**2)*nevents[:, None],
                                axis=0) / events_in_run)
-            # Store the pixel-averaged std dev:
+            # Store the pixel-averaged FF charge std dev:
             runsummary['ff_charge_stddev'].extend([np.nanmean(charge_stddev)])
 
             pixwise_runsummary['ff_pix_charge_mean'].extend(
@@ -426,9 +448,6 @@ def plot(filename='longterm_dl1_check.h5'):
     bokeh_output_file(Path(filename).with_suffix('.html'),
                       title='LST1 long-term DL1 data check')
 
-    pad_width = 350
-    pad_height = 370
-
     run_titles = []
     for i, run in enumerate(file.root.pixwise_runsummary.col('runnumber')):
         date = pd.to_datetime(file.root.pixwise_runsummary.col('time')[i],
@@ -436,6 +455,60 @@ def plot(filename='longterm_dl1_check.h5'):
         run_titles.append('Run {0:05d}, {date}'.\
                           format(run,
                                  date = date.strftime("%b %d %Y %H:%M:%S")))
+
+    runsummary = pd.read_hdf(filename, 'runsummary')
+    page0 = Panel()
+    fig_ped_rates = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix', unit='s'),
+                               y=runsummary['num_pedestals'] /
+                                 runsummary['elapsed_time'],
+                               xlabel='date',
+                               ylabel='Interleaved pedestals rate',
+                               ey=np.sqrt(runsummary['num_pedestals']) /
+                                  runsummary['elapsed_time'],
+                               xtype='datetime', ytype='linear',
+                               point_labels=run_titles)
+    fig_ff_rates = show_graph(x=pd.to_datetime(runsummary['time'],
+                                               origin='unix', unit='s'),
+                               y=runsummary['num_flatfield'] /
+                                 runsummary['elapsed_time'],
+                               xlabel='date',
+                               ylabel='Interleaved flat field rate',
+                               ey=np.sqrt(runsummary['num_flatfield']) /
+                                  runsummary['elapsed_time'],
+                               xtype='datetime', ytype='linear',
+                               point_labels=run_titles)
+    fig_cosmic_rates = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                   origin='unix', unit='s'),
+                                  y=runsummary['num_cosmics'] /
+                                  runsummary['elapsed_time'],
+                                  xlabel='date',
+                                  ylabel='Cosmics rate',
+                                  ey=np.sqrt(runsummary['num_cosmics']) /
+                                     runsummary['elapsed_time'],
+                                  xtype='datetime', ytype='linear',
+                                  point_labels=run_titles)
+    fig_muring_rates = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                   origin='unix', unit='s'),
+                                  y=runsummary['num_contained_mu_rings'] /
+                                  runsummary['elapsed_time'],
+                                  xlabel='date',
+                                  ylabel='Contained mu-rings rate',
+                                  ey=np.sqrt(runsummary[
+                                                 'num_contained_mu_rings']) /
+                                                 runsummary['elapsed_time'],
+                                  xtype='datetime', ytype='linear',
+                                  point_labels=run_titles)
+
+    pad_width = 550
+    pad_height = 350
+    row1 = [fig_ped_rates, fig_ff_rates]
+    row2 = [fig_cosmic_rates, fig_muring_rates]
+    grid0 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page0.child = grid0
+    page0.title = 'Event rates'
+
 
     page1 = Panel()
     mean = []
@@ -450,6 +523,8 @@ def plot(filename='longterm_dl1_check.h5'):
     row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
                        pad_height, 'Pedestals charge std dev',
                        run_titles)
+    pad_width = 350
+    pad_height = 370
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page1.child = grid1
@@ -516,47 +591,101 @@ def plot(filename='longterm_dl1_check.h5'):
     pad_width = 550
     pad_height = 350
 
-    runsummary = pd.read_hdf(filename, 'runsummary')
     page5 = Panel()
 
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
                                               unit='s'),
                              y=runsummary['mu_effi_mean'],
-                             ey=runsummary['mu_effi_stddev']/np.sqrt(
-                                     runsummary['num_contained_mu_rings']),
                              xlabel='date',
-                             ylabel='telescope efficiency from mu-rings (mean & std dev)',
+                             ylabel='telescope efficiency from mu-rings',
+                             ey=runsummary['mu_effi_stddev'] / np.sqrt(
+                                     runsummary['num_contained_mu_rings']),
                              xtype='datetime', ytype='linear',
                              point_labels=run_titles)
     fig_mu_effi.y_range = Range1d(0.,1.1*np.max(runsummary['mu_effi_mean']))
-    row1 = [fig_mu_effi]
+
+    fig_mu_width = show_graph(x=pd.to_datetime(runsummary['time'],
+                                               origin='unix', unit='s'),
+                              y=runsummary['mu_width_mean'],
+                              xlabel='date',
+                              ylabel='muon ring width (deg)',
+                              ey=runsummary['mu_width_stddev'] / np.sqrt(
+                                      runsummary['num_contained_mu_rings']),
+                              xtype='datetime', ytype='linear',
+                              point_labels=run_titles)
+    fig_mu_width.y_range = Range1d(0.,1.1*np.max(runsummary['mu_width_mean']))
+    row1 = [fig_mu_effi, fig_mu_width]
+
     grid5 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page5.child = grid5
     page5.title = "Muons"
 
     page6 = Panel()
-    fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
-                                                origin='unix',
-                                                unit='s'),
-                             y=runsummary['ff_charge_mean'],
-                             ey=runsummary['ff_charge_mean_err'],
-                             xlabel='date',
-                             ylabel='Camera-averaged flat-field charge (pe/pixel)',
-                             xtype='datetime', ytype='linear',
-                             point_labels=run_titles)
-    fig_flatfield.y_range = Range1d(0.,1.1*np.max(runsummary['ff_charge_mean']))
-    row1 = [fig_flatfield]
+    fig_ped = show_graph(x=pd.to_datetime(runsummary['time'],
+                                          origin='unix',
+                                          unit='s'),
+                         y=runsummary['ped_charge_mean'],
+                         xlabel='date',
+                         ylabel='Camera-averaged pedestal charge (pe/pixel)',
+                         ey=runsummary['ped_charge_mean_err'],
+                         xtype='datetime', ytype='linear',
+                         point_labels=run_titles)
+    fig_ped.y_range = Range1d(0.,1.1*np.max(runsummary['ped_charge_mean']))
+
+    fig_ped_stddev = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                 origin='unix',
+                                                 unit='s'),
+                                y=runsummary['ped_charge_stddev'],
+                                xlabel='date',
+                                ylabel='Camera-averaged pedestal charge std '
+                                       'dev (pe/pixel)',
+                                xtype='datetime', ytype='linear',
+                                point_labels=run_titles)
+    fig_ped_stddev.y_range = \
+        Range1d(0.,1.1*np.max(runsummary['ped_charge_stddev']))
+
+    row1 = [fig_ped, fig_ped_stddev]
     grid6 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page6.child = grid6
-    page6.title = "Interleaved FF, average charge"
+    page6.title = "Interleaved pedestals, averages"
 
-    tabs = Tabs(tabs=[page1, page2, page3, page4, page5, page6])
+    page7 = Panel()
+    fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix',
+                                                unit='s'),
+                               y=runsummary['ff_charge_mean'],
+                               xlabel='date',
+                               ylabel='Camera-averaged flat-field charge (pe/pixel)',
+                               ey=runsummary['ff_charge_mean_err'],
+                               xtype='datetime', ytype='linear',
+                               point_labels=run_titles)
+    fig_flatfield.y_range = Range1d(0.,1.1*np.max(runsummary['ff_charge_mean']))
+
+    fig_ff_stddev = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix',
+                                                unit='s'),
+                               y=runsummary['ff_charge_stddev'],
+                               xlabel='date',
+                               ylabel='Camera-averaged flat-field charge std '
+                                      'dev (pe/pixel)',
+                               xtype='datetime', ytype='linear',
+                               point_labels=run_titles)
+    fig_ff_stddev.y_range = \
+        Range1d(0.,1.1*np.max(runsummary['ff_charge_stddev']))
+
+    row1 = [fig_flatfield, fig_ff_stddev]
+    grid7 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page7.child = grid7
+    page7.title = "Interleaved FF, averages"
+
+    tabs = Tabs(tabs=[page0, page1, page2, page3, page4, page5, page6, page7])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 
-def show_graph(x, y, ey, xlabel, ylabel, xtype='linear', ytype='linear',
+def show_graph(x, y, xlabel, ylabel, ey=None, xtype='linear', ytype='linear',
                point_labels=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
@@ -579,21 +708,24 @@ def show_graph(x, y, ey, xlabel, ylabel, xtype='linear', ytype='linear',
 
     fig = figure(background_fill_color='#ffffff', x_axis_label=xlabel,
                  x_axis_type=xtype, y_axis_type=ytype, y_axis_label=ylabel)
-    ylow = y - ey
-    yhigh = y + ey
     source = ColumnDataSource(data=dict(x=x, y=y))
     if point_labels is not None:
         source.data['point_labels'] = point_labels
-    source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
     fig.circle(x='x', y='y', size=2, source=source)
-    error_bars = Whisker(source=source_error, base="base", lower="lower",
-                         upper="upper")
-    error_bars.line_color = 'steelblue'
-    error_bars.upper_head.line_color = 'steelblue'
-    error_bars.lower_head.line_color = 'steelblue'
-    error_bars.upper_head.size = 4
-    error_bars.lower_head.size = 4
-    fig.add_layout(error_bars)
+
+    if ey is not None:
+        ylow = y - ey
+        yhigh = y + ey
+        source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
+        error_bars = Whisker(source=source_error, base="base", lower="lower",
+                             upper="upper")
+        error_bars.line_color = 'steelblue'
+        error_bars.upper_head.line_color = 'steelblue'
+        error_bars.lower_head.line_color = 'steelblue'
+        error_bars.upper_head.size = 4
+        error_bars.lower_head.size = 4
+        fig.add_layout(error_bars)
+
     if point_labels is not None:
         fig.add_tools(HoverTool(tooltips=[('value', '@y'),
                                           ('point id', '@point_labels')],
