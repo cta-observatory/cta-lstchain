@@ -182,7 +182,10 @@ class CalibrationHDF5Writer(Tool):
 
                 # reject event without trigger type
                 if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
-                    continue
+                    if LSTEventType.is_unknown(event.lst.tel[tel_id].evt.ucts_trigger_type):
+                        continue
+                    else:
+                        event.r1.tel[tel_id].trigger_type = event.lst.tel[tel_id].evt.ucts_trigger_type
 
                 # if pedestal event
                 if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
