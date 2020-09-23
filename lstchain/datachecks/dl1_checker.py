@@ -8,8 +8,7 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
-    'merge_dl1datacheck_files',
-    'plot_mean_and_stddev_bokeh'
+    'merge_dl1datacheck_files'
 ]
 
 import h5py
@@ -25,13 +24,11 @@ import tables
 
 from astropy import units as u
 from astropy.table import Table, vstack
-from bokeh.layouts import gridplot
 from bokeh.models.widgets import Panel
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
-from lstchain.datachecks.bokehcamdisplay import show_camera
 from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
@@ -1247,54 +1244,3 @@ def merge_dl1datacheck_files(file_list):
                           append=True, serialize_meta=True)
 
     return merged_filename
-
-
-def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
-
-    """
-    Parameters
-    ----------
-    table:  python table containing pixel-wise information to be displayed
-    camgeom: camera geometry
-    columns: list of 2 strings, columns of 'table', first one is the mean and
-    the second the std deviation to be plotted
-    labels: plot titles
-
-    Returns
-    -------
-    None
-
-    The subrun-wise mean and std dev values are used to calculate the
-    run-wise (i.e. for all processed subruns which appear in the table)
-    counterparts of the same, which are then plotted.
-
-    """
-
-    logger = logging.getLogger(__name__)
-
-    # calculate pixel-wise mean and standard deviation for the whole run,
-    # from the subrun-wise values:
-    mean = np.sum(np.multiply(table.col(columns[0]),
-                              table.col('num_events')[:, None]),
-                  axis=0) / np.sum(table.col('num_events'))
-    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
-                                        table.col('num_events')[:, None]),
-                            axis=0) / np.sum(table.col('num_events')))
-
-    if np.isnan(mean).sum() > 0:
-        logger.info(f'Pixels with NaNs in {columns[0]}: '
-                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
-
-    # plot mean and std dev (of e.g. pedestal charge or time), as camera
-    # display, vs. pixel id, and as a histogram:
-
-    pad_width = 350
-    pad_height = 370
-
-    row1 = show_camera(mean, camgeom, pad_width, pad_height, labels[0])
-    row2 = show_camera(stddev, camgeom, pad_width, pad_height,
-                                labels[1])
-
-    grid = gridplot([row1, row2], sizing_mode=None,
-                    plot_width=pad_width, plot_height=pad_height)
-    return grid

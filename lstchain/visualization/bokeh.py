@@ -1,26 +1,21 @@
-'''
-New version of a Bokeh camera display, by K. Kosack, see
-https://github.com/cta-observatory/ctapipe/issues/1247
-
-Copied here for testing, the ctapipe version of it should replace this code
-as soon as it is released!
-'''
-
 __all__ = [
     '_generate_polygon_vertices',
     '_generate_bokeh_multi_polygon_arrays',
     'CameraDisplay',
     'show_camera',
+    'plot_mean_and_stddev_bokeh',
     'get_pixel_location'
 ]
 
 import copy
+import logging
+from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource
-from bokeh.plotting import figure
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider, RangeSlider
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
+from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
 from pkg_resources import resource_filename
 
@@ -58,9 +53,13 @@ def _generate_bokeh_multi_polygon_arrays(geom, order=6):
 
 
 class CameraDisplay:
-    """
-    CameraDisplay implementation in Bokeh
-    """
+    '''
+    New version of a Bokeh camera display, by K. Kosack, see
+    https://github.com/cta-observatory/ctapipe/issues/1247
+
+    Copied here for testing, the ctapipe version of it should replace this code
+    as soon as it is released!
+    '''
 
     def __init__(self, geom: CameraGeometry, zlow = 0., zhigh = 1.,
                  label='Camera display', title='', use_notebook=True,
@@ -387,6 +386,57 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     range_slider.js_on_change('value', callback2)
 
     return [slider, p1, range_slider, p2, p3]
+
+
+def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
+
+    """
+    Parameters
+    ----------
+    table:  python table containing pixel-wise information to be displayed
+    camgeom: camera geometry
+    columns: list of 2 strings, columns of 'table', first one is the mean and
+    the second the std deviation to be plotted
+    labels: plot titles
+
+    Returns
+    -------
+    None
+
+    The subrun-wise mean and std dev values are used to calculate the
+    run-wise (i.e. for all processed subruns which appear in the table)
+    counterparts of the same, which are then plotted.
+
+    """
+
+    logger = logging.getLogger(__name__)
+
+    # calculate pixel-wise mean and standard deviation for the whole run,
+    # from the subrun-wise values:
+    mean = np.sum(np.multiply(table.col(columns[0]),
+                              table.col('num_events')[:, None]),
+                  axis=0) / np.sum(table.col('num_events'))
+    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
+                                        table.col('num_events')[:, None]),
+                            axis=0) / np.sum(table.col('num_events')))
+
+    if np.isnan(mean).sum() > 0:
+        logger.info(f'Pixels with NaNs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
+
+    # plot mean and std dev (of e.g. pedestal charge or time), as camera
+    # display, vs. pixel id, and as a histogram:
+
+    pad_width = 350
+    pad_height = 370
+
+    row1 = show_camera(mean, camgeom, pad_width, pad_height, labels[0])
+    row2 = show_camera(stddev, camgeom, pad_width, pad_height,
+                                labels[1])
+
+    grid = gridplot([row1, row2], sizing_mode=None,
+                    plot_width=pad_width, plot_height=pad_height)
+    return grid
 
 
 def get_pixel_location(pix_id):

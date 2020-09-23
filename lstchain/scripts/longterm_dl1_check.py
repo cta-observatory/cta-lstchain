@@ -14,7 +14,6 @@ some run-wise summary values for plotting long-term evolution of the DL1 data.
 
 from astropy.table import Table
 import copy
-import datetime
 import glob
 import numpy as np
 import pandas as pd
@@ -28,7 +27,7 @@ from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.instrument import CameraGeometry
 from ctapipe.coordinates import EngineeringCameraFrame
-from lstchain.datachecks import show_camera
+from lstchain.visualization.bokeh import show_camera
 from pathlib import Path
 
 def main():
@@ -511,6 +510,8 @@ def plot(filename='longterm_dl1_check.h5'):
 
 
     page1 = Panel()
+    pad_width = 350
+    pad_height = 370
     mean = []
     stddev = []
     for item in file.root.pixwise_runsummary.col('ped_pix_charge_mean'):
@@ -523,8 +524,6 @@ def plot(filename='longterm_dl1_check.h5'):
     row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
                        pad_height, 'Pedestals charge std dev',
                        run_titles)
-    pad_width = 350
-    pad_height = 370
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page1.child = grid1
@@ -588,10 +587,9 @@ def plot(filename='longterm_dl1_check.h5'):
 
     file.close()
 
+    page5 = Panel()
     pad_width = 550
     pad_height = 350
-
-    page5 = Panel()
 
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
                                               unit='s'),
