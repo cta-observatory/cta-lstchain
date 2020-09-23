@@ -36,7 +36,7 @@ class CalibrationCalculator(Component):
 
     """
     squared_excess_noise_factor = Float(
-        1.2,
+        1.222,
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
