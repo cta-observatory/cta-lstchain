@@ -59,11 +59,11 @@ def main():
     ntelescopes_gamma = 4
     ntelescopes_protons = 4
     n_bins_energy = 20  #  Number of energy bins
-    n_bins_gammaness = 10  #  Number of gammaness bins
-    n_bins_theta2 = 10  #  Number of theta2 bins
+    n_bins_gammaness = 1  #  Number of gammaness bins
+    n_bins_theta2 = 20  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.6 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
     #(number from 0 to 1)
 
@@ -84,9 +84,9 @@ def main():
 
     df_proton_events_for_cuts=df_protons[:half_size_protons]
     df_proton_events_for_sens=df_protons[half_size_protons:]
-
+    
     # Finds the best cuts for the computation of the sensitivity
-    energy, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
+    energy, best_sens, result, units, dl2, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
                                                                               args.dl2_file_p,
                                                                               df_gamma_events_for_cuts,
                                                                               df_proton_events_for_cuts,
@@ -100,30 +100,19 @@ def main():
                                                                               obstime)
     
     #For testing using fixed cuts
-    #gcut = np.ones(n_bins_energy) * 0.2
-    #tcut = np.ones(n_bins_energy) * 0.005
+    #gcut = np.ones(n_bins_energy) * 0.3
+    #tcut = np.ones(n_bins_energy) * 0.01
 
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
 
 
-    # Computes the sensitivity
-    energy, best_sens, result, units, dl2 = sensitivity(args.dl2_file_g,
-                                                        args.dl2_file_p,
-                                                        df_gamma_events_for_sens,
-                                                        df_proton_events_for_sens,
-                                                        ntelescopes_gamma,
-                                                        ntelescopes_protons,
-                                                        n_bins_energy, gcut, tcut * (u.deg ** 2), noff,
-                                                        fraction_of_events_for_cuts,
-                                                        obstime)
-
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
-
+    
     # Saves the results
     dl2.to_hdf(args.output_path+'/test_sens.h5', key='data', mode='w')
-    result.to_hdf(args.output_path+'/test_sens.h5', key='results', mode='w')
+    result.to_hdf(args.output_path+'/test_sens.h5', key='results')
 
     tab = Table.from_pandas(result)
 
@@ -153,7 +142,7 @@ def main():
 
     #Rates
     egeom = np.sqrt(energy[1:] * energy[:-1])
-    plt.plot(egeom, tab['hadron_rate'], label='Hadron rate', marker='o')
+    plt.plot(egeom, tab['proton_rate'], label='Proton rate', marker='o')
     plt.plot(egeom, tab['gamma_rate'], label='Gamma rate', marker='o')
     plt.legend()
     plt.xscale('log')
@@ -200,7 +189,8 @@ def main():
     plt.show()
 
     #fig=plt.figure(figsize=(12, 8))
-    ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, gammas_mc.reco_energy  )
+    #ctaplot.plot_angular_resolution_per_energy(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, gammas_mc.reco_energy  )
+    ctaplot.plot_angular_resolution_per_energy(dl2.reco_alt, dl2.reco_az, dl2.mc_alt, dl2.mc_az, dl2.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
 
     plt.legend()
