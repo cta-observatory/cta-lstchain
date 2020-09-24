@@ -59,13 +59,13 @@ def main():
     ntelescopes_gamma = 4
     ntelescopes_protons = 4
     n_bins_energy = 20  #  Number of energy bins
-    n_bins_gammaness = 1  #  Number of gammaness bins
-    n_bins_theta2 = 20  #  Number of theta2 bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.5 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.01 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
     #(number from 0 to 1)
+    percent_of_gammas_gammaness = 0.9
+    percent_of_gammas_theta2 = 0.7
 
     #Divide the event set in two:
     #First half for calculating the best sensitivity cuts
@@ -87,17 +87,19 @@ def main():
     
     # Finds the best cuts for the computation of the sensitivity
     energy, best_sens, result, units, dl2, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
-                                                                              args.dl2_file_p,
-                                                                              df_gamma_events_for_cuts,
-                                                                              df_proton_events_for_cuts,
-                                                                              ntelescopes_gamma,
-                                                                              ntelescopes_protons,
-                                                                              n_bins_energy,
-                                                                              n_bins_gammaness,
-                                                                              n_bins_theta2,
-                                                                              noff,
-                                                                              fraction_of_events_for_cuts,
-                                                                              obstime)
+                                                                                   args.dl2_file_p,
+                                                                                   df_gamma_events_for_sens,
+                                                                                   df_proton_events_for_sens,
+                                                                                   df_gamma_events_for_cuts,
+                                                                                   df_proton_events_for_cuts,
+                                                                                   ntelescopes_gamma,
+                                                                                   ntelescopes_protons,
+                                                                                   n_bins_energy,
+                                                                                   percent_of_gammas_gammaness,
+                                                                                   percent_of_gammas_theta2,
+                                                                                   noff,
+                                                                                   fraction_of_events_for_cuts,
+                                                                                   obstime)
     
     #For testing using fixed cuts
     #gcut = np.ones(n_bins_energy) * 0.3
@@ -146,6 +148,7 @@ def main():
     plt.plot(egeom, tab['gamma_rate'], label='Gamma rate', marker='o')
     plt.legend()
     plt.xscale('log')
+    plt.yscale('log')
     plt.xlabel('Energy (TeV)')
     plt.ylabel('events / min')
     plt.savefig(args.output_path+"/rates.png")
@@ -200,7 +203,7 @@ def main():
 
     #Energy resolution
     #fig=plt.figure(figsize=(12, 8))
-    ctaplot.plot_energy_resolution(gammas_mc.mc_energy, gammas_mc.reco_energy)
+    ctaplot.plot_energy_resolution(dl2.mc_energy, dl2.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
     plt.tight_layout()
@@ -209,7 +212,7 @@ def main():
 
     #Energy bias
     #fig=plt.figure(figsize=(12, 8))
-    ctaplot.plot_energy_bias(gammas_mc.mc_energy, gammas_mc.reco_energy)
+    ctaplot.plot_energy_bias(dl2.mc_energy, dl2.reco_energy)
     plt.savefig(args.output_path+"/energy_bias.png")
     plt.show()
 
