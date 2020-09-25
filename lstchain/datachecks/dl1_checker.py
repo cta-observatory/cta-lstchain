@@ -507,6 +507,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
+            '''
+            For future bokeh-based display, turned off for now:
             page1.child = \
                 plot_mean_and_stddev_bokeh(table_pedestals,
                                            engineering_geom,
@@ -515,8 +517,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                            'Pedestal charge std dev (p.e.)',
                                            'PEDESTALS, pixel-wise charge info'])
             page1.title = 'PEDESTALS, pixel-wise charge info'
-
-
+            '''
             plot_mean_and_stddev(table_pedestals, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
                                  ['Pedestal mean charge (p.e.)',
@@ -528,6 +529,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_flatfield is None or len(table_flatfield) == 0:
             write_error_page('flatfield', pagesize)
         else:
+            '''
+            For future bokeh-based display, turned off for now:
             page2.child = \
                 plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
                                            ['charge_mean', 'charge_stddev'],
@@ -535,7 +538,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                            'Flat-field charge std dev (p.e.)',
                                            'FLATFIELD, pixel-wise charge info'])
             page2.title = 'FLATFIELD, pixel-wise charge info'
-
+            '''
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
                                  ['Flat-field mean charge (p.e.)',
