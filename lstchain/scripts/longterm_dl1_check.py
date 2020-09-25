@@ -10,6 +10,9 @@ in the same directory.
 
 The output is the file longterm_dl1_check.h5 file, which contains tables with
 some run-wise summary values for plotting long-term evolution of the DL1 data.
+It also produces an interactive web page, longterm_dl1_check.html with plots
+showing the evolution of many such values.
+
 """
 
 from astropy.table import Table
