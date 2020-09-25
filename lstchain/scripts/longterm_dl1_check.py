@@ -156,7 +156,7 @@ def main():
 
         try:
             a = tables.open_file(file)
-        except:
+        except IOError:
             print('Could not read file', file, '- skipping...')
             continue
 
@@ -179,16 +179,16 @@ def main():
         subruns = None
 
         # fill data which are common to all tables:
-        for table, dict in zip(datatables, dicts):
+        for table, d in zip(datatables, dicts):
             if table is None:
                 continue
-            dict['runnumber'].extend(len(table)*[runnumber])
-            dict['subrun'].extend(table.col('subrun_index'))
-            dict['elapsed_time'].extend(table.col('elapsed_time'))
-            dict['events'].extend(table.col('num_events'))
-            dict['time'].extend(table.col('dragon_time').mean(axis=1))
-            dict['azimuth'].extend(table.col('mean_az_tel'))
-            dict['altitude'].extend(table.col('mean_alt_tel'))
+            d['runnumber'].extend(len(table)*[runnumber])
+            d['subrun'].extend(table.col('subrun_index'))
+            d['elapsed_time'].extend(table.col('elapsed_time'))
+            d['events'].extend(table.col('num_events'))
+            d['time'].extend(table.col('dragon_time').mean(axis=1))
+            d['azimuth'].extend(table.col('mean_az_tel'))
+            d['altitude'].extend(table.col('mean_alt_tel'))
 
         # now fill table-specific quantities. In some cases they are
         # pixel-averaged values:

@@ -35,7 +35,7 @@ from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
     run_to_muon_filename, run_to_datacheck_dl1_filename
-from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
+# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
@@ -351,8 +351,11 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
     geom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
+    '''
+    For future bokeh-based display, turned off for now:
     page1 = Panel()
     page2 = Panel()
+    '''
 
     with PdfPages(pdf_filename) as pdf:
         # first deal with the DL1 datacheck file, created from DL1 event data:

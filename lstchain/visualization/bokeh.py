@@ -10,7 +10,6 @@ __all__ = [
 import copy
 import logging
 from bokeh.layouts import gridplot
-from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider, RangeSlider
 from bokeh.models.annotations import Title
