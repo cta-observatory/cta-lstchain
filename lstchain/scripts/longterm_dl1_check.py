@@ -96,6 +96,11 @@ def main():
                   'ff_charge_mean': [],   # camera average of mean pix FF charge
                   'ff_charge_mean_err': [], # uncertainty of the above
                   'ff_charge_stddev': [], # camera average
+                  'ff_time_mean': [], # camera average of mean FF time
+                  'ff_time_mean_err': [], # uncertainty of the above
+                  'ff_time_stddev': [], # camera average
+                  'ff_rel_time_stddev': [], # camera-averaged std dev of pixel t
+                  # w.r.t. average of rest of pixels in camera (~ t-resolution)
                   'ped_charge_mean': [], # camera average of mean pix ped charge
                   'ped_charge_mean_err':[],  # uncertainty of the above
                   'ped_charge_stddev': [],  # camera average
@@ -107,6 +112,10 @@ def main():
                   'mu_effi_stddev': [],
                   'mu_width_mean': [],
                   'mu_width_stddev': [],
+                  'mu_hg_peak_sample_mean': [],
+                  'mu_hg_peak_sample_stddev': [],
+                  'mu_lg_peak_sample_mean': [],
+                  'mu_lg_peak_sample_stddev': [],
                   'mu_intensity_mean': []}
 
 
@@ -239,8 +248,7 @@ def main():
                  runsummary['num_cosmics'][-1]])
         pixwise_runsummary['cosmics_pix_fraction_pulses_above30'].extend(
                 [table.col('num_pulses_above_0030_pe').sum(axis=0) /
-                 runsummary['num_cosmics'][
-                                                                          -1]])
+                 runsummary['num_cosmics'][-1]])
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
@@ -297,8 +305,12 @@ def main():
             runsummary['num_flatfield'].extend([events_in_run])
 
             # Mean flat field charge through a run, for each pixel:
-            charge_mean = np.sum(table.col('charge_mean')*nevents[:, None],
+            charge_mean = np.sum(table.col('charge_mean') * nevents[:, None],
                                  axis=0) / events_in_run
+            # Mean flat field time through a run, for each pixel:
+            time_mean = np.sum(table.col('time_mean') * nevents[:, None],
+                                 axis=0) / events_in_run
+
             # Now store the pixel-averaged mean charge:
             runsummary['ff_charge_mean'].extend([np.nanmean(charge_mean)])
             npixels=len(charge_mean)
@@ -310,6 +322,23 @@ def main():
                                axis=0) / events_in_run)
             # Store the pixel-averaged FF charge std dev:
             runsummary['ff_charge_stddev'].extend([np.nanmean(charge_stddev)])
+
+            # Pixel-averaged mean time:
+            runsummary['ff_time_mean'].extend([np.nanmean(time_mean)])
+            runsummary['ff_time_mean_err'].extend([np.nanstd(time_mean) /
+                                                     np.sqrt(npixels)])
+            # FF time std dev through a run, for each pixel:
+            time_stddev =\
+                np.sqrt(np.sum((table.col('time_stddev')**2)*nevents[:, None],
+                               axis=0) / events_in_run)
+            # Store the pixel-averaged FF time std dev:
+            runsummary['ff_time_stddev'].extend([np.nanmean(time_stddev)])
+
+            rel_time_stddev =\
+                np.sqrt(np.sum((table.col('relative_time_stddev')**2) *
+                               nevents[:, None], axis=0) / events_in_run)
+            runsummary['ff_rel_time_stddev'].\
+                extend([np.nanmean(rel_time_stddev)])
 
             pixwise_runsummary['ff_pix_charge_mean'].extend(
                     [table.col('charge_mean').mean(axis=0)])
@@ -324,6 +353,10 @@ def main():
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
+            runsummary['ff_time_mean'].extend([np.nan])
+            runsummary['ff_time_mean_err'].extend([np.nan])
+            runsummary['ff_time_stddev'].extend([np.nan])
+            runsummary['ff_rel_time_stddev'].extend([np.nan])
             pixwise_runsummary['ff_pix_charge_mean'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ff_pix_charge_stddev'].extend([numpixels*[np.nan]])
             pixwise_runsummary['ff_pix_rel_time_mean'].extend(
@@ -400,6 +433,14 @@ def main():
             runsummary['mu_width_mean'].extend([contained_mu_wholerun['ring_width'].mean()])
             runsummary['mu_width_stddev'].extend([contained_mu_wholerun['ring_width'].std()])
             runsummary['mu_intensity_mean'].extend([contained_mu_wholerun['ring_size'].mean()])
+            runsummary['mu_hg_peak_sample_mean'].\
+                extend([contained_mu_wholerun['hg_peak_sample'].mean()])
+            runsummary['mu_hg_peak_sample_stddev'].\
+                extend([contained_mu_wholerun['hg_peak_sample'].std()])
+            runsummary['mu_lg_peak_sample_mean'].\
+                extend([contained_mu_wholerun['lg_peak_sample'].mean()])
+            runsummary['mu_lg_peak_sample_stddev'].\
+                extend([contained_mu_wholerun['lg_peak_sample'].std()])
         else:
             runsummary['num_contained_mu_rings'].extend([np.nan])
             runsummary['mu_effi_mean'].extend([np.nan])
@@ -407,6 +448,10 @@ def main():
             runsummary['mu_width_mean'].extend([np.nan])
             runsummary['mu_width_stddev'].extend([np.nan])
             runsummary['mu_intensity_mean'].extend([np.nan])
+            runsummary['mu_hg_peak_sample_mean'].extend([np.nan])
+            runsummary['mu_hg_peak_sample_stddev'].extend([np.nan])
+            runsummary['mu_lg_peak_sample_mean'].extend([np.nan])
+            runsummary['mu_lg_peak_sample_stddev'].extend([np.nan])
 
     pd.DataFrame(runsummary).to_hdf(output_file_name, key='runsummary', mode='w')
 
@@ -613,8 +658,7 @@ def plot(filename='longterm_dl1_check.h5'):
 
     page5 = Panel()
     pad_width = 550
-    pad_height = 350
-
+    pad_height = 280
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
                                               unit='s'),
                              y=runsummary['mu_effi_mean'],
@@ -636,14 +680,41 @@ def plot(filename='longterm_dl1_check.h5'):
                               xtype='datetime', ytype='linear',
                               point_labels=run_titles)
     fig_mu_width.y_range = Range1d(0.,1.1*np.max(runsummary['mu_width_mean']))
-    row1 = [fig_mu_effi, fig_mu_width]
 
-    grid5 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+    fig_mu_intensity = show_graph(
+        x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
+        y=runsummary['mu_intensity_mean'], xlabel='date',
+        ylabel='mean muon ring intensity (p.e.)',
+        xtype='datetime', ytype='linear', point_labels=run_titles)
+    fig_mu_intensity.y_range = \
+        Range1d(0., 1.1 * np.max(runsummary['mu_intensity_mean']))
+
+    fig_mu_hg_peak = show_graph(
+        x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
+        y=runsummary['mu_hg_peak_sample_mean'], xlabel='date',
+        ey=runsummary['mu_hg_peak_sample_stddev'],
+        ylabel='HG global peak sample id (mean&RMS)',
+        xtype='datetime', ytype='linear', point_labels=run_titles)
+    fig_mu_hg_peak.y_range = Range1d(0., 38.)
+    fig_mu_lg_peak = show_graph(
+        x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
+        y=runsummary['mu_lg_peak_sample_mean'], xlabel='date',
+        ey=runsummary['mu_lg_peak_sample_stddev'],
+        ylabel='LG global peak sample id (mean&RMS)',
+        xtype='datetime', ytype='linear', point_labels=run_titles)
+    fig_mu_lg_peak.y_range = Range1d(0., 38.)
+    row1 = [fig_mu_effi, fig_mu_width]
+    row2 = [fig_mu_intensity]
+    row3 = [fig_mu_hg_peak, fig_mu_lg_peak]
+
+    grid5 = gridplot([row1, row2, row3], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page5.child = grid5
     page5.title = "Muons"
 
     page6 = Panel()
+    pad_width = 550
+    pad_height = 350
     fig_ped = show_graph(x=pd.to_datetime(runsummary['time'],
                                           origin='unix',
                                           unit='s'),
@@ -674,6 +745,8 @@ def plot(filename='longterm_dl1_check.h5'):
     page6.title = "Interleaved pedestals, averages"
 
     page7 = Panel()
+    pad_width = 550
+    pad_height = 280
     fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
                                                 origin='unix',
                                                 unit='s'),
@@ -697,8 +770,42 @@ def plot(filename='longterm_dl1_check.h5'):
     fig_ff_stddev.y_range = \
         Range1d(0.,1.1*np.max(runsummary['ff_charge_stddev']))
 
+    fig_ff_time = show_graph(x=pd.to_datetime(runsummary['time'],
+                                              origin='unix',
+                                              unit='s'),
+                             y=runsummary['ff_time_mean'],
+                             xlabel='date',
+                             ylabel='Camera-averaged flat-field time (ns)',
+                             ey=runsummary['ff_time_mean_err'],
+                             xtype='datetime', ytype='linear',
+                             point_labels=run_titles)
+
+    fig_ff_time_std = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                  origin='unix',
+                                                  unit='s'),
+                                 y=runsummary['ff_time_stddev'],
+                                 xlabel='date',
+                                 ylabel='Camera-averaged flat-field time std '
+                                        'dev (ns)',
+                                 xtype='datetime', ytype='linear',
+                                 point_labels=run_titles)
+    fig_ff_rel_time_std = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                      origin='unix',
+                                                      unit='s'),
+                                     y=runsummary['ff_rel_time_stddev'],
+                                     xlabel='date',
+                                     ylabel='Cam-averaged flat-field '
+                                            'rel. pix time std dev (ns)',
+                                     xtype='datetime', ytype='linear',
+                                     point_labels=run_titles)
+    fig_ff_rel_time_std.y_range = \
+        Range1d(0., np.max([1., runsummary['ff_rel_time_stddev'].max()]))
+
     row1 = [fig_flatfield, fig_ff_stddev]
-    grid7 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+    row2 = [fig_ff_time, fig_ff_time_std]
+    row3 = [fig_ff_rel_time_std]
+
+    grid7 = gridplot([row1, row2, row3], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
