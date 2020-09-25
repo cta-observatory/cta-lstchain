@@ -85,6 +85,9 @@ def main():
     runsummary = {'runnumber': [],
                   'time': [],
                   'elapsed_time': [],
+                  'min_altitude': [],
+                  'mean_altitude': [],
+                  'max_altitude': [],
                    # currently (as of lstchain 0.5.3) event numbers are post-cleaning!:
                   'num_cosmics': [],
                   'num_pedestals': [],
@@ -221,6 +224,9 @@ def main():
         runsummary['runnumber'].extend([runnumber])
         runsummary['time'].extend([table.col('dragon_time').mean()])
         runsummary['elapsed_time'].extend([table.col('elapsed_time').sum()])
+        runsummary['min_altitude'].extend([table.col('mean_alt_tel').min()])
+        runsummary['mean_altitude'].extend([table.col('mean_alt_tel').mean()])
+        runsummary['max_altitude'].extend([table.col('mean_alt_tel').max()])
         runsummary['num_cosmics'].extend([table.col('num_events').sum()])
         runsummary['cosmics_fraction_pulses_above10'].extend(
                 [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
@@ -508,6 +514,24 @@ def plot(filename='longterm_dl1_check.h5'):
     page0.child = grid0
     page0.title = 'Event rates'
 
+    page0b = Panel()
+    altmin = np.rad2deg(runsummary['min_altitude'])
+    altmean = np.rad2deg(runsummary['mean_altitude'])
+    altmax = np.rad2deg(runsummary['max_altitude'])
+    fig_altitude = show_graph(x=pd.to_datetime(runsummary['time'],
+                                               origin='unix', unit='s'),
+                              y=altmean,
+                              xlabel='date',
+                              ylabel='Telescope altitude (mean, min, max)',
+                              eylow=altmean-altmin, eyhigh=altmax-altmean,
+                              xtype='datetime', ytype='linear',
+                              point_labels=run_titles)
+    fig_altitude.y_range = Range1d(altmin.min()*0.95, altmax.max()*1.05)
+    row1 = [fig_altitude]
+    grid0b = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page0b.child = grid0b
+    page0b.title = 'Pointing'
 
     page1 = Panel()
     pad_width = 350
@@ -679,11 +703,13 @@ def plot(filename='longterm_dl1_check.h5'):
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
 
-    tabs = Tabs(tabs=[page0, page1, page2, page3, page4, page5, page6, page7])
+    tabs = Tabs(tabs=[page0, page0b, page1, page2, page3, page4, page5, page6,
+                      page7])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 
-def show_graph(x, y, xlabel, ylabel, ey=None, xtype='linear', ytype='linear',
+def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
+               xtype='linear', ytype='linear',
                point_labels=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
@@ -711,9 +737,18 @@ def show_graph(x, y, xlabel, ylabel, ey=None, xtype='linear', ytype='linear',
         source.data['point_labels'] = point_labels
     fig.circle(x='x', y='y', size=2, source=source)
 
-    if ey is not None:
-        ylow = y - ey
-        yhigh = y + ey
+    if eylow is None:
+        eylow = ey
+    if eyhigh is None:
+        eyhigh = ey
+
+    if eylow is not None or eyhigh is not None:
+        yhigh = y
+        ylow = y
+        if eylow is not None:
+            ylow = y - eylow
+        if eyhigh is not None:
+            yhigh = y + eyhigh
         source_error = ColumnDataSource(data=dict(base=x, lower=ylow, upper=yhigh))
         error_bars = Whisker(source=source_error, base="base", lower="lower",
                              upper="upper")
