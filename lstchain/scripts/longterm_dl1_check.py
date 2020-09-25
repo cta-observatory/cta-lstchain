@@ -755,7 +755,7 @@ def plot(filename='longterm_dl1_check.h5'):
                                                 unit='s'),
                                y=runsummary['ff_charge_mean'],
                                xlabel='date',
-                               ylabel='Camera-averaged flat-field charge (pe/pixel)',
+                               ylabel='Cam-averaged FF Q (pe/pixel)',
                                ey=runsummary['ff_charge_mean_err'],
                                xtype='datetime', ytype='linear',
                                point_labels=run_titles)
@@ -766,7 +766,7 @@ def plot(filename='longterm_dl1_check.h5'):
                                                 unit='s'),
                                y=runsummary['ff_charge_stddev'],
                                xlabel='date',
-                               ylabel='Camera-averaged flat-field charge std '
+                               ylabel='Cam-averaged FF Q std '
                                       'dev (pe/pixel)',
                                xtype='datetime', ytype='linear',
                                point_labels=run_titles)
@@ -778,7 +778,7 @@ def plot(filename='longterm_dl1_check.h5'):
                                               unit='s'),
                              y=runsummary['ff_time_mean'],
                              xlabel='date',
-                             ylabel='Camera-averaged flat-field time (ns)',
+                             ylabel='Cam-averaged FF time (ns)',
                              ey=runsummary['ff_time_mean_err'],
                              xtype='datetime', ytype='linear',
                              point_labels=run_titles)
@@ -788,7 +788,7 @@ def plot(filename='longterm_dl1_check.h5'):
                                                   unit='s'),
                                  y=runsummary['ff_time_stddev'],
                                  xlabel='date',
-                                 ylabel='Camera-averaged flat-field time std '
+                                 ylabel='Cam-averaged FF t std '
                                         'dev (ns)',
                                  xtype='datetime', ytype='linear',
                                  point_labels=run_titles)
@@ -797,8 +797,8 @@ def plot(filename='longterm_dl1_check.h5'):
                                                       unit='s'),
                                      y=runsummary['ff_rel_time_stddev'],
                                      xlabel='date',
-                                     ylabel='Cam-averaged flat-field '
-                                            'rel. pix time std dev (ns)',
+                                     ylabel='Cam-averaged FF '
+                                            'rel. pix t std dev (ns)',
                                      xtype='datetime', ytype='linear',
                                      point_labels=run_titles)
     fig_ff_rel_time_std.y_range = \
