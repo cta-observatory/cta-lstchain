@@ -192,7 +192,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
             allimages.append(content[i-1])
 
     if titles is None:
-        titles = [None]*numsets
+        titles = ['']*numsets
 
     # We plot the range which contains 99.8 of all events, so that
     # outliers do not prevent us from seing the bulk of the data:
