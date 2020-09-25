@@ -156,7 +156,7 @@ def main():
 
         try:
             a = tables.open_file(file)
-        except IOError:
+        except FileNotFoundError:
             print('Could not read file', file, '- skipping...')
             continue
 
@@ -169,7 +169,7 @@ def main():
                      '/dl1datacheck/flatfield']:
             try:
                 node = a.get_node(name)
-            except:
+            except RuntimeWarning:
                 print('   Table', name, 'is missing!')
                 datatables.append(None)
                 continue
@@ -473,8 +473,8 @@ def main():
     h5file.close()
 
     # Finally the tables with info by event type:
-    for dict, name in zip(dicts, ['cosmics', 'pedestals', 'flatfield']):
-        pd.DataFrame(dict).to_hdf(output_file_name, key=name, mode='a')
+    for d, name in zip(dicts, ['cosmics', 'pedestals', 'flatfield']):
+        pd.DataFrame(d).to_hdf(output_file_name, key=name, mode='a')
 
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):

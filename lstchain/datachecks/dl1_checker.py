@@ -24,7 +24,6 @@ import tables
 
 from astropy import units as u
 from astropy.table import Table, vstack
-from bokeh.models.widgets import Panel
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
@@ -36,6 +35,7 @@ from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
     run_to_muon_filename, run_to_datacheck_dl1_filename
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
+# from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
