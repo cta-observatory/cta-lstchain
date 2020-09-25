@@ -86,7 +86,7 @@ def process_mc(dl2_file, events, mc_type):
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
-        & (events.intensity > 50)
+        & (events.intensity > 200)
     )
     events = events[filter_good_events]
 
@@ -120,23 +120,25 @@ def process_mc(dl2_file, events, mc_type):
 
     return gammaness, angdist2.to(u.deg**2), e_reco, e_true, sim_par, events
 
-def diff_events_after_cut(events, feature, cut, percent_of_gammas):
-    total_events=events.shape[0]
+def diff_events_after_cut(events, rates, obstime, feature, cut, percent_of_gammas):
+    total_events=np.sum(rates) * obstime
+    
     if feature=="gammaness":
-        events_after_cut=events[events[feature]>cut].shape[0]
+        events_after_cut=np.sum(rates[events[feature]>cut]) * obstime
     else:
-        events_after_cut=events[events[feature]<cut].shape[0]
+        events_after_cut=np.sum(rates[events[feature]<cut]) * obstime
         
     return events_after_cut-percent_of_gammas*total_events
+
 def samesign(a,b):
     return a * b > 0
 
-def find_cut(events, feature, low_cut, high_cut, percent_of_gammas):
+def find_cut(events, rates, obstime, feature, low_cut, high_cut, percent_of_gammas):
 
     for i in range(54):
         midpoint = (low_cut + high_cut) / 2.0
-        if samesign(diff_events_after_cut(events, feature, low_cut, percent_of_gammas),
-                    diff_events_after_cut(events, feature, midpoint, percent_of_gammas)):
+        if samesign(diff_events_after_cut(events, rates, obstime, feature, low_cut, percent_of_gammas),
+                    diff_events_after_cut(events, rates, obstime, feature, midpoint, percent_of_gammas)):
             low_cut = midpoint
         else:
             high_cut = midpoint
@@ -411,7 +413,7 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
                       * w_p
                       
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.6 * u.deg, 0.5 * u.deg)
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
 
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
@@ -467,22 +469,24 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
         events_bin_g = events_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]
         events_bin_p = events_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]
         
-        events_bin_g_cuts = events_g_cuts[(e_reco_g_cuts < energy[i+1]) & (e_reco_g_cuts > energy[i])]
-        events_bin_p_cuts = events_p_cuts[(e_reco_p_cuts < energy[i+1]) & (e_reco_p_cuts > energy[i])]
-        best_g_cut = 0.4#find_cut(events_bin_g_cuts, "gammaness", 0, 0.9, percent_of_gammas_gammaness)
-        best_theta2_cut = 0.2 * u.deg**2# find_cut(events_bin_g_cuts, "theta2", 0.0, 10.0, percent_of_gammas_theta2) * u.deg**2
-        '''
-        if best_g_cut < 0.3:
-            best_g_cut=0.3
-        if best_theta2_cut > 0.2 * u.deg**2:
-            best_theta2_cut=0.2 *u.deg**2
-        '''    
+        rate_g_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])])
+
+        rates_g = rate_weighted_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]
+                                     
+        events_bin_g = events_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]
+        events_bin_p = events_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]
+
+        best_g_cut = find_cut(events_bin_g, rates_g, obstime,  "gammaness", 0, 0.9, percent_of_gammas_gammaness)
+        best_theta2_cut = find_cut(events_bin_g, rates_g, obstime, "theta2", 0.0, 10.0, percent_of_gammas_theta2) * u.deg**2
+            
         print(best_g_cut, best_theta2_cut)
         
         
         events_bin_after_cuts_g = events_bin_g[(events_bin_g.gammaness > best_g_cut) &(events_bin_g.theta2 < best_theta2_cut)]
         events_bin_after_cuts_p = events_bin_p[(events_bin_p.gammaness > best_g_cut) &(events_bin_p.theta2 < best_theta2_cut)]
 
+        
+        
         dl2 = pd.concat((dl2, events_bin_after_cuts_g))
         dl2 = pd.concat((dl2, events_bin_after_cuts_p))
 
@@ -532,7 +536,8 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
         
     print(e_reco_p.shape, e_reco_p[p_contained].shape[0])
     n_excesses_min, sensitivity = calculate_sensitivity_lima(final_gamma, final_protons*noff, 1/noff * np.ones_like(final_gamma))
-    
+
+        
     # Avoid bins which are empty or have too few events:
     min_num_events = 10
     min_pre_events = 10
@@ -547,7 +552,7 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
                                         nevents_proton, final_gamma], op_flags=['readwrite']):
         
         conditions = (not np.isfinite(sens_value)) or (sens_value<=0) \
-                     or (final_gammas_value < min_pre_events) \
+                     or (final_gammas_value < min_num_events) \
                      or (pre_gamma_value < min_pre_events) \
                      or (pre_protons_value < min_pre_events)
         if conditions:
@@ -584,241 +589,3 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     
     return energy, sensitivity, result, units, dl2, gcut, tcut
 
-
-def sensitivity(dl2_file_g, dl2_file_p,
-                events_g, events_p,
-                ntelescopes_gammas, ntelescopes_protons,
-                n_bins_energy, gcut, tcut, noff,
-                fraction_of_events_for_cuts,
-                obstime=50 * 3600 * u.s):
-    """
-    Main function to calculate the sensitivity given a MC dataset
-
-    Parameters
-    ---------
-    dl2_file_g: `string` path to h5 file of reconstructed gammas
-    dl2_file_p: `string' path to h5 file of reconstructed protons
-    ntelescopes_gammas: `int` number of telescopes used
-    ntelescopes_protons: `int` number of telescopes used
-    n_bins_energy: `int` number of bins in energy
-    n_bins_gammaness: `int` number of bins in gammaness
-    n_bins_theta2: `int` number of bins in theta2
-    noff: `float` ratio between the background and the signal region
-    obstime: `Quantity` Observation time in seconds
-
-    Returns
-    ---------
-    energy: `array` center of energy bins
-    sensitivity: `array` sensitivity per energy bin
-
-    """
-
-    # Read simulated and reconstructed values
-    gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, events_g, 'gamma')
-    gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, events_p, 'proton')
-
-    mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas * (1-fraction_of_events_for_cuts)
-    mc_par_p['sim_ev'] = mc_par_p['sim_ev'] * ntelescopes_protons * (1-fraction_of_events_for_cuts)
-
-    # Pass units to TeV and cm2
-    mc_par_g['emin'] = mc_par_g['emin'].to(u.TeV)
-    mc_par_g['emax'] = mc_par_g['emax'].to(u.TeV)
-
-    mc_par_p['emin'] = mc_par_p['emin'].to(u.TeV)
-    mc_par_p['emax'] = mc_par_p['emax'].to(u.TeV)
-
-    mc_par_g['area_sim'] = mc_par_g['area_sim'].to(u.cm ** 2)
-    mc_par_p['area_sim'] = mc_par_p['area_sim'].to(u.cm ** 2)
-
-    # Set binning for sensitivity calculation
-    emin_sensitivity = 0.01 * u.TeV  # mc_par_g['emin'] 
-    emax_sensitivity =  100 * u.TeV  # mc_par_g['emax']
-
-    energy = np.logspace(np.log10(emin_sensitivity.to_value()),
-                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
-
-    # Extract spectral parameters
-    dFdE, crab_par = crab_hegra(energy)
-    dFdEd0, proton_par = proton_bess(energy)
-
-    bins = np.logspace(np.log10(emin_sensitivity.to_value()), np.log10(emax_sensitivity.to_value()), n_bins_energy + 1)
-    y0 = mc_par_g['sim_ev'] / (mc_par_g['emax'].to_value() ** (mc_par_g['sp_idx'] + 1) \
-                               - mc_par_g['emin'].to_value() ** (mc_par_g['sp_idx'] + 1)) \
-         * (mc_par_g['sp_idx'] + 1)
-    y = y0 * (bins[1:] ** (crab_par['alpha'] + 1) - bins[:-1] ** (crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
-
-    n_sim_bin = y
-
-    # Rates and weights
-    rate_g = rate("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], crab_par, mc_par_g['cone'], mc_par_g['area_sim'])
-
-    rate_p = rate("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], proton_par, mc_par_p['cone'], mc_par_p['area_sim'])
-
-    w_g = weight("PowerLaw", mc_par_g['emin'], mc_par_g['emax'], mc_par_g['sp_idx'], rate_g,
-                 mc_par_g['sim_ev'], crab_par)
-
-    w_p = weight("PowerLaw", mc_par_p['emin'], mc_par_p['emax'], mc_par_p['sp_idx'], rate_p,
-                 mc_par_p['sim_ev'], proton_par)
-    
-    if (w_g.unit ==  u.Unit("sr / s")):
-        print("You are using diffuse gammas to estimate point-like sensitivity")
-        print("These results will make no sense")
-        w_g = w_g / u.sr  # Fix to make tests pass
-
-    rate_weighted_g = ((e_true_g / crab_par['e0']) ** (crab_par['alpha'] - mc_par_g['sp_idx'])) \
-                      * w_g
-    rate_weighted_p = ((e_true_p / proton_par['e0']) ** (proton_par['alpha'] - mc_par_p['sp_idx'])) \
-                      * w_p
-
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
-
-    # FIX: ring_radius and ring_halfwidth should have units of deg
-    # FIX: hardcoded at the moment, but ring_radius should be read from
-    # the gamma file (point-like) or given as input (diffuse).
-    # FIX: ring_halfwidth should be given as input
-    area_ratio_p = np.pi * tcut / ang_area_p
-    # ratio between the area where we search for protons ang_area_p
-    # and the area where we search for gammas math.pi * t
-
-    # Arrays to contain the number of gammas and protons for different cuts
-    final_gamma = np.ndarray(shape=(n_bins_energy))
-    final_protons = np.ndarray(shape=(n_bins_energy))
-    pre_gamma = np.ndarray(shape=(n_bins_energy))
-    pre_protons = np.ndarray(shape=(n_bins_energy))
-
-    ngamma_per_ebin = np.ndarray(n_bins_energy)
-    nproton_per_ebin = np.ndarray(n_bins_energy)
-
-    # Weight events and count number of events per bin:
-    for i in range(n_bins_energy):  # binning in energy
-        rate_g_ebin = np.sum(rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i]) \
-                                             & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])])
-
-
-        rate_p_ebin = np.sum(rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
-                                             & (gammaness_p > gcut[i]) & p_contained])
-        final_gamma[i] = (rate_g_ebin * obstime).value
-        final_protons[i] = (rate_p_ebin * obstime).value * area_ratio_p[i]
-
-        pre_gamma[i] = e_reco_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i]) \
-                                & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])].shape[0]
-        pre_protons[i] = e_reco_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
-                                  & (gammaness_p > gcut[i]) & p_contained].shape[0]
-
-        ngamma_per_ebin[i] = np.sum(
-            rate_weighted_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])].to(1 / u.s).value) \
-                             * obstime.to(u.s).value
-        nproton_per_ebin[i] = np.sum(
-            rate_weighted_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i])].to(1 / u.s).value) \
-                              * obstime.to(u.s).value
-
-    n_excesses_5sigma, sensitivity_3Darray = calculate_sensitivity_lima(final_gamma, final_protons*noff,
-                                                                             1 / noff * np.ones(len(final_gamma)),
-                                                                             )
-    
-    # Avoid bins which are empty or have too few events:
-    min_num_events = 10
-    min_pre_events = 10
-    # Minimum number of gamma and proton events in a bin to be taken into account for minimization
-    for i in range(0, n_bins_energy):
-        conditions = (not np.isfinite(sensitivity_3Darray[i])) or (sensitivity_3Darray[i] <= 0) \
-                     or (final_protons[i] < min_num_events) \
-                     or (pre_gamma[i] < min_pre_events) \
-                     or (pre_protons[i] < min_pre_events)
-        if conditions:
-            sensitivity_3Darray[i] = np.inf
-
-    # Quantities to show in the results
-    sensitivity = np.ndarray(shape=n_bins_energy)
-    n_excesses_min = np.ndarray(shape=n_bins_energy)
-    eff_g = np.ndarray(shape=n_bins_energy)
-    eff_p = np.ndarray(shape=n_bins_energy)
-    ngammas = np.ndarray(shape=n_bins_energy)
-    nprotons = np.ndarray(shape=n_bins_energy)
-    gammarate = np.ndarray(shape=n_bins_energy)
-    protonrate = np.ndarray(shape=n_bins_energy)
-    eff_area = np.ndarray(shape=n_bins_energy)
-    nevents_gamma = np.ndarray(shape=n_bins_energy)
-    nevents_proton = np.ndarray(shape=n_bins_energy)
-
-    # Calculate the minimum sensitivity per energy bin
-    for i in range(0, n_bins_energy):
-        ngammas[i] = final_gamma[i]
-        nprotons[i] = final_protons[i]
-        gammarate[i] = final_gamma[i] / (obstime.to(u.min)).to_value()
-        protonrate[i] = final_protons[i] / (obstime.to(u.min)).to_value()
-        n_excesses_min[i] = n_excesses_5sigma[i]
-        sensitivity[i] = sensitivity_3Darray[i]
-        eff_g[i] = final_gamma[i] / ngamma_per_ebin[i]
-        eff_p[i] = final_protons[i] / nproton_per_ebin[i]
-
-        e_aftercuts = e_true_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i]) \
-                               & (gammaness_g > gcut[i]) & (theta2_g < tcut[i])]
-
-        e_aftercuts_p = e_true_p[(e_reco_p < energy[i + 1]) & (e_reco_p > energy[i]) \
-                                 & (gammaness_p > gcut[i]) & p_contained]
-
-        e_aftercuts_w = np.sum(np.power(e_aftercuts, crab_par['alpha'] - mc_par_g['sp_idx']))
-
-        e_w = np.sum(np.power(e_true_g[(e_reco_g < energy[i + 1]) & (e_reco_g > energy[i])],
-                              crab_par['alpha'] - mc_par_g['sp_idx']))
-
-        eff_area[i] = e_aftercuts_w.to_value() / n_sim_bin[i] * mc_par_g['area_sim'].to(u.m ** 2).to_value()
-
-        nevents_gamma[i] = e_aftercuts.shape[0]
-        nevents_proton[i] = e_aftercuts_p.shape[0]
-
-    # Compute sensitivity  in flux units
-
-    egeom = np.sqrt(energy[1:] * energy[:-1])
-    dFdE, par = crab_hegra(egeom)
-    sensitivity_flux = sensitivity / 100 * (dFdE * egeom * egeom).to(u.TeV / (u.cm ** 2 * u.s))
-    
-    print("\n******** Energy [TeV] *********\n")
-    print(egeom)
-    print("\nsensitivity flux:\n", sensitivity_flux)
-    print("\nsensitivity[%]:\n", sensitivity)
-    print("\n**************\n")
-    
-    list_of_tuples = list(zip(energy[:energy.shape[0]-1].to_value(),
-                              energy[1:].to_value(), gcut, tcut,
-                              ngammas, nprotons,
-                              gammarate, protonrate,
-                              n_excesses_min,
-                              sensitivity_flux.to_value(),
-                              eff_area,
-                              eff_g, eff_p,
-                              nevents_gamma, nevents_proton))
-    result = pd.DataFrame(list_of_tuples,
-                          columns=['ebin_low', 'ebin_up',
-                                   'gammaness_cut', 'theta2_cut',
-                                   'n_gammas', 'n_protons',
-                                   'gamma_rate', 'proton_rate',
-                                   'n_excesses_min', 'sensitivity',
-                                   'eff_area',
-                                   'eff_gamma', 'eff_proton',
-                                   'nevents_g', 'nevents_p'])
-
-    units = [energy.unit, energy.unit, "", tcut.unit, "", "",
-             u.min ** -1, u.min ** -1, "",
-             sensitivity_flux.unit,
-             mc_par_g['area_sim'].to(u.cm ** 2).unit,
-             "", "", "", ""]
-
-    # sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity)
-    # plot_positions_survived_events(events_g,
-    #                                events_p,
-    #                                gammaness_g, gammaness_p,
-    #                                theta2_g, p_contained, sensitivity, energy, n_bins_energy, gcut, tcut)
-
-    # Build dataframe of events that survive the cuts:
-    events = pd.concat((events_g, events_p))
-    dl2 = pd.DataFrame(columns=events.keys())
-    
-    for i in range(0, n_bins_energy):
-        df_bin = events[(events.mc_energy < energy[i+1]) & (events.mc_energy > energy[i]) \
-                               & (events.gammaness > gcut[i]) & (events.theta2 < tcut[i])]
-
-        dl2 = pd.concat((dl2, df_bin))
-
-    return energy, sensitivity, result, units, dl2

@@ -15,7 +15,7 @@ $> python lstchain_mc_sensitivity.py
 """
 
 
-from lstchain.mc.sensitivity import sensitivity, find_best_cuts_sensitivity
+from lstchain.mc.sensitivity import find_best_cuts_sensitivity
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
@@ -61,11 +61,11 @@ def main():
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    fraction_of_events_for_cuts = 0.01 # Fraction of the total number
+    fraction_of_events_for_cuts = 0.0 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
     #(number from 0 to 1)
-    percent_of_gammas_gammaness = 0.9
-    percent_of_gammas_theta2 = 0.7
+    percent_of_gammas_gammaness = 0.7
+    percent_of_gammas_theta2 = 0.8
 
     #Divide the event set in two:
     #First half for calculating the best sensitivity cuts
