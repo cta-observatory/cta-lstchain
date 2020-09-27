@@ -358,8 +358,8 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         print("USING FILTERS: ", writer._h5file.filters)
 
-        first_valid_ucts = None
-        first_valid_ucts_tib = None
+        first_valid_ucts = np.nan
+        first_valid_ucts_tib = np.nan
         previous_ucts_time_unix = []
         previous_ucts_trigger_type = []
 
@@ -498,7 +498,7 @@ def r0_to_dl1(
                                 # UCTS presence flag is OK
                                 ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
 
-                                if first_valid_ucts is None:
+                                if math.isnan(first_valid_ucts):
                                     first_valid_ucts = ucts_time
 
                                     initial_dragon_counter = (
@@ -513,8 +513,8 @@ def r0_to_dl1(
                                         f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
 
-                                if first_event.lst.tel[1].evt.extdevices_presence & 1 \
-                                        and first_valid_ucts_tib is None:
+                                if event.lst.tel[telescope_id].evt.extdevices_presence & 1 \
+                                        and math.isnan(first_valid_ucts_tib):
                                     # Both TIB and UCTS presence flags are OK
                                     first_valid_ucts_tib = ucts_time
 
@@ -545,9 +545,15 @@ def r0_to_dl1(
                                     event.lst.tel[telescope_id].evt.tib_pps_counter +
                                     event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                             )
+
                             if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
                                 # UCTS presence flag is OK
                                 ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+                                if math.isnan(first_valid_ucts):
+                                    first_valid_ucts = ucts_time
+                                if math.isnan(first_valid_ucts_tib) \
+                                        and event.lst.tel[telescope_id].evt.extdevices_presence & 1:
+                                    first_valid_ucts_tib = ucts_time
                             else:
                                 ucts_time = math.nan
 
@@ -765,10 +771,10 @@ def r0_to_dl1(
                                    event.mon.tel[tel_id],
                                    new_ped=new_ped, new_ff=new_ff)
 
-    if first_valid_ucts is None:
+    if math.isnan(first_valid_ucts):
         logger.warning("Not valid UCTS timestamp found")
 
-    if first_valid_ucts_tib is None:
+    if math.isnan(first_valid_ucts_tib):
         logger.warning("Not valid TIB counter value found")
 
     if is_simu:
