@@ -76,17 +76,17 @@ class DL1ParametersContainer(Container):
     concentration_pixel = Field(np.nan, 'Fraction of intensity in brightest '
                                         'pixel')
     n_islands = Field(0, 'Number of Islands')
-    alt_tel = Field(u.Quantity(np.nan, u.rad), 'Telescope altitude pointing',
+    alt_tel = Field(None, 'Telescope altitude pointing',
                     unit=u.rad)
-    az_tel = Field(u.Quantity(np.nan, u.rad), 'Telescope azimuth pointing',
+    az_tel = Field(None, 'Telescope azimuth pointing',
                    unit=u.rad)
 
     obs_id = Field(-1, 'Observation ID')
     event_id = Field(-1, 'Event ID')
     calibration_id = Field(-1, 'ID of the employed calibration event')
-    dragon_time = Field(np.nan, 'Dragon time event trigger')
-    ucts_time = Field(np.nan, 'UCTS time event trigger')
-    tib_time = Field(np.nan, 'TIB time event trigger')
+    dragon_time = Field(None, 'Dragon time event trigger')
+    ucts_time = Field(None, 'UCTS time event trigger')
+    tib_time = Field(None, 'TIB time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     log_mc_energy = Field(None, 'log of simulated energy/TeV')
