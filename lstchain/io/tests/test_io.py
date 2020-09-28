@@ -7,7 +7,8 @@ import os
 from astropy.table import Table
 import astropy.units as u
 
-from lstchain.tests.test_lstchain import mc_gamma_testfile, dl1_file, test_dir, dl2_file
+from lstchain.tests.test_lstchain import mc_gamma_testfile, dl1_file, test_dir
+from lstchain.scripts.tests.test_lstchain_scripts import dl2_file
 
 merged_dl1_file = os.path.join(test_dir, 'dl1_merged.h5')
 
@@ -126,4 +127,4 @@ def test_read_dl2_to_pyirf():
     from lstchain.io.io import read_dl2_to_pyirf
     events, sim_info = read_dl2_to_pyirf(dl2_file)
     assert 'true_energy' in events.colnames
-    assert sim_info.energy_max == 5 * u.TeV
+    assert sim_info.energy_max == 330 * u.TeV
