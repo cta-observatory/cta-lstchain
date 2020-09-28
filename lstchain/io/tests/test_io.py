@@ -122,7 +122,7 @@ def test_read_subarray_description():
     assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
 
 
-@pytest.mark.run(after='test_apply_models')
+@pytest.mark.run(after='test_lstchain_dl1_to_dl2')
 def test_read_dl2_to_pyirf():
     from lstchain.io.io import read_dl2_to_pyirf
     events, sim_info = read_dl2_to_pyirf(dl2_file)
