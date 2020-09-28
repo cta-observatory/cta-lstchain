@@ -356,7 +356,7 @@ def r0_to_dl1(
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
         writer._h5file.filters = filters
-        print("USING FILTERS: ", writer._h5file.filters)
+        logger.info("USING FILTERS: ", writer._h5file.filters)
 
         first_valid_ucts = np.nan
         first_valid_ucts_tib = np.nan
@@ -366,12 +366,11 @@ def r0_to_dl1(
         for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
-                print(i)
+                logger.info(i)
 
             event.dl0.prefix = ''
             event.mc.prefix = 'mc'
             event.trigger.prefix = ''
-
 
             # write sub tables
             if is_simu:
@@ -413,8 +412,6 @@ def r0_to_dl1(
 
                 # update the calibration index in the dl1 event container
                 dl1_container.calibration_id = calibration_index.calibration_id
-
-
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -679,7 +676,6 @@ def r0_to_dl1(
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
                                  containers = [dl1_container])
 
-
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
                         bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
@@ -760,7 +756,6 @@ def r0_to_dl1(
                         writer.write(table_name=f'simulation/{tel_name}',
                                      containers=[event.mc.tel[telescope_id], extra_im]
                                      )
-
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics
