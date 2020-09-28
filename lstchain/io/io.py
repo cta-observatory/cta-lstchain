@@ -1091,6 +1091,6 @@ def merge_dl2_runs(data_path, runs, columns_to_read=None, n_process=4):
 
     observation_times = pool.map(extract_observation_time, df_list)
 
-    observation_time = np.sum(observation_times).total_seconds()
+    observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
