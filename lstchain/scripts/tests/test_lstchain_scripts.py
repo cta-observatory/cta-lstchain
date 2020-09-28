@@ -201,3 +201,11 @@ def test_mc_r0_to_dl2():
         '-o', output_dir,
     )
     assert os.path.exists(dl2_file)
+
+@pytest.mark.run(after='test_mc_r0_to_dl2')
+def test_read_dl2_to_pyirf():
+    from lstchain.io.io import read_dl2_to_pyirf
+    import astropy.units as u
+    events, sim_info = read_dl2_to_pyirf(dl2_file)
+    assert 'true_energy' in events.colnames
+    assert sim_info.energy_max == 330 * u.TeV
