@@ -95,7 +95,7 @@ class DL1ParametersContainer(Container):
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
     mc_core_y = Field(None, 'Simulated impact point y position', unit=u.m)
     mc_h_first_int = Field(None, 'Simulated first interaction height', unit=u.m)
-    mc_type = Field(None, 'Simulated particle type')
+    mc_type = Field(-1, 'Simulated particle type')
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
     mc_x_max = Field(None, "MC Xmax value", unit=u.g / (u.cm ** 2))
