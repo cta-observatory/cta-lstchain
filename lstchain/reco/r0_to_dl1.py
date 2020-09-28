@@ -451,17 +451,9 @@ def r0_to_dl1(
                         'HillasParameterizationError in get_dl1()'
                     )
 
-                # Workaround, see below.
-                if i == 0 and dl1_container.n_pixels == 0:
-                    dl1_filled = None
-
-                # The condition below should now be true for all events, except
-                # when the first event in a run has n_pixels = 0 after
-                # cleaning (i.e. it is an interleaved pedestal). In that case we
-                # do not write it out, to avoid a problem with data types not
-                # being properly set in the DL1ParametersContainer,
-                # which mater error upon writing.
-
+                # The condition below should now be true for all events, this
+                # is a relic of previous approach in which only survivors of
+                # cleaning and parametrization were further processed.
                 if dl1_filled is not None:
 
                     dl1_container.fill_event_info(event)
