@@ -41,7 +41,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_metadata',
            'write_dataframe',
            'write_dl2_dataframe',
-           'write_calibration_data'
+           'write_calibration_data',
+           'read_dl2_to_pyirf'
            ]
 
 
