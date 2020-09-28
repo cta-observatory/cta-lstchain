@@ -191,6 +191,11 @@ class DL1DataCheckContainer(Container):
                                      bins=histogram_binnings.hist_skewness)
         self.hist_skewness = counts
 
+        psi = table.loc[mask, 'psi'].to_numpy()
+        counts, _, _ = \
+            plt.hist(psi, bins=histogram_binnings.hist_psi)
+        self.hist_psi = counts
+
         counts, _, _, _ = \
             plt.hist2d(intensity, table.loc[mask, 'intercept'].to_numpy(),
                        bins=histogram_binnings.hist_intercept)
