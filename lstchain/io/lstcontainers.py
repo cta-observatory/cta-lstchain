@@ -5,6 +5,7 @@ Functions to handle custom containers for the mono reconstruction of LST1
 import astropy.units as u
 import numpy as np
 from astropy.units import Quantity
+from astropy.coordinates import Angle
 from ctapipe.core import Container, Field
 from ctapipe.image import leakage, concentration
 from ctapipe.image import timing_parameters
@@ -31,18 +32,22 @@ class DL1ParametersContainer(Container):
     TODO: maybe fields could be inherited from ctapipe containers definition
         For now I have not found an elegant way to do so
     """
-    intensity = Field(None, 'total intensity (size)')
-    log_intensity = Field(None, 'log of total intensity (size)')
+    intensity = Field(np.float64(np.nan), 'total intensity (size)')
+    log_intensity = Field(np.float64(np.nan), 'log of total intensity (size)')
 
-    x = Field(None, 'centroid x coordinate', unit=u.m)
-    y = Field(None, 'centroid x coordinate', unit=u.m)
-    r = Field(None, 'radial coordinate of centroid', unit=u.m)
-    phi = Field(None, 'polar coordinate of centroid', unit=u.rad)
-    length = Field(None, 'RMS spread along the major-axis', unit=u.deg)
-    width = Field(None, 'RMS spread along the minor-axis', unit=u.deg)
-    psi = Field(None, 'rotation angle of ellipse', unit=u.rad)
-    skewness = Field(None, 'measure of the asymmetry')
-    kurtosis = Field(None, 'measure of the tailedness')
+    x = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
+    y = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
+    r = Field(u.Quantity(np.nan, u.m), 'radial coordinate of centroid', unit=u.m)
+    phi = Field(Angle(np.nan, u.rad), 'polar coordinate of centroid',
+                unit=u.rad)
+    length = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the major-axis',
+                   unit=u.deg)
+    width = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the minor-axis',
+                             unit=u.deg)
+    psi = Field(Angle(np.nan, u.rad), 'rotation angle of ellipse', unit=u.rad)
+
+    skewness = Field(np.nan, 'measure of the asymmetry')
+    kurtosis = Field(np.nan, 'measure of the tailedness')
     disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
     disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
     disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
@@ -51,26 +56,37 @@ class DL1ParametersContainer(Container):
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
-    time_gradient = Field(None, 'Time gradient in the camera')
-    intercept = Field(None, 'Intercept')
-    leakage_intensity_width_1 = Field(None, 'Fraction of intensity in outermost pixels')
-    leakage_intensity_width_2 = Field(None, 'Fraction of intensity in two outermost rings of pixels')
-    leakage_pixels_width_1 = Field(None, 'Fraction of signal pixels that are border pixels')
-    leakage_pixels_width_2 = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
-    n_pixels = Field(None, 'Number of pixels after cleaning')
-    concentration_cog = Field(None, 'Fraction of intensity in three pixels closest to the cog')
-    concentration_core = Field(None, 'Fraction of intensity inside hillas ellipse')
-    concentration_pixel = Field(None, 'Fraction of intensity in brightest pixel')
-    n_islands = Field(None, 'Number of Islands')
-    alt_tel = Field(None, 'Telescope altitude pointing', unit=u.rad)
-    az_tel = Field(None, 'Telescope azimuth pointing', unit=u.rad)
+    time_gradient = Field(np.nan, 'Time gradient in the camera')
+    intercept = Field(np.nan, 'Intercept')
+    leakage_intensity_width_1 = \
+        Field(np.float32(np.nan), 'Fraction of intensity in outermost pixels',
+              dtype=np.float32)
+    leakage_intensity_width_2 = \
+        Field(np.float32(np.nan), 'Fraction of intensity in two outermost '
+                                  'rings of pixels', dtype=np.float32)
+    leakage_pixels_width_1 = Field(np.nan, 'Fraction of signal pixels that are '
+                                           'border pixels')
+    leakage_pixels_width_2 = Field(np.nan, 'Fraction of signal pixels that are '
+                                           'in the two outermost rings of pixels')
+    n_pixels = Field(0, 'Number of pixels after cleaning')
+    concentration_cog = Field(np.nan, 'Fraction of intensity in three pixels '
+                                      'closest to the cog')
+    concentration_core = Field(np.nan, 'Fraction of intensity inside hillas '
+                                       'ellipse')
+    concentration_pixel = Field(np.nan, 'Fraction of intensity in brightest '
+                                        'pixel')
+    n_islands = Field(0, 'Number of Islands')
+    alt_tel = Field(u.Quantity(np.nan, u.rad), 'Telescope altitude pointing',
+                    unit=u.rad)
+    az_tel = Field(u.Quantity(np.nan, u.rad), 'Telescope azimuth pointing',
+                   unit=u.rad)
 
-    obs_id = Field(None, 'Observation ID')
-    event_id = Field(None, 'Event ID')
-    calibration_id = Field(None, 'ID of the employed calibration event')
-    dragon_time = Field(None, 'Dragon time event trigger')
-    ucts_time = Field(None, 'UCTS time event trigger')
-    tib_time = Field(None, 'TIB time event trigger')
+    obs_id = Field(-1, 'Observation ID')
+    event_id = Field(-1, 'Event ID')
+    calibration_id = Field(-1, 'ID of the employed calibration event')
+    dragon_time = Field(np.nan, 'Dragon time event trigger')
+    ucts_time = Field(np.nan, 'UCTS time event trigger')
+    tib_time = Field(np.nan, 'TIB time event trigger')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     log_mc_energy = Field(None, 'log of simulated energy/TeV')
@@ -89,7 +105,7 @@ class DL1ParametersContainer(Container):
                                     "negative for antimatter.")
 
     hadroness = Field(None, "Hadroness")
-    wl = Field(None, "width/length")
+    wl = Field(u.Quantity(np.nan), "width/length")
 
     tel_id = Field(None, "Telescope Id")
     tel_pos_x = Field(None, "Telescope x position in the ground")
