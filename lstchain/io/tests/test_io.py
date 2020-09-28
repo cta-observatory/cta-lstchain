@@ -5,10 +5,8 @@ import tempfile
 import pytest
 import os
 from astropy.table import Table
-import astropy.units as u
 
 from lstchain.tests.test_lstchain import mc_gamma_testfile, dl1_file, test_dir
-from lstchain.scripts.tests.test_lstchain_scripts import dl2_file
 
 merged_dl1_file = os.path.join(test_dir, 'dl1_merged.h5')
 
