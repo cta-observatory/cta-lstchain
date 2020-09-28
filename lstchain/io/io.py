@@ -1017,4 +1017,7 @@ def read_dl2_to_pyirf(filename):
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
     events = table.QTable.from_pandas(events)
 
+    for k, v in unit_mapping.items():
+        events[k] *= v
+
     return events, pyirf_simu_info
