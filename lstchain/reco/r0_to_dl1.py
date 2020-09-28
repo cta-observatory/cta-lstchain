@@ -141,6 +141,14 @@ def get_dl1(
 
         # Fill container
         dl1_container.fill_hillas(hillas)
+
+        # convert ctapipe's width and length (in m) to deg:
+        foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+        width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+        length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+        dl1_container.width = width
+        dl1_container.length = length
+
         dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
@@ -154,22 +162,6 @@ def get_dl1(
         dl1_container.set_telescope_info(subarray, telescope_id)
 
     else:
-        # No image was parametrized, so we put zeros (instead of the default
-        # Nones) in all parameters: a container reset() is not an option because
-        # the default None values prevent the container to be written out. We
-        # cannot use np.nan either, because upon writing it complains for the
-        # integer parameters.
-        #
-        for key in dl1_container.keys():
-            dl1_container[key] = u.Quantity(0, dl1_container.fields[key].unit)
-
-        # Fields width and length do not have in their declaration the units
-        # that are actually expected later in the program, so we set them here.
-        # We now use nans since these are floats, and will be later used to
-        # calculate W/L...
-        dl1_container.width = u.Quantity(np.nan, u.m)
-        dl1_container.length = u.Quantity(np.nan, u.m)
-
         # We set other fields which still make sense for a non-parametrized
         # image:
         dl1_container.set_telescope_info(subarray, telescope_id)
@@ -372,6 +364,7 @@ def r0_to_dl1(
             event.mc.prefix = 'mc'
             event.trigger.prefix = ''
 
+            dl1_container.reset()
 
             # write sub tables
             if is_simu:
@@ -653,10 +646,6 @@ def r0_to_dl1(
                     # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
                     mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
-                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width
-                    dl1_container.length = length
                     dl1_container.prefix = tel.prefix
 
                     # extra info for the image table
