@@ -4,7 +4,7 @@ Run fast-alps analysis
 """
 import argparse
 import toml
-from lstchain.analysis.fast_alps import analyze_on_off, analyze_wobble, LOGGER, setup_logging
+from lstchain.analysis.post_dl2 import analyze_on_off, analyze_wobble, LOGGER, setup_logging
 
 
 def get_parser():

@@ -4,17 +4,15 @@ Collection of core analysis methods
 
 import logging
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from gammapy.stats import WStatCountsStatistic
 from lstchain.io.io import merge_dl2_runs
 from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, rotate
 import lstchain.visualization.plot_dl2 as plotting
-from fast_alps.utils.logger import LOGGER
 
 
-LOGGER = logging.getLogger('fast_alps')
+LOGGER = logging.getLogger('post_dl2')
 LOGGER.setLevel(logging.DEBUG)
 LOGGING_LEVELS = {0: logging.ERROR, 1: logging.INFO, 2: logging.DEBUG}
 
