@@ -420,6 +420,7 @@ def expand_tel_list(tel_list, max_tels):
 
 
 def filter_events(events,
+                  reco_features,
                   filters=dict(intensity=[0, np.inf],
                                  width=[0, np.inf],
                                  length=[0, np.inf],
@@ -455,7 +456,7 @@ def filter_events(events,
 
     if dropna:
         with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
+            return events[filter][reco_features].dropna()
     else:
         return events[filter]
 

@@ -101,6 +101,7 @@ def main():
 
     filtered_data = filter_events(data[all_features], filters=config["events_filters"])
 
+
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
     fileD = args.path_models + "/reg_disp_vector.sav"
