@@ -122,7 +122,10 @@ def test_apply_models():
     import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
+    dl1 = filter_events(dl1,
+                        filters=custom_config["events_filters"],
+                        finite_params=custom_config['regression_features'] + custom_config['classification_features'],
+                        )
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
@@ -183,13 +186,13 @@ def test_sensitivity():
                                                    obstime)
 
 
-@pytest.mark.last
-def test_clean_test_files():
-    """
-    Function to clean the test files created by the previous test
-    """
-    import shutil
-    shutil.rmtree(test_dir)
+# @pytest.mark.last
+# def test_clean_test_files():
+#     """
+#     Function to clean the test files created by the previous test
+#     """
+#     import shutil
+#     shutil.rmtree(test_dir)
 
 
 def test_disp_vector():

@@ -81,10 +81,6 @@ def main():
 
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
-    regression_features = config['regression_features']
-    classification_features = config['classification_features']
-    all_features = [f for f in set(regression_features + classification_features) if f in data.columns]
-
     if config['source_dependent']:
         data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data = pd.concat([data, data_src_dep], axis=1)
@@ -99,7 +95,10 @@ def main():
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
 
-    filtered_data = filter_events(data[all_features], filters=config["events_filters"])
+    data = filter_events(data,
+                         filters=config["events_filters"],
+                         finite_params=config['regression_features'] + config['classification_features'],
+                         )
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
@@ -112,16 +111,10 @@ def main():
     
     #Apply the models to the data
 
-    dl2 = dl1_to_dl2.apply_models(filtered_data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
-
-    # merge predicted columns in data
-    for feature in dl2.columns:
-        if feature not in data:
-            data[feature] = dl2[feature]
-
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
@@ -154,7 +147,7 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
-    write_dl2_dataframe(data, output_file)
+    write_dl2_dataframe(dl2, output_file)
 
 if __name__ == '__main__':
     main()

@@ -421,13 +421,13 @@ def expand_tel_list(tel_list, max_tels):
 
 def filter_events(events,
                   filters=dict(intensity=[0, np.inf],
-                                 width=[0, np.inf],
-                                 length=[0, np.inf],
-                                 wl=[0, np.inf],
-                                 r=[0, np.inf],
-                                 leakage_intensity_width_2=[0, 1],
-                                 ),
-                  dropna=True,
+                               width=[0, np.inf],
+                               length=[0, np.inf],
+                               wl=[0, np.inf],
+                               r=[0, np.inf],
+                               leakage_intensity_width_2=[0, 1],
+                               ),
+                  finite_params=None,
                   ):
     """
     Apply data filtering to a pandas dataframe.
@@ -439,8 +439,8 @@ def filter_events(events,
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
-    dropna: bool
-        if True (default), `dropna()` is applied to the dataframe.
+    finite_params: optional, None or list of strings
+        extra filter to ensure finite parameters
 
     Returns
     -------
@@ -452,12 +452,12 @@ def filter_events(events,
     for k in filters.keys():
         if k in events.columns:
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+    if finite_params is not None:
+        for k in finite_params:
+            if k in events.columns:
+                filter = filter & np.isfinite(events[k])
 
-    if dropna:
-        with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
-    else:
-        return events[filter]
+    return events[filter]
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):

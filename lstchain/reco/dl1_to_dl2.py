@@ -308,8 +308,15 @@ def build_models(filegammas, fileprotons,
         df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)], axis=1)
         df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)], axis=1)
 
-    df_gamma = utils.filter_events(df_gamma, filters=events_filters)
-    df_proton = utils.filter_events(df_proton, filters=events_filters)
+    df_gamma = utils.filter_events(df_gamma,
+                                   filters=events_filters,
+                                   finite_params=config['regression_features'] + config['classification_features'],
+                                   )
+
+    df_proton = utils.filter_events(df_proton,
+                                    filters=events_filters,
+                                    finite_params=config['regression_features'] + config['classification_features'],
+                                    )
 
     regression_features = config['regression_features']
 
