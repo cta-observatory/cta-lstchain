@@ -46,6 +46,8 @@ __all__ = [
     'unix_tai_to_time',
 ]
 
+log = logging.getLogger(__name__)
+
 # position of the LST1
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
@@ -420,6 +422,7 @@ def expand_tel_list(tel_list, max_tels):
 
 
 def filter_events(events,
+                  reco_features,
                   filters=dict(intensity=[0, np.inf],
                                  width=[0, np.inf],
                                  length=[0, np.inf],
@@ -454,8 +457,7 @@ def filter_events(events,
             filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
     if dropna:
-        with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
+        return events[filter][reco_features].dropna()
     else:
         return events[filter]
 

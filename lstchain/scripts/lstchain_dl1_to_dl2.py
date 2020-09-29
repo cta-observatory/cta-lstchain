@@ -94,7 +94,7 @@ def main():
         else:
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
-    data = filter_events(data, filters=config["events_filters"])
+    data = filter_events(data, config['regression_features'], filters=config["events_filters"])
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"

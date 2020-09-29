@@ -308,10 +308,11 @@ def build_models(filegammas, fileprotons,
         df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)], axis=1)
         df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)], axis=1)
 
-    df_gamma = utils.filter_events(df_gamma, filters=events_filters)
-    df_proton = utils.filter_events(df_proton, filters=events_filters)
-
     regression_features = config['regression_features']
+
+    df_gamma = utils.filter_events(df_gamma, regression_features, filters=events_filters)
+    df_proton = utils.filter_events(df_proton, regression_features, filters=events_filters)
+
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
