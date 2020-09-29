@@ -460,6 +460,7 @@ def filter_events(events,
     return events[filter]
 
 
+
 def linear_imputer(y, missing_values=np.nan, copy=True):
     """
     Replace missing values in y with values from a linear interpolation on their position in the array.

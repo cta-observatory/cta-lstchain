@@ -318,7 +318,6 @@ def build_models(filegammas, fileprotons,
                                     finite_params=config['regression_features'] + config['classification_features'],
                                     )
 
-    regression_features = config['regression_features']
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
