@@ -313,7 +313,6 @@ def build_models(filegammas, fileprotons,
     df_gamma = utils.filter_events(df_gamma, regression_features, filters=events_filters)
     df_proton = utils.filter_events(df_proton, regression_features, filters=events_filters)
 
-
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
