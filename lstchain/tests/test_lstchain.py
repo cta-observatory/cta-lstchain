@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
-import astropy.units as u 
+import astropy.units as u
 
 test_dir = 'testfiles'
 
@@ -155,7 +155,7 @@ def produce_fake_dl2_proton_file(dl2_file):
 
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
 def test_sensitivity():
-    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
 
     produce_fake_dl2_proton_file(dl2_file)
 
@@ -186,13 +186,13 @@ def test_sensitivity():
                                                    obstime)
 
 
-# @pytest.mark.last
-# def test_clean_test_files():
-#     """
-#     Function to clean the test files created by the previous test
-#     """
-#     import shutil
-#     shutil.rmtree(test_dir)
+@pytest.mark.last
+def test_clean_test_files():
+    """
+    Function to clean the test files created by the previous test
+    """
+    import shutil
+    shutil.rmtree(test_dir)
 
 
 def test_disp_vector():
