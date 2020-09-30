@@ -54,6 +54,9 @@ UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
 INVALID_TIME = UCTS_EPOCH
 
 
+log = logging.getLogger(__name__)
+
+
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
     (angle from z-axis) for simtel array coordinate systems
@@ -421,13 +424,13 @@ def expand_tel_list(tel_list, max_tels):
 
 def filter_events(events,
                   filters=dict(intensity=[0, np.inf],
-                                 width=[0, np.inf],
-                                 length=[0, np.inf],
-                                 wl=[0, np.inf],
-                                 r=[0, np.inf],
-                                 leakage_intensity_width_2=[0, 1],
-                                 ),
-                  dropna=True,
+                               width=[0, np.inf],
+                               length=[0, np.inf],
+                               wl=[0, np.inf],
+                               r=[0, np.inf],
+                               leakage_intensity_width_2=[0, 1],
+                               ),
+                  finite_params=None,
                   ):
     """
     Apply data filtering to a pandas dataframe.
@@ -439,8 +442,8 @@ def filter_events(events,
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
-    dropna: bool
-        if True (default), `dropna()` is applied to the dataframe.
+    finite_params: optional, None or list of strings
+        extra filter to ensure finite parameters
 
     Returns
     -------
@@ -451,13 +454,24 @@ def filter_events(events,
 
     for k in filters.keys():
         if k in events.columns:
-            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+            filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
-    if dropna:
+    if finite_params is not None:
+        _finite_params = list(set(finite_params).intersection(list(events.columns)))
         with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
-    else:
-        return events[filter]
+            not_finite_mask = events[_finite_params].isnull()
+        filter &= ~(not_finite_mask.any(axis=1))
+
+        not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
+        if (not_finite_counts > 0).any():
+            log.warning('Data contains not-predictable events.')
+            log.warning('Column | Number of non finite values')
+            for k, v in not_finite_counts.items():
+                if v > 0:
+                    log.warning(f'{k} : {v}')
+
+    return events[filter]
+
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
