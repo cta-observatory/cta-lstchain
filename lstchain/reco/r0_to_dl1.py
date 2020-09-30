@@ -731,7 +731,7 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(None,
+                                fill_muon_event(-1,
                                                 muon_parameters,
                                                 good_ring,
                                                 event.index.event_id,
