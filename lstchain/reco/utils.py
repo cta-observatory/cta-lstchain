@@ -54,6 +54,9 @@ UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
 INVALID_TIME = UCTS_EPOCH
 
 
+log = logging.getLogger(__name__)
+
+
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
     (angle from z-axis) for simtel array coordinate systems
@@ -451,11 +454,20 @@ def filter_events(events,
 
     for k in filters.keys():
         if k in events.columns:
-            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+            filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+
+    _finite_params = list(set(finite_params + events.columns))
+
     if finite_params is not None:
-        for k in finite_params:
-            if k in events.columns:
-                filter = filter & np.isfinite(events[k])
+        with pd.option_context('mode.use_inf_as_null', True):
+            finite_mask = ~(events.isnull())
+        filter &= finite_mask[_finite_params]
+
+    not_finite_counts = (~finite_mask).sum(axis=0)[_finite_params]
+    if (not_finite_counts > 0).any():
+        not_finite_counts_str = ', '.join(f'{k}: {v}' for k, v in not_finite_counts.items() if v > 0)
+        log.warning('Data contains not-predictable events.')
+        log.warning(f'There are nan-values in columns: {not_finite_counts_str}')
 
     return events[filter]
 
