@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
-import astropy.units as u 
+import astropy.units as u
 
 test_dir = 'testfiles'
 
@@ -124,7 +124,10 @@ def test_apply_models():
     import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
+    dl1 = filter_events(dl1,
+                        filters=custom_config["events_filters"],
+                        finite_params=custom_config['regression_features'] + custom_config['classification_features'],
+                        )
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
@@ -154,7 +157,7 @@ def produce_fake_dl2_proton_file(dl2_file):
 
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
 def test_sensitivity():
-    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
 
     produce_fake_dl2_proton_file(dl2_file)
 
