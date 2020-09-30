@@ -356,7 +356,7 @@ def r0_to_dl1(
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
         writer._h5file.filters = filters
-        print("USING FILTERS: ", writer._h5file.filters)
+        logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
         first_valid_ucts = None
         first_valid_ucts_tib = None
@@ -366,12 +366,11 @@ def r0_to_dl1(
         for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
-                print(i)
+                logger.info(i)
 
             event.dl0.prefix = ''
             event.mc.prefix = 'mc'
             event.trigger.prefix = ''
-
 
             # write sub tables
             if is_simu:
@@ -413,8 +412,6 @@ def r0_to_dl1(
 
                 # update the calibration index in the dl1 event container
                 dl1_container.calibration_id = calibration_index.calibration_id
-
-
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -505,7 +502,7 @@ def r0_to_dl1(
                                             event.lst.tel[telescope_id].evt.pps_counter[module_id] +
                                             event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
                                     )
-                                    logger.info(
+                                    logger.warning(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.index.event_id}, "
@@ -513,7 +510,7 @@ def r0_to_dl1(
                                         f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
 
-                                if first_event.lst.tel[1].evt.extdevices_presence & 1 \
+                                if event.lst.tel[telescope_id].evt.extdevices_presence & 1 \
                                         and first_valid_ucts_tib is None:
                                     # Both TIB and UCTS presence flags are OK
                                     first_valid_ucts_tib = ucts_time
@@ -522,7 +519,7 @@ def r0_to_dl1(
                                             event.lst.tel[telescope_id].evt.tib_pps_counter +
                                             event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                                     )
-                                    logger.info(
+                                    logger.warning(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.index.event_id}, UCTS timestamp corresponding to "
@@ -545,9 +542,15 @@ def r0_to_dl1(
                                     event.lst.tel[telescope_id].evt.tib_pps_counter +
                                     event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                             )
+
                             if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
                                 # UCTS presence flag is OK
                                 ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+                                if first_valid_ucts is None:
+                                    first_valid_ucts = ucts_time
+                                if first_valid_ucts_tib is None \
+                                        and event.lst.tel[telescope_id].evt.extdevices_presence & 1:
+                                    first_valid_ucts_tib = ucts_time
                             else:
                                 ucts_time = math.nan
 
@@ -673,7 +676,6 @@ def r0_to_dl1(
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
                                  containers = [dl1_container])
 
-
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
                         bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
@@ -754,7 +756,6 @@ def r0_to_dl1(
                         writer.write(table_name=f'simulation/{tel_name}',
                                      containers=[event.mc.tel[telescope_id], extra_im]
                                      )
-
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics
