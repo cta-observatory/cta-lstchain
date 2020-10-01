@@ -51,14 +51,14 @@ def get_volume_reduction_method(config_file):
     return algorithm
 
 
-def apply_volume_reduction(event, config):
+def apply_volume_reduction(event, subarray, config):
     """
     Checks the volume reduction algorithm defined in the config file, and if not None, it applies
      to a **calibrated** event the volume reduction method.
 
     Parameters
     ----------
-    event: 'ctapipe.io.containers.DataContainer'
+    event: 'ctapipe.containers.DataContainer'
     config: dict
         Read the parameters of the volume reduction method specified in the config file.
 
@@ -66,7 +66,7 @@ def apply_volume_reduction(event, config):
     -------
     none
         Modifies the event container by applying the computed mask to the image, the waveform
-        and the pulse_time objects, as:
+        and the peak_time objects, as:
             image[~mask] = 0, ...
 
     """
@@ -82,16 +82,16 @@ def apply_volume_reduction(event, config):
 
         for tel_id in event.r0.tels_with_data:
 
-            camera = event.inst.subarray.tel[tel_id].camera
+            camera_geometry = subarray.tel[tel_id].camera.geometry
 
             image = event.dl1.tel[tel_id].image  # Volume reduction mask computed, to date, at dl1 level !
-            pulse_time = event.dl1.tel[tel_id].pulse_time
+            peak_time = event.dl1.tel[tel_id].peak_time
             waveform = event.dl0.tel[tel_id].waveform
 
-            pixels_to_keep = volume_reduction_algorithm(camera, image, **parameters)
+            pixels_to_keep = volume_reduction_algorithm(camera_geometry, image, **parameters)
 
             image[~pixels_to_keep] = 0
-            pulse_time[~pixels_to_keep] = 0
+            peak_time[~pixels_to_keep] = 0
             if waveform.ndim == 2:
                 # the gain selection as been applied to DL0
                 waveform[~pixels_to_keep, :] = 0

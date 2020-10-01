@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.reco.utils import filter_events
-import astropy.units as u 
+import astropy.units as u
 
 test_dir = 'testfiles'
 
@@ -122,7 +122,10 @@ def test_apply_models():
     import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
+    dl1 = filter_events(dl1,
+                        filters=custom_config["events_filters"],
+                        finite_params=custom_config['regression_features'] + custom_config['classification_features'],
+                        )
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
@@ -132,16 +135,16 @@ def test_apply_models():
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
-def produce_fake_dl1_proton_file():
+def produce_fake_dl1_proton_file(dl1_file):
     """
-    Produce a fake dl2 proton file by copying the dl2 gamma test file
+    Produce a fake dl1 proton file by copying the dl2 gamma test file
     and changing mc_type
     """
     events = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     events.mc_type = 101
     events.to_hdf(fake_dl1_proton_file, key=dl1_params_lstcam_key)
 
-def produce_fake_dl2_proton_file():
+def produce_fake_dl2_proton_file(dl2_file):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type
@@ -152,9 +155,9 @@ def produce_fake_dl2_proton_file():
 
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
 def test_sensitivity():
-    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity 
+    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
 
-    produce_fake_dl2_proton_file()
+    produce_fake_dl2_proton_file(dl2_file)
 
     nfiles_gammas = 1
     nfiles_protons = 1

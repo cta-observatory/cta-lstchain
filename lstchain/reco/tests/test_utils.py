@@ -9,7 +9,7 @@ import pandas as pd
 def test_camera_to_altaz():
     pos_x = np.array([0, 0]) * u.m
     pos_y = np.array([0, 0]) * u.m
-    focal = 28*u.m
+    focal = 28 * u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
@@ -17,7 +17,7 @@ def test_camera_to_altaz():
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
     # Test for real event with a time
-    obs_time = Time('2018-11-01T02:00', '2018-11-01T02:00')
+    obs_time = Time(['2018-11-01T02:00', '2018-11-01T02:00'])
     sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = obs_time)
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
@@ -88,3 +88,18 @@ def test_unix_tai_to_utc():
     timestamps = np.array([timestamp_tai, np.nan])
     assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
     assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
+
+
+def test_filter_events():
+    from lstchain.reco.utils import filter_events
+    df = pd.DataFrame({'a': [1, 2, 3, ],
+                       'b': [np.nan, 2.2, 3.2],
+                       'c': [1, 2, np.inf]}
+                      )
+    np.testing.assert_array_equal(filter_events(df, finite_params=['b']),
+                                  pd.DataFrame({'a': [2, 3], 'b': [2.2, 3.2], 'c': [2, np.inf]}))
+    np.testing.assert_array_equal(filter_events(df, finite_params=['b', 'c']),
+                                  pd.DataFrame({'a': [2], 'b': [2.2], 'c': [2]}))
+    np.testing.assert_array_equal(filter_events(df, finite_params=['e']), df)
+    np.testing.assert_array_equal(filter_events(df, filters={'a': [0, 1]}),
+                                  pd.DataFrame({'a': [1], 'b': [np.nan], 'c': 1}))

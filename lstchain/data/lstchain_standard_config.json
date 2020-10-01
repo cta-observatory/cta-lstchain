@@ -5,7 +5,7 @@
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage2_intensity": [0, 1]
+    "leakage_intensity_width_2": [0, 1]
   },
 
   "tailcut": {
@@ -76,7 +76,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands"
   ],
 
@@ -93,7 +93,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage2_intensity",
+    "leakage_intensity_width_2",
     "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
@@ -112,8 +112,7 @@
   "gain_selector_config": {
     "threshold":  3500
   },
-  "apply_charge_correction": false,
-  "charge_scale": [1.0,1.0],
+  "charge_scale": [1.142,1.104],
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
@@ -139,9 +138,9 @@
   "LSTCalibrationCalculator":{
      "minimum_hg_charge_median": 5000,
      "maximum_lg_charge_std": 300,
+    "squared_excess_noise_factor": 1.222,
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
-     "apply_charge_correction": false,
      "PedestalIntegrator":{
        "sample_size": 10000,
        "sample_duration":100000,

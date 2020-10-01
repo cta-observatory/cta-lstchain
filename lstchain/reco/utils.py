@@ -11,36 +11,38 @@ Usage:
 "import utils"
 """
 
-import numpy as np
-from ctapipe.coordinates import CameraFrame
+import logging
+from warnings import warn
+
 import astropy.units as u
-from astropy.utils import deprecated
+import numpy as np
+import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
+from astropy.utils import deprecated
+from ctapipe.coordinates import CameraFrame
+
 from . import disp
-from warnings import warn
-import pandas as pd
-import logging
 
 __all__ = [
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
-    'get_event_pos_in_camera',
-    'reco_source_position_sky',
     'camera_to_altaz',
-    'sky_to_camera',
-    'radec_to_camera',
-    'source_side',
-    'source_dx_dy',
-    'polar_to_cartesian',
     'cartesian_to_polar',
-    'predict_source_position_in_camera',
+    'clip_alt',
     'expand_tel_list',
     'filter_events',
-    'linear_imputer',
+    'get_event_pos_in_camera',
     'impute_pointing',
-    'clip_alt',
+    'linear_imputer',
+    'polar_to_cartesian',
+    'predict_source_position_in_camera',
+    'radec_to_camera',
+    'reco_source_position_sky',
+    'sky_to_camera',
+    'source_dx_dy',
+    'source_side',
     'unix_tai_to_time',
 ]
 
@@ -50,6 +52,9 @@ obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
 INVALID_TIME = UCTS_EPOCH
+
+
+log = logging.getLogger(__name__)
 
 
 def alt_to_theta(alt):
@@ -159,7 +164,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
@@ -419,13 +424,13 @@ def expand_tel_list(tel_list, max_tels):
 
 def filter_events(events,
                   filters=dict(intensity=[0, np.inf],
-                                 width=[0, np.inf],
-                                 length=[0, np.inf],
-                                 wl=[0, np.inf],
-                                 r=[0, np.inf],
-                                 leakage2_intensity=[0, 1],
-                                 ),
-                  dropna=True,
+                               width=[0, np.inf],
+                               length=[0, np.inf],
+                               wl=[0, np.inf],
+                               r=[0, np.inf],
+                               leakage_intensity_width_2=[0, 1],
+                               ),
+                  finite_params=None,
                   ):
     """
     Apply data filtering to a pandas dataframe.
@@ -437,8 +442,8 @@ def filter_events(events,
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
-    dropna: bool
-        if True (default), `dropna()` is applied to the dataframe.
+    finite_params: optional, None or list of strings
+        extra filter to ensure finite parameters
 
     Returns
     -------
@@ -449,13 +454,24 @@ def filter_events(events,
 
     for k in filters.keys():
         if k in events.columns:
-            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+            filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
 
-    if dropna:
+    if finite_params is not None:
+        _finite_params = list(set(finite_params).intersection(list(events.columns)))
         with pd.option_context('mode.use_inf_as_null', True):
-            return events[filter].dropna()
-    else:
-        return events[filter]
+            not_finite_mask = events[_finite_params].isnull()
+        filter &= ~(not_finite_mask.any(axis=1))
+
+        not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
+        if (not_finite_counts > 0).any():
+            log.warning('Data contains not-predictable events.')
+            log.warning('Column | Number of non finite values')
+            for k, v in not_finite_counts.items():
+                if v > 0:
+                    log.warning(f'{k} : {v}')
+
+    return events[filter]
+
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
