@@ -34,6 +34,7 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--default_time_run', help="If 0 time calibration is calculated otherwise create a link to the give run time calibration",type=int, default='1625')
 optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
+optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
 
 
 args = parser.parse_args()
@@ -45,6 +46,7 @@ base_dir = args.base_dir
 default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
+sub_run = '%04d'%args.sub_run
 
 max_events = 1000000
 
@@ -55,7 +57,7 @@ def main():
 
     try:
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
+        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run}*'))
         if len(file_list) == 0:
             print(f">>> Error: Run {run} not found\n")
             raise NameError()
