@@ -1064,13 +1064,13 @@ def extract_observation_time(t_df):
            pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
 
 
-def merge_dl2_runs(data_path, runs, columns_to_read=None, n_process=4):
+def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     """
     Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.
 
     Parameters
     ----------
-    data_path: Path to data location
+    data_tag: lstchain version tag
     runs: List of run numbers
     n_process: Number of parallel read processes to use
 
@@ -1079,13 +1079,15 @@ def merge_dl2_runs(data_path, runs, columns_to_read=None, n_process=4):
     Pair (observation time, data)
     """
     from functools import partial
+    from glob import glob
+    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*') # Current format of LST data path
 
     pool = Pool(n_process)
     filelist = []
     # Create a list of files with matching run numbers
-    for filename in sorted(os.listdir(data_path)):
-        if any(str(run) in filename for run in runs):
-            filelist.append(f'{data_path}/{filename}')
+    for filename in filepath_glob:
+        if any(f'Run{run:05}' in filename for run in runs):
+            filelist.append(filename)
 
     df_list = pool.map(partial(read_dl2_sub_run, columns_to_read=columns_to_read), filelist)
 

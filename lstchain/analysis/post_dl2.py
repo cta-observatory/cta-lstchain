@@ -51,10 +51,10 @@ def analyze_wobble(config):
     theta2_cut = config['analysis']['selection']['theta2'][0]
     LOGGER.info("Running wobble analysis with %s off-source observation points", n_points)
     LOGGER.info("Analyzing runs %s", config['analysis']['runs'])
-    observation_time, data = merge_dl2_runs(config['input']['data_path'],
+    observation_time, data = merge_dl2_runs(config['input']['data_tag'],
                                             config['analysis']['runs'],
                                             config['input']['columns_to_read'])
-    LOGGER.debug('\nPreselction:\n%s',config['preselection'])
+    LOGGER.debug('\nPreselection:\n%s',config['preselection'])
     for key, value in config['preselection'].items():
         LOGGER.debug('\nParameter: %s, range: %s, value type: %s', key, value, type(value))
 
@@ -99,12 +99,12 @@ def analyze_on_off(config):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     LOGGER.info("Running ON/OFF analysis")
     LOGGER.info("ON data runs: %s", config['analysis']['runs_on'])
-    observation_time_on, data_on = merge_dl2_runs(config['input']['data_path'],
+    observation_time_on, data_on = merge_dl2_runs(config['input']['data_tag'],
                                                   config['analysis']['runs_on'],
                                                   config['input']['columns_to_read'], 4)
     LOGGER.info("ON observation time: %s", observation_time_on)
     LOGGER.info("OFF data runs: %s", config['analysis']['runs_off'])
-    observation_time_off, data_off = merge_dl2_runs(config['input']['data_path'],
+    observation_time_off, data_off = merge_dl2_runs(config['input']['data_tag'],
                                                     config['analysis']['runs_off'],
                                                     config['input']['columns_to_read'], 4)
     LOGGER.info("OFF observation time: %s", observation_time_off)
