@@ -21,7 +21,7 @@ __all__ = [
     'calculate_sensitivity_lima_ebin',
     'bin_definition',
     'ring_containment',
-    'find_best_cuts_sensitivity',
+    'sensitivity_fraction_of_gammas',
     'sensitivity',
     ]
 
@@ -314,9 +314,8 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
 
     return contained, area
 
-def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
+def sensitivity_fraction_of_gammas(dl2_file_g, dl2_file_p,
                                events_g, events_p,
-                               events_g_cuts, events_p_cuts,
                                ntelescopes_gammas, ntelescopes_protons,
                                n_bins_energy,
                                percent_of_gammas_gammaness,
@@ -353,9 +352,6 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
 
     # Read simulated and reconstructed values
 
-    gammaness_g_cuts, theta2_g_cuts, e_reco_g_cuts, e_true_g_cuts, mc_par_g_cuts, events_g_cuts = process_mc(dl2_file_g, events_g_cuts,  'gamma')
-    gammaness_p_cuts, angdist2_p_cuts, e_reco_p_cuts, e_true_p_cuts, mc_par_p_cuts, events_p_cuts = process_mc(dl2_file_p, events_p_cuts, 'proton')
-    
     gammaness_g, theta2_g, e_reco_g, e_true_g, mc_par_g, events_g = process_mc(dl2_file_g, events_g,  'gamma')
     gammaness_p, angdist2_p, e_reco_p, e_true_p, mc_par_p, events_p = process_mc(dl2_file_p, events_p, 'proton')
 
@@ -376,19 +372,21 @@ def find_best_cuts_sensitivity(dl2_file_g, dl2_file_p,
     emin_sensitivity =  mc_par_p['emin']
     emax_sensitivity =  mc_par_p['emax']
 
-    energy = np.logspace(np.log10(emin_sensitivity.to_value()),
-                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
+    #Energy bins
+    e_bins = np.logspace(np.log10(emin_sensitivity.to_value()),
+                         np.log10(emax_sensitivity.to_value()), n_bins_energy + 1)
+    energy = e_bins * u.TeV
     
     # Extract spectral parameters
     dFdE, crab_par = crab_hegra(energy)
     dFdEd0, proton_par = proton_bess(energy)
 
-    bins = np.logspace(np.log10(emin_sensitivity.to_value()), np.log10(emax_sensitivity.to_value()), n_bins_energy + 1)
-
+    
+                       
     y0 = mc_par_g['sim_ev'] / (mc_par_g['emax'].to_value()**(mc_par_g['sp_idx'] + 1) \
                                - mc_par_g['emin'].to_value()**(mc_par_g['sp_idx'] + 1)) \
         * (mc_par_g['sp_idx'] + 1)
-    y = y0 * (bins[1:]**(crab_par['alpha'] + 1) - bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
+    y = y0 * (e_bins[1:]**(crab_par['alpha'] + 1) - e_bins[:-1]**(crab_par['alpha'] + 1)) / (crab_par['alpha'] + 1)
 
     n_sim_bin = y
 

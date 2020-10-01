@@ -8,14 +8,14 @@ Inputs are DL1/DL2 gamma and proton files
 Usage:
 
 $> python lstchain_mc_sensitivity.py
---gdl2-cuts dl2_gammas.h5
---pdl2-cuts dl2_protons.h5
+--gdl2 dl2_gammas.h5
+--pdl2 dl2_protons.h5
 --o /output/path
 
 """
 
 
-from lstchain.mc.sensitivity import find_best_cuts_sensitivity
+from lstchain.mc.sensitivity import sensitivity_fraction_of_gammas
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
@@ -23,7 +23,6 @@ import numpy as np
 import pandas as pd
 import argparse
 import ctaplot
-from lstchain.visualization import plot_dl2
 from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
@@ -64,8 +63,8 @@ def main():
     fraction_of_events_for_cuts = 0.0 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
     #(number from 0 to 1)
-    percent_of_gammas_gammaness = 0.7
-    percent_of_gammas_theta2 = 0.8
+    fraction_of_gammas_gammaness = 0.7
+    fraction_of_gammas_theta2 = 0.8
 
     #Divide the event set in two:
     #First half for calculating the best sensitivity cuts
@@ -86,34 +85,28 @@ def main():
     df_proton_events_for_sens=df_protons[half_size_protons:]
     
     # Finds the best cuts for the computation of the sensitivity
-    energy, best_sens, result, units, dl2, gcut, tcut = find_best_cuts_sensitivity(args.dl2_file_g,
+    energy, sensitivity, result, units, events, gcut, tcut = sensitivity_fraction_of_gammas(args.dl2_file_g,
                                                                                    args.dl2_file_p,
                                                                                    df_gamma_events_for_sens,
                                                                                    df_proton_events_for_sens,
-                                                                                   df_gamma_events_for_cuts,
-                                                                                   df_proton_events_for_cuts,
                                                                                    ntelescopes_gamma,
                                                                                    ntelescopes_protons,
                                                                                    n_bins_energy,
-                                                                                   percent_of_gammas_gammaness,
-                                                                                   percent_of_gammas_theta2,
+                                                                                   fraction_of_gammas_gammaness,
+                                                                                   fraction_of_gammas_theta2,
                                                                                    noff,
                                                                                    fraction_of_events_for_cuts,
                                                                                    obstime)
     
-    #For testing using fixed cuts
-    #gcut = np.ones(n_bins_energy) * 0.3
-    #tcut = np.ones(n_bins_energy) * 0.01
-
+    
     print("\nApplying optimal gammaness cuts:", gcut)
     print("Applying optimal theta2 cuts: {} \n".format(tcut))
-
 
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
     
     # Saves the results
-    dl2.to_hdf(args.output_path+'/test_sens.h5', key='data', mode='w')
+    events.to_hdf(args.output_path+'/test_sens.h5', key='data', mode='w')
     result.to_hdf(args.output_path+'/test_sens.h5', key='results')
 
     tab = Table.from_pandas(result)
@@ -137,7 +130,7 @@ def main():
     plot_utils.plot_Crab_SED(ax, 100, 5, 1e5, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 5, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 5, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
-    plot_utils.plot_sensitivity(energy, best_sens, ax)
+    plot_utils.plot_sensitivity(energy, sensitivity, ax)
     plt.legend()
     plt.savefig(args.output_path+"/sensitivity.png")
     plt.show()
@@ -156,8 +149,8 @@ def main():
 
     #Gammaness
     #fig=plt.figure(figsize=(12, 8))
-    gammas_mc = dl2[dl2.mc_type == 0]
-    protons_mc = dl2[dl2.mc_type == 101]
+    gammas_mc = events[events.mc_type == 0]
+    protons_mc = events[events.mc_type == 101]
     sns.distplot(gammas_mc.gammaness, label='gammas')
     sns.distplot(protons_mc.gammaness, label='protons')
     plt.legend()
