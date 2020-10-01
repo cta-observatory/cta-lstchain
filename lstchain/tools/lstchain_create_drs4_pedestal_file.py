@@ -64,7 +64,24 @@ class PedestalFITSWriter(Tool):
     def start(self):
 
         try:
-            pass
+            if self.deltaT:
+                self.log.info("DeltaT correction active")
+                for i, event in enumerate(self.eventsource):
+                    for tel_id in event.r0.tels_with_data:
+                        self.lst_r0.time_lapse_corr(event, tel_id)
+                        self.pedestal.fill_pedestal_event(event)
+                        if i % 500 == 0:
+                            self.log.debug("i = {}, ev id = {}".format(i, event.index.event_id))
+            else:
+                self.log.info("DeltaT correction no active")
+                for i, event in enumerate(self.eventsource):
+                    self.pedestal.fill_pedestal_event(event)
+                    if i % 500 == 0:
+                        self.log.debug("i = {}, ev id = {}".format(i, event.index.event_id))
+
+            # Finalize pedestal and write to fits file
+            self.pedestal.finalize_pedestal()
+
         except Exception as e:
             self.log.error(e)
 
