@@ -17,9 +17,10 @@ class PedestalFITSWriter(Tool):
     description = "Generate a pedestal FITS file"
 
     output_file = traits.Path(
+        default_value="pedestal.fits",
         help="Path to the generated FITS pedestal file",
         directory_ok=False,
-        exist=False,
+        exists=False,
     ).tag(config=True)
 
     deltaT = traits.Bool(
@@ -47,19 +48,22 @@ class PedestalFITSWriter(Tool):
         """
 
         self.eventsource = None
-        self.lst_r0 = None
         self.pedestal = None
+        self.lst_r0 = None
+        self.tel_id = None
+        self.ev = None
 
     def setup(self):
 
         self.log.debug(f"Open file")
         self.eventsource = EventSource.from_config(parent=self)
+
         seeker = EventSeeker(self.eventsource)
-        ev = seeker[0]
-        tel_id = ev.r0.tels_with_data[0]
-        n_modules = ev.lst.tel[tel_id].svc.num_modules
+        self.ev = seeker[0]
+        self.tel_id = self.ev.r0.tels_with_data[0]
+        n_modules = self.ev.lst.tel[self.tel_id].svc.num_modules
         self.lst_r0 = LSTR0Corrections(config=self.config)
-        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules)
+        self.pedestal = DragonPedestal(tel_id=self.tel_id, n_module=n_modules)
 
     def start(self):
 
@@ -79,18 +83,22 @@ class PedestalFITSWriter(Tool):
                     if i % 500 == 0:
                         self.log.debug("i = {}, ev id = {}".format(i, event.index.event_id))
 
-            # Finalize pedestal and write to fits file
             self.pedestal.finalize_pedestal()
 
         except Exception as e:
             self.log.error(e)
 
     def finish(self):
-        # Provenance().add_output_file(
-        #     self.output_file,
-        #     role='mon.tel.pedestal'
-        # )
-        pass
+
+        primaryhdu = fits.PrimaryHDU(self.ev.lst.tel[self.tel_id].svc.pixel_ids)
+        secondhdu = fits.ImageHDU(np.int16(self.pedestal.meanped))
+        hdulist = fits.HDUList([primaryhdu, secondhdu])
+        hdulist.writeto(self.output_file)
+
+        Provenance().add_output_file(
+            self.output_file,
+            role='mon.tel.pedestal'
+        )
 
 
 def main():
