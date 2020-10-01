@@ -127,7 +127,7 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera_geometry, image, pulse_time, **cleaning_parameters)
+    signal_pixels = cleaning_method(camera_geometry, image, peak_time, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
