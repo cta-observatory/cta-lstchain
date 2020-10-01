@@ -70,12 +70,12 @@ class TimeCalibrationHDF5Writer(Tool):
             self.log.error(e)
 
     def finish(self):
-        # Provenance().add_output_file(
-        #     self.output_file,
-        #     role='mon.tel.calibration'
-        # )
-        # self.writer.close()
-        pass
+
+        self.timeCorr.finalize()
+        Provenance().add_output_file(
+            self.output_file,
+            role='mon.tel.calibration'
+        )
 
 
 def main():
