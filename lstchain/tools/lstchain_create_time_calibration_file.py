@@ -55,7 +55,17 @@ class TimeCalibrationHDF5Writer(Tool):
     def start(self):
 
         try:
-            self.log.debug(f"Start loop")
+            for i, event in enumerate(self.eventsource):
+                if i % 5000 == 0:
+                    self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
+                self.lst_r0.calibrate(event)
+
+                # cut in signal to avoid cosmic events
+                if event.r1.tel[self.timeCorr.tel_id].trigger_type == 4 or (
+                        np.median(np.sum(event.r1.tel[self.timeCorr.tel_id].waveform[0], axis=1)) > 300
+                ):
+                    self.timeCorr.calibrate_peak_time(event)
+
         except Exception as e:
             self.log.error(e)
 
