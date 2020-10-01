@@ -1,11 +1,14 @@
 """
 Create drs4 time correction coefficients.
 """
+import numpy as np
+
 from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
+from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 
 
 class TimeCalibrationHDF5Writer(Tool):
@@ -13,15 +16,14 @@ class TimeCalibrationHDF5Writer(Tool):
     name = "TimeCalibrationHDF5Writer"
     description = "Generate a HDF5 file with time calibration coefficients"
 
-    output_file = traits.Path(
+    output_file = traits.Unicode(
+        default_value="time_calibration.hdf5",
         help="Path to the generated the generated HDF5 time calibration file",
-        directory_ok=False,
-        exists=False,
     ).tag(config=True)
 
     aliases = {
         "input_file": "EventSource.input_url",
-        "output_file": "TimeCalibrationHDF5Writer.output_file",
+        "output_file": "TimeCorrectionCalculate.calib_file_path",
         "pedestal_file": "LSTR0Corrections.pedestal_path",
     }
 
@@ -37,11 +39,18 @@ class TimeCalibrationHDF5Writer(Tool):
         """
 
         self.eventsource = None
-        self.writer = None
+        self.timeCorr = None
+        self.lst_r0 = None
 
     def setup(self):
 
-        self.log.debug(f"Open file")
+        self.log.debug(f"Opening file")
+        self.eventsource = EventSource.from_config(parent=self)
+        self.lst_r0 = LSTR0Corrections(config=self.config)
+        self.timeCorr = TimeCorrectionCalculate(
+            config=self.config,
+            subarray=self.eventsource.subarray,
+        )
 
     def start(self):
 
