@@ -6,7 +6,7 @@ from astropy.io import fits
 
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
-from ctapipe.io import EventSource
+from ctapipe.io import EventSeeker, EventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
@@ -47,11 +47,19 @@ class PedestalFITSWriter(Tool):
         """
 
         self.eventsource = None
+        self.lst_r0 = None
+        self.pedestal = None
 
     def setup(self):
 
         self.log.debug(f"Open file")
         self.eventsource = EventSource.from_config(parent=self)
+        seeker = EventSeeker(self.eventsource)
+        ev = seeker[0]
+        tel_id = ev.r0.tels_with_data[0]
+        n_modules = ev.lst.tel[tel_id].svc.num_modules
+        self.lst_r0 = LSTR0Corrections(config=self.config)
+        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules)
 
     def start(self):
 
