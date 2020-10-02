@@ -17,7 +17,8 @@ from .io import (
     write_subarray_tables,
     read_simu_info_merged_hdf5,
     write_calibration_data,
-    read_dl2_to_pyirf
+    read_mc_dl2_to_pyirf,
+    read_data_dl2_to_pyirf
 )
 
 standard_config = get_standard_config()
@@ -41,5 +42,6 @@ __all__ = [
     'write_subarray_tables',
     'read_simu_info_merged_hdf5',
     'write_calibration_data',
-    'read_dl2_to_pyirf'
+    'read_mc_dl2_to_pyirf',
+    'read_data_dl2_to_pyirf'
 ]

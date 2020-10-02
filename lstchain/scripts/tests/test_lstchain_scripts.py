@@ -7,19 +7,22 @@ import pandas as pd
 import pkg_resources
 import pytest
 
-from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
-from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file, fake_dl1_proton_file
+from lstchain.tests.test_lstchain import (
+            test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file,
+            fake_dl1_proton_file,)
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
 merged_dl1_file = os.path.join(output_dir, 'script_merged_dl1.h5')
 merged_dl2_file = os.path.join(output_dir, 'script_merged_dl2.h5')
 dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
+dl2_file_new = os.path.join(output_dir, 'dl2_gamma_test_large_new.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
-dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large.h5')
+dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large_new.fits')
 dl3_hdu_index = os.path.join(output_dir, 'hdu-index.fits.gz')
 dl3_obs_index = os.path.join(output_dir, 'obs-index.fits.gz')
 
@@ -122,8 +125,6 @@ def test_lstchain_merge_dl1_hdf5_files():
 
 @pytest.mark.run(after='test_lstchain_merge_dl1_hdf5_files')
 def test_lstchain_merged_dl1_to_dl2():
-    os.remove(dl2_file)
-    os.remove(merged_dl2_file)
     output_file = merged_dl1_file.replace('dl1', 'dl2')
     run_program(
         'lstchain_dl1_to_dl2',
@@ -161,33 +162,6 @@ def test_mc_dl1ab_validity():
     dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
 
-
-@pytest.mark.run(after='test_lstchain_merged_dl1_to_dl2')
-def test_dl3():
-    #Gamma='.'
-    run_program(
-            'lstchain_dl2_to_dl3',
-            '-d', merged_dl2_file,
-            '-o', output_dir,
-            '-fg', merged_dl2_file,
-            '-irf', 'False',
-            #'-s', Gamma,
-            )
-    assert os.path.exists(dl3_file)
-
-@pytest.mark.run(after='test_dl3')
-def test_dl3_index():
-    #num=int(1)
-    run_program(
-            'lstchain_create_dl3_index_files',
-            '-d', output_dir,
-            #'-n', '1'
-            )
-    #assert Table.read(dl3_hdu_index, hdu='events')["ENERGY"][0]
-    #assert Table.read(dl3_obs_index)
-    assert os.path.exists(dl3_hdu_index)
-    assert os.path.exists(dl3_obs_index)
-
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
 def test_mc_r0_to_dl2():
     os.remove(dl1_file)
@@ -203,9 +177,62 @@ def test_mc_r0_to_dl2():
     assert os.path.exists(dl2_file)
 
 @pytest.mark.run(after='test_mc_r0_to_dl2')
-def test_read_dl2_to_pyirf():
-    from lstchain.io.io import read_dl2_to_pyirf
+def test_read_mc_dl2_to_pyirf():
+    from lstchain.io.io import read_mc_dl2_to_pyirf
     import astropy.units as u
-    events, sim_info = read_dl2_to_pyirf(dl2_file)
+
+    events, sim_info = read_mc_dl2_to_pyirf(dl2_file)
+
     assert 'true_energy' in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+
+@pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
+def test_read_data_dl2_to_pyirf():
+    from lstchain.io.io import read_data_dl2_to_pyirf
+
+    events = read_data_dl2_to_pyirf(dl2_file)
+
+    assert 'gh_score' in events.colnames
+
+@pytest.mark.run(after='test_mc_r0_to_dl2')
+def test_dl3():
+    from astropy.table import Table
+    import pandas as pd
+
+    input_mc_file = dl2_file
+    dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
+    # Adding some necessary columns for reading it as real data file
+    dl2['dragon_time'] = dl2["obs_id"]
+    dl2['alt_tel'] = dl2["mc_alt_tel"]
+    dl2['az_tel'] = dl2["mc_az_tel"]
+    dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
+    input_file = dl2_file_new
+    #Selection cuts have to be changed for tests
+    run_program(
+            'lstchain_dl2_to_dl3',
+            '-d', input_file,
+            '-o', output_dir,
+            '-fg', input_mc_file,
+            '-irf', 'True',
+            '-s', 'Gamma'
+            )
+
+    assert os.path.exists(dl3_file)
+    assert 'RA' in Table.read(dl3_file, hdu='events').columns
+    assert 'START' in Table.read(dl3_file, hdu='gti').columns
+    assert 'POINTING' in Table.read(dl3_file, hdu='pointing').meta['EXTNAME']
+
+@pytest.mark.run(after='test_dl3')
+def test_dl3_index():
+    from astropy.table import Table
+
+    run_program(
+            'lstchain_create_dl3_index_files',
+            '-d', output_dir,
+            '-n', '1'
+            )
+
+    assert os.path.exists(dl3_hdu_index)
+    assert os.path.exists(dl3_obs_index)
+    assert 'HDU_CLASS' in Table.read(dl3_hdu_index).columns
+    assert 'OBJECT' in Table.read(dl3_obs_index).columns

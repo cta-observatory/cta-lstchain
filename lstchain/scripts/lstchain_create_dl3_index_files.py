@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 
 """
-A sseparate script to index the HDU tables and Observation tables of the DL3 files
+A separate script to index the HDU tables and Observation tables of the DL3 files
 in a particular directory.
 The number of DL3 fits files to be indexed from the directory can be selected as
 per a sorted order.
-
-There is a small issue of combining the Table data as BinTableHDUs to the
-compressed index fits files as it prepends a PrimaryHDU while writing it.
-For now, the tables are directly written to the compressed index fits file.
-
 
 Usage:
 $> python lstchain_create_dl3_index_files.py
 --input-dl3-dir ./DL3/
 --num-files n
 """
-
 
 import os
 from pathlib import Path

@@ -20,9 +20,6 @@ fake_dl1_proton_file = os.path.join(test_dir, 'dl1_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
-dl3_file = os.path.join(test_dir, 'dl3_gamma_test_large.h5')
-dl3_hdu_index = os.path.join(test_dir, 'hdu-index.fits.gz')
-dl3_obs_index = os.path.join(test_dir, 'obs-index.fits.gz')
 
 custom_config = {
     "events_filters": {
@@ -135,7 +132,6 @@ def test_apply_models():
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
-
 def produce_fake_dl1_proton_file(dl1_file):
     """
     Produce a fake dl1 proton file by copying the dl2 gamma test file
@@ -186,82 +182,6 @@ def test_sensitivity():
                                                    eb, gcut, tcut * (u.deg ** 2), noff,
                                                    obstime)
 
-def generate_irf(dl2_file):
-    from pyirf.perf.irf_maker import IrfMaker
-    from lstchain.clean import read_and_update_dl2, mc_filter, data_filter
-    import yaml
-
-    dl2 = read_and_update_dl2(dl2_file)
-    print(len(dl2))
-
-    dl2 = data_filter(dl2)
-    mc_dl2 = mc_filter(dl2)
-    with open(os.path.join(os.path.dirname(__file__),'../data/pyirf_config.yml'), "r") as cfg:
-        config = yaml.safe_load(cfg)
-    im = IrfMaker(config = config, evt_dict = dict(gamma=mc_dl2), outdir='.')
-    aeff = im.make_effective_area()
-    edisp = im.make_energy_dispersion()
-
-    print(dl2.gammaness)
-    dl2['dragon_time']= [1.000, 1.001, 1.002]
-    dl2['alt_tel'] = [1.355,1.355,1.355]
-    dl2['az_tel'] = [2.22,2.22,2.22]
-
-    return dl2, aeff, edisp
-
-@pytest.mark.run(order=4)
-def test_create_dl3():
-
-    from lstchain.hdu import create_event_list
-    from astropy.io import fits
-    from astropy.table import Table
-
-    dl2, aeff, edisp = generate_irf(dl2_file)
-
-    primary_hdu = fits.PrimaryHDU([1,2,3,4,5])
-    events, gti, pointing = create_event_list(data=dl2, run_number=0,
-                    Source_name='Sample')
-    hdulist = fits.HDUList([primary_hdu, events, gti, pointing, aeff[1], edisp[1]])
-
-    hdulist.writeto(dl3_file,overwrite=True)
-
-    #Check on the presence of hdus in the dl3_file
-    if Table.read(dl3_file, hdu='EVENTS'):
-        print('Events HDU present')
-    if Table.read(dl3_file, hdu='GTI'):
-        print('GTI HDU present')
-    if Table.read(dl3_file, hdu='POINTING'):
-        print('Pointing HDU present')
-    if Table.read(dl3_file, hdu='EFFECTIVE AREA'):
-        print('Effective Area HDU present')
-    if Table.read(dl3_file, hdu='ENERGY DISPERSION'):
-        print('Energy Dispersion HDU present')
-    return
-
-@pytest.mark.run(order=5)
-def test_create_dl3_index():
-    from lstchain.hdu import create_obs_hdu_index
-    from astropy.table import Table
-    
-    name = ['dl3_gamma_test_large.h5']
-    create_obs_hdu_index(name, test_dir)
-
-    if Table.read(dl3_hdu_index):
-        print('HDU index present')
-    if Table.read(dl3_obs_index):
-        print('Obs index present')
-    return
-
-
-@pytest.mark.last
-def test_clean_test_files():
-    """
-    Function to clean the test files created by the previous test
-    """
-    import shutil
-    shutil.rmtree(test_dir)
-
-
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector
     dx = np.cos(np.pi/3 * np.ones(3))
@@ -272,7 +192,6 @@ def test_disp_vector():
     disp_dx, disp_dy = disp_vector(disp_norm, disp_angle, disp_sign)
     np.testing.assert_array_equal([dx, dy], [disp_dx, disp_dy])
 
-
 def test_disp_to_pos():
     from lstchain.reco.disp import disp_to_pos
     x = np.random.rand(3)
@@ -281,7 +200,6 @@ def test_disp_to_pos():
     cog_y = np.random.rand(3)
     X, Y = disp_to_pos(x, y, cog_x, cog_y)
     np.testing.assert_array_equal([X, Y], [x+cog_x, y+cog_y])
-
 
 def test_change_frame_camera_sky():
     from lstchain.reco.utils import sky_to_camera, camera_to_altaz
@@ -313,3 +231,11 @@ def test_version_not_unkown():
     """
     import lstchain
     assert lstchain.__version__ != 'unknown'
+
+@pytest.mark.last
+def test_clean_test_files():
+    """
+    Function to clean the test files created by the previous test
+    """
+    import shutil
+    shutil.rmtree(test_dir)

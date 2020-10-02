@@ -3,15 +3,93 @@ import os
 from lstchain.reco.utils import camera_to_altaz
 
 import astropy.units as u
-from astropy.table import Table, Column, vstack
+from astropy.table import Table, Column, vstack, QTable
 from astropy.io import fits
 from astropy.time import Time
 
 __all__ = [
     'make_hdu',
+    'make_edisp2d_hdu',
+    'make_aeff2d_hdu',
     'create_obs_hdu_index',
     'create_event_list'
     ]
+
+### TODO:
+#once the pyIRF IRF HDUs are generalized for our use, we can import the functions
+# directly from pyIRF
+
+def make_aeff2d_hdu(
+    effective_area,
+    true_energy_bins,
+    fov_offset_bins,
+    extname="EFFECTIVE AREA",
+    point_like=True,
+    ):
+
+    effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
+
+    aeff = QTable(
+        {
+            "ENERG_LO" : u.Quantity(true_energy_bins[:-1], ndmin=2).to(u.TeV),
+            "ENERG_HI" : u.Quantity(true_energy_bins[1:], ndmin=2).to(u.TeV),
+            "THETA_LO" : u.Quantity(fov_offset_bins[:-1], ndmin=2).to(u.deg),
+            "THETA_HI" : u.Quantity(fov_offset_bins[1:], ndmin=2).to(u.deg),
+            "EFFAREA" : u.Quantity(effective_area.T[np.newaxis, ...], ndmin=3).to(u.m ** 2)
+        }
+    )
+
+    # required header keywords
+    header= fits.Header()
+    header["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+    header["HDUVERS"] = "0.2"
+    header["HDUCLASS"] = "GADF"
+    header["HDUCLAS1"] = "RESPONSE"
+    header["HDUCLAS2"] = "EFF_AREA"
+    header["HDUCLAS3"] = "POINT-LIKE" if point_like else "FULL-ENCLOSURE"
+    header["HDUCLAS4"] = "AEFF_2D"
+    header["DATE"] = Time.now().utc.iso
+    header["TELESCOP"] = "CTA"
+    header["INSTRUME"] = "LST-1"
+
+    return fits.BinTableHDU(aeff, header=header, name=extname)
+
+def make_edisp2d_hdu(
+    energy_dispersion,
+    true_energy_bins,
+    migration_bins,
+    fov_offset_bins,
+    extname="ENERGY DISPERSION",
+    point_like=True,
+    ):
+
+    edisp = QTable(
+        {
+            "ENERG_LO": u.Quantity(true_energy_bins[:-1], ndmin=2).to(u.TeV),
+            "ENERG_HI": u.Quantity(true_energy_bins[1:], ndmin=2).to(u.TeV),
+            "MIGRA_LO": u.Quantity(migration_bins[:-1], ndmin=2).to(u.one),
+            "MIGRA_HI": u.Quantity(migration_bins[1:], ndmin=2).to(u.one),
+            "THETA_LO": u.Quantity(fov_offset_bins[:-1], ndmin=2).to(u.deg),
+            "THETA_HI": u.Quantity(fov_offset_bins[1:], ndmin=2).to(u.deg),
+            # transpose as FITS uses opposite dimension order
+            "MATRIX": u.Quantity(energy_dispersion.T[np.newaxis, ...]).to(u.one),
+        }
+    )
+
+    # required header keywords
+    header= fits.Header()
+    header["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+    header["HDUVERS"] = "0.2"
+    header["HDUCLASS"] = "GADF"
+    header["HDUCLAS1"] = "RESPONSE"
+    header["HDUCLAS2"] = "EDISP"
+    header["HDUCLAS3"] = "POINT-LIKE" if point_like else "FULL-ENCLOSURE"
+    header["HDUCLAS4"] = "EDISP_2D"
+    header["DATE"] = Time.now().utc.iso
+    header["TELESCOP"] = "CTA"
+    header["INSTRUME"] = "LST-1"
+
+    return fits.BinTableHDU(edisp, header=header, name=extname)
 
 
 def make_hdu(hdu_name, table):
@@ -84,7 +162,6 @@ def create_obs_hdu_index(filename_list, fits_dir):
     N_TELS = []
     TELLIST = []
 
-
     # loop through the files
     for file in filename_list:
 
@@ -115,7 +192,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
         hdu_class_3 = ['']
         hdu_class_4 = ['']
         obs_id_hdu_table = [event_table.meta["OBS_ID"]]
-        file_dir = [fits_dir]
+        file_dir = ['']
         file_name = [file]
         hdu_name = ['events']
 
@@ -145,7 +222,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
         t_pnt['HDU_CLASS'] = ['pointing']
         t_pnt['HDU_NAME'] = ['pointing']
 
-        hdu_tables.append(t_gti)
+        hdu_tables.append(t_pnt)
 
         ###############################################
         #Energy Dispersion
@@ -157,6 +234,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_edisp['HDU_CLASS3'] = ['POINT-LIKE']
             t_edisp['HDU_CLASS4'] = ['EDISP_2D']
             t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
+            #t_edisp.meta['EXTNAME'] = 'ENERGY DISPERSION'
 
             hdu_tables.append(t_edisp)
         else:
@@ -248,8 +326,6 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     return
 
-
-
 def create_event_list(data, run_number, Source_name):
 
     """Create the event_list HDUs from the given data and fill it up with the relevant values
@@ -257,7 +333,7 @@ def create_event_list(data, run_number, Source_name):
     Parameters
     ----------
         Data: DL2 data file
-                HDF5 file
+                'astropy.table.QTable'
         Run: Run number
                 Int
         Source_name: Name of the source
@@ -277,18 +353,18 @@ def create_event_list(data, run_number, Source_name):
 
     lam = 1000 #Average rate of triggered events, taken by hand for now
     # Timing parameters
-    t_start = data.dragon_time.values[0]
-    t_stop = data.dragon_time.values[-1]
-    time = Time(data.dragon_time, format='unix', scale="utc")
+    t_start = data['dragon_time'][0]
+    t_stop = data['dragon_time'][-1]
+    time = Time(data['dragon_time'], format='unix', scale="utc")
 
     obs_time = t_stop-t_start
 
     #Position parameters
     focal = 28 * u.m
-    pos_x = data.reco_src_x.values * u .m
-    pos_y = data.reco_src_y.values * u .m
-    pointing_alt = data.alt_tel.values * u.rad
-    pointing_az = data.az_tel.values *u.rad
+    pos_x = data['reco_src_x'] * u .m
+    pos_y = data['reco_src_y'] * u .m
+    pointing_alt = data['alt_tel'] * u.rad
+    pointing_az = data['az_tel'] *u.rad
 
     coord = camera_to_altaz(pos_x = pos_x, pos_y=pos_y, focal = focal,
                     pointing_alt = pointing_alt, pointing_az = pointing_az,
@@ -301,11 +377,11 @@ def create_event_list(data, run_number, Source_name):
     ##########################################################################
     ### Event table columns
     event_table["EVENT_ID"] = Column(
-        data.event_id , unit="", description="event_id",
+        data['event_id'] , unit="", description="event_id",
         dtype=np.int64, format="E"
         )
     event_table["TIME"] = Column(
-        data.dragon_time , unit="s", description="time",
+        data['dragon_time'] , unit="s", description="time",
         dtype=np.float64, format="F"
         )
     event_table["RA"] = Column(
@@ -317,7 +393,7 @@ def create_event_list(data, run_number, Source_name):
         dtype=np.float64, format="E"
         )
     event_table["ENERGY"] = Column(
-        data.reco_energy , unit="TeV",
+        data['reco_energy'] , unit="TeV",
         description="energy", dtype=np.float64, format="E"
         )
     ##########################################################################
@@ -337,8 +413,8 @@ def create_event_list(data, run_number, Source_name):
     event_table.meta["OBS_ID"] = run_number
     event_table.meta["TSTART"] = t_start
     event_table.meta["TSTOP"] = t_stop
-    event_table.meta["MJDREFI"] = Time(40587, format='unix', scale="utc") # Unix 01/01/1970 0h0m0
-    event_table.meta["MJDREFF"] = Time(0,format='unix',scale='utc')
+    event_table.meta["MJDREFI"] = '40587' #Time('', format='mjd', scale="utc") # Unix 01/01/1970 0h0m0
+    event_table.meta["MJDREFF"] = '0' #Time('0',format='mjd',scale='utc')
     event_table.meta["TIMEUNIT"] = 's'
     event_table.meta["TIMESYS"] = "UTC"
     event_table.meta["OBJECT"] = name
@@ -353,8 +429,8 @@ def create_event_list(data, run_number, Source_name):
 
     event_table.meta["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
     event_table.meta["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
-    event_table.meta["ALT_PNT"]=round(np.rad2deg(data.alt_tel.values[0]),6)
-    event_table.meta["AZ_PNT"]=round(np.rad2deg(data.az_tel.values[0]),6)
+    event_table.meta["ALT_PNT"]=round(np.rad2deg(data['alt_tel'][0]),6)
+    event_table.meta["AZ_PNT"]=round(np.rad2deg(data['az_tel'][0]),6)
     event_table.meta["FOVALIGN"]='ALTAZ'
     event_table.meta["ONTIME"]=obs_time
 
