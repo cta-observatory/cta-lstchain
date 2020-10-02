@@ -6,7 +6,7 @@ from astropy.io import fits
 
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
-from ctapipe.io import EventSeeker, EventSource
+from ctapipe.io import EventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
@@ -48,22 +48,21 @@ class PedestalFITSWriter(Tool):
         """
 
         self.eventsource = None
+        self.pixel_ids = None
         self.pedestal = None
         self.lst_r0 = None
-        self.tel_id = None
-        self.ev = None
 
     def setup(self):
 
         self.log.debug("Opening file")
         self.eventsource = EventSource.from_config(parent=self)
 
-        seeker = EventSeeker(self.eventsource)
-        self.ev = seeker[0]
-        self.tel_id = self.ev.r0.tels_with_data[0]
-        n_modules = self.ev.lst.tel[self.tel_id].svc.num_modules
-        self.lst_r0 = LSTR0Corrections(config=self.config)
-        self.pedestal = DragonPedestal(tel_id=self.tel_id, n_module=n_modules)
+        for event in self.eventsource:
+            tel_id = event.r0.tels_with_data[0]
+            self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
+            self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
+            self.lst_r0 = LSTR0Corrections(config=self.config)
+            break
 
     def start(self):
 
@@ -90,7 +89,7 @@ class PedestalFITSWriter(Tool):
 
     def finish(self):
 
-        primaryhdu = fits.PrimaryHDU(self.ev.lst.tel[self.tel_id].svc.pixel_ids)
+        primaryhdu = fits.PrimaryHDU(self.pixel_ids)
         secondhdu = fits.ImageHDU(np.int16(self.pedestal.meanped))
         hdulist = fits.HDUList([primaryhdu, secondhdu])
         hdulist.writeto(self.output_file)
