@@ -44,7 +44,7 @@ class PedestalFITSWriter(Tool):
         Tool that generates a pedestal FITS file for low level calibration.
 
         For getting help run:
-        python lstchain_create_drs4_pedestal_file.py --help
+        lstchain_create_drs4_pedestal_file --help
         """
 
         self.eventsource = None
@@ -55,7 +55,7 @@ class PedestalFITSWriter(Tool):
 
     def setup(self):
 
-        self.log.debug(f"Open file")
+        self.log.debug("Opening file")
         self.eventsource = EventSource.from_config(parent=self)
 
         seeker = EventSeeker(self.eventsource)
@@ -75,13 +75,13 @@ class PedestalFITSWriter(Tool):
                         self.lst_r0.time_lapse_corr(event, tel_id)
                         self.pedestal.fill_pedestal_event(event)
                         if i % 500 == 0:
-                            self.log.debug("i = {}, ev id = {}".format(i, event.index.event_id))
+                            self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
             else:
                 self.log.info("DeltaT correction no active")
                 for i, event in enumerate(self.eventsource):
                     self.pedestal.fill_pedestal_event(event)
                     if i % 500 == 0:
-                        self.log.debug("i = {}, ev id = {}".format(i, event.index.event_id))
+                        self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
 
             self.pedestal.finalize_pedestal()
 
