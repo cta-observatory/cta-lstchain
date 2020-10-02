@@ -50,7 +50,7 @@ from astropy.coordinates.angle_utilities import angular_separation
 
 # pyIRF packages
 #from pyirf.io.gadf import create_aeff2d_hdu, create_energy_dispersion_hdu
-from pyirf.irf import effective_area_energy, energy_dispersion
+from pyirf.irf import effective_area_per_energy, energy_dispersion#, effective_area_per_energy_and_fov
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
 
 log = logging.getLogger(__name__)
@@ -172,8 +172,8 @@ def main():
         fov_offset_bins = [0.2, 0.6, 1.0] * u.deg
         migration_bins = np.linspace(0.2, 5, 31)
 
-        area = effective_area_energy(gamma, gamma_info, true_energy_bins)
-        # use effective_area_energy_fov for diffuse MC
+        area = effective_area_per_energy(gamma, gamma_info, true_energy_bins)
+        # use effective_area_per_energy_and_fov for diffuse MC
         #area = effective_area_energy_fov(gamma_diff, gamma_diff_info, true_energy_bins, fov_offset_bins)
         edisp = energy_dispersion(gamma, true_energy_bins, fov_offset_bins, migration_bins)
 

@@ -1,8 +1,8 @@
 {
   "general":{
-    "gh_score": 0.2,
+    "gh_score": 0.8,
     "source_fov_offset": 2.83,
-    "intensity": 0,
+    "intensity": 200,
     "r": 1,
     "wl": 0.1,
     "leakage2_intensity": 0.2,
@@ -10,6 +10,6 @@
     "alpha": 8
     },
   "mc":{
-    "theta_cut": 0.4
+    "theta_cut": 0.14
     }
 }

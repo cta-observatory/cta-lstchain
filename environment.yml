@@ -6,7 +6,7 @@ channels:
 dependencies:
   - python=3.7
   - pip
-  - pyirf>0.1.0
+  - pyirf>=0.2.0
   - ctapipe=0.8.0
   - gammapy>=0.17
   - h5py
