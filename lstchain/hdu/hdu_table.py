@@ -8,112 +8,16 @@ from astropy.io import fits
 from astropy.time import Time
 
 __all__ = [
-    'make_hdu',
-    'make_edisp2d_hdu',
-    'make_aeff2d_hdu',
     'create_obs_hdu_index',
     'create_event_list'
     ]
 
-### TODO:
-#once the pyIRF IRF HDUs are generalized for our use, we can import the functions
-# directly from pyIRF
 
-def make_aeff2d_hdu(
-    effective_area,
-    true_energy_bins,
-    fov_offset_bins,
-    extname="EFFECTIVE AREA",
-    point_like=True,
-    ):
-
-    effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
-
-    aeff = QTable(
-        {
-            "ENERG_LO" : u.Quantity(true_energy_bins[:-1], ndmin=2).to(u.TeV),
-            "ENERG_HI" : u.Quantity(true_energy_bins[1:], ndmin=2).to(u.TeV),
-            "THETA_LO" : u.Quantity(fov_offset_bins[:-1], ndmin=2).to(u.deg),
-            "THETA_HI" : u.Quantity(fov_offset_bins[1:], ndmin=2).to(u.deg),
-            "EFFAREA" : u.Quantity(effective_area.T[np.newaxis, ...], ndmin=3).to(u.m ** 2)
-        }
-    )
-
-    # required header keywords
-    header= fits.Header()
-    header["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-    header["HDUVERS"] = "0.2"
-    header["HDUCLASS"] = "GADF"
-    header["HDUCLAS1"] = "RESPONSE"
-    header["HDUCLAS2"] = "EFF_AREA"
-    header["HDUCLAS3"] = "POINT-LIKE" if point_like else "FULL-ENCLOSURE"
-    header["HDUCLAS4"] = "AEFF_2D"
-    header["DATE"] = Time.now().utc.iso
-    header["TELESCOP"] = "CTA"
-    header["INSTRUME"] = "LST-1"
-
-    return fits.BinTableHDU(aeff, header=header, name=extname)
-
-def make_edisp2d_hdu(
-    energy_dispersion,
-    true_energy_bins,
-    migration_bins,
-    fov_offset_bins,
-    extname="ENERGY DISPERSION",
-    point_like=True,
-    ):
-
-    edisp = QTable(
-        {
-            "ENERG_LO": u.Quantity(true_energy_bins[:-1], ndmin=2).to(u.TeV),
-            "ENERG_HI": u.Quantity(true_energy_bins[1:], ndmin=2).to(u.TeV),
-            "MIGRA_LO": u.Quantity(migration_bins[:-1], ndmin=2).to(u.one),
-            "MIGRA_HI": u.Quantity(migration_bins[1:], ndmin=2).to(u.one),
-            "THETA_LO": u.Quantity(fov_offset_bins[:-1], ndmin=2).to(u.deg),
-            "THETA_HI": u.Quantity(fov_offset_bins[1:], ndmin=2).to(u.deg),
-            # transpose as FITS uses opposite dimension order
-            "MATRIX": u.Quantity(energy_dispersion.T[np.newaxis, ...]).to(u.one),
-        }
-    )
-
-    # required header keywords
-    header= fits.Header()
-    header["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-    header["HDUVERS"] = "0.2"
-    header["HDUCLASS"] = "GADF"
-    header["HDUCLAS1"] = "RESPONSE"
-    header["HDUCLAS2"] = "EDISP"
-    header["HDUCLAS3"] = "POINT-LIKE" if point_like else "FULL-ENCLOSURE"
-    header["HDUCLAS4"] = "EDISP_2D"
-    header["DATE"] = Time.now().utc.iso
-    header["TELESCOP"] = "CTA"
-    header["INSTRUME"] = "LST-1"
-
-    return fits.BinTableHDU(edisp, header=header, name=extname)
-
-
-def make_hdu(hdu_name, table):
-    """Create the BinTableHDU from the Table
-
-    Parameters
-    ----------
-        hdu_name: str
-            name of the HDU
-        table: `~astropy.table.Table`
-
-    Returns
-    -------
-       hdu:  `astropy.io.fits.BinTableHDU`
-    """
-    col_list = [
-        fits.Column(col.name, col.format, unit=str(col.unit), array=col.data)
-        for col in table.columns.values()
-    ]
-    hdu = fits.BinTableHDU.from_columns(col_list)
-    hdu.header.set("EXTNAME", hdu_name)
-    for key in table.meta.keys():
-        hdu.header.set(key, table.meta[key])
-    return hdu
+DEFAULT_HEADER = fits.Header()
+#DEFAULT_HEADER["CREATOR"] = f"pyirf v{__version__}"
+DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+DEFAULT_HEADER["HDUVERS"] = "0.2"
+DEFAULT_HEADER["HDUCLASS"] = "GADF"
 
 #IRF should be separate?
 def create_obs_hdu_index(filename_list, fits_dir):
@@ -165,11 +69,11 @@ def create_obs_hdu_index(filename_list, fits_dir):
     # loop through the files
     for file in filename_list:
 
-        if os.path.exists(str(fits_dir)+"/"+file):
+        if os.path.exists(str(fits_dir)+file):
             try:
-                event_table = Table.read(str(fits_dir)+"/"+file, hdu="EVENTS")
-                gti_table = Table.read(str(fits_dir)+"/"+file, hdu="GTI")
-                pointing_table = Table.read(str(fits_dir)+"/"+file, hdu="POINTING")
+                event_table = Table.read(str(fits_dir)+file, hdu="EVENTS")
+                gti_table = Table.read(str(fits_dir)+file, hdu="GTI")
+                pointing_table = Table.read(str(fits_dir)+file, hdu="POINTING")
             #edisp_table = Table.read(edisp, hdu="ENERGY DISPERSION")
             #aeff_table = Table.read(aeff, hdu="EFFECTIVE AREA")
             except Exception:
@@ -196,6 +100,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
         file_name = [file]
         hdu_name = ['events']
 
+        #hdu_table = QTable({})
         t_events = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
                     file_dir, file_name, hdu_name],
                 names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
@@ -226,7 +131,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
         #Energy Dispersion
-        if Table.read(str(fits_dir)+"/"+file, hdu="ENERGY DISPERSION"):
+        if Table.read(str(fits_dir)+file, hdu="ENERGY DISPERSION"):
             t_edisp = t_events.copy()
             t_edisp['HDU_TYPE'] = ['edisp']
             t_edisp['HDU_CLASS'] = ['edisp_2d']
@@ -234,7 +139,6 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_edisp['HDU_CLASS3'] = ['POINT-LIKE']
             t_edisp['HDU_CLASS4'] = ['EDISP_2D']
             t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
-            #t_edisp.meta['EXTNAME'] = 'ENERGY DISPERSION'
 
             hdu_tables.append(t_edisp)
         else:
@@ -242,7 +146,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
         #Effective Area
-        if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
+        if Table.read(str(fits_dir)+file, hdu="EFFECTIVE AREA"):
             t_aeff = t_edisp.copy()
             t_aeff['HDU_TYPE'] = ['aeff']
             t_aeff['HDU_CLASS'] = ['aeff_2d']
@@ -291,7 +195,6 @@ def create_obs_hdu_index(filename_list, fits_dir):
     hdu_name='HDU_INDEX'
     hdu_list = fits.HDUList()
     hdu_list.append(hdu)
-    #fits.append(fits_dir+filename_hdu_table, hdu_table, header='HDU_INDEX')
     hdu_list.writeto(str(fits_dir)+"/"+filename_hdu_table, overwrite=True)
 
     #Complete OBS table
@@ -319,16 +222,14 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     filename_obs_table = 'obs-index.fits.gz'
     obs = fits.BinTableHDU(obs_table)
-    hdu_list = fits.HDUList()
-    hdu_list.append(obs)
-    #fits.append(fits_dir+filename_obs_table, obs_table, header='OBS_INDEX')
-    hdu_list.writeto(str(fits_dir)+"/"+filename_obs_table, overwrite=True) #Make it to update
+    hdu_list = fits.HDUList([fits.PrimaryHDU()] + obs)
+    hdu_list.writeto(str(fits_dir)+filename_obs_table, overwrite=True) #Make it to update
 
     return
 
 def create_event_list(data, run_number, Source_name):
-
-    """Create the event_list HDUs from the given data and fill it up with the relevant values
+    """
+    Create the event_list BinTableHDUs from the given data
 
     Parameters
     ----------
@@ -345,11 +246,6 @@ def create_event_list(data, run_number, Source_name):
         Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
     name=Source_name
-
-    #Initiate tables
-    event_table = Table()
-    gti_table = Table()
-    pointing_table = Table()
 
     lam = 1000 #Average rate of triggered events, taken by hand for now
     # Timing parameters
@@ -375,90 +271,82 @@ def create_event_list(data, run_number, Source_name):
                 obstime = time[0])
 
     ##########################################################################
-    ### Event table columns
-    event_table["EVENT_ID"] = Column(
-        data['event_id'] , unit="", description="event_id",
-        dtype=np.int64, format="E"
-        )
-    event_table["TIME"] = Column(
-        data['dragon_time'] , unit="s", description="time",
-        dtype=np.float64, format="F"
-        )
-    event_table["RA"] = Column(
-        coord_icrs.ra.deg , unit="deg", description="ra",
-        dtype=np.float64, format="E"
-        )
-    event_table["DEC"] = Column(
-        coord_icrs.dec.deg  , unit="deg", description="dec",
-        dtype=np.float64, format="E"
-        )
-    event_table["ENERGY"] = Column(
-        data['reco_energy'] , unit="TeV",
-        description="energy", dtype=np.float64, format="E"
+    ### Event table
+    event_table = QTable(
+            {
+                "EVENT_ID" : u.Quantity(data['event_id'], ndmin=2),
+                "TIME" : u.Quantity(data['dragon_time'] * u.s, ndmin=2),
+                "RA" : u.Quantity(coord_icrs.ra.deg * u.deg, ndmin=2),
+                "DEC" : u.Quantity(coord_icrs.dec.deg * u.deg, ndmin=2),
+                "ENERGY" : u.Quantity(data['reco_energy'] * u.TeV, ndmin=2)
+            }
         )
     ##########################################################################
-    ### GTI table columns
-    gti_table["START"] = Column(
-        [t_start], unit='s', description='Start time',
-        dtype=np.float64, format="F", length=1
-        )
-    gti_table["STOP"]=Column(
-        [t_stop], unit='s', description='Stop time',
-        dtype=np.float64, format="F", length=1
-        )
+    ### GTI table
+    gti_table = QTable(
+        {
+            "START" : u.Quantity(t_start * u.s, ndmin=2),
+            "STOP" : u.Quantity(t_stop * u.s, ndmin=2)
+        }
+    )
     ##########################################################################
     ### Adding the meta data
     ### Event table metadata
+    ev_header = DEFAULT_HEADER.copy()
+    ev_header["HDUCLAS1"] = "EVENTS"
 
-    event_table.meta["OBS_ID"] = run_number
-    event_table.meta["TSTART"] = t_start
-    event_table.meta["TSTOP"] = t_stop
-    event_table.meta["MJDREFI"] = '40587' #Time('', format='mjd', scale="utc") # Unix 01/01/1970 0h0m0
-    event_table.meta["MJDREFF"] = '0' #Time('0',format='mjd',scale='utc')
-    event_table.meta["TIMEUNIT"] = 's'
-    event_table.meta["TIMESYS"] = "UTC"
-    event_table.meta["OBJECT"] = name
-    event_table.meta["TELLIST"] = 'LST-1'
-    event_table.meta["N_TELS"] = 1
+    ev_header["OBS_ID"] = run_number
+    ev_header["TSTART"] = t_start
+    ev_header["TSTOP"] = t_stop
+    ev_header["MJDREFI"] = '40587' #Time('', format='mjd', scale="utc") # Unix 01/01/1970 0h0m0
+    ev_header["MJDREFF"] = '0' #Time('0',format='mjd',scale='utc')
+    ev_header["TIMEUNIT"] = 's'
+    ev_header["TIMESYS"] = "UTC"
+    ev_header["OBJECT"] = name
+    ev_header["TELLIST"] = 'LST-1'
+    ev_header["N_TELS"] = 1
 
-    event_table.meta["HDUCLASS"] = "GADF"
-    event_table.meta["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-    event_table.meta["HDUVERS"] = "0.2"
-    event_table.meta["HDUCLAS1"] = "INDEX"
-    event_table.meta["HDUCLAS2"] = "HDU"
-
-    event_table.meta["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
-    event_table.meta["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
-    event_table.meta["ALT_PNT"]=round(np.rad2deg(data['alt_tel'][0]),6)
-    event_table.meta["AZ_PNT"]=round(np.rad2deg(data['az_tel'][0]),6)
-    event_table.meta["FOVALIGN"]='ALTAZ'
-    event_table.meta["ONTIME"]=obs_time
+    ev_header["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
+    ev_header["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
+    ev_header["ALT_PNT"]=round(np.rad2deg(data['alt_tel'][0]),6)
+    ev_header["AZ_PNT"]=round(np.rad2deg(data['az_tel'][0]),6)
+    ev_header["FOVALIGN"]='ALTAZ'
+    ev_header["ONTIME"]=obs_time
 
     #Dead time for DRS4 chip is 26 u_sec
     #Value of lam is taken by hand, to be around the same order of magnitude for now
-    event_table.meta["DEADC"]=1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
-    event_table.meta["LIVETIME"]=event_table.meta["DEADC"]*event_table.meta["ONTIME"]
+    ev_header["DEADC"]=1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
+    ev_header["LIVETIME"]=ev_header["DEADC"]*ev_header["ONTIME"]
 
     ##########################################################################
     ### GTI table metadata
-    gti_table.meta["OBS_ID"]=run_number#data.obs_id
-    gti_table.meta["MJDREFI"] = event_table.meta["MJDREFI"]
-    gti_table.meta["MJDREFF"] = event_table.meta["MJDREFF"]
-    gti_table.meta["TIMESYS"] = event_table.meta["TIMESYS"]
-    gti_table.meta["TIMEUNIT"] = event_table.meta["TIMEUNIT"]
+    gti_header = DEFAULT_HEADER.copy()
+    gti_header["HDUCLAS1"] = "GTI"
+
+    gti_header["OBS_ID"]=run_number
+    gti_header["MJDREFI"] = ev_header["MJDREFI"]
+    gti_header["MJDREFF"] = ev_header["MJDREFF"]
+    gti_header["TIMESYS"] = ev_header["TIMESYS"]
+    gti_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
 
     ##########################################################################
     ### Pointing table metadata
-    pointing_table.meta["OBS_ID"]=run_number#data.obs_id
-    pointing_table.meta["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
-    pointing_table.meta["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
-    pointing_table.meta["ALT_PNT"]=event_table.meta["ALT_PNT"]
-    pointing_table.meta["AZ_PNT"]=event_table.meta["AZ_PNT"]
-    pointing_table.meta["TIME"]=t_start
+    pnt_header = DEFAULT_HEADER.copy()
+    pnt_header["HDUCLAS1"] = "POINTING"
+
+    pnt_header["OBS_ID"]=run_number
+    pnt_header["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
+    pnt_header["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
+    pnt_header["ALT_PNT"]=ev_header["ALT_PNT"]
+    pnt_header["AZ_PNT"]=ev_header["AZ_PNT"]
+    pnt_header["TIME"]=t_start
 
     ### Create HDUs
     #########################################################################
-    event = make_hdu(hdu_name = "EVENTS", table = event_table)
-    gti = make_hdu(hdu_name= "GTI", table = gti_table)
-    pointing = make_hdu(hdu_name = "POINTING", table = pointing_table)
+    pnt_table = QTable()
+
+    event = fits.BinTableHDU(event_table, header = ev_header, name = 'EVENTS')
+    gti = fits.BinTableHDU(gti_table, header = gti_header, name = 'GTI')
+    pointing = fits.BinTableHDU(pnt_table, header = pnt_header, name = 'POINTING')
+
     return event, gti, pointing

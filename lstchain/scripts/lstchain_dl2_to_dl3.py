@@ -31,7 +31,7 @@ $> python lstchain_dl2_to_dl3.py
 """
 
 import os
-import yaml
+import json
 import re
 from distutils.util import strtobool
 import numpy as np
@@ -41,15 +41,16 @@ import logging
 import sys
 
 from lstchain.clean import mc_filter, data_filter
-from lstchain.hdu import create_event_list, make_aeff2d_hdu, make_edisp2d_hdu
-from lstchain.io import read_mc_dl2_to_pyirf, read_data_dl2_to_pyirf
+from lstchain.hdu import create_event_list#, make_aeff2d_hdu, make_edisp2d_hdu
+from lstchain.io import read_mc_dl2_to_pyirf, read_data_dl2_to_pyirf, read_configuration_file, get_standard_config
+from lstchain.reco.utils import filter_events
 
 from astropy.io import fits
 import astropy.units as u
 from astropy.coordinates.angle_utilities import angular_separation
 
 # pyIRF packages
-#from pyirf.io.gadf import create_aeff2d_hdu, create_energy_dispersion_hdu
+from pyirf.io.gadf import create_aeff2d_hdu, create_energy_dispersion_hdu
 from pyirf.irf import effective_area_per_energy, energy_dispersion#, effective_area_per_energy_and_fov
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
 
@@ -136,8 +137,13 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    data = data_filter(data)
+    selection_config = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.json")
+    cuts = read_configuration_file(selection_config)
 
+    data = filter_events(data, cuts["events_filters"], dropna=False)
+    if 'leakage2_intensity' in data.columns:
+        data = filter_events(data, cuts["old_version"], dropna=False)
+    data = data[data["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
     #Temporary filter for non/fewer events file
     #if len(data)<100:
     #    log.error(len(data), 'events only')
@@ -148,10 +154,14 @@ def main():
 
         gamma, gamma_info = read_mc_dl2_to_pyirf(args.gamma_file)
         # Add angular separation columns using pyirf's functions
-        gamma['source_fov_offset'] = calculate_source_fov_offset(gamma)
-        gamma['theta'] = calculate_theta(gamma, gamma['true_az'], gamma['true_alt'])
+        gamma["source_fov_offset"] = calculate_source_fov_offset(gamma)
+        gamma["theta"] = calculate_theta(gamma, gamma["true_az"], gamma["true_alt"])
 
-        gamma = mc_filter(gamma)
+        gamma = filter_events(gamma, cuts["events_filters"], dropna=False)
+        if 'leakage2_intensity' in gamma.columns:
+            gamma = filter_events(gamma, cuts["old_version"], dropna=False)
+        gamma = gamma[gamma["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
+        gamma = gamma[gamma["theta"].to_value() < cuts["angular_filters"]["theta_cut"][1]]
 
         #gamma_diff, gamma_diff_info = read_mc_dl2_to_pyirf(args.gamma_diff_file)
         #gamma_diff = mc_filter(gamma_diff)
@@ -173,13 +183,14 @@ def main():
         migration_bins = np.linspace(0.2, 5, 31)
 
         area = effective_area_per_energy(gamma, gamma_info, true_energy_bins)
+        effective_area = np.column_stack([area, np.zeros_like(area)])
         # use effective_area_per_energy_and_fov for diffuse MC
         #area = effective_area_energy_fov(gamma_diff, gamma_diff_info, true_energy_bins, fov_offset_bins)
         edisp = energy_dispersion(gamma, true_energy_bins, fov_offset_bins, migration_bins)
 
         # BinTableHDU is returned here
-        aeff2d = make_aeff2d_hdu(area, true_energy_bins, fov_offset_bins)
-        edisp_2d = make_edisp2d_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins)
+        aeff2d = create_aeff2d_hdu(area, true_energy_bins, fov_offset_bins)
+        edisp_2d = create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins)
 
     #Create primary HDU
     n = np.arange(100) # a simple sequence of floats from 0.0 to 99.9

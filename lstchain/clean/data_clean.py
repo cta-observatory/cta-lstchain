@@ -21,8 +21,8 @@ def mc_filter(data):
     data = data[data['intensity'] > data_cut["general"]["intensity"]]
     data = data[data['wl'] > data_cut["general"]["wl"]]
     data = data[data['gh_score'] > data_cut["general"]["gh_score"]]
-    data = data[data['theta'].value < data_cut["mc"]["theta_cut"]]
-    data = data[data['source_fov_offset'].value < data_cut["general"]["source_fov_offset"]]
+    data = data[data['theta'].to_value() < data_cut["mc"]["theta_cut"]]
+    data = data[data['source_fov_offset'].to_value() < data_cut["general"]["source_fov_offset"]]
 
     return data
 
@@ -35,6 +35,6 @@ def data_filter(data):
     data = data[data['wl'] > data_cut["general"]["wl"]]
     data = data[data['gh_score'] > data_cut["general"]["gh_score"]]
     #data = data[data['theta']] < data_cut["mc"]["theta_cut"]
-    data = data[data['source_fov_offset'].value < data_cut["general"]["source_fov_offset"]]
+    data = data[data['source_fov_offset'].to_value() < data_cut["general"]["source_fov_offset"]]
 
     return data

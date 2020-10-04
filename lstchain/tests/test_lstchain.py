@@ -28,7 +28,7 @@ custom_config = {
         "length": [0, 10],
         "wl": [0, 1],
         "r": [0, 1],
-        "leakage2_intensity": [0, 1]
+        "leakage_intensity_width_2": [0, 1],
     },
     "tailcut": {
         "picture_thresh":6,
@@ -76,7 +76,9 @@ custom_config = {
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
     "threshold":  4094
-  }
+  },
+  "mc_nominal_source_x_deg": 0.,
+  "mc_nominal_source_y_deg": 0.,
 }
 
 def test_import_calib():
@@ -122,7 +124,10 @@ def test_apply_models():
     import joblib
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    dl1 = filter_events(dl1, filters=custom_config["events_filters"])
+    dl1 = filter_events(dl1,
+                        filters=custom_config["events_filters"],
+                        finite_params=custom_config['regression_features'] + custom_config['classification_features'],
+                        )
 
     reg_energy = joblib.load(file_model_energy)
     reg_disp = joblib.load(file_model_disp)
