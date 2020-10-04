@@ -8,9 +8,8 @@ The selection cuts are applied using a separate yml file
 
 TODO:
 Adding filter for size of files after cuts, to have significant number of events
+Include angular cuts in filter_events
 Generalize source_fov_offset binning
-Use updated pyIRF's HDU generating functions, once the changes made with
-astropy's PR #10768 is implemented
 
  - Input: Path where the merged DL2 data HDF5 file is present
           MC gamma file path #other MC files are optional currently
@@ -108,6 +107,7 @@ parser.add_argument('--input-file-electron', '-fe', type=Path, dest='electron_fi
 args = parser.parse_args()
 
 def main():
+    t0=t()
     if not args.input_data.is_file():
         log.error('Input Path does not exist or is not a file')
         sys.exit(1)
@@ -140,29 +140,26 @@ def main():
     selection_config = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.json")
     cuts = read_configuration_file(selection_config)
 
-    data = filter_events(data, cuts["events_filters"], dropna=False)
-    if 'leakage2_intensity' in data.columns:
-        data = filter_events(data, cuts["old_version"], dropna=False)
+    data = filter_events(data, cuts["events_filters"])
+    # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
     #Temporary filter for non/fewer events file
     #if len(data)<100:
     #    log.error(len(data), 'events only')
     #    log.error('Less than 100 events, please check the selection cuts')
     #    sys.exit(1)
-
     if args.add_irf:
 
         gamma, gamma_info = read_mc_dl2_to_pyirf(args.gamma_file)
+        # Select the MC only for the same TEL as of real data
+        gamma = gamma[gamma["tel_id"]==data["tel_id"][0]]
         # Add angular separation columns using pyirf's functions
         gamma["source_fov_offset"] = calculate_source_fov_offset(gamma)
         gamma["theta"] = calculate_theta(gamma, gamma["true_az"], gamma["true_alt"])
 
-        gamma = filter_events(gamma, cuts["events_filters"], dropna=False)
-        if 'leakage2_intensity' in gamma.columns:
-            gamma = filter_events(gamma, cuts["old_version"], dropna=False)
+        gamma = filter_events(gamma, cuts["events_filters"])
         gamma = gamma[gamma["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
         gamma = gamma[gamma["theta"].to_value() < cuts["angular_filters"]["theta_cut"][1]]
-
         #gamma_diff, gamma_diff_info = read_mc_dl2_to_pyirf(args.gamma_diff_file)
         #gamma_diff = mc_filter(gamma_diff)
         #proton, proton_info = read_mc_dl2_to_pyirf(args.proton_file)
@@ -189,8 +186,10 @@ def main():
         edisp = energy_dispersion(gamma, true_energy_bins, fov_offset_bins, migration_bins)
 
         # BinTableHDU is returned here
-        aeff2d = create_aeff2d_hdu(area, true_energy_bins, fov_offset_bins)
+        aeff2d = create_aeff2d_hdu(effective_area, true_energy_bins, fov_offset_bins)
         edisp_2d = create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins)
+        # Using the HDU name as required by gammapy
+        edisp_2d.header["EXTNAME"] = "ENERGY DISPERSION"
 
     #Create primary HDU
     n = np.arange(100) # a simple sequence of floats from 0.0 to 99.9

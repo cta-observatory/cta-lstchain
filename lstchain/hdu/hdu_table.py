@@ -14,7 +14,6 @@ __all__ = [
 
 
 DEFAULT_HEADER = fits.Header()
-#DEFAULT_HEADER["CREATOR"] = f"pyirf v{__version__}"
 DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
@@ -69,13 +68,11 @@ def create_obs_hdu_index(filename_list, fits_dir):
     # loop through the files
     for file in filename_list:
 
-        if os.path.exists(str(fits_dir)+file):
+        if os.path.exists(str(fits_dir)+"/"+file):
             try:
-                event_table = Table.read(str(fits_dir)+file, hdu="EVENTS")
-                gti_table = Table.read(str(fits_dir)+file, hdu="GTI")
-                pointing_table = Table.read(str(fits_dir)+file, hdu="POINTING")
-            #edisp_table = Table.read(edisp, hdu="ENERGY DISPERSION")
-            #aeff_table = Table.read(aeff, hdu="EFFECTIVE AREA")
+                event_table = Table.read(str(fits_dir)+"/"+file, hdu="EVENTS")
+                gti_table = Table.read(str(fits_dir)+"/"+file, hdu="GTI")
+                pointing_table = Table.read(str(fits_dir)+"/"+file, hdu="POINTING")
             except Exception:
                 print(f"fits corrupted for file {file}")
                 continue
@@ -90,6 +87,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
         # Event list
+
         hdu_type_name = ['events']
         hdu_class_1 = ['events']
         hdu_class_2 = ['']
@@ -131,7 +129,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
         #Energy Dispersion
-        if Table.read(str(fits_dir)+file, hdu="ENERGY DISPERSION"):
+        if Table.read(str(fits_dir)+"/"+file, hdu="EDISP"):
             t_edisp = t_events.copy()
             t_edisp['HDU_TYPE'] = ['edisp']
             t_edisp['HDU_CLASS'] = ['edisp_2d']
@@ -146,7 +144,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
         #Effective Area
-        if Table.read(str(fits_dir)+file, hdu="EFFECTIVE AREA"):
+        if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
             t_aeff = t_edisp.copy()
             t_aeff['HDU_TYPE'] = ['aeff']
             t_aeff['HDU_CLASS'] = ['aeff_2d']
@@ -160,7 +158,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
         ###############################################
 
-        # Filling up the remainng quantities
+        # Filling up the remainng quantities for obs_index
         obs_id.append(event_table.meta['OBS_ID'])
         source.append(event_table.meta['OBJECT'])
         N_TELS.append(event_table.meta["N_TELS"])
@@ -192,9 +190,9 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     filename_hdu_table = 'hdu-index.fits.gz'
     hdu = fits.BinTableHDU(hdu_table)
-    hdu_name='HDU_INDEX'
-    hdu_list = fits.HDUList()
-    hdu_list.append(hdu)
+    #hdu_name='HDU_INDEX'
+    hdu_list = fits.HDUList([fits.PrimaryHDU(), hdu])
+    #hdu_list.append(hdu)
     hdu_list.writeto(str(fits_dir)+"/"+filename_hdu_table, overwrite=True)
 
     #Complete OBS table
@@ -222,8 +220,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     filename_obs_table = 'obs-index.fits.gz'
     obs = fits.BinTableHDU(obs_table)
-    hdu_list = fits.HDUList([fits.PrimaryHDU()] + obs)
-    hdu_list.writeto(str(fits_dir)+filename_obs_table, overwrite=True) #Make it to update
+    hdu_list = fits.HDUList([fits.PrimaryHDU(), obs])
+    hdu_list.writeto(str(fits_dir)+"/"+filename_obs_table, overwrite=True) #Make it to update
 
     return
 
