@@ -103,7 +103,7 @@
   "gain_selector_config": {
     "threshold":  3500
   },
-  "charge_scale": [1.142,1.104],
+  "charge_scale": [1.18,1.09],
   "LocalPeakWindowSum":{
      "window_shift": 4,
      "window_width":8
