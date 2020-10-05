@@ -16,12 +16,16 @@ from ctapipe.instrument import OpticsDescription
 __all__ = [
     'read_sim_par',
     'process_mc',
+    'get_weights'
+    'samesign'
+    'diff_events_after_cut'
+    'find_cut'
     'calculate_sensitivity',
     'calculate_sensitivity_lima',
     'calculate_sensitivity_lima_ebin',
     'bin_definition',
     'ring_containment',
-    'sensitivity',
+    'sensitivity_gamma_efficiency',
     ]
 
 
@@ -125,7 +129,19 @@ def process_mc(dl2_file, mc_type):
     return gammaness, angdist2.to(u.deg**2), e_reco, e_true, sim_par, events
 
 def get_weights(mc_par, spectral_par):
+    """
+    Calculate the weight to transform from MC spectra to target spectra
 
+    Paramenters
+    ---------
+    mc_par:  `dict` MC spectral parameters
+    spectral_par: `dict`spectral parameters of desired spectrum
+        
+    Returns
+    ---------
+    w: `float` weight
+    
+    """
     r = rate("PowerLaw",
                   mc_par['emin'], mc_par['emax'],
                   spectral_par, mc_par['cone'], mc_par['area_sim'])
@@ -136,25 +152,74 @@ def get_weights(mc_par, spectral_par):
                  mc_par['sim_ev'], spectral_par)
     return w
 
-def diff_events_after_cut(events, rates, obstime, feature, cut, percent_of_gammas):
-    total_events=np.sum(rates) * obstime
+def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency):
+    """
+    This function calculates the difference between the number of events after the cut
+    in feature and gamma_efficiency*total number of events
+
+    Paramenters
+    ---------
+    events:  `pd.dataframe` Dataframe of events
+    rates: `np.ndarray` gamma rates
+    obstime: `observation time`
+    feature: `string` feature for cut: gammaness or theta2
+    cut: `float` cut in feature
+    gamma_efficiency: `float` target gamma efficiency for the cut
+        
+    Returns
+    ---------
+    midpoint: `float` cut in feature
     
+    """
+
+    total_events=np.sum(rates) * obstime
     if feature=="gammaness":
         events_after_cut=np.sum(rates[events[feature]>cut]) * obstime
     else:
         events_after_cut=np.sum(rates[events[feature]<cut]) * obstime
         
-    return events_after_cut-percent_of_gammas*total_events
+    return events_after_cut-gamma_efficiency*total_events
 
 def samesign(a,b):
+    """
+    Check if two numbers have the same sign
+    Paramenters
+    ---------
+    a: `float` 
+    b: `float` 
+        
+    Returns
+    ---------
+    a * b > 0: `bool` True if a and b have the same sign
+    
+    """
     return a * b > 0
 
-def find_cut(events, rates, obstime, feature, low_cut, high_cut, percent_of_gammas):
+def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficiency):
+    """
+    Find cut in feature that corresponds to gamma efficiency.
+    Bisection method is used to find the root of the function
+    Number of events after cuts - gamma_efficiency*total number of events
 
+    Paramenters
+    ---------
+    events:  `pd.dataframe` Dataframe of events
+    rates: `np.ndarray` gamma rates
+    obstime: `observation time`
+    feature: `string` feature for cut: gammaness or theta2
+    low_cut: `float` lower cut limit
+    high_cut: `float` higher cut limit
+    gamma_efficiency: `float` target gamma efficiency for the cut
+        
+    Returns
+    ---------
+    midpoint: `float` cut in feature
+    
+    """
     for i in range(54):
         midpoint = (low_cut + high_cut) / 2.0
-        if samesign(diff_events_after_cut(events, rates, obstime, feature, low_cut, percent_of_gammas),
-                    diff_events_after_cut(events, rates, obstime, feature, midpoint, percent_of_gammas)):
+        if samesign(diff_events_after_cut(events, rates, obstime, feature, low_cut, gamma_efficiency),
+                    diff_events_after_cut(events, rates, obstime, feature, midpoint, gamma_efficiency)):
             low_cut = midpoint
         else:
             high_cut = midpoint
