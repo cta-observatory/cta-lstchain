@@ -104,16 +104,16 @@
   },
   "charge_scale": [1.142,1.104],
   "LocalPeakWindowSum":{
-     "window_shift": 5,
-     "window_width": 12
+     "window_shift": 4,
+     "window_width": 8
     },
   "GlobalPeakWindowSum":{
-     "window_shift": 5,
-     "window_width": 12
+     "window_shift": 4,
+     "window_width": 8
     },
   "FixedWindowSum": {
-     "window_shift": 5,
-     "window_width": 12
+     "window_shift": 4,
+     "window_width": 8
   },
   "timestamps_pointing":"ucts",
 
