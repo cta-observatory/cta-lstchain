@@ -136,7 +136,7 @@ def format_axes_sensitivity(ax):
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha = .5)
 
-def plot_MAGIC_sensitivity(ax):
+def plot_MAGIC_sensitivity(ax, **kwargs):
     """
     Plot MAGIC sensitivity for comparison with the reached one
 
@@ -152,11 +152,11 @@ def plot_MAGIC_sensitivity(ax):
 
     s = np.loadtxt('../spectra/data/magic_sensitivity.txt', skiprows = 1)   
     ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/ 1e3, 2), 
-              color = 'C0', label = 'MAGIC (Aleksic et al. 2014)')
+              **kwargs, label = 'MAGIC (Aleksic et al. 2014)')
     
     return ax
 
-def plot_LST_preliminary_sensitivity(ax):
+def plot_LST_preliminary_sensitivity(ax, **kwargs):
     """
     Plot MAGIC sensitivity for comparison with the reached one
 
@@ -176,7 +176,7 @@ def plot_LST_preliminary_sensitivity(ax):
     dFdE, par = crab_hegra(e)
     sensitivity_flux = sensitivity / 100 * (dFdE * e * e).to(u.TeV / (u.cm ** 2 * u.s))
     ax.loglog(e.to(u.GeV), sensitivity_flux, 
-              color = 'C2', linestyle='--',
+              **kwargs,
               label = 'LST sensitivity (PRELIMINARY)')
     
     return ax
