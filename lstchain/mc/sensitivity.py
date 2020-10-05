@@ -3,7 +3,7 @@ import pandas as pd
 import astropy.units as u
 from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
 from .mc import rate, weight
-from lstchain.spectra.crab import crab_hegra 
+from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
 from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import reco_source_position_sky
@@ -16,10 +16,10 @@ from ctapipe.instrument import OpticsDescription
 __all__ = [
     'read_sim_par',
     'process_mc',
-    'get_weights'
-    'samesign'
-    'diff_events_after_cut'
-    'find_cut'
+    'get_weights',
+    'samesign',
+    'diff_events_after_cut',
+    'find_cut',
     'calculate_sensitivity',
     'calculate_sensitivity_lima',
     'calculate_sensitivity_lima_ebin',
@@ -35,7 +35,7 @@ def read_sim_par(file):
 
     Parameters
     ---------
-    file: `hdf5 file` 
+    file: `hdf5 file`
 
     Returns
     ---------
@@ -102,9 +102,7 @@ def process_mc(dl2_file, mc_type):
     e_true = events.mc_energy.to_numpy() * u.TeV
 
     gammaness = events.gammaness
-    
-    focal_length = OpticsDescription.from_name("LST").equivalent_focal_length
-
+        
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
     if mc_type == 'gamma':
@@ -185,8 +183,8 @@ def samesign(a,b):
     Check if two numbers have the same sign
     Paramenters
     ---------
-    a: `float` 
-    b: `float` 
+    a: `float`
+    b: `float`
         
     Returns
     ---------
@@ -278,12 +276,11 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha):
 
 
     n_excesses_5sigma = stat.excess_matching_significance(5)
-    for value_excesses, value_bkg, value_on in np.nditer([n_excesses_5sigma, n_background, n_on_events], op_flags=['readwrite']):
+    for value_excesses, value_bkg in np.nditer([n_excesses_5sigma, n_background], op_flags=['readwrite']):
         if value_excesses < 10:
             value_excesses[...] = 10
         if value_excesses < 0.05 * value_bkg * alpha[0]:
             value_excesses[...]=0.05 * value_bkg * alpha[0]
-        #print(value_excesses, value_on, value_bkg, 0.05 *value_bkg*alpha[0])
         
     sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
     
@@ -413,10 +410,10 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     ntelescopes_gammas: `int` number of telescopes used
     ntelescopes_protons: `int` number of telescopes used
     n_bins_energy: `int` number of bins in energy
-    fraction_of_gammas_gammaness: `float` between 0 and 1 %/100 
-    of gammas to be left after cut in gammaness    
-    fraction_of_gammas_theta2: `float` between 0 and 1 %/100 
-    of gammas to be left after cut in theta2    
+    fraction_of_gammas_gammaness: `float` between 0 and 1 %/100
+    of gammas to be left after cut in gammaness
+    fraction_of_gammas_theta2: `float` between 0 and 1 %/100
+    of gammas to be left after cut in theta2
     noff: `float` ratio between the background and the signal region
     obstime: `Quantity` Observation time in seconds
 
@@ -495,7 +492,7 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     print("Total rate triggered gamma  {:.3f} Hz".format(total_rate_gamma))
 
     #Dataframe to store the events which survive the cuts
-    gammalike_events = pd.DataFrame(columns=events_g.keys()) 
+    gammalike_events = pd.DataFrame(columns=events_g.keys())
 
     # Weight events and count number of events per bin:
     for i in range(0, n_bins_energy):  # binning in energy
@@ -567,12 +564,12 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
 
     # Set conditions for calculating sensitivity
     for sens_value, \
-        final_protons_value, \
         pre_gamma_value, \
         pre_protons_value, \
         final_gammas_value in np.nditer([sensitivity, \
-                                        final_protons, pre_gammas, \
-                                         pre_protons, final_gammas], op_flags=['readwrite']):
+                                         pre_gammas, \
+                                         pre_protons, final_gammas],\
+                                        op_flags=['readwrite']):
         
         conditions = (not np.isfinite(sens_value)) or (sens_value<=0) \
                      or (final_gammas_value < min_num_events) \
@@ -608,7 +605,7 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
                                     'mc_gammas', 'mc_protons'])
 
     units = [energy.unit, energy.unit,"", best_theta2_cut.unit,"", "",
-             u.min**-1, u.min**-1, "", "", 
+             u.min**-1, u.min**-1, "", "",
              sensitivity_flux.unit,
              "", "", "", ""]
     

@@ -151,7 +151,7 @@ def plot_MAGIC_sensitivity(ax, **kwargs):
     """
 
     s = np.loadtxt('../spectra/data/magic_sensitivity.txt', skiprows = 1)   
-    ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/ 1e3, 2), 
+    ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/ 1e3, 2),
               **kwargs, label = 'MAGIC (Aleksic et al. 2014)')
     
     return ax
@@ -176,8 +176,7 @@ def plot_LST_preliminary_sensitivity(ax, **kwargs):
     dFdE, par = crab_hegra(e)
     sensitivity_flux = sensitivity / 100 * (dFdE * e * e).to(u.TeV / (u.cm ** 2 * u.s))
     ax.loglog(e.to(u.GeV), sensitivity_flux, 
-              **kwargs,
-              label = 'LST sensitivity (PRELIMINARY)')
+              **kwargs, label = 'LST sensitivity (PRELIMINARY)')
     
     return ax
 
@@ -232,7 +231,7 @@ def plot_sensitivity(energy, sensitivity, ax = None):
 
     ax.set_yscale("log")
     ax.set_xscale("log")
-    ax.errorbar(egeom[mask].to_value()*1000, 
+    ax.errorbar(egeom[mask].to_value()*1000,
                 (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
                 * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(), 
                 xerr=binsize[mask].to_value(), marker = 'o', color = 'C3', label = 'Sensitivity')

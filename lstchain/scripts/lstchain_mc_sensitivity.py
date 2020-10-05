@@ -20,13 +20,11 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
 import numpy as np
-import pandas as pd
 import argparse
 import ctaplot
 from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
-from lstchain.io.io import dl2_params_lstcam_key
 from lstchain.spectra.crab import crab_hegra
 from lstchain.mc import plot_utils
 import os
@@ -86,19 +84,17 @@ def main():
     result.to_hdf(args.output_path+'/sensitivity.h5', key='results')
 
     # Plots
-
-    fig=plt.figure(figsize=(12, 8))
-
+    
     #Sensitivity
     ax=plt.axes()
     plot_utils.format_axes_sensitivity(ax)
     plot_utils.plot_MAGIC_sensitivity(ax, color='C0')
     plot_utils.plot_LST_preliminary_sensitivity(ax,  color='C2', linestyle='--')
-    plot_utils.plot_Crab_SED(ax, 100, 5, 1e5, label="100% Crab") #Energy in GeV
-    plot_utils.plot_Crab_SED(ax, 10, 5, 1e5, linestyle='--', label="10% Crab") #Energy in GeV
-    plot_utils.plot_Crab_SED(ax, 1, 5, 1e5, linestyle=':', label="1% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 100, 50, 5e4, label="100% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 10, 50, 5e4, linestyle='--', label="10% Crab") #Energy in GeV
+    plot_utils.plot_Crab_SED(ax, 1, 50, 5e4, linestyle=':', label="1% Crab") #Energy in GeV
     plot_utils.plot_sensitivity(energy, sensitivity, ax)
-    plt.legend()
+    plt.legend(prop={'size': 12})
     plt.savefig(args.output_path+"/sensitivity.png")
     plt.show()
 
@@ -148,7 +144,7 @@ def main():
     plt.savefig(args.output_path+"/theta2.png")
     plt.show()
 
-    #Angular resolution    
+    #Angular resolution   
     ctaplot.plot_angular_resolution_per_energy(events.reco_alt, events.reco_az, events.mc_alt, events.mc_az, events.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
 
