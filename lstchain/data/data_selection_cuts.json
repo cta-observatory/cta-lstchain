@@ -1,0 +1,16 @@
+{
+  "events_filters":{
+    "gh_score": [0.8,1],
+    "intensity": [200, Infinity],
+    "r": [0, 1],
+    "wl": [0.1, 1],
+    "leakage_intensity_width_2": [0, 0.2]
+  },
+  "angular_filters":{
+    "theta_cut": [0, 0.14],
+    "source_fov_offset": [0, 2.83]
+  },
+  "source_dependent": {
+    "alpha": [0, 8]
+  }
+}

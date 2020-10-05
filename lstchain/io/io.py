@@ -1,26 +1,32 @@
 import h5py
 import numpy as np
-from astropy.table import Table, vstack
+import pandas as pd
 import tables
 from tables import open_file
 import os
-import astropy.units as u
+from tqdm import tqdm
+
 import ctapipe
-import lstchain
 from ctapipe.io import HDF5TableReader
 from ctapipe.containers import MCHeaderContainer
 from ctapipe.io import HDF5TableWriter
+from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (OpticsDescription, CameraGeometry,
+		 CameraDescription, CameraReadout, \
+		 TelescopeDescription, SubarrayDescription)
+
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
+
+import lstchain
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-from tqdm import tqdm
-from ctapipe.tools.stage1 import Stage1ProcessorTool
+
 from astropy.utils import deprecated
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
-from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
-import pandas as pd
+from astropy.table import Table, vstack
+import astropy.units as u
+
+from pyirf.simulations import SimulatedEventsInfo
 
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
@@ -41,7 +47,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_dataframe',
            'write_dl2_dataframe',
            'write_calibration_data',
-           'read_dl2_to_pyirf',
+           'read_mc_dl2_to_pyirf',
+           'read_data_dl2_to_QTable'
            ]
 
 
@@ -974,9 +981,9 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
         )
 
 
-def read_dl2_to_pyirf(filename):
+def read_mc_dl2_to_pyirf(filename):
     """
-    Read DL2 files from lstchain and convert into pyirf internal format
+    Read MC DL2 files from lstchain and convert into pyirf internal format
     Parameters
     ----------
     filename: path
@@ -1018,7 +1025,29 @@ def read_dl2_to_pyirf(filename):
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
     events = table.QTable.from_pandas(events)
 
+    #Make the columns as Quantity
     for k, v in unit_mapping.items():
         events[k] *= v
 
     return events, pyirf_simu_info
+
+def read_data_dl2_to_QTable(filename):
+    """
+    Read data DL2 files from lstchain and return QTable format
+
+    Parameters
+    ----------
+    filename: path to the lstchain DL2 file
+    Returns
+    -------
+    `astropy.table.QTable`
+    """
+    #Mapping
+    name_mapping = {
+        "gammaness" : "gh_score"
+    }
+    #TODO: Update other parameters with keys
+    data = pd.read_hdf(filename, key = dl2_params_lstcam_key).rename(columns=name_mapping)
+    data = table.QTable.from_pandas(data)
+
+    return data

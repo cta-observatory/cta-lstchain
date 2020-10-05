@@ -5,6 +5,7 @@ from . import calib
 from . import mc
 from . import spectra
 from . import image
+from . import hdu
 
 from .io import standard_config
 
