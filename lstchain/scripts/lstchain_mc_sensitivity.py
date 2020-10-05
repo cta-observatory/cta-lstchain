@@ -63,7 +63,7 @@ def main():
 
     
     # Calculate the sensitivity
-    energy,sensitivity,result, units, events, gcut, tcut = sensitivity_gamma_efficiency(args.dl2_file_g,
+    energy,sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency(args.dl2_file_g,
                                                                                          args.dl2_file_p,
                                                                                          ntelescopes_gamma,
                                                                                          ntelescopes_protons,
@@ -72,7 +72,8 @@ def main():
                                                                                          geff_theta2,
                                                                                          noff,
                                                                                          obstime)
-        
+
+    
     print("\nOptimal gammaness cuts:", gcut)
     print("Optimal theta2 cuts: {} \n".format(tcut))
 
@@ -144,7 +145,7 @@ def main():
     plt.savefig(args.output_path+"/theta2.png")
     plt.show()
 
-    #Angular resolution   
+    #Angular resolution
     ctaplot.plot_angular_resolution_per_energy(events.reco_alt, events.reco_az, events.mc_alt, events.mc_az, events.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
 

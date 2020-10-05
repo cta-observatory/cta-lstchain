@@ -11,8 +11,6 @@ from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
 
-from ctapipe.instrument import OpticsDescription
-
 __all__ = [
     'read_sim_par',
     'process_mc',
@@ -214,14 +212,15 @@ def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficienc
     midpoint: `float` cut in feature
     
     """
-    for i in range(54):
+    tol = 1000
+    while tol > 1e-5:
         midpoint = (low_cut + high_cut) / 2.0
         if samesign(diff_events_after_cut(events, rates, obstime, feature, low_cut, gamma_efficiency),
                     diff_events_after_cut(events, rates, obstime, feature, midpoint, gamma_efficiency)):
             low_cut = midpoint
         else:
             high_cut = midpoint
-
+        tol = high_cut -low_cut
     return midpoint
     
 
@@ -603,11 +602,6 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
                                     'n_excesses_min', 'relative_sensitivity', 'sensitivity_flux',
                                     'eff_gamma', 'eff_proton',
                                     'mc_gammas', 'mc_protons'])
-
-    units = [energy.unit, energy.unit,"", best_theta2_cut.unit,"", "",
-             u.min**-1, u.min**-1, "", "",
-             sensitivity_flux.unit,
-             "", "", "", ""]
     
-    return energy, sensitivity, result, units, gammalike_events, gcut, tcut
+    return energy, sensitivity, result, gammalike_events, gcut, tcut
 

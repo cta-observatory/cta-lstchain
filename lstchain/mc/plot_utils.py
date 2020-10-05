@@ -173,9 +173,8 @@ def plot_LST_preliminary_sensitivity(ax, **kwargs):
     s = np.loadtxt('../spectra/data/sensitivity.txt', skiprows = 1)
     e = s[:,0] * u.TeV
     sensitivity = s[:,1]
-    dFdE, par = crab_hegra(e)
-    sensitivity_flux = sensitivity / 100 * (dFdE * e * e).to(u.TeV / (u.cm ** 2 * u.s))
-    ax.loglog(e.to(u.GeV), sensitivity_flux, 
+    sensitivity_flux = sensitivity / 100 * (crab_hegra(e)[0] * e * e).to(u.TeV / (u.cm ** 2 * u.s))
+    ax.loglog(e.to(u.GeV), sensitivity_flux,
               **kwargs, label = 'LST sensitivity (PRELIMINARY)')
     
     return ax
