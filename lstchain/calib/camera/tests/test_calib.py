@@ -63,8 +63,8 @@ def test_load_image_extractor_from_config():
     image_extractor = load_image_extractor_from_config(config, subarray)
 
     assert isinstance(image_extractor, LocalPeakWindowSum)
-    assert image_extractor.window_shift[0][2] == 5
-    assert image_extractor.window_width[0][2] == 12
+    assert image_extractor.window_shift[0][2] == 4
+    assert image_extractor.window_width[0][2] == 8
 
     config = {'image_extractor': 'LocalPeakWindowSum',
               'LocalPeakWindowSum': {
