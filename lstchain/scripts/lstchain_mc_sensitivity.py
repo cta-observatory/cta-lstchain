@@ -63,8 +63,8 @@ def main():
     fraction_of_events_for_cuts = 0.0 # Fraction of the total number
     #of events to be used to calculate the best sensitivity cuts
     #(number from 0 to 1)
-    fraction_of_gammas_gammaness = 0.7
-    fraction_of_gammas_theta2 = 0.8
+    fraction_of_gammas_gammaness = 0.9
+    fraction_of_gammas_theta2 = 0.7
 
     #Divide the event set in two:
     #First half for calculating the best sensitivity cuts
@@ -95,7 +95,7 @@ def main():
                                                                                    fraction_of_gammas_gammaness,
                                                                                    fraction_of_gammas_theta2,
                                                                                    noff,
-                                                                                   fraction_of_events_for_cuts,
+                                                                                   
                                                                                    obstime)
     
     
