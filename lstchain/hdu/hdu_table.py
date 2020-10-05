@@ -272,11 +272,11 @@ def create_event_list(data, run_number, Source_name):
     ### Event table
     event_table = QTable(
             {
-                "EVENT_ID" : u.Quantity(data['event_id'], ndmin=2),
-                "TIME" : u.Quantity(data['dragon_time'] * u.s, ndmin=2),
-                "RA" : u.Quantity(coord_icrs.ra.deg * u.deg, ndmin=2),
-                "DEC" : u.Quantity(coord_icrs.dec.deg * u.deg, ndmin=2),
-                "ENERGY" : u.Quantity(data['reco_energy'] * u.TeV, ndmin=2)
+                "EVENT_ID" : u.Quantity(data['event_id']),
+                "TIME" : u.Quantity(data['dragon_time'] * u.s),
+                "RA" : u.Quantity(coord_icrs.ra.deg * u.deg),
+                "DEC" : u.Quantity(coord_icrs.dec.deg * u.deg),
+                "ENERGY" : u.Quantity(data['reco_energy'] * u.TeV)
             }
         )
     ##########################################################################
