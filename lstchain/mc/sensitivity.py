@@ -272,15 +272,11 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha):
         n_off=n_background,
         alpha=alpha
         )
-
-
     n_excesses_5sigma = stat.excess_matching_significance(5)
-    for value_excesses, value_bkg in np.nditer([n_excesses_5sigma, n_background], op_flags=['readwrite']):
-        if value_excesses < 10:
-            value_excesses[...] = 10
-        if value_excesses < 0.05 * value_bkg * alpha[0]:
-            value_excesses[...]=0.05 * value_bkg * alpha[0]
-        
+    n_excesses_5sigma[n_excesses_5sigma<10] = 10
+    bkg_5percent = 0.05*n_background*alpha
+    n_excesses_5sigma[n_excesses_5sigma<bkg_5percent] = bkg_5percent[n_excesses_5sigma<bkg_5percent]
+
     sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
     
     return n_excesses_5sigma, sensitivity
@@ -349,8 +345,8 @@ def bin_definition(n_bins_gammaness, n_bins_theta2):
 
     """
     max_gam = 0.9
-    max_th2 = 0.02 * u.deg * u.deg
-    min_th2 = 0.001 * u.deg * u.deg
+    max_th2 = 0.05 * u.deg * u.deg
+    min_th2 = 0.005 * u.deg * u.deg
 
     gammaness_bins = np.linspace(0, max_gam, n_bins_gammaness)
     theta2_bins = np.linspace(min_th2, max_th2, n_bins_theta2)
@@ -393,8 +389,8 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
 def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
                 ntelescopes_gammas, ntelescopes_protons,
                 n_bins_energy,
-                fraction_of_gammas_gammaness,
-                fraction_of_gammas_theta2,
+                gamma_eff_gammaness,
+                gamma_eff_theta2,
                 noff,
                 obstime = 50 * 3600 * u.s):
 
@@ -409,9 +405,9 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     ntelescopes_gammas: `int` number of telescopes used
     ntelescopes_protons: `int` number of telescopes used
     n_bins_energy: `int` number of bins in energy
-    fraction_of_gammas_gammaness: `float` between 0 and 1 %/100
+    gamma_eff_gammaness: `float` between 0 and 1 %/100
     of gammas to be left after cut in gammaness
-    fraction_of_gammas_theta2: `float` between 0 and 1 %/100
+    gamma_eff_theta2: `float` between 0 and 1 %/100
     of gammas to be left after cut in theta2
     noff: `float` ratio between the background and the signal region
     obstime: `Quantity` Observation time in seconds
@@ -510,8 +506,8 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
         events_bin_g = events_g[(e_reco_g < energy[i+1]) & (e_reco_g > energy[i])]
         events_bin_p = events_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]
 
-        best_g_cut = find_cut(events_bin_g, rates_g, obstime,  "gammaness", 0, 1.0, fraction_of_gammas_gammaness)
-        best_theta2_cut = find_cut(events_bin_g, rates_g, obstime, "theta2", 0.0, 10.0, fraction_of_gammas_theta2) * u.deg**2
+        best_g_cut = find_cut(events_bin_g, rates_g, obstime,  "gammaness", 0, 1.0, gamma_eff_gammaness)
+        best_theta2_cut = find_cut(events_bin_g, rates_g, obstime, "theta2", 0.0, 10.0, gamma_eff_theta2) * u.deg**2
          
         events_bin_after_cuts_g = events_bin_g[(events_bin_g.gammaness > best_g_cut) &(events_bin_g.theta2 < best_theta2_cut)]
         events_bin_after_cuts_p = events_bin_p[(events_bin_p.gammaness > best_g_cut) &(events_bin_p.theta2 < best_theta2_cut)]
@@ -562,6 +558,16 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     min_pre_events = 5
 
     # Set conditions for calculating sensitivity
+        
+    conditions = (
+         (sensitivity<=0)
+        | (pre_gammas<min_pre_events)
+        | (pre_protons<min_pre_events)
+        | (final_gammas<min_num_events)
+    )
+    
+    sensitivity[conditions] = np.inf
+    '''
     for sens_value, \
         pre_gamma_value, \
         pre_protons_value, \
@@ -576,7 +582,7 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
                      or (pre_protons_value < min_pre_events)
         if conditions:
             sens_value[...] = np.inf
-    
+    '''
     
     # Compute sensitivity in flux units
     egeom = np.sqrt(energy[1:] * energy[:-1])

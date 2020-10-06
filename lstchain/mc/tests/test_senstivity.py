@@ -22,7 +22,7 @@ def test_read_sim_par():
     assert np.isclose(par['emax'].to_value(), 330.0)
     assert np.isclose(par['sp_idx'], -2.0)
     assert np.isclose(par['sim_ev'], 400000)
-    assert np.isclose(par['area_sim'].to_value(), 28274333.88)
+    assert np.isclose(par['area_sim'].to_value(), 2.82743339e+11)
     assert np.isclose(par['cone'].to_value(), 10.0)
 
 
@@ -33,7 +33,6 @@ def test_process_mc():
     pass
 
 def test_calculate_sensitivity():
-
     np.testing.assert_allclose(calculate_sensitivity(
         50, 10, 0.2), 14.14, rtol = 1.e-3) 
     np.testing.assert_allclose(calculate_sensitivity(
@@ -44,16 +43,10 @@ def test_calculate_sensitivity():
 
 def test_calculate_sensitivity_lima():
     
-    np.testing.assert_allclose(calculate_sensitivity_lima(
-            50, 10, 0.2, 1, 0, 0),
-                               ([13.48, 26.97]), rtol = 1.e-3)
-    np.testing.assert_allclose(calculate_sensitivity_lima(
-            200, 50, 1, 0, 1, 0),
-                               ([63.00, 31.5]), rtol = 1.e-3)
     # Testing an array
     np.testing.assert_allclose(calculate_sensitivity_lima(
-            [10, 100], [50,100], [1, 1], 1, 1, 0),
-                               ([63.00, 83.57],[630.07,  83.57]), rtol = 1.e-3)
+            np.array([10, 100]), np.array([50,100]), np.array([1, 1])),
+                               (np.array([63.00, 83.57]), np.array([630.07,  83.57])), rtol = 1.e-3)
 
 def test_calculate_sensitivity_lima_ebin():
     
@@ -69,8 +62,8 @@ def test_calculate_sensitivity_lima_ebin():
 
 def test_bin_definition():
 
-    gammaness_bins, theta2_bins = bin_definition(11,10)
-    gammaness_bins_test = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    gammaness_bins, theta2_bins = bin_definition(10,10)
+    gammaness_bins_test = [0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     theta2_bins_test = [0.005, 0.01 , 0.015, 0.02 , 0.025, 0.03 , 0.035, 0.04, 
             0.045, 0.05]
     np.testing.assert_allclose(gammaness_bins, gammaness_bins_test) 
