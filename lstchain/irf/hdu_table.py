@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import logging
+
 from lstchain.reco.utils import camera_to_altaz
 
 import astropy.units as u
@@ -12,6 +14,7 @@ __all__ = [
     'create_event_list'
     ]
 
+log = logging.getLogger(__name__)
 
 DEFAULT_HEADER = fits.Header()
 DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
@@ -47,90 +50,58 @@ def create_obs_hdu_index(filename_list, fits_dir):
         directory containing the fits file
     """
 
-    # empty lists with the quantities we want
     hdu_tables = []
+    obs_tables = []
 
-    obs_id = []
-    ra_pnt = []
-    dec_pnt = []
-    zen_pnt = []
-    alt_pnt = []
-    az_pnt = []
-    ontime = []
-    livetime = []
-    deadc = []
-    tstart = []
-    tstop = []
-    source = []
-    N_TELS = []
-    TELLIST = []
-
-    # loop through the files
+    #loop through the files
     for file in filename_list:
-
-        if os.path.exists(str(fits_dir)+"/"+file):
+        filepath = (fits_dir/file)
+        if filepath.is_file():
             try:
-                event_table = Table.read(str(fits_dir)+"/"+file, hdu="EVENTS")
-                gti_table = Table.read(str(fits_dir)+"/"+file, hdu="GTI")
-                pointing_table = Table.read(str(fits_dir)+"/"+file, hdu="POINTING")
+                event_table = Table.read(filepath, hdu="EVENTS")
+                gti_table = Table.read(filepath, hdu="GTI")
+                pointing_table = Table.read(filepath, hdu="POINTING")
             except Exception:
-                print(f"fits corrupted for file {file}")
+                log.error(f"fits corrupted for file {file}")
                 continue
         else:
-            print(f"fits {file} doesn't exist")
+            log.error(f"fits {file} doesn't exist")
             continue
 
         #The column names for the table follows the scheme as shown in
         #https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
-        #As RESPONSE class will have EFF_AREA, EDISP, RPSF, BKG and RAD_MAX, the names of
-        #the corresponding HDU_CLASS_n can change its name
-
         ###############################################
         # Event list
-
-        hdu_type_name = ['events']
-        hdu_class_1 = ['events']
-        hdu_class_2 = ['']
-        hdu_class_3 = ['']
-        hdu_class_4 = ['']
-        obs_id_hdu_table = [event_table.meta["OBS_ID"]]
-        file_dir = ['']
-        file_name = [file]
-        hdu_name = ['events']
-
-        #hdu_table = QTable({})
-        t_events = Table([obs_id_hdu_table, hdu_type_name, hdu_class_1, hdu_class_2, hdu_class_3, hdu_class_4,
-                    file_dir, file_name, hdu_name],
-                names=('OBS_ID', 'HDU_TYPE', 'HDU_CLASS', 'HDU_CLASS2', 'HDU_CLASS3', 'HDU_CLASS4',
-                    'FILE_DIR', 'FILE_NAME', 'HDU_NAME'),
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20'),
-                meta={'name': 'HDU_INDEX'}
+        t_events = Table(
+                {'OBS_ID':[event_table.meta['OBS_ID']],'HDU_TYPE':['events'],'HDU_CLASS':['events'],
+                    'HDU_CLASS2':[''],'HDU_CLASS3':[''],'HDU_CLASS4':[''],'FILE_DIR':[''],'FILE_NAME': [file],
+                    'HDU_NAME':['events']},
+                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20')
                 )
         hdu_tables.append(t_events)
-
         ###############################################
         #GTI
         t_gti = t_events.copy()
 
-        t_gti['HDU_TYPE'] = ['gti']
-        t_gti['HDU_CLASS'] = ['gti']
-        t_gti['HDU_NAME'] = ['gti']
+        t_gti['HDU_TYPE'] = 'gti'
+        t_gti['HDU_CLASS'] = 'gti'
+        t_gti['HDU_NAME'] = 'gti'
 
         hdu_tables.append(t_gti)
-
         ###############################################
         #POINTING
         t_pnt = t_events.copy()
+
         t_pnt['HDU_TYPE'] = ['pointing']
         t_pnt['HDU_CLASS'] = ['pointing']
         t_pnt['HDU_NAME'] = ['pointing']
 
         hdu_tables.append(t_pnt)
-
         ###############################################
         #Energy Dispersion
         if Table.read(str(fits_dir)+"/"+file, hdu="ENERGY DISPERSION"):
             t_edisp = t_events.copy()
+
             t_edisp['HDU_TYPE'] = ['edisp']
             t_edisp['HDU_CLASS'] = ['edisp_2d']
             t_edisp['HDU_CLASS2'] = ['EDISP']
@@ -140,8 +111,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
             hdu_tables.append(t_edisp)
         else:
-            print('Energy Dispersion HDU not found')
-
+            log.error('Energy Dispersion HDU not found')
         ###############################################
         #Effective Area
         if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
@@ -154,74 +124,47 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
             hdu_tables.append(t_aeff)
         else:
-            print('Effective Area HDU not found')
-
+            log.error('Effective Area HDU not found')
         ###############################################
+        # Obs_table
+        t_obs = Table(
+            {'OBS_ID' : [event_table.meta['OBS_ID']],'RA_PNT' : [pointing_table.meta['RA_PNT']],
+            'DEC_PNT' : [pointing_table.meta['DEC_PNT']], 'ZEN_PNT' : [90 - float(pointing_table.meta['ALT_PNT'])],
+            'ALT_PNT' : [pointing_table.meta['ALT_PNT']], 'AZ_PNT' : [pointing_table.meta['AZ_PNT']],
+            'ONTIME': [event_table.meta["ONTIME"]], 'LIVETIME' : [event_table.meta["LIVETIME"]],
+            'DEADC' : [event_table.meta["DEADC"]], 'TSTART' : [gti_table["START"]],'TSTOP' : [gti_table["STOP"]],
+            'OBJECT' : [event_table.meta['OBJECT']], 'N_TELS' : [event_table.meta["N_TELS"]],
+            'TELLIST' : [event_table.meta["TELLIST"]]},
+            dtype=('>i8', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f8', '>f8', 'S20','>i8', 'S20')
+            )
+        obs_tables.append(t_obs)
 
-        # Filling up the remainng quantities for obs_index
-        obs_id.append(event_table.meta['OBS_ID'])
-        source.append(event_table.meta['OBJECT'])
-        N_TELS.append(event_table.meta["N_TELS"])
-        TELLIST.append(event_table.meta["TELLIST"])
-
-        ontime.append(event_table.meta["ONTIME"])
-        livetime.append(event_table.meta["LIVETIME"])
-        deadc.append(event_table.meta["DEADC"])
-        tstart.append(gti_table["START"])
-        tstop.append(gti_table["STOP"])
-
-        ra_pnt.append(pointing_table.meta['RA_PNT'])
-        dec_pnt.append(pointing_table.meta['DEC_PNT'])
-        zen_pnt.append(90 - float(pointing_table.meta['ALT_PNT']))
-        alt_pnt.append(pointing_table.meta['ALT_PNT'])
-        az_pnt.append(pointing_table.meta['AZ_PNT'])
-
-
-    #Complete HDU table
     hdu_table = vstack(hdu_tables)
-    hdu_table.meta['EXTNAME'] = 'HDU_INDEX'
-    hdu_table.meta["HDUCLASS"] = "GADF"
-    hdu_table.meta["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-    hdu_table.meta["HDUVERS"] = "0.2"
-    hdu_table.meta["HDUCLAS1"] = "INDEX"
-    hdu_table.meta["HDUCLAS2"] = "HDU"
-    hdu_table.meta["TELESCOP"] = "CTA"
-    hdu_table.meta["INSTRUME"] = "LST-1"
 
-    filename_hdu_table = 'hdu-index.fits.gz'
-    hdu = fits.BinTableHDU(hdu_table)
-    #hdu_name='HDU_INDEX'
+    hdu_header = DEFAULT_HEADER.copy()
+    hdu_header["HDUCLAS1"] = "INDEX"
+    hdu_header["HDUCLAS2"] = "HDU"
+    hdu_header["TELESCOP"] = "CTA"
+    hdu_header["INSTRUME"] = "LST-1"
+
+    filename_hdu_table = (fits_dir/'hdu-index.fits.gz')
+
+    hdu = fits.BinTableHDU(hdu_table, header=hdu_header, name='HDU INDEX')
     hdu_list = fits.HDUList([fits.PrimaryHDU(), hdu])
-    #hdu_list.append(hdu)
-    hdu_list.writeto(str(fits_dir)+"/"+filename_hdu_table, overwrite=True)
+    hdu_list.writeto(filename_hdu_table, overwrite=True)
 
-    #Complete OBS table
-    obs_table = Table(
-        [obs_id, ra_pnt, dec_pnt, zen_pnt, alt_pnt, az_pnt, ontime, livetime, deadc, tstart, tstop, source, N_TELS, TELLIST],
-        names=(
-            'OBS_ID', 'RA_PNT', 'DEC_PNT', 'ZEN_PNT', 'ALT_PNT', 'AZ_PNT', 'ONTIME', 'LIVETIME', 'DEADC', 'TSTART',
-            'TSTOP', 'OBJECT','N_TELS', 'TELLIST'),
-        dtype=('>i8', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f8', '>f8', 'S20','>i8', 'S20'),
-        meta={'name': 'OBS_INDEX'}
-    )
+    obs_table = vstack(obs_tables)
 
-    obs_table = vstack(obs_table)
-    obs_table.meta['EXTNAME'] = 'OBS_INDEX'
-    obs_table.meta["HDUCLASS"] = "GADF"
-    obs_table.meta["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-    obs_table.meta["HDUVERS"] = "0.2"
-    obs_table.meta["HDUCLAS1"] = "INDEX"
-    obs_table.meta["HDUCLAS2"] = "OBS"
-    obs_table.meta["TELESCOP"] = "CTA"
-    obs_table.meta["INSTRUME"] = "LST-1"
+    obs_header = hdu_header.copy()
+    obs_header["HDUCLAS2"] = "OBS"
+    obs_header['MJDREFI'] = event_table.meta['MJDREFI']
+    obs_header['MJDREFF'] = event_table.meta['MJDREFF']
 
-    obs_table.meta['MJDREFI'] = event_table.meta['MJDREFI']
-    obs_table.meta['MJDREFF'] = event_table.meta['MJDREFF']
+    filename_obs_table = (fits_dir/'obs-index.fits.gz')
 
-    filename_obs_table = 'obs-index.fits.gz'
-    obs = fits.BinTableHDU(obs_table)
+    obs = fits.BinTableHDU(obs_table, header = obs_header, name='OBS INDEX')
     hdu_list = fits.HDUList([fits.PrimaryHDU(), obs])
-    hdu_list.writeto(str(fits_dir)+"/"+filename_obs_table, overwrite=True) #Make it to update
+    hdu_list.writeto(filename_obs_table, overwrite=True)
 
     return
 
@@ -348,4 +291,3 @@ def create_event_list(data, run_number, Source_name):
     pointing = fits.BinTableHDU(pnt_table, header = pnt_header, name = 'POINTING')
 
     return event, gti, pointing
-

@@ -10,7 +10,7 @@ import pytest
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
 from lstchain.tests.test_lstchain import (
-		test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file, 
+		test_dir, mc_gamma_testfile, produce_fake_dl1_proton_file,
 		fake_dl1_proton_file)
 
 output_dir = os.path.join(test_dir, 'scripts')
@@ -22,6 +22,7 @@ dl2_file_new = os.path.join(output_dir, 'dl2_gamma_test_large_new.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
+irf_file = os.path.join(output_dir, 'irf.fits.gz')
 dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large_new.fits')
 dl3_hdu_index = os.path.join(output_dir, 'hdu-index.fits.gz')
 dl3_obs_index = os.path.join(output_dir, 'obs-index.fits.gz')
@@ -149,8 +150,8 @@ def test_lstchain_dl1_to_dl2():
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
 def test_mc_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab', 
-                '-f', dl1_file, 
+    run_program('lstchain_mc_dl1ab',
+                '-f', dl1_file,
                 '-o', output_file,
                 )
     assert os.path.exists(output_file)
@@ -197,11 +198,23 @@ def test_read_data_dl2_to_pyirf():
     assert 'gh_score' in events.colnames
 
 @pytest.mark.run(after='test_mc_r0_to_dl2')
+def test_irf():
+	from astropy.table import table
+
+	run_program(
+			'lstchain_mc_dl2_to_irf',
+			'-fg', dl2_file,
+			'-o', output_dir
+	)
+
+	assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
+	assert 'MATRIX' in Table.read(irf_file, hdu='ENERGY DISPERSION').columns
+
+@pytest.mark.run(after='test_irf')
 def test_dl3():
     from astropy.table import Table
     import pandas as pd
-
-    input_mc_file = dl2_file
+	
     dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
     dl2['tel_id'] = dl2['tel_id'].min()
@@ -215,8 +228,8 @@ def test_dl3():
             'lstchain_dl2_to_dl3',
             '-d', input_file,
             '-o', output_dir,
-            '-fg', input_mc_file,
-            '-irf', 'True',
+            '-add-irf', 'True',
+            '-irf', irf_file,
             '-s', 'Gamma'
             )
 

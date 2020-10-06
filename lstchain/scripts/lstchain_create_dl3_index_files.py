@@ -5,6 +5,7 @@ A separate script to index the HDU tables and Observation tables of the DL3 file
 in a particular directory.
 The number of DL3 fits files to be indexed from the directory can be selected as
 per a sorted order.
+
 Usage:
 $> python lstchain_create_dl3_index_files.py
 --input-dl3-dir ./DL3/
@@ -18,7 +19,7 @@ import sys
 
 import argparse
 import numpy as np
-from lstchain.hdu import create_obs_hdu_index
+from lstchain.irf import create_obs_hdu_index
 
 log = logging.getLogger(__name__)
 

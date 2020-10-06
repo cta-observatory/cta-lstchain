@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Script to create DL3 of single (merged) DL2 run along with IRF files.
-The IRF files are not stored in a separate fits file
-The selection cuts are applied using a separate yml file
+Script to create DL3 of single (merged) DL2 run along with IRFs generated from lstchain_mc_dl2_to_irf.py.
+
+The selection cuts applied are the same as those used in generating IRFs.
 
 TODO:
 Adding filter for size of files after cuts, to have significant number of events
@@ -11,21 +11,17 @@ Include angular cuts in filter_events
 Generalize source_fov_offset binning
 
  - Input: Path where the merged DL2 data HDF5 file is present
-          MC gamma file path #other MC files are optional currently
           Source name
-          Adding IRF or not
+          IRFs
  - Output: DL3 of the input DL2 data file in fits format.
 
 Usage:
 $> python lstchain_dl2_to_dl3.py
 --input-data ./DL2/dl2_LST-1.Run*.h5
 --output-fits-dir ./DL3/
---input-file-gamma ./gamma/dl2_gamma_*.h5
---input-file-gamma-diff ./gamma-diff/dl2_gamma-diff*.h5 #optional for now
---input-file-proton ./proton/dl2_proton_*.h5 #optional for now
---input-file-electron ./electron/dl2_electron_*.h5 #optional for now
---source-name Crab
 --add-irf True
+--input-irf-file ./IRF/irf.fits.gz
+--source-name Crab
 
 """
 
@@ -39,17 +35,14 @@ from pathlib import Path
 import logging
 import sys
 
-from lstchain.hdu import create_event_list#, make_aeff2d_hdu, make_edisp2d_hdu
-from lstchain.io import read_mc_dl2_to_pyirf, read_data_dl2_to_QTable, read_configuration_file, get_standard_config
+from lstchain.irf import create_event_list
+from lstchain.io import read_data_dl2_to_QTable, read_configuration_file, get_standard_config
 from lstchain.reco.utils import filter_events
 
 from astropy.io import fits
 import astropy.units as u
 from astropy.coordinates.angle_utilities import angular_separation
 
-# pyIRF packages
-from pyirf.io.gadf import create_aeff2d_hdu, create_energy_dispersion_hdu
-from pyirf.irf import effective_area_per_energy, energy_dispersion#, effective_area_per_energy_and_fov
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
 
 log = logging.getLogger(__name__)
@@ -69,38 +62,21 @@ parser.add_argument('--output-fits-dir', '-o', type=Path,
                     default=None, required=True
                     )
 
-parser.add_argument('--input-file-gamma', '-fg', type=Path, dest='gamma_file',
-                    help='Path to the dl2 file of gamma events for building IRF',
-                    default=None, required=True
+parser.add_argument('--add-irf', '-add-irf', action='store',
+		            type=lambda x: bool(strtobool(x)), dest='add_irf',
+                    help='Boolean: True to add IRF to DL3',
+                    default=False, required=True
+                    )
+
+parser.add_argument('--input-irf-file', '-irf', type=Path, dest='irf',
+                    help='Path to the fits.gz file of IRFs',
+                    default=None, required=False
                     )
 
 parser.add_argument('--source-name', '-s', type=str,
                     dest='source_name',
                     help='Name of the source',
                     default='Crab', required=True
-                    )
-
-parser.add_argument('--add-irf', '-irf', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='add_irf',
-                    help='Boolean: True to add IRF to DL3',
-                    default=False, required=True
-                    )
-
-# Optional arguments
-#For now as we are not producing background IRFs, the other MC files can be optional
-parser.add_argument('--input-file-gamma-diff', '-fg-diff', type=Path, dest='gamma_diff_file',
-                    help='Path to the dl2 file of gamma diffuse events for building IRF',
-                    default=None, required=False
-                    )
-
-parser.add_argument('--input-file-proton', '-fp', type=Path, dest='proton_file',
-                    help='Path to the dl2 file of proton events for building IRF',
-                    default=None, required=False
-                    )
-
-parser.add_argument('--input-file-electron', '-fe', type=Path, dest='electron_file',
-                    help='Path to the dl2 file of electron events for building IRF',
-                    default=None, required=False
                     )
 
 args = parser.parse_args()
@@ -141,54 +117,14 @@ def main():
 
     data = filter_events(data, cuts["events_filters"])
     # Separate cuts for angular separations, for now. Will be included later in filter_events
-    data = data[data["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
+    data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]
+    data = data[data["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
+
     #Temporary filter for non/fewer events file
     #if len(data)<100:
     #    log.error(len(data), 'events only')
     #    log.error('Less than 100 events, please check the selection cuts')
     #    sys.exit(1)
-    if args.add_irf:
-
-        gamma, gamma_info = read_mc_dl2_to_pyirf(args.gamma_file)
-        # Select the MC only for the same TEL as of real data
-        gamma = gamma[gamma["tel_id"]==data["tel_id"][0]]
-        # Add angular separation columns using pyirf's functions
-        gamma["source_fov_offset"] = calculate_source_fov_offset(gamma)
-        gamma["theta"] = calculate_theta(gamma, gamma["true_az"], gamma["true_alt"])
-
-        gamma = filter_events(gamma, cuts["events_filters"])
-        gamma = gamma[gamma["source_fov_offset"].to_value() < cuts["angular_filters"]["source_fov_offset"][1]]
-        gamma = gamma[gamma["theta"].to_value() < cuts["angular_filters"]["theta_cut"][1]]
-        #gamma_diff, gamma_diff_info = read_mc_dl2_to_pyirf(args.gamma_diff_file)
-        #gamma_diff = mc_filter(gamma_diff)
-        #proton, proton_info = read_mc_dl2_to_pyirf(args.proton_file)
-        #proton = mc_filter(proton)
-        #electron, electron_info = read_mc_dl2_to_pyirf(args.electron_file)
-        #electron = mc_filter(electron)
-
-        # Binning of parameters used in IRFs
-        # This can be included in the config files
-        #Number of bins is based on crude check for smooth distribution
-        true_energy_bins = np.logspace(np.log10(0.05),np.log10(50), 10) *u.TeV
-        ### TODO: The FoV offset angle is 0.4 deg for LST1 and it is used in
-        # this manner because of an issue with astropy, which will be rectified
-        # in a recent PR and updated in atropy v4.0.2
-        # Later, we can just find the mean of FoV offset values, and use it
-        # for the binning
-        fov_offset_bins = [0.2, 0.6, 1.0] * u.deg
-        migration_bins = np.linspace(0.2, 5, 31)
-
-        area = effective_area_per_energy(gamma, gamma_info, true_energy_bins)
-        effective_area = np.column_stack([area, np.zeros_like(area)])
-        # use effective_area_per_energy_and_fov for diffuse MC
-        #area = effective_area_energy_fov(gamma_diff, gamma_diff_info, true_energy_bins, fov_offset_bins)
-        edisp = energy_dispersion(gamma, true_energy_bins, fov_offset_bins, migration_bins)
-
-        # BinTableHDU is returned here
-        aeff2d = create_aeff2d_hdu(effective_area, true_energy_bins, fov_offset_bins)
-        edisp_2d = create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins)
-        # Using the HDU name as required by gammapy
-        edisp_2d.header["EXTNAME"] = "ENERGY DISPERSION"
 
     #Create primary HDU
     n = np.arange(100) # a simple sequence of floats from 0.0 to 99.9
@@ -200,10 +136,15 @@ def main():
     name_dl3_file = name_dl3_file.replace('h5', 'fits')
 
     if args.add_irf:
-        hdulist = fits.HDUList([primary_hdu, events, gti, pointing, aeff2d, edisp_2d])
+        irf = fits.open(args.irf)
+        aeff2d = irf[1]
+        edisp2d = irf[2]
+        #bkg2d = irf[3]
+        #psf = irf[4]
+        hdulist = fits.HDUList([primary_hdu, events, gti, pointing, aeff2d, edisp2d])
     else:
         hdulist = fits.HDUList([primary_hdu, events, gti, pointing])
-    hdulist.writeto(str(args.output_fits_dir)+'/'+name_dl3_file,overwrite=True)
+    hdulist.writeto((args.output_fits_dir/name_dl3_file),overwrite=True)
 
 if __name__ == '__main__':
     main()
