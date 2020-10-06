@@ -30,7 +30,7 @@ class TimeCalibrationHDF5Writer(Tool):
 
     max_events = traits.Int(
         help="Maximum numbers of events to read. Default = 20000",
-        default_value=2000
+        default_value=20000
     ).tag(config=True)
 
     aliases = {
