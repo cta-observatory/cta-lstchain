@@ -90,7 +90,6 @@ def main():
     ax=plt.axes()
     plot_utils.format_axes_sensitivity(ax)
     plot_utils.plot_MAGIC_sensitivity(ax, color='C0')
-    plot_utils.plot_LST_preliminary_sensitivity(ax,  color='C2', linestyle='--')
     plot_utils.plot_Crab_SED(ax, 100, 50, 5e4, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 50, 5e4, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 50, 5e4, linestyle=':', label="1% Crab") #Energy in GeV

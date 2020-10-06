@@ -12,7 +12,6 @@ __all__ = [
     'format_axes_array',
     'format_axes_sensitivity',
     'plot_MAGIC_sensitivity',
-    'plot_LST_preliminary_sensitivity',
     'plot_Crab_SED',
     'plot_sensitivity',
     'sensitivity_minimization_plot',
@@ -153,29 +152,6 @@ def plot_MAGIC_sensitivity(ax, **kwargs):
     s = np.loadtxt('../spectra/data/magic_sensitivity.txt', skiprows = 1)   
     ax.loglog(s[:,0], s[:,3] * np.power(s[:,0]/ 1e3, 2),
               **kwargs, label = 'MAGIC (Aleksic et al. 2014)')
-    
-    return ax
-
-def plot_LST_preliminary_sensitivity(ax, **kwargs):
-    """
-    Plot MAGIC sensitivity for comparison with the reached one
-
-    Parameters
-    --------
-    ax:    `matplotlib.pyplot.axis`  
-
-    Returns
-    --------
-    ax:    `matplotlib.pyplot.axis`  
-
-    """
-
-    s = np.loadtxt('../spectra/data/sensitivity.txt', skiprows = 1)
-    e = s[:,0] * u.TeV
-    sensitivity = s[:,1]
-    sensitivity_flux = sensitivity / 100 * (crab_hegra(e)[0] * e * e).to(u.TeV / (u.cm ** 2 * u.s))
-    ax.loglog(e.to(u.GeV), sensitivity_flux,
-              **kwargs, label = 'LST sensitivity (PRELIMINARY)')
     
     return ax
 
