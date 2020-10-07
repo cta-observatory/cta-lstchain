@@ -92,6 +92,7 @@ def main():
     output_dir.mkdir(exist_ok=True)
 
     data = read_data_dl2_to_QTable(args.input_data)
+
     # Add angular separation column, different from pyirf function, because
     # it is used only for MC files.
     data['source_fov_offset'] = angular_separation(data['reco_az'] * u.rad,
@@ -114,7 +115,6 @@ def main():
 
     selection_config = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.json")
     cuts = read_configuration_file(selection_config)
-
     data = filter_events(data, cuts["events_filters"])
     # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]
@@ -127,8 +127,6 @@ def main():
     #    sys.exit(1)
 
     #Create primary HDU
-    n = np.arange(100) # a simple sequence of floats from 0.0 to 99.9
-    primary_hdu = fits.PrimaryHDU(n)
     events, gti, pointing = create_event_list(data=data, run_number=run_number,
                     Source_name=args.source_name)
 
@@ -141,9 +139,9 @@ def main():
         edisp2d = irf[2]
         #bkg2d = irf[3]
         #psf = irf[4]
-        hdulist = fits.HDUList([primary_hdu, events, gti, pointing, aeff2d, edisp2d])
+        hdulist = fits.HDUList([fits.PrimaryHDU(), events, gti, pointing, aeff2d, edisp2d])
     else:
-        hdulist = fits.HDUList([primary_hdu, events, gti, pointing])
+        hdulist = fits.HDUList([fits.PrimaryHDU(), events, gti, pointing])
     hdulist.writeto((args.output_fits_dir/name_dl3_file),overwrite=True)
 
 if __name__ == '__main__':

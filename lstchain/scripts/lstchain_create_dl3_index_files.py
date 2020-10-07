@@ -16,9 +16,9 @@ import os
 from pathlib import Path
 import logging
 import sys
-
 import argparse
 import numpy as np
+
 from lstchain.irf import create_obs_hdu_index
 
 log = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ parser.add_argument('--input-dl3-dir', '-d', type=Path,
                     help='path to DL3 files',
                     default=None, required=True
                     )
+
 parser.add_argument('--num-files', '-n', type=int,
                     dest='number_of_files',
                     help='Number of files in sorted order',

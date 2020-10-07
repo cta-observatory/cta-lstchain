@@ -190,31 +190,32 @@ def test_read_mc_dl2_to_pyirf():
     assert sim_info.energy_max == 330 * u.TeV
 
 @pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
-def test_read_data_dl2_to_pyirf():
+def test_read_data_dl2_to_QTable():
     from lstchain.io.io import read_data_dl2_to_QTable
 
     events = read_data_dl2_to_QTable(dl2_file)
 
     assert 'gh_score' in events.colnames
 
-@pytest.mark.run(after='test_mc_r0_to_dl2')
+@pytest.mark.run(after='test_read_data_dl2_to_QTable')
 def test_irf():
-	from astropy.table import table
+    from astropy.table import Table
 
-	run_program(
+    #Use Proton spectra for spectral weighting as the test file is diffuse gammas
+    run_program(
 			'lstchain_mc_dl2_to_irf',
 			'-fg', dl2_file,
 			'-o', output_dir
-	)
+			)
 
-	assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
-	assert 'MATRIX' in Table.read(irf_file, hdu='ENERGY DISPERSION').columns
+    assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
+    assert 'MATRIX' in Table.read(irf_file, hdu='ENERGY DISPERSION').columns
 
 @pytest.mark.run(after='test_irf')
 def test_dl3():
     from astropy.table import Table
     import pandas as pd
-	
+
     dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
     dl2['tel_id'] = dl2['tel_id'].min()

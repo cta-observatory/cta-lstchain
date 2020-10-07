@@ -13,11 +13,12 @@ Use optimised cuts and binning
 
 Usage:
 $> python lstchain_mc_dl2_to_irf.py
--input-file-gamma ./gamma/dl2_gamma_*.h5
+--input-file-gamma ./gamma/dl2_gamma_*.h5
 --input-file-gamma-diff ./gamma-diff/dl2_gamma-diff*.h5 #optional for now
 --input-file-proton ./proton/dl2_proton_*.h5 #optional for now
 --input-file-electron ./electron/dl2_electron_*.h5 #optional for now
 --output-dir ./IRFs/
+--pnt-like True
 """
 
 import os
@@ -82,6 +83,12 @@ parser.add_argument('--input-file-electron', '-fe', type=Path, dest='electron_fi
                     default=None, required=False
                     )
 
+parser.add_argument('--pnt-like', '-pnt', action='store',
+                    type=lambda x: bool(strtobool(x)), dest='irf_type',
+                    help='True for point-like IRF, False for Full Enclosure',
+                    default=True, required=False
+                    )
+
 args = parser.parse_args()
 
 def main():
@@ -103,7 +110,7 @@ def main():
 	     },
 #	"gamma-diff": {
 #	     "file": args.gamma_diff_file,
-#	     "target_spectrum": CRAB_HEGRA,
+#	     "target_spectrum": ,
 #	     },
 #	"proton": {
 #             "file": args.proton_file,
@@ -131,9 +138,12 @@ def main():
         log.info(p["simulation_info"])
 
     gammas = particles["gamma"]["events"]
+    # selecting 1 tel_id as the data is collected from only 1 for now
+    gammas = gammas[gammas["tel_id"]==1]
     #background = table.vstack(
     #    [particles["proton"]["events"], particles["electron"]["events"]]
     #)
+
     gh_cut = cuts["fixed_cuts"]["gh_score"][0]
     log.info(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
@@ -166,6 +176,7 @@ def main():
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
         effective_area = effective_area_per_energy(gammas[gammas["selected"]], particles["gamma"]["simulation_info"], true_energy_bins)
+        #effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
     hdus.append(create_aeff2d_hdu(effective_area[..., np.newaxis],true_energy_bins, fov_offset_bins,extname = "EFFECTIVE AREA"))
     # use effective_area_per_energy_and_fov for diffuse MC
 
