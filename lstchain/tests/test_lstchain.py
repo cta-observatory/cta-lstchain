@@ -160,24 +160,20 @@ def test_sensitivity():
     from lstchain.mc.sensitivity import sensitivity_gamma_efficiency
 
     produce_fake_dl2_proton_file(dl2_file)
-
-    nfiles_gammas = 1
-    nfiles_protons = 1
-
     geff_gammaness = 0.9
     geff_theta2 = 0.8
     eb = 10  # Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 2
 
-    E, best_sens, result, events, gcut, tcut = sensitivity_gamma_efficiency(dl2_file,
-                                                                            fake_dl2_proton_file,
-                                                                            1, 1,
-                                                                            eb,
-                                                                            geff_gammaness,
-                                                                            geff_theta2,
-                                                                            noff,
-                                                                            obstime)
+    sensitivity_gamma_efficiency(dl2_file,
+                                 fake_dl2_proton_file,
+                                 1, 1,
+                                 eb,
+                                 geff_gammaness,
+                                 geff_theta2,
+                                 noff,
+                                 obstime)
 @pytest.mark.last
 def test_clean_test_files():
     """

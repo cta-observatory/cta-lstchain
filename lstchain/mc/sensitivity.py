@@ -567,22 +567,6 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     )
     
     sensitivity[conditions] = np.inf
-    '''
-    for sens_value, \
-        pre_gamma_value, \
-        pre_protons_value, \
-        final_gammas_value in np.nditer([sensitivity, \
-                                         pre_gammas, \
-                                         pre_protons, final_gammas],\
-                                        op_flags=['readwrite']):
-        
-        conditions = (not np.isfinite(sens_value)) or (sens_value<=0) \
-                     or (final_gammas_value < min_num_events) \
-                     or (pre_gamma_value < min_pre_events) \
-                     or (pre_protons_value < min_pre_events)
-        if conditions:
-            sens_value[...] = np.inf
-    '''
     
     # Compute sensitivity in flux units
     egeom = np.sqrt(energy[1:] * energy[:-1])
