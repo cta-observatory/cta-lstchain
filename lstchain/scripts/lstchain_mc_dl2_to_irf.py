@@ -158,7 +158,7 @@ def main():
     true_energy_bins =  add_overflow_bins(
         create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 10)
     )[:-1]
-    # The overflow binning added is not needed for now in our script, so we will not use it
+    # The overflow binning added is not needed in the current script
 
     reco_energy_bins = add_overflow_bins(
         create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 5)
@@ -166,7 +166,7 @@ def main():
 
     ### TODO: The FoV offset angle is 0.4 deg for LST1 and it is used in
     # this manner because of an issue with astropy which will be updated
-    # in atropy v4.0.2, and later in gammapy as well
+    # in atropy v4.0.2, and later in pyirf and gammapy as well
     # Later, we can just find the mean of FoV offset values, and use it
     # for the binning
     fov_offset_bins = [0.2, 0.6, 1.0] * u.deg
@@ -176,8 +176,8 @@ def main():
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
         effective_area = effective_area_per_energy(gammas[gammas["selected"]], particles["gamma"]["simulation_info"], true_energy_bins)
-        #effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
-    hdus.append(create_aeff2d_hdu(effective_area[..., np.newaxis],true_energy_bins, fov_offset_bins,extname = "EFFECTIVE AREA"))
+        effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
+    hdus.append(create_aeff2d_hdu(effective_area,true_energy_bins, fov_offset_bins,extname = "EFFECTIVE AREA")) #[..., np.newaxis]
     # use effective_area_per_energy_and_fov for diffuse MC
 
     edisp = energy_dispersion(gammas[gammas["selected"]], true_energy_bins, fov_offset_bins, migration_bins)
