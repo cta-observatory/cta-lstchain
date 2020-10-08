@@ -19,6 +19,7 @@ $> python lstchain_mc_dl2_to_irf.py
 --input-file-electron ./electron/dl2_electron_*.h5 #optional for now
 --output-dir ./IRFs/
 --pnt-like True
+--config ../../data/data_selection_cuts.json
 """
 
 import os
@@ -59,7 +60,7 @@ parser = argparse.ArgumentParser(description="MC DL2 to IRF")
 # Required arguments
 parser.add_argument('--input-file-gamma', '-fg', type=Path, dest='gamma_file',
                     help='Path to the DL file of point like gamma events for building IRF',
-                    default=None, required=True
+                    default=None, required=False
                     )
 
 parser.add_argument('--output-irf-dir', '-o', type=Path, dest='output_irf_dir',
@@ -89,6 +90,12 @@ parser.add_argument('--pnt-like', '-pnt', action='store',
                     default=True, required=False
                     )
 
+parser.add_argument('--config', '-conf', type=Path,
+                    dest='config',
+                    help='Config file for selection cuts',
+                    default=None, required=False
+                    )
+
 args = parser.parse_args()
 
 def main():
@@ -100,27 +107,43 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    selection_config = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.json")
-    cuts = read_configuration_file(selection_config)
+    if args.config is None:
+        cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), '../data/data_selection_cuts.json'))
+    else:
+        cuts = read_configuration_file(args.config)
 
-    particles = {
-	"gamma": {
-	     "file": args.gamma_file,
-	     "target_spectrum": CRAB_HEGRA,
-	     },
-#	"gamma-diff": {
-#	     "file": args.gamma_diff_file,
-#	     "target_spectrum": ,
-#	     },
-#	"proton": {
-#             "file": args.proton_file,
-#	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-#             },
-#	"electron": {
-#             "file": args.electron_file,
-#	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
-#             },
-	}
+    if args.gamma_diff_file is None:
+        particles = {
+	       "gamma": {
+	          "file": args.gamma_file,
+	          "target_spectrum": CRAB_HEGRA,
+	          },
+        #	"proton": {
+        #             "file": args.proton_file,
+        #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+        #             },
+        #	"electron": {
+        #             "file": args.electron_file,
+        #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+        #             },
+    	}
+    else:
+        #Using proton spectrum at the moment for unit tests
+        particles = {
+	       "gamma": {
+	          "file": args.gamma_diff_file,
+	          "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+	          },
+        #	"proton": {
+        #             "file": args.proton_file,
+        #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+        #             },
+        #	"electron": {
+        #             "file": args.electron_file,
+        #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+        #             },
+    	}
+
     for k, p in particles.items():
         log.info(f"Simulated {k.title()} Events:")
         p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
@@ -150,6 +173,7 @@ def main():
     gammas = filter_events(gammas, cuts["events_filters"])
 
     gammas["selected_gh"] = gammas["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]
+    #For point like gammas
     gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
     gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
     gammas["selected"] = gammas["selected_theta"] & gammas["selected_gh"] & gammas["selected_fov"]

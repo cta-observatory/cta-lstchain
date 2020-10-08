@@ -22,7 +22,7 @@ $> python lstchain_dl2_to_dl3.py
 --add-irf True
 --input-irf-file ./IRF/irf.fits.gz
 --source-name Crab
-
+--config ../../data/data_selection_cuts.json
 """
 
 import os
@@ -79,6 +79,11 @@ parser.add_argument('--source-name', '-s', type=str,
                     default='Crab', required=True
                     )
 
+parser.add_argument('--config', '-conf', type=Path,
+                    dest='config',
+                    help='Config file for selection cuts',
+                    default=None, required=False
+                    )
 args = parser.parse_args()
 
 def main():
@@ -113,8 +118,11 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    selection_config = os.path.join(os.path.dirname(__file__),"../data/data_selection_cuts.json")
-    cuts = read_configuration_file(selection_config)
+    if args.config is None:
+        cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), '../data/data_selection_cuts.json'))
+    else:
+        cuts = read_configuration_file(args.config)
+
     data = filter_events(data, cuts["events_filters"])
     # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]

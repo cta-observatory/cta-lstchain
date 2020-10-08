@@ -22,6 +22,7 @@ dl2_file_new = os.path.join(output_dir, 'dl2_gamma_test_large_new.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
+cuts = os.path.join(output_dir, 'cuts.json')
 irf_file = os.path.join(output_dir, 'irf.fits.gz')
 dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large_new.fits')
 dl3_hdu_index = os.path.join(output_dir, 'hdu-index.fits.gz')
@@ -200,12 +201,20 @@ def test_read_data_dl2_to_QTable():
 @pytest.mark.run(after='test_read_data_dl2_to_QTable')
 def test_irf():
     from astropy.table import Table
+    import json
+    import os
 
+    #Selection cuts have to be changed for tests
+    data = json.load(open(os.path.join('lstchain/data/data_selection_cuts.json')))
+    data["fixed_cuts"]["gh_score"][0] = 0.4
+    data["events_filters"]["intensity"][0]=0
+    json.dump(data, open(cuts,'x'))
     #Use Proton spectra for spectral weighting as the test file is diffuse gammas
     run_program(
 			'lstchain_mc_dl2_to_irf',
-			'-fg', dl2_file,
-			'-o', output_dir
+			'-fg-diff', dl2_file,
+			'-o', output_dir,
+			'-conf', cuts
 			)
 
     assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
@@ -224,14 +233,15 @@ def test_dl3():
     dl2['az_tel'] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
     input_file = dl2_file_new
-    #Selection cuts have to be changed for tests
+
     run_program(
             'lstchain_dl2_to_dl3',
             '-d', input_file,
             '-o', output_dir,
             '-add-irf', 'True',
             '-irf', irf_file,
-            '-s', 'Gamma'
+            '-s', 'Gamma',
+			'-conf', cuts
             )
 
     assert os.path.exists(dl3_file)
