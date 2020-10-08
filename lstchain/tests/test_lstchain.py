@@ -4,7 +4,17 @@ import pytest
 import os
 import shutil
 import pandas as pd
-from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from tables import open_file
+from lstchain.io.io import (
+    dl1_params_lstcam_key,
+    dl1_images_lstcam_key,
+    dl2_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key
+    )
+from lstchain.io import (
+    write_dl2_dataframe,
+    get_dataset_keys
+)
 from lstchain.reco.utils import filter_events
 import astropy.units as u
 
@@ -135,7 +145,37 @@ def test_apply_models():
 
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
-    dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
+
+    dl1_keys = get_dataset_keys(dl1_file)
+    if dl1_images_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_images_lstcam_key)
+    if dl1_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_lstcam_key)
+
+    if dl1_params_src_dep_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    with open_file(dl1_file, 'r') as h5in:
+        with open_file(dl2_file, 'a') as h5out:
+
+            # Write the selected DL1 info
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
+
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
+
+    write_dl2_dataframe(dl2, dl2_file)
+    #dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
 def produce_fake_dl1_proton_file(dl1_file):
     """
@@ -146,20 +186,50 @@ def produce_fake_dl1_proton_file(dl1_file):
     events.mc_type = 101
     events.to_hdf(fake_dl1_proton_file, key=dl1_params_lstcam_key)
 
-def produce_fake_dl2_proton_file(dl2_file):
+def produce_fake_dl2_proton_file(dl1_file, dl2_file):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type
     """
     events = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     events.mc_type = 101
-    events.to_hdf(fake_dl2_proton_file, key=dl2_params_lstcam_key)
+    #events.to_hdf(fake_dl2_proton_file, key=dl2_params_lstcam_key)
 
+    dl1_keys = get_dataset_keys(dl1_file)
+    if dl1_images_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_images_lstcam_key)
+    if dl1_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_lstcam_key)
+
+    if dl1_params_src_dep_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    with open_file(dl1_file, 'r') as h5in:
+        with open_file(fake_dl2_proton_file, 'a') as h5out:
+
+            # Write the selected DL1 info
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
+
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
+
+    write_dl2_dataframe(events, fake_dl2_proton_file)
+    
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
 def test_sensitivity():
     from lstchain.mc.sensitivity import sensitivity_gamma_efficiency
 
-    produce_fake_dl2_proton_file(dl2_file)
+    produce_fake_dl2_proton_file(dl1_file, dl2_file)
     geff_gammaness = 0.9
     geff_theta2 = 0.8
     eb = 10  # Number of energy bins
