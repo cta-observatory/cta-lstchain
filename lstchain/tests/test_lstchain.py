@@ -212,8 +212,8 @@ def produce_fake_dl2_proton_file(dl1_file, dl2_file):
                 if not k.startswith('/'):
                     k = '/' + k
 
-                path, name = k.rsplit('/', 1)
-                if path not in h5out:
+                path = k.rsplit('/', 1)
+                if path[0] not in h5out:
                     grouppath, groupname = path.rsplit('/', 1)
                     g = h5out.create_group(
                         grouppath, groupname, createparents=True
@@ -224,7 +224,7 @@ def produce_fake_dl2_proton_file(dl1_file, dl2_file):
                 h5in.copy_node(k, g, overwrite=True)
 
     write_dl2_dataframe(events, fake_dl2_proton_file)
-    
+
 @pytest.mark.run(after='produce_fake_dl2_proton_file')
 def test_sensitivity():
     from lstchain.mc.sensitivity import sensitivity_gamma_efficiency
