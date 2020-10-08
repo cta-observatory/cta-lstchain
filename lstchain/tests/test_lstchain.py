@@ -212,8 +212,8 @@ def produce_fake_dl2_proton_file(dl1_file, dl2_file):
                 if not k.startswith('/'):
                     k = '/' + k
 
-                path = k.rsplit('/', 1)
-                if path[0] not in h5out:
+                path = k.rsplit('/', 1)[0]
+                if path not in h5out:
                     grouppath, groupname = path.rsplit('/', 1)
                     g = h5out.create_group(
                         grouppath, groupname, createparents=True
