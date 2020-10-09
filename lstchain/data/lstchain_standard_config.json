@@ -98,20 +98,23 @@
   "mc_image_scaling_factor": 1,
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
     "threshold":  3500
   },
-  "charge_scale": [1.142,1.104],
+  "charge_scale": [1.18,1.09],
   "LocalPeakWindowSum":{
      "window_shift": 4,
-     "window_width":8
+     "window_width": 8
     },
   "GlobalPeakWindowSum":{
      "window_shift": 4,
-     "window_width":8
+     "window_width": 8
     },
+  "FixedWindowSum": {
+     "window_shift": 4,
+     "window_width": 8
+  },
   "timestamps_pointing":"ucts",
 
 
@@ -149,11 +152,11 @@
        "charge_std_cut_outliers": [-10,10],
        "time_cut_outliers": [2,38]
      },
-      "LocalPeakWindowSum":{
+    "LocalPeakWindowSum":{
       "window_shift": 5,
       "window_width":12
      },
-     "FixedWindowSum":{
+    "FixedWindowSum":{
        "window_start": 12,
        "window_width":12
     }

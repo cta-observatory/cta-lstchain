@@ -141,6 +141,14 @@ def get_dl1(
 
         # Fill container
         dl1_container.fill_hillas(hillas)
+
+        # convert ctapipe's width and length (in m) to deg:
+        foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+        width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+        length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+        dl1_container.width = width
+        dl1_container.length = length
+
         dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
         dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
@@ -154,22 +162,6 @@ def get_dl1(
         dl1_container.set_telescope_info(subarray, telescope_id)
 
     else:
-        # No image was parametrized, so we put zeros (instead of the default
-        # Nones) in all parameters: a container reset() is not an option because
-        # the default None values prevent the container to be written out. We
-        # cannot use np.nan either, because upon writing it complains for the
-        # integer parameters.
-        #
-        for key in dl1_container.keys():
-            dl1_container[key] = u.Quantity(0, dl1_container.fields[key].unit)
-
-        # Fields width and length do not have in their declaration the units
-        # that are actually expected later in the program, so we set them here.
-        # We now use nans since these are floats, and will be later used to
-        # calculate W/L...
-        dl1_container.width = u.Quantity(np.nan, u.m)
-        dl1_container.length = u.Quantity(np.nan, u.m)
-
         # We set other fields which still make sense for a non-parametrized
         # image:
         dl1_container.set_telescope_info(subarray, telescope_id)
@@ -356,7 +348,7 @@ def r0_to_dl1(
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
         writer._h5file.filters = filters
-        print("USING FILTERS: ", writer._h5file.filters)
+        logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
         first_valid_ucts = None
         first_valid_ucts_tib = None
@@ -366,12 +358,13 @@ def r0_to_dl1(
         for i, event in enumerate(chain([first_event],  event_iter)):
 
             if i % 100 == 0:
-                print(i)
+                logger.info(i)
 
             event.dl0.prefix = ''
             event.mc.prefix = 'mc'
             event.trigger.prefix = ''
 
+            dl1_container.reset()
 
             # write sub tables
             if is_simu:
@@ -413,8 +406,6 @@ def r0_to_dl1(
 
                 # update the calibration index in the dl1 event container
                 dl1_container.calibration_id = calibration_index.calibration_id
-
-
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -505,7 +496,7 @@ def r0_to_dl1(
                                             event.lst.tel[telescope_id].evt.pps_counter[module_id] +
                                             event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
                                     )
-                                    logger.info(
+                                    logger.warning(
                                         f"Dragon timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.index.event_id}, "
@@ -513,7 +504,7 @@ def r0_to_dl1(
                                         f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
                                     )
 
-                                if first_event.lst.tel[1].evt.extdevices_presence & 1 \
+                                if event.lst.tel[telescope_id].evt.extdevices_presence & 1 \
                                         and first_valid_ucts_tib is None:
                                     # Both TIB and UCTS presence flags are OK
                                     first_valid_ucts_tib = ucts_time
@@ -522,7 +513,7 @@ def r0_to_dl1(
                                             event.lst.tel[telescope_id].evt.tib_pps_counter +
                                             event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                                     )
-                                    logger.info(
+                                    logger.warning(
                                         f"TIB timestamps not based on a valid absolute reference timestamp. "
                                         f"Consider using the following initial values \n"
                                         f"Event ID: {event.index.event_id}, UCTS timestamp corresponding to "
@@ -545,9 +536,15 @@ def r0_to_dl1(
                                     event.lst.tel[telescope_id].evt.tib_pps_counter +
                                     event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
                             )
+
                             if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
                                 # UCTS presence flag is OK
                                 ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
+                                if first_valid_ucts is None:
+                                    first_valid_ucts = ucts_time
+                                if first_valid_ucts_tib is None \
+                                        and event.lst.tel[telescope_id].evt.extdevices_presence & 1:
+                                    first_valid_ucts_tib = ucts_time
                             else:
                                 ucts_time = math.nan
 
@@ -653,10 +650,6 @@ def r0_to_dl1(
                     # FIXME: no need to read telescope characteristics like foclen for every event!
                     foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
                     mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
-                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width
-                    dl1_container.length = length
                     dl1_container.prefix = tel.prefix
 
                     # extra info for the image table
@@ -672,7 +665,6 @@ def r0_to_dl1(
                                  containers = [event.r0, tel, extra_im])
                     writer.write(table_name = f'telescope/parameters/{tel_name}',
                                  containers = [dl1_container])
-
 
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
@@ -731,7 +723,7 @@ def r0_to_dl1(
                                 lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
                             if good_ring:
-                                fill_muon_event(None,
+                                fill_muon_event(-1,
                                                 muon_parameters,
                                                 good_ring,
                                                 event.index.event_id,
@@ -754,7 +746,6 @@ def r0_to_dl1(
                         writer.write(table_name=f'simulation/{tel_name}',
                                      containers=[event.mc.tel[telescope_id], extra_im]
                                      )
-
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics
