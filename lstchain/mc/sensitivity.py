@@ -218,15 +218,22 @@ def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficienc
         else:
             return high_cut
 
+    if feature=="gammaness":
+        lookfor_cut = high_cut
+        alternative_cut = low_cut
+    else:
+        lookfor_cut = low_cut
+        alternative_cut = high_cut
+        
     tol = 1000
     while tol > 1e-5:
-        midpoint = (low_cut + high_cut) / 2.0
-        if samesign(diff_events_after_cut(events, rates, obstime, feature, high_cut, gamma_efficiency),
+        midpoint = (alternative_cut + lookfor_cut) / 2.0
+        if samesign(diff_events_after_cut(events, rates, obstime, feature, lookfor_cut, gamma_efficiency),
                     diff_events_after_cut(events, rates, obstime, feature, midpoint, gamma_efficiency)):
-            high_cut = midpoint
+            lookfor_cut = midpoint
         else:
-            low_cut = midpoint
-        tol = high_cut -low_cut
+            alternative_cut = midpoint
+        tol = abs(lookfor_cut -alternative_cut)
         
     return midpoint
     
