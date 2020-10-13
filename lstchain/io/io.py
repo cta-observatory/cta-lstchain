@@ -22,7 +22,6 @@ from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescript
     TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
-import pandas as pd
 
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
