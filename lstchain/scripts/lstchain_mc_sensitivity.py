@@ -15,7 +15,7 @@ $> python lstchain_mc_sensitivity.py
 """
 
 
-from lstchain.mc.sensitivity import sensitivity_gamma_efficiency
+from lstchain.mc.sensitivity import sensitivity_gamma_efficiency, sensitivity_gamma_efficiency_real_protons
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.table import Table
@@ -58,11 +58,12 @@ def main():
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    geff_gammaness = 0.9 #Gamma efficincy of gammaness cut
-    geff_theta2 = 0.7 #Gamma efficiency of theta2 cut
+    geff_gammaness = 1. #Gamma efficincy of gammaness cut
+    geff_theta2 = 1. #Gamma efficiency of theta2 cut
 
-    
+
     # Calculate the sensitivity
+    '''
     energy,sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency(args.dl2_file_g,
                                                                                          args.dl2_file_p,
                                                                                          ntelescopes_gamma,
@@ -73,23 +74,34 @@ def main():
                                                                                          noff,
                                                                                          obstime)
 
-    
+    '''
+
+    energy,sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency_real_protons(args.dl2_file_g,
+                                                                                             args.dl2_file_p,
+                                                                                             ntelescopes_gamma,
+                                                                                             n_bins_energy,
+                                                                                             geff_gammaness,
+                                                                                             geff_theta2,
+                                                                                             noff,
+                                                                                             obstime)
+
     print("\nOptimal gammaness cuts:", gcut)
     print("Optimal theta2 cuts: {} \n".format(tcut))
 
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
-    
+
     # Saves the results
     events.to_hdf(args.output_path+'/sensitivity.h5', key='data', mode='w')
     result.to_hdf(args.output_path+'/sensitivity.h5', key='results')
 
     # Plots
-    
+
     #Sensitivity
     ax=plt.axes()
     plot_utils.format_axes_sensitivity(ax)
     plot_utils.plot_MAGIC_sensitivity(ax, color='C0')
+    plot_utils.plot_LST_preliminary_sensitivity(ax, color='C2')
     plot_utils.plot_Crab_SED(ax, 100, 50, 5e4, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 50, 5e4, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 50, 5e4, linestyle=':', label="1% Crab") #Energy in GeV
@@ -99,7 +111,7 @@ def main():
     plt.show()
 
     #Rates
-    
+
     egeom = np.sqrt(energy[1:] * energy[:-1])
     plt.plot(egeom, result['proton_rate'], label='Proton rate', marker='o')
     plt.plot(egeom, result['gamma_rate'], label='Gamma rate', marker='o')
@@ -113,7 +125,7 @@ def main():
 
     #Gammaness
     gammas_mc = events[events.mc_type == 0]
-    protons_mc = events[events.mc_type == 101]
+    protons_mc = events[events.mc_type != 0]
     sns.distplot(gammas_mc.gammaness, label='gammas')
     sns.distplot(protons_mc.gammaness, label='protons')
     plt.legend()
@@ -154,7 +166,7 @@ def main():
     plt.show()
 
     #Energy resolution
-    
+
     ctaplot.plot_energy_resolution(events.mc_energy, events.reco_energy)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
@@ -163,13 +175,13 @@ def main():
     plt.show()
 
     #Energy bias
-    
+
     ctaplot.plot_energy_bias(events.mc_energy, events.reco_energy)
     plt.savefig(args.output_path+"/energy_bias.png")
     plt.show()
 
     #Effective Area
-    
+
     gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl2_file_g)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
