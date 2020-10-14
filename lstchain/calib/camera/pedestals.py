@@ -84,10 +84,7 @@ class PedestalIntegrator(PedestalCalculator):
         """
 
         waveforms = event.r1.tel[self.tel_id].waveform
-
-        # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
         no_gain_selection= np.zeros((waveforms.shape[0],waveforms.shape[1]), dtype=np.int)
-        no_gain_selection[1] = 1
 
         # Extract charge and time
         charge = 0

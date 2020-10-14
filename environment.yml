@@ -18,4 +18,3 @@ dependencies:
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
       - ctaplot
-      - pyirf~=0.3.0

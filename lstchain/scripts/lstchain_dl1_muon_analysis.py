@@ -136,8 +136,7 @@ def main():
             dummy_times[:] = np.nan
             parameters['dragon_time'] = dummy_times
 
-        for full_image, event_id, dragon_time, mc_energy in zip(
-                images, parameters['event_id'], parameters['dragon_time'], parameters['mc_energy']):
+        for full_image, event_id, dragon_time in zip(images, parameters['event_id'], parameters['dragon_time']):
             if args.calib_file is not None:
                 image = full_image*(~bad_pixels)
             else:
@@ -170,7 +169,7 @@ def main():
             # write ring data, including also "not-so-good" rings
             # in case we want to reconsider ring selections!:
             fill_muon_event(
-                mc_energy, output_parameters, good_ring, event_id,
+                parameters, output_parameters, good_ring, event_id,
                 dragon_time, muonintensityparam, dist_mask,
                 muonringparam, radial_distribution, size,
                 size_outside_ring, mean_pixel_charge_around_ring,
