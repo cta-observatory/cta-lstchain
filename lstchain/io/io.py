@@ -18,7 +18,9 @@ from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
 from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
     TelescopeDescription, SubarrayDescription
-
+from pyirf.simulations import SimulatedEventsInfo
+from astropy import table
+import pandas as pd
 
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
@@ -38,7 +40,8 @@ __all__ = ['read_simu_info_hdf5',
            'write_metadata',
            'write_dataframe',
            'write_dl2_dataframe',
-           'write_calibration_data'
+           'write_calibration_data',
+           'read_dl2_to_pyirf',
            ]
 
 
@@ -1010,3 +1013,53 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
             table_name="telescope/monitoring/calibration",
             containers=[mon_index, mon_event.calibration]
         )
+
+
+def read_dl2_to_pyirf(filename):
+    """
+    Read DL2 files from lstchain and convert into pyirf internal format
+    Parameters
+    ----------
+    filename: path
+    Returns
+    -------
+    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    """
+
+    ## mapping
+    name_mapping = {
+        'mc_energy': 'true_energy',
+        'mc_alt': 'true_alt',
+        'mc_az': 'true_az',
+        'mc_alt_tel': 'pointing_alt',
+        'mc_az_tel': 'pointing_az',
+        'gammaness': 'gh_score',
+    }
+
+    unit_mapping = {
+        'true_energy': u.TeV,
+        'reco_energy': u.TeV,
+        'pointing_alt': u.rad,
+        'pointing_az': u.rad,
+        'true_alt': u.rad,
+        'true_az': u.rad,
+        'reco_alt': u.rad,
+        'reco_az': u.rad,
+    }
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+    pyirf_simu_info = SimulatedEventsInfo(n_showers=simu_info.num_showers * simu_info.shower_reuse,
+                                          energy_min=simu_info.energy_range_min,
+                                          energy_max=simu_info.energy_range_max,
+                                          max_impact=simu_info.max_scatter_range,
+                                          spectral_index=simu_info.spectral_index,
+                                          viewcone=simu_info.max_viewcone_radius,
+                                          )
+
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    events = table.QTable.from_pandas(events)
+
+    for k, v in unit_mapping.items():
+        events[k] *= v
+
+    return events, pyirf_simu_info
