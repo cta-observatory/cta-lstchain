@@ -357,12 +357,14 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
+    This is a temporary solution until we move to ctapipe v0.9.1. 
 
     Parameters
     ----------
     subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     output_filename: str
     """
+
 
     serialize_meta = True
 
