@@ -1044,10 +1044,27 @@ def read_data_dl2_to_QTable(filename):
     """
     #Mapping
     name_mapping = {
-        "gammaness" : "gh_score"
+        'gammaness' : 'gh_score',
+        'alt_tel': 'pointing_alt',
+        'az_tel': 'pointing_az',
+
     }
-    #TODO: Update other parameters with keys
+    unit_mapping = {
+        'reco_energy': u.TeV,
+        'pointing_alt': u.rad,
+        'pointing_az': u.rad,
+        'reco_alt': u.rad,
+        'reco_az': u.rad,
+		'dragon_time': u.s,
+		'reco_src_x': u.m,
+		'reco_src_y': u.m
+    }
+
     data = pd.read_hdf(filename, key = dl2_params_lstcam_key).rename(columns=name_mapping)
     data = table.QTable.from_pandas(data)
+
+	#Make the columns as Quantity
+    for k, v in unit_mapping.items():
+        data[k] *= v
 
     return data

@@ -155,14 +155,12 @@ def main():
         # calculate theta / distance between reco and assumed source position
         p["events"]["theta"] = calculate_theta(
             p["events"],
-            assumed_source_az=p["events"]["true_az"],
-            assumed_source_alt=p["events"]["true_alt"],
+            assumed_source_az=p["events"]["pointing_az"],
+            assumed_source_alt=p["events"]["pointing_alt"],
         )
         log.info(p["simulation_info"])
 
     gammas = particles["gamma"]["events"]
-    # selecting 1 tel_id as the data is collected from only 1 for now
-    gammas = gammas[gammas["tel_id"]==1]
     #background = table.vstack(
     #    [particles["proton"]["events"], particles["electron"]["events"]]
     #)
@@ -172,20 +170,30 @@ def main():
 
     gammas = filter_events(gammas, cuts["events_filters"])
 
-    gammas["selected_gh"] = gammas["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]
+    #Filtering the tels needed to use with the real data
+    #Add MAGIC tels when need be
+    tel_ids = cuts["LST_tels"]["tel_list"]
+    for i in tel_ids:
+        gammas["selected_tels"] = gammas["tel_id"] == i
+
+    gammas["selected_gh"] = gammas["gh_score"] > gh_cut
     #For point like gammas
     gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
     gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
-    gammas["selected"] = gammas["selected_theta"] & gammas["selected_gh"] & gammas["selected_fov"]
+    #Combining selection cuts
+    gammas["selected"] = gammas["selected_theta"] & \
+                        gammas["selected_gh"] & \
+                        gammas["selected_fov"] & \
+                        gammas["selected_tels"]
 
     # Binning of parameters used in IRFs
     true_energy_bins =  add_overflow_bins(
-        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 10)
+        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 2.5)
     )[:-1]
     # The overflow binning added is not needed in the current script
 
     reco_energy_bins = add_overflow_bins(
-        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 5)
+        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 2)
     )[:-1]
 
     ### TODO: The FoV offset angle is 0.4 deg for LST1 and it is used in
@@ -193,21 +201,20 @@ def main():
     # in atropy v4.0.2, and later in pyirf and gammapy as well
     # Later, we can just find the mean of FoV offset values, and use it
     # for the binning
-    fov_offset_bins = [0.2, 0.6, 1.0] * u.deg
+    fov_offset_bins = [0.2, 0.6] * u.deg
     migration_bins = np.linspace(0.2, 5, 31)
 
     # Write HDUs
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
         effective_area = effective_area_per_energy(gammas[gammas["selected"]], particles["gamma"]["simulation_info"], true_energy_bins)
-        effective_area = np.column_stack([effective_area, np.zeros_like(effective_area)])
     hdus.append(create_aeff2d_hdu(effective_area,true_energy_bins, fov_offset_bins,extname = "EFFECTIVE AREA")) #[..., np.newaxis]
     # use effective_area_per_energy_and_fov for diffuse MC
 
     edisp = energy_dispersion(gammas[gammas["selected"]], true_energy_bins, fov_offset_bins, migration_bins)
     hdus.append(create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins, extname = "ENERGY DISPERSION"))
 
-    output_file = (output_dir/"irf.fits.gz")
+    output_file = output_dir/"irf.fits.gz"
     fits.HDUList(hdus).writeto(output_file, overwrite=True)
 
 if __name__ == "__main__":

@@ -55,7 +55,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     #loop through the files
     for file in filename_list:
-        filepath = (fits_dir/file)
+        filepath = fits_dir/file
         if filepath.is_file():
             try:
                 event_table = Table.read(filepath, hdu="EVENTS")
@@ -74,9 +74,11 @@ def create_obs_hdu_index(filename_list, fits_dir):
         # Event list
         t_events = Table(
                 {'OBS_ID':[event_table.meta['OBS_ID']],'HDU_TYPE':['events'],'HDU_CLASS':['events'],
-                    'HDU_CLASS2':[''],'HDU_CLASS3':[''],'HDU_CLASS4':[''],'FILE_DIR':[''],'FILE_NAME': [file],
-                    'HDU_NAME':['events']},
-                dtype=('>i8', 'S6', 'S10', 'S20', 'S20', 'S20', 'S70', 'S54', 'S20')
+                    'HDU_CLASS2':[''],'HDU_CLASS3':[''],'HDU_CLASS4':[''],'FILE_DIR':[''],
+                    'FILE_NAME': [file], 'HDU_NAME':['events']},
+                dtype=('>i8', 'S6', 'S10',
+                'S20', 'S20', 'S20', 'S70',
+                'S54', 'S20')
                 )
         hdu_tables.append(t_events)
         ###############################################
@@ -99,7 +101,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
         hdu_tables.append(t_pnt)
         ###############################################
         #Energy Dispersion
-        if Table.read(str(fits_dir)+"/"+file, hdu="ENERGY DISPERSION"):
+        try:
+            Table.read(filepath, hdu="ENERGY DISPERSION")
             t_edisp = t_events.copy()
 
             t_edisp['HDU_TYPE'] = ['edisp']
@@ -110,11 +113,12 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
 
             hdu_tables.append(t_edisp)
-        else:
+        except:
             log.error('Energy Dispersion HDU not found')
         ###############################################
         #Effective Area
-        if Table.read(str(fits_dir)+"/"+file, hdu="EFFECTIVE AREA"):
+        try:
+            Table.read(filepath, hdu="EFFECTIVE AREA")
             t_aeff = t_edisp.copy()
             t_aeff['HDU_TYPE'] = ['aeff']
             t_aeff['HDU_CLASS'] = ['aeff_2d']
@@ -123,7 +127,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_aeff['HDU_NAME'] = ['EFFECTIVE AREA']
 
             hdu_tables.append(t_aeff)
-        else:
+        except:
             log.error('Effective Area HDU not found')
         ###############################################
         # Obs_table
@@ -147,7 +151,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
     hdu_header["TELESCOP"] = "CTA"
     hdu_header["INSTRUME"] = "LST-1"
 
-    filename_hdu_table = (fits_dir/'hdu-index.fits.gz')
+    filename_hdu_table = fits_dir/'hdu-index.fits.gz'
 
     hdu = fits.BinTableHDU(hdu_table, header=hdu_header, name='HDU INDEX')
     hdu_list = fits.HDUList([fits.PrimaryHDU(), hdu])
@@ -160,7 +164,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
     obs_header['MJDREFI'] = event_table.meta['MJDREFI']
     obs_header['MJDREFF'] = event_table.meta['MJDREFF']
 
-    filename_obs_table = (fits_dir/'obs-index.fits.gz')
+    filename_obs_table = fits_dir/'obs-index.fits.gz'
 
     obs = fits.BinTableHDU(obs_table, header = obs_header, name='OBS INDEX')
     hdu_list = fits.HDUList([fits.PrimaryHDU(), obs])
@@ -190,23 +194,22 @@ def create_event_list(data, run_number, Source_name):
 
     lam = 1000 #Average rate of triggered events, taken by hand for now
     # Timing parameters
-    t_start = data['dragon_time'][0]
-    t_stop = data['dragon_time'][-1]
+    t_start = data['dragon_time'][0].value
+    t_stop = data['dragon_time'][-1].value
     time = Time(data['dragon_time'], format='unix', scale="utc")
 
     obs_time = t_stop-t_start
 
     #Position parameters
     focal = 28 * u.m
-    pos_x = data['reco_src_x'] * u .m
-    pos_y = data['reco_src_y'] * u .m
-    pointing_alt = data['alt_tel'] * u.rad
-    pointing_az = data['az_tel'] *u.rad
+    pos_x = data['reco_src_x']
+    pos_y = data['reco_src_y']
+    pointing_alt = data['pointing_alt']
+    pointing_az = data['pointing_az']
 
     coord = camera_to_altaz(pos_x = pos_x, pos_y=pos_y, focal = focal,
                     pointing_alt = pointing_alt, pointing_az = pointing_az,
                     obstime = time)
-    coord_icrs = coord.icrs
     coord_pointing = camera_to_altaz(pos_x = 0 * u.m, pos_y=0 * u.m, focal = focal,
                 pointing_alt = pointing_alt[0], pointing_az = pointing_az[0],
                 obstime = time[0])
@@ -216,18 +219,18 @@ def create_event_list(data, run_number, Source_name):
     event_table = QTable(
             {
                 "EVENT_ID" : u.Quantity(data['event_id']),
-                "TIME" : u.Quantity(data['dragon_time'] * u.s),
-                "RA" : u.Quantity(coord_icrs.ra.deg * u.deg),
-                "DEC" : u.Quantity(coord_icrs.dec.deg * u.deg),
-                "ENERGY" : u.Quantity(data['reco_energy'] * u.TeV)
+                "TIME" : u.Quantity(data['dragon_time']),
+                "RA" : u.Quantity(coord.icrs.ra.to(u.deg)),
+                "DEC" : u.Quantity(coord.icrs.dec.to(u.deg)),
+                "ENERGY" : u.Quantity(data['reco_energy'])
             }
         )
     ##########################################################################
     ### GTI table
     gti_table = QTable(
         {
-            "START" : u.Quantity(t_start * u.s, ndmin=2),
-            "STOP" : u.Quantity(t_stop * u.s, ndmin=2)
+            "START" : u.Quantity(t_start, ndmin=2),
+            "STOP" : u.Quantity(t_stop, ndmin=2)
         }
     )
     ##########################################################################
@@ -247,10 +250,10 @@ def create_event_list(data, run_number, Source_name):
     ev_header["TELLIST"] = 'LST-1'
     ev_header["N_TELS"] = 1
 
-    ev_header["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
-    ev_header["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
-    ev_header["ALT_PNT"]=round(np.rad2deg(data['alt_tel'][0]),6)
-    ev_header["AZ_PNT"]=round(np.rad2deg(data['az_tel'][0]),6)
+    ev_header["RA_PNT"]=coord_pointing.icrs.ra.value
+    ev_header["DEC_PNT"]=coord_pointing.icrs.dec.value
+    ev_header["ALT_PNT"]=round(np.rad2deg(data['pointing_alt'].value.mean()),6)
+    ev_header["AZ_PNT"]=round(np.rad2deg(data['pointing_az'].value[0]),6)
     ev_header["FOVALIGN"]='ALTAZ'
     ev_header["ONTIME"]=obs_time
 
@@ -276,8 +279,8 @@ def create_event_list(data, run_number, Source_name):
     pnt_header["HDUCLAS1"] = "POINTING"
 
     pnt_header["OBS_ID"]=run_number
-    pnt_header["RA_PNT"]=float(coord_pointing.icrs.ra.deg)
-    pnt_header["DEC_PNT"]=float(coord_pointing.icrs.dec.deg)
+    pnt_header["RA_PNT"]=coord_pointing.icrs.ra.value
+    pnt_header["DEC_PNT"]=coord_pointing.icrs.dec.value
     pnt_header["ALT_PNT"]=ev_header["ALT_PNT"]
     pnt_header["AZ_PNT"]=ev_header["AZ_PNT"]
     pnt_header["TIME"]=t_start

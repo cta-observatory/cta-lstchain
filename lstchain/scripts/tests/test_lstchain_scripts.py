@@ -193,8 +193,18 @@ def test_read_mc_dl2_to_pyirf():
 @pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
 def test_read_data_dl2_to_QTable():
     from lstchain.io.io import read_data_dl2_to_QTable
+    import pandas as pd
+    from lstchain.io.io import dl2_params_lstcam_key
 
-    events = read_data_dl2_to_QTable(dl2_file)
+    dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
+    # Adding some necessary columns for reading it as real data file
+    dl2['tel_id'] = dl2['tel_id'].min()
+    dl2['dragon_time'] = dl2["obs_id"]
+    dl2['alt_tel'] = dl2["mc_alt_tel"]
+    dl2['az_tel'] = dl2["mc_az_tel"]
+    dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
+
+    events = read_data_dl2_to_QTable(dl2_file_new)
 
     assert 'gh_score' in events.colnames
 
@@ -223,15 +233,7 @@ def test_irf():
 @pytest.mark.run(after='test_irf')
 def test_dl3():
     from astropy.table import Table
-    import pandas as pd
 
-    dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
-    # Adding some necessary columns for reading it as real data file
-    dl2['tel_id'] = dl2['tel_id'].min()
-    dl2['dragon_time'] = dl2["obs_id"]
-    dl2['alt_tel'] = dl2["mc_alt_tel"]
-    dl2['az_tel'] = dl2["mc_az_tel"]
-    dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
     input_file = dl2_file_new
 
     run_program(

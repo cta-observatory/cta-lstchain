@@ -7,7 +7,6 @@ The selection cuts applied are the same as those used in generating IRFs.
 
 TODO:
 Adding filter for size of files after cuts, to have significant number of events
-Include angular cuts in filter_events
 Generalize source_fov_offset binning
 
  - Input: Path where the merged DL2 data HDF5 file is present
@@ -100,17 +99,17 @@ def main():
 
     # Add angular separation column, different from pyirf function, because
     # it is used only for MC files.
-    data['source_fov_offset'] = angular_separation(data['reco_az'] * u.rad,
-                                              data['reco_alt'] * u.rad,
-                                              data['az_tel'] * u.rad,
-                                              data['alt_tel'] * u.rad,
+    data['source_fov_offset'] = angular_separation(data['reco_az'],
+                                              data['reco_alt'],
+                                              data['pointing_az'],
+                                              data['pointing_alt'],
                                               ).to(u.deg)
 
     # Get the obs_id from the filename if it is -1 in the column
     # Assuming the filename to be 'dl2_LST-1.Run#####_*.h5'
     # If the nomenclature is different, change the final index position to get the run number
     if data['obs_id'][0] <= 0:
-        run_number = int(re.findall('\d+', file)[2])
+        run_number = int(re.findall('\d+', file)[1])
     else:
         run_number= data['obs_id'][0]
 
