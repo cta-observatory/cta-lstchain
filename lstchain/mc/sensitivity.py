@@ -173,12 +173,12 @@ def get_obstime_real(events):
         deltat = tib_time[i+1]-tib_time[i]
         dead_time[i]=deltat
 
-    dead_time = dead_time[(dead_time > 0) & (dead_time < 100)]
+    dead_time = dead_time[(dead_time > 0) & (dead_time < 0.002)]
     hist, bins = np.histogram(dead_time)
 
-    obstime_real =(total_time - bins[0]) * u.s
+    obstime_real =(sum(dead_time) - bins[0]) * u.s
 
-    return obstime_real
+    return obstime_real, dead_time
 
 def get_weights(mc_par, spectral_par):
     """
