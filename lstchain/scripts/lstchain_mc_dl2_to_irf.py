@@ -117,14 +117,17 @@ def main():
 	       "gamma": {
 	          "file": args.gamma_file,
 	          "target_spectrum": CRAB_HEGRA,
+              "mc_nominal_source_deg": 0,
 	          },
         #	"proton": {
         #             "file": args.proton_file,
         #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+        #         "mc_nominal_source_deg": 0.4,
         #             },
         #	"electron": {
         #             "file": args.electron_file,
         #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+        #         "mc_nominal_source_deg": 0,
         #             },
     	}
     else:
@@ -133,14 +136,17 @@ def main():
 	       "gamma": {
 	          "file": args.gamma_diff_file,
 	          "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+              "mc_nominal_source_deg": 0,
 	          },
         #	"proton": {
         #             "file": args.proton_file,
         #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+        #         "mc_nominal_source_deg": 0.4,
         #             },
         #	"electron": {
         #             "file": args.electron_file,
         #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+        #         "mc_nominal_source_deg": 0,
         #             },
     	}
 
@@ -155,8 +161,8 @@ def main():
         # calculate theta / distance between reco and assumed source position
         p["events"]["theta"] = calculate_theta(
             p["events"],
-            assumed_source_az=p["events"]["pointing_az"],
-            assumed_source_alt=p["events"]["pointing_alt"],
+            assumed_source_az=p["events"]["true_az"],
+            assumed_source_alt=p["events"]["true_alt"]+p["mc_nominal_source_deg"],
         )
         log.info(p["simulation_info"])
 
@@ -185,7 +191,7 @@ def main():
                         gammas["selected_gh"] & \
                         gammas["selected_fov"] & \
                         gammas["selected_tels"]
-
+    
     # Binning of parameters used in IRFs
     true_energy_bins =  add_overflow_bins(
         create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 2.5)
