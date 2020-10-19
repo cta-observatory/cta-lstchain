@@ -109,7 +109,7 @@ def main():
     # Assuming the filename to be 'dl2_LST-1.Run#####_*.h5'
     # If the nomenclature is different, change the final index position to get the run number
     if data['obs_id'][0] <= 0:
-        run_number = int(re.findall('\d+', file)[1])
+        run_number = int(re.findall('\d+', file)[2])
     else:
         run_number= data['obs_id'][0]
 
