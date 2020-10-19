@@ -12,7 +12,7 @@ from ctapipe.containers import MCHeaderContainer
 from ctapipe.io import HDF5TableWriter
 from ctapipe.tools.stage1 import Stage1ProcessorTool
 from ctapipe.instrument import (OpticsDescription, CameraGeometry,
-		 CameraDescription, CameraReadout, \
+		 CameraDescription, CameraReadout,
 		 TelescopeDescription, SubarrayDescription)
 
 from eventio import Histograms

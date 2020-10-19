@@ -224,7 +224,8 @@ def test_irf():
 			'lstchain_mc_dl2_to_irf',
 			'-fg-diff', dl2_file,
 			'-o', output_dir,
-			'-conf', cuts
+			'-conf', cuts,
+			'-pnt', 'True',
 			)
 
     assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
@@ -240,7 +241,7 @@ def test_dl3():
             'lstchain_dl2_to_dl3',
             '-d', input_file,
             '-o', output_dir,
-            '-add-irf', 'True',
+            '-add-irf', 'False',
             '-irf', irf_file,
             '-s', 'Gamma',
 			'-conf', cuts

@@ -14,7 +14,7 @@
     "alpha": [0, 8]
   },
   "LST_tels": {
-    "tel_list": [1,2,3,4]
+    "tel_list": [1]
   },
   "MAGIC_tels": {
     "tel_list": [1,2]

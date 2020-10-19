@@ -15,8 +15,6 @@ Usage:
 $> python lstchain_mc_dl2_to_irf.py
 --input-file-gamma ./gamma/dl2_gamma_*.h5
 --input-file-gamma-diff ./gamma-diff/dl2_gamma-diff*.h5 #optional for now
---input-file-proton ./proton/dl2_proton_*.h5 #optional for now
---input-file-electron ./electron/dl2_electron_*.h5 #optional for now
 --output-dir ./IRFs/
 --pnt-like True
 --config ../../data/data_selection_cuts.json
@@ -27,6 +25,7 @@ import json
 import numpy as np
 import argparse
 from pathlib import Path
+from distutils.util import strtobool
 import logging
 
 from lstchain.io import read_mc_dl2_to_pyirf, read_configuration_file, get_standard_config
@@ -40,13 +39,7 @@ from astropy import table
 from pyirf.io.gadf import (create_aeff2d_hdu, create_energy_dispersion_hdu)
 from pyirf.irf import (effective_area_per_energy, energy_dispersion, effective_area_per_energy_and_fov)
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
-from pyirf.spectral import (
-    calculate_event_weights,
-    PowerLaw,
-    CRAB_HEGRA,
-    IRFDOC_PROTON_SPECTRUM,
-    IRFDOC_ELECTRON_SPECTRUM,
-)
+
 from pyirf.binning import (
     create_bins_per_decade,
     add_overflow_bins,
@@ -74,20 +67,10 @@ parser.add_argument('--input-file-gamma-diff', '-fg-diff', type=Path, dest='gamm
                     default=None, required=False
                     )
 
-parser.add_argument('--input-file-proton', '-fp', type=Path, dest='proton_file',
-                    help='Path to the dl2 file of proton events for building IRF',
-                    default=None, required=False
-                    )
-
-parser.add_argument('--input-file-electron', '-fe', type=Path, dest='electron_file',
-                    help='Path to the dl2 file of electron events for building IRF',
-                    default=None, required=False
-                    )
-
 parser.add_argument('--pnt-like', '-pnt', action='store',
                     type=lambda x: bool(strtobool(x)), dest='irf_type',
                     help='True for point-like IRF, False for Full Enclosure',
-                    default=True, required=False
+                    default=None, required=False
                     )
 
 parser.add_argument('--config', '-conf', type=Path,
@@ -113,64 +96,26 @@ def main():
         cuts = read_configuration_file(args.config)
 
     if args.gamma_diff_file is None:
-        particles = {
-	       "gamma": {
-	          "file": args.gamma_file,
-	          "target_spectrum": CRAB_HEGRA,
-              "mc_nominal_source_deg": 0,
-	          },
-        #	"proton": {
-        #             "file": args.proton_file,
-        #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-        #         "mc_nominal_source_deg": 0.4,
-        #             },
-        #	"electron": {
-        #             "file": args.electron_file,
-        #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
-        #         "mc_nominal_source_deg": 0,
-        #             },
-    	}
+        mc_gamma = {"file": args.gamma_file,
+                 "type": "point-like",}
     else:
-        #Using proton spectrum at the moment for unit tests
-        particles = {
-	       "gamma": {
-	          "file": args.gamma_diff_file,
-	          "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-              "mc_nominal_source_deg": 0,
-	          },
-        #	"proton": {
-        #             "file": args.proton_file,
-        #	      "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-        #         "mc_nominal_source_deg": 0.4,
-        #             },
-        #	"electron": {
-        #             "file": args.electron_file,
-        #	      "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
-        #         "mc_nominal_source_deg": 0,
-        #             },
-    	}
+        mc_gamma = {"file": args.gamma_diff_file,
+                 "type": "diffuse",}
 
-    for k, p in particles.items():
-        log.info(f"Simulated {k.title()} Events:")
-        p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
-        p["simulated_spectrum"] = PowerLaw.from_simulation(p["simulation_info"], 50 * u.hour)
-        p["events"]["weight"] = calculate_event_weights(
-            p["events"]["true_energy"], p["target_spectrum"], p["simulated_spectrum"]
-        )
-        p["events"]["source_fov_offset"] = calculate_source_fov_offset(p["events"])
-        # calculate theta / distance between reco and assumed source position
-        p["events"]["theta"] = calculate_theta(
-            p["events"],
-            assumed_source_az=p["events"]["true_az"],
-            assumed_source_alt=p["events"]["true_alt"]+p["mc_nominal_source_deg"],
-        )
-        log.info(p["simulation_info"])
+    #Read and update MC information
+    log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
+    mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(mc_gamma["file"])
+    mc_gamma["events"]["source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"])
+    # calculate theta / distance between reco and assumed source position
+    mc_gamma["events"]["theta"] = calculate_theta(
+                    mc_gamma["events"],
+                    assumed_source_az=mc_gamma["events"]["true_az"],
+                    assumed_source_alt=mc_gamma["events"]["true_alt"],
+                    )
+    log.info(mc_gamma["simulation_info"])
 
-    gammas = particles["gamma"]["events"]
-    #background = table.vstack(
-    #    [particles["proton"]["events"], particles["electron"]["events"]]
-    #)
-
+    #Apply selection cuts
+    gammas = mc_gamma["events"]
     gh_cut = cuts["fixed_cuts"]["gh_score"][0]
     log.info(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
@@ -183,39 +128,42 @@ def main():
         gammas["selected_tels"] = gammas["tel_id"] == i
 
     gammas["selected_gh"] = gammas["gh_score"] > gh_cut
-    #For point like gammas
-    gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
-    gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
-    #Combining selection cuts
-    gammas["selected"] = gammas["selected_theta"] & \
-                        gammas["selected_gh"] & \
-                        gammas["selected_fov"] & \
-                        gammas["selected_tels"]
-    
+    #irf_type = True for point like IRFs, False for Full Enclosure IRFs
+    if args.irf_type:
+        gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
+        gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
+        #Combining selection cuts
+        gammas["selected"] = gammas["selected_theta"] & \
+                            gammas["selected_gh"] & \
+                            gammas["selected_fov"] & \
+                            gammas["selected_tels"]
+    else:
+        gammas["selected"] = gammas["selected_gh"] & \
+                            gammas["selected_tels"]
     # Binning of parameters used in IRFs
-    true_energy_bins =  add_overflow_bins(
-        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 2.5)
-    )[:-1]
+    #12.5 GeV - 51.28 TeV
+    true_energy_bins =  create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
+    #add_overflow_bins(***)[1:-1]
     # The overflow binning added is not needed in the current script
+    reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
-    reco_energy_bins = add_overflow_bins(
-        create_bins_per_decade(10 ** -1.9 * u.TeV, 10 ** 1.71 * u.TeV, 2)
-    )[:-1]
-
-    ### TODO: The FoV offset angle is 0.4 deg for LST1 and it is used in
-    # this manner because of an issue with astropy which will be updated
-    # in atropy v4.0.2, and later in pyirf and gammapy as well
-    # Later, we can just find the mean of FoV offset values, and use it
-    # for the binning
-    fov_offset_bins = [0.2, 0.6] * u.deg
+    #TODO: Generalize FoV offset binning
+    if args.gamma_diff_file is None:
+        fov_offset_bins = [0.2, 0.6] * u.deg
+    else:
+        # temporary usage of bins as used in MAGIC
+        fov_offset_bins = [0,0.3,0.5,0.7,0.9,1.1] * u.deg
     migration_bins = np.linspace(0.2, 5, 31)
 
     # Write HDUs
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
-        effective_area = effective_area_per_energy(gammas[gammas["selected"]], particles["gamma"]["simulation_info"], true_energy_bins)
-    hdus.append(create_aeff2d_hdu(effective_area,true_energy_bins, fov_offset_bins,extname = "EFFECTIVE AREA")) #[..., np.newaxis]
-    # use effective_area_per_energy_and_fov for diffuse MC
+        if args.gamma_diff_file is None:
+            effective_area = effective_area_per_energy(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins)
+        else:
+            effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins, fov_offset_bins)
+    #Adding a dimension for FoV offset for effective area
+    hdus.append(create_aeff2d_hdu(effective_area[..., np.newaxis],true_energy_bins, fov_offset_bins, extname = "EFFECTIVE AREA"))
 
     edisp = energy_dispersion(gammas[gammas["selected"]], true_energy_bins, fov_offset_bins, migration_bins)
     hdus.append(create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins, extname = "ENERGY DISPERSION"))
