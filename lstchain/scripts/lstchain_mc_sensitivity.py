@@ -58,8 +58,8 @@ def main():
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    geff_gammaness = 1. #Gamma efficincy of gammaness cut
-    geff_theta2 = 1. #Gamma efficiency of theta2 cut
+    geff_gammaness = 0.95 #Gamma efficincy of gammaness cut
+    geff_theta2 = 0.6 #Gamma efficiency of theta2 cut
 
 
     # Calculate the sensitivity
@@ -84,6 +84,7 @@ def main():
                                                                                              geff_theta2,
                                                                                              noff,
                                                                                              obstime)
+
 
     print("\nOptimal gammaness cuts:", gcut)
     print("Optimal theta2 cuts: {} \n".format(tcut))

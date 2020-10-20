@@ -133,7 +133,7 @@ def process_real(dl2_file, reco_type):
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
-         (events.intensity > 200)
+        & (events.intensity > 200)
     )
     events = events[filter_good_events]
 
@@ -168,17 +168,21 @@ def get_obstime_real(events):
     tib_time = events.tib_time.to_numpy()
     last_event = events.shape[0]-1
     total_time = tib_time[last_event]-tib_time[0]
-    dead_time = np.ndarray(tib_time.size)
+    deltat = np.ndarray(tib_time.size)
     for i in range(tib_time.size-1):
-        deltat = tib_time[i+1]-tib_time[i]
-        dead_time[i]=deltat
+        deltat_event = tib_time[i+1]-tib_time[i]
+        deltat[i]=deltat_event
 
-    dead_time = dead_time[(dead_time > 0) & (dead_time < 0.002)]
-    hist, bins = np.histogram(dead_time)
+    deltat = deltat[(deltat > 0) & (deltat < 0.002)]
+    hist, bins = np.histogram(deltat)
+    dead_time = bins[0]
+    t_elapsed =(sum(deltat) - dead_time) * u.s
+    bin_center=np.sqrt(bins[1:] * bins[:-1])
+    fit_result = np.polyfit(bin_center, np.log10(hist), 1)
+    rate=-1*fit_result[0]
+    t_eff = t_elapsed/(1+rate*dead_time)
 
-    obstime_real =(sum(dead_time) - bins[0]) * u.s
-
-    return obstime_real, dead_time
+    return t_eff
 
 def get_weights(mc_par, spectral_par):
     """
