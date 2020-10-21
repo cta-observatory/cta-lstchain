@@ -21,7 +21,6 @@ DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 
-#IRF should be separate?
 def create_obs_hdu_index(filename_list, fits_dir):
     """
     Create the obs table and hdu table (below some explanation)
@@ -73,9 +72,16 @@ def create_obs_hdu_index(filename_list, fits_dir):
         ###############################################
         # Event list
         t_events = Table(
-                {'OBS_ID':[event_table.meta['OBS_ID']],'HDU_TYPE':['events'],'HDU_CLASS':['events'],
-                    'HDU_CLASS2':[''],'HDU_CLASS3':[''],'HDU_CLASS4':[''],'FILE_DIR':[''],
-                    'FILE_NAME': [file], 'HDU_NAME':['events']},
+                {
+                'OBS_ID':[event_table.meta['OBS_ID']],
+                'HDU_TYPE':['events'],
+                'HDU_CLASS':['events'],
+                'HDU_CLASS2':[''],
+                'HDU_CLASS3':[''],
+                'HDU_CLASS4':[''],
+                'FILE_DIR':[''],
+                'FILE_NAME': [file],
+                'HDU_NAME':['events']},
                 dtype=('>i8', 'S6', 'S10',
                 'S20', 'S20', 'S20', 'S70',
                 'S54', 'S20')
@@ -132,14 +138,22 @@ def create_obs_hdu_index(filename_list, fits_dir):
         ###############################################
         # Obs_table
         t_obs = Table(
-            {'OBS_ID' : [event_table.meta['OBS_ID']],'RA_PNT' : [pointing_table.meta['RA_PNT']],
-            'DEC_PNT' : [pointing_table.meta['DEC_PNT']], 'ZEN_PNT' : [90 - float(pointing_table.meta['ALT_PNT'])],
-            'ALT_PNT' : [pointing_table.meta['ALT_PNT']], 'AZ_PNT' : [pointing_table.meta['AZ_PNT']],
-            'ONTIME': [event_table.meta["ONTIME"]], 'LIVETIME' : [event_table.meta["LIVETIME"]],
-            'DEADC' : [event_table.meta["DEADC"]], 'TSTART' : [gti_table["START"]],'TSTOP' : [gti_table["STOP"]],
-            'OBJECT' : [event_table.meta['OBJECT']], 'N_TELS' : [event_table.meta["N_TELS"]],
+            {'OBS_ID' : [event_table.meta['OBS_ID']],
+            'RA_PNT' : [pointing_table.meta['RA_PNT']],
+            'DEC_PNT' : [pointing_table.meta['DEC_PNT']],
+            'ZEN_PNT' : [90 - float(pointing_table.meta['ALT_PNT'])],
+            'ALT_PNT' : [pointing_table.meta['ALT_PNT']],
+            'AZ_PNT' : [pointing_table.meta['AZ_PNT']],
+            'ONTIME': [event_table.meta["ONTIME"]],
+            'LIVETIME' : [event_table.meta["LIVETIME"]],
+            'DEADC' : [event_table.meta["DEADC"]],
+            'TSTART' : [event_table.meta["TSTART"]],
+            'TSTOP' : [event_table.meta["TSTOP"]],
+            'OBJECT' : [event_table.meta['OBJECT']],
+            'N_TELS' : [event_table.meta["N_TELS"]],
             'TELLIST' : [event_table.meta["TELLIST"]]},
-            dtype=('>i8', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f4', '>f8', '>f8', 'S20','>i8', 'S20')
+            dtype=('>i8', '>f4', '>f4', '>f4', '>f4', '>f4',
+            '>f4', '>f4', '>f4', '>f8', '>f8', 'S20','>i8', 'S20')
             )
         obs_tables.append(t_obs)
 
@@ -229,8 +243,8 @@ def create_event_list(data, run_number, Source_name):
     ### GTI table
     gti_table = QTable(
         {
-            "START" : u.Quantity(t_start, ndmin=2),
-            "STOP" : u.Quantity(t_stop, ndmin=2)
+            "START" : u.Quantity(t_start, ndmin=1),
+            "STOP" : u.Quantity(t_stop, ndmin=1)
         }
     )
     ##########################################################################
@@ -250,17 +264,17 @@ def create_event_list(data, run_number, Source_name):
     ev_header["TELLIST"] = 'LST-1'
     ev_header["N_TELS"] = 1
 
-    ev_header["RA_PNT"]=coord_pointing.icrs.ra.value
-    ev_header["DEC_PNT"]=coord_pointing.icrs.dec.value
-    ev_header["ALT_PNT"]=round(np.rad2deg(data['pointing_alt'].value.mean()),6)
-    ev_header["AZ_PNT"]=round(np.rad2deg(data['pointing_az'].value[0]),6)
-    ev_header["FOVALIGN"]='ALTAZ'
-    ev_header["ONTIME"]=obs_time
+    ev_header["RA_PNT"] = coord_pointing.icrs.ra.value
+    ev_header["DEC_PNT"] = coord_pointing.icrs.dec.value
+    ev_header["ALT_PNT"] = round(np.rad2deg(data['pointing_alt'].value.mean()),6)
+    ev_header["AZ_PNT"] = round(np.rad2deg(data['pointing_az'].value[0]),6)
+    ev_header["FOVALIGN"] = 'ALTAZ'
+    ev_header["ONTIME"] = obs_time
 
     #Dead time for DRS4 chip is 26 u_sec
     #Value of lam is taken by hand, to be around the same order of magnitude for now
-    ev_header["DEADC"]=1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
-    ev_header["LIVETIME"]=ev_header["DEADC"]*ev_header["ONTIME"]
+    ev_header["DEADC"] = 1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
+    ev_header["LIVETIME"] = ev_header["DEADC"]*ev_header["ONTIME"]
 
     ##########################################################################
     ### GTI table metadata
@@ -278,12 +292,12 @@ def create_event_list(data, run_number, Source_name):
     pnt_header = DEFAULT_HEADER.copy()
     pnt_header["HDUCLAS1"] = "POINTING"
 
-    pnt_header["OBS_ID"]=run_number
-    pnt_header["RA_PNT"]=coord_pointing.icrs.ra.value
-    pnt_header["DEC_PNT"]=coord_pointing.icrs.dec.value
-    pnt_header["ALT_PNT"]=ev_header["ALT_PNT"]
-    pnt_header["AZ_PNT"]=ev_header["AZ_PNT"]
-    pnt_header["TIME"]=t_start
+    pnt_header["OBS_ID"] = run_number
+    pnt_header["RA_PNT"] = coord_pointing.icrs.ra.value
+    pnt_header["DEC_PNT"] = coord_pointing.icrs.dec.value
+    pnt_header["ALT_PNT"] = ev_header["ALT_PNT"]
+    pnt_header["AZ_PNT"] = ev_header["AZ_PNT"]
+    pnt_header["TIME"] = t_start
 
     ### Create HDUs
     #########################################################################

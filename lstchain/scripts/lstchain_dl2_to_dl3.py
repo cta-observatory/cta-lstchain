@@ -26,7 +26,6 @@ $> python lstchain_dl2_to_dl3.py
 
 import os
 import json
-import re
 from distutils.util import strtobool
 import numpy as np
 import argparse
@@ -37,6 +36,7 @@ import sys
 from lstchain.irf import create_event_list
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file, get_standard_config
 from lstchain.reco.utils import filter_events
+from lstchain.paths import run_info_from_filename
 
 from astropy.io import fits
 import astropy.units as u
@@ -105,11 +105,9 @@ def main():
                                               data['pointing_alt'],
                                               ).to(u.deg)
 
-    # Get the obs_id from the filename if it is -1 in the column
-    # Assuming the filename to be 'dl2_LST-1.Run#####_*.h5'
-    # If the nomenclature is different, change the final index position to get the run number
+    # Get the run_id from the filename if it is -1 in the obs_id column
     if data['obs_id'][0] <= 0:
-        run_number = int(re.findall('\d+', file)[2])
+        run_number=run_info_from_filename(args.input_data)[1]
     else:
         run_number= data['obs_id'][0]
 
@@ -123,8 +121,10 @@ def main():
         cuts = read_configuration_file(args.config)
 
     data = filter_events(data, cuts["events_filters"])
+
     # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]
+
     data = data[data["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
 
     #Temporary filter for non/fewer events file

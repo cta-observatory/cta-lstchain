@@ -31,7 +31,7 @@ GENERAL_RE = re.compile(
     r'LST-(\d+)'         # tel_id
     r'(?:.(\d+))?'       # stream is optional
     r'.Run(\d+)'         # run number
-    r'.(\d+)'            # subrun number
+    r'(?:.(\d+))?'            # subrun number
 )
 
 EXTENSIONS_TO_REMOVE = {

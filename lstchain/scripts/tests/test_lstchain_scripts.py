@@ -244,7 +244,7 @@ def test_dl3():
             '-add-irf', 'False',
             '-irf', irf_file,
             '-s', 'Gamma',
-			'-conf', cuts
+            '-conf', cuts
             )
 
     assert os.path.exists(dl3_file)
