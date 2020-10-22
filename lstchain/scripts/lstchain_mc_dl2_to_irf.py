@@ -116,6 +116,7 @@ def main():
 
     #Apply selection cuts
     gammas = mc_gamma["events"]
+
     gh_cut = cuts["fixed_cuts"]["gh_score"][0]
     log.info(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
@@ -140,6 +141,7 @@ def main():
     else:
         gammas["selected"] = gammas["selected_gh"] & \
                             gammas["selected_tels"]
+
     # Binning of parameters used in IRFs
     #12.5 GeV - 51.28 TeV
     true_energy_bins =  create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
