@@ -116,6 +116,7 @@ def main():
                 peak_time = row['peak_time']
 
                 signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
+
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
@@ -151,10 +152,10 @@ def main():
 
                     dl1_container.width = u.Quantity(np.nan, u.m)
                     dl1_container.length = u.Quantity(np.nan, u.m)
-                    dl1_container.wl  = u.Quantity(np.nan, u.m)
+                    dl1_container.wl = u.Quantity(np.nan, u.m)
 
-            for p in parameters_to_update:
-                params[ii][p] = u.Quantity(dl1_container[p]).value
+                for p in parameters_to_update:
+                    params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
 
