@@ -110,6 +110,9 @@ def main():
             params = output.root[dl1_params_lstcam_key].read()
 
             for ii, row in enumerate(image_table):
+
+                dl1_container.reset()
+
                 if ii % 10000 == 0:
                     print(ii)
                 image = row['image']
@@ -144,15 +147,7 @@ def main():
                     dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
 
-                else:
-                    # for consistency with r0_to_dl1.py:
-                    for key in dl1_container.keys():
-                        dl1_container[key] = \
-                            u.Quantity(0, dl1_container.fields[key].unit)
 
-                    dl1_container.width = u.Quantity(np.nan, u.m)
-                    dl1_container.length = u.Quantity(np.nan, u.m)
-                    dl1_container.wl = u.Quantity(np.nan, u.m)
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
