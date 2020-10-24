@@ -13,11 +13,13 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import joblib
 import os
+from astropy.time import Time
+from astropy.coordinates import SkyCoord
 from . import utils
 from . import disp
 from ..io import standard_config, replace_config
 import astropy.units as u
-from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_on_lstcam_key
 from ctapipe.instrument import OpticsDescription
 from ctapipe.image.hillas import camera_to_shower_coordinates
 
@@ -254,7 +256,7 @@ def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
                  energy_min=-np.inf,
                  custom_config={},
-                 test_size=0.2,
+                 test_size=0.5,
                  ):
     """Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
@@ -305,8 +307,8 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)], axis=1)
-        df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)], axis=1)
+        df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_on_lstcam_key)], axis=1)
+        df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_on_lstcam_key)], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
@@ -437,7 +439,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
 
 
-def get_source_dependent_parameters(data, config={}):
+def get_source_dependent_parameters(data, config={}, wobble_angle=None):
 
     """Get parameters for source-dependent analysis .
 
@@ -445,22 +447,28 @@ def get_source_dependent_parameters(data, config={}):
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
+    wobble angle: 
     
     """
 
     src_dep_params = pd.DataFrame(index=data.index)
 
-    is_simu = 'mc_type' in data.columns
-    
+    #is_simu = 'mc_type' in data.columns
+    is_simu = ~(data['mc_type']==-1).all()
+    print(data['mc_type'])
+    print("is_simu: ", is_simu)
+
     if is_simu:
-        if (data['mc_type'] == 0).all():
+        #if (data['mc_type'] == 0).all():
+        if (data['mc_type'][0] == 0):
             data_type = 'mc_gamma'
         else:
             data_type = 'mc_proton'
     else:
         data_type = 'real_data'
     
-    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
+    print("data type: ", data_type)
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config, wobble_angle=wobble_angle)
 
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
@@ -482,8 +490,7 @@ def get_source_dependent_parameters(data, config={}):
 
     return src_dep_params
 
-
-def get_expected_source_pos(data, data_type, config):
+def get_expected_source_pos(data, data_type, config, wobble_angle = None):
 
     """Get expected source position for source-dependent analysis .
 
@@ -517,10 +524,34 @@ def get_expected_source_pos(data, data_type, config):
         expected_src_pos_y_m = expected_src_pos.y.to_value()
 
     # For real data
-    # TODO: expected source position for real data should be obtained by using tel_alt,az and source RA,Dec
-    # For the moment, expected source position is defined as camera center (ON mode)
     if data_type == 'real_data':
-        expected_src_pos_x_m = np.zeros(len(data))
-        expected_src_pos_y_m = np.zeros(len(data))
+        # source is always at the ceter of camera for ON mode
+        if config['observation_mode'] == 'on':
+            expected_src_pos_x_m = np.zeros(len(data))
+            expected_src_pos_y_m = np.zeros(len(data))
+        
+        # compute source position in camera coordinate event by event for wobble mode
+        if config['observation_mode'] == 'wobble':
+            source_coord  = SkyCoord(config['source_ra'], config['source_dec'], frame="icrs", unit="deg") 
+            focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
+            cos_wobble = np.cos(wobble_angle)
+            sin_wobble = np.sin(wobble_angle)
+            
+            expected_src_pos_x_m = np.zeros(len(data))
+            expected_src_pos_y_m = np.zeros(len(data))
+            
+            for i in range(len(data)):
+                time = data['dragon_time'][i]
 
+                obstime = Time(time, scale='utc', format='unix')
+                pointing_alt = u.Quantity(data['alt_tel'][i], u.rad, copy=False)
+                pointing_az  = u.Quantity(data['az_tel'][i],  u.rad, copy=False)
+
+                source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
+                
+                # rotate by wobble angle
+                expected_src_pos_x_m[i] = (source_pos.x * cos_wobble  + source_pos.y * -sin_wobble).to_value()
+                expected_src_pos_y_m[i] = (source_pos.x * sin_wobble + source_pos.y * cos_wobble).to_value()
+                
+   
     return expected_src_pos_x_m, expected_src_pos_y_m 
