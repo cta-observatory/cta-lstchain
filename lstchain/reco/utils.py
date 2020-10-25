@@ -436,7 +436,6 @@ def filter_events(events,
     Apply data filtering to a pandas dataframe.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
-    If the column name does not exist, the filtering is simply not applied
 
     Parameters
     ----------
@@ -455,6 +454,8 @@ def filter_events(events,
     for k in filters.keys():
         if k in events.columns:
             filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+        else:
+            raise TypeError(f'{k} does not exist in the list of keys')
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events.columns)))
