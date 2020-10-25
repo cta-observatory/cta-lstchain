@@ -450,17 +450,20 @@ def get_source_dependent_parameters(data, config={}):
 
     src_dep_params = pd.DataFrame(index=data.index)
 
-    is_simu = 'mc_type' in data.columns
+    is_simu = ('mc_type' in data.columns) and ~(data['mc_type'] < 0).all()
     
     if is_simu:
-        if (data['mc_type'] == 0).all():
+        if (data['mc_type'][data['mc_type']>=0] == 0).all():
             data_type = 'mc_gamma'
         else:
             data_type = 'mc_proton'
     else:
         data_type = 'real_data'
     
+    print("data type: ", data_type)
+
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
+    print(f"expected source position: (x, y) = ({expected_src_pos_x_m[0]} m, {expected_src_pos_y_m[0]} m)")
 
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
