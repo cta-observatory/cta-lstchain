@@ -105,14 +105,14 @@ def test_content_dl1():
     with tables.open_file(dl1_file) as f:
         images_table = f.root[dl1_images_lstcam_key]
         params_table = f.root[dl1_params_lstcam_key]
-    assert 'image' in images_table.colnames
-    assert 'peak_time' in images_table.colnames
-    assert 'tel_id' in images_table.colnames
-    assert 'obs_id' in images_table.colnames
-    assert 'event_id' in images_table.colnames
-    assert 'tel_id' in params_table.colnames
-    assert 'event_id' in params_table.colnames
-    assert 'obs_id' in params_table.colnames
+        assert 'image' in images_table.colnames
+        assert 'peak_time' in images_table.colnames
+        assert 'tel_id' in images_table.colnames
+        assert 'obs_id' in images_table.colnames
+        assert 'event_id' in images_table.colnames
+        assert 'tel_id' in params_table.colnames
+        assert 'event_id' in params_table.colnames
+        assert 'obs_id' in params_table.colnames
 
 def test_get_source_dependent_parameters():
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
