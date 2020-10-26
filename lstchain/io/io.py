@@ -868,7 +868,7 @@ def write_subarray_tables(writer, event, metadata=None):
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
-        add_global_metadata(event.dl0, metadata)
+        add_global_metadata(event.index, metadata)
         add_global_metadata(event.mc, metadata)
         add_global_metadata(event.trigger, metadata)
 
