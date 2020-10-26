@@ -107,7 +107,6 @@ def process_mc(dl2_file, mc_type):
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
     if mc_type == 'gamma':
-        events = events[events.mc_type == 0]
         alt2 = events.mc_alt
         az2 = events.mc_az
 
@@ -115,7 +114,6 @@ def process_mc(dl2_file, mc_type):
     # the squared angular distance of the reconstructed position w.r.t. the
     # center of the camera
     else:
-        events = events[events.mc_type != 0]
         alt2 = events.mc_alt_tel
         az2 = events.mc_az_tel
 
@@ -130,6 +128,7 @@ def process_mc(dl2_file, mc_type):
 def process_real(dl2_file, reco_type):
 
     events = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
+    obstime_real = get_obstime_real(events)
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
@@ -142,7 +141,6 @@ def process_real(dl2_file, reco_type):
     # If the particle is a gamma ray, it returns the squared angular distance
     # from the reconstructed gamma-ray position and the simulated incoming position
     if reco_type == 'gamma':
-        events = events[events.reco_type == 0]
         alt2 = events.mc_alt
         az2 = events.mc_az
 
@@ -150,7 +148,6 @@ def process_real(dl2_file, reco_type):
     # the squared angular distance of the reconstructed position w.r.t. the
     # center of the camera
     else:
-        events = events[events.reco_type != 0]
         alt2 = events.alt_tel
         az2 = events.az_tel
 
@@ -159,7 +156,6 @@ def process_real(dl2_file, reco_type):
 
     angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad) ** 2
     events['theta2'] = angdist2.to(u.deg**2)
-    obstime_real = get_obstime_real(events)
 
     return gammaness, angdist2.to(u.deg**2),e_reco, events, obstime_real
 
@@ -181,7 +177,7 @@ def get_obstime_real(events):
     fit_result = np.polyfit(bin_center, np.log10(hist), 1)
     rate=-1*fit_result[0]
     t_eff = t_elapsed/(1+rate*dead_time)
-
+    print(t_elapsed, t_eff, dead_time, rate)
     return t_eff
 
 def get_weights(mc_par, spectral_par):

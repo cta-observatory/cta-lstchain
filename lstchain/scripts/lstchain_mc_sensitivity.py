@@ -18,6 +18,8 @@ $> python lstchain_mc_sensitivity.py
 from lstchain.mc.sensitivity import sensitivity_gamma_efficiency, sensitivity_gamma_efficiency_real_protons
 import matplotlib.pyplot as plt
 import astropy.units as u
+import pandas as pd
+from lstchain.io.io import dl2_params_lstcam_key
 from astropy.table import Table
 import numpy as np
 import argparse
@@ -58,8 +60,8 @@ def main():
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5
-    geff_gammaness = 0.95 #Gamma efficincy of gammaness cut
-    geff_theta2 = 0.6 #Gamma efficiency of theta2 cut
+    geff_gammaness = 0.8 #Gamma efficincy of gammaness cut
+    geff_theta2 = 0.8 #Gamma efficiency of theta2 cut
 
 
     # Calculate the sensitivity
@@ -84,6 +86,9 @@ def main():
                                                                                              geff_theta2,
                                                                                              noff,
                                                                                              obstime)
+
+    events[events.mc_type==0].alt_tel = events[events.mc_type==0].mc_alt
+    events[events.mc_type==0].az_tel = events[events.mc_type==0].mc_az
 
 
     print("\nOptimal gammaness cuts:", gcut)
@@ -117,6 +122,7 @@ def main():
     plt.plot(egeom, result['proton_rate'], label='Proton rate', marker='o')
     plt.plot(egeom, result['gamma_rate'], label='Gamma rate', marker='o')
     plt.legend()
+    plt.grid()
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('Energy (TeV)')
@@ -125,8 +131,8 @@ def main():
     plt.show()
 
     #Gammaness
-    gammas_mc = events[events.mc_type == 0]
-    protons_mc = events[events.mc_type != 0]
+    gammas_mc = pd.read_hdf(args.dl2_file_g, key=dl2_params_lstcam_key)
+    protons_mc = pd.read_hdf(args.dl2_file_p, key=dl2_params_lstcam_key)
     sns.distplot(gammas_mc.gammaness, label='gammas')
     sns.distplot(protons_mc.gammaness, label='protons')
     plt.legend()
@@ -134,6 +140,7 @@ def main():
     plt.savefig(args.output_path+"/distplot_gammaness.png")
     plt.show()
 
+    '''
     #True Energy
     sns.distplot(gammas_mc.mc_energy, label='gammas');
     sns.distplot(protons_mc.mc_energy, label='protons');
@@ -142,7 +149,6 @@ def main():
     plt.savefig(args.output_path+"/distplot_mc_energy.png")
     plt.show()
 
-
     #Reconstructed Energy
     sns.distplot(gammas_mc.reco_energy.apply(np.log10), label='gammas')
     sns.distplot(protons_mc.reco_energy.apply(np.log10), label='protons')
@@ -150,15 +156,15 @@ def main():
     plt.tight_layout()
     plt.savefig(args.output_path+"/distplot_energy_apply.png")
     plt.show()
-
+    '''
 
     #Theta2
-    ctaplot.plot_theta2(gammas_mc.reco_alt, gammas_mc.reco_az, gammas_mc.mc_alt, gammas_mc.mc_az, range=(0, 1), bins=100)
+    ctaplot.plot_theta2(events.reco_alt, events.reco_az, events.alt_tel, events.az_tel, range=(0, 1), bins=100)
     plt.savefig(args.output_path+"/theta2.png")
     plt.show()
 
     #Angular resolution
-    ctaplot.plot_angular_resolution_per_energy(events.reco_alt, events.reco_az, events.mc_alt, events.mc_az, events.reco_energy  )
+    ctaplot.plot_angular_resolution_per_energy(events.reco_alt, events.reco_az, events.alt_tel, events.az_tel, events.reco_energy  )
     ctaplot.plot_angular_resolution_cta_requirement('north', color='black')
 
     plt.legend()
@@ -168,7 +174,7 @@ def main():
 
     #Energy resolution
 
-    ctaplot.plot_energy_resolution(events.mc_energy, events.reco_energy)
+    ctaplot.plot_energy_resolution(events[events.mc_type==0].mc_energy, events[events.mc_type==0].reco_energy)
     ctaplot.plot_energy_resolution_cta_requirement('north', color='black')
     plt.legend()
     plt.tight_layout()
@@ -177,7 +183,7 @@ def main():
 
     #Energy bias
 
-    ctaplot.plot_energy_bias(events.mc_energy, events.reco_energy)
+    ctaplot.plot_energy_bias(events[events.mc_type==0].mc_energy, events[events.mc_type==0].reco_energy)
     plt.savefig(args.output_path+"/energy_bias.png")
     plt.show()
 
@@ -190,7 +196,7 @@ def main():
     spectral_index = gamma_ps_simu_info.spectral_index
     area = (gamma_ps_simu_info.max_scatter_range.value - gamma_ps_simu_info.min_scatter_range.value) ** 2 * np.pi
     ctaplot.plot_effective_area_per_energy_power_law(emin, emax, total_number_of_events, spectral_index,
-                                                     gammas_mc.reco_energy[gammas_mc.tel_id == 1],
+                                                     events.reco_energy,
                                                      area,
                                                      label='selected gammas',
                                                      linestyle='--'
