@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import os
 import pandas as pd
-from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 import astropy.units as u
 import tables
@@ -102,7 +102,6 @@ def test_r0_to_dl1():
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1():
     # test presence of images and parameters
-    from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
     with tables.open_file(dl1_file) as f:
         images_table = f.root[dl1_images_lstcam_key]
         params_table = f.root[dl1_params_lstcam_key]
