@@ -450,8 +450,9 @@ def get_source_dependent_parameters(data, config={}):
 
     src_dep_params = pd.DataFrame(index=data.index)
 
-    is_simu = ('mc_type' in data.columns) and ~(data['mc_type'] < 0).all()
-    
+    is_simu = ~(data['mc_type'] < 0).all() if ('mc_type' in data.columns) else False
+
+    # -1 means real data or events that do not pass image cleaning, 0 means gamma, and >1 means hadron
     if is_simu:
         if (data['mc_type'][data['mc_type']>=0] == 0).all():
             data_type = 'mc_gamma'
@@ -460,8 +461,6 @@ def get_source_dependent_parameters(data, config={}):
     else:
         data_type = 'real_data'
     
-    print("data type: ", data_type)
-
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
     print(f"expected source position: (x, y) = ({expected_src_pos_x_m[0]} m, {expected_src_pos_y_m[0]} m)")
 
