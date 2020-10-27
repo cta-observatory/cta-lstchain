@@ -21,6 +21,7 @@ $> python lstchain_dl2_to_dl3.py
 --add-irf True
 --input-irf-file ./IRF/irf.fits.gz
 --source-name Crab
+--obs-mode WOBBLE
 --config ../../data/data_selection_cuts.json
 """
 
@@ -78,6 +79,12 @@ parser.add_argument('--source-name', '-s', type=str,
                     default='Crab', required=True
                     )
 
+parser.add_argument('--obs-mode', '-mode', type=str,
+                    dest='obs_mode',
+                    help='Observation mode: ON, OFF or WOBBLE',
+                    default=None, required=True
+                    )
+
 parser.add_argument('--config', '-conf', type=Path,
                     dest='config',
                     help='Config file for selection cuts',
@@ -127,15 +134,9 @@ def main():
 
     data = data[data["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
 
-    #Temporary filter for non/fewer events file
-    #if len(data)<100:
-    #    log.error(len(data), 'events only')
-    #    log.error('Less than 100 events, please check the selection cuts')
-    #    sys.exit(1)
-
     #Create primary HDU
     events, gti, pointing = create_event_list(data=data, run_number=run_number,
-                    Source_name=args.source_name)
+                    source_name=args.source_name, mode=args.obs_mode)
 
     name_dl3_file = file.replace('dl2', 'dl3')
     name_dl3_file = name_dl3_file.replace('h5', 'fits')

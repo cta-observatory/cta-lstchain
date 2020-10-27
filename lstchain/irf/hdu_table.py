@@ -7,6 +7,7 @@ from lstchain.reco.utils import camera_to_altaz
 import astropy.units as u
 from astropy.table import Table, Column, vstack, QTable
 from astropy.io import fits
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
 __all__ = [
@@ -139,21 +140,26 @@ def create_obs_hdu_index(filename_list, fits_dir):
         # Obs_table
         t_obs = Table(
             {'OBS_ID' : [event_table.meta['OBS_ID']],
+            'DATE_OBS' : [event_table.meta['DATE_OBS']],
             'RA_PNT' : [pointing_table.meta['RA_PNT']],
             'DEC_PNT' : [pointing_table.meta['DEC_PNT']],
             'ZEN_PNT' : [90 - float(pointing_table.meta['ALT_PNT'])],
             'ALT_PNT' : [pointing_table.meta['ALT_PNT']],
             'AZ_PNT' : [pointing_table.meta['AZ_PNT']],
+            'RA_OBJ' : [event_table.meta['RA_OBJ']],
+            'DEC_OBJ' : [event_table.meta['DEC_OBJ']],
             'ONTIME': [event_table.meta["ONTIME"]],
             'LIVETIME' : [event_table.meta["LIVETIME"]],
             'DEADC' : [event_table.meta["DEADC"]],
             'TSTART' : [event_table.meta["TSTART"]],
             'TSTOP' : [event_table.meta["TSTOP"]],
             'OBJECT' : [event_table.meta['OBJECT']],
+            'OBS_MODE' : [event_table.meta['OBS_MODE']],
             'N_TELS' : [event_table.meta["N_TELS"]],
             'TELLIST' : [event_table.meta["TELLIST"]]},
-            dtype=('>i8', '>f4', '>f4', '>f4', '>f4', '>f4',
-            '>f4', '>f4', '>f4', '>f8', '>f8', 'S20','>i8', 'S20')
+            dtype=('>i8', '>S12','>f4', '>f4', '>f4', '>f4', '>f4',
+            '>f4', '>f4','>f4', '>f4', '>f4', '>f8', '>f8', 'S20',
+            '>S20', '>i8', 'S20')
             )
         obs_tables.append(t_obs)
 
@@ -186,7 +192,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
 
     return
 
-def create_event_list(data, run_number, Source_name):
+def create_event_list(data, run_number, source_name, mode):
     """
     Create the event_list BinTableHDUs from the given data
 
@@ -198,21 +204,23 @@ def create_event_list(data, run_number, Source_name):
                 Int
         Source_name: Name of the source
                 Str
+        Mode: Observation mode
+                Str, eg: ON, OFF, WOBBLE
     Returns
     -------
         Events HDU:  `astropy.io.fits.BinTableHDU`
         GTI HDU:  `astropy.io.fits.BinTableHDU`
         Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
-    name=Source_name
+    name=source_name
 
-    lam = 1000 #Average rate of triggered events, taken by hand for now
     # Timing parameters
+    lam = 2800 #Average rate of triggered events, taken by hand for now
     t_start = data['dragon_time'][0].value
     t_stop = data['dragon_time'][-1].value
     time = Time(data['dragon_time'], format='unix', scale="utc")
-
-    obs_time = t_stop-t_start
+    date_obs = time[0].to_value('iso', 'date')
+    obs_time = t_stop-t_start #All corrections excluded
 
     #Position parameters
     focal = 28 * u.m
@@ -227,6 +235,8 @@ def create_event_list(data, run_number, Source_name):
     coord_pointing = camera_to_altaz(pos_x = 0 * u.m, pos_y=0 * u.m, focal = focal,
                 pointing_alt = pointing_alt[0], pointing_az = pointing_az[0],
                 obstime = time[0])
+
+    object_radec=SkyCoord.from_name(source_name)
 
     ##########################################################################
     ### Event table
@@ -254,6 +264,7 @@ def create_event_list(data, run_number, Source_name):
     ev_header["HDUCLAS1"] = "EVENTS"
 
     ev_header["OBS_ID"] = run_number
+    ev_header["DATE_OBS"] = date_obs
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
     ev_header["MJDREFI"] = '40587' #Time('', format='mjd', scale="utc") # Unix 01/01/1970 0h0m0
@@ -261,18 +272,20 @@ def create_event_list(data, run_number, Source_name):
     ev_header["TIMEUNIT"] = 's'
     ev_header["TIMESYS"] = "UTC"
     ev_header["OBJECT"] = name
-    ev_header["TELLIST"] = 'LST-1'
-    ev_header["N_TELS"] = 1
+    ev_header["OBS_MODE"] = mode
+    ev_header["N_TELS"] = data["tel_id"][0]
+    ev_header["TELLIST"] = f'LST-{data["tel_id"][0]}'
 
     ev_header["RA_PNT"] = coord_pointing.icrs.ra.value
     ev_header["DEC_PNT"] = coord_pointing.icrs.dec.value
     ev_header["ALT_PNT"] = round(np.rad2deg(data['pointing_alt'].value.mean()),6)
     ev_header["AZ_PNT"] = round(np.rad2deg(data['pointing_az'].value[0]),6)
+    ev_header["RA_OBJ"] = object_radec.ra.value
+    ev_header["DEC_OBJ"] = object_radec.dec.value
     ev_header["FOVALIGN"] = 'ALTAZ'
-    ev_header["ONTIME"] = obs_time
 
+    ev_header["ONTIME"] = obs_time
     #Dead time for DRS4 chip is 26 u_sec
-    #Value of lam is taken by hand, to be around the same order of magnitude for now
     ev_header["DEADC"] = 1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
     ev_header["LIVETIME"] = ev_header["DEADC"]*ev_header["ONTIME"]
 

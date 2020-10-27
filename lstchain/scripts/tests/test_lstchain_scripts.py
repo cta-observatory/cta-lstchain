@@ -244,6 +244,7 @@ def test_dl3():
             '-add-irf', 'False',
             '-irf', irf_file,
             '-s', 'Gamma',
+			'-mode', 'OFF',
             '-conf', cuts
             )
 
