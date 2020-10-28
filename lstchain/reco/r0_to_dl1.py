@@ -430,12 +430,12 @@ def r0_to_dl1(
                 # DL1 output or not.
 
                 try:
-                    dl1_filled = get_dl1(event,
-                                         subarray,
-                                         telescope_id,
-                                         dl1_container=dl1_container,
-                                         custom_config=config,
-                                         use_main_island=True)
+                    get_dl1(event,
+                            subarray,
+                            telescope_id,
+                            dl1_container=dl1_container,
+                            custom_config=config,
+                            use_main_island=True)
 
                 except HillasParameterizationError:
                     logging.exception(
