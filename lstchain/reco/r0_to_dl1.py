@@ -142,7 +142,7 @@ def get_dl1(
         # Fill container
         dl1_container.fill_hillas(hillas)
 
-        if np.isfinite(dl1_container.intensity):
+        if dl1_container.intensity > 0:
             dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
         # convert ctapipe's width and length (in m) to deg:
