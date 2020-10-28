@@ -15,7 +15,7 @@ $> python lstchain_mc_sensitivity.py
 """
 
 
-from lstchain.mc.sensitivity import sensitivity_gamma_efficiency, sensitivity_gamma_efficiency_real_protons
+from lstchain.mc.sensitivity import sensitivity_gamma_efficiency, sensitivity_gamma_efficiency_real_protons, sensitivity_gamma_efficiency_real_data
 import matplotlib.pyplot as plt
 import astropy.units as u
 import pandas as pd
@@ -47,6 +47,9 @@ parser.add_argument('--input-file-gamma-dl2', '--gdl2', type = str,
 parser.add_argument('--input-file-proton-dl2', '--pdl2', type = str,
                     dest = 'dl2_file_p',
                     help = 'path to reconstructed protons dl2 file')
+parser.add_argument('--input-file-on-dl2', '--ondl2', type = str,
+                    dest = 'dl2_file_on',
+                    help = 'path to reconstructed ON dl2 file')
 parser.add_argument('--output_path', '--o', type = str,
                     dest = 'output_path',
                     help = 'path where to save plot images')
@@ -61,7 +64,8 @@ def main():
     obstime = 50 * 3600 * u.s
     noff = 5
     geff_gammaness = 0.8 #Gamma efficincy of gammaness cut
-    geff_theta2 = 0.8 #Gamma efficiency of theta2 cut
+    geff_theta2 = 0.8
+    #Gamma efficiency of theta2 cut
 
 
     # Calculate the sensitivity
@@ -76,9 +80,10 @@ def main():
                                                                                          noff,
                                                                                          obstime)
 
+
     '''
 
-    energy,sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency_real_protons(args.dl2_file_g,
+    energy,mc_sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency_real_protons(args.dl2_file_g,
                                                                                              args.dl2_file_p,
                                                                                              ntelescopes_gamma,
                                                                                              n_bins_energy,
@@ -87,8 +92,21 @@ def main():
                                                                                              noff,
                                                                                              obstime)
 
-    events[events.mc_type==0].alt_tel = events[events.mc_type==0].mc_alt
-    events[events.mc_type==0].az_tel = events[events.mc_type==0].mc_az
+
+    energy,sensitivity,result,events, gcut, tcut=sensitivity_gamma_efficiency_real_data(args.dl2_file_on,
+                                                                                        args.dl2_file_p,
+                                                                                        gcut,
+                                                                                        tcut,
+                                                                                        n_bins_energy,
+                                                                                        geff_gammaness,
+                                                                                        geff_theta2,
+                                                                                        noff,
+                                                                                        obstime)
+
+
+
+    #events[events.mc_type==0].alt_tel = events[events.mc_type==0].mc_alt
+    #events[events.mc_type==0].az_tel = events[events.mc_type==0].mc_az
 
 
     print("\nOptimal gammaness cuts:", gcut)
@@ -111,7 +129,8 @@ def main():
     plot_utils.plot_Crab_SED(ax, 100, 50, 5e4, label="100% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 10, 50, 5e4, linestyle='--', label="10% Crab") #Energy in GeV
     plot_utils.plot_Crab_SED(ax, 1, 50, 5e4, linestyle=':', label="1% Crab") #Energy in GeV
-    plot_utils.plot_sensitivity(energy, sensitivity, ax)
+    plot_utils.plot_sensitivity(energy, sensitivity, ax, color='orange', label="Sensitivity real data")
+    plot_utils.plot_sensitivity(energy, mc_sensitivity, ax, color='green', label="Sensitivity MC gammas")
     plt.legend(prop={'size': 12})
     plt.savefig(args.output_path+"/sensitivity.png")
     plt.show()
