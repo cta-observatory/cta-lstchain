@@ -17,11 +17,11 @@ are unit tested and should be working as long as the build status is passing.
 ### As user
 
 ```
-LSTCHAIN_VER=0.6.3
+LSTCHAIN_VER=0.6.2
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
-pip install https://github.com/cta-observatory/cta-lstchain/archive/v$LSTCHAIN_VER.tar.gz
+pip install lstchain==$LSTCHAIN_VER
 rm environment.yml
 ```
 
