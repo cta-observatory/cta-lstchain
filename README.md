@@ -21,7 +21,7 @@ LSTCHAIN_VER=0.6.3
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
-pip install https://github.com/cta-observatory/cta-lstchain/archive/v$LSTCHAIN_VER.tar.gz
+pip install lstchain==$LSTCHAIN_VER
 rm environment.yml
 ```
 
