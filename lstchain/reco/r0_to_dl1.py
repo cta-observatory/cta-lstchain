@@ -60,6 +60,7 @@ from ..io.io import write_array_info_08
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..pointing import PointingPosition
+from ..io.io import dl1_params_lstcam_key
 
 logger = logging.getLogger(__name__)
 
@@ -430,12 +431,12 @@ def r0_to_dl1(
                 # DL1 output or not.
 
                 try:
-                    get_dl1(event,
-                            subarray,
-                            telescope_id,
-                            dl1_container=dl1_container,
-                            custom_config=config,
-                            use_main_island=True)
+                    dl1_filled = get_dl1(event,
+                                         subarray,
+                                         telescope_id,
+                                         dl1_container=dl1_container,
+                                         custom_config=config,
+                                         use_main_island=True)
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -635,108 +636,110 @@ def r0_to_dl1(
                         dl1_container.az_tel = u.Quantity(np.nan, u.rad)
                         dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
 
-                    dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
-                    dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
-
-                    # FIXME: no need to read telescope characteristics like foclen for every event!
-                    foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-                    mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
-                    dl1_container.prefix = tel.prefix
-
-                    # extra info for the image table
-                    extra_im.tel_id = telescope_id
-                    extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
-
-                    for container in [extra_im, dl1_container, event.r0, tel]:
-                        add_global_metadata(container, metadata)
-
-                    event.r0.prefix = ''
-
-                    writer.write(table_name = f'telescope/image/{tel_name}',
-                                 containers = [event.r0, tel, extra_im])
-                    writer.write(table_name = f'telescope/parameters/{tel_name}',
-                                 containers = [dl1_container])
-
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
-                    if not is_simu:
-                        bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
-                        # Set to 0 unreliable pixels:
-                        image = tel.image*(~bad_pixels)
+                    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                    # Set to 0 unreliable pixels:
+                    image = tel.image * (~bad_pixels)
 
-                        # process only promising events, in terms of # of pixels with large signals:
-                        if tag_pix_thr(image):
+                    # process only promising events, in terms of # of pixels with large signals:
+                    if tag_pix_thr(image):
 
-                            # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                            numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
-                            bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
-                            bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
-                            # Now set to 0 all samples in unreliable pixels. Important for global peak
-                            # integrator in case of crazy pixels!  TBD: can this be done in a simpler
-                            # way?
-                            bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
-                                                      np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+                        # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
+                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
+                        bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+                        bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
+                        # Now set to 0 all samples in unreliable pixels. Important for global peak
+                        # integrator in case of crazy pixels!  TBD: can this be done in a simpler
+                        # way?
+                        bad_waveform = np.array(([np.transpose(np.array(numsamples * [bad_pixels_hg])),
+                                                  np.transpose(np.array(numsamples * [bad_pixels_lg]))]))
 
-                            # print('hg bad pixels:',np.where(bad_pixels_hg))
-                            # print('lg bad pixels:',np.where(bad_pixels_lg))
+                        # print('hg bad pixels:',np.where(bad_pixels_hg))
+                        # print('lg bad pixels:',np.where(bad_pixels_lg))
 
-                            event.r1.tel[telescope_id].waveform *= ~bad_waveform
-                            r1_dl1_calibrator_for_muon_rings(event)
+                        event.r1.tel[telescope_id].waveform *= ~bad_waveform
+                        r1_dl1_calibrator_for_muon_rings(event)
 
-                            tel = event.dl1.tel[telescope_id]
-                            image = tel.image*(~bad_pixels)
+                        tel = event.dl1.tel[telescope_id]
+                        image = tel.image * (~bad_pixels)
 
-                            # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
-                            # perhaps the event is no longer promising (e.g. if it has a large time evolution)
-                            if not tag_pix_thr(image):
-                                good_ring = False
-                            else:
-                                # read geometry from event.inst. But not needed for every event. FIXME?
-                                geom = subarray.tel[telescope_id].\
-                                    camera.geometry
+                        # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
+                        # perhaps the event is no longer promising (e.g. if it has a large time evolution)
+                        if not tag_pix_thr(image):
+                            good_ring = False
+                        else:
+                            # read geometry from event.inst. But not needed for every event. FIXME?
+                            geom = subarray.tel[telescope_id]. \
+                                camera.geometry
 
-                                muonintensityparam, dist_mask, \
-                                ring_size, size_outside_ring, muonringparam, \
-                                good_ring, radial_distribution, \
-                                mean_pixel_charge_around_ring,\
-                                muonpars = \
-                                    analyze_muon_event(subarray,
-                                                       event.index.event_id,
-                                                       image, geom, foclen,
-                                                       mirror_area, False, '')
-                                #                      mirror_area, True, './')
-                                #           (test) plot muon rings as png files
+                            muonintensityparam, dist_mask, \
+                            ring_size, size_outside_ring, muonringparam, \
+                            good_ring, radial_distribution, \
+                            mean_pixel_charge_around_ring, \
+                            muonpars = \
+                                analyze_muon_event(subarray,
+                                                   event.index.event_id,
+                                                   image, geom, foclen,
+                                                   mirror_area, False, '')
+                            #                      mirror_area, True, './')
+                            #           (test) plot muon rings as png files
 
-                                # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                                bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
-                                stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
-                                # stacked waveforms from all bright pixels; shape (ngains, nsamples)
-                                hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
-                                lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+                            # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
+                            bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:,
+                                                      image > min_pe_for_muon_t_calc, :]
+                            stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+                            # stacked waveforms from all bright pixels; shape (ngains, nsamples)
+                            hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
+                            lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
 
-                            if good_ring:
-                                fill_muon_event(-1,
-                                                muon_parameters,
-                                                good_ring,
-                                                event.index.event_id,
-                                                dragon_time,
-                                                muonintensityparam,
-                                                dist_mask,
-                                                muonringparam,
-                                                radial_distribution,
-                                                ring_size,
-                                                size_outside_ring,
-                                                mean_pixel_charge_around_ring,
-                                                muonpars,
-                                                hg_peak_sample, lg_peak_sample)
+                        if good_ring:
+                            fill_muon_event(-1,
+                                            muon_parameters,
+                                            good_ring,
+                                            event.index.event_id,
+                                            dragon_time,
+                                            muonintensityparam,
+                                            dist_mask,
+                                            muonringparam,
+                                            radial_distribution,
+                                            ring_size,
+                                            size_outside_ring,
+                                            mean_pixel_charge_around_ring,
+                                            muonpars,
+                                            hg_peak_sample, lg_peak_sample)
 
-                    # writes mc information per telescope, including photo electron image
-                    if is_simu \
-                            and (event.mc.tel[telescope_id].true_image > 0).any() \
-                            and config['write_pe_image']:
-                        event.mc.tel[telescope_id].prefix = ''
-                        writer.write(table_name=f'simulation/{tel_name}',
-                                     containers=[event.mc.tel[telescope_id], extra_im]
-                                     )
+
+                dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
+                dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
+
+                # FIXME: no need to read telescope characteristics like foclen for every event!
+                foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+                mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+                dl1_container.prefix = tel.prefix
+
+                # extra info for the image table
+                extra_im.tel_id = telescope_id
+                extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
+
+                for container in [extra_im, dl1_container, event.r0, tel]:
+                    add_global_metadata(container, metadata)
+
+                event.r0.prefix = ''
+
+                writer.write(table_name=f'telescope/image/{tel_name}',
+                             containers=[event.r0, tel, extra_im])
+                writer.write(table_name=f'telescope/parameters/{tel_name}',
+                             containers=[dl1_container])
+
+
+                # writes mc information per telescope, including photo electron image
+                if is_simu \
+                        and (event.mc.tel[telescope_id].true_image > 0).any() \
+                        and config['write_pe_image']:
+                    event.mc.tel[telescope_id].prefix = ''
+                    writer.write(table_name=f'simulation/{tel_name}',
+                                 containers=[event.mc.tel[telescope_id], extra_im]
+                                 )
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics
@@ -757,8 +760,7 @@ def r0_to_dl1(
         # Reconstruct source position from disp for all events and write the result in the output file
         for tel_name in ['LST_LSTCam']:
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-            dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
-            add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
+            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal)
 
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
