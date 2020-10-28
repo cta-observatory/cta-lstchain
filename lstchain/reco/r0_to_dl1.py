@@ -149,8 +149,6 @@ def get_dl1(
         dl1_container.width = width
         dl1_container.length = length
 
-        dl1_container.set_mc_core_distance(calibrated_event, subarray.positions[telescope_id])
-        dl1_container.set_mc_type(calibrated_event)
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
                                           image[signal_pixels],
                                           peak_time[signal_pixels],
@@ -455,7 +453,7 @@ def r0_to_dl1(
                     if is_simu:
                         dl1_container.mc_energy = event.mc.energy.to_value(u.TeV)
                         dl1_container.log_mc_energy = np.log10(event.mc.energy.to_value(u.TeV))
-                        dl1_container.fill_mc(event)
+                        dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
