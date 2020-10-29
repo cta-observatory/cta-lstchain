@@ -452,11 +452,8 @@ def filter_events(events,
     filter = np.ones(len(events), dtype=bool)
 
     for k in filters.keys():
-        if k in events.columns:
-            filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
-        else:
-            raise KeyError(f'{k} does not exist in the list of keys')
-
+        filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+        
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events.columns)))
         with pd.option_context('mode.use_inf_as_null', True):
