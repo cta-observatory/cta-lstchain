@@ -2,11 +2,11 @@ from ctapipe.utils import get_dataset_path
 import numpy as np
 import pytest
 import os
-import shutil
 import pandas as pd
-from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 import astropy.units as u
+import tables
 
 test_dir = 'testfiles'
 
@@ -98,6 +98,21 @@ def test_r0_to_dl1():
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
+
+@pytest.mark.run(after='test_r0_to_dl1')
+def test_content_dl1():
+    # test presence of images and parameters
+    with tables.open_file(dl1_file) as f:
+        images_table = f.root[dl1_images_lstcam_key]
+        params_table = f.root[dl1_params_lstcam_key]
+        assert 'image' in images_table.colnames
+        assert 'peak_time' in images_table.colnames
+        assert 'tel_id' in images_table.colnames
+        assert 'obs_id' in images_table.colnames
+        assert 'event_id' in images_table.colnames
+        assert 'tel_id' in params_table.colnames
+        assert 'event_id' in params_table.colnames
+        assert 'obs_id' in params_table.colnames
 
 def test_get_source_dependent_parameters():
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters

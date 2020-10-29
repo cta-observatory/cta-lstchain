@@ -659,10 +659,10 @@ def r0_to_dl1(
 
                     event.r0.prefix = ''
 
-                    writer.write(table_name = f'telescope/image/{tel_name}',
-                                 containers = [event.r0, tel, extra_im])
-                    writer.write(table_name = f'telescope/parameters/{tel_name}',
-                                 containers = [dl1_container])
+                    writer.write(table_name=f'telescope/image/{tel_name}',
+                                 containers=[event.index, tel, extra_im])
+                    writer.write(table_name=f'telescope/parameters/{tel_name}',
+                                 containers=[event.index, dl1_container])
 
                     # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                     if not is_simu:
