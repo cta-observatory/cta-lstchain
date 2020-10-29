@@ -455,7 +455,7 @@ def filter_events(events,
         if k in events.columns:
             filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
         else:
-            raise TypeError(f'{k} does not exist in the list of keys')
+            raise KeyError(f'{k} does not exist in the list of keys')
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events.columns)))
