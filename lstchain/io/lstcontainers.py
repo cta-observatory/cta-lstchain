@@ -138,8 +138,8 @@ class DL1ParametersContainer(Container):
         fill from mc
         """
         try:
-            self.mc_energy = event.mc.energy.to_value(u.TeV)
-            self.log_mc_energy = np.log10(self.mc_energy)
+            self.mc_energy = event.mc.energy
+            self.log_mc_energy = np.log10(self.mc_energy.to_value(u.TeV))
             self.mc_alt = event.mc.alt
             self.mc_az = event.mc.az
             self.mc_core_x = event.mc.core_x
