@@ -434,6 +434,9 @@ def r0_to_dl1(
                 # Will determine whether this event has to be written to the
                 # DL1 output or not.
 
+                if is_simu:
+                    dl1_container.fill_mc(event, subarray.positions[telescope_id])
+
                 try:
                     dl1_filled = get_dl1(event,
                                          subarray,
@@ -451,12 +454,6 @@ def r0_to_dl1(
                 # is a relic of previous approach in which only survivors of
                 # cleaning and parametrization were further processed.
                 if dl1_filled is not None:
-
-                    # Log10(Energy) in TeV
-                    if is_simu:
-                        dl1_container.mc_energy = event.mc.energy.to_value(u.TeV)
-                        dl1_container.log_mc_energy = np.log10(event.mc.energy.to_value(u.TeV))
-                        dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
