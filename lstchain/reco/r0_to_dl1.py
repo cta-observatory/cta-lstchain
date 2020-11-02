@@ -405,8 +405,6 @@ def r0_to_dl1(
                 # calibrate and extract image from event
                 r1_dl1_calibrator(event)
 
-                # update the calibration index in the dl1 event container
-                dl1_container.calibration_id = calibration_index.calibration_id
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -419,6 +417,9 @@ def r0_to_dl1(
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
                 dl1_container.reset()
+
+                # update the calibration index in the dl1 event container
+                dl1_container.calibration_id = calibration_index.calibration_id
 
                 dl1_container.fill_event_info(event)
 
