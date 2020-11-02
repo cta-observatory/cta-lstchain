@@ -868,12 +868,12 @@ def write_subarray_tables(writer, event, metadata=None):
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
-        add_global_metadata(event.dl0, metadata)
+        add_global_metadata(event.index, metadata)
         add_global_metadata(event.mc, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trigger])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
 def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
