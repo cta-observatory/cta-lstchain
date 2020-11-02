@@ -418,6 +418,8 @@ def r0_to_dl1(
 
                 dl1_container.reset()
 
+                dl1_container.fill_event_info(event)
+
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
@@ -447,8 +449,6 @@ def r0_to_dl1(
                 # is a relic of previous approach in which only survivors of
                 # cleaning and parametrization were further processed.
                 if dl1_filled is not None:
-
-                    dl1_container.fill_event_info(event)
 
                     # Log10(Energy) in TeV
                     if is_simu:
