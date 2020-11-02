@@ -133,7 +133,7 @@ class DL1ParametersContainer(Container):
         for key in hillas.keys():
             self[key] = hillas[key]
 
-    def fill_mc(self, event):
+    def fill_mc(self, event, tel_pos):
         """
         fill from mc
         """
@@ -148,6 +148,14 @@ class DL1ParametersContainer(Container):
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
+            self.mc_type = event.mc.shower_primary_id
+            distance = np.sqrt(
+                (event.mc.core_x - tel_pos[0]) ** 2 +
+                (event.mc.core_y - tel_pos[1]) ** 2
+            )
+            if np.isfinite(distance):
+                self.mc_core_distance = distance
+
         except IndexError:
             print("mc information not filled")
 
@@ -162,14 +170,6 @@ class DL1ParametersContainer(Container):
             else self[k]
             for k in features_names
         ])
-
-    def set_mc_core_distance(self, event, tel_pos):
-        distance = np.sqrt(
-            (event.mc.core_x - tel_pos[0]) ** 2 +
-            (event.mc.core_y - tel_pos[1]) ** 2
-        )
-        if np.isfinite(distance):
-            self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
         disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
@@ -218,8 +218,7 @@ class DL1ParametersContainer(Container):
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
 
-    def set_mc_type(self, event):
-        self.mc_type = event.mc.shower_primary_id
+
 
 
 class DispContainer(Container):

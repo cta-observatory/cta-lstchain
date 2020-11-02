@@ -361,15 +361,58 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
+    This is a temporary solution until we move to ctapipe v0.9.1. 
 
     Parameters
     ----------
     subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     output_filename: str
     """
-    stage1 = Stage1ProcessorTool()
-    stage1.output_path = output_filename
-    stage1._write_instrument_configuration(subarray)
+
+    serialize_meta = True
+
+    subarray.to_table().write(
+      output_filename,
+      path="/configuration/instrument/subarray/layout",
+      serialize_meta=serialize_meta,
+      append=True,
+    )
+
+    subarray.to_table(kind="optics").write(
+      output_filename,
+      path="/configuration/instrument/telescope/optics",
+      append=True,
+      serialize_meta=serialize_meta,
+    )
+
+    for telescope_type in subarray.telescope_types:
+      ids = set(subarray.get_tel_ids_for_type(telescope_type))
+      if len(ids) > 0: # only write if there is a telescope with this camera
+        tel_id = list(ids)[0]
+        camera = subarray.tel[tel_id].camera
+        camera_name = f'geometry_{camera}'
+        with tables.open_file(output_filename, mode='a') as f:
+          telescope_chidren = f.root['/configuration/instrument/telescope']._v_children.keys()
+          if 'camera' in telescope_chidren:
+            cameras_name = f.root['/configuration/instrument/telescope/camera']._v_children.keys()
+            if camera_name in cameras_name:
+              print(
+                f'WARNING during lstchain.io.write_array_info_08():',
+                f'camera {camera_name} seems to be already present in the h5 file.'
+              )
+              continue
+        camera.geometry.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
+          append=True,
+          serialize_meta=serialize_meta          
+        )
+        camera.readout.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/readout_{camera}",
+          append=True,
+          serialize_meta=serialize_meta
+        )
 
 
 @deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
@@ -826,12 +869,12 @@ def write_subarray_tables(writer, event, metadata=None):
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
-        add_global_metadata(event.dl0, metadata)
+        add_global_metadata(event.index, metadata)
         add_global_metadata(event.mc, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trigger])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
 def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
