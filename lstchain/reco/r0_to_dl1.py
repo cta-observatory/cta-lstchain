@@ -60,6 +60,7 @@ from ..io.io import write_array_info_08
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..pointing import PointingPosition
+from ..io.io import dl1_params_lstcam_key
 
 logger = logging.getLogger(__name__)
 
@@ -758,8 +759,7 @@ def r0_to_dl1(
         # Reconstruct source position from disp for all events and write the result in the output file
         for tel_name in ['LST_LSTCam']:
             focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-            dl1_params_key = f'dl1/event/telescope/parameters/{tel_name}'
-            add_disp_to_parameters_table(output_filename, dl1_params_key, focal)
+            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal)
 
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
