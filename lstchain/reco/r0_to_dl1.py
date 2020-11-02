@@ -416,6 +416,8 @@ def r0_to_dl1(
 
             for ii, telescope_id in enumerate(event.r0.tels_with_data):
 
+                dl1_container.reset()
+
                 tel = event.dl1.tel[telescope_id]
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
