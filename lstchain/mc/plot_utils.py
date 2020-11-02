@@ -154,7 +154,7 @@ def plot_LST_preliminary_sensitivity(ax, **kwargs):
     sensitivity = s[:,1]
     sensitivity_flux = sensitivity / 100 * (crab_hegra(e)[0] * e * e).to(u.TeV / (u.cm ** 2 * u.s))
     ax.loglog(e.to(u.GeV), sensitivity_flux,
-              **kwargs, label = 'LST sensitivity (PRELIMINARY)')
+              **kwargs, label = 'LST sensitivity source dependent')
 
     return ax
 

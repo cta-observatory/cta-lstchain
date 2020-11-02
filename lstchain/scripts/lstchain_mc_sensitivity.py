@@ -58,13 +58,13 @@ args = parser.parse_args()
 
 
 def main():
-    ntelescopes_gamma = 4
-    ntelescopes_protons = 4
+    ntelescopes_gamma = 1
+    ntelescopes_protons = 1
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5
     geff_gammaness = 0.8 #Gamma efficincy of gammaness cut
-    geff_theta2 = 0.8
+    geff_theta2 = 0.68
     #Gamma efficiency of theta2 cut
 
 
@@ -83,7 +83,7 @@ def main():
 
     '''
 
-    energy,mc_sensitivity,result,events, gcut, tcut = sensitivity_gamma_efficiency_real_protons(args.dl2_file_g,
+    mc_energy,mc_sensitivity,mc_result,mc_events, gcut, tcut = sensitivity_gamma_efficiency_real_protons(args.dl2_file_g,
                                                                                              args.dl2_file_p,
                                                                                              ntelescopes_gamma,
                                                                                              n_bins_energy,
@@ -92,31 +92,34 @@ def main():
                                                                                              noff,
                                                                                              obstime)
 
+    # Saves the results
+ #   mc_events.to_hdf(args.output_path+'/mc_sensitivity.h5', key='data', mode='w')
+    mc_result.to_hdf(args.output_path+'/mc_sensitivity.h5', key='results')
+
+    print("\nOptimal gammaness cuts:", gcut)
+    print("Optimal theta2 cuts: {} \n".format(tcut))
 
     energy,sensitivity,result,events, gcut, tcut=sensitivity_gamma_efficiency_real_data(args.dl2_file_on,
                                                                                         args.dl2_file_p,
                                                                                         gcut,
                                                                                         tcut,
                                                                                         n_bins_energy,
+                                                                                        mc_energy,
                                                                                         geff_gammaness,
                                                                                         geff_theta2,
                                                                                         noff,
                                                                                         obstime)
-
-
+    print("\nOptimal gammaness cuts:", gcut)
+    print("Optimal theta2 cuts: {} \n".format(tcut))
 
     #events[events.mc_type==0].alt_tel = events[events.mc_type==0].mc_alt
     #events[events.mc_type==0].az_tel = events[events.mc_type==0].mc_az
-
-
-    print("\nOptimal gammaness cuts:", gcut)
-    print("Optimal theta2 cuts: {} \n".format(tcut))
 
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
     # Saves the results
-    events.to_hdf(args.output_path+'/sensitivity.h5', key='data', mode='w')
+#    events.to_hdf(args.output_path+'/sensitivity.h5', key='data', mode='w')
     result.to_hdf(args.output_path+'/sensitivity.h5', key='results')
 
     # Plots

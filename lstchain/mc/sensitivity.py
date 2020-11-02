@@ -96,7 +96,7 @@ def process_mc(dl2_file, mc_type):
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
-        & (events.intensity > 200)
+        & (events.intensity > 100)
     )
     events = events[filter_good_events]
 
@@ -133,7 +133,7 @@ def process_real(dl2_file):
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
-        & (events.intensity > 200)
+        & (events.intensity > 100)
     )
     events = events[filter_good_events]
 
@@ -206,7 +206,24 @@ def get_weights(mc_par, spectral_par):
                  mc_par['sim_ev'], spectral_par)
     return w
 
-def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency, real=False):
+def diff_events_after_cut_real(events_on, events_off, obstime_on, obstime_off, feature, cut, gamma_efficiency):
+
+    total_signal=events_on.shape[0] - (events_off.shape[0]*obstime_on/obstime_off)
+    if feature=="gammaness":
+        events_on_after_cut=events_on[events_on[feature]>cut].shape[0]
+        events_off_after_cut=events_off[events_off[feature]>cut].shape[0]*obstime_on/obstime_off
+
+    else:
+        events_on_after_cut=events_on[events_on[feature]<cut].shape[0]
+        events_off_after_cut=events_off[events_off[feature]<cut].shape[0]*obstime_on/obstime_off
+
+    signal_after_cut=events_on_after_cut-events_off_after_cut
+
+    print(signal_after_cut, total_signal, gamma_efficiency*total_signal)
+    return gamma_efficiency*total_signal-signal_after_cut
+
+
+def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency):
     """
     This function calculates the difference between the number of events after the cut
     in feature and gamma_efficiency*total number of events
@@ -225,21 +242,15 @@ def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency
     midpoint: `float` cut in feature
 
     """
-    if real==False:
-        total_events=np.sum(rates) * obstime
-    else:
-        total_events=events.shape[0]
+
+    total_events=np.sum(rates) * obstime
+
 
     if feature=="gammaness":
-        if real==False:
-            events_after_cut=np.sum(rates[events[feature]>cut]) * obstime
-        else:
-            events_after_cut=events[events[feature]>cut].shape[0]
+        events_after_cut=np.sum(rates[events[feature]>cut]) * obstime
+
     else:
-        if real==False:
-            events_after_cut=np.sum(rates[events[feature]<cut]) * obstime
-        else:
-            events_after_cut=events[events[feature]<cut].shape[0]
+        events_after_cut=np.sum(rates[events[feature]<cut]) * obstime
 
     return gamma_efficiency*total_events-events_after_cut
 
@@ -258,7 +269,7 @@ def samesign(a,b):
     """
     return a * b > 0
 
-def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficiency, real=False):
+def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficiency):
     """
     Find cut in feature that corresponds to gamma efficiency.
     Bisection method is used to find the root of the function
@@ -296,16 +307,61 @@ def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficienc
 
     while tol > 1e-6:
         midpoint = (lookfor_cut + alternative_cut) / 2.0
+        if samesign(diff_events_after_cut(events, rates, obstime, feature, lookfor_cut, gamma_efficiency),
+                    diff_events_after_cut(events, rates, obstime, feature, midpoint, gamma_efficiency)):
+            lookfor_cut = midpoint
+        else:
+            alternative_cut = midpoint
+        tol = abs(alternative_cut -lookfor_cut)
+    return midpoint
 
-        if samesign(diff_events_after_cut(events, rates, obstime, feature, lookfor_cut, gamma_efficiency, real),
-                    diff_events_after_cut(events, rates, obstime, feature, midpoint, gamma_efficiency, real)):
+def find_cut_real(events_on, events_off, obstime_on, obstime_off, feature, low_cut, high_cut, gamma_efficiency):
+    """
+    Find cut in feature that corresponds to gamma efficiency.
+    Bisection method is used to find the root of the function
+    Number of events after cuts - gamma_efficiency*total number of events
+
+    Paramenters
+    ---------
+    events:  `pd.dataframe` Dataframe of events
+    rates: `np.ndarray` gamma rates
+    obstime: `observation time`
+    feature: `string` feature for cut: gammaness or theta2
+    low_cut: `float` lower cut limit
+    high_cut: `float` higher cut limit
+    gamma_efficiency: `float` target gamma efficiency for the cut
+
+    Returns
+    ---------
+    midpoint: `float` cut in feature
+
+    """
+    if events_on.shape[0] == 0:
+        if feature=="gammaness":
+            return low_cut
+        else:
+            return high_cut
+
+    tol = 1000
+
+    if feature=="gammaness":
+        lookfor_cut = high_cut
+        alternative_cut = low_cut
+    else:
+        lookfor_cut = low_cut
+        alternative_cut = high_cut
+
+    while tol > 1e-6:
+        midpoint = (lookfor_cut + alternative_cut) / 2.0
+
+        if samesign(diff_events_after_cut_real(events_on, events_off, obstime_on, obstime_off, feature, lookfor_cut, gamma_efficiency),
+                    diff_events_after_cut_real(events_on, events_off, obstime_on, obstime_off, feature, midpoint, gamma_efficiency)):
             lookfor_cut = midpoint
         else:
             alternative_cut = midpoint
 
         tol = abs(alternative_cut -lookfor_cut)
     return midpoint
-
 
 def calculate_sensitivity(n_excesses, n_background, alpha):
     """
@@ -717,7 +773,6 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
     gammaness_p, angdist2_p, e_reco_p, events_p, obstime_real = process_real(dl2_file_p)
     e_reco_p = events_p["reco_energy"]
     gammaness_p = events_p["gammaness"]
-    obstime_real = 4188.0 *u.s
 
     #Account for the number of telescopes simulated
     mc_par_g['sim_ev'] = mc_par_g['sim_ev'] * ntelescopes_gammas
@@ -745,7 +800,8 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
                       * w_g
 
     #For background, select protons contained in a ring overlapping with the ON region
-    p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
+    p_contained, ang_area_p = ring_containment(angdist2_p, 0.5 * u.deg, 0.5 * u.deg)
+    #p_contained, ang_area_p = ring_containment(angdist2_p, 0.4 * u.deg, 0.3 * u.deg)
     # FIX: ring_radius and ring_halfwidth should have units of deg
     # FIX: hardcoded at the moment, but ring_radius should be read from
     # the gamma file (point-like) or given as input (diffuse).
@@ -796,7 +852,11 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
         events_bin_p = events_p[(e_reco_p < energy[i+1]) & (e_reco_p > energy[i])]
 
         best_g_cut = find_cut(events_bin_g, rates_g, obstime,  "gammaness", 0.0, 1.0, gamma_eff_gammaness)
-        best_theta2_cut = find_cut(events_bin_g, rates_g, obstime, "theta2", 0.0, 10.0, gamma_eff_theta2) * u.deg**2
+
+        events_g_after_g_cut=events_bin_g[events_bin_g.gammaness > best_g_cut]
+        rates_g_after_g_cut=rates_g[events_bin_g.gammaness > best_g_cut]
+
+        best_theta2_cut = find_cut(events_g_after_g_cut, rates_g_after_g_cut, obstime, "theta2", 0.0, .5, gamma_eff_theta2) * u.deg**2
 
         events_bin_after_cuts_g = events_bin_g[(events_bin_g.gammaness > best_g_cut) &(events_bin_g.theta2 < best_theta2_cut)]
 
@@ -822,7 +882,7 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
                                & (gammaness_p > best_g_cut) & p_contained].shape[0]/obstime_real
 
         gamma_rate[i] = rate_g_ebin.to(1/u.min).to_value()
-        proton_rate[i] = rate_p_ebin.to(1/u.min).to_value()
+        proton_rate[i] = rate_p_ebin.to(1/u.min).to_value()*area_ratio_p
 
         final_gammas[i] = rate_g_ebin * obstime
         final_protons[i] = rate_p_ebin * obstime * area_ratio_p
@@ -865,8 +925,6 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
 
     sensitivity[conditions] = np.inf
 
-    print(final_protons)
-
     # Compute sensitivity in flux units
     egeom = np.sqrt(energy[1:] * energy[:-1])
     dFdE, par = crab_hegra(egeom)
@@ -897,6 +955,7 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
 def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
                                            gcut, tcut,
                                            n_bins_energy,
+                                           energy,
                                            gamma_eff_gammaness,
                                            gamma_eff_theta2,
                                            noff,
@@ -930,17 +989,11 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     gammaness_on, theta2_on, e_reco_on, events_on, obstime_on = process_real(dl2_file_on)
     gammaness_off, angdist2_off, e_reco_off, events_off, obstime_off = process_real(dl2_file_off)
 
-    obstime_on = 6846.0 *u.s
-    obstime_off = 4188.0 *u.s
-
-    emin_sensitivity =  0.01 * u.TeV
-    emax_sensitivity =  100  * u.TeV
-
-    #Energy bins
-    energy = np.logspace(np.log10(emin_sensitivity.to_value()),
-                        np.log10(emax_sensitivity.to_value()), n_bins_energy + 1) * u.TeV
+    #obstime_on = 6846.0 *u.s
+    #obstime_off = 4188.0 *u.s
 
     # Extract spectral parameters
+    print(energy)
     dFdE, crab_par = crab_hegra(energy)
 
     #For background, select protons contained in a ring overlapping with the ON region
@@ -984,12 +1037,19 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
         #Calculate the cuts in gammaness and theta2 based on efficiency of weighted gammas
 
         events_bin_on = events_on[(e_reco_on < energy[i+1]) & (e_reco_on > energy[i])]
+
         events_bin_off = events_off[(e_reco_off < energy[i+1]) & (e_reco_off > energy[i])]
 
         best_g_cut = gcut[i]#find_cut(events_bin_on, 1, obstime,  "gammaness", 0, 1.0, gamma_eff_gammaness, True)
 
-        best_theta2_cut = tcut[i] #find_cut(events_bin_on, 1, obstime, "theta2", 0.0, 10.0, gamma_eff_theta2, True) * u.deg**2
-        best_theta2_cut_off=0.5
+
+
+        events_on_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
+        events_off_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
+
+        best_theta2_cut = tcut[i]#find_cut_real(events_on_after_g_cut, events_off_after_g_cut, obstime_on, obstime_off, "theta2", 0.0, 1.0, gamma_eff_theta2) * u.deg**2
+        #tcut[i]=best_theta2_cut.to_value()
+        best_theta2_cut_off=0.5 #* u.deg**2
 
         events_bin_after_cuts_on = events_bin_on[(events_bin_on.gammaness > best_g_cut) & \
                                                  (events_bin_on.theta2 < best_theta2_cut)]
@@ -1014,7 +1074,7 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
                                  (events_bin_on.theta2 < best_theta2_cut)].shape[0]/obstime_on
 
         on_rate[i] = rate_on_ebin.to(1/u.min).to_value()
-        off_rate[i] = rate_off_ebin.to(1/u.min).to_value()
+        off_rate[i] = rate_off_ebin.to(1/u.min).to_value() * area_ratio_p
 
         final_on[i] = rate_on_ebin * obstime
         final_off[i] = rate_off_ebin * obstime * area_ratio_p
@@ -1034,6 +1094,8 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
         eff_off[i] = pre_off[i] / events_bin_off.shape[0]
 
     signal = final_on - final_off
+
+    rate_gammas = (signal/obstime).to(1/u.min).to_value()
 
     n_excesses_min, sensitivity = calculate_sensitivity_lima(signal, final_off*noff,
     1/noff* np.ones_like(final_on))
@@ -1065,8 +1127,8 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     print("\n**************\n")
 
     list_of_tuples = list(zip(energy[:energy.shape[0]-1].to_value(), energy[1:].to_value(), gcut, tcut,
-                            final_on, final_off,
-                            on_rate, off_rate,
+                              final_on, final_off,
+                              rate_gammas, off_rate,
                               n_excesses_min, sensitivity, sensitivity_flux.to_value(),
                               eff_on, eff_off, pre_on, pre_off))
 
