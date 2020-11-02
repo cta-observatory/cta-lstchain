@@ -99,9 +99,7 @@ class DL1ParametersContainer(Container):
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
     mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm**2)
-    mc_core_distance = Field(
-            u.Quantity(np.nan, u.m), "Distance from the impact point to the "
-                                     "telescope", unit=u.m)
+    mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
     mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
                                     "2(mu-), 100*A+Z for nucleons and nuclei,"
                                     "negative for antimatter.")
