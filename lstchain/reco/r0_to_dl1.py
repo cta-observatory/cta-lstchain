@@ -148,6 +148,7 @@ def get_dl1(
         length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
         dl1_container.width = width
         dl1_container.length = length
+        dl1_container.wl = dl1_container.width / dl1_container.length
 
         dl1_container.set_timing_features(camera_geometry[signal_pixels],
                                           image[signal_pixels],
@@ -447,8 +448,6 @@ def r0_to_dl1(
 
                     dl1_container.fill_event_info(event)
 
-                    # Some custom def
-                    dl1_container.wl = dl1_container.width / dl1_container.length
                     # Log10(Energy) in TeV
                     if is_simu:
                         dl1_container.mc_energy = event.mc.energy.to_value(u.TeV)
