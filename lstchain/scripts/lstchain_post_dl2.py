@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run fast-alps analysis
+Run post-DL2 analysis
 """
 import argparse
 import toml

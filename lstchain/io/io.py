@@ -43,7 +43,7 @@ __all__ = ['read_simu_info_hdf5',
            'write_dl2_dataframe',
            'write_calibration_data',
            'read_dl2_to_pyirf',
-           'read_dl2_sub_run',
+           'read_dl2_params',
            'extract_observation_time',
            'merge_dl2_runs'
            ]
@@ -1071,9 +1071,9 @@ def read_dl2_to_pyirf(filename):
     return events, pyirf_simu_info
 
 
-def read_dl2_sub_run(t_filename, columns_to_read=None):
+def read_dl2_params(t_filename, columns_to_read=None):
     '''
-    Read a file with DL2 data
+    Read specified parameters from a file with DL2 data
 
     Parameters
     ----------
@@ -1131,7 +1131,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
         if any(f'Run{run:05}' in filename for run in runs):
             filelist.append(filename)
 
-    df_list = pool.map(partial(read_dl2_sub_run, columns_to_read=columns_to_read), filelist)
+    df_list = pool.map(partial(read_dl2_params, columns_to_read=columns_to_read), filelist)
 
     observation_times = pool.map(extract_observation_time, df_list)
 

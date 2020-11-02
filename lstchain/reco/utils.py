@@ -108,7 +108,7 @@ def extract_source_position(data, observed_source_name):
 
 def compute_theta2(data, source_position, conversion_factor=2.0):
     """
-    Computes a square of theta (angle from z-axis) from camrea frame coordinates
+    Computes a square of theta (angle from z-axis) from camera frame coordinates
 
     Parameters:
     -----------
