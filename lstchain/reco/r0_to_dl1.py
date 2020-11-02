@@ -160,6 +160,8 @@ def get_dl1(
         dl1_container.n_islands = num_islands
         dl1_container.set_telescope_info(subarray, telescope_id)
 
+        dl1_container.log_intensity = np.log10(dl1_container.intensity)
+
     else:
         # We set other fields which still make sense for a non-parametrized
         # image:
@@ -455,8 +457,6 @@ def r0_to_dl1(
                         dl1_container.mc_energy = event.mc.energy.to_value(u.TeV)
                         dl1_container.log_mc_energy = np.log10(event.mc.energy.to_value(u.TeV))
                         dl1_container.fill_mc(event, subarray.positions[telescope_id])
-
-                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                     if not is_simu:
                         # GPS + WRS + UCTS is now working in its nominal configuration.
