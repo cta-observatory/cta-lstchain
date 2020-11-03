@@ -88,3 +88,19 @@ def test_unix_tai_to_utc():
     timestamps = np.array([timestamp_tai, np.nan])
     assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
     assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
+
+
+def test_filter_events():
+    from lstchain.reco.utils import filter_events
+    df = pd.DataFrame({'a': [1, 2, 3],
+                       'b': [np.nan, 2.2, 3.2],
+                       'c': [1, 2, np.inf]}
+                      )
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b']),
+                                  pd.DataFrame({'a': [2, 3], 'b': [2.2, 3.2], 'c': [2, np.inf]}))
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b', 'c']),
+                                  pd.DataFrame({'a': [2], 'b': [2.2], 'c': [2]}))
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, 1])),
+                                  pd.DataFrame({'a': [1], 'b': [np.nan], 'c': 1}))
+    with np.testing.assert_raises(KeyError):
+        filter_events(df, filters=dict(e=[0, np.inf]))

@@ -241,6 +241,11 @@ class LSTCameraCalibrator(CameraCalibrator):
         if self._check_dl0_empty(waveforms):
             return
 
+        # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+        no_gain_selection[1] = 1
+
+
         # correct the dl0 waveform for the sampling time corrections
         if self.time_sampling_corrector:
             waveforms*= self.time_sampling_corrector.get_corrections(event,telid)[gain_mask, np.arange(n_pixels)]

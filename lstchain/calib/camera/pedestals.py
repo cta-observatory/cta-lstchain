@@ -106,6 +106,7 @@ class PedestalIntegrator(PedestalCalculator):
         event : general event container
 
         """
+
         # copy the waveform be cause we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
@@ -118,6 +119,7 @@ class PedestalIntegrator(PedestalCalculator):
         if self.time_sampling_corrector:
             waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
             [no_gain_selection, np.arange(n_pixels)])
+
 
         # Extract charge and time
         charge = 0

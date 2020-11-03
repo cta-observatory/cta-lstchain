@@ -129,6 +129,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # copy the waveform be cause we do not want to change it for the moment
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
+        # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
         no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
         no_gain_selection[1] = 1
         n_pixels = 1855
@@ -137,7 +138,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.time_sampling_corrector:
             waveforms*= (self.time_sampling_corrector.get_corrections(event,self.tel_id)
                          [no_gain_selection, np.arange(n_pixels)])
-
 
         # Extract charge and time
         charge = 0
