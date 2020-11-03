@@ -119,7 +119,7 @@ def main():
         dl2_srcdep_list = []
         dl2_srcdep_keys_list = []
 
-        for k in dl1_srcdep_keys:
+        for i, k in enumerate(dl1_srcdep_keys):
             data_srcdep = pd.read_hdf(args.input_file, key=k)
             data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
@@ -127,8 +127,11 @@ def main():
                                                finite_params=config['regression_features'] + config['classification_features'],
                                            )
             dl2_srcdep = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
-            dl2_srcdep_list.append(dl2_srcdep)
+            dl2_srcdep_list.append(dl2_srcdep.drop(columns=data.columns))
             dl2_srcdep_keys_list.append(k.replace("dl1", "dl2"))
+
+            if i==0:
+                dl2_srcindep = dl2_srcdep[data.columns]
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
@@ -170,6 +173,8 @@ def main():
         write_dl2_dataframe(dl2, output_file)
 
     else:
+        write_dl2_dataframe(dl2_srcindep, output_file)
+
         for i in range(len(dl2_srcdep_keys_list)):
             write_dataframe(dl2_srcdep_list[i], output_file, dl2_srcdep_keys_list[i])
 
