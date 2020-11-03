@@ -262,6 +262,7 @@ def r0_to_dl1(
 
         r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
                                                 time_calibration_path = time_calibration_path,
+                                                time_sampling_correction_path = config['time_sampling_correction_path'],
                                                 extractor_product = config['image_extractor'],
                                                 gain_threshold = Config(config).gain_selector_config['threshold'],
                                                 charge_scale = config['charge_scale'],
@@ -274,6 +275,7 @@ def r0_to_dl1(
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
         r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
                                                                time_calibration_path = time_calibration_path,
+                                                               time_sampling_correction_path=config['time_sampling_correction_path'],
                                                                extractor_product = config['image_extractor_for_muons'],
                                                                gain_threshold = Config(config).gain_selector_config['threshold'],
                                                                charge_scale=config['charge_scale'],

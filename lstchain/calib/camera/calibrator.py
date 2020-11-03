@@ -264,6 +264,6 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # fill dl1 container
         event.dl1.tel[telid].image = corrected_charge
-        event.dl1.tel[telid].peak_time = peak_time_ff_corrected
+        event.dl1.tel[telid].peak_time = peak_time_ff_corrected.astype(np.float32)
 
 
