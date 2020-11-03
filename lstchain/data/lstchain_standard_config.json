@@ -103,8 +103,6 @@
     "threshold":  3500
   },
   "time_sampling_correction_path": null,
-  "apply_charge_correction": false,
-  "charge_scale": [1.0,1.0],
   "charge_scale": [1.18,1.09],
   "LocalPeakWindowSum":{
      "window_shift": 4,

@@ -8,7 +8,7 @@
      "log_level":"DEBUG"
    },
    "LSTCalibrationCalculator": {
-     "minimum_hg_charge_median": 1300,
+     "minimum_hg_charge_median": 5000,
      "maximum_lg_charge_std": 300,
      "squared_excess_noise_factor": 1.222,
      "flatfield_product": "FlasherFlatFieldCalculator",
