@@ -25,6 +25,7 @@ import pandas as pd
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
            'get_dataset_keys',
+           'get_dataset_srcdep_keys',
            'write_simtel_energy_histogram',
            'write_mcheader',
            'write_array_info',
@@ -124,6 +125,30 @@ def get_dataset_keys(filename):
         file.visititems(walk)
 
     return dataset_keys
+
+
+def get_dataset_srcdep_keys(filename):
+
+    """
+    Return a list of source-dependent parameter keys in a HDF5 file
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+
+    Returns
+    -------
+    list of keys
+    """
+    
+    dataset_keys = get_dataset_keys(filename)
+    srcdep_param_keys = []
+
+    for k in dataset_keys:
+        if "parameters_src_dependent" in k:
+            srcdep_param_keys.append(k)
+
+    return srcdep_param_keys
 
 
 def get_stacked_table(filenames_list, node):

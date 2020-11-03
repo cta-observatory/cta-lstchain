@@ -30,6 +30,7 @@ from lstchain.io import (
     replace_config,
     write_dl2_dataframe,
     get_dataset_keys,
+    get_dataset_srcdep_keys,
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
@@ -114,21 +115,20 @@ def main():
 
     #Source-dependent analysis
     if config['source_dependent']:
-        dl1_keys = get_dataset_keys(args.input_file)
+        dl1_srcdep_keys = get_dataset_srcdep_keys(args.input_file)
         dl2_srcdep_list = []
         dl2_srcdep_keys_list = []
 
-        for k in dl1_keys:
-            if 'parameters_src_dependent' in k:
-                data_srcdep = pd.read_hdf(args.input_file, key=k)
-                data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
-                data_with_srcdep_param = filter_events(data_with_srcdep_param,
-                             filters=config["events_filters"],
-                             finite_params=config['regression_features'] + config['classification_features'],
-                         )
-                dl2_srcdep = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
-                dl2_srcdep_list.append(dl2_srcdep)
-                dl2_srcdep_keys_list.append(k.replace("dl1", "dl2"))
+        for k in dl1_srcdep_keys:
+            data_srcdep = pd.read_hdf(args.input_file, key=k)
+            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
+            data_with_srcdep_param = filter_events(data_with_srcdep_param,
+                                               filters=config["events_filters"],
+                                               finite_params=config['regression_features'] + config['classification_features'],
+                                           )
+            dl2_srcdep = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+            dl2_srcdep_list.append(dl2_srcdep)
+            dl2_srcdep_keys_list.append(k.replace("dl1", "dl2"))
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
