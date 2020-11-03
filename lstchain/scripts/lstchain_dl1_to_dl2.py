@@ -33,7 +33,7 @@ from lstchain.io import (
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
-    dl1_params_src_dep_on_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
     dl1_images_lstcam_key,
     dl2_params_lstcam_key,
     write_dataframe,
@@ -105,7 +105,6 @@ def main():
 
     #Source-independent analysis
     if not config['source_dependent']:
-        data = filter_events(data, filters=config["events_filters"])
         data = filter_events(data,
                              filters=config["events_filters"],
                              finite_params=config['regression_features'] + config['classification_features'],
@@ -116,20 +115,20 @@ def main():
     #Source-dependent analysis
     if config['source_dependent']:
         dl1_keys = get_dataset_keys(args.input_file)
-        dl2_srcdep = []
-        dl1_srcdep_keys = []
+        dl2_srcdep_list = []
+        dl2_srcdep_keys_list = []
+
         for k in dl1_keys:
             if 'parameters_src_dependent' in k:
-                dl1_srcdep_keys.append(k)
                 data_srcdep = pd.read_hdf(args.input_file, key=k)
                 data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
                 data_with_srcdep_param = filter_events(data_with_srcdep_param,
                              filters=config["events_filters"],
                              finite_params=config['regression_features'] + config['classification_features'],
                          )
-                dl2_tmp = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
-                dl2_srcdep.append(dl2_tmp)
-
+                dl2_srcdep = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+                dl2_srcdep_list.append(dl2_srcdep)
+                dl2_srcdep_keys_list.append(k.replace("dl1", "dl2"))
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
@@ -170,10 +169,9 @@ def main():
     if not config['source_dependent']:
         write_dl2_dataframe(dl2, output_file)
 
-    if config['source_dependent']:
-        for i in range(len(dl1_srcdep_keys)):
-            dl2_srcdep_key = dl1_srcdep_keys[i].replace('dl1', 'dl2')
-            write_dataframe(dl2_srcdep[i], output_file, dl2_srcdep_key)
+    else:
+        for i in range(len(dl2_srcdep_keys_list)):
+            write_dataframe(dl2_srcdep_list[i], output_file, dl2_srcdep_keys_list[i])
 
 if __name__ == '__main__':
     main()

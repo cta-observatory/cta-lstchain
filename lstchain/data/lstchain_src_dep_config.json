@@ -109,6 +109,7 @@
 
   "observation_mode": "wobble",
   "n_off_wobble": 3,
+  "source_name": "Crab Nebula",
   "source_ra":83.63308333,
   "source_dec":22.0145,
 

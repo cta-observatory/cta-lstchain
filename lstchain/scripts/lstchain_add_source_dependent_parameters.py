@@ -21,8 +21,7 @@ from lstchain.reco.utils import radec_to_camera
 from lstchain.io import read_configuration_file, get_standard_config
 from lstchain.io.io import(
     dl1_params_lstcam_key,
-    dl1_params_src_dep_on_lstcam_key,
-    dl1_params_src_dep_off_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
     write_dataframe,
 )
 
@@ -57,20 +56,19 @@ def main():
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
  
+    src_dep_df_list = get_source_dependent_parameters(dl1_params, config)
+
     if config['observation_mode']=='on':
-        src_dep_df = get_source_dependent_parameters(dl1_params, config)
-        write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_on_lstcam_key)
+        write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
 
     if config['observation_mode']=='wobble':
         # ON position
-        src_dep_df = get_source_dependent_parameters(dl1_params, config, wobble_angle = 0.)
-        write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_on_lstcam_key)
+        write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
         
         # OFF position
         for ioff in range(config['n_off_wobble']):
-            wobble_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
-            src_dep_df = get_source_dependent_parameters(dl1_params, config, wobble_angle = wobble_angle)
-            write_dataframe(src_dep_df, dl1_filename,  dl1_params_src_dep_off_lstcam_key.replace('*', '{:.0f}'.format(np.rad2deg(wobble_angle))))
+            write_dataframe(src_dep_df_list[ioff+1], dl1_filename,  \
+                dl1_params_src_dep_lstcam_key.replace('parameters_src_dependent', 'parameters_src_dependent{:.0f}'.format(src_dep_df_list[ioff+1]['source_angle'][0])))
  
 
 if __name__ == '__main__':
