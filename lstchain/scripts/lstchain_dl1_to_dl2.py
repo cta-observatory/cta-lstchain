@@ -37,6 +37,7 @@ from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl2_params_lstcam_key,
 )
+from .reorganizer_dl1hiperta300_stream_to_dl1lstchain063 import main as hiperta_lstchain_reorganzier
 
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -64,11 +65,16 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None, required=False)
 
-
-
 args = parser.parse_args()
 
+
 def main():
+
+    # We need to reorganize (hiperta --> lstchain) the dl1 file first
+    output_reorganizer = args.input_file.replace('dl1_', 'dl1_reorganizer_')
+    hiperta_lstchain_reorganzier(args.input_file, output_reorganizer)
+    # TODO erase dl1_hiperta ?
+    # os.remove(args.input_file)
 
     custom_config = {}
     if args.config_file is not None:
@@ -79,10 +85,12 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
+    # data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(output_reorganizer, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
+        # data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
+        data_src_dep = pd.read_hdf(output_reorganizer, key=dl1_params_src_dep_lstcam_key)
         data = pd.concat([data, data_src_dep], axis=1)
   
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
@@ -100,8 +108,7 @@ def main():
                          finite_params=config['regression_features'] + config['classification_features'],
                          )
 
-
-    #Load the trained RF for reconstruction:
+    # Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
     fileD = args.path_models + "/reg_disp_vector.sav"
     fileH = args.path_models + "/cls_gh.sav"
@@ -110,17 +117,18 @@ def main():
     reg_disp_vector = joblib.load(fileD)
     cls_gh = joblib.load(fileH)
     
-    #Apply the models to the data
+    # Apply the models to the data
 
     dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
 
-    dl1_keys = get_dataset_keys(args.input_file)
+    # dl1_keys = get_dataset_keys(args.input_file)
+    dl1_keys = get_dataset_keys(output_reorganizer)
     if dl1_images_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_images_lstcam_key)
     if dl1_params_lstcam_key in dl1_keys:
@@ -129,7 +137,8 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    with open_file(args.input_file, 'r') as h5in:
+    # with open_file(args.input_file, 'r') as h5in:
+    with open_file(output_reorganizer, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
 
             # Write the selected DL1 info
@@ -149,6 +158,7 @@ def main():
                 h5in.copy_node(k, g, overwrite=True)
 
     write_dl2_dataframe(dl2, output_file)
+
 
 if __name__ == '__main__':
     main()
