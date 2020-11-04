@@ -74,7 +74,7 @@ def main():
     os.rename(args.input_file, args.input_file.replace('dl1_', 'dl1_aligned_ctapipe08_'))
 
     input_reorganizer = args.input_file.replace('dl1_', 'dl1_aligned_ctapipe08_')
-    output_reorganizer = args.input_file.replace('dl1_aligned_ctapipe08_', 'dl1_')
+    output_reorganizer = args.input_file
 
     hiperta_lstchain_reorganzier(input_reorganizer, output_reorganizer)
     # TODO erase dl1_hiperta ?
