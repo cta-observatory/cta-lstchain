@@ -79,6 +79,8 @@ custom_config = {
   },
   "mc_nominal_source_x_deg": 0.,
   "mc_nominal_source_y_deg": 0.,
+  "observation_mode": "wobble",
+  ""
 }
 
 def test_import_calib():

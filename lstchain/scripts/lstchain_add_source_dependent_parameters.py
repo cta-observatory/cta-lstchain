@@ -58,17 +58,23 @@ def main():
  
     src_dep_df_list = get_source_dependent_parameters(dl1_params, config)
 
-    if config['observation_mode']=='on':
+    is_simu = (dl1_params['mc_type'] >= 0).all() if 'mc_type' in dl1_params.columns else False
+
+    if is_simu:
         write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
 
-    if config['observation_mode']=='wobble':
-        # ON position
-        write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
-        
-        # OFF position
-        for ioff in range(config['n_off_wobble']):
-            write_dataframe(src_dep_df_list[ioff+1], dl1_filename,  \
-                dl1_params_src_dep_lstcam_key.replace('parameters_src_dependent', 'parameters_src_dependent{:.0f}'.format(src_dep_df_list[ioff+1]['source_angle'][0])))
+    else:
+        if config['observation_mode']=='on':
+            write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
+
+        if config['observation_mode']=='wobble':
+            # ON position
+            write_dataframe(src_dep_df_list[0], dl1_filename, dl1_params_src_dep_lstcam_key)
+                
+            # OFF position
+            for ioff in range(config['n_off_wobble']):
+                write_dataframe(src_dep_df_list[ioff+1], dl1_filename,  \
+                    dl1_params_src_dep_lstcam_key.replace('parameters_src_dependent', 'parameters_src_dependent{:.0f}'.format(src_dep_df_list[ioff+1]['source_angle'][0])))
  
 
 if __name__ == '__main__':

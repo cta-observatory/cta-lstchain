@@ -469,16 +469,17 @@ def get_source_dependent_parameters(data, config):
     src_dep_params['source_angle'] = np.zeros(len(src_dep_params))
     src_dep_params_list.append(src_dep_params)
 
-    if config['observation_mode']=='wobble':
-        for ioff in range(config['n_off_wobble']):
-            source_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
+    if not is_simu:
+        if config['observation_mode']=='wobble':
+            for ioff in range(config['n_off_wobble']):
+                source_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
             
-            rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(source_angle) - expected_src_pos_y_m * np.sin(source_angle)
-            rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(source_angle) + expected_src_pos_y_m * np.cos(source_angle)
+                rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(source_angle) - expected_src_pos_y_m * np.sin(source_angle)
+                rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(source_angle) + expected_src_pos_y_m * np.cos(source_angle)
 
-            src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
-            src_dep_params['source_angle'] = np.rad2deg(source_angle)
-            src_dep_params_list.append(src_dep_params)
+                src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
+                src_dep_params['source_angle'] = np.rad2deg(source_angle)
+                src_dep_params_list.append(src_dep_params)
 
     return src_dep_params_list
 
