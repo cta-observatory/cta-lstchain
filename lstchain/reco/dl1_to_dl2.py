@@ -559,8 +559,8 @@ def get_expected_source_pos(data, data_type, config):
             if 'source_name' in config:
                 source_coord  = SkyCoord.from_name(config['source_name'])
             else:
-                source_coord  = SkyCoord(config['source_ra'], config['source_dec'], frame="icrs", unit="deg") 
-            
+                source_coord  = SkyCoord(config['source_ra'], config['source_dec'], frame="icrs", unit="deg")
+     
             focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
             
             expected_src_pos_x_m = np.zeros(len(data))

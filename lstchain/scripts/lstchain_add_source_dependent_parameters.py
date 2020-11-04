@@ -15,9 +15,7 @@ $> python lstchain_add_source_dependent_parameters.py
 import os
 import argparse
 import pandas as pd
-import numpy as np
 from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
-from lstchain.reco.utils import radec_to_camera
 from lstchain.io import read_configuration_file, get_standard_config
 from lstchain.io.io import(
     dl1_params_lstcam_key,

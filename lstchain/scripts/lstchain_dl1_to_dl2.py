@@ -175,8 +175,8 @@ def main():
     else:
         write_dl2_dataframe(dl2_srcindep, output_file)
 
-        for i in range(len(dl2_srcdep_keys_list)):
-            write_dataframe(dl2_srcdep_list[i], output_file, dl2_srcdep_keys_list[i])
+        for i, k in enumerate(dl2_srcdep_keys_list):
+            write_dataframe(dl2_srcdep_list[i], output_file, k)
 
 if __name__ == '__main__':
     main()
