@@ -654,8 +654,13 @@ def r0_to_dl1(
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:
-                    r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray,
-                                         muon_parameters)
+                    r0_dl1_muon_analysis(event,
+                                         telescope_id,
+                                         r1_dl1_calibrator_for_muon_rings,
+                                         subarray,
+                                         muon_parameters,
+                                         dragon_time,
+                                         )
 
                 # writes mc information per telescope, including photo electron image
                 if is_simu \
@@ -766,7 +771,7 @@ def rescale_dl1_charge(event, scaling_factor):
         tel.image *= scaling_factor
 
 
-def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray, muon_parameters):
+def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray, muon_parameters, dragon_time):
     """
 
     Returns
@@ -779,7 +784,7 @@ def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, 
 
     # FIXME: no need to read telescope characteristics like foclen for every event!
     foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-    mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+    mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
     bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
     # Set to 0 unreliable pixels:
@@ -818,15 +823,15 @@ def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, 
             muonintensityparam, dist_mask, \
             ring_size, size_outside_ring, muonringparam, \
             good_ring, radial_distribution, \
-            mean_pixel_charge_around_ring,\
-            muonpars = \
-                analyze_muon_event(subarray,
-                                   event.index.event_id,
-                                   image, camera_geometry,
-                                   foclen,
-                                   mirror_area,
-                                   False,
-                                   '')
+            mean_pixel_charge_around_ring, \
+            muonpars = analyze_muon_event(subarray,
+                                          event.index.event_id,
+                                          image, camera_geometry,
+                                          foclen,
+                                          mirror_area,
+                                          False,
+                                          '',
+                                          )
             #                      mirror_area, True, './')
             #           (test) plot muon rings as png files
 
@@ -851,4 +856,6 @@ def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, 
                             size_outside_ring,
                             mean_pixel_charge_around_ring,
                             muonpars,
-                            hg_peak_sample, lg_peak_sample)
+                            hg_peak_sample,
+                            lg_peak_sample,
+                            )
