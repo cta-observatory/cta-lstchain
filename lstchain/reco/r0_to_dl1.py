@@ -686,6 +686,30 @@ def event_timing_pointing(dl1_container,
                           pointings=None,
                           drive_data=None,
                           ):
+    """
+    Compute the correct event timestamp and pointing
+
+    Parameters
+    ----------
+    dl1_container: `lstchain.io.lstcontainer.DL1ParametersContainer`
+    config: dict
+    event: `ctapipe.containers.DataContainer`
+    telescope_id: int
+    ucts_t0_dragon: float
+    dragon_counter0: float
+    ucts_t0_tib: float
+    tib_counter0: float
+    first_valid_ucts: float or None
+    first_valid_ucts_tib: float or None
+    previous_ucts_time_unix: list
+    previous_ucts_trigger_type: list
+    pointings: None or `lstchain.pointing.PointingPosition`
+    drive_data: None or dict
+
+    Returns
+    -------
+    first_valid_ucts, first_valid_ucts_tib, previous_ucts_time_unix, previous_ucts_trigger_type, dragon_time
+    """
     # GPS + WRS + UCTS is now working in its nominal configuration.
     # These TS are stored into ucts_time container.
     # TS can be alternatively calculated from the TIB and
