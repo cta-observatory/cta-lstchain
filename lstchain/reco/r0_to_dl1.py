@@ -244,9 +244,7 @@ def r0_to_dl1(
     if not is_simu:
 
         # TODO : add DRS4 calibration config in config file, read it and pass it here
-        r0_r1_calibrator = LSTR0Corrections(
-            pedestal_path=pedestal_path, tel_id=1,
-        )
+        r0_r1_calibrator = LSTR0Corrections(pedestal_path=pedestal_path, tel_id=1)
 
         # all this will be cleaned up in a next PR related to the configuration files
 
@@ -773,9 +771,17 @@ def rescale_dl1_charge(event, scaling_factor):
 
 def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray, muon_parameters, dragon_time):
     """
+    Muon analysis in the stage r0 to dl1.
+    Fills the `muon_parameters` table.
 
-    Returns
-    -------
+    Parameters
+    ----------
+    event: `ctapipe.containers.DataContainer`
+    telescope_id: int
+    r1_dl1_calibrator_for_muon_rings: `LSTCameraCalibrator`
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    muon_parameters: dict `lstchain.image.muon.create_muon_table`
+    dragon_time: `astropy.Quantity`
 
     """
     # minimum number of pe in a pixel to include it
@@ -788,7 +794,7 @@ def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, 
 
     bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
     # Set to 0 unreliable pixels:
-    image = event.dl1.tel.image*(~bad_pixels)
+    image = event.dl1.tel[telescope_id].image*(~bad_pixels)
 
     # process only promising events, in terms of # of pixels with large signals:
     if tag_pix_thr(image):
