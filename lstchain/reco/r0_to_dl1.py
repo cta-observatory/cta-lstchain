@@ -451,7 +451,7 @@ def r0_to_dl1(
 
                 if not is_simu:
                     (first_valid_ucts, first_valid_ucts_tib, previous_ucts_time_unix, previous_ucts_trigger_type,
-                     dragon_timed) = event_timing_pointing(dl1_container,
+                     dragon_time) = event_timing_pointing(dl1_container,
                                                            config,
                                                            event,
                                                            telescope_id,
