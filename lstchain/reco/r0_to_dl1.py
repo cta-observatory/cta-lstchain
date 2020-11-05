@@ -238,10 +238,6 @@ def r0_to_dl1(
 
     cal_mc = load_calibrator_from_config(config, subarray)
 
-    # minimum number of pe in a pixel to include it
-    # in calculation of muon ring time (peak sample):
-    min_pe_for_muon_t_calc = 10.
-
     # Dictionary to store muon ring parameters
     muon_parameters = create_muon_table()
 
@@ -640,9 +636,6 @@ def r0_to_dl1(
                 dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
                 dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
 
-                # FIXME: no need to read telescope characteristics like foclen for every event!
-                foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                 dl1_container.prefix = tel.prefix
 
                 # extra info for the image table
@@ -661,75 +654,8 @@ def r0_to_dl1(
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:
-                    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
-                    # Set to 0 unreliable pixels:
-                    image = tel.image*(~bad_pixels)
-
-                    # process only promising events, in terms of # of pixels with large signals:
-                    if tag_pix_thr(image):
-
-                        # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
-                        bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
-                        bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
-                        # Now set to 0 all samples in unreliable pixels. Important for global peak
-                        # integrator in case of crazy pixels!  TBD: can this be done in a simpler
-                        # way?
-                        bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
-                                                  np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
-
-                        # print('hg bad pixels:',np.where(bad_pixels_hg))
-                        # print('lg bad pixels:',np.where(bad_pixels_lg))
-
-                        event.r1.tel[telescope_id].waveform *= ~bad_waveform
-                        r1_dl1_calibrator_for_muon_rings(event)
-
-                        tel = event.dl1.tel[telescope_id]
-                        image = tel.image*(~bad_pixels)
-
-                        # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
-                        # perhaps the event is no longer promising (e.g. if it has a large time evolution)
-                        if not tag_pix_thr(image):
-                            good_ring = False
-                        else:
-                            # read geometry from event.inst. But not needed for every event. FIXME?
-                            geom = subarray.tel[telescope_id].\
-                                camera.geometry
-
-                            muonintensityparam, dist_mask, \
-                            ring_size, size_outside_ring, muonringparam, \
-                            good_ring, radial_distribution, \
-                            mean_pixel_charge_around_ring,\
-                            muonpars = \
-                                analyze_muon_event(subarray,
-                                                   event.index.event_id,
-                                                   image, geom, foclen,
-                                                   mirror_area, False, '')
-                            #                      mirror_area, True, './')
-                            #           (test) plot muon rings as png files
-
-                            # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                            bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
-                            stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
-                            # stacked waveforms from all bright pixels; shape (ngains, nsamples)
-                            hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
-                            lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
-
-                        if good_ring:
-                            fill_muon_event(-1,
-                                            muon_parameters,
-                                            good_ring,
-                                            event.index.event_id,
-                                            dragon_time,
-                                            muonintensityparam,
-                                            dist_mask,
-                                            muonringparam,
-                                            radial_distribution,
-                                            ring_size,
-                                            size_outside_ring,
-                                            mean_pixel_charge_around_ring,
-                                            muonpars,
-                                            hg_peak_sample, lg_peak_sample)
+                    r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray,
+                                         muon_parameters)
 
                 # writes mc information per telescope, including photo electron image
                 if is_simu \
@@ -838,3 +764,91 @@ def rescale_dl1_charge(event, scaling_factor):
 
     for tel_id, tel in event.dl1.tel.items():
         tel.image *= scaling_factor
+
+
+def r0_dl1_muon_analysis(event, telescope_id, r1_dl1_calibrator_for_muon_rings, subarray, muon_parameters):
+    """
+
+    Returns
+    -------
+
+    """
+    # minimum number of pe in a pixel to include it
+    # in calculation of muon ring time (peak sample):
+    min_pe_for_muon_t_calc = 10.
+
+    # FIXME: no need to read telescope characteristics like foclen for every event!
+    foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+    mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
+
+    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+    # Set to 0 unreliable pixels:
+    image = event.dl1.tel.image*(~bad_pixels)
+
+    # process only promising events, in terms of # of pixels with large signals:
+    if tag_pix_thr(image):
+
+        # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
+        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
+        bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
+        bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
+        # Now set to 0 all samples in unreliable pixels. Important for global peak
+        # integrator in case of crazy pixels!  TBD: can this be done in a simpler
+        # way?
+        bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
+                                  np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+
+        # print('hg bad pixels:',np.where(bad_pixels_hg))
+        # print('lg bad pixels:',np.where(bad_pixels_lg))
+
+        event.r1.tel[telescope_id].waveform *= ~bad_waveform
+        r1_dl1_calibrator_for_muon_rings(event)
+
+        tel = event.dl1.tel[telescope_id]
+        image = tel.image*(~bad_pixels)
+
+        # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
+        # perhaps the event is no longer promising (e.g. if it has a large time evolution)
+        if not tag_pix_thr(image):
+            good_ring = False
+        else:
+            # read geometry from event.inst. But not needed for every event. FIXME?
+            camera_geometry = subarray.tel[telescope_id].camera.geometry
+
+            muonintensityparam, dist_mask, \
+            ring_size, size_outside_ring, muonringparam, \
+            good_ring, radial_distribution, \
+            mean_pixel_charge_around_ring,\
+            muonpars = \
+                analyze_muon_event(subarray,
+                                   event.index.event_id,
+                                   image, camera_geometry,
+                                   foclen,
+                                   mirror_area,
+                                   False,
+                                   '')
+            #                      mirror_area, True, './')
+            #           (test) plot muon rings as png files
+
+            # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
+            bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
+            stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+            # stacked waveforms from all bright pixels; shape (ngains, nsamples)
+            hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
+            lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+
+        if good_ring:
+            fill_muon_event(-1,
+                            muon_parameters,
+                            good_ring,
+                            event.index.event_id,
+                            dragon_time,
+                            muonintensityparam,
+                            dist_mask,
+                            muonringparam,
+                            radial_distribution,
+                            ring_size,
+                            size_outside_ring,
+                            mean_pixel_charge_around_ring,
+                            muonpars,
+                            hg_peak_sample, lg_peak_sample)
