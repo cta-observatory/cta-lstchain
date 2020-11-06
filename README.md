@@ -14,6 +14,19 @@ are unit tested and should be working as long as the build status is passing.
 
 - You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
 
+### As user
+
+```
+LSTCHAIN_VER=0.6.3
+wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
+conda env create -n lst -f environment.yml
+conda activate lst
+pip install lstchain==$LSTCHAIN_VER
+rm environment.yml
+```
+
+### As developer
+
 - Create and activate the conda environment:
 ```
 git clone https://github.com/cta-observatory/cta-lstchain.git
@@ -27,7 +40,7 @@ To update the environment (e.g. when depenencies got updated), use:
 conda env update -n lst-dev -f environment.yml
 ```
 
-- Install lstchain:
+- Install lstchain in developer mode:
 
 ```
 pip install -e .
