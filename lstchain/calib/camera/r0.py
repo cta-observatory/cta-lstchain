@@ -247,7 +247,7 @@ class LSTR0Corrections(CameraR0Calibrator):
 
     def interpolate_spikes(self, event, tel_id):
         """
-        Interpolates spike A & B.
+        Interpolates spikes type A.
         Fill the R1 container.
         Parameters
         ----------
@@ -291,7 +291,7 @@ class LSTR0Corrections(CameraR0Calibrator):
     @jit(parallel=True)
     def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules):
         """
-        Interpolate Spike A & B.
+        Interpolates spikes type A.
         Change waveform array.
         Parameters
         ----------
@@ -346,7 +346,7 @@ class LSTR0Corrections(CameraR0Calibrator):
     @jit(parallel=True)
     def interpolate_pseudo_pulses_data_from_20181010_to_20191104(waveform, expected_pixel_id, fc, fc_old, n_modules):
         """
-        Interpolate Spike A & B.
+        Interpolates spikes type A.
         This is function for data from 2018/10/10 to 2019/11/04 with old firmware.
         Change waveform array.
         Parameters
