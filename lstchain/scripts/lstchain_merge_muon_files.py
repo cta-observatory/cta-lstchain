@@ -14,9 +14,7 @@ $> python lstchain_merge_muon_files.py
 
 import argparse
 import os
-from distutils.util import strtobool
-# import tables
-from lstchain.io import get_dataset_keys
+from astropy.table import Table, vstack
 from glob import glob
 
 parser = argparse.ArgumentParser(description='Merge fits files')
@@ -61,7 +59,7 @@ def main():
     tab = Table.read('{}'.format(file_list[0]), format='fits')
     for i in range(1,len(file_list)):
         tab2 = Table.read('{}'.format(file_list[i]), format='fits')
-        tab = vstack([dat, dat2])
+        tab = vstack([tab, tab2])
 
         
 
