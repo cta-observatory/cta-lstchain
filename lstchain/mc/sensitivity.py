@@ -185,7 +185,7 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha, n_bins_energy, 
         )
 
 
-    n_excesses_5sigma = stat.excess_matching_significance(5)
+    n_excesses_5sigma = stat.n_sig_matching_significance(5)
 
     for i in range(0, n_bins_energy):
         for j in range(0, n_bins_gammaness):
@@ -234,7 +234,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
         
 
 
-    n_excesses_5sigma = stat.excess_matching_significance(5)
+    n_excesses_5sigma = stat.n_sig_matching_significance(5)
 
     for i in range(0, n_bins_energy):
         # If the excess needed to get 5 sigma is less than 10,
