@@ -46,7 +46,12 @@ def main():
         file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
 
 
+    tab = Table.read('{}'.format(file_list[0]), format='fits')
+    for i in range(1,len(file_list)):
+        tab2 = Table.read('{}'.format(file_list[i]), format='fits')
+        tab = vstack([dat, dat2])
 
+        
 
 if __name__ == '__main__':
     main()
