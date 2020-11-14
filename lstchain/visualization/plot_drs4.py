@@ -36,12 +36,6 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
      offset_value: baseline off_set
      """
 
-    # plot open pdf
-    if plot_file != "none":
-        pp = PdfPages(plot_file)
-
-    plt.rc('font', size=15)
-
     # r0 calibrator
     r0_calib = LSTR0Corrections(pedestal_path=pedestal_file, offset=offset_value,
                                 tel_id=tel_id )
