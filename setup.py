@@ -46,7 +46,7 @@ setup(
         'ctapipe~=0.8.0',
         'ctaplot~=0.5.3',
         "eventio>=1.1.1,<2.0.0a0",  # at least 1.1.1, but not 2
-        'gammapy>=0.17',
+        'gammapy>=0.18',
         'h5py',
         'joblib',
         'matplotlib',
