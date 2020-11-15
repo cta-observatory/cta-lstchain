@@ -58,11 +58,11 @@ def test_calculate_sensitivity_lima():
 def test_calculate_sensitivity_lima_ebin():
     
     np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
-            [50], [10], [0.2], 1), ([10.], [20.]), 
+            np.array(50), np.array(10), np.array(0.2), 1), ([10.], [20.]), 
                                rtol = 1.e-3)
 
     np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
-            [50, 20, 10], [10, 10, 10], [0.2, 0.2, 0.2], 3), 
+            np.array([50, 20, 10]), np.array([10, 10, 10]), np.array([0.2, 0.2, 0.2]), 3), 
                                (([10., 10.730952,  12.1983]),
                                 [20., 53.654761, 121.982995]), 
                                rtol = 1.e-3)
