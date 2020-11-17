@@ -168,8 +168,12 @@ def stack_and_write_parameters_table(input_filename, hfile_out, node_dl1_event, 
     parameter_table.add_column(parameter_table['width'] / parameter_table['length'], name='wl')
 
     # Param table is indeed huge - it contains all the mc_events parameters (from v0.6 !!) too
-    if output_mc_table_pointer is not None:
-        mc_event_table = Table(output_mc_table_pointer.mc_shower.read())
+    try:
+        mc_shower_pointer = output_mc_table_pointer.mc_shower
+    except:
+        mc_shower_pointer = None
+    if mc_shower_pointer is not None:
+        mc_event_table = Table(mc_shower_pointer.read())
         mc_event_table.remove_column('obs_id')
         parameter_table = join(parameter_table, mc_event_table, keys='event_id')
         parameter_table.add_column(np.log10(parameter_table['mc_energy']), name='log_mc_energy')
@@ -307,6 +311,7 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
 
     try:
         subarray_pointer = hfile_out.root.dl1.event.subarray
+        # root.dl1.event.subarray.trigger
     except:
         subarray_pointer = None
 
