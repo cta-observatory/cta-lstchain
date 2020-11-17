@@ -318,7 +318,7 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
                             newname="mc_shower",
                             recursive=True,
                             filters=filter_pointer)
-    if subarray_pointer is None:
+    if subarray_pointer is None and sim_pointer08 is None:
         pass
     else:
         rename_mc_shower_colnames(input_filename,
