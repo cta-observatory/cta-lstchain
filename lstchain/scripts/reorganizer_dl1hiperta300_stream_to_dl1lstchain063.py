@@ -357,7 +357,10 @@ def main(input_filename, output_filename):
     create_hfile_out(input_filename, output_filename, simulation_v08, configuration_v08, dl1_v08, filter_v08)
 
     # Add disp_* and mc_type to the parameters table.
-    add_disp_and_mc_type_to_parameters_table(output_filename, 'dl1/event/telescope/parameters/LST_LSTCam')
+    if simulation_v08 is None:
+        pass
+    else:
+        add_disp_and_mc_type_to_parameters_table(output_filename, 'dl1/event/telescope/parameters/LST_LSTCam')
 
     hfile.close()
 
