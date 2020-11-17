@@ -141,31 +141,35 @@ def format_axes_sensitivity(ax):
 
 def plot_Crab_SED(percentage, emin, emax, ax=None, **kwargs):
     """
-    Plot a percentage of the Crab SED to compare with the achieved
-    sensitivity
+    Plot a percentage of the Crab SED
 
     Parameters
     --------
-    ax:    `matplotlib.pyplot.axis`  
     percentage:    `float`  percentage of the Crab Nebula to be plotted
     emin:   `float` minimum energy
     emax:   `float` maximum energy
+    ax:    `matplotlib.pyplot.axis`
+    kwargs: kwargs for `matplotlib.pyplot.plot`
 
     Returns
     --------
-    ax:    `matplotlib.pyplot.axis`  
-
+    ax:    `matplotlib.pyplot.axis`
     """
     ax = plt.gca() if ax is None else ax
 
     energy = np.geomspace(emin.to_value(u.TeV), emax.to_value(u.TeV), 40) * u.TeV
 
-    kwargs.setdefault('label', 'MAGIC JHEAP 2015')
+    kwargs.setdefault('label', 'Crab (MAGIC JHEAP 2015)')
     kwargs.setdefault('color', 'gray')
     ax.plot(energy.to_value(u.TeV),
             percentage/100. * (energy**2 * CRAB_MAGIC_JHEAP2015(energy)).to_value(u.TeV / (u.cm * u.cm * u.s)),
-            label="MAGIC JHEAP 2015",
+            **kwargs
             )
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel("Energy [TeV]")
+    ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
+    ax.legend()
     return ax
 
 
