@@ -304,26 +304,28 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
     # This will only happen on ctapipe, not RTA
     # hfile_out.remove_node(dl1_event_node06.telescope.trigger)  # Table stored twice, remove to avoid problems.
 
-    subarray_pointer = hfile_out.root.dl1.event.subarray
     if sim_pointer08 is None:
         pass
     else:
+        subarray_pointer = hfile_out.root.dl1.event.subarray
         hfile_out.copy_node(sim_pointer08.event.subarray.shower,
                             newparent=subarray_pointer,
                             newname="mc_shower",
                             recursive=True,
                             filters=filter_pointer)
 
-    rename_mc_shower_colnames(input_filename,
-                              hfile_out,
-                              dl1_event_node06,
-                              subarray_pointer
-                              )
-    stack_and_write_parameters_table(input_filename,
-                                     hfile_out,
-                                     dl1_event_node06,
-                                     subarray_pointer
-                                     )
+        rename_mc_shower_colnames(input_filename,
+                                  hfile_out,
+                                  dl1_event_node06,
+                                  subarray_pointer
+                                  )
+
+        stack_and_write_parameters_table(input_filename,
+                                         hfile_out,
+                                         dl1_event_node06,
+                                         subarray_pointer
+                                         )
+
     if 'images' in dl1_event_node06.telescope:
         stack_and_write_images_table(input_filename,
                                      hfile_out,
