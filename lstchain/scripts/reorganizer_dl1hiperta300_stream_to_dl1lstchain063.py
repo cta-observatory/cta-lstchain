@@ -256,19 +256,22 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
     hfile_out.create_group('/', 'simulation')
     hfile_out.create_group('/', 'dl1')
 
-    # Simulation node V0.6
-    #    /simulation (Group) 'Simulation information of the run'
-    #       children := ['mc_event' (Table), 'run_config' (Table), 'thrown_event_distribution' (Table)]
-    hfile_out.copy_node(sim_pointer08.service.shower_distribution,
-                        newparent=hfile_out.root.simulation,
-                        newname='thrown_event_distribution',
-                        recursive=True,
-                        filters=filter_pointer)
-    hfile_out.copy_node(config_pointer08.simulation.run,
-                        newparent=hfile_out.root.simulation,
-                        newname='run_config',
-                        recursive=True,
-                        filters=filter_pointer)
+    if sim_pointer08 is None:
+        pass
+    else:
+        # Simulation node V0.6
+        #    /simulation (Group) 'Simulation information of the run'
+        #       children := ['mc_event' (Table), 'run_config' (Table), 'thrown_event_distribution' (Table)]
+        hfile_out.copy_node(sim_pointer08.service.shower_distribution,
+                            newparent=hfile_out.root.simulation,
+                            newname='thrown_event_distribution',
+                            recursive=True,
+                            filters=filter_pointer)
+        hfile_out.copy_node(config_pointer08.simulation.run,
+                            newparent=hfile_out.root.simulation,
+                            newname='run_config',
+                            recursive=True,
+                            filters=filter_pointer)
 
     # Instrument node V0.6
     #    --instrument (Group)
@@ -302,11 +305,14 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
     # hfile_out.remove_node(dl1_event_node06.telescope.trigger)  # Table stored twice, remove to avoid problems.
 
     subarray_pointer = hfile_out.root.dl1.event.subarray
-    hfile_out.copy_node(sim_pointer08.event.subarray.shower,
-                        newparent=subarray_pointer,
-                        newname="mc_shower",
-                        recursive=True,
-                        filters=filter_pointer)
+    if sim_pointer08 is None:
+        pass
+    else:
+        hfile_out.copy_node(sim_pointer08.event.subarray.shower,
+                            newparent=subarray_pointer,
+                            newname="mc_shower",
+                            recursive=True,
+                            filters=filter_pointer)
 
     rename_mc_shower_colnames(input_filename,
                               hfile_out,
@@ -338,7 +344,10 @@ def main(input_filename, output_filename):
     hfile = tables.open_file(input_filename, 'r')
 
     # dl1 v0.8 Pointers
-    simulation_v08 = hfile.root.simulation
+    try:
+        simulation_v08 = hfile.root.simulation
+    except:
+        simulation_v08 = None
     configuration_v08 = hfile.root.configuration
     dl1_v08 = hfile.root.dl1
     filter_v08 = hfile.filters
