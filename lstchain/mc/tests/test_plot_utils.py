@@ -5,7 +5,7 @@ import numpy as np
 
 def test_plot_Crab_SED():
 
-    plot_utils.plot_Crab_SED(100, 1*u.GeV, 1*u.PeV, label=r'Crab')
+    plot_utils.plot_Crab_SED(1*u.GeV, 1*u.PeV, percentage=45, label=r'Crab')
 
 
 def test_sensitivity_plot_comparison():

@@ -139,7 +139,7 @@ def format_axes_sensitivity(ax):
     ax.grid(ls='--', alpha=.5)
 
 
-def plot_Crab_SED(percentage, emin, emax, ax=None, **kwargs):
+def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     """
     Plot a percentage of the Crab SED
 
@@ -159,7 +159,11 @@ def plot_Crab_SED(percentage, emin, emax, ax=None, **kwargs):
 
     energy = np.geomspace(emin.to_value(u.TeV), emax.to_value(u.TeV), 40) * u.TeV
 
-    kwargs.setdefault('label', 'Crab (MAGIC JHEAP 2015)')
+    if percentage==100:
+        kwargs.setdefault('label', f'Crab (MAGIC JHEAP 2015)')
+    else:
+        kwargs.setdefault('label', f'{percentage}% Crab (MAGIC JHEAP 2015)')
+
     kwargs.setdefault('color', 'gray')
     ax.plot(energy.to_value(u.TeV),
             percentage/100. * (energy**2 * CRAB_MAGIC_JHEAP2015(energy)).to_value(u.TeV / (u.cm * u.cm * u.s)),
@@ -291,9 +295,9 @@ def sensitivity_plot_comparison(energy, sensitivity, ax=None):
     emin = 10 * u.GeV
     emax = 100 * u.TeV
 
-    plot_Crab_SED(100, emin, emax, ax=ax, label=r'Crab')
-    plot_Crab_SED(1, emin, emax, ax=ax, ls='dotted', label='1% Crab')
-    plot_Crab_SED(10, emin, emax, ax=ax, ls='-.', label='10% Crab')
+    plot_Crab_SED(emin, emax, percentage=100, ax=ax, label=r'Crab')
+    plot_Crab_SED(emin, emax, percentage=1, ax=ax, ls='dotted', label='1% Crab')
+    plot_Crab_SED(emin, emax, percentage=10, ax=ax, ls='-.', label='10% Crab')
 
     plot_sensitivity_magic_performance(ax=ax)
     format_axes_sensitivity(ax)
