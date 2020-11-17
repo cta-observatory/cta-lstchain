@@ -145,9 +145,9 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
 
     Parameters
     --------
-    percentage:    `float`  percentage of the Crab Nebula to be plotted
-    emin:   `float` minimum energy
-    emax:   `float` maximum energy
+    emin: `astropy.units.quantity.Quantity` compatible with energies
+    emax:  astropy.units.quantity.Quantity compatible with energies
+    percentage:  `float`  percentage of the Crab Nebula to be plotted
     ax:    `matplotlib.pyplot.axis`
     kwargs: kwargs for `matplotlib.pyplot.plot`
 
