@@ -168,10 +168,11 @@ def stack_and_write_parameters_table(input_filename, hfile_out, node_dl1_event, 
     parameter_table.add_column(parameter_table['width'] / parameter_table['length'], name='wl')
 
     # Param table is indeed huge - it contains all the mc_events parameters (from v0.6 !!) too
-    mc_event_table = Table(output_mc_table_pointer.mc_shower.read())
-    mc_event_table.remove_column('obs_id')
-    parameter_table = join(parameter_table, mc_event_table, keys='event_id')
-    parameter_table.add_column(np.log10(parameter_table['mc_energy']), name='log_mc_energy')
+    if output_mc_table_pointer is not None:
+        mc_event_table = Table(output_mc_table_pointer.mc_shower.read())
+        mc_event_table.remove_column('obs_id')
+        parameter_table = join(parameter_table, mc_event_table, keys='event_id')
+        parameter_table.add_column(np.log10(parameter_table['mc_energy']), name='log_mc_energy')
 
     dump_plus_copy_node_to_create_new_table(input_filename,
                                             hfile_out,
@@ -304,27 +305,33 @@ def create_hfile_out(input_filename, outfile_name, sim_pointer08, config_pointer
     # This will only happen on ctapipe, not RTA
     # hfile_out.remove_node(dl1_event_node06.telescope.trigger)  # Table stored twice, remove to avoid problems.
 
+    try:
+        subarray_pointer = hfile_out.root.dl1.event.subarray
+    except:
+        subarray_pointer = None
+
     if sim_pointer08 is None:
         pass
     else:
-        subarray_pointer = hfile_out.root.dl1.event.subarray
         hfile_out.copy_node(sim_pointer08.event.subarray.shower,
                             newparent=subarray_pointer,
                             newname="mc_shower",
                             recursive=True,
                             filters=filter_pointer)
-
+    if subarray_pointer is None:
+        pass
+    else:
         rename_mc_shower_colnames(input_filename,
                                   hfile_out,
                                   dl1_event_node06,
                                   subarray_pointer
                                   )
 
-        stack_and_write_parameters_table(input_filename,
-                                         hfile_out,
-                                         dl1_event_node06,
-                                         subarray_pointer
-                                         )
+    stack_and_write_parameters_table(input_filename,
+                                     hfile_out,
+                                     dl1_event_node06,
+                                     subarray_pointer
+                                     )
 
     if 'images' in dl1_event_node06.telescope:
         stack_and_write_images_table(input_filename,
@@ -357,10 +364,7 @@ def main(input_filename, output_filename):
     create_hfile_out(input_filename, output_filename, simulation_v08, configuration_v08, dl1_v08, filter_v08)
 
     # Add disp_* and mc_type to the parameters table.
-    if simulation_v08 is None:
-        pass
-    else:
-        add_disp_and_mc_type_to_parameters_table(output_filename, 'dl1/event/telescope/parameters/LST_LSTCam')
+    add_disp_and_mc_type_to_parameters_table(output_filename, 'dl1/event/telescope/parameters/LST_LSTCam')
 
     hfile.close()
 
