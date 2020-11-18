@@ -335,8 +335,8 @@ def plot_positions_survived_events(df_gammas,
 
     """
 
-    e_reco_g = 10**df_gammas.mc_energy
-    e_reco_p = 10 ** df_protons.mc_energy
+    e_reco_g = df_gammas.reco_energy
+    e_reco_p = df_protons.reco_energy
     for i in range(0, n_bins_energy):
         fig, ax = plt.subplots()
         print("Energy range [GeV]: ", energy[i], energy[i + 1])
