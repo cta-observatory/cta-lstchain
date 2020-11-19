@@ -79,26 +79,21 @@ class PedestalFITSWriter(Tool):
 
         if self.deltaT:
             self.log.info("DeltaT correction active")
-            self.log.info(f"Progress bar {self.progress_bar}")
-            for event in tqdm(
-                self.eventsource,
-                desc=self.eventsource.__class__.__name__,
-                total=self.eventsource.max_events,
-                unit="ev",
-                disable=not self.progress_bar,
-            ):
+        else:
+            self.log.info("DeltaT correction not active")
+
+        for event in tqdm(
+            self.eventsource,
+            desc=self.eventsource.__class__.__name__,
+            total=self.eventsource.max_events,
+            unit="ev",
+            disable=not self.progress_bar,
+        ):
+            if self.deltaT:
                 for tel_id in event.r0.tels_with_data:
                     self.lst_r0.time_lapse_corr(event, tel_id)
                     self.pedestal.fill_pedestal_event(event)
-        else:
-            self.log.info("DeltaT correction no active")
-            for event in tqdm(
-                self.eventsource,
-                desc=self.eventsource.__class__.__name__,
-                total=self.eventsource.max_events,
-                unit="ev",
-                disable=not self.progress_bar,
-            ):
+            else:
                 self.pedestal.fill_pedestal_event(event)
 
         self.pedestal.complete_pedestal()
