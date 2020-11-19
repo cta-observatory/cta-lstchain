@@ -82,7 +82,7 @@ class DragonPedestal(Component):
                             meanped[gain, pixel, posads] += val
                             numped[gain, pixel, posads] += 1
 
-    def finalize_pedestal(self):
+    def complete_pedestal(self):
         if np.sum(self.numped==0) > 0:
             raise RuntimeError("Not enough events to coverage all capacitor. "
                                "Please use more events to create pedestal file.")
