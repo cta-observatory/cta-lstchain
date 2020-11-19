@@ -25,7 +25,7 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     deltaT = traits.Bool(
-        help="Flag to use deltaT correction. Default=True", default_value=True
+        help="Flag to use deltaT correction. Default=False", default_value=False
     ).tag(config=True)
 
     progress_bar = traits.Bool(
@@ -40,8 +40,8 @@ class PedestalFITSWriter(Tool):
 
     flags = {
         "deltaT": (
-            {"PedestalFITSWriter": {"deltaT": True}},
-            "Flag to use deltaT correction. Default is True",
+            {"PedestalFITSWriter": {"deltaT": False}},
+            "Flag to use deltaT correction. Default is False",
         )
     }
 
