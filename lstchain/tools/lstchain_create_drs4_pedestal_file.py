@@ -21,7 +21,6 @@ class PedestalFITSWriter(Tool):
         default_value="pedestal.fits",
         help="Path to the generated fits pedestal file",
         directory_ok=False,
-        exists=False,
     ).tag(config=True)
 
     deltaT = traits.Bool(
@@ -101,7 +100,7 @@ class PedestalFITSWriter(Tool):
         primaryhdu = fits.PrimaryHDU(self.pixel_ids)
         secondhdu = fits.ImageHDU(np.int16(self.pedestal.meanped))
         hdulist = fits.HDUList([primaryhdu, secondhdu])
-        hdulist.writeto(self.output)
+        hdulist.writeto(self.output, overwrite=True)
 
         Provenance().add_output_file(self.output, role="mon.tel.pedestal")
 
