@@ -96,7 +96,7 @@ def main():
         pedestal.fill_pedestal_event(event)
 
     # Finalize pedestal and write to fits file
-    pedestal.finalize_pedestal()
+    pedestal.complete_pedestal()
 
     expected_pixel_id = fits.PrimaryHDU(camera_config.expected_pixels_id)
     pedestal_array = fits.ImageHDU(

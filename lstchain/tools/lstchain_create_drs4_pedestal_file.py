@@ -35,11 +35,14 @@ class PedestalFITSWriter(Tool):
 
     aliases = {
         "input": "EventSource.input_url",
-        "output": "PedestalFITSWriter.output_file"
+        "output": "PedestalFITSWriter.output_file",
     }
 
     flags = {
-        "deltaT": ({"PedestalFITSWriter": {"deltaT": True}}, "Flag to use deltaT correction. Default is True")
+        "deltaT": (
+            {"PedestalFITSWriter": {"deltaT": True}},
+            "Flag to use deltaT correction. Default is True",
+        )
     }
 
     classes = [EventSource, LSTR0Corrections, DragonPedestal]
@@ -69,18 +72,20 @@ class PedestalFITSWriter(Tool):
         for event in self.eventsource:
             tel_id = event.r0.tels_with_data[0]
             self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
-            self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
+            self.pedestal = DragonPedestal(
+                tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules
+            )
             break
 
         if self.deltaT:
             self.log.info("DeltaT correction active")
             self.log.info(f"Progress bar {self.progress_bar}")
             for event in tqdm(
-                    self.eventsource,
-                    desc=self.eventsource.__class__.__name__,
-                    total=self.eventsource.max_events,
-                    unit="ev",
-                    disable=not self.progress_bar,
+                self.eventsource,
+                desc=self.eventsource.__class__.__name__,
+                total=self.eventsource.max_events,
+                unit="ev",
+                disable=not self.progress_bar,
             ):
                 for tel_id in event.r0.tels_with_data:
                     self.lst_r0.time_lapse_corr(event, tel_id)
@@ -88,11 +93,11 @@ class PedestalFITSWriter(Tool):
         else:
             self.log.info("DeltaT correction no active")
             for event in tqdm(
-                    self.eventsource,
-                    desc=self.eventsource.__class__.__name__,
-                    total=self.eventsource.max_events,
-                    unit="ev",
-                    disable=not self.progress_bar,
+                self.eventsource,
+                desc=self.eventsource.__class__.__name__,
+                total=self.eventsource.max_events,
+                unit="ev",
+                disable=not self.progress_bar,
             ):
                 self.pedestal.fill_pedestal_event(event)
 
@@ -105,10 +110,7 @@ class PedestalFITSWriter(Tool):
         hdulist = fits.HDUList([primaryhdu, secondhdu])
         hdulist.writeto(self.output)
 
-        Provenance().add_output_file(
-            self.output,
-            role='mon.tel.pedestal'
-        )
+        Provenance().add_output_file(self.output, role="mon.tel.pedestal")
 
 
 def main():
