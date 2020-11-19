@@ -56,12 +56,12 @@ class PedestalFITSWriter(Tool):
 
         self.log.debug("Opening file")
         self.eventsource = EventSource.from_config(parent=self)
+        self.lst_r0 = self.add_component(LSTR0Corrections(parent=self))
 
         for event in self.eventsource:
             tel_id = event.r0.tels_with_data[0]
             self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
             self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
-            self.lst_r0 = LSTR0Corrections(config=self.config)
             break
 
     def start(self):
