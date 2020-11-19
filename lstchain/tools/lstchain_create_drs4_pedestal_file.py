@@ -3,6 +3,7 @@ Create drs4 time pedestal fits file.
 """
 import numpy as np
 from astropy.io import fits
+from tqdm.autonotebook import tqdm
 
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
@@ -25,6 +26,11 @@ class PedestalFITSWriter(Tool):
 
     deltaT = traits.Bool(
         help="Flag to use deltaT correction. Default=True", default_value=True
+    ).tag(config=True)
+
+    progress_bar = traits.Bool(
+        help="show progress bar during processing",
+        default_value=True,
     ).tag(config=True)
 
     aliases = {
@@ -58,34 +64,39 @@ class PedestalFITSWriter(Tool):
         self.eventsource = EventSource.from_config(parent=self)
         self.lst_r0 = self.add_component(LSTR0Corrections(parent=self))
 
+    def start(self):
+
         for event in self.eventsource:
             tel_id = event.r0.tels_with_data[0]
             self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
             self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
             break
 
-    def start(self):
-
-        try:
-            if self.deltaT:
-                self.log.info("DeltaT correction active")
-                for i, event in enumerate(self.eventsource):
-                    for tel_id in event.r0.tels_with_data:
-                        self.lst_r0.time_lapse_corr(event, tel_id)
-                        self.pedestal.fill_pedestal_event(event)
-                        if i % 500 == 0:
-                            self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
-            else:
-                self.log.info("DeltaT correction no active")
-                for i, event in enumerate(self.eventsource):
+        if self.deltaT:
+            self.log.info("DeltaT correction active")
+            self.log.info(f"Progress bar {self.progress_bar}")
+            for event in tqdm(
+                    self.eventsource,
+                    desc=self.eventsource.__class__.__name__,
+                    total=self.eventsource.max_events,
+                    unit="ev",
+                    disable=not self.progress_bar,
+            ):
+                for tel_id in event.r0.tels_with_data:
+                    self.lst_r0.time_lapse_corr(event, tel_id)
                     self.pedestal.fill_pedestal_event(event)
-                    if i % 500 == 0:
-                        self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
+        else:
+            self.log.info("DeltaT correction no active")
+            for event in tqdm(
+                    self.eventsource,
+                    desc=self.eventsource.__class__.__name__,
+                    total=self.eventsource.max_events,
+                    unit="ev",
+                    disable=not self.progress_bar,
+            ):
+                self.pedestal.fill_pedestal_event(event)
 
-            self.pedestal.finalize_pedestal()
-
-        except Exception as e:
-            self.log.error(e)
+        self.pedestal.complete_pedestal()
 
     def finish(self):
 
