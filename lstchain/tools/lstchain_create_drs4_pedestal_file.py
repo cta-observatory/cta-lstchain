@@ -35,7 +35,7 @@ class PedestalFITSWriter(Tool):
 
     aliases = {
         "input": "EventSource.input_url",
-        "output": "PedestalFITSWriter.output_file",
+        "output": "PedestalFITSWriter.output",
     }
 
     flags = {
@@ -92,9 +92,7 @@ class PedestalFITSWriter(Tool):
             if self.deltaT:
                 for tel_id in event.r0.tels_with_data:
                     self.lst_r0.time_lapse_corr(event, tel_id)
-                    self.pedestal.fill_pedestal_event(event)
-            else:
-                self.pedestal.fill_pedestal_event(event)
+            self.pedestal.fill_pedestal_event(event)
 
         self.pedestal.complete_pedestal()
 
