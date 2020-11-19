@@ -16,9 +16,9 @@ class PedestalFITSWriter(Tool):
     name = "PedestalFITSWriter"
     description = "Generate a pedestal FITS file"
 
-    output_file = traits.Path(
+    output = traits.Path(
         default_value="pedestal.fits",
-        help="Path to the generated FITS pedestal file",
+        help="Path to the generated fits pedestal file",
         directory_ok=False,
         exists=False,
     ).tag(config=True)
@@ -28,8 +28,8 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input_file": "EventSource.input_url",
-        "output_file": "PedestalFITSWriter.output_file",
+        "input": "EventSource.input_url",
+        "output": "PedestalFITSWriter.output_file"
     }
 
     flags = {
@@ -92,10 +92,10 @@ class PedestalFITSWriter(Tool):
         primaryhdu = fits.PrimaryHDU(self.pixel_ids)
         secondhdu = fits.ImageHDU(np.int16(self.pedestal.meanped))
         hdulist = fits.HDUList([primaryhdu, secondhdu])
-        hdulist.writeto(self.output_file)
+        hdulist.writeto(self.output)
 
         Provenance().add_output_file(
-            self.output_file,
+            self.output,
             role='mon.tel.pedestal'
         )
 
