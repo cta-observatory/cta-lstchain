@@ -8,6 +8,7 @@ from ctapipe.core import Provenance, Tool, traits
 from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
+from tqdm.autonotebook import tqdm
 
 
 class TimeCalibrationHDF5Writer(Tool):
@@ -36,6 +37,11 @@ class TimeCalibrationHDF5Writer(Tool):
         help="Maximum numbers of events to read. Default = 20000", default_value=20000
     ).tag(config=True)
 
+    progress_bar = traits.Bool(
+        help="show progress bar during processing",
+        default_value=True,
+    ).tag(config=True)
+
     aliases = {
         "input": "TimeCalibrationHDF5Writer.input",
         "glob": "TimeCalibrationHDF5Writer.glob",
@@ -54,7 +60,7 @@ class TimeCalibrationHDF5Writer(Tool):
         For getting help run:
         lstchain_create_time_calibration_file --help
         """
-        self.reader = None
+        self.eventsource = None
         self.timeCorr = None
         self.path_list = None
         self.lst_r0 = None
@@ -65,7 +71,7 @@ class TimeCalibrationHDF5Writer(Tool):
         if self.input.is_dir():
             self.path_list = sorted(glob.glob(str(self.input/self.glob)))
 
-        self.reader = self.add_component(
+        self.eventsource = self.add_component(
             LSTEventSource(
                 input_url=self.path_list[0],
                 max_events=self.max_events,
@@ -77,7 +83,7 @@ class TimeCalibrationHDF5Writer(Tool):
         )
         self.timeCorr = TimeCorrectionCalculate(
             calib_file_path=self.output,
-            subarray=self.reader.subarray,
+            subarray=self.eventsource.subarray,
             config=self.config,
         )
 
@@ -85,14 +91,17 @@ class TimeCalibrationHDF5Writer(Tool):
 
         try:
             for j, path in enumerate(self.path_list):
-                self.reader.input_url = path
+                self.eventsource.input_url = path
                 self.log.info(f"File {j + 1} out of {len(self.path_list)}")
                 self.log.info(f"Processing: {path}")
-                for i, event in enumerate(self.reader):
-                    if i % 5000 == 0:
-                        self.log.debug(f"i = {i}, ev id = {event.index.event_id}")
+                for event in tqdm(
+                        self.eventsource,
+                        desc=self.eventsource.__class__.__name__,
+                        total=self.eventsource.max_events,
+                        unit="ev",
+                        disable=not self.progress_bar,
+                ):
                     self.lst_r0.calibrate(event)
-
                     # cut in signal to avoid cosmic events
                     if event.r1.tel[self.timeCorr.tel_id].trigger_type == 4 or (
                         np.median(np.sum(event.r1.tel[self.timeCorr.tel_id].waveform[0], axis=1)) > 300
