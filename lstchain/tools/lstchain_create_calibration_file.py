@@ -10,8 +10,6 @@ from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
 from lstchain.calib.camera.r0 import CameraR0Calibrator
 from lstchain.io.lstcontainers import LSTEventType
 
-__all__ = ["CalibrationHDF5Writer"]
-
 
 class CalibrationHDF5Writer(Tool):
 
