@@ -25,14 +25,6 @@ class TimeCalibrationHDF5Writer(Tool):
         default_value="*"
     ).tag(config=True)
 
-    output = traits.Unicode(
-        help="Path to the hdf5 time calibration file",
-    ).tag(config=True)
-
-    pedestal = traits.Unicode(
-        help="Path to drs4 fits pedestal file",
-    ).tag(config=True)
-
     max_events = traits.Int(
         help="Maximum numbers of events to read. Default = 20000", default_value=20000
     ).tag(config=True)
@@ -45,7 +37,7 @@ class TimeCalibrationHDF5Writer(Tool):
     aliases = {
         "input": "TimeCalibrationHDF5Writer.input",
         "glob": "TimeCalibrationHDF5Writer.glob",
-        "output": "TimeCalibrationHDF5Writer.output",
+        "output": "TimeCorrectionCalculate.calib_file_path",
         "pedestal": "LSTR0Corrections.pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
     }
@@ -79,10 +71,9 @@ class TimeCalibrationHDF5Writer(Tool):
             )
         )
         self.lst_r0 = self.add_component(
-            LSTR0Corrections(pedestal_path=self.pedestal, parent=self)
+            LSTR0Corrections(parent=self)
         )
         self.timeCorr = TimeCorrectionCalculate(
-            calib_file_path=self.output,
             subarray=self.eventsource.subarray,
             config=self.config,
         )
@@ -111,7 +102,7 @@ class TimeCalibrationHDF5Writer(Tool):
 
         self.timeCorr.finalize()
         Provenance().add_output_file(
-            self.output,
+            self.timeCorr.calib_file_path,
             role='mon.tel.calibration'
         )
 
