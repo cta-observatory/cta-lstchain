@@ -15,8 +15,13 @@ class TimeCalibrationHDF5Writer(Tool):
     name = "TimeCalibrationHDF5Writer"
     description = "Generate a HDF5 file with time calibration coefficients"
 
-    input = traits.Unicode(
-        help="Path to the fits.fz input file containing events (wildcards allowed)",
+    input = traits.Path(
+        help="Path to the fits.fz events file or directory to glob"
+    ).tag(config=True)
+
+    glob = traits.Unicode(
+        help="Filename pattern to glob files in the directory",
+        default_value="*"
     ).tag(config=True)
 
     output = traits.Unicode(
@@ -33,6 +38,7 @@ class TimeCalibrationHDF5Writer(Tool):
 
     aliases = {
         "input": "TimeCalibrationHDF5Writer.input",
+        "glob": "TimeCalibrationHDF5Writer.glob",
         "output": "TimeCalibrationHDF5Writer.output",
         "pedestal": "LSTR0Corrections.pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
@@ -55,7 +61,10 @@ class TimeCalibrationHDF5Writer(Tool):
 
     def setup(self):
 
-        self.path_list = sorted(glob.glob(self.input))
+        self.path_list = [str(self.input)]
+        if self.input.is_dir():
+            self.path_list = sorted(glob.glob(str(self.input/self.glob)))
+
         self.reader = self.add_component(
             LSTEventSource(
                 input_url=self.path_list[0],
