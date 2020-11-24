@@ -84,7 +84,7 @@ class PedestalFITSWriter(Tool):
         for event in tqdm(
             self.eventsource,
             desc=self.eventsource.__class__.__name__,
-            total=self.eventsource.max_events,
+            total=len(self.eventsource.multi_file),
             unit="ev",
             disable=not self.progress_bar,
         ):
