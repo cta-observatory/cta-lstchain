@@ -75,7 +75,7 @@ class TimeCalibrationHDF5Writer(Tool):
             LSTEventSource(
                 input_url=self.path_list[0],
                 max_events=self.max_events,
-                config=self.config,
+                parent=self,
             )
         )
         self.lst_r0 = self.add_component(
@@ -89,27 +89,23 @@ class TimeCalibrationHDF5Writer(Tool):
 
     def start(self):
 
-        try:
-            for j, path in enumerate(self.path_list):
-                self.eventsource.input_url = path
-                self.log.info(f"File {j + 1} out of {len(self.path_list)}")
-                self.log.info(f"Processing: {path}")
-                for event in tqdm(
-                        self.eventsource,
-                        desc=self.eventsource.__class__.__name__,
-                        total=self.eventsource.max_events,
-                        unit="ev",
-                        disable=not self.progress_bar,
+        for j, path in enumerate(self.path_list):
+            self.eventsource.input_url = path
+            self.log.info(f"File {j + 1} out of {len(self.path_list)}")
+            self.log.info(f"Processing: {path}")
+            for event in tqdm(
+                    self.eventsource,
+                    desc=self.eventsource.__class__.__name__,
+                    total=self.eventsource.max_events,
+                    unit="ev",
+                    disable=not self.progress_bar,
+            ):
+                self.lst_r0.calibrate(event)
+                # cut in signal to avoid cosmic events
+                if event.r1.tel[self.timeCorr.tel_id].trigger_type == 4 or (
+                    np.median(np.sum(event.r1.tel[self.timeCorr.tel_id].waveform[0], axis=1)) > 300
                 ):
-                    self.lst_r0.calibrate(event)
-                    # cut in signal to avoid cosmic events
-                    if event.r1.tel[self.timeCorr.tel_id].trigger_type == 4 or (
-                        np.median(np.sum(event.r1.tel[self.timeCorr.tel_id].waveform[0], axis=1)) > 300
-                    ):
-                        self.timeCorr.calibrate_peak_time(event)
-
-        except Exception as e:
-            self.log.error(e)
+                    self.timeCorr.calibrate_peak_time(event)
 
     def finish(self):
 
