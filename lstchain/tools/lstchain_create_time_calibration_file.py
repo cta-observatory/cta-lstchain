@@ -2,10 +2,9 @@
 Create drs4 time correction coefficients.
 """
 import glob
-import numpy as np
 
-from ctapipe.core import Provenance, traits
-from ctapipe.core import Tool
+import numpy as np
+from ctapipe.core import Provenance, Tool, traits
 from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
@@ -16,15 +15,15 @@ class TimeCalibrationHDF5Writer(Tool):
     name = "TimeCalibrationHDF5Writer"
     description = "Generate a HDF5 file with time calibration coefficients"
 
-    input_file = traits.Unicode(
+    input = traits.Unicode(
         help="Path to the fits.fz input file containing events (wildcards allowed)",
     ).tag(config=True)
 
-    output_file = traits.Unicode(
+    output = traits.Unicode(
         help="Path to the hdf5 time calibration file",
     ).tag(config=True)
 
-    pedestal_file = traits.Unicode(
+    pedestal = traits.Unicode(
         help="Path to drs4 fits pedestal file",
     ).tag(config=True)
 
@@ -33,9 +32,9 @@ class TimeCalibrationHDF5Writer(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input_file": "TimeCalibrationHDF5Writer.input_file",
-        "output_file": "TimeCalibrationHDF5Writer.output_file",
-        "pedestal_file": "LSTR0Corrections.pedestal_path",
+        "input": "TimeCalibrationHDF5Writer.input",
+        "output": "TimeCalibrationHDF5Writer.output",
+        "pedestal": "LSTR0Corrections.pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
     }
 
@@ -56,7 +55,7 @@ class TimeCalibrationHDF5Writer(Tool):
 
     def setup(self):
 
-        self.path_list = sorted(glob.glob(self.input_file))
+        self.path_list = sorted(glob.glob(self.input))
         self.reader = self.add_component(
             LSTEventSource(
                 input_url=self.path_list[0],
@@ -65,10 +64,10 @@ class TimeCalibrationHDF5Writer(Tool):
             )
         )
         self.lst_r0 = self.add_component(
-            LSTR0Corrections(pedestal_path=self.pedestal_file, parent=self)
+            LSTR0Corrections(pedestal_path=self.pedestal, parent=self)
         )
         self.timeCorr = TimeCorrectionCalculate(
-            calib_file_path=self.output_file,
+            calib_file_path=self.output,
             subarray=self.reader.subarray,
             config=self.config,
         )
@@ -98,7 +97,7 @@ class TimeCalibrationHDF5Writer(Tool):
 
         self.timeCorr.finalize()
         Provenance().add_output_file(
-            self.output_file,
+            self.output,
             role='mon.tel.calibration'
         )
 
