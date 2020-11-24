@@ -18,8 +18,12 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-    one_event = Bool(False, help="Stop after first calibration event").tag(config=True)
-    output_file = Unicode("calibration.hdf5", help="Name of the output file").tag(config=True)
+    one_event = traits.Bool(False, help="Stop after first calibration event").tag(config=True)
+    output = traits.Path(
+        help="Name of the output file",
+        directory_ok=False,
+        default_value="calibration.hdf5"
+    ).tag(config=True)
     calibration_product = traits.create_class_enum_trait(
         CalibrationCalculator, default_value="LSTCalibrationCalculator"
     )
@@ -28,8 +32,8 @@ class CalibrationHDF5Writer(Tool):
     )
 
     aliases = {
-            "input_file": "EventSource.input_url",
-            "output_file": "CalibrationHDF5Writer.output_file",
+            "input": "EventSource.input_url",
+            "output": "CalibrationHDF5Writer.output",
             "max_events": "EventSource.max_events",
             "calibration_product": "CalibrationHDF5Writer.calibration_product",
             "r0calibrator_product": "CalibrationHDF5Writer.r0calibrator_product",
@@ -60,8 +64,8 @@ class CalibrationHDF5Writer(Tool):
 
     def setup(self):
 
-        self.log.debug(f"Open file")
         self.eventsource = EventSource.from_config(parent=self)
+        self.log.debug(self.eventsource.input_url)
 
         tel_id = self.eventsource.lst_service.telescope_id
         if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
@@ -81,9 +85,9 @@ class CalibrationHDF5Writer(Tool):
 
         group_name = 'tel_' + str(tel_id)
 
-        self.log.debug(f"Open output file {self.output_file}")
+        self.log.debug(f"Open output file {self.output}")
         self.writer = HDF5TableWriter(
-            filename=self.output_file, group_name=f"tel_{self.processor.tel_id}", overwrite=True
+            filename=self.output, group_name=f"tel_{self.processor.tel_id}", overwrite=True
         )
 
     def start(self):
@@ -213,7 +217,7 @@ class CalibrationHDF5Writer(Tool):
 
     def finish(self):
         Provenance().add_output_file(
-            self.output_file,
+            self.output,
             role='mon.tel.calibration'
         )
         self.writer.close()
