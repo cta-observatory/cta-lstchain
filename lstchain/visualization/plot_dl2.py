@@ -747,7 +747,26 @@ def plot_1d_excess(named_datasets, lima_significance,
     """
     Plot one-dimensional distribution of signal and backgound events
     Color maps: https://matplotlib.org/gallery/color/colormap_reference.html
+        
+    Parameters
+    ----------
+    named_datasets: dataset to be analysed  
+    lima_significance: significance to be used
+    x_label: label x-axis
+    x_cut: signal region
+    ax: matplotlib.pyplot.axis
+    x_range_min: min value of the histogram
+    x_range_max: max value of the histogram
+    n_bins: number of bins of the histogram
+    opacity: alpha parameter of the histogram
+    color_map_name
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axis`
+    
     """
+   
     if ax is None:
         ax = plt.gca()
     colors = get_cmap(color_map_name).colors
