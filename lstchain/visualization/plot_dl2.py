@@ -728,10 +728,10 @@ def plot_wobble(source_position, n_points, ax = None):
     rotation_angle = 360./n_points
     labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
     ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
-    for _ in range(n_points):
-        first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0], rotation_angle * _)[0])
-        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity, label=labels[_])
-        ax.annotate(labels[_], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[_])
+    for off_point in range(n_points):
+        first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0], rotation_angle * off_point)[0])
+        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity, label=labels[off_point])
+        ax.annotate(labels[off_point], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[off_point])
 
     ax.set_ylim(-0.7, 0.7)
     ax.set_xlim(-0.7, 0.7)
