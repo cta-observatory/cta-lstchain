@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
 from astropy.table import Table
+from matplotlib.cm import get_cmap
 from scipy.stats import norm
 
 from ..io.config import get_standard_config, read_configuration_file
@@ -27,6 +28,8 @@ __all__ = [
     'plot_importances',
     'plot_pos',
     'plot_roc_gamma',
+    'plot_1d_excess',
+    'plot_wobble',
 ]
 
 
@@ -696,3 +699,60 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
         fig.savefig(plot_outfile)
 
     return fig, axes
+
+
+def plot_wobble(source_position, n_points, ax = None):
+    """
+    Plot 2D map of ON/OFF positions w.r.t. to the camera center
+    """
+    from lstchain.reco.utils import rotate
+    if ax is None:
+        ax = plt.gca()
+    opacity = 0.2
+    marker_size = 20
+    color_map_name = 'Set1'  # https://matplotlib.org/gallery/color/colormap_reference.html
+    colors = get_cmap(color_map_name).colors
+    ax.set_prop_cycle(color=colors)
+
+    rotation_angle = 360./n_points
+    labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
+    ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
+    for _ in range(n_points):
+        first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0], rotation_angle * _)[0])
+        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity, label=labels[_])
+        ax.annotate(labels[_], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[_])
+
+    ax.set_ylim(-0.7, 0.7)
+    ax.set_xlim(-0.7, 0.7)
+
+    ax.set_ylabel("(m)")
+    ax.set_xlabel("Position in the camera (m)")
+    return ax
+
+
+def plot_1d_excess(named_datasets, lima_significance,
+                   x_label, x_cut, ax=None, x_range_min=0, x_range_max=2,
+                   n_bins=100, opacity=0.2, color_map_name='Set1'):
+    """
+    Plot one-dimensional distribution of signal and backgound events
+    Color maps: https://matplotlib.org/gallery/color/colormap_reference.html
+    """
+    if ax is None:
+        ax = plt.gca()
+    colors = get_cmap(color_map_name).colors
+    ax.set_prop_cycle(color=colors)
+
+    hists = []
+    for label, data, factor in named_datasets:
+        hists.append(ax.hist(data, label=label, weights=factor*np.ones_like(data),
+                     bins=n_bins, alpha=opacity, range=[x_range_min, x_range_max]))
+
+    ax.annotate(text=f'Significance Li&Ma = {lima_significance:.2f} $\sigma$\n',
+                 xy=(np.max(hists[0][1]/4), np.max(hists[0][0]/6*5)), size=20, color='r')
+
+    ax.vlines(x=x_cut, ymin=0, ymax=np.max(hists[0][0]*1.2), linestyle='--', linewidth=2,
+               color='black', alpha=opacity)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(r'Number of events')
+    ax.legend(fontsize=12)
+    return(ax)
