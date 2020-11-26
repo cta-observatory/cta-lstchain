@@ -1071,7 +1071,7 @@ def read_dl2_to_pyirf(filename):
     return events, pyirf_simu_info
 
 
-def read_dl2_sub_run(t_filename, columns_to_read=None):
+def read_dl2_params(t_filename, columns_to_read=None):
     '''
     Read a file with DL2 data
 
