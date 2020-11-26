@@ -62,7 +62,6 @@ def analyze_wobble(config):
     # Add theta2 to selected data
     true_source_position = extract_source_position(selected_data, config['input']['observed_source'])
     plotting.plot_wobble(true_source_position, n_points, ax1)
-    #plt.draw()
     named_datasets = []
     named_datasets.append(('ON data', np.array(compute_theta2(selected_data, true_source_position)), 1))
     n_on = np.sum(named_datasets[0][1] < theta2_cut)
@@ -88,7 +87,6 @@ def analyze_wobble(config):
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
-    #plt.draw()
     plt.show()
 
 
@@ -135,7 +133,6 @@ def analyze_on_off(config):
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off,  lima_norm)], lima_significance,
                             r'$\theta^2$ [deg$^2$]', theta2_cut, ax1)
-    #plt.draw()
 
     # alpha analysis
     LOGGER.info('Perform alpha analysis')
@@ -159,5 +156,5 @@ def analyze_on_off(config):
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, ax2, 0, 90, 90)
-    #plt.draw()
+
     plt.show()
