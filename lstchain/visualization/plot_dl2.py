@@ -425,6 +425,7 @@ def plot_pos(data, true_hadroness=False):
 def plot_importances(model, features_names, ax=None, **kwargs):
     """
     plot features importances
+    
     Parameters
     ----------
     model: scikit-learn model
@@ -434,7 +435,7 @@ def plot_importances(model, features_names, ax=None, **kwargs):
 
     Returns
     -------
-
+    ax: `matplotlib.pyplot.axis`
     """
 
     ax = plt.gca() if ax is None else ax
@@ -704,6 +705,16 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 def plot_wobble(source_position, n_points, ax = None):
     """
     Plot 2D map of ON/OFF positions w.r.t. to the camera center
+    
+    Parameters
+    ----------
+    source_position: list with x and y of the source position
+    n_points: number of off points
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axis`
+    
     """
     from lstchain.reco.utils import rotate
     if ax is None:
