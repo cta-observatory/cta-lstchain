@@ -69,23 +69,23 @@ def analyze_wobble(config):
     rotation_angle = 360./n_points
     origin_x = selected_data['reco_src_x']
     origin_y = selected_data['reco_src_y']
-    for _ in range(1, n_points):
+    for off_point in range(1, n_points):
         t_off_data = selected_data.copy()
-        off_xy = rotate(tuple(zip(origin_x, origin_y)), rotation_angle * _)
+        off_xy = rotate(tuple(zip(origin_x, origin_y)), rotation_angle * off_point)
         t_off_data['reco_src_x'] = [xy[0] for xy in off_xy]
         t_off_data['reco_src_y'] = [xy[1] for xy in off_xy]
-        named_datasets.append((f'OFF {rotation_angle * _}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
+        named_datasets.append((f'OFF {rotation_angle * off_point}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
     lima_significance = stat.sqrt_ts.item()
     lima_excess = stat.n_sig
-    LOGGER.info('Observation time %s', observation_time)
-    LOGGER.info('Number of "ON" events %s', n_on)
-    LOGGER.info('Number of "OFF" events %s', n_off)
-    LOGGER.info('ON/OFF observation time ratio %s', 1./(n_points - 1))
-    LOGGER.info('Excess is %s', lima_excess)
-    LOGGER.info('Li&Ma significance %s', lima_significance)
+    LOGGER.info('Observation time: {:.1f} s'.format(observation_time))
+    LOGGER.info('Number of "ON" events: {:.0f}'.format(n_on))
+    LOGGER.info('Number of "OFF" events: {:.0f}'.format(n_off))
+    LOGGER.info('ON/OFF observation time ratio: {:.3f}'.format(1./(n_points - 1)))
+    LOGGER.info('Excess: {:.1f}'.format(lima_excess))
+    LOGGER.info('Li&Ma significance: {:.2f}'.format(lima_significance))
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
     plt.show()
 
