@@ -84,6 +84,8 @@ def analyze_wobble(config):
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
+    
+    # API change for attributes significance and excess in the new gammapy version: https://docs.gammapy.org/dev/api/gammapy.stats.WStatCountsStatistic.html
     lima_significance = stat.sqrt_ts.item()
     lima_excess = stat.n_sig
     LOGGER.info('Observation time %s', observation_time)
@@ -139,8 +141,8 @@ def analyze_on_off(config):
     n_norm_off = np.sum((theta2_off > theta2_norm_min) & (theta2_off < theta2_norm_max))
     lima_norm = n_norm_on / n_norm_off
     stat = WStatCountsStatistic(n_on, n_off, lima_norm)
-    lima_significance = stat.significance.item()
-    lima_excess = stat.excess
+    lima_significance = stat.sqrt_ts.item()
+    lima_excess = stat.n_sig
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off,  lima_norm)], lima_significance,
