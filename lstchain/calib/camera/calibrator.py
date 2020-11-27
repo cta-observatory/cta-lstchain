@@ -69,6 +69,8 @@ class LSTCameraCalibrator(CameraCalibrator):
             will be used by default.
         calibration_path :
             Path to LST calibration file to get the pedestal and flat-field corrections
+        time_calibration_path :
+            Path to DRS4 time calibration file, if set to empty string no correction is done
 
 
         kwargs
@@ -100,7 +102,9 @@ class LSTCameraCalibrator(CameraCalibrator):
             )
 
         # declare time calibrator if correction file exist
-        if os.path.exists(self.time_calibration_path):
+        if self.time_calibration_path == '':
+            self.time_corrector = None
+        elif os.path.exists(self.time_calibration_path):
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path=self.time_calibration_path
             )
