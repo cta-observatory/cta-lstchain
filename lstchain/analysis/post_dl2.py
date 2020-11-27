@@ -78,8 +78,8 @@ def analyze_wobble(config):
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
-    lima_significance = stat.significance.item()
-    lima_excess = stat.excess
+    lima_significance = stat.sqrt_ts.item()
+    lima_excess = stat.n_sig
     LOGGER.info('Observation time %s', observation_time)
     LOGGER.info('Number of "ON" events %s', n_on)
     LOGGER.info('Number of "OFF" events %s', n_off)
@@ -156,5 +156,4 @@ def analyze_on_off(config):
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, ax2, 0, 90, 90)
-
     plt.show()
