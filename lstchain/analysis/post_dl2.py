@@ -44,8 +44,14 @@ def setup_logging(verbosity=1):
 
 def analyze_wobble(config):
     """
-    Perform the wobble analysis
+    Extracts the theta2 plot of a dataset taken with wobble observations
+    
+    Parameters
+    ----------
+    config_file
+
     """
+   
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     n_points = config['analysis']['parameters']['n_points']
     theta2_cut = config['analysis']['selection']['theta2'][0]
@@ -87,12 +93,18 @@ def analyze_wobble(config):
     LOGGER.info('Excess: {:.1f}'.format(lima_excess))
     LOGGER.info('Li&Ma significance: {:.2f}'.format(lima_significance))
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
+    fig.savefig("theta2.png")
     plt.show()
 
 
 def analyze_on_off(config):
     """
-    Perform the ON/OFF analysis
+    Extracts the theta2 plot of a dataset taken with ON/OFF observations
+    
+    Parameters
+    ----------
+    config_file
+
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     LOGGER.info("Running ON/OFF analysis")
