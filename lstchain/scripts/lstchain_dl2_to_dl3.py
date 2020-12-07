@@ -76,13 +76,7 @@ parser.add_argument('--input-irf-file', '-irf', type=Path, dest='irf',
 parser.add_argument('--source-name', '-s', type=str,
                     dest='source_name',
                     help='Name of the source',
-                    default='Crab', required=True
-                    )
-
-parser.add_argument('--obs-mode', '-mode', type=str,
-                    dest='obs_mode',
-                    help='Observation mode: ON, OFF or WOBBLE',
-                    default=None, required=True
+                    required=True
                     )
 
 parser.add_argument('--config', '-conf', type=Path,
@@ -136,7 +130,7 @@ def main():
 
     #Create primary HDU
     events, gti, pointing = create_event_list(data=data, run_number=run_number,
-                    source_name=args.source_name, mode=args.obs_mode)
+                    source_name=args.source_name)
 
     name_dl3_file = file.replace('dl2', 'dl3')
     name_dl3_file = name_dl3_file.replace('h5', 'fits')

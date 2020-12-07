@@ -67,10 +67,10 @@ parser.add_argument('--input-file-gamma-diff', '-fg-diff', type=Path, dest='gamm
                     default=None, required=False
                     )
 
-parser.add_argument('--pnt-like', '-pnt', action='store',
-                    type=lambda x: bool(strtobool(x)), dest='irf_type',
+parser.add_argument('--point-like', '-pnt', action='store',
+                    type=lambda x: bool(strtobool(x)), dest='point_like',
                     help='True for point-like IRF, False for Full Enclosure',
-                    default=None, required=False
+                    required=True
                     )
 
 parser.add_argument('--config', '-conf', type=Path,
@@ -130,7 +130,7 @@ def main():
 
     gammas["selected_gh"] = gammas["gh_score"] > gh_cut
     #irf_type = True for point like IRFs, False for Full Enclosure IRFs
-    if args.irf_type:
+    if args.point_like:
         gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
         gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
         #Combining selection cuts

@@ -18,5 +18,5 @@ dependencies:
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
       - ctaplot
-      - astropy>=4.0.2
+      - astropy>=4.1
       - pyirf~=0.3.0

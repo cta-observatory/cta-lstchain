@@ -241,10 +241,10 @@ def test_dl3():
             'lstchain_dl2_to_dl3',
             '-d', input_file,
             '-o', output_dir,
-            '-add-irf', 'False',
+            '-add-irf', 'True',
             '-irf', irf_file,
-            '-s', 'Gamma',
-			'-mode', 'OFF',
+            '-s', 'Crab',
+            '-mode', 'OFF',
             '-conf', cuts
             )
 
