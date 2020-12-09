@@ -85,6 +85,11 @@ class LSTR0Corrections(CameraR0Calibrator):
                             help='Path to the LST pedestal binary file'
                             ).tag(config=True)
 
+    spike_path = Unicode('',
+                            allow_none=True,
+                            help='Path to the DRS spike text file'
+                            ).tag(config=True)
+
     def __init__(self, **kwargs):
         """
         The R0 calibrator for LST data.
@@ -115,6 +120,9 @@ class LSTR0Corrections(CameraR0Calibrator):
                                               self.size4drs+40),
                                               dtype=np.int16)
 
+        self.spike_adc = np.array([47.0, 53.0])
+
+
         self.first_cap_array = np.zeros((self.n_module,
                                          self.n_gain,
                                          self.n_pix))
@@ -137,6 +145,7 @@ class LSTR0Corrections(CameraR0Calibrator):
                                              self.n_pix))
 
         self._load_calib()
+        self._load_spike()
 
     def calibrate(self, event):
         for tel_id in event.r0.tels_with_data:
@@ -275,21 +284,24 @@ class LSTR0Corrections(CameraR0Calibrator):
                                                                                     expected_pixel_id,
                                                                                     self.first_cap_array_spike,
                                                                                     self.first_cap_old_array,
-                                                                                    n_modules)
+                                                                                    n_modules,
+                                                                                    self.spike_adc)
             else:
                 event.r1.tel[self.tel_id].waveform = \
                     self.interpolate_pseudo_pulses_data_from_20181010_to_20191104(samples,
                                                                                   expected_pixel_id,
                                                                                   self.first_cap_array_spike,
                                                                                   self.first_cap_old_array,
-                                                                                  n_modules)
+                                                                                  n_modules,
+                                                                                  self.spike_adc)
 
             event.r1.tel[self.tel_id].trigger_type = event.r0.tel[self.tel_id].trigger_type
             event.r1.tel[self.tel_id].trigger_time = event.r0.tel[self.tel_id].trigger_time
 
     @staticmethod
     @jit(parallel=True)
-    def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules):
+    #def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules, spike_adc):
+    def interpolate_pseudo_pulses(waveform, expected_pixel_id, fc, fc_old, n_modules, spike_adc):
         """
         Interpolate Spike A & B.
         Change waveform array.
@@ -329,7 +341,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % size1drs <= size1drs//2-1):
                                 pixel = expected_pixel_id[nr_module * 7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                #interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel, spike_adc)
 
                         # looking for spike A second case
                         abspos = int(roi_size - 1 + fc_old[nr_module, gain, pix] + k * size1drs)
@@ -339,12 +352,14 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # first half of the DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % size1drs <= size1drs//2-1):
                                 pixel = expected_pixel_id[nr_module * 7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                #interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel, spike_adc)
         return waveform
 
     @staticmethod
     @jit(parallel=True)
-    def interpolate_pseudo_pulses_data_from_20181010_to_20191104(waveform, expected_pixel_id, fc, fc_old, n_modules):
+    #def interpolate_pseudo_pulses_data_from_20181010_to_20191104(waveform, expected_pixel_id, fc, fc_old, n_modules):
+    def interpolate_pseudo_pulses_data_from_20181010_to_20191104(waveform, expected_pixel_id, fc, fc_old, n_modules, spike_adc):
         """
         Interpolate Spike A & B.
         This is function for data from 2018/10/10 to 2019/11/04 with old firmware.
@@ -385,7 +400,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix]+ (roi_size-1)) % size1drs <= size1drs//2-2):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                #interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel, spike_adc)
 
                         # looking for spike A second case
                         abspos = int(roi_size - 2 + fc_old[nr_module, gain, pix]+ k * size1drs)
@@ -395,7 +411,8 @@ class LSTR0Corrections(CameraR0Calibrator):
                             # first half of the DRS4 ring
                             if ((fc_old[nr_module, gain, pix] + (roi_size-1)) % 2 == 0 and (fc_old[nr_module, gain, pix] + (roi_size-1)) % size1drs <= size1drs//2-2):
                                 pixel = expected_pixel_id[nr_module*7 + pix]
-                                interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                #interpolate_spike_A(waveform, gain, spike_A_position, pixel)
+                                interpolate_spike_A(waveform, gain, spike_A_position, pixel, spike_adc)
         return waveform
 
     def _load_calib(self):
@@ -409,6 +426,15 @@ class LSTR0Corrections(CameraR0Calibrator):
                                                     pedestal_data - self.offset
                 self.pedestal_value_array[:, :, self.size4drs:self.size4drs + 40] \
                     = pedestal_data[:, :, 0:40] - self.offset
+
+    def _load_spike(self):
+        """
+        Function to load spike file.
+        """
+        if self.spike_path:
+            ev_id, num, mean, flag = np.loadtxt(self.spike_path, comments="#", unpack=True)
+            self.spike_adc = np.array(mean)
+
 
     def _get_first_capacitor(self, event, nr_module, tel_id):
         """
@@ -569,16 +595,18 @@ def ped_time(timediff):
 
 
 @jit
-def interpolate_spike_A(waveform, gain, position, pixel):
+def interpolate_spike_A(waveform, gain, position, pixel, spike_adc):
     """
     Numba function for interpolation spike type A.
     Change waveform array.
     """
     samples = waveform[gain, pixel, :]
-    a = int(samples[position - 1])
-    b = int(samples[position + 2])
-    waveform[gain, pixel, position] = (samples[position - 1]) + (0.33 * (b - a))
-    waveform[gain, pixel, position + 1] = (samples[position - 1]) + (0.66 * (b - a))
+    #a = int(samples[position - 1])
+    #b = int(samples[position + 2])
+    #waveform[gain, pixel, position] = (samples[position - 1]) + (0.33 * (b - a))
+    #waveform[gain, pixel, position + 1] = (samples[position - 1]) + (0.66 * (b - a))
+    waveform[gain, pixel, position] = (samples[position]) - spike_adc[0]
+    waveform[gain, pixel, position + 1] = (samples[position + 1]) - spike_adc[1]
 
 
 class NullR0Calibrator(CameraR0Calibrator):
