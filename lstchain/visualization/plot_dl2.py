@@ -425,6 +425,7 @@ def plot_pos(data, true_hadroness=False):
 def plot_importances(model, features_names, ax=None, **kwargs):
     """
     plot features importances
+    
     Parameters
     ----------
     model: scikit-learn model
@@ -434,7 +435,7 @@ def plot_importances(model, features_names, ax=None, **kwargs):
 
     Returns
     -------
-
+    ax: `matplotlib.pyplot.axis`
     """
 
     ax = plt.gca() if ax is None else ax
@@ -728,12 +729,12 @@ def plot_wobble(source_position, n_points, ax = None):
     rotation_angle = 360./n_points
     labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
     ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
-    for index in range(n_points):
+    for off_point in range(n_points):
         first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0],
-                                   rotation_angle * index)[0])
+                                   rotation_angle * off_point)[0])
         ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity,
-                label=labels[index])
-        ax.annotate(labels[_], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[index])
+                label=labels[off_point])
+        ax.annotate(labels[off_point], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[off_point])
 
     ax.set_ylim(-0.7, 0.7)
     ax.set_xlim(-0.7, 0.7)
@@ -768,6 +769,7 @@ def plot_1d_excess(named_datasets, lima_significance,
     -------
     ax: `matplotlib.pyplot.axes`
     """
+   
     if ax is None:
         ax = plt.gca()
     colors = get_cmap(color_map_name).colors

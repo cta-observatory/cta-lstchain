@@ -44,8 +44,14 @@ def setup_logging(verbosity=1):
 
 def analyze_wobble(config):
     """
-    Perform the wobble analysis
+    Extracts the theta2 plot of a dataset taken with wobble observations
+    
+    Parameters
+    ----------
+    config_file
+
     """
+   
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     n_points = config['analysis']['parameters']['n_points']
     theta2_cut = config['analysis']['selection']['theta2'][0]
@@ -62,7 +68,6 @@ def analyze_wobble(config):
     # Add theta2 to selected data
     true_source_position = extract_source_position(selected_data, config['input']['observed_source'])
     plotting.plot_wobble(true_source_position, n_points, ax1)
-    #plt.draw()
     named_datasets = []
     named_datasets.append(('ON data', np.array(compute_theta2(selected_data, true_source_position)), 1))
     n_on = np.sum(named_datasets[0][1] < theta2_cut)
@@ -70,17 +75,19 @@ def analyze_wobble(config):
     rotation_angle = 360./n_points
     origin_x = selected_data['reco_src_x']
     origin_y = selected_data['reco_src_y']
-    for _ in range(1, n_points):
+    for off_point in range(1, n_points):
         t_off_data = selected_data.copy()
-        off_xy = rotate(tuple(zip(origin_x, origin_y)), rotation_angle * _)
+        off_xy = rotate(tuple(zip(origin_x, origin_y)), rotation_angle * off_point)
         t_off_data['reco_src_x'] = [xy[0] for xy in off_xy]
         t_off_data['reco_src_y'] = [xy[1] for xy in off_xy]
-        named_datasets.append((f'OFF {rotation_angle * _}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
+        named_datasets.append((f'OFF {rotation_angle * off_point}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
-    lima_significance = stat.significance.item()
-    lima_excess = stat.excess
+    
+    # API change for attributes significance and excess in the new gammapy version: https://docs.gammapy.org/dev/api/gammapy.stats.WStatCountsStatistic.html
+    lima_significance = stat.sqrt_ts.item()
+    lima_excess = stat.n_sig
     LOGGER.info('Observation time %s', observation_time)
     LOGGER.info('Number of "ON" events %s', n_on)
     LOGGER.info('Number of "OFF" events %s', n_off)
@@ -88,12 +95,18 @@ def analyze_wobble(config):
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
+
     plt.show()
 
 
 def analyze_on_off(config):
     """
-    Perform the ON/OFF analysis
+    Extracts the theta2 plot of a dataset taken with ON/OFF observations
+    
+    Parameters
+    ----------
+    config_file
+
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     LOGGER.info("Running ON/OFF analysis")
@@ -128,13 +141,12 @@ def analyze_on_off(config):
     n_norm_off = np.sum((theta2_off > theta2_norm_min) & (theta2_off < theta2_norm_max))
     lima_norm = n_norm_on / n_norm_off
     stat = WStatCountsStatistic(n_on, n_off, lima_norm)
-    lima_significance = stat.significance.item()
-    lima_excess = stat.excess
+    lima_significance = stat.sqrt_ts.item()
+    lima_excess = stat.n_sig
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off,  lima_norm)], lima_significance,
                             r'$\theta^2$ [deg$^2$]', theta2_cut, ax1)
-    #plt.draw()
 
     # alpha analysis
     LOGGER.info('Perform alpha analysis')
