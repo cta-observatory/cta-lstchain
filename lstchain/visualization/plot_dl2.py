@@ -705,16 +705,17 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 def plot_wobble(source_position, n_points, ax = None):
     """
     Plot 2D map of ON/OFF positions w.r.t. to the camera center
-    
+
     Parameters
     ----------
-    source_position: list with x and y of the source position
-    n_points: number of off points
+    source_position: Source position in the camera frame, array-like [x,y]
+    n_points: Number of observation points. Rotation angle for each next observation is determined
+    as 360/n_points
+    ax: `matplotlib.pyplot.axes` or None
 
     Returns
     -------
-    ax: `matplotlib.pyplot.axis`
-    
+    ax: `matplotlib.pyplot.axes`
     """
     from lstchain.reco.utils import rotate
     if ax is None:
@@ -729,8 +730,10 @@ def plot_wobble(source_position, n_points, ax = None):
     labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
     ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
     for off_point in range(n_points):
-        first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0], rotation_angle * off_point)[0])
-        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity, label=labels[off_point])
+        first_point = tuple(rotate(list(zip(source_position[0], source_position[1]))[0],
+                                   rotation_angle * off_point)[0])
+        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity,
+                label=labels[off_point])
         ax.annotate(labels[off_point], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[off_point])
 
     ax.set_ylim(-0.7, 0.7)
@@ -747,24 +750,24 @@ def plot_1d_excess(named_datasets, lima_significance,
     """
     Plot one-dimensional distribution of signal and backgound events
     Color maps: https://matplotlib.org/gallery/color/colormap_reference.html
-        
+
     Parameters
     ----------
-    named_datasets: dataset to be analysed  
-    lima_significance: significance to be used
-    x_label: label x-axis
-    x_cut: signal region
-    ax: matplotlib.pyplot.axis
-    x_range_min: min value of the histogram
-    x_range_max: max value of the histogram
-    n_bins: number of bins of the histogram
-    opacity: alpha parameter of the histogram
-    color_map_name
+    named_datasets: Array of datasets to plot in a following form: (<dataset label>, data, overall
+    scale factor)
+    lima_significance: Li&Ma significance of observation
+    x_label: X-axis label
+    x_cut: X cut value
+    ax: `matplotlib.pyplot.axes` or None
+    x_range_min: Bottom value of X
+    x_range_max: Top value of X
+    n_bins: Number of histogram bins along X axis
+    opacity: Plot opaacity
+    color_map_name: Matplotlib colormap name
 
     Returns
     -------
-    ax: `matplotlib.pyplot.axis`
-    
+    ax: `matplotlib.pyplot.axes`
     """
    
     if ax is None:

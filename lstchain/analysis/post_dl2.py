@@ -95,7 +95,7 @@ def analyze_wobble(config):
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
-    fig.savefig("theta2.png")
+
     plt.show()
 
 

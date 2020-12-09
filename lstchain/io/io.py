@@ -1073,7 +1073,7 @@ def read_dl2_to_pyirf(filename):
 
 def read_dl2_params(t_filename, columns_to_read=None):
     '''
-    Read a file with DL2 data
+    Read specified parameters from a file with DL2 data
 
     Parameters
     ----------
