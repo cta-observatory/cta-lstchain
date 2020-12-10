@@ -1,20 +1,37 @@
 from lstchain.reco import utils
 import astropy.units as u
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
 import numpy as np
 import pandas as pd
 
 
-def test_camera_to_sky():
+def test_camera_to_altaz():
     pos_x = np.array([0, 0]) * u.m
     pos_y = np.array([0, 0]) * u.m
-    focal = 28*u.m
+    focal = 28 * u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
+    # Test for real event with a time
+    obs_time = Time(['2018-11-01T02:00', '2018-11-01T02:00'])
+    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = obs_time)
+    np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
+    np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
+
+def test_radec_to_camera():
+    pointing_radec = SkyCoord.from_name('Crab')
+    obstime = Time('2020-01-27T23:00', scale='utc')
+    pointing_alt  = u.Quantity(1.3748, u.rad, copy=False)
+    pointing_az = u.Quantity(4.0975, u.rad, copy=False)
+    focal = 28*u.m
+    expected_source_pos_camera = np.array([0.0, 0.0]) * u.m
+    pointing_pos_camera = utils.radec_to_camera(pointing_radec, obstime, pointing_alt, pointing_az, focal)
+    np.testing.assert_allclose(pointing_pos_camera.x.to_value(), expected_source_pos_camera[0].to_value(), atol=0.1)
+    np.testing.assert_allclose(pointing_pos_camera.y.to_value(), expected_source_pos_camera[1].to_value(), atol=0.1)
 
 def test_reco_source_position_sky():
     cog_x = np.array([2, 1]) * u.m
@@ -56,7 +73,34 @@ def test_impute_pointing():
 
 
 def test_unix_tai_to_utc():
+    from lstchain.reco.utils import unix_tai_to_time, INVALID_TIME
+
     timestamp_tai = 1579376359.3225002
     leap_seconds = 37
-    utc_time = utils.unix_tai_to_utc(timestamp_tai)
-    np.testing.assert_allclose(utc_time.unix, timestamp_tai - leap_seconds, rtol=1e-12)
+    utc_time = unix_tai_to_time(timestamp_tai)
+
+    assert np.isclose(utc_time.unix, timestamp_tai - leap_seconds)
+
+    # test nan values
+    assert unix_tai_to_time(np.nan) == INVALID_TIME
+
+    # test multiple values including nans
+    timestamps = np.array([timestamp_tai, np.nan])
+    assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
+    assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
+
+
+def test_filter_events():
+    from lstchain.reco.utils import filter_events
+    df = pd.DataFrame({'a': [1, 2, 3],
+                       'b': [np.nan, 2.2, 3.2],
+                       'c': [1, 2, np.inf]}
+                      )
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b']),
+                                  pd.DataFrame({'a': [2, 3], 'b': [2.2, 3.2], 'c': [2, np.inf]}))
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b', 'c']),
+                                  pd.DataFrame({'a': [2], 'b': [2.2], 'c': [2]}))
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, 1])),
+                                  pd.DataFrame({'a': [1], 'b': [np.nan], 'c': 1}))
+    with np.testing.assert_raises(KeyError):
+        filter_events(df, filters=dict(e=[0, np.inf]))

@@ -5,8 +5,11 @@ from setuptools import setup, find_packages
 import os
 import sys
 
-# pep 517 builds do not have pwd in PATH
-sys.path.insert(0, os.path.dirname(__file__))
+# Add lstchain folder to path (contains version.py)
+# this is needed as lstchain/__init__.py imports dependencies
+# that might not be installed before setup runs, so we cannot import
+# lstchain.version
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lstchain'))
 from version import get_version, update_release_version  # noqa
 
 
@@ -38,25 +41,32 @@ entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
 setup(
     version=version,
     packages=find_packages(),
-    py_modules='version',
     install_requires=[
-        'astropy',
-        'ctapipe',
-        'gammapy>=0.17',
+        "astropy~=4.0,>=4.0.2",
+        'ctapipe~=0.8.0',
+        'ctaplot~=0.5.3',
+        "eventio>=1.1.1,<2.0.0a0",  # at least 1.1.1, but not 2
+        'gammapy>=0.18',
         'h5py',
+        'joblib',
+        'matplotlib',
         'numba',
         'numpy',
         'pandas',
+        'pyirf~=0.4.0',
         'scipy',
         'seaborn',
+        'scikit-learn',
         'tables',
+        'traitlets',
     ],
     package_data={
-      'lstchain': ['data/lstchain_standard_config.json']
+        'lstchain': ['data/lstchain_standard_config.json',
+                     'resources/LST_pixid_to_cluster.txt'],
     },
     tests_require=[
-      'pytest',
-      'pytest-ordering',
+        'pytest',
+        'pytest-ordering',
     ],
     entry_points=entry_points
 )

@@ -4,17 +4,23 @@ from astropy.table import Table, vstack
 import tables
 from tables import open_file
 import os
-import pandas as pd
 import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
-from ctapipe.io.containers import MCHeaderContainer
+from ctapipe.containers import MCHeaderContainer
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-
+from tqdm import tqdm
+from ctapipe.tools.stage1 import Stage1ProcessorTool
+from astropy.utils import deprecated
+from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
+    TelescopeDescription, SubarrayDescription
+from pyirf.simulations import SimulatedEventsInfo
+from astropy import table
+import pandas as pd
 
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
@@ -33,7 +39,9 @@ __all__ = ['read_simu_info_hdf5',
            'write_subarray_tables',
            'write_metadata',
            'write_dataframe',
-           'write_dl2_dataframe'
+           'write_dl2_dataframe',
+           'write_calibration_data',
+           'read_dl2_to_pyirf',
            ]
 
 
@@ -41,6 +49,7 @@ __all__ = ['read_simu_info_hdf5',
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
+dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 
 
 
@@ -181,6 +190,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
+    bar = tqdm(total=len(file_list))
     with open_file(output_filename, 'w') as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
@@ -200,6 +210,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                                 os.path.basename(k),
                                                 createparents=True,
                                                 obj=f1.root[k].read())
+        bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
@@ -212,6 +223,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                                 merge_file.root[k].append(file.root[k].read())
                     except:
                         print("Can't append node {} from file {}".format(k, filename))
+            bar.update(1)
 
 
 def merging_check(file_list):
@@ -344,7 +356,66 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
         writer.write("run_config", [extramc, mcheader])
 
 
-def write_array_info(event, output_filename):
+@deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
+def write_array_info_08(subarray, output_filename):
+    """
+    Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
+    This is a temporary solution until we move to ctapipe v0.9.1. 
+
+    Parameters
+    ----------
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    output_filename: str
+    """
+
+    serialize_meta = True
+
+    subarray.to_table().write(
+      output_filename,
+      path="/configuration/instrument/subarray/layout",
+      serialize_meta=serialize_meta,
+      append=True,
+    )
+
+    subarray.to_table(kind="optics").write(
+      output_filename,
+      path="/configuration/instrument/telescope/optics",
+      append=True,
+      serialize_meta=serialize_meta,
+    )
+
+    for telescope_type in subarray.telescope_types:
+      ids = set(subarray.get_tel_ids_for_type(telescope_type))
+      if len(ids) > 0: # only write if there is a telescope with this camera
+        tel_id = list(ids)[0]
+        camera = subarray.tel[tel_id].camera
+        camera_name = f'geometry_{camera}'
+        with tables.open_file(output_filename, mode='a') as f:
+          telescope_chidren = f.root['/configuration/instrument/telescope']._v_children.keys()
+          if 'camera' in telescope_chidren:
+            cameras_name = f.root['/configuration/instrument/telescope/camera']._v_children.keys()
+            if camera_name in cameras_name:
+              print(
+                f'WARNING during lstchain.io.write_array_info_08():',
+                f'camera {camera_name} seems to be already present in the h5 file.'
+              )
+              continue
+        camera.geometry.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
+          append=True,
+          serialize_meta=serialize_meta          
+        )
+        camera.readout.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/readout_{camera}",
+          append=True,
+          serialize_meta=serialize_meta
+        )
+
+
+@deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
+def write_array_info(subarray, output_filename):
     """
     Write the array info to a HDF5 file
         - layout info is writen in '/instrument/subarray/layout'
@@ -353,33 +424,33 @@ def write_array_info(event, output_filename):
 
     Parameters
     ----------
-    event: `ctapipe.io.DataContainer`
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     output_filename: str
     """
 
     serialize_meta = True
 
-    sub = event.inst.subarray
-    sub.to_table().write(
+    subarray.to_table().write(
         output_filename,
         path="/instrument/subarray/layout",
         serialize_meta=serialize_meta,
         append=True
     )
 
-    sub.to_table(kind='optics').write(
+    subarray.to_table(kind='optics').write(
         output_filename,
         path='/instrument/telescope/optics',
         append=True,
         serialize_meta=serialize_meta
     )
-    for telescope_type in sub.telescope_types:
-        ids = set(sub.get_tel_ids_for_type(telescope_type))
+    for telescope_type in subarray.telescope_types:
+        ids = set(subarray.get_tel_ids_for_type(telescope_type))
         if len(ids) > 0:  # only write if there is a telescope with this camera
             tel_id = list(ids)[0]
-            camera = sub.tel[tel_id].camera
+            camera = subarray.tel[tel_id].camera
             camera_name = str(camera)
-            with tables.open_file(output_filename, mode='r') as f:
+
+            with tables.open_file(output_filename, mode='a') as f:
                 telescope_chidren = f.root['instrument/telescope']._v_children.keys()
                 if 'camera' in telescope_chidren:
                     cameras_name = f.root['instrument/telescope/camera']._v_children.keys()
@@ -389,14 +460,15 @@ def write_array_info(event, output_filename):
                             f'camera {camera_name} seems to be already present in the h5 file.'
                         )
                         continue
-            camera.to_table().write(
+
+            camera.geometry.to_table().write(
                 output_filename,
                 path=f'/instrument/telescope/camera/{camera_name}',
                 append=True,
                 serialize_meta=serialize_meta,
             )
 
-
+@deprecated('09/07/2020', message='will be removed in lstchain v0.7')
 def read_array_info(filename):
     """
     Read array information from HDF5 file.
@@ -419,14 +491,248 @@ def read_array_info(filename):
     return array_info
 
 
+def read_single_optics(filename, telescope_name):
+    """
+    Read a specific telescope optics from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    telescope_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.optics.OpticsDescription`
+    """
+    from astropy.units import Quantity
+    telescope_optics_path = "/configuration/instrument/telescope/optics"
+    telescope_optic_table = Table.read(filename, path=telescope_optics_path)
+    row = telescope_optic_table[np.where(telescope_name == telescope_optic_table['name'])[0][0]]
+    optics_description = OpticsDescription(
+        name=row['name'],
+        num_mirrors=row['num_mirrors'],
+        equivalent_focal_length=row['equivalent_focal_length'] * telescope_optic_table['equivalent_focal_length'].unit,
+        mirror_area=row['mirror_area'] * telescope_optic_table['mirror_area'].unit,
+        num_mirror_tiles=Quantity(row['num_mirror_tiles']),
+    )
+    return optics_description
+
+
+def read_optics(filename):
+    """
+    Read all telescope optics from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dictionnary of ctapipe.instrument.optics.OpticsDescription by telescope names
+    """
+    telescope_optics_path = "/configuration/instrument/telescope/optics"
+    telescope_optics_table = Table.read(filename, path=telescope_optics_path)
+    optics_dict = {}
+    for telescope_name in telescope_optics_table['name']:
+        optics_dict[telescope_name] = read_single_optics(filename, telescope_name)
+    return optics_dict
+
+
+def read_single_camera_geometry(filename, camera_name):
+    """
+    Read a specific camera geometry from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.geometry.CameraGeometry`
+    """
+    camera_geometry_path = f"/configuration/instrument/telescope/camera/geometry_{camera_name}"
+    camera_geometry = CameraGeometry.from_table(Table.read(filename, camera_geometry_path))
+    return camera_geometry
+
+
+def read_camera_geometries(filename):
+    """
+    Read all camera geometries from a DL1 file
+
+    Parameters
+    ----------
+    filename
+
+    Returns
+    -------
+    dictionnary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    camera_geoms = {}
+    for camera_name in set(Table.read(filename, path=subarray_layout_path)['camera_type']):
+        camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
+    return camera_geoms
+
+
+def read_single_camera_readout(filename, camera_name):
+    """
+    Read a specific camera readout from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.readout.CameraReadout`
+    """
+    camera_readout_path = f"/configuration/instrument/telescope/camera/readout_{camera_name}"
+    return CameraReadout.from_table(Table.read(filename, path=camera_readout_path))
+
+
+def read_camera_readouts(filename):
+    """
+    Read  all camera readouts from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dict of `ctapipe.instrument.camera.description.CameraDescription` by tel_id
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    camera_readouts = {}
+    for row in Table.read(filename, path=subarray_layout_path):
+        camera_name = row['camera_type']
+        camera_readouts[row['tel_id']] = read_single_camera_readout(filename, camera_name)
+    return camera_readouts
+
+
+def read_single_camera_description(filename, camera_name):
+    """
+    Read a specific camera description from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.camera.description.CameraDescription`
+    """
+    geom = read_single_camera_geometry(filename, camera_name)
+    readout = read_single_camera_readout(filename, camera_name)
+    return CameraDescription(camera_name, geometry=geom, readout=readout)
+
+
+def read_single_telescope_description(filename, telescope_name, telescope_type, camera_name):
+    """
+    Read a specific telescope description from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+    telescope_name: str
+    camera_name: str
+
+    Returns
+    -------
+    `ctapipe.instrument.telescope.TelescopeDescription`
+    """
+    optics = read_single_optics(filename, telescope_name)
+    camera_descr = read_single_camera_description(filename, camera_name)
+    return TelescopeDescription(telescope_name, telescope_type, optics=optics, camera=camera_descr)
+
+
+def read_subarray_table(filename):
+    """
+    Read the subarray as a table from a DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    `astropy.table.table.Table`
+    """
+    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    return Table.read(filename, path=subarray_layout_path)
+
+
+def read_telescopes_descriptions(filename):
+    """
+    Read telescopes descriptions from DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dict of `ctapipe.instrument.telescope.TelescopeDescription` by tel_id
+    """
+    subarray_table = read_subarray_table(filename)
+    descriptions = {}
+    for row in subarray_table:
+        tel_name = row['name']
+        camera_type = row['camera_type']
+        optics = read_single_optics(filename, tel_name)
+        camera = read_single_camera_description(filename, camera_type)
+        descriptions[row['tel_id']] = TelescopeDescription(row['name'], row['type'], optics=optics, camera=camera)
+    return descriptions
+
+
+def read_telescopes_positions(filename):
+    """
+    Read telescopes positions from DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    dictionnary of telescopes positions by tel_id
+    """
+    subarray_table = read_subarray_table(filename)
+    pos_dict = {}
+    pos_unit = subarray_table['pos_x'].unit
+    for row in subarray_table:
+        pos_dict[row['tel_id']] = np.array([row['pos_x'], row['pos_y'], row['pos_z']]) * pos_unit
+    return pos_dict
+
+
+def read_subarray_description(filename, subarray_name='LST-1'):
+    """
+    Read subarray description from an HDF5 DL1 file
+
+    Parameters
+    ----------
+    filename: str
+
+    Returns
+    -------
+    `ctapipe.instrument.subarray.SubarrayDescription`
+    """
+    tel_pos = read_telescopes_positions(filename)
+    tel_descrp = read_telescopes_descriptions(filename)
+    return SubarrayDescription(subarray_name, tel_positions=tel_pos, tel_descriptions=tel_descrp)
+
+
 def check_mcheader(mcheader1, mcheader2):
     """
     Check that the information in two mcheaders are physically consistent.
 
     Parameters
     ----------
-    mcheader1: `ctapipe.io.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.io.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.MCHeaderContainer`
+    mcheader2: `ctapipe.containers.MCHeaderContainer`
 
     Returns
     -------
@@ -543,7 +849,7 @@ def add_global_metadata(container, metadata):
 
     Parameters
     ----------
-    container: `ctapipe.io.containers.Container`
+    container: `ctapipe.containers.Container`
     metadata: `lstchain.io.lstchainers.MetaData`
     """
     meta_dict = metadata.as_dict()
@@ -558,19 +864,19 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
-        add_global_metadata(event.dl0, metadata)
+        add_global_metadata(event.index, metadata)
         add_global_metadata(event.mc, metadata)
-        add_global_metadata(event.trig, metadata)
+        add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trig])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path):
+def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -578,14 +884,21 @@ def write_dataframe(dataframe, outfile, table_path):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
-    table_path: str - path to the table to write in the HDF5 file
+    table_path: str
+        path to the table to write in the HDF5 file
     """
-    with pd.HDFStore(outfile, mode='a') as store:
+    if not table_path.startswith('/'):
+        table_path = '/' + table_path
+
+    with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit('/', maxsplit=1)
-        store.append(path, dataframe,
-                     format='table',
-                     data_columns=True)
-        store.get_node(os.path.join(path, 'table'))._f_rename(table_name)
+
+        f.create_table(
+            path,
+            table_name,
+            dataframe.to_records(index=index),
+            createparents=True,
+        )
 
 
 def write_dl2_dataframe(dataframe, outfile):
@@ -667,3 +980,88 @@ def recursive_copy_node(src_file, dir_file, path):
             recursive_path = os.path.join(recursive_path, p)
 
 
+def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
+    mon_event.pedestal.prefix = ''
+    mon_event.flatfield.prefix = ''
+    mon_event.calibration.prefix = ''
+    mon_index.prefix = ''
+
+
+    # update index
+    if new_ped:
+        mon_index.pedestal_id += 1
+
+    if new_ff:
+        mon_index.flatfield_id += 1
+        mon_index.calibration_id += 1
+
+
+    if new_ped:
+        # write ped container
+        writer.write(
+            table_name=f'telescope/monitoring/pedestal',
+            containers=[mon_index, mon_event.pedestal]
+        )
+
+    if new_ff:
+        # write calibration container
+        writer.write(
+            table_name="telescope/monitoring/flatfield",
+            containers=[mon_index, mon_event.flatfield]
+        )
+
+        # write ff container
+        writer.write(
+            table_name="telescope/monitoring/calibration",
+            containers=[mon_index, mon_event.calibration]
+        )
+
+
+def read_dl2_to_pyirf(filename):
+    """
+    Read DL2 files from lstchain and convert into pyirf internal format
+    Parameters
+    ----------
+    filename: path
+    Returns
+    -------
+    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    """
+
+    ## mapping
+    name_mapping = {
+        'mc_energy': 'true_energy',
+        'mc_alt': 'true_alt',
+        'mc_az': 'true_az',
+        'mc_alt_tel': 'pointing_alt',
+        'mc_az_tel': 'pointing_az',
+        'gammaness': 'gh_score',
+    }
+
+    unit_mapping = {
+        'true_energy': u.TeV,
+        'reco_energy': u.TeV,
+        'pointing_alt': u.rad,
+        'pointing_az': u.rad,
+        'true_alt': u.rad,
+        'true_az': u.rad,
+        'reco_alt': u.rad,
+        'reco_az': u.rad,
+    }
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+    pyirf_simu_info = SimulatedEventsInfo(n_showers=simu_info.num_showers * simu_info.shower_reuse,
+                                          energy_min=simu_info.energy_range_min,
+                                          energy_max=simu_info.energy_range_max,
+                                          max_impact=simu_info.max_scatter_range,
+                                          spectral_index=simu_info.spectral_index,
+                                          viewcone=simu_info.max_viewcone_radius,
+                                          )
+
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    events = table.QTable.from_pandas(events)
+
+    for k, v in unit_mapping.items():
+        events[k] *= v
+
+    return events, pyirf_simu_info

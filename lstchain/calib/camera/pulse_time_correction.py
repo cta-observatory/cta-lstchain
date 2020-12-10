@@ -5,6 +5,11 @@ from numba import njit, prange
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Unicode
 
+__all__ = [
+    'PulseTimeCorrection',
+    'get_corr_time_jit'
+    ]
+
 
 high_gain = 0
 low_gain = 1
@@ -147,7 +152,9 @@ class PulseTimeCorrection(Component):
 
 @njit()
 def get_corr_time_jit(first_cap, fan, fbn, n_harmonics, n_cap):
-    time = fan[0] / 2.
+
+    #time = fan[0] / 2. #commented because time flat-fielding is performed in charge calibrator
+    time = 0
     for n in prange(1, n_harmonics):
         time += fan[n] * np.cos((first_cap * n * 2 * np.pi) / n_cap)
         time += fbn[n] * np.sin((first_cap * n * 2 * np.pi) / n_cap)

@@ -11,36 +11,50 @@ Usage:
 "import utils"
 """
 
-import numpy as np
-from ctapipe.coordinates import CameraFrame
+import logging
+from warnings import warn
+
 import astropy.units as u
-from astropy.utils import deprecated
+import numpy as np
+import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
+from astropy.utils import deprecated
+from ctapipe.coordinates import CameraFrame
+
 from . import disp
-from warnings import warn
 
 __all__ = [
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
-    'get_event_pos_in_camera',
-    'reco_source_position_sky',
-    'camera_to_sky',
-    'sky_to_camera',
-    'source_side',
-    'source_dx_dy',
-    'polar_to_cartesian',
+    'camera_to_altaz',
     'cartesian_to_polar',
+    'clip_alt',
+    'expand_tel_list',
+    'filter_events',
+    'get_event_pos_in_camera',
+    'impute_pointing',
+    'linear_imputer',
+    'polar_to_cartesian',
     'predict_source_position_in_camera',
-    'unix_tai_to_utc'
+    'radec_to_camera',
+    'reco_source_position_sky',
+    'sky_to_camera',
+    'source_dx_dy',
+    'source_side',
+    'unix_tai_to_time',
 ]
 
-
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)  # position of the LST1
+# position of the LST1
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
 UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
+INVALID_TIME = UCTS_EPOCH
+
+
+log = logging.getLogger(__name__)
 
 
 def alt_to_theta(alt):
@@ -150,7 +164,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.io.containers.DataContainer`
+    event: `ctapipe.containers.DataContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
@@ -194,24 +208,32 @@ def reco_source_position_sky(cog_x, cog_y, disp_dx, disp_dy, focal_length, point
     sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
     """
     src_x, src_y = disp.disp_to_pos(disp_dx, disp_dy, cog_x, cog_y)
-    return camera_to_sky(src_x, src_y, focal_length, pointing_alt, pointing_az)
+    return camera_to_altaz(src_x, src_y, focal_length, pointing_alt, pointing_az)
 
 
-def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
+def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime = None):
     """
+    Compute camera to Horizontal frame (Altitude-Azimuth system). For MC assume the default ObsTime.
 
     Parameters
     ----------
-    pos_x: X coordinate in camera (distance)
-    pos_y: Y coordinate in camera (distance)
-    focal: telescope focal (distance)
-    pointing_alt: pointing altitude in angle unit
-    pointing_az: pointing altitude in angle unit
+    pos_x: `~astropy.units.Quantity`
+        X coordinate in camera (distance)
+    pos_y: `~astropy.units.Quantity`
+        Y coordinate in camera (distance)
+    focal: `~astropy.units.Quantity`
+        telescope focal (distance)
+    pointing_alt: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    pointing_az: `~astropy.units.Quantity`
+        pointing altitude in angle unit
+    obstime: `~astropy.time.Time`
+
 
     Returns
     -------
-    sky frame: `astropy.coordinates.sky_coordinate.SkyCoord`
-
+    sky frame: `astropy.coordinates.SkyCoord`
+       in AltAz frame
     Example:
     --------
     import astropy.units as u
@@ -221,9 +243,13 @@ def camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az):
     focal = 28*u.m
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_sky(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
     """
+    if not obstime:
+        logging.info("No time given. To be use only for MC data.")
+    horizon_frame = AltAz(location=location, obstime=obstime)
+
     pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
 
     camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction)
@@ -260,6 +286,31 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
     return camera_pos
 
+def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
+    """
+    Coordinate transform from sky coordinate to camera coordinates (x, y) in distance
+    Parameters
+    ----------
+    sky_coordinate: astropy.coordinates.sky_coordinate.SkyCoord
+    obstime: astropy.time.Time
+    pointing_alt: pointing altitude in angle unit
+    pointing_az: pointing altitude in angle unit
+    focal: astropy Quantity
+    
+    Returns
+    -------
+    camera frame: `astropy.coordinates.sky_coordinate.SkyCoord`
+    """   
+    
+    horizon_frame = AltAz(location=location, obstime=obstime)
+
+    pointing_direction = SkyCoord(alt=clip_alt(pointing_alt), az=pointing_az, frame=horizon_frame)
+
+    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=pointing_direction, obstime=obstime, location=location)
+
+    camera_pos = sky_coordinate.transform_to(camera_frame)
+
+    return camera_pos
 
 def source_side(source_pos_x, cog_x):
     """
@@ -373,26 +424,25 @@ def expand_tel_list(tel_list, max_tels):
 
 def filter_events(events,
                   filters=dict(intensity=[0, np.inf],
-                                 width=[0, np.inf],
-                                 length=[0, np.inf],
-                                 wl=[0, np.inf],
-                                 r=[0, np.inf],
-                                 leakage=[0, 1],
-                                 ),
-                  dropna=True,
+                               width=[0, np.inf],
+                               length=[0, np.inf],
+                               wl=[0, np.inf],
+                               r=[0, np.inf],
+                               leakage_intensity_width_2=[0, 1],
+                               ),
+                  finite_params=None,
                   ):
     """
     Apply data filtering to a pandas dataframe.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
-    If the column name does not exist, the filtering is simply not applied
 
     Parameters
     ----------
     events: `pandas.DataFrame`
     filters: dict containing events features names and their filtering range
-    dropna: bool
-        if True (default), `dropna()` is applied to the dataframe.
+    finite_params: optional, None or list of strings
+        extra filter to ensure finite parameters
 
     Returns
     -------
@@ -402,13 +452,24 @@ def filter_events(events,
     filter = np.ones(len(events), dtype=bool)
 
     for k in filters.keys():
-        if k in events.columns:
-            filter = filter & (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+        filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+        
+    if finite_params is not None:
+        _finite_params = list(set(finite_params).intersection(list(events.columns)))
+        with pd.option_context('mode.use_inf_as_null', True):
+            not_finite_mask = events[_finite_params].isnull()
+        filter &= ~(not_finite_mask.any(axis=1))
 
-    if dropna:
-        return events[filter].dropna()
-    else:
-        return events[filter]
+        not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
+        if (not_finite_counts > 0).any():
+            log.warning('Data contains not-predictable events.')
+            log.warning('Column | Number of non finite values')
+            for k, v in not_finite_counts.items():
+                if v > 0:
+                    log.warning(f'{k} : {v}')
+
+    return events[filter]
+
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
@@ -467,9 +528,21 @@ def clip_alt(alt):
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
 
 
-def unix_tai_to_utc(timestamp):
+def unix_tai_to_time(timestamp):
     """
-    Transform unix time from TAI to UTC scale considering the leap seconds
-    by adding the timestamp in seconds to the epoch value.
+    Create an astropy.Time object for timestamps in unix tai format.
+    Unix tai format mean seconds since 1970-01-01T00:00 TAI as opposed
+    to 1970-01-01T00:00 UTC for the usual unix timestamps.
     """
-    return UCTS_EPOCH + u.Quantity(timestamp, u.s, copy=False)
+    scalar = np.isscalar(timestamp)
+
+    timestamp = u.Quantity(timestamp, u.s, ndmin=1)
+    invalid = ~np.isfinite(timestamp)
+    timestamp[invalid] = 0
+
+    t = UCTS_EPOCH + timestamp
+
+    if scalar:
+        return t[0]
+
+    return t
