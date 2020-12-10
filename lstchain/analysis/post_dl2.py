@@ -2,9 +2,11 @@
 Collection of core analysis methods
 """
 
+import getpass
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 from gammapy.stats import WStatCountsStatistic
 from lstchain.io.io import merge_dl2_runs
@@ -27,7 +29,7 @@ def setup_logging(verbosity=1):
 
     :param int verbosity: Verbosity level used for console output
     """
-    fh = logging.FileHandler('/tmp/fast_alps.log')
+    fh = logging.FileHandler(f'/tmp/lstchain-postDL2-{getpass.getuser()}_{time.time()}.log')
     fh.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
@@ -39,7 +41,6 @@ def setup_logging(verbosity=1):
     # add the handler to the root logger
     LOGGER.addHandler(console)
     LOGGER.addHandler(fh)
-
 
 
 def analyze_wobble(config):
@@ -84,7 +85,7 @@ def analyze_wobble(config):
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
     stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
-    
+
     # API change for attributes significance and excess in the new gammapy version: https://docs.gammapy.org/dev/api/gammapy.stats.WStatCountsStatistic.html
     lima_significance = stat.sqrt_ts.item()
     lima_excess = stat.n_sig
@@ -96,7 +97,10 @@ def analyze_wobble(config):
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
 
-    plt.show()
+    if config['output']['interactive'] is True:
+        plt.show()
+    else:
+        plt.savefig(f"{config['output']['directory']}/wobble.png")
 
 
 def analyze_on_off(config):
@@ -164,10 +168,14 @@ def analyze_on_off(config):
     n_norm_off = np.sum((alpha_off > alpha_norm_min) & (alpha_off < alpha_norm_max))
     lima_norm = n_norm_on / n_norm_off
     stat = WStatCountsStatistic(n_on, n_off, lima_norm)
-    lima_significance = stat.significance.item()
-    lima_excess = stat.excess
+    lima_significance = stat.sqrt_ts.item()
+    lima_excess = stat.n_sig
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
     plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, ax2, 0, 90, 90)
-    plt.show()
+    if config['output']['interactive'] is True:
+        plt.show()
+    else:
+        plt.savefig(f"{config['output']['directory']}/on_off.png")
+

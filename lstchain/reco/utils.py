@@ -82,7 +82,7 @@ def rotate(flat_object, degree=0, origin=(0, 0)):
     return res
 
 
-def extract_source_position(data, observed_source_name):
+def extract_source_position(data, observed_source_name, equivalent_focal_length = 28*u.m):
     """
     Extract source position from data
 
@@ -90,19 +90,19 @@ def extract_source_position(data, observed_source_name):
     -----------
     pandas.DataFrame data: input data
     str observed_source_name: Name of the observed source
+    astropy.units.m equivalent_focal_length: Equivalent focal length of a telescope
 
     Returns:
     --------
-    2D array of coordinates of the source in form [(x),(y)]
+    2D array of coordinates of the source in form [(x),(y)] in astropy.units.m
     """
     observed_source = SkyCoord.from_name(observed_source_name)
     obstime = pd.to_datetime(data['dragon_time'], unit='s')
     pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
     pointing_az = u.Quantity(data['az_tel'], u.rad, copy=False)
-    # FIXME hardcoded focal length next line
     source_pos_camera = radec_to_camera(observed_source, obstime,
-                                        pointing_alt, pointing_az, focal=28*u.m)
-    source_position = [source_pos_camera.x.to_value(), source_pos_camera.y.to_value()]
+                                        pointing_alt, pointing_az, focal=equivalent_focal_length)
+    source_position = [source_pos_camera.x, source_pos_camera.y]
     return source_position
 
 
@@ -113,7 +113,7 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
     Parameters:
     -----------
     pandas.DataFrame data: Input data
-    2D array (x,y) source_position: Observed source name
+    2D array (x,y) source_position: Observed source position in astropy.units.m
     float conversion_factor: Conversion factor (default 0.1/0.05 deg/m)
 
     Returns:
@@ -122,7 +122,8 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
     """
     reco_src_x = data['reco_src_x']
     reco_src_y = data['reco_src_y']
-    return conversion_factor**2 * ((source_position[0]-reco_src_x)**2 + (source_position[1]-reco_src_y)**2)
+    return conversion_factor**2 * ((source_position[0].to_value()-reco_src_x)**2 +
+                                   (source_position[1].to_value()-reco_src_y)**2)
 
 
 def compute_alpha(data):
