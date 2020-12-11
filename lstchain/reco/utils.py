@@ -120,10 +120,10 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
     -------
     Array with `theta2` values
     """
-    reco_src_x = data['reco_src_x']
-    reco_src_y = data['reco_src_y']
-    return conversion_factor**2 * ((source_position[0].to_value()-reco_src_x)**2 +
-                                   (source_position[1].to_value()-reco_src_y)**2)
+    reco_src_x = np.array(data['reco_src_x']) * u.m
+    reco_src_y = np.array(data['reco_src_y']) * u.m
+    return conversion_factor**2 * ((source_position[0] - reco_src_x)**2 +
+                                   (source_position[1] - reco_src_y)**2)
 
 
 def compute_alpha(data):

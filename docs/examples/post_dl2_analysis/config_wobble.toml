@@ -4,7 +4,7 @@ observed_source = 'Mrk 421'
 columns_to_read = ['alt_tel', 'az_tel', 'dragon_time', 'gammaness', 'intensity', 'leakage2_intensity', 'n_pixels', 'reco_src_x', 'reco_src_y', 'wl']
 
 [output]
-interactive = false
+interactive = true
 directory = '/tmp'
 
 [preselection]

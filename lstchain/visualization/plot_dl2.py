@@ -789,4 +789,4 @@ def plot_1d_excess(named_datasets, lima_significance,
     ax.set_xlabel(x_label)
     ax.set_ylabel(r'Number of events')
     ax.legend(fontsize=12)
-    return(ax)
+    return ax

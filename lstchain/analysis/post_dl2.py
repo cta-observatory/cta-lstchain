@@ -98,9 +98,13 @@ def analyze_wobble(config):
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
 
     if config['output']['interactive'] is True:
+        LOGGER.info('Interactive mode ON, plots will be only shown, but not saved')
         plt.show()
     else:
+        LOGGER.info('Interactive mode OFF, no plots will be displayed')
+        plt.ioff()
         plt.savefig(f"{config['output']['directory']}/wobble.png")
+        plt.close()
 
 
 def analyze_on_off(config):
@@ -175,7 +179,10 @@ def analyze_on_off(config):
     plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, ax2, 0, 90, 90)
     if config['output']['interactive'] is True:
+        LOGGER.info('Interactive mode ON, plots will be only shown, but not saved')
         plt.show()
     else:
+        LOGGER.info('Interactive mode OFF, no plots will be displayed')
+        plt.ioff()
         plt.savefig(f"{config['output']['directory']}/on_off.png")
-
+        plt.close()
