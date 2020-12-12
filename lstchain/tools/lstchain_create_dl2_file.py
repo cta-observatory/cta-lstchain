@@ -1,7 +1,6 @@
 """
 Create h5 file with reconstruction of energy, disp and gamma/hadron separation of events.
 """
-import os
 
 import joblib
 import numpy as np
@@ -60,9 +59,17 @@ class ReconstructionHDF5Writer(Tool):
         For getting help run:
         lstchain_create_dl2_file --help
         """
+        self.configuration = None
+        self.data = None
 
     def setup(self):
-        pass
+        self.configuration = standard_config
+        if self.config_file:
+            self.configuration = read_configuration_file(self.config_file)
+        self.data = pd.read_hdf(self.input, key=dl1_params_lstcam_key)
+        if self.configuration['source_dependent']:
+            data_src_dep = pd.read_hdf(self.input, key=dl1_params_src_dep_lstcam_key)
+            self.data = pd.concat([self.data, data_src_dep], axis=1)
 
     def start(self):
         pass
