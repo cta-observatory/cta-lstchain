@@ -9,7 +9,6 @@ from ctapipe.core import Provenance, Tool, traits
 from lstchain.io import (
     get_dataset_keys,
     read_configuration_file,
-    replace_config,
     standard_config,
     write_dl2_dataframe,
 )
@@ -26,15 +25,13 @@ from tables import open_file
 class ReconstructionHDF5Writer(Tool):
 
     name = "ReconstructionHDF5Writer"
-    description = (
-        "Generate a HDF5 file with reconstructed energy, disp and hadroness of events"
-    )
+    description = "Generate a HDF5 file with reconstructed energy, disp and hadroness of events"
 
     input = traits.Path(
         help="Path to a DL1 HDF5 file", directory_ok=False, exists=True
     ).tag(config=True)
     path_models = traits.Path(
-        help="Path where to find the trained RF", file_ok=False
+        help="Path where to find the trained RF models", file_ok=False
     ).tag(config=True)
     output_dir = traits.Path(
         help="Path where to store the reconstructed DL2", file_ok=False
@@ -117,7 +114,43 @@ class ReconstructionHDF5Writer(Tool):
         )
 
     def finish(self):
-        pass
+
+        # prepare output dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = self.output_dir / self.input.name.replace("dl1", "dl2")
+        if output_file.exists():
+            raise IOError(f"{output_file} already exists")
+        self.log.info(f"Generating {output_file}")
+
+        # prepare dl1_keys
+        dl1_keys = get_dataset_keys(self.input)
+        if dl1_images_lstcam_key in dl1_keys:
+            dl1_keys.remove(dl1_images_lstcam_key)
+        if dl1_params_lstcam_key in dl1_keys:
+            dl1_keys.remove(dl1_params_lstcam_key)
+        if dl1_params_src_dep_lstcam_key in dl1_keys:
+            dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+        # prepare h5 file
+        with open_file(self.input, "r") as h5in:
+            with open_file(output_file, "a") as h5out:
+                for k in dl1_keys:
+                    if not k.startswith("/"):
+                        k = "/" + k
+                    path, name = k.rsplit("/", 1)
+                    if path not in h5out:
+                        group_path, group_name = path.rsplit("/", 1)
+                        g = h5out.create_group(group_path, group_name, createparents=True)
+                    else:
+                        g = h5out.get_node(path)
+                    h5in.copy_node(k, g, overwrite=True)
+
+        # write h5 file
+        write_dl2_dataframe(self.dl2, output_file)
+        Provenance().add_output_file(
+            output_file,
+            role="DL2/Event"
+        )
 
 
 def main():
