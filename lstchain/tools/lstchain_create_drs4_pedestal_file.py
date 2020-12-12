@@ -34,7 +34,9 @@ class PedestalFITSWriter(Tool):
 
     aliases = {
         "input": "EventSource.input_url",
+        "i": "EventSource.input_url",
         "output": "PedestalFITSWriter.output",
+        "o": "PedestalFITSWriter.output",
     }
 
     flags = {
