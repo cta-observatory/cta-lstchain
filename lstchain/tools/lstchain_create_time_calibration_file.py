@@ -36,8 +36,10 @@ class TimeCalibrationHDF5Writer(Tool):
 
     aliases = {
         "input": "TimeCalibrationHDF5Writer.input",
+        "i": "TimeCalibrationHDF5Writer.input",
         "glob": "TimeCalibrationHDF5Writer.glob",
         "output": "TimeCorrectionCalculate.calib_file_path",
+        "o": "TimeCorrectionCalculate.calib_file_path",
         "pedestal": "LSTR0Corrections.pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
     }
