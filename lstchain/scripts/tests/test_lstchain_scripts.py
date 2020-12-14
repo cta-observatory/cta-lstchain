@@ -216,7 +216,7 @@ def test_irf():
 
     #Selection cuts have to be changed for tests
     data = json.load(open(os.path.join('lstchain/data/data_selection_cuts.json')))
-    data["fixed_cuts"]["gh_score"][0] = 0.4
+    data["fixed_cuts"]["gh_score"][0] = 0.3
     data["events_filters"]["intensity"][0]=0
     json.dump(data, open(cuts,'x'))
     #Use Proton spectra for spectral weighting as the test file is diffuse gammas
@@ -244,7 +244,6 @@ def test_dl3():
             '-add-irf', 'True',
             '-irf', irf_file,
             '-s', 'Crab',
-            '-mode', 'OFF',
             '-conf', cuts
             )
 
