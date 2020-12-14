@@ -43,6 +43,7 @@ from pyirf.utils import calculate_source_fov_offset, calculate_theta
 from pyirf.binning import (
     create_bins_per_decade,
     add_overflow_bins,
+    create_histogram_table,
 )
 
 log = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ def main():
     #Read and update MC information
     log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
     mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(mc_gamma["file"])
-    mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"], prefix='true')
+    mc_gamma["events"]["source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"])
     # calculate theta / distance between reco and assumed source position
     mc_gamma["events"]["theta"] = calculate_theta(
                     mc_gamma["events"],
@@ -131,7 +132,7 @@ def main():
     #irf_type = True for point like IRFs, False for Full Enclosure IRFs
     if args.point_like:
         gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
-        gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
+        gammas["selected_fov"] = gammas["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
         #Combining selection cuts
         gammas["selected"] = gammas["selected_theta"] & \
                             gammas["selected_gh"] & \
