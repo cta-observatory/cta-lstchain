@@ -5,10 +5,6 @@ Script to create DL3 of single (merged) DL2 run along with IRFs generated from l
 
 The selection cuts applied are the same as those used in generating IRFs.
 
-TODO:
-Adding filter for size of files after cuts, to have significant number of events
-Generalize source_fov_offset binning
-
  - Input: Path where the merged DL2 data HDF5 file is present
           Source name
           IRFs
@@ -21,7 +17,6 @@ $> python lstchain_dl2_to_dl3.py
 --add-irf True
 --input-irf-file ./IRF/irf.fits.gz
 --source-name Crab
---obs-mode WOBBLE
 --config ../../data/data_selection_cuts.json
 """
 
@@ -43,8 +38,7 @@ from astropy.io import fits
 import astropy.units as u
 from astropy.coordinates.angle_utilities import angular_separation
 
-from pyirf.utils import calculate_source_fov_offset, calculate_theta
-
+from pyirf.utils import calculate_source_fov_offset
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="DL2 to DL3")
@@ -100,11 +94,7 @@ def main():
 
     # Add angular separation column, different from pyirf function, because
     # it is used only for MC files.
-    data['source_fov_offset'] = angular_separation(data['reco_az'],
-                                              data['reco_alt'],
-                                              data['pointing_az'],
-                                              data['pointing_alt'],
-                                              ).to(u.deg)
+    data['reco_source_fov_offset'] = calculate_source_fov_offset(data, prefix='reco')
 
     # Get the run_id from the filename if it is -1 in the obs_id column
     if data['obs_id'][0] <= 0:
@@ -126,7 +116,7 @@ def main():
     # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]
 
-    data = data[data["source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
+    data = data[data["reco_source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
 
     #Create primary HDU
     events, gti, pointing = create_event_list(data=data, run_number=run_number,

@@ -6,8 +6,8 @@ channels:
 dependencies:
   - python=3.7
   - pip
-  - ctapipe=0.8.0
-  - gammapy>=0.17
+  - ctapipe~=0.8.0
+  - gammapy==0.17
   - h5py
   - ipython
   - jupyter
@@ -19,4 +19,4 @@ dependencies:
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
       - ctaplot
       - astropy>=4.1
-      - pyirf~=0.3.0
+      - pyirf~=0.4.0

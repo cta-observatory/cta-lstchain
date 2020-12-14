@@ -238,7 +238,7 @@ def create_event_list(data, run_number, source_name):
     focal = 28 * u.m
     location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
     reco_alt = data['reco_alt']
-    reco_alt = data['reco_az']
+    reco_az = data['reco_az']
     pointing_alt = data['pointing_alt']
     pointing_az = data['pointing_az']
 
@@ -257,12 +257,16 @@ def create_event_list(data, run_number, source_name):
     source_pointing_diff = object_radec.separation(
                 SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
                 ).deg
-    if round(source_pointing_diff, 1) == 0.:
-        mode = 'ON'
-    elif round(source_pointing_diff, 1) == 0.4:
+    # Assuming wobble offset is fixed to 0.4
+    if round(source_pointing_diff, 1) == 0.4:
         mode = 'WOBBLE'
     elif round(source_pointing_diff, 1) > 1:
         mode = 'OFF'
+    elif round(source_pointing_diff, 1) == 0.:
+        mode = 'ON'
+    else:
+        mode = 'ON-MISPOINTING' #Either this or modify the method of getting ON mode
+
     log.error(f'Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg' )
 
     ##########################################################################

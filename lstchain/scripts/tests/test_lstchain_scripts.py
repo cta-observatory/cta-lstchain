@@ -244,7 +244,6 @@ def test_dl3():
             '-add-irf', 'True',
             '-irf', irf_file,
             '-s', 'Crab',
-            '-mode', 'OFF',
             '-conf', cuts
             )
 
