@@ -466,19 +466,17 @@ def get_source_dependent_parameters(data, config):
     src_dep_params_list = []
 
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
-    src_dep_params['source_angle'] = np.zeros(len(src_dep_params))
     src_dep_params_list.append(src_dep_params)
 
     if not is_simu:
-        if config['observation_mode']=='wobble':
-            for ioff in range(config['n_off_wobble']):
+        if config.get('observation_mode')=='wobble':
+            for ioff in range(config.get('n_off_wobble')):
                 source_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
             
                 rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(source_angle) - expected_src_pos_y_m * np.sin(source_angle)
                 rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(source_angle) + expected_src_pos_y_m * np.cos(source_angle)
 
                 src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
-                src_dep_params['source_angle'] = np.rad2deg(source_angle)
                 src_dep_params_list.append(src_dep_params)
 
     return src_dep_params_list
@@ -543,41 +541,33 @@ def get_expected_source_pos(data, data_type, config):
             u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
         
-        expected_src_pos_x_m = expected_src_pos.x.to_value()
-        expected_src_pos_y_m = expected_src_pos.y.to_value()
+        expected_src_pos_x_m = expected_src_pos.x.to_value(u.m)
+        expected_src_pos_y_m = expected_src_pos.y.to_value(u.m)
 
     # For real data
     if data_type == 'real_data':
         # source is always at the ceter of camera for ON mode
-        if config['observation_mode'] == 'on':
+        if config.get('observation_mode') == 'on':
             expected_src_pos_x_m = np.zeros(len(data))
             expected_src_pos_y_m = np.zeros(len(data))
         
         # compute source position in camera coordinate event by event for wobble mode
-        if config['observation_mode'] == 'wobble':
+        if config.get('observation_mode') == 'wobble':
 
             if 'source_name' in config:
-                source_coord  = SkyCoord.from_name(config['source_name'])
+                source_coord  = SkyCoord.from_name(config.get('source_name'))
             else:
-                source_coord  = SkyCoord(config['source_ra'], config['source_dec'], frame="icrs", unit="deg")
+                source_coord  = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
      
             focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
             
-            expected_src_pos_x_m = np.zeros(len(data))
-            expected_src_pos_y_m = np.zeros(len(data))
-            
-            for i in range(len(data)):
-                # update source position every 1000 events
-                if i%1000==0:
-                    time = data['dragon_time'][i]
+            time = data['dragon_time']
+            obstime = Time(time, scale='utc', format='unix')
+            pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
+            pointing_az  = u.Quantity(data['az_tel'],  u.rad, copy=False)
+            source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
 
-                    obstime = Time(time, scale='utc', format='unix')
-                    pointing_alt = u.Quantity(data['alt_tel'][i], u.rad, copy=False)
-                    pointing_az  = u.Quantity(data['az_tel'][i],  u.rad, copy=False)
-                    source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
-
-                expected_src_pos_x_m[i] = (source_pos.x).to_value()
-                expected_src_pos_y_m[i] = (source_pos.y).to_value()
-                
+            expected_src_pos_x_m = source_pos.x.to_value(u.m)
+            expected_src_pos_y_m = source_pos.y.to_value(u.m)
    
     return expected_src_pos_x_m, expected_src_pos_y_m 
