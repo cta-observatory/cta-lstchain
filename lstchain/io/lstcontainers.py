@@ -99,9 +99,7 @@ class DL1ParametersContainer(Container):
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
     mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm**2)
-    mc_core_distance = Field(
-            u.Quantity(np.nan, u.m), "Distance from the impact point to the "
-                                     "telescope", unit=u.m)
+    mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
     mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
                                     "2(mu-), 100*A+Z for nucleons and nuclei,"
                                     "negative for antimatter.")
@@ -139,12 +137,12 @@ class DL1ParametersContainer(Container):
         """
         try:
             self.mc_energy = event.mc.energy
+            self.log_mc_energy = np.log10(self.mc_energy.to_value(u.TeV))
             self.mc_alt = event.mc.alt
             self.mc_az = event.mc.az
             self.mc_core_x = event.mc.core_x
             self.mc_core_y = event.mc.core_y
             self.mc_h_first_int = event.mc.h_first_int
-            # mcType = event.mc. # TODO: find type in event
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
