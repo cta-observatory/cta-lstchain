@@ -307,8 +307,13 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)], axis=1)
-        df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)], axis=1)
+        src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
+        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_gamma.columns])
+        df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
+
+        src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
+        src_dep_df_proton.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_proton.columns])
+        df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
@@ -441,7 +446,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
 def get_source_dependent_parameters(data, config):
 
-    """Get list of parameters for source-dependent analysis .
+    """Get parameters dict for source-dependent analysis .
 
     Parameters:
     -----------
@@ -462,24 +467,23 @@ def get_source_dependent_parameters(data, config):
     
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
 
-
-    src_dep_params_list = []
-
+    # ON position
+    src_dep_params_dict = {}
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
-    src_dep_params_list.append(src_dep_params)
+    src_dep_params_dict['on'] = src_dep_params
 
     if not is_simu:
         if config.get('observation_mode')=='wobble':
             for ioff in range(config.get('n_off_wobble')):
-                source_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
+                off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
             
-                rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(source_angle) - expected_src_pos_y_m * np.sin(source_angle)
-                rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(source_angle) + expected_src_pos_y_m * np.cos(source_angle)
-
+                rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(off_angle) - expected_src_pos_y_m * np.sin(off_angle)
+                rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(off_angle) + expected_src_pos_y_m * np.cos(off_angle)
                 src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
-                src_dep_params_list.append(src_dep_params)
+                src_dep_params['off_angle'] = np.rad2deg(off_angle)
+                src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
 
-    return src_dep_params_list
+    return src_dep_params_dict
 
 
 def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m):

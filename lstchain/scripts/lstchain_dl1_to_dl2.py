@@ -30,13 +30,13 @@ from lstchain.io import (
     replace_config,
     write_dl2_dataframe,
     get_dataset_keys,
-    get_dataset_srcdep_keys,
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
     dl1_images_lstcam_key,
     dl2_params_lstcam_key,
+    dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )
 
@@ -115,23 +115,24 @@ def main():
 
     #Source-dependent analysis
     if config['source_dependent']:
-        dl1_srcdep_keys = get_dataset_srcdep_keys(args.input_file)
-        dl2_srcdep_list = []
-        dl2_srcdep_keys_list = []
+        data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
+        data_srcdep.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in data_srcdep.columns])
 
-        for i, k in enumerate(dl1_srcdep_keys):
-            data_srcdep = pd.read_hdf(args.input_file, key=k)
-            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
+        dl2_srcdep_dict = {}
+
+        for i, k in enumerate(data_srcdep.columns.levels[0]):
+            data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                filters=config["events_filters"],
                                                finite_params=config['regression_features'] + config['classification_features'],
                                            )
-            dl2_srcdep = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
-            dl2_srcdep_list.append(dl2_srcdep.drop(columns=data.columns))
-            dl2_srcdep_keys_list.append(k.replace("dl1", "dl2"))
+            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+
+            dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
+            dl2_srcdep_dict[k] = dl2_srcdep
 
             if i==0:
-                dl2_srcindep = dl2_srcdep[data.columns]
+                dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
@@ -140,15 +141,15 @@ def main():
         raise IOError(output_file + ' exists, exiting.')
 
     dl1_keys = get_dataset_keys(args.input_file)
+
     if dl1_images_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_images_lstcam_key)
     
     if dl1_params_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_lstcam_key)
 
-    for i in reversed(range(len(dl1_keys))):
-        if 'parameters_src_dependent' in dl1_keys[i]:
-            dl1_keys.remove(dl1_keys[i])
+    if dl1_params_src_dep_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
     with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
@@ -174,9 +175,7 @@ def main():
 
     else:
         write_dl2_dataframe(dl2_srcindep, output_file)
-
-        for i, k in enumerate(dl2_srcdep_keys_list):
-            write_dataframe(dl2_srcdep_list[i], output_file, k)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key)
 
 if __name__ == '__main__':
     main()
