@@ -28,9 +28,9 @@ from ctapipe_io_lst.containers import LSTDataContainer
 from lstchain.io import standard_config, replace_config, get_dataset_keys, read_configuration_file
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io import DL1ParametersContainer
+from lstchain.io.subarray import SubarrayDescription
 from lstchain.reco.r0_to_dl1 import get_dl1
 
-from subarray import SubarrayDescription
 
 logger = logging.getLogger(__name__)
 
@@ -105,10 +105,6 @@ def main():
             peak_time = np.array([x['peak_time'] for x in image_group.iterrows()])
             tel_id = np.array([x['tel_id'] for x in image_group.iterrows()])
         
-            if is_simu:
-                simu_group = data.dl1.event.subarray.mc_shower
-                mc_type = np.array([x['mc_shower_primary_id'] for x in simu_group.iterrows()])
-        
             # Read DL1 parameters
             dl1_group = data.dl1.event.telescope.parameters.LST_LSTCam
 
@@ -150,7 +146,7 @@ def main():
                     dl1_container.mc_core_x = u.Quantity(x['mc_core_x'], u.m)
                     dl1_container.mc_core_y = u.Quantity(x['mc_core_y'], u.m)
                     dl1_container.mc_h_first_int = u.Quantity(x['mc_h_first_int'], u.m)
-                    dl1_container.mc_type = mc_type[i]
+                    dl1_container.mc_type = x['mc_type']
                     dl1_container.mc_az_tel = u.Quantity(x['mc_az_tel'], u.rad)
                     dl1_container.mc_alt_tel = u.Quantity(x['mc_alt_tel'], u.rad)
                     dl1_container.mc_x_max = u.Quantity(x['mc_x_max'], u.g / u.cm / u.cm)

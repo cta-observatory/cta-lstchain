@@ -13,6 +13,7 @@ from lstchain.tests.test_lstchain import test_dir, mc_gamma_testfile, produce_fa
 
 output_dir = os.path.join(test_dir, 'scripts')
 dl1_file = os.path.join(output_dir, 'dl1_gamma_test_large.h5')
+reprocessed_dl1_file = os.path.join(output_dir, 'script_reprocessed_dl1.h5')
 merged_dl1_file = os.path.join(output_dir, 'script_merged_dl1.h5')
 dl2_file = os.path.join(output_dir, 'dl2_gamma_test_large.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
@@ -60,6 +61,16 @@ def test_lstchain_mc_r0_to_dl1():
         '-o', output_dir
     )
     assert os.path.exists(dl1_file)
+
+@pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
+def test_lstchain_reprocess_dl1():
+    input_file = dl1_file
+    run_program(
+        'lstchain_reprocess_dl1',
+        '-f', input_file,
+        '-o', reprocessed_dl1_file
+    )
+    assert os.path.exists(reprocessed_dl1_file)
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
