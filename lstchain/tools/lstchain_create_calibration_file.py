@@ -39,10 +39,8 @@ class CalibrationHDF5Writer(Tool):
     )
 
     aliases = {
-            "input": "EventSource.input_url",
-            "i": "EventSource.input_url",
-            "output": "CalibrationHDF5Writer.output",
-            "o": "CalibrationHDF5Writer.output",
+            "input_file": "EventSource.input_url",
+            "output_file": "CalibrationHDF5Writer.output",
             "max_events": "EventSource.max_events",
             "calibration_product": "CalibrationHDF5Writer.calibration_product",
             "r0calibrator_product": "CalibrationHDF5Writer.r0calibrator_product",
