@@ -82,11 +82,8 @@ def main():
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        data_src_dep = pd.read_hdf(args.datafile, key=dl1_params_src_dep_lstcam_key)
-        data_src_dep = data_src_dep.set_index('index', drop=True)
+        data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data = pd.concat([data, data_src_dep], axis=1)
-
-
   
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
@@ -97,7 +94,12 @@ def main():
         else:
             data.alt_tel = - np.pi/2.
             data.az_tel = - np.pi/2.
-    data = filter_events(data, filters=config["events_filters"])
+
+    data = filter_events(data,
+                         filters=config["events_filters"],
+                         finite_params=config['regression_features'] + config['classification_features'],
+                         )
+
 
     #Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"

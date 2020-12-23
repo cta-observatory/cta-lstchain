@@ -129,9 +129,12 @@ class DL1DataCheckContainer(Container):
         n_jump = 1+int(self.num_events/n_samples)
         # keep some info every n-jump-th event:
         sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
-        tib_time = np.array(table['tib_time'][mask][0::n_jump])
-        ucts_time = np.array(table['ucts_time'][mask][0::n_jump])
-        dragon_time = np.array(table['dragon_time'][mask][0::n_jump])
+        tib_time = u.Quantity(np.array(table['tib_time'][mask][0::n_jump]),
+                              u.s, copy=False)
+        ucts_time = u.Quantity(np.array(table['ucts_time'][mask][0::n_jump]),
+                               u.s, copy=False)
+        dragon_time = u.Quantity(np.array(table['dragon_time'][mask][
+                                          0::n_jump]), u.s, copy=False)
         # in case the resulting number of entries is <n_samples, we have to pad
         # the arrays, because hdf vector columns must have the same number of
         # elements in each row. We repeat the last value in the array
@@ -159,7 +162,7 @@ class DL1DataCheckContainer(Container):
                                  bins=histogram_binnings.hist_nislands)
         self.hist_nislands = counts
 
-        intensity = table['intensity'][mask]
+        intensity = table.loc[mask, 'intensity'].to_numpy()
         counts, _, _ = plt.hist(intensity,
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
@@ -173,33 +176,42 @@ class DL1DataCheckContainer(Container):
                      bins=histogram_binnings.hist_dist0_intensity_gt_200)
         self.hist_dist0_intensity_gt_200 = counts
 
-        counts, _, _, _ = plt.hist2d(table['intensity'][mask],
-                                     table['width'][mask],
+        counts, _, _, _ = plt.hist2d(intensity,
+                                     table.loc[mask, 'width'].to_numpy(),
                                      bins=histogram_binnings.hist_width)
         self.hist_width = counts
 
-        counts, _, _, _ = plt.hist2d(table['intensity'][mask],
-                                     table['length'][mask],
+        counts, _, _, _ = plt.hist2d(intensity,
+                                     table.loc[mask, 'length'].to_numpy(),
                                      bins=histogram_binnings.hist_length)
         self.hist_length = counts
 
-        counts, _, _, _ = plt.hist2d(table['intensity'][mask],
-                                     table['skewness'][mask],
+        counts, _, _, _ = plt.hist2d(intensity,
+                                     table.loc[mask, 'skewness'].to_numpy(),
                                      bins=histogram_binnings.hist_skewness)
         self.hist_skewness = counts
 
-        intercept = table['intercept'][mask]
+        psi = table.loc[mask, 'psi'].to_numpy()
+        counts, _, _ = \
+            plt.hist(psi, bins=histogram_binnings.hist_psi)
+        self.hist_psi = counts
+
         counts, _, _, _ = \
-            plt.hist2d(intensity, intercept,
+            plt.hist2d(intensity, table.loc[mask, 'intercept'].to_numpy(),
                        bins=histogram_binnings.hist_intercept)
         self.hist_intercept = counts
 
-        length = table['length'][mask]
-        tgrad = np.abs(table['time_gradient'][mask])
+        length = table.loc[mask, 'length'].to_numpy()
+        tgrad = np.abs(table.loc[mask, 'time_gradient'].to_numpy())
         counts, _, _, _ = \
             plt.hist2d(length, tgrad,
                        bins=histogram_binnings.hist_tgrad_vs_length)
         self.hist_tgrad_vs_length = counts
+
+        # We noticed an occasional pyplot error that seems to be fixed by
+        # making sure that the coordinates passed to hist2d are ndarrays
+        # (instead of Pandas data series)
+
         counts, _, _, _ = \
             plt.hist2d(length[intensity > 200], tgrad[intensity > 200],
                        bins=histogram_binnings.
@@ -265,7 +277,7 @@ class DL1DataCheckContainer(Container):
         # containing very little signal. For time plots we require at least 1
         # p.e. We will also exclude NaNs from the calculations
 
-        time = table.col('pulse_time')[mask]
+        time = table.col('peak_time')[mask]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 

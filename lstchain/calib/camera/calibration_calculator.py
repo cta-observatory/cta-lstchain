@@ -5,7 +5,7 @@ Component for the estimation of the calibration coefficients  events
 import numpy as np
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List
+from ctapipe.core.traits import  Float, List, Bool
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from lstchain.io.lstcontainers import LSTEventType
@@ -36,18 +36,18 @@ class CalibrationCalculator(Component):
 
     """
     squared_excess_noise_factor = Float(
-        1.2,
+        1.222,
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
-    pedestal_product = traits.enum_trait(
+    pedestal_product = traits.create_class_enum_trait(
         PedestalCalculator,
-        default='PedestalIntegrator'
+        default_value='PedestalIntegrator'
     )
 
-    flatfield_product = traits.enum_trait(
+    flatfield_product = traits.create_class_enum_trait(
         FlatFieldCalculator,
-        default='FlasherFlatFieldCalculator'
+        default_value='FlasherFlatFieldCalculator'
     )
 
     classes = List([
@@ -61,6 +61,7 @@ class CalibrationCalculator(Component):
 
     def __init__(
         self,
+        subarray,
         parent=None,
         config=None,
         **kwargs
@@ -87,11 +88,13 @@ class CalibrationCalculator(Component):
 
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
         self.pedestal = PedestalCalculator.from_name(
             self.pedestal_product,
-            parent=self
+            parent=self,
+            subarray = subarray
         )
 
         msg = "tel_id not the same for all calibration components"
@@ -167,7 +170,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
-        calib_data.time_range = ff_data.sample_time_range
+        calib_data.time_min = ff_data.sample_time_min
+        calib_data.time_max = ff_data.sample_time_max
         calib_data.n_pe = n_pe
 
         # find signal median of good pixels
@@ -181,14 +185,15 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # calibration coefficients
         numerator = n_pe * ff
-        denominator = (ff_data.charge_median - ped_data.charge_median)
+
+        # correct the signal for the integration window
+        denominator = (ff_data.charge_median - ped_data.charge_median) 
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
-        # put the time around zero
-        camera_time_median = np.median(ff_data.time_median, axis=1)
-        calib_data.time_correction = -ff_data.relative_time_median - camera_time_median[:, np.newaxis]
+        # flat-field time corrections
+        calib_data.time_correction = -ff_data.relative_time_median
 
-        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width
+        calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # put to zero unusable pixels
         calib_data.dc_to_pe[calib_data.unusable_pixels] = 0

@@ -3,6 +3,7 @@ import os
 from lstchain.visualization import plot_dl2
 from lstchain.tests.test_lstchain import dl2_file, dl2_params_lstcam_key, test_dir
 from lstchain.scripts.tests.test_lstchain_scripts import output_dir
+import matplotlib.pyplot as plt
 
 def test_plot_disp():
     dl2_df = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
@@ -21,5 +22,6 @@ def test_energy_results():
                             plot_outfile=os.path.join(test_dir, 'ene.png'))
 
 def test_plot_models_features_importances():
-    plot_dl2.plot_models_features_importances(output_dir)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 10))
+    plot_dl2.plot_models_features_importances(output_dir, axes=axes, alpha=0.5, fill=False)
 

@@ -3,23 +3,27 @@ Functions to handle custom containers for the mono reconstruction of LST1
 """
 
 import astropy.units as u
-from astropy.units import Quantity
 import numpy as np
+from astropy.units import Quantity
+from astropy.coordinates import Angle
 from ctapipe.core import Container, Field
-from ctapipe.image import timing_parameters as time
 from ctapipe.image import leakage, concentration
-from ctapipe.image.cleaning import number_of_islands
-
-from ..reco import utils
+from ctapipe.image import timing_parameters
+from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
+from ..reco import utils
+
 __all__ = [
+    'DL1MonitoringEventIndexContainer',
     'DL1ParametersContainer',
     'DispContainer',
+    'ExtraImageInfo',
+    'ExtraMCInfo',
+    'ExtraMCInfo',
+    'LSTEventType',
     'MetaData',
     'ThrownEventsHistogram',
-    'DL1MonitoringEventIndexContainer',
-    'LSTEventType'
 ]
 
 
@@ -28,18 +32,22 @@ class DL1ParametersContainer(Container):
     TODO: maybe fields could be inherited from ctapipe containers definition
         For now I have not found an elegant way to do so
     """
-    intensity = Field(None, 'total intensity (size)')
-    log_intensity = Field(None, 'log of total intensity (size)')
+    intensity = Field(np.float64(np.nan), 'total intensity (size)')
+    log_intensity = Field(np.float64(np.nan), 'log of total intensity (size)')
 
-    x = Field(None, 'centroid x coordinate', unit=u.m)
-    y = Field(None, 'centroid x coordinate', unit=u.m)
-    r = Field(None, 'radial coordinate of centroid', unit=u.m)
-    phi = Field(None, 'polar coordinate of centroid', unit=u.rad)
-    length = Field(None, 'RMS spread along the major-axis', unit=u.m)
-    width = Field(None, 'RMS spread along the minor-axis', unit=u.m)
-    psi = Field(None, 'rotation angle of ellipse', unit=u.rad)
-    skewness = Field(None, 'measure of the asymmetry')
-    kurtosis = Field(None, 'measure of the tailedness')
+    x = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
+    y = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
+    r = Field(u.Quantity(np.nan, u.m), 'radial coordinate of centroid', unit=u.m)
+    phi = Field(Angle(np.nan, u.rad), 'polar coordinate of centroid',
+                unit=u.rad)
+    length = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the major-axis',
+                   unit=u.deg)
+    width = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the minor-axis',
+                             unit=u.deg)
+    psi = Field(Angle(np.nan, u.rad), 'rotation angle of ellipse', unit=u.rad)
+
+    skewness = Field(np.nan, 'measure of the asymmetry')
+    kurtosis = Field(np.nan, 'measure of the tailedness')
     disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
     disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
     disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
@@ -48,24 +56,34 @@ class DL1ParametersContainer(Container):
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
     src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
     src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
-    time_gradient = Field(None, 'Time gradient in the camera')
-    intercept = Field(None, 'Intercept')
-    leakage1_intensity = Field(None, 'Fraction of intensity in outermost pixels')
-    leakage2_intensity = Field(None, 'Fraction of intensity in two outermost rings of pixels')
-    leakage1_pixel = Field(None, 'Fraction of signal pixels that are border pixels')
-    leakage2_pixel = Field(None, 'Fraction of signal pixels that are in the two outermost rings of pixels')
-    n_pixels = Field(None, 'Number of pixels after cleaning')
-    concentration_cog = Field(None, 'Fraction of intensity in three pixels closest to the cog')
-    concentration_core = Field(None, 'Fraction of intensity inside hillas ellipse')
-    concentration_pixel = Field(None, 'Fraction of intensity in brightest pixel')
-    n_islands = Field(None, 'Number of Islands')
-    alt_tel = Field(None, 'Telescope altitude pointing', unit=u.rad)
-    az_tel = Field(None, 'Telescope azimuth pointing', unit=u.rad)
+    time_gradient = Field(np.nan, 'Time gradient in the camera')
+    intercept = Field(np.nan, 'Intercept')
+    leakage_intensity_width_1 = \
+        Field(np.float32(np.nan), 'Fraction of intensity in outermost pixels',
+              dtype=np.float32)
+    leakage_intensity_width_2 = \
+        Field(np.float32(np.nan), 'Fraction of intensity in two outermost '
+                                  'rings of pixels', dtype=np.float32)
+    leakage_pixels_width_1 = Field(np.nan, 'Fraction of signal pixels that are '
+                                           'border pixels')
+    leakage_pixels_width_2 = Field(np.nan, 'Fraction of signal pixels that are '
+                                           'in the two outermost rings of pixels')
+    n_pixels = Field(0, 'Number of pixels after cleaning')
+    concentration_cog = Field(np.nan, 'Fraction of intensity in three pixels '
+                                      'closest to the cog')
+    concentration_core = Field(np.nan, 'Fraction of intensity inside hillas '
+                                       'ellipse')
+    concentration_pixel = Field(np.nan, 'Fraction of intensity in brightest '
+                                        'pixel')
+    n_islands = Field(0, 'Number of Islands')
+    alt_tel = Field(None, 'Telescope altitude pointing',
+                    unit=u.rad)
+    az_tel = Field(None, 'Telescope azimuth pointing',
+                   unit=u.rad)
 
-    obs_id = Field(None, 'Observation ID')
-    event_id = Field(None, 'Event ID')
-    calibration_id = Field(None, 'ID of the employed calibration event')
-    gps_time = Field(None, 'GPS time event trigger')
+    obs_id = Field(-1, 'Observation ID')
+    event_id = Field(-1, 'Event ID')
+    calibration_id = Field(-1, 'ID of the employed calibration event')
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
     tib_time = Field(None, 'TIB time event trigger')
@@ -77,17 +95,17 @@ class DL1ParametersContainer(Container):
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
     mc_core_y = Field(None, 'Simulated impact point y position', unit=u.m)
     mc_h_first_int = Field(None, 'Simulated first interaction height', unit=u.m)
-    mc_type = Field(None, 'Simulated particle type')
+    mc_type = Field(-1, 'Simulated particle type')
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
-    mc_x_max = Field(None, "MC Xmax value", unit=u.g / (u.cm ** 2))
+    mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm**2)
     mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
     mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
                                     "2(mu-), 100*A+Z for nucleons and nuclei,"
                                     "negative for antimatter.")
 
     hadroness = Field(None, "Hadroness")
-    wl = Field(None, "width/length")
+    wl = Field(u.Quantity(np.nan), "width/length")
 
     tel_id = Field(None, "Telescope Id")
     tel_pos_x = Field(None, "Telescope x position in the ground")
@@ -113,28 +131,35 @@ class DL1ParametersContainer(Container):
         for key in hillas.keys():
             self[key] = hillas[key]
 
-    def fill_mc(self, event):
+    def fill_mc(self, event, tel_pos):
         """
         fill from mc
         """
         try:
             self.mc_energy = event.mc.energy
+            self.log_mc_energy = np.log10(self.mc_energy.to_value(u.TeV))
             self.mc_alt = event.mc.alt
             self.mc_az = event.mc.az
             self.mc_core_x = event.mc.core_x
             self.mc_core_y = event.mc.core_y
             self.mc_h_first_int = event.mc.h_first_int
-            # mcType = event.mc. # TODO: find type in event
             self.mc_x_max = event.mc.x_max
             self.mc_alt_tel = event.mcheader.run_array_direction[1]
             self.mc_az_tel = event.mcheader.run_array_direction[0]
+            self.mc_type = event.mc.shower_primary_id
+            distance = np.sqrt(
+                (event.mc.core_x - tel_pos[0]) ** 2 +
+                (event.mc.core_y - tel_pos[1]) ** 2
+            )
+            if np.isfinite(distance):
+                self.mc_core_distance = distance
+
         except IndexError:
             print("mc information not filled")
 
     def fill_event_info(self, event):
-        self.gps_time = event.trig.gps_time
-        self.obs_id = event.r0.obs_id
-        self.event_id = event.r0.event_id
+        self.obs_id = event.index.obs_id
+        self.event_id = event.index.event_id
 
     def get_features(self, features_names):
         return np.array([
@@ -143,14 +168,6 @@ class DL1ParametersContainer(Container):
             else self[k]
             for k in features_names
         ])
-
-    def set_mc_core_distance(self, event, telescope_id):
-        tel_pos = event.inst.subarray.positions[telescope_id]
-        distance = np.sqrt(
-            (event.mc.core_x - tel_pos[0]) ** 2 +
-            (event.mc.core_y - tel_pos[1]) ** 2
-        )
-        self.mc_core_distance = distance
 
     def set_disp(self, source_pos, hillas):
         disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
@@ -161,9 +178,9 @@ class DL1ParametersContainer(Container):
         self.disp_sign = disp.sign
         self.disp_miss = disp.miss
 
-    def set_timing_features(self, geom, image, pulse_time, hillas):
+    def set_timing_features(self, geom, image, peak_time, hillas):
         try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
-            timepars = time.timing_parameters(geom, image, pulse_time, hillas)
+            timepars = timing_parameters(geom, image, peak_time, hillas)
             self.time_gradient = timepars.slope.value
             self.intercept = timepars.intercept
         except ValueError:
@@ -172,36 +189,34 @@ class DL1ParametersContainer(Container):
 
     def set_leakage(self, geom, image, clean):
         leakage_c = leakage(geom, image, clean)
-        self.leakage1_intensity = leakage_c.leakage1_intensity
-        self.leakage2_intensity = leakage_c.leakage2_intensity
-        self.leakage1_pixel = leakage_c.leakage1_pixel
-        self.leakage2_pixel = leakage_c.leakage2_pixel
+        self.leakage_intensity_width_1 = leakage_c.intensity_width_1
+        self.leakage_intensity_width_2 = leakage_c.intensity_width_2
+        self.leakage_pixels_width_1 = leakage_c.pixels_width_1
+        self.leakage_pixels_width_2 = leakage_c.pixels_width_2
 
     def set_concentration(self, geom, image, hillas_parameters):
         conc = concentration(geom, image, hillas_parameters)
-        self.concentration_cog = conc.concentration_cog
-        self.concentration_core = conc.concentration_core
-        self.concentration_pixel = conc.concentration_pixel
+        self.concentration_cog = conc.cog
+        self.concentration_core = conc.core
+        self.concentration_pixel = conc.pixel
 
     def set_n_islands(self, geom, clean):
         n_islands, islands_mask = number_of_islands(geom, clean)
         self.n_islands = n_islands
 
-    def set_telescope_info(self, event, telescope_id):
+    def set_telescope_info(self, subarray, telescope_id):
         self.tel_id = telescope_id
-        tel_pos = event.inst.subarray.positions[telescope_id]
+        tel_pos = subarray.positions[telescope_id]
         self.tel_pos_x = tel_pos[0]
         self.tel_pos_y = tel_pos[1]
         self.tel_pos_z = tel_pos[2]
 
-    def set_source_camera_position(self, event, telescope_id):
-        tel = event.inst.subarray.tel[telescope_id]
-        source_pos = utils.get_event_pos_in_camera(event, tel)
+    def set_source_camera_position(self, event, telescope):
+        source_pos = utils.get_event_pos_in_camera(event, telescope)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
 
-    def set_mc_type(self, event):
-        self.mc_type = event.mc.shower_primary_id
+
 
 
 class DispContainer(Container):

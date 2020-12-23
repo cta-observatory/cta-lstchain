@@ -16,7 +16,7 @@ import os
 import argparse
 import pandas as pd
 from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
-from lstchain.io import read_configuration_file
+from lstchain.io import read_configuration_file, get_standard_config
 from lstchain.io.io import dl1_params_src_dep_lstcam_key, write_dataframe, dl1_params_lstcam_key
 
 
@@ -41,7 +41,7 @@ def main():
 
     dl1_filename = os.path.abspath(args.input_file)
 
-    config = {}
+    config = get_standard_config()
     if args.config_file is not None:
         try:
             config = read_configuration_file(os.path.abspath(args.config_file))

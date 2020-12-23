@@ -6,7 +6,7 @@ import pytest
 import os
 from astropy.table import Table
 
-from lstchain.tests.test_lstchain import dl1_file, test_dir
+from lstchain.tests.test_lstchain import mc_gamma_testfile, dl1_file, test_dir
 
 merged_dl1_file = os.path.join(test_dir, 'dl1_merged.h5')
 
@@ -106,3 +106,15 @@ def test_trigger_type_in_dl1_params():
     from lstchain.io.io import dl1_params_lstcam_key
     params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     assert 'trigger_type' in params.columns
+
+
+@pytest.mark.run(after='test_r0_to_dl1')
+def test_read_subarray_description():
+    from lstchain.io.io import read_subarray_description
+    from ctapipe.io import event_source
+    source = event_source(mc_gamma_testfile)
+    dl1_subarray = read_subarray_description(dl1_file)
+    dl1_subarray.peek()
+    dl1_subarray.info()
+    assert len(dl1_subarray.tels) ==  len(source.subarray.tels)
+    assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
