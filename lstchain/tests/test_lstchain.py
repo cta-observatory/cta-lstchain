@@ -4,6 +4,7 @@ import pytest
 import os
 import pandas as pd
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io import standard_config
 from lstchain.reco.utils import filter_events
 import astropy.units as u
 import tables
@@ -21,65 +22,6 @@ file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
 
-custom_config = {
-    "events_filters": {
-        "intensity": [0.3, np.inf],
-        "width": [0, 10],
-        "length": [0, 10],
-        "wl": [0, 1],
-        "r": [0, 1],
-        "leakage_intensity_width_2": [0, 1],
-    },
-    "tailcut": {
-        "picture_thresh":6,
-        "boundary_thresh":2,
-        "keep_isolated_pixels": True,
-        "min_number_picture_neighbors": 1
-    },
-
-    "random_forest_regressor_args": {
-        "max_depth": 5,
-        "min_samples_leaf": 2,
-        "n_jobs": 4,
-        "n_estimators": 15,
-    },
-    "random_forest_classifier_args": {
-        "max_depth": 5,
-        "min_samples_leaf": 2,
-        "n_jobs": 4,
-        "n_estimators": 10,
-    },
-    "regression_features": [
-        "intensity",
-        "width",
-        "length",
-        "x",
-        "y",
-        "wl",
-        "skewness",
-        "kurtosis",
-    ],
-    "classification_features": [
-        "intensity",
-        "width",
-        "length",
-        "x",
-        "y",
-        "log_reco_energy",
-        "reco_disp_dx",
-        "reco_disp_dy"
-    ],
-
-  "allowed_tels": [1, 2, 3, 4],
-  "image_extractor": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  4094
-  },
-  "mc_nominal_source_x_deg": 0.,
-  "mc_nominal_source_y_deg": 0.,
-}
 
 def test_import_calib():
     from lstchain import calib
@@ -97,7 +39,7 @@ def test_import_lstio():
 def test_r0_to_dl1():
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     infile = mc_gamma_testfile
-    r0_to_dl1(infile, custom_config=custom_config, output_filename=dl1_file)
+    r0_to_dl1(infile, custom_config=standard_config, output_filename=dl1_file)
 
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1():
@@ -118,14 +60,14 @@ def test_get_source_dependent_parameters():
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
 
     dl1_params = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, custom_config)
+    src_dep_df = get_source_dependent_parameters(dl1_params, standard_config)
 
 @pytest.mark.run(order=2)
 def test_build_models():
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = dl1_file
 
-    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=custom_config, save_models=False)
+    reg_energy, reg_disp, cls_gh = build_models(infile, infile, custom_config=standard_config, save_models=False)
 
     import joblib
     joblib.dump(reg_energy, file_model_energy)
@@ -140,8 +82,8 @@ def test_apply_models():
 
     dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(dl1,
-                        filters=custom_config["events_filters"],
-                        finite_params=custom_config['regression_features'] + custom_config['classification_features'],
+                        filters=standard_config["events_filters"],
+                        finite_params=standard_config['regression_features'] + standard_config['classification_features'],
                         )
 
     reg_energy = joblib.load(file_model_energy)
@@ -149,7 +91,7 @@ def test_apply_models():
     reg_cls_gh = joblib.load(file_model_gh_sep)
 
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=standard_config)
     dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
 def produce_fake_dl1_proton_file(dl1_file):
