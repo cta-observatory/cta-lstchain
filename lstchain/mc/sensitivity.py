@@ -5,11 +5,11 @@ from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_e
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra,crab_magic
 from lstchain.spectra.proton import proton_bess
-from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
+from pyirf.sensitivity import relative_sensitivity
 
 __all__ = [
     'read_sim_par',
@@ -23,6 +23,10 @@ __all__ = [
     'sensitivity',
     ]
 
+
+def excess_matching_significance(n_on, n_off, alpha, significance):
+    n_excess = n_on - alpha *  n_off
+    return n_excess * relative_sensitivity(n_on=n_on, n_off=n_off, alpha=alpha)
 
 def read_sim_par(dl1_file):
     """
@@ -178,15 +182,8 @@ def calculate_sensitivity_lima(n_on_events, n_background, alpha, n_bins_energy, 
     """
 
     
-    stat = WStatCountsStatistic(
-        n_on=n_on_events,  
-        n_off=n_background,
-        alpha=alpha
-        )
-
-
-    n_excesses_5sigma = stat.excess_matching_significance(5)
-
+    n_excesses_5sigma = excess_matching_significance(n_on_events, n_background, alpha, 5)
+    
     for i in range(0, n_bins_energy):
         for j in range(0, n_bins_gammaness):
             for k in range(0, n_bins_theta2):
@@ -222,19 +219,8 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
                 a 5 sigma significance
 
     """
-    #if any(len(a) != n_bins_energy for a in (n_on_events, n_background, alpha)):
-    #    raise ValueError(
-     #       'Excess, background and alpha arrays must have the same length')
-
-    stat = WStatCountsStatistic(
-        n_on=n_on_events,
-        n_off=n_background,
-        alpha=alpha 
-        )
         
-
-
-    n_excesses_5sigma = stat.excess_matching_significance(5)
+    n_excesses_5sigma = excess_matching_significance(n_on_events, n_background, alpha, 5)
 
     for i in range(0, n_bins_energy):
         # If the excess needed to get 5 sigma is less than 10,
