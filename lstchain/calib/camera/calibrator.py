@@ -107,7 +107,6 @@ class LSTCameraCalibrator(CameraCalibrator):
             )
 
         # declare time calibrator if correction file exist
-
         if self.time_calibration_path is not None:
 
             self.time_corrector = PulseTimeCorrection(
@@ -118,17 +117,9 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
-            # search the file in resources if not found
-            if not os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_correction_path = resource_filename('lstchain',
-                                                                       f"resources/{self.time_sampling_correction_path}")
-
-            if os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_corrector = TimeSamplingCorrection(
+            self.time_sampling_corrector = TimeSamplingCorrection(
                     time_sampling_correction_path=self.time_sampling_correction_path
                 )
-            else:
-                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
         else:
             self.time_sampling_corrector = None
 

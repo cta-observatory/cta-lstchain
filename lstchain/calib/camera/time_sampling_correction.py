@@ -3,7 +3,7 @@ import numpy as np
 
 
 from ctapipe.core import Component
-from ctapipe.core.traits import Unicode
+from ctapipe.core.traits import Path
 
 __all__ = [
     'TimeSamplingCorrection',
@@ -17,18 +17,15 @@ class TimeSamplingCorrection(Component):
         using Fourier series expansion.
     """
 
-    time_sampling_correction_path = Unicode(
-        '',
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
         help='Path to the waveform sampling correction file',
-        allow_none = True,
+
     ).tag(config=True)
 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-
-        self.time_sampling_coefficients = None
 
         self.load_sampling_coefficient_file()
 
@@ -61,6 +58,7 @@ class TimeSamplingCorrection(Component):
         n_gains = 2
         n_modules = 265  # number of modules in LST's camera.
         n_pixel_per_module = 7  # number of pixels per one module.
+        n_channel_per_module = 8
         size_drs4 = 1024
         n_pixels = 1855
         roi = 36
@@ -75,8 +73,8 @@ class TimeSamplingCorrection(Component):
 
         for k in range(n_modules):
             for n in range(n_pixel_per_module):
-                fc[0][k * 7 + n] = fc_all[8 * k + n // 2]
-                fc[1][k * 7 + n] = fc_all[8 * k + n // 2 + 4]
+                fc[0][k * n_pixel_per_module + n] = fc_all[n_channel_per_module * k + n // 2]
+                fc[1][k * n_pixel_per_module + n] = fc_all[n_channel_per_module * k + n // 2 + 4]
 
         # reorder first capacitor as in waveform
         fc_ordered = np.zeros((n_gains, n_pixels), dtype=np.int16)
