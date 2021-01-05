@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from pkg_resources import resource_filename
-from ctapipe.core.traits import Unicode, List, Int
+from ctapipe.core.traits import Unicode, List, Int, Path
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
@@ -29,20 +29,19 @@ class LSTCameraCalibrator(CameraCalibrator):
         help='Name of the DataVolumeReducer to use'
     ).tag(config=True)
 
-    calibration_path = Unicode(
-        '',
+    calibration_path = Path(
+        exists=True, directory_ok=False,
         help='Path to LST calibration file'
     ).tag(config=True)
 
-    time_calibration_path = Unicode(
-        '',
+    time_calibration_path = Path(
+        exists=True, directory_ok=False,
         help='Path to drs4 time calibration file'
     ).tag(config=True)
 
-    time_sampling_correction_path = Unicode(
-        '',
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
         help='Path to time sampling correction file',
-        allow_none = True,
     ).tag(config=True)
 
     allowed_tels = List(
@@ -109,7 +108,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # declare time calibrator if correction file exist
 
-        if os.path.exists(self.time_calibration_path):
+        if self.time_calibration_path is not None:
 
             self.time_corrector = PulseTimeCorrection(
                 calib_file_path=self.time_calibration_path

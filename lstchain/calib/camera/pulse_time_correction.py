@@ -3,7 +3,7 @@ import numpy as np
 from numba import njit, prange
 
 from ctapipe.core import Component
-from ctapipe.core.traits import Int, Unicode
+from ctapipe.core.traits import Int, Path
 
 __all__ = [
     'PulseTimeCorrection',
@@ -32,8 +32,7 @@ class PulseTimeCorrection(Component):
                        help='number of capacitors (1024 or 4096)'
                        ).tag(config=True)
 
-    calib_file_path = Unicode('',
-                            allow_none=True,
+    calib_file_path = Path(exists=True, directory_ok=False,
                             help='Path to the time calibration file'
                             ).tag(config=True)
 
