@@ -177,7 +177,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     return ax
 
 
-def plot_sensitivity(energy, sensitivity, ax = None):
+def plot_sensitivity(energy, sensitivity, ax=None):
     """
     Plot the achieved sensitivity
 
@@ -194,7 +194,7 @@ def plot_sensitivity(energy, sensitivity, ax = None):
     """
     ax = plt.gca() if ax is None else ax
 
-    mask = sensitivity < 1e100
+    mask = sensitivity < 1e100 * sensitivity.unit
     egeom = np.sqrt(energy[1:] * energy[:-1])
     binsize = (energy[1:] - energy[:-1]) / 2
 

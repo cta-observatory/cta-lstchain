@@ -11,7 +11,8 @@ def test_plot_Crab_SED():
 def test_sensitivity_plot_comparison():
 
     energy = np.geomspace(0.01, 100, 20) * u.TeV
-    sensitivity = energy**-1 * 1e-12 / (u.cm**2 * u.s)
+    e_center = np.sqrt(energy[:-1] * energy[1:])
+    sensitivity = e_center**-1 * 1e-12 / (u.cm**2 * u.s)
 
     plot_utils.sensitivity_plot_comparison(energy, sensitivity)
 
