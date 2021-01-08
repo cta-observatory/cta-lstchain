@@ -59,6 +59,7 @@ setup(
         'scikit-learn',
         'tables',
         'traitlets',
+        'iminuit~=1.5',
     ],
     package_data={
         'lstchain': ['data/lstchain_standard_config.json',
