@@ -3,8 +3,20 @@ import numpy as np
 import pytest
 import os
 import pandas as pd
-from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.io import standard_config
+
+from tables import open_file
+from lstchain.io.io import (
+    dl1_params_lstcam_key,
+    dl1_images_lstcam_key,
+    dl2_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key
+    )
+from lstchain.io import (
+    write_dl2_dataframe,
+    get_dataset_keys
+)
+
+
 from lstchain.reco.utils import filter_events
 import astropy.units as u
 import tables
@@ -91,8 +103,39 @@ def test_apply_models():
     reg_cls_gh = joblib.load(file_model_gh_sep)
 
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=standard_config)
-    dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
+
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=custom_config)
+
+    dl1_keys = get_dataset_keys(dl1_file)
+    if dl1_images_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_images_lstcam_key)
+    if dl1_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_lstcam_key)
+
+    if dl1_params_src_dep_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    with open_file(dl1_file, 'r') as h5in:
+        with open_file(dl2_file, 'a') as h5out:
+
+            # Write the selected DL1 info
+            for k in dl1_keys:
+                if not k.startswith('/'):
+                    k = '/' + k
+
+                path, name = k.rsplit('/', 1)
+                if path not in h5out:
+                    grouppath, groupname = path.rsplit('/', 1)
+                    g = h5out.create_group(
+                        grouppath, groupname, createparents=True
+                        )
+                else:
+                    g = h5out.get_node(path)
+
+                h5in.copy_node(k, g, overwrite=True)
+
+    write_dl2_dataframe(dl2, dl2_file)
+    #dl2.to_hdf(dl2_file, key=dl2_params_lstcam_key)
 
 
 def produce_fake_dl1_proton_file(dl1_file):

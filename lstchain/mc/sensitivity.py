@@ -32,7 +32,8 @@ __all__ = [
 
 
 
-def read_sim_par(dl1_file):
+def read_sim_par(file):
+
     """
     Read MC simulated parameters
 
@@ -425,6 +426,7 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
     n_excesses_5sigma[n_excesses_5sigma<bkg_5percent] = bkg_5percent[n_excesses_5sigma<bkg_5percent]
 
     sensitivity = n_excesses_5sigma / (n_signal) * 100  # percentage of Crab
+
 
     return n_excesses_5sigma, sensitivity
 
