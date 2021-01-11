@@ -5,11 +5,11 @@ from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_e
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
-from gammapy.stats import WStatCountsStatistic
 from lstchain.reco.utils import reco_source_position_sky
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
+from pyirf.sensitivity import relative_sensitivity
 
 __all__ = [
     'read_sim_par',
@@ -31,7 +31,9 @@ __all__ = [
     ]
 
 
+
 def read_sim_par(file):
+
     """
     Read MC simulated parameters
 
@@ -412,6 +414,7 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
                 a 5 sigma significance
 
     """
+
     stat = WStatCountsStatistic(
         n_on=n_signal+alpha*n_background,
         n_off=n_background,
@@ -423,6 +426,7 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
     n_excesses_5sigma[n_excesses_5sigma<bkg_5percent] = bkg_5percent[n_excesses_5sigma<bkg_5percent]
 
     sensitivity = n_excesses_5sigma / (n_signal) * 100  # percentage of Crab
+
 
     return n_excesses_5sigma, sensitivity
 
@@ -447,6 +451,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
                 a 5 sigma significance
 
     """
+
     #if any(len(a) != n_bins_energy for a in (n_on_events, n_background, alpha)):
     #    raise ValueError(
      #       'Excess, background and alpha arrays must have the same length')
@@ -458,6 +463,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
         )
 
     n_excesses_5sigma = stat.n_sig_matching_significance(5)
+
 
     for i in range(0, n_bins_energy):
         # If the excess needed to get 5 sigma is less than 10,
