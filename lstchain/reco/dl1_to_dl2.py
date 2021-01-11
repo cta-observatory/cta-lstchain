@@ -53,9 +53,9 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args'] 
+    regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor    
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -304,6 +304,8 @@ def build_models(filegammas, fileprotons,
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
+    df_proton['mc_type']=101
+
     if config['source_dependent']:
         df_gamma = pd.concat([df_gamma, pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)], axis=1)
         df_proton = pd.concat([df_proton, pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)], axis=1)
@@ -391,7 +393,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
-      
+
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
     dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
@@ -445,13 +447,13 @@ def get_source_dependent_parameters(data, config={}):
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
-    
+
     """
 
     src_dep_params = pd.DataFrame(index=data.index)
 
     is_simu = 'mc_type' in data.columns
-    
+
     if is_simu:
         if (data['mc_type'] == 0).all():
             data_type = 'mc_gamma'
@@ -459,17 +461,17 @@ def get_source_dependent_parameters(data, config={}):
             data_type = 'mc_proton'
     else:
         data_type = 'real_data'
-    
+
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
 
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
-    
+
     src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
-    
+
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
-        expected_src_pos_y_m, 
+        expected_src_pos_y_m,
         data['x'],
         data['y'],
         data['psi']
@@ -477,7 +479,7 @@ def get_source_dependent_parameters(data, config={}):
 
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
-    
+
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
 
     return src_dep_params
@@ -492,7 +494,7 @@ def get_expected_source_pos(data, data_type, config):
     data: Pandas DataFrame
     data_type: 'mc_gamma','mc_proton','real_data'
     config: dictionnary containing configuration
-    
+
     """
 
     #For gamma MC, expected source position is actual one for each event
@@ -502,9 +504,9 @@ def get_expected_source_pos(data, data_type, config):
 
     #For proton MC, nominal source position is one written in config file
     if data_type == 'mc_proton':
-        
+
         focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
-        
+
         expected_src_pos = utils.sky_to_camera(
             u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values + config['mc_nominal_source_y_deg'], u.deg, copy=False),
@@ -512,7 +514,7 @@ def get_expected_source_pos(data, data_type, config):
             u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
-        
+
         expected_src_pos_x_m = expected_src_pos.x.to_value()
         expected_src_pos_y_m = expected_src_pos.y.to_value()
 
@@ -523,4 +525,4 @@ def get_expected_source_pos(data, data_type, config):
         expected_src_pos_x_m = np.zeros(len(data))
         expected_src_pos_y_m = np.zeros(len(data))
 
-    return expected_src_pos_x_m, expected_src_pos_y_m 
+    return expected_src_pos_x_m, expected_src_pos_y_m
