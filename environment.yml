@@ -7,7 +7,7 @@ dependencies:
   - python=3.7
   - pip
   - ctapipe=0.8.0
-  - gammapy>=0.17
+  - gammapy>=0.18
   - h5py
   - ipython
   - jupyter
@@ -18,4 +18,4 @@ dependencies:
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
       - ctaplot
-      - pyirf~=0.3.0
+      - pyirf~=0.4.0
