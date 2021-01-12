@@ -87,14 +87,15 @@ class IRFFITSWriter(Tool):
         else:
             self.cuts = read_configuration_file(self.config_file)
 
-        if str(self.input_gamma_dl2) is not None:
+
+        if self.input_gamma_dl2 is not None:
             self.mc_gamma = {"file": str(self.input_gamma_dl2),
                      "type": "point-like",}
         else:
             self.mc_gamma = {"file": str(self.input_gamma_diff_dl2),
                      "type": "diffuse",}
 
-        #Read and update MC information
+        # Read and update MC information
         self.log.info(f'Simulated {self.mc_gamma["type"]} Gamma Events:')
         self.mc_gamma["events"], self.mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(self.mc_gamma["file"])
         self.mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(self.mc_gamma["events"], prefix='true')
@@ -115,20 +116,20 @@ class IRFFITSWriter(Tool):
 
         gammas = filter_events(gammas, self.cuts["events_filters"])
 
-        #Filtering the tels needed to use with the real data
-        #Add MAGIC tels when need be
+        # Filtering the tels needed to use with the real data
+        # Add MAGIC tels when need be
         tel_ids = self.cuts["LST_tels"]["tel_list"]
         for i in tel_ids:
             gammas["selected_tels"] = gammas["tel_id"] == i
 
         gammas["selected_gh"] = gammas["gh_score"] > gh_cut
-        #irf_type = True for point like IRFs, False for Full Enclosure IRFs
+        # irf_type = True for point like IRFs, False for Full Enclosure IRFs
         if self.pnt_like:
             gammas["selected_theta"] = gammas["theta"] < u.Quantity(
                                         **self.cuts["fixed_cuts"]["theta_cut"])
             gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
                                     **self.cuts["fixed_cuts"]["source_fov_offset"])
-            #Combining selection cuts
+            # Combining selection cuts
             gammas["selected"] = gammas["selected_theta"] & \
                                 gammas["selected_gh"] & \
                                 gammas["selected_fov"] & \
@@ -138,14 +139,14 @@ class IRFFITSWriter(Tool):
                                 gammas["selected_tels"]
 
         # Binning of parameters used in IRFs
-        #12.5 GeV - 51.28 TeV
+        # 12.5 GeV - 51.28 TeV
         true_energy_bins =  create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
-        #add_overflow_bins(***)[1:-1]
+        # add_overflow_bins(***)[1:-1]
         # The overflow binning added is not needed in the current script
         reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
-        #TODO: Generalize FoV offset binning
-        if str(self.input_gamma_dl2) is None:
+        # TODO: Generalize FoV offset binning
+        if self.input_gamma_dl2 is not None:
             fov_offset_bins = [0.2, 0.6] * u.deg
         else:
             # temporary usage of bins as used in MAGIC
@@ -163,7 +164,7 @@ class IRFFITSWriter(Tool):
                 self.effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]],
                                                 self.mc_gamma["simulation_info"],
                                                 true_energy_bins, fov_offset_bins)
-        #Adding a dimension for FoV offset for effective area
+        # Adding a dimension for FoV offset for effective area
         self.hdus.append(create_aeff2d_hdu(self.effective_area[..., np.newaxis],
                         true_energy_bins, fov_offset_bins, extname = "EFFECTIVE AREA"))
         self.log.info("Effective Area HDU created")

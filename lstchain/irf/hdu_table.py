@@ -53,7 +53,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
     hdu_tables = []
     obs_tables = []
 
-    #loop through the files
+    # loop through the files
     for file in filename_list:
         filepath = fits_dir/file
         if filepath.is_file():
@@ -68,9 +68,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
             log.error(f"fits {file} doesn't exist")
             continue
 
-        #The column names for the table follows the scheme as shown in
-        #https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
-        ###############################################
+        # The column names for the table follows the scheme as shown in
+        # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
         # Event list
         t_events = Table(
                 {
@@ -88,8 +87,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
                 'S54', 'S20')
                 )
         hdu_tables.append(t_events)
-        ###############################################
-        #GTI
+
+        # GTI
         t_gti = t_events.copy()
 
         t_gti['HDU_TYPE'] = 'gti'
@@ -97,8 +96,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
         t_gti['HDU_NAME'] = 'gti'
 
         hdu_tables.append(t_gti)
-        ###############################################
-        #POINTING
+
+        # POINTING
         t_pnt = t_events.copy()
 
         t_pnt['HDU_TYPE'] = ['pointing']
@@ -106,8 +105,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
         t_pnt['HDU_NAME'] = ['pointing']
 
         hdu_tables.append(t_pnt)
-        ###############################################
-        #Energy Dispersion
+
+        # Energy Dispersion
         try:
             Table.read(filepath, hdu="ENERGY DISPERSION")
             t_edisp = t_events.copy()
@@ -120,10 +119,10 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
 
             hdu_tables.append(t_edisp)
-        except:
-            log.error('Energy Dispersion HDU not found')
-        ###############################################
-        #Effective Area
+        except KeyError as err:
+            log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
+
+        # Effective Area
         try:
             Table.read(filepath, hdu="EFFECTIVE AREA")
             t_aeff = t_edisp.copy()
@@ -134,10 +133,10 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_aeff['HDU_NAME'] = ['EFFECTIVE AREA']
 
             hdu_tables.append(t_aeff)
-        except:
-            log.error('Effective Area HDU not found')
-        ###############################################
-        #Background
+        except KeyError as err:
+            log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
+
+        # Background
         try:
             Table.read(filepath, hdu="BACKGROUND")
             t_bkg = t_edisp.copy()
@@ -148,9 +147,9 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_bkg['HDU_NAME'] = ['BACKGROUND']
 
             hdu_tables.append(t_bkg)
-        except:
-            log.error('Background HDU not found')
-        ###############################################
+        except KeyError as err:
+            log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
+
         # Obs_table
         t_obs = Table(
             {'OBS_ID' : [event_table.meta['OBS_ID']],
@@ -226,16 +225,14 @@ def create_event_list(data, run_number, source_name):
     """
 
     # Timing parameters
-    lam = 2800 #Average rate of triggered events, taken by hand for now
+    lam = 2800 # Average rate of triggered events, taken by hand for now
     t_start = data['dragon_time'].value[0]
     t_stop = data['dragon_time'].value[-1]
     time = Time(data['dragon_time'], format='unix', scale="utc")
     date_obs = time[0].to_value('iso', 'date')
-    obs_time = t_stop-t_start #All corrections excluded
-    #Use get_effective_time function of PR #566 for future livetime calculations
+    obs_time = t_stop-t_start # All corrections excluded
 
-    #Position parameters
-    focal = 28 * u.m
+    # Position parameters
     location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
     reco_alt = data['reco_alt']
     reco_az = data['reco_az']
@@ -251,7 +248,7 @@ def create_event_list(data, run_number, source_name):
         object_radec=SkyCoord.from_name(source_name)
     except:
         log.error('Timeout Error in finding Object in Sesame')
-        object_radec = SkyCoord(coord_pointing.icrs)
+        object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
 
     # Observation modes
     source_pointing_diff = object_radec.separation(
@@ -265,12 +262,11 @@ def create_event_list(data, run_number, source_name):
     elif round(source_pointing_diff, 1) == 0.:
         mode = 'ON'
     else:
-        mode = 'ON-MISPOINTING' #Either this or modify the method of getting ON mode
+        mode = 'ON-MISPOINTING' # Either this or modify the method of getting ON mode
 
     log.error(f'Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg' )
 
-    ##########################################################################
-    ### Event table
+    # Event table
     event_table = QTable(
             {
                 "EVENT_ID" : u.Quantity(data['event_id']),
@@ -280,17 +276,15 @@ def create_event_list(data, run_number, source_name):
                 "ENERGY" : u.Quantity(data['reco_energy'])
             }
         )
-    ##########################################################################
-    ### GTI table
+    # GTI table
     gti_table = QTable(
         {
             "START" : u.Quantity(t_start, ndmin=1),
             "STOP" : u.Quantity(t_stop, ndmin=1)
         }
     )
-    ##########################################################################
-    ### Adding the meta data
-    ### Event table metadata
+    # Adding the meta data
+    # Event table metadata
     ev_header = DEFAULT_HEADER.copy()
     ev_header["HDUCLAS1"] = "EVENTS"
 
@@ -298,8 +292,8 @@ def create_event_list(data, run_number, source_name):
     ev_header["DATE_OBS"] = date_obs
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
-    ev_header["MJDREFI"] = '40587' #Time('', format='mjd', scale="utc") # Unix 01/01/1970 0h0m0
-    ev_header["MJDREFF"] = '0' #Time('0',format='mjd',scale='utc')
+    ev_header["MJDREFI"] = '40587' # mjd format
+    ev_header["MJDREFF"] = '0'
     ev_header["TIMEUNIT"] = 's'
     ev_header["TIMESYS"] = "UTC"
     ev_header["OBJECT"] = source_name
@@ -316,12 +310,11 @@ def create_event_list(data, run_number, source_name):
     ev_header["FOVALIGN"] = 'ALTAZ'
 
     ev_header["ONTIME"] = obs_time
-    #Dead time for DRS4 chip is 26 u_sec
+    # Dead time for DRS4 chip is 26 u_sec
     ev_header["DEADC"] = 1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
     ev_header["LIVETIME"] = ev_header["DEADC"]*ev_header["ONTIME"]
 
-    ##########################################################################
-    ### GTI table metadata
+    # GTI table metadata
     gti_header = DEFAULT_HEADER.copy()
     gti_header["HDUCLAS1"] = "GTI"
 
@@ -331,8 +324,7 @@ def create_event_list(data, run_number, source_name):
     gti_header["TIMESYS"] = ev_header["TIMESYS"]
     gti_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
 
-    ##########################################################################
-    ### Pointing table metadata
+    # Pointing table metadata
     pnt_header = DEFAULT_HEADER.copy()
     pnt_header["HDUCLAS1"] = "POINTING"
 
@@ -343,8 +335,7 @@ def create_event_list(data, run_number, source_name):
     pnt_header["AZ_PNT"] = ev_header["AZ_PNT"]
     pnt_header["TIME"] = t_start
 
-    ### Create HDUs
-    #########################################################################
+    # Create HDUs
     pnt_table = QTable()
 
     event = fits.BinTableHDU(event_table, header = ev_header, name = 'EVENTS')

@@ -92,8 +92,6 @@ def main():
 
     data = read_data_dl2_to_QTable(args.input_data)
 
-    # Add angular separation column, different from pyirf function, because
-    # it is used only for MC files.
     data['reco_source_fov_offset'] = calculate_source_fov_offset(data, prefix='reco')
 
     # Get the run_id from the filename if it is -1 in the obs_id column
@@ -118,7 +116,7 @@ def main():
 
     data = data[data["reco_source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])]
 
-    #Create primary HDU
+    # Create primary HDU
     events, gti, pointing = create_event_list(data=data, run_number=run_number,
                     source_name=args.source_name)
 
@@ -127,10 +125,10 @@ def main():
 
     if args.add_irf:
         irf = fits.open(args.irf)
-        aeff2d = irf[1]
-        edisp2d = irf[2]
-        #bkg2d = irf[3]
-        #psf = irf[4]
+        aeff2d = irf['EFFECTIVE AREA']
+        edisp2d = irf['ENERGY DISPERSION']
+        # bkg2d = irf['BACKGROUND']
+        # psf = irf['PSF']
         hdulist = fits.HDUList([fits.PrimaryHDU(), events, gti, pointing, aeff2d, edisp2d])
     else:
         hdulist = fits.HDUList([fits.PrimaryHDU(), events, gti, pointing])

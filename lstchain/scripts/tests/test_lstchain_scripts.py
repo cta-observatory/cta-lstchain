@@ -214,12 +214,12 @@ def test_irf():
     import json
     import os
 
-    #Selection cuts have to be changed for tests
+    # Selection cuts have to be changed for tests
     data = json.load(open(os.path.join('lstchain/data/data_selection_cuts.json')))
     data["fixed_cuts"]["gh_score"][0] = 0.3
     data["events_filters"]["intensity"][0]=0
     json.dump(data, open(cuts,'x'))
-    #Use Proton spectra for spectral weighting as the test file is diffuse gammas
+    # Use Proton spectra for spectral weighting as the test file is diffuse gammas
     run_program(
 			'lstchain_mc_dl2_to_irf',
 			'-fg-diff', dl2_file,
@@ -258,8 +258,7 @@ def test_dl3_index():
 
     run_program(
             'lstchain_create_dl3_index_files',
-            '-d', output_dir,
-            '-n', '1'
+            '-f', dl3_file,
             )
 
     assert os.path.exists(dl3_hdu_index)

@@ -101,8 +101,6 @@ class DataReductionFITSWriter(Tool):
 
     def start(self):
 
-        # Add angular separation column, different from pyirf function, because
-        # it is used only for MC files.
         self.data['reco_source_fov_offset'] = calculate_source_fov_offset(self.data, prefix='reco')
 
         self.data = filter_events(self.data, self.cuts["events_filters"])
@@ -118,10 +116,10 @@ class DataReductionFITSWriter(Tool):
 
         if self.add_irf:
             irf = fits.open(self.input_irf)
-            self.aeff2d = irf[1]
-            self.edisp2d = irf[2]
-            #self.bkg2d = irf[3]
-            #self.psf = irf[4]
+            self.aeff2d = irf['EFFECTIVE AREA']
+            self.edisp2d = irf['ENERGY DISPERSION']
+            # self.bkg2d = irf['BACKGROUND']
+            # self.psf = irf['PSF']
             self.log.info("Adding IRF HDUs")
             self.hdulist = fits.HDUList([fits.PrimaryHDU(), self.events,
                                     self.gti, self.pointing, self.aeff2d, self.edisp2d])

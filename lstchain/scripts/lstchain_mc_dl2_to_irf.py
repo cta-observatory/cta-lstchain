@@ -60,7 +60,7 @@ parser.add_argument('--output-irf-dir', '-o', type=Path, dest='output_irf_dir',
                     default=None, required=True
                     )
 
-#Optional arguments
+# Optional arguments
 parser.add_argument('--input-file-gamma-diff', '-fg-diff', type=Path, dest='gamma_diff_file',
                     help='Path to the dl2 file of gamma diffuse events for building IRF',
                     default=None, required=False
@@ -101,7 +101,7 @@ def main():
         mc_gamma = {"file": args.gamma_diff_file,
                  "type": "diffuse",}
 
-    #Read and update MC information
+    # Read and update MC information
     log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
     mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(mc_gamma["file"])
     mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"], prefix='true')
@@ -113,7 +113,7 @@ def main():
                     )
     log.info(mc_gamma["simulation_info"])
 
-    #Apply selection cuts
+    # Apply selection cuts
     gammas = mc_gamma["events"]
 
     gh_cut = cuts["fixed_cuts"]["gh_score"][0]
@@ -121,18 +121,18 @@ def main():
 
     gammas = filter_events(gammas, cuts["events_filters"])
 
-    #Filtering the tels needed to use with the real data
-    #Add MAGIC tels when need be
+    # Filtering the tels needed to use with the real data
+    # Add MAGIC tels when need be
     tel_ids = cuts["LST_tels"]["tel_list"]
     for i in tel_ids:
         gammas["selected_tels"] = gammas["tel_id"] == i
 
     gammas["selected_gh"] = gammas["gh_score"] > gh_cut
-    #irf_type = True for point like IRFs, False for Full Enclosure IRFs
+    # irf_type = True for point like IRFs, False for Full Enclosure IRFs
     if args.point_like:
         gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
         gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
-        #Combining selection cuts
+        # Combining selection cuts
         gammas["selected"] = gammas["selected_theta"] & \
                             gammas["selected_gh"] & \
                             gammas["selected_fov"] & \
@@ -142,13 +142,13 @@ def main():
                             gammas["selected_tels"]
 
     # Binning of parameters used in IRFs
-    #12.5 GeV - 51.28 TeV
+    # 12.5 GeV - 51.28 TeV
     true_energy_bins =  create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
-    #add_overflow_bins(***)[1:-1]
+    # add_overflow_bins(***)[1:-1]
     # The overflow binning added is not needed in the current script
     reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
-    #TODO: Generalize FoV offset binning
+    # TODO: Generalize FoV offset binning
     if args.gamma_diff_file is None:
         fov_offset_bins = [0.2, 0.6] * u.deg
     else:
@@ -163,7 +163,7 @@ def main():
             effective_area = effective_area_per_energy(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins)
         else:
             effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins, fov_offset_bins)
-    #Adding a dimension for FoV offset for effective area
+    # Adding a dimension for FoV offset for effective area
     hdus.append(create_aeff2d_hdu(effective_area[..., np.newaxis],true_energy_bins, fov_offset_bins, extname = "EFFECTIVE AREA"))
 
     edisp = energy_dispersion(gammas[gammas["selected"]], true_energy_bins, fov_offset_bins, migration_bins)

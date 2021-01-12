@@ -6,8 +6,8 @@
     "leakage_intensity_width_2": [0, 0.2]
   },
   "fixed_cuts":{
-    "gh_score": [0.8,1],
-    "theta_cut": {"value": 0.14, "unit": "deg"},
+    "gh_score": [0.6,1],
+    "theta_cut": {"value": 0.2, "unit": "deg"},
     "source_fov_offset": {"value": 2.83, "unit": "deg"}
   },
   "source_dependent": {

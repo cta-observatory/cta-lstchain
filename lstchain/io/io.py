@@ -992,7 +992,7 @@ def read_mc_dl2_to_pyirf(filename):
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
     """
 
-    ## mapping
+    # mapping
     name_mapping = {
         'mc_energy': 'true_energy',
         'mc_alt': 'true_alt',
@@ -1025,7 +1025,7 @@ def read_mc_dl2_to_pyirf(filename):
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
     events = table.QTable.from_pandas(events)
 
-    #Make the columns as Quantity
+    # Make the columns as Quantity
     for k, v in unit_mapping.items():
         events[k] *= v
 
@@ -1042,7 +1042,7 @@ def read_data_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`
     """
-    #Mapping
+    # Mapping
     name_mapping = {
         'gammaness' : 'gh_score',
         'alt_tel': 'pointing_alt',
@@ -1063,7 +1063,7 @@ def read_data_dl2_to_QTable(filename):
     data = pd.read_hdf(filename, key = dl2_params_lstcam_key).rename(columns=name_mapping)
     data = table.QTable.from_pandas(data)
 
-	#Make the columns as Quantity
+	# Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
 
