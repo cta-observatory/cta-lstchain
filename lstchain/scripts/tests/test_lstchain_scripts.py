@@ -222,7 +222,7 @@ def test_irf():
     # Use Proton spectra for spectral weighting as the test file is diffuse gammas
     run_program(
 			'lstchain_mc_dl2_to_irf',
-			'-fg-diff', dl2_file,
+			'-fg', dl2_file,
 			'-o', output_dir,
 			'-conf', cuts,
 			'-pnt', 'True',

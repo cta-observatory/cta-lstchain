@@ -40,10 +40,6 @@ class IRFFITSWriter(Tool):
     config_file = traits.Path(
         help="Config file for selection cuts", directory_ok=False, file_ok=True,
     ).tag(config=True)
-    input_gamma_diff_dl2 = traits.Path(
-        help="Input MC diffuse gamma DL2 file", exists=True, directory_ok=False,
-        file_ok=True
-    ).tag(config=True)
 
     aliases = {
         "input_gamma_dl2" : "IRFFITSWriter.input_gamma_dl2",
@@ -54,8 +50,6 @@ class IRFFITSWriter(Tool):
         "pnt" : "IRFFITSWriter.pnt_like",
         "config_file" : "IRFFITSWriter.config_file",
         "conf" : "IRFFITSWriter.config_file",
-        "input_gamma_diff_dl2" : "IRFFITSWriter.input_gamma_diff_dl2",
-        "fg_diff" : "IRFFITSWriter.input_gamma_diff_dl2",
     }
 
     flag = {
@@ -87,17 +81,16 @@ class IRFFITSWriter(Tool):
         else:
             self.cuts = read_configuration_file(self.config_file)
 
-
-        if self.input_gamma_dl2 is not None:
-            self.mc_gamma = {"file": str(self.input_gamma_dl2),
-                     "type": "point-like",}
-        else:
-            self.mc_gamma = {"file": str(self.input_gamma_diff_dl2),
-                     "type": "diffuse",}
-
         # Read and update MC information
-        self.log.info(f'Simulated {self.mc_gamma["type"]} Gamma Events:')
+        self.mc_gamma = {"file": str(self.input_gamma_dl2),}
         self.mc_gamma["events"], self.mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(self.mc_gamma["file"])
+
+        if self.mc_gamma["simulation_info"].viewcone.value == 0.:
+            self.mc_gamma["type"] = "point-like"
+        else:
+            self.mc_gamma["type"] = "diffuse"
+        self.log.info(f'Simulated {self.mc_gamma["type"]} Gamma Events:')
+
         self.mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(self.mc_gamma["events"], prefix='true')
         # calculate theta / distance between reco and assumed source position
         self.mc_gamma["events"]["theta"] = calculate_theta(
@@ -146,7 +139,7 @@ class IRFFITSWriter(Tool):
         reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
         # TODO: Generalize FoV offset binning
-        if self.input_gamma_dl2 is not None:
+        if self.mc_gamma["type"] == "point-like":
             fov_offset_bins = [0.2, 0.6] * u.deg
         else:
             # temporary usage of bins as used in MAGIC
@@ -157,7 +150,7 @@ class IRFFITSWriter(Tool):
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(),]
         with np.errstate(invalid='ignore', divide='ignore'):
-            if self.input_gamma_diff_dl2 is None:
+            if self.mc_gamma["type"] == "point-like":
                 self.effective_area = effective_area_per_energy(gammas[gammas["selected"]],
                                         self.mc_gamma["simulation_info"], true_energy_bins)
             else:

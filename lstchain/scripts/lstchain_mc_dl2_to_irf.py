@@ -14,7 +14,6 @@ Use optimised cuts and binning
 Usage:
 $> python lstchain_mc_dl2_to_irf.py
 --input-file-gamma ./gamma/dl2_gamma_*.h5
---input-file-gamma-diff ./gamma-diff/dl2_gamma-diff*.h5 #optional for now
 --output-dir ./IRFs/
 --pnt-like True
 --config ../../data/data_selection_cuts.json
@@ -61,11 +60,6 @@ parser.add_argument('--output-irf-dir', '-o', type=Path, dest='output_irf_dir',
                     )
 
 # Optional arguments
-parser.add_argument('--input-file-gamma-diff', '-fg-diff', type=Path, dest='gamma_diff_file',
-                    help='Path to the dl2 file of gamma diffuse events for building IRF',
-                    default=None, required=False
-                    )
-
 parser.add_argument('--point-like', '-pnt', action='store',
                     type=lambda x: bool(strtobool(x)), dest='point_like',
                     help='True for point-like IRF, False for Full Enclosure',
@@ -94,16 +88,16 @@ def main():
     else:
         cuts = read_configuration_file(args.config)
 
-    if args.gamma_diff_file is None:
-        mc_gamma = {"file": args.gamma_file,
-                 "type": "point-like",}
-    else:
-        mc_gamma = {"file": args.gamma_diff_file,
-                 "type": "diffuse",}
-
     # Read and update MC information
-    log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
+    mc_gamma = {"file": args.gamma_file,}
+
     mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(mc_gamma["file"])
+    if mc_gamma["simulation_info"].viewcone.value == 0.:
+        mc_gamma["type"] = "point-like"
+    else:
+        mc_gamma["type"] = "diffuse"
+    log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
+
     mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"], prefix='true')
     # calculate theta / distance between reco and assumed source position
     mc_gamma["events"]["theta"] = calculate_theta(
@@ -149,7 +143,7 @@ def main():
     reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
     # TODO: Generalize FoV offset binning
-    if args.gamma_diff_file is None:
+    if mc_gamma["type"] == "point-like":
         fov_offset_bins = [0.2, 0.6] * u.deg
     else:
         # temporary usage of bins as used in MAGIC
@@ -159,7 +153,7 @@ def main():
     # Write HDUs
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
-        if args.gamma_diff_file is None:
+        if mc_gamma["type"] == "point-like":
             effective_area = effective_area_per_energy(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins)
         else:
             effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins, fov_offset_bins)
