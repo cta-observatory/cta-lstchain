@@ -11,7 +11,7 @@ intercept, time_gradient
 
 Usage: 
 
-$> python lstchain_mc_dl1ab.py 
+$> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 
 """
