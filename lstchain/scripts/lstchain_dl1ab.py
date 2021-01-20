@@ -17,11 +17,12 @@ $> python lstchain_dl1ab.py
 """
 
 import argparse
+import logging
 from distutils.util import strtobool
 
+import astropy.units as u
 import numpy as np
 import tables
-import astropy.units as u
 from astropy.table import Table
 from ctapipe.containers import HillasParametersContainer
 from ctapipe.image import hillas_parameters
@@ -34,6 +35,8 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
@@ -55,7 +58,7 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--no-image', action='store', 
+parser.add_argument('--no-image', action='store',
                     type=lambda x: bool(strtobool(x)),
                     dest='noimage',
                     help='Boolean. True to remove the images in output file',
@@ -64,16 +67,19 @@ parser.add_argument('--no-image', action='store',
 args = parser.parse_args()
 
 
-
 def main():
     std_config = get_standard_config()
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
 
     if args.config_file is not None:
         config = replace_config(std_config, read_configuration_file(args.config_file))
     else:
         config = std_config
 
-    print(config['tailcut'])
+    log.info(f"Tailcut config used: {config['tailcut']}")
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -95,6 +101,7 @@ def main():
         'n_pixels',
         'wl',
         'r',
+        'log_intensity'
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -113,8 +120,6 @@ def main():
 
                 dl1_container.reset()
 
-                if ii % 10000 == 0:
-                    print(ii)
                 image = row['image']
                 peak_time = row['peak_time']
 
@@ -146,8 +151,7 @@ def main():
                     dl1_container.width = width
                     dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
-
-
+                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
