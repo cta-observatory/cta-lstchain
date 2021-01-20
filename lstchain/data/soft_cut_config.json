@@ -81,7 +81,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage_intensity_width_2",
+    "leakage_intensity_width_2"
   ],
   "classification_features": [
     "log_intensity",
