@@ -1,6 +1,6 @@
 {
   "events_filters":{
-    "intensity": [200, Infinity],
+    "intensity": [100, Infinity],
     "r": [0, 1],
     "wl": [0.1, 1],
     "leakage_intensity_width_2": [0, 0.2]

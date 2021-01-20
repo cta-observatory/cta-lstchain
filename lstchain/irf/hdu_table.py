@@ -50,8 +50,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
         directory containing the fits file
     """
 
-    hdu_tables = []
-    obs_tables = []
+    hdu_index_tables = []
+    obs_index_tables = []
 
     # loop through the files
     for file in filename_list:
@@ -86,7 +86,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
                 'S20', 'S20', 'S20', 'S70',
                 'S54', 'S20')
                 )
-        hdu_tables.append(t_events)
+        hdu_index_tables.append(t_events)
 
         # GTI
         t_gti = t_events.copy()
@@ -95,7 +95,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
         t_gti['HDU_CLASS'] = 'gti'
         t_gti['HDU_NAME'] = 'gti'
 
-        hdu_tables.append(t_gti)
+        hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
@@ -104,21 +104,21 @@ def create_obs_hdu_index(filename_list, fits_dir):
         t_pnt['HDU_CLASS'] = ['pointing']
         t_pnt['HDU_NAME'] = ['pointing']
 
-        hdu_tables.append(t_pnt)
+        hdu_index_tables.append(t_pnt)
 
         # Energy Dispersion
         try:
-            Table.read(filepath, hdu="ENERGY DISPERSION")
+            edisp = Table.read(filepath, hdu="ENERGY DISPERSION")
             t_edisp = t_events.copy()
 
             t_edisp['HDU_TYPE'] = ['edisp']
             t_edisp['HDU_CLASS'] = ['edisp_2d']
             t_edisp['HDU_CLASS2'] = ['EDISP']
-            t_edisp['HDU_CLASS3'] = ['POINT-LIKE']
+            t_edisp['HDU_CLASS3'] = [edisp.meta['HDUCLAS3']]
             t_edisp['HDU_CLASS4'] = ['EDISP_2D']
             t_edisp['HDU_NAME'] = ['ENERGY DISPERSION']
 
-            hdu_tables.append(t_edisp)
+            hdu_index_tables.append(t_edisp)
         except KeyError as err:
             log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
 
@@ -132,7 +132,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_aeff['HDU_CLASS4'] = ['AEFF_2D']
             t_aeff['HDU_NAME'] = ['EFFECTIVE AREA']
 
-            hdu_tables.append(t_aeff)
+            hdu_index_tables.append(t_aeff)
         except KeyError as err:
             log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
 
@@ -146,7 +146,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
             t_bkg['HDU_CLASS4'] = ['BKG_2D']
             t_bkg['HDU_NAME'] = ['BACKGROUND']
 
-            hdu_tables.append(t_bkg)
+            hdu_index_tables.append(t_bkg)
         except KeyError as err:
             log.error('Run {0}:{1}'.format(t_events['OBS_ID'].data[0], err))
 
@@ -174,34 +174,42 @@ def create_obs_hdu_index(filename_list, fits_dir):
             '>f4', '>f4','>f4', '>f4', '>f4', '>f8', '>f8', 'S20',
             '>S20', '>i8', 'S20')
             )
-        obs_tables.append(t_obs)
+        obs_index_tables.append(t_obs)
 
-    hdu_table = vstack(hdu_tables)
+    hdu_index_table = vstack(hdu_index_tables)
 
-    hdu_header = DEFAULT_HEADER.copy()
-    hdu_header["HDUCLAS1"] = "INDEX"
-    hdu_header["HDUCLAS2"] = "HDU"
-    hdu_header["TELESCOP"] = "CTA"
-    hdu_header["INSTRUME"] = "LST-1"
+    hdu_index_header = DEFAULT_HEADER.copy()
+    hdu_index_header["HDUCLAS1"] = "INDEX"
+    hdu_index_header["HDUCLAS2"] = "HDU"
+    hdu_index_header["TELESCOP"] = "CTA"
+    hdu_index_header["INSTRUME"] = "LST-1"
 
     filename_hdu_table = fits_dir/'hdu-index.fits.gz'
 
-    hdu = fits.BinTableHDU(hdu_table, header=hdu_header, name='HDU INDEX')
-    hdu_list = fits.HDUList([fits.PrimaryHDU(), hdu])
-    hdu_list.writeto(filename_hdu_table, overwrite=True)
+    hdu_index = fits.BinTableHDU(
+                        hdu_index_table,
+                        header=hdu_index_header,
+                        name='HDU INDEX'
+                        )
+    hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
+    hdu_index_list.writeto(filename_hdu_table, overwrite=True)
 
-    obs_table = vstack(obs_tables)
+    obs_index_table = vstack(obs_index_tables)
 
-    obs_header = hdu_header.copy()
-    obs_header["HDUCLAS2"] = "OBS"
-    obs_header['MJDREFI'] = event_table.meta['MJDREFI']
-    obs_header['MJDREFF'] = event_table.meta['MJDREFF']
+    obs_index_header = hdu_index_header.copy()
+    obs_index_header["HDUCLAS2"] = "OBS"
+    obs_index_header['MJDREFI'] = event_table.meta['MJDREFI']
+    obs_index_header['MJDREFF'] = event_table.meta['MJDREFF']
 
     filename_obs_table = fits_dir/'obs-index.fits.gz'
 
-    obs = fits.BinTableHDU(obs_table, header = obs_header, name='OBS INDEX')
-    hdu_list = fits.HDUList([fits.PrimaryHDU(), obs])
-    hdu_list.writeto(filename_obs_table, overwrite=True)
+    obs_index = fits.BinTableHDU(
+                        obs_index_table,
+                        header = obs_index_header,
+                        name='OBS INDEX'
+                        )
+    obs_index_list = fits.HDUList([fits.PrimaryHDU(), obs_index])
+    obs_index_list.writeto(filename_obs_table, overwrite=True)
 
     return
 
@@ -230,19 +238,34 @@ def create_event_list(data, run_number, source_name):
     t_stop = data['dragon_time'].value[-1]
     time = Time(data['dragon_time'], format='unix', scale="utc")
     date_obs = time[0].to_value('iso', 'date')
-    obs_time = t_stop-t_start # All corrections excluded
+    obs_time = t_stop - t_start # All corrections excluded
 
     # Position parameters
-    location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
+    location = EarthLocation.from_geodetic(
+                            -17.89139 * u.deg,
+                            28.76139 * u.deg,
+                            2184 * u.m)
     reco_alt = data['reco_alt']
     reco_az = data['reco_az']
     pointing_alt = data['pointing_alt']
     pointing_az = data['pointing_az']
 
-    src_sky_pos = SkyCoord(alt=reco_alt, az=reco_az, frame=AltAz(obstime=time,
-                location=location)).transform_to(frame='icrs')
-    tel_pnt_sky_pos = SkyCoord(alt=pointing_alt[0], az=pointing_az[0], frame=AltAz(
-                obstime=time[0], location=location)).transform_to(frame='icrs')
+    src_sky_pos = SkyCoord(
+                        alt=reco_alt,
+                        az=reco_az,
+                        frame=AltAz(
+                                obstime=time,
+                                location=location
+                                )
+                        ).transform_to(frame='icrs')
+    tel_pnt_sky_pos = SkyCoord(
+                            alt=pointing_alt[0],
+                            az=pointing_az[0],
+                            frame=AltAz(
+                                    obstime=time[0],
+                                    location=location
+                                    )
+                            ).transform_to(frame='icrs')
 
     try:
         object_radec=SkyCoord.from_name(source_name)
@@ -252,8 +275,11 @@ def create_event_list(data, run_number, source_name):
 
     # Observation modes
     source_pointing_diff = object_radec.separation(
-                SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
-                ).deg
+                                            SkyCoord(
+                                                tel_pnt_sky_pos.ra,
+                                                tel_pnt_sky_pos.dec
+                                                    )
+                                                ).deg
     # Assuming wobble offset is fixed to 0.4
     if round(source_pointing_diff, 1) == 0.4:
         mode = 'WOBBLE'
@@ -318,7 +344,7 @@ def create_event_list(data, run_number, source_name):
     gti_header = DEFAULT_HEADER.copy()
     gti_header["HDUCLAS1"] = "GTI"
 
-    gti_header["OBS_ID"]=run_number
+    gti_header["OBS_ID"] = run_number
     gti_header["MJDREFI"] = ev_header["MJDREFI"]
     gti_header["MJDREFF"] = ev_header["MJDREFF"]
     gti_header["TIMESYS"] = ev_header["TIMESYS"]
@@ -338,8 +364,20 @@ def create_event_list(data, run_number, source_name):
     # Create HDUs
     pnt_table = QTable()
 
-    event = fits.BinTableHDU(event_table, header = ev_header, name = 'EVENTS')
-    gti = fits.BinTableHDU(gti_table, header = gti_header, name = 'GTI')
-    pointing = fits.BinTableHDU(pnt_table, header = pnt_header, name = 'POINTING')
+    event = fits.BinTableHDU(
+                    event_table,
+                    header = ev_header,
+                    name = 'EVENTS'
+                    )
+    gti = fits.BinTableHDU(
+                    gti_table,
+                    header = gti_header,
+                    name = 'GTI'
+                    )
+    pointing = fits.BinTableHDU(
+                    pnt_table,
+                    header = pnt_header,
+                    name = 'POINTING'
+                    )
 
     return event, gti, pointing

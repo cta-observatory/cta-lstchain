@@ -22,10 +22,9 @@ parser.add_argument(
     "--input-dl3-files",
     "-f",
     nargs="+",
-    dest="input_dl3_files",
     help="Path of DL3 files, listed in a pattern *[1-n]*",
     required=True,
-)
+    )
 
 args = parser.parse_args()
 

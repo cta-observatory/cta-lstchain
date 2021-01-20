@@ -14,8 +14,8 @@ Use optimised cuts and binning
 Usage:
 $> python lstchain_mc_dl2_to_irf.py
 --input-file-gamma ./gamma/dl2_gamma_*.h5
---output-dir ./IRFs/
---pnt-like True
+--output-irf-dir ./IRFs/
+--point-like True
 --config ../../data/data_selection_cuts.json
 """
 
@@ -49,27 +49,37 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="MC DL2 to IRF")
 
 # Required arguments
-parser.add_argument('--input-file-gamma', '-fg', type=Path, dest='gamma_file',
+parser.add_argument('--input-file-gamma',
+                    '-fg',
+                    type=Path,
                     help='Path to the DL file of point like gamma events for building IRF',
-                    default=None, required=False
+                    default=None,
+                    required=False
                     )
 
-parser.add_argument('--output-irf-dir', '-o', type=Path, dest='output_irf_dir',
+parser.add_argument('--output-irf-dir',
+                    '-o',
+                    type=Path,
                     help='Path to output IRF files',
-                    default=None, required=True
+                    default=None,
+                    required=True
                     )
 
 # Optional arguments
-parser.add_argument('--point-like', '-pnt', action='store',
-                    type=lambda x: bool(strtobool(x)), dest='point_like',
+parser.add_argument('--point-like',
+                    '-pnt',
+                    action='store',
+                    type=lambda x: bool(strtobool(x)),
                     help='True for point-like IRF, False for Full Enclosure',
                     required=True
                     )
 
-parser.add_argument('--config', '-conf', type=Path,
-                    dest='config',
+parser.add_argument('--config',
+                    '-conf',
+                    type=Path,
                     help='Config file for selection cuts',
-                    default=None, required=False
+                    default=None,
+                    required=False
                     )
 
 args = parser.parse_args()
@@ -84,21 +94,24 @@ def main():
     logging.getLogger().addHandler(handler)
 
     if args.config is None:
-        cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), '../data/data_selection_cuts.json'))
+        cuts = read_configuration_file(os.path.join(os.path.dirname(__file__),
+                        '../data/data_selection_cuts.json'))
     else:
         cuts = read_configuration_file(args.config)
 
     # Read and update MC information
-    mc_gamma = {"file": args.gamma_file,}
+    mc_gamma = {"file": args.input_file_gamma,}
 
-    mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(mc_gamma["file"])
+    mc_gamma["events"], mc_gamma["simulation_info"] = read_mc_dl2_to_pyirf(
+                                                    mc_gamma["file"])
     if mc_gamma["simulation_info"].viewcone.value == 0.:
         mc_gamma["type"] = "point-like"
     else:
         mc_gamma["type"] = "diffuse"
     log.info(f'Simulated {mc_gamma["type"]} Gamma Events:')
 
-    mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(mc_gamma["events"], prefix='true')
+    mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(
+                                            mc_gamma["events"], prefix='true')
     # calculate theta / distance between reco and assumed source position
     mc_gamma["events"]["theta"] = calculate_theta(
                     mc_gamma["events"],
@@ -122,10 +135,12 @@ def main():
         gammas["selected_tels"] = gammas["tel_id"] == i
 
     gammas["selected_gh"] = gammas["gh_score"] > gh_cut
-    # irf_type = True for point like IRFs, False for Full Enclosure IRFs
+    # point_like = True for point like IRFs, False for Full Enclosure IRFs
     if args.point_like:
-        gammas["selected_theta"] = gammas["theta"] < u.Quantity(**cuts["fixed_cuts"]["theta_cut"])
-        gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(**cuts["fixed_cuts"]["source_fov_offset"])
+        gammas["selected_theta"] = gammas["theta"] < u.Quantity(
+                                            **cuts["fixed_cuts"]["theta_cut"])
+        gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
+                                    **cuts["fixed_cuts"]["source_fov_offset"])
         # Combining selection cuts
         gammas["selected"] = gammas["selected_theta"] & \
                             gammas["selected_gh"] & \
@@ -154,14 +169,36 @@ def main():
     hdus = [fits.PrimaryHDU(),]
     with np.errstate(invalid='ignore', divide='ignore'):
         if mc_gamma["type"] == "point-like":
-            effective_area = effective_area_per_energy(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins)
+            effective_area = effective_area_per_energy(
+                                gammas[gammas["selected"]],
+                                mc_gamma["simulation_info"],
+                                true_energy_bins)
         else:
-            effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]], mc_gamma["simulation_info"], true_energy_bins, fov_offset_bins)
+            effective_area = effective_area_per_energy_and_fov(
+                                gammas[gammas["selected"]],
+                                mc_gamma["simulation_info"],
+                                true_energy_bins,
+                                fov_offset_bins)
     # Adding a dimension for FoV offset for effective area
-    hdus.append(create_aeff2d_hdu(effective_area[..., np.newaxis],true_energy_bins, fov_offset_bins, extname = "EFFECTIVE AREA"))
+    hdus.append(create_aeff2d_hdu(
+                    effective_area[..., np.newaxis],
+                    true_energy_bins,
+                    fov_offset_bins,
+                    point_like=args.point_like,
+                    extname = "EFFECTIVE AREA"))
 
-    edisp = energy_dispersion(gammas[gammas["selected"]], true_energy_bins, fov_offset_bins, migration_bins)
-    hdus.append(create_energy_dispersion_hdu(edisp,true_energy_bins, migration_bins, fov_offset_bins, extname = "ENERGY DISPERSION"))
+    edisp = energy_dispersion(
+                gammas[gammas["selected"]],
+                true_energy_bins,
+                fov_offset_bins,
+                migration_bins)
+    hdus.append(create_energy_dispersion_hdu(
+                    edisp,
+                    true_energy_bins,
+                    migration_bins,
+                    fov_offset_bins,
+                    point_like=args.point_like,
+                    extname = "ENERGY DISPERSION"))
 
     output_file = output_dir/"irf.fits.gz"
     fits.HDUList(hdus).writeto(output_file, overwrite=True)

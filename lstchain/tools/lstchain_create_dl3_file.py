@@ -27,25 +27,39 @@ class DataReductionFITSWriter(Tool):
     description = "Create DL3 FITS file from given data DL2 file, selection cuts and/or IRF FITS file"
 
     input_dl2 = traits.Path(
-        help="Input data DL2 file", exists=True, directory_ok=False, file_ok=True
-    ).tag(config=True)
+        help="Input data DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
+        ).tag(config=True)
+
     output_dl3_path = traits.Path(
         help="DL3 output filedir",
-        directory_ok=True, file_ok=False
-    ).tag(config=True)
+        directory_ok=True,
+        file_ok=False
+        ).tag(config=True)
+
     add_irf = traits.Bool(
         help="True for adding IRF fits file to the DL3 file",
         default_value=True,
-    ).tag(config=True)
+        ).tag(config=True)
+
     input_irf = traits.Path(
-        help="Compressed FITS file of IRFs", exists=True, directory_ok=False, file_ok=True
-    ).tag(config=True)
+        help="Compressed FITS file of IRFs",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
+        ).tag(config=True)
+
     config_file = traits.Path(
-        help="Config file for selection cuts", directory_ok=False, file_ok=True,
-    ).tag(config=True)
+        help="Config file for selection cuts",
+        directory_ok=False,
+        file_ok=True,
+        ).tag(config=True)
+
     source_name = traits.Unicode(
         help="Name of Source"
-    ).tag(config=True)
+        ).tag(config=True)
 
     aliases = {
         "input_dl2" : "DataReductionFITSWriter.input_dl2",
@@ -83,7 +97,9 @@ class DataReductionFITSWriter(Tool):
     def setup(self):
 
         if self.config_file is None:
-            self.cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), '../data/data_selection_cuts.json'))
+            self.cuts = read_configuration_file(os.path.join(
+                                        os.path.dirname(__file__),
+                                        '../data/data_selection_cuts.json'))
         else:
             self.cuts = read_configuration_file(self.config_file)
 
@@ -101,7 +117,8 @@ class DataReductionFITSWriter(Tool):
 
     def start(self):
 
-        self.data['reco_source_fov_offset'] = calculate_source_fov_offset(self.data, prefix='reco')
+        self.data['reco_source_fov_offset'] = calculate_source_fov_offset(
+                                                    self.data, prefix='reco')
 
         self.data = filter_events(self.data, self.cuts["events_filters"])
 
@@ -111,8 +128,11 @@ class DataReductionFITSWriter(Tool):
         self.data = self.data[self.data["reco_source_fov_offset"] < u.Quantity(
                                         **self.cuts["fixed_cuts"]["source_fov_offset"])]
         self.log.info("Gemerating Event List")
-        self.events, self.gti, self.pointing = create_event_list(data=self.data, run_number=self.run_number,
-                        source_name=self.source_name)
+        self.events, self.gti, self.pointing = create_event_list(
+                                            data=self.data,
+                                            run_number=self.run_number,
+                                            source_name=self.source_name
+                                            )
 
         if self.add_irf:
             irf = fits.open(self.input_irf)
@@ -121,10 +141,19 @@ class DataReductionFITSWriter(Tool):
             # self.bkg2d = irf['BACKGROUND']
             # self.psf = irf['PSF']
             self.log.info("Adding IRF HDUs")
-            self.hdulist = fits.HDUList([fits.PrimaryHDU(), self.events,
-                                    self.gti, self.pointing, self.aeff2d, self.edisp2d])
+            self.hdulist = fits.HDUList([fits.PrimaryHDU(),
+                                        self.events,
+                                        self.gti,
+                                        self.pointing,
+                                        self.aeff2d,
+                                        self.edisp2d]
+                                        )
         else:
-            self.hdulist = fits.HDUList([fits.PrimaryHDU(), self.events, self.gti, self.pointing])
+            self.hdulist = fits.HDUList([fits.PrimaryHDU(),
+                                        self.events,
+                                        self.gti,
+                                        self.pointing]
+                                        )
 
     def finish(self):
 
@@ -132,7 +161,7 @@ class DataReductionFITSWriter(Tool):
         if self.output_file.exists():
             self.log.info(f"{self.output_file} exists, will be overwritten")
 
-        self.hdulist.writeto(self.output_file,overwrite=True)
+        self.hdulist.writeto(self.output_file, overwrite=True)
         Provenance().add_output_file(self.output_file)
 
 def main():

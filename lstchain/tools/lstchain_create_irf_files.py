@@ -27,34 +27,43 @@ class IRFFITSWriter(Tool):
     description = "Create IRF FITS file from given MC DL2 files and selection cuts"
 
     input_gamma_dl2 = traits.Path(
-        help="Input MC gamma DL2 file", exists=True, directory_ok=False, file_ok=True
-    ).tag(config=True)
+        help="Input MC gamma DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
+        ).tag(config=True)
+
     output_irf_path = traits.Path(
         help="IRF output filedir",
-        directory_ok=True, file_ok=False
-    ).tag(config=True)
-    pnt_like = traits.Bool(
+        directory_ok=True,
+        file_ok=False
+        ).tag(config=True)
+
+    point_like = traits.Bool(
         help="True for point-like IRF, False for Full Enclosure",
         default_value=False,
-    ).tag(config=True)
+        ).tag(config=True)
+
     config_file = traits.Path(
-        help="Config file for selection cuts", directory_ok=False, file_ok=True,
-    ).tag(config=True)
+        help="Config file for selection cuts",
+        directory_ok=False,
+        file_ok=True,
+        ).tag(config=True)
 
     aliases = {
         "input_gamma_dl2" : "IRFFITSWriter.input_gamma_dl2",
         "fg" : "IRFFITSWriter.input_gamma_dl2",
         "output_irf_path" : "IRFFITSWriter.output_irf_path",
         "o" : "IRFFITSWriter.output_irf_path",
-        "pnt_like" : "IRFFITSWriter.pnt_like",
-        "pnt" : "IRFFITSWriter.pnt_like",
+        "point_like" : "IRFFITSWriter.point_like",
+        "pnt" : "IRFFITSWriter.point_like",
         "config_file" : "IRFFITSWriter.config_file",
         "conf" : "IRFFITSWriter.config_file",
     }
 
     flag = {
-        "pnt_like": (
-        {"IRFFITSWriter": {"pnt_like":False}},
+        "point_like": (
+        {"IRFFITSWriter": {"point_like": False}},
         "Full Enclosure IRFs will be produced"
         ),
     }
@@ -77,7 +86,9 @@ class IRFFITSWriter(Tool):
     def setup(self):
 
         if self.config_file is None:
-            self.cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), '../data/data_selection_cuts.json'))
+            self.cuts = read_configuration_file(os.path.join(
+                                            os.path.dirname(__file__),
+                                            '../data/data_selection_cuts.json'))
         else:
             self.cuts = read_configuration_file(self.config_file)
 
@@ -91,7 +102,9 @@ class IRFFITSWriter(Tool):
             self.mc_gamma["type"] = "diffuse"
         self.log.info(f'Simulated {self.mc_gamma["type"]} Gamma Events:')
 
-        self.mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(self.mc_gamma["events"], prefix='true')
+        self.mc_gamma["events"]["true_source_fov_offset"] = calculate_source_fov_offset(
+                                                            self.mc_gamma["events"],
+                                                            prefix='true')
         # calculate theta / distance between reco and assumed source position
         self.mc_gamma["events"]["theta"] = calculate_theta(
                         self.mc_gamma["events"],
@@ -117,7 +130,7 @@ class IRFFITSWriter(Tool):
 
         gammas["selected_gh"] = gammas["gh_score"] > gh_cut
         # irf_type = True for point like IRFs, False for Full Enclosure IRFs
-        if self.pnt_like:
+        if self.point_like:
             gammas["selected_theta"] = gammas["theta"] < u.Quantity(
                                         **self.cuts["fixed_cuts"]["theta_cut"])
             gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
@@ -151,20 +164,39 @@ class IRFFITSWriter(Tool):
         self.hdus = [fits.PrimaryHDU(),]
         with np.errstate(invalid='ignore', divide='ignore'):
             if self.mc_gamma["type"] == "point-like":
-                self.effective_area = effective_area_per_energy(gammas[gammas["selected"]],
-                                        self.mc_gamma["simulation_info"], true_energy_bins)
-            else:
-                self.effective_area = effective_area_per_energy_and_fov(gammas[gammas["selected"]],
+                self.effective_area = effective_area_per_energy(
+                                                gammas[gammas["selected"]],
                                                 self.mc_gamma["simulation_info"],
-                                                true_energy_bins, fov_offset_bins)
+                                                true_energy_bins)
+            else:
+                self.effective_area = effective_area_per_energy_and_fov(
+                                                gammas[gammas["selected"]],
+                                                self.mc_gamma["simulation_info"],
+                                                true_energy_bins,
+                                                fov_offset_bins)
         # Adding a dimension for FoV offset for effective area
-        self.hdus.append(create_aeff2d_hdu(self.effective_area[..., np.newaxis],
-                        true_energy_bins, fov_offset_bins, extname = "EFFECTIVE AREA"))
+        self.hdus.append(create_aeff2d_hdu(
+                            self.effective_area[..., np.newaxis],
+                            true_energy_bins,
+                            fov_offset_bins,
+                            point_like=self.point_like,
+                            extname = "EFFECTIVE AREA")
+                            )
         self.log.info("Effective Area HDU created")
-        self.edisp = energy_dispersion(gammas[gammas["selected"]],
-                    true_energy_bins, fov_offset_bins, migration_bins)
-        self.hdus.append(create_energy_dispersion_hdu(self.edisp,true_energy_bins,
-                        migration_bins, fov_offset_bins, extname = "ENERGY DISPERSION"))
+        self.edisp = energy_dispersion(
+                            gammas[gammas["selected"]],
+                            true_energy_bins,
+                            fov_offset_bins,
+                            migration_bins
+                            )
+        self.hdus.append(create_energy_dispersion_hdu(
+                            self.edisp,
+                            true_energy_bins,
+                            migration_bins,
+                            fov_offset_bins,
+                            point_like=self.point_like,
+                            extname = "ENERGY DISPERSION")
+                            )
         self.log.info("Energy Dispersion HDU created")
 
     def finish(self):
