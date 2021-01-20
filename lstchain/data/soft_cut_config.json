@@ -82,7 +82,6 @@
     "r",
     "time_gradient",
     "leakage_intensity_width_2",
-    "n_islands"
   ],
   "classification_features": [
     "log_intensity",
@@ -98,7 +97,6 @@
     "r",
     "time_gradient",
     "leakage_intensity_width_2",
-    "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
