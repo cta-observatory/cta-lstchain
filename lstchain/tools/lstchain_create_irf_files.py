@@ -33,10 +33,10 @@ class IRFFITSWriter(Tool):
         file_ok=True
         ).tag(config=True)
 
-    output_irf_path = traits.Path(
-        help="IRF output filedir",
-        directory_ok=True,
-        file_ok=False
+    output_irf_file = traits.Path(
+        help="IRF output file",
+        directory_ok=False,
+        file_ok=True
         ).tag(config=True)
 
     point_like = traits.Bool(
@@ -53,8 +53,8 @@ class IRFFITSWriter(Tool):
     aliases = {
         "input_gamma_dl2" : "IRFFITSWriter.input_gamma_dl2",
         "fg" : "IRFFITSWriter.input_gamma_dl2",
-        "output_irf_path" : "IRFFITSWriter.output_irf_path",
-        "o" : "IRFFITSWriter.output_irf_path",
+        "output_irf_file" : "IRFFITSWriter.output_irf_file",
+        "o" : "IRFFITSWriter.output_irf_file",
         "point_like" : "IRFFITSWriter.point_like",
         "pnt" : "IRFFITSWriter.point_like",
         "config_file" : "IRFFITSWriter.config_file",
@@ -81,7 +81,6 @@ class IRFFITSWriter(Tool):
         self.hdus = None
         self.effective_area = None
         self.edisp = None
-        self.output_file = None
 
     def setup(self):
 
@@ -200,12 +199,12 @@ class IRFFITSWriter(Tool):
         self.log.info("Energy Dispersion HDU created")
 
     def finish(self):
-        self.output_file = self.output_irf_path/"irf.fits.gz"
-        if self.output_file.exists():
-            self.log.info(f"{self.output_file} exists, will be overwritten")
 
-        fits.HDUList(self.hdus).writeto(self.output_file, overwrite=True)
-        Provenance().add_output_file(self.output_file)
+        if self.output_irf_file.exists():
+            self.log.info(f"{self.output_irf_file} exists, will be overwritten")
+
+        fits.HDUList(self.hdus).writeto(self.output_irf_file, overwrite=True)
+        Provenance().add_output_file(self.output_irf_file)
 
 def main():
     tool = IRFFITSWriter()
