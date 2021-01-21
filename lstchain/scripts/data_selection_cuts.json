@@ -1,0 +1,21 @@
+{
+  "events_filters":{
+    "intensity": [200, Infinity],
+    "r": [0, 1],
+    "wl": [0.1, 1]
+  },
+  "fixed_cuts":{
+    "gh_score": [0.6,1],
+    "theta_cut": {"value": 0.2, "unit": "deg"},
+    "source_fov_offset": {"value": 2.83, "unit": "deg"}
+  },
+  "source_dependent": {
+    "alpha": [0, 8]
+  },
+  "LST_tels": {
+    "tel_list": [1]
+  },
+  "MAGIC_tels": {
+    "tel_list": [1,2]
+  }
+}
