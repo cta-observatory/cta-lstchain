@@ -5,10 +5,8 @@ Factory for the estimation of the flat field coefficients
 import os
 import numpy as np
 from astropy import units as u
-from pkg_resources import resource_filename
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Unicode, Bool
-from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
+from ctapipe.core.traits import  List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
 __all__ = [
@@ -37,23 +35,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         [-0.3, 0.3],
         help='Interval of accepted charge values (fraction with respect to camera median value)'
     ).tag(config=True)
-    time_cut_outliers = List(
-        [0, 60],
-        help='Interval (in waveform samples) of accepted time values'
-    ).tag(config=True)
     charge_std_cut_outliers = List(
         [-3, 3],
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
 
-    time_calibration_path = Unicode(
-        None,
-        allow_none = True,
-        help = 'Path to drs4 time calibration file'
-    ).tag(config = True)
-
-    time_sampling_correction_path = Unicode(
-        '',
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
         help='Path to time sampling correction file',
         allow_none = True,
     ).tag(config=True)
@@ -89,30 +77,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-        if self.time_calibration_path is None:
-            self.time_corrector = None
-        else:
-        # look for calibration path otherwise
-            if os.path.exists(self.time_calibration_path):
-                self.time_corrector = PulseTimeCorrection(
-                calib_file_path = self.time_calibration_path)
-            else:
-                msg=f"Time calibration file {self.time_calibration_path} not found!"
-                raise IOError(msg)
-
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
-            # search the file in resources if not found
-            if not os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_correction_path = resource_filename('lstchain',
-                                                                       f"resources/{self.time_sampling_correction_path}")
-
-            if os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_corrector = TimeSamplingCorrection(
+            self.time_sampling_corrector = TimeSamplingCorrection(
                     time_sampling_correction_path=self.time_sampling_correction_path
-                )
-            else:
-                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
+            )
         else:
             self.time_sampling_corrector = None
 
@@ -146,8 +115,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
 
             # correct time with drs4 correction if available
-            if self.time_corrector:
-                peak_pos = self.time_corrector.get_corr_pulse(event, peak_pos)
+            peak_pos -= event.calibration.tel[self.tel_id].dl1.time_shift
 
         return charge, peak_pos
 
@@ -184,7 +152,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                 self.trigger_time = event.trig.gps_time.unix
             else:
                 self.trigger_time = 0
-
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time

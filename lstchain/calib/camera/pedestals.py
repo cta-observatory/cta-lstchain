@@ -2,12 +2,11 @@
 Factory for the estimation of the flat field coefficients
 """
 
-import os
+
 import numpy as np
-from pkg_resources import resource_filename
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import List, Unicode
+from ctapipe.core.traits import List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
 
@@ -43,8 +42,8 @@ class PedestalIntegrator(PedestalCalculator):
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
 
-    time_sampling_correction_path = Unicode(
-        '',
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
         help='Path to time sampling correction file',
         allow_none = True,
     ).tag(config=True)
@@ -82,17 +81,8 @@ class PedestalIntegrator(PedestalCalculator):
 
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
-            # search the file in resources if not found
-            if not os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_correction_path = resource_filename('lstchain',
-                                                                       f"resources/{self.time_sampling_correction_path}")
-
-            if os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_corrector = TimeSamplingCorrection(
-                    time_sampling_correction_path=self.time_sampling_correction_path
-                )
-            else:
-                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
+            self.time_sampling_corrector = TimeSamplingCorrection(
+                time_sampling_correction_path=self.time_sampling_correction_path)
         else:
             self.time_sampling_corrector = None
 
