@@ -131,13 +131,7 @@ class LSTCameraCalibrator(CameraCalibrator):
                     # read the calibration data
                     table = '/tel_' + str(telid) + '/calibration'
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
-                    # eliminate inf values (should be done probably before)
-                    dc_to_pe = self.mon_data.tel[telid].calibration.dc_to_pe
 
-<<<<<<< HEAD
-                    dc_to_pe[np.isinf(dc_to_pe)] = 0
-                    self.log.info(f"read {self.mon_data.tel[telid].calibration.dc_to_pe}")
-=======
                     # read pedestal data
                     table = '/tel_' + str(telid) + '/pedestal'
                     next(h5_table.read(table, self.mon_data.tel[telid].pedestal))
@@ -149,18 +143,12 @@ class LSTCameraCalibrator(CameraCalibrator):
                     # read the pixel_status container
                     table = '/tel_' + str(telid) + '/pixel_status'
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
-<<<<<<< HEAD
->>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
-        except:
-            self.log.error(f"Problem in reading calibration file {self.calibration_path}")
-=======
         except Exception:
             self.log.exception(
                 f"Problem in reading calibration file {self.calibration_path}"
             )
             raise
 
->>>>>>> upstream/master
 
     def _calibrate_dl0(self, event, telid):
         """
@@ -170,14 +158,6 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         if self._check_r1_empty(waveforms):
             return
-<<<<<<< HEAD
-
-        event.dl0.event_id = event.r1.event_id
-<<<<<<< HEAD
-        event.mon.tel[telid].calibration = self.mon_data.tel[telid].calibration
-=======
-=======
->>>>>>> upstream/master
 
         # if not already done, initialize the event monitoring containers
         if event.mon.tel[telid].calibration.dc_to_pe is None:
@@ -185,21 +165,14 @@ class LSTCameraCalibrator(CameraCalibrator):
             event.mon.tel[telid].flatfield = self.mon_data.tel[telid].flatfield
             event.mon.tel[telid].pedestal = self.mon_data.tel[telid].pedestal
             event.mon.tel[telid].pixel_status = self.mon_data.tel[telid].pixel_status
->>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
         #
-<<<<<<< HEAD
-        event.dl0.tel[telid].waveform = (
-                (event.r1.tel[telid].waveform - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis])
-=======
         # subtract the pedestal per sample and multiply for the calibration coefficients
         #
         event.dl0.tel[telid].waveform = (
                 (waveforms - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
                 * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis]).astype(np.float32)
 
->>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
 
     def _calibrate_dl1(self, event, telid):
         """
@@ -241,33 +214,16 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # perform the gain selection if the threshold is defined
         if self.gain_threshold:
-<<<<<<< HEAD
-            waveforms, gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
-            event.dl1.tel[telid].image = charge[gain_mask, np.arange(charge.shape[1])]
-            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected[gain_mask, np.arange(pulse_time_ff_corrected.shape[1])]
-=======
             gain_mask = self.gain_selector(event.r1.tel[telid].waveform)
 
             event.dl1.tel[telid].image = corrected_charge[gain_mask, np.arange(charge.shape[1])]
             event.dl1.tel[telid].peak_time = \
                 peak_time_ff_corrected[gain_mask, np.arange(peak_time_ff_corrected.shape[1])].astype(np.float32)
->>>>>>> upstream/master
 
             # remember which channel has been selected
             event.r1.tel[telid].selected_gain_channel = gain_mask
 
         # if threshold == None
         else:
-<<<<<<< HEAD
-            event.dl1.tel[telid].image = charge
-<<<<<<< HEAD
-            event.dl1.tel[telid].pulse_time = pulse_corr_array
-=======
-            event.dl1.tel[telid].pulse_time = pulse_time_ff_corrected
-
-=======
             event.dl1.tel[telid].image = corrected_charge
             event.dl1.tel[telid].peak_time = peak_time_ff_corrected
->>>>>>> upstream/master
-
->>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
