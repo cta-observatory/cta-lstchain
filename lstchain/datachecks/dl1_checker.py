@@ -8,16 +8,11 @@ __all__ = [
     'plot_datacheck',
     'plot_trigger_types',
     'plot_mean_and_stddev',
-    'merge_dl1datacheck_files',
-    'plot_mean_and_stddev_bokeh',
-    'bokeh_camera_display',
-    'get_pixel_location'
+    'merge_dl1datacheck_files'
 ]
 
-import copy
 import h5py
 import logging
-import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
@@ -29,30 +24,22 @@ import tables
 
 from astropy import units as u
 from astropy.table import Table, vstack
-from bokeh.io import output_file, show
-from bokeh.layouts import gridplot, column
-from bokeh.models import HoverTool, Div
-from bokeh.models.annotations import Title
-from bokeh.models.widgets import Tabs, Panel
-from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
-from ctapipe.visualization.bokeh import CameraDisplay as BokehCameraDisplay
 from datetime import datetime
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
     run_to_muon_filename, run_to_datacheck_dl1_filename
+# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
+# from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 from pathlib import Path
-from pkg_resources import resource_filename
 from scipy.stats import poisson, sem
-
-pixel_hardware_info = []
 
 def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     """
@@ -364,8 +351,9 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
     geom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
-    page1 = Panel()
-    page2 = Panel()
+    # For future bokeh-based display, turned off for now:
+    # page1 = Panel()
+    # page2 = Panel()
 
     with PdfPages(pdf_filename) as pdf:
         # first deal with the DL1 datacheck file, created from DL1 event data:
@@ -520,15 +508,15 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
-            page1.child = \
-                plot_mean_and_stddev_bokeh(table_pedestals,
-                                           engineering_geom,
-                                           ['charge_mean', 'charge_stddev'],
-                                           ['Pedestal mean charge (p.e.)',
-                                           'Pedestal charge std dev (p.e.)',
-                                           'PEDESTALS, pixel-wise charge info'])
-            page1.title = 'PEDESTALS, pixel-wise charge info'
-
+            # For future bokeh-based display, turned off for now:
+            # page1.child = \
+            #     plot_mean_and_stddev_bokeh(table_pedestals,
+            #                                engineering_geom,
+            #                                ['charge_mean', 'charge_stddev'],
+            #                                ['Pedestal mean charge (p.e.)',
+            #                                'Pedestal charge std dev (p.e.)',
+            #                                'PEDESTALS, pixel-wise charge info'])
+            # page1.title = 'PEDESTALS, pixel-wise charge info'
 
             plot_mean_and_stddev(table_pedestals, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
@@ -541,13 +529,14 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         if table_flatfield is None or len(table_flatfield) == 0:
             write_error_page('flatfield', pagesize)
         else:
-            page2.child = \
-                plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
-                                           ['charge_mean', 'charge_stddev'],
-                                           ['Flat-field mean charge (p.e.)',
-                                           'Flat-field charge std dev (p.e.)',
-                                           'FLATFIELD, pixel-wise charge info'])
-            page2.title = 'FLATFIELD, pixel-wise charge info'
+            # For future bokeh-based display, turned off for now:
+            # page2.child = \
+            #     plot_mean_and_stddev_bokeh(table_flatfield, engineering_geom,
+            #                                ['charge_mean', 'charge_stddev'],
+            #                                ['Flat-field mean charge (p.e.)',
+            #                                'Flat-field charge std dev (p.e.)',
+            #                                'FLATFIELD, pixel-wise charge info'])
+            # page2.title = 'FLATFIELD, pixel-wise charge info'
 
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
@@ -557,14 +546,12 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  norm='log')
         pdf.savefig()
 
-        '''
-        Displaying and saving of FUTURE bokeh display, not yet active: 
-        output_file(pdf_filename.with_suffix('.html'),
-                    title='LST1 DL1 data check')
-        tabs = Tabs(tabs=[page1, page2])
-        show(column(Div(text='<h1>'+os.path.basename(datacheck_filename)+'</h1>'),
-                    tabs))
-        '''
+        # Displaying and saving of FUTURE bokeh display, not yet active:
+        # output_file(pdf_filename.with_suffix('.html'),
+        #             title='LST1 DL1 data check')
+        # tabs = Tabs(tabs=[page1, page2])
+        # show(column(Div(text='<h1>'+os.path.basename(datacheck_filename)+'</h1>'),
+        #             tabs))
 
         histograms = ['hist_pixelchargespectrum', 'hist_intensity',
                       'hist_npixels', 'hist_nislands']
@@ -658,7 +645,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                     fontsize='xx-large')
             for i, y in enumerate(['num_pulses_above_0010_pe',
                                    'num_pulses_above_0030_pe']):
-                axesb[i].set_yscale('log')
+                if np.mean(table.col(y), axis=1).max() > 0:
+                    axesb[i].set_yscale('log')
                 axesb[i].plot(table.col('subrun_index'),
                               np.mean(table.col(y), axis=1) /
                               table.col('num_events'), fmt)
@@ -1257,184 +1245,3 @@ def merge_dl1datacheck_files(file_list):
                           append=True, serialize_meta=True)
 
     return merged_filename
-
-
-def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
-
-    """
-    Parameters
-    ----------
-    table:  python table containing pixel-wise information to be displayed
-    camgeom: camera geometry
-    columns: list of 2 strings, columns of 'table', first one is the mean and
-    the second the std deviation to be plotted
-    labels: plot titles
-
-    Returns
-    -------
-    None
-
-    The subrun-wise mean and std dev values are used to calculate the
-    run-wise (i.e. for all processed subruns which appear in the table)
-    counterparts of the same, which are then plotted.
-
-    """
-
-    logger = logging.getLogger(__name__)
-
-    # calculate pixel-wise mean and standard deviation for the whole run,
-    # from the subrun-wise values:
-    mean = np.sum(np.multiply(table.col(columns[0]),
-                              table.col('num_events')[:, None]),
-                  axis=0) / np.sum(table.col('num_events'))
-    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
-                                        table.col('num_events')[:, None]),
-                            axis=0) / np.sum(table.col('num_events')))
-
-    if np.isnan(mean).sum() > 0:
-        logger.info(f'Pixels with NaNs in {columns[0]}: '
-                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
-
-    # plot mean and std dev (of e.g. pedestal charge or time), as camera
-    # display, vs. pixel id, and as a histogram:
-
-    pad_width = 350
-    pad_height = 370
-
-    row1 = bokeh_camera_display(mean, camgeom, pad_width, pad_height, labels[0])
-    row2 = bokeh_camera_display(stddev, camgeom, pad_width, pad_height,
-                                labels[1])
-
-    grid = gridplot([row1, row2], sizing_mode=None,
-                    plot_width=pad_width, plot_height=pad_height)
-    return grid
-
-
-def bokeh_camera_display(content, geom, pad_width, pad_height, label):
-
-    """
-
-    Parameters
-    ----------
-    content: pixel-wise quantity to be plotted, ndarray with as many entries as
-    the number of pixels
-    geom: camera geometry
-    pad_width: width in pixels of each of the 3 pads in the plot
-    pad_height: height in pixels of each of the 3 pads in the plot
-    label: label to be shown on the plots
-
-    Returns
-    -------
-    [p1, p2, p3]: three bokeh figures, intended for showing them on the same row
-    p1 is the camera display (with "content" in linear & logarithmic scale)
-    p2: content vs. pixel
-    p3: histogram of content (with one entry per pixel)
-
-    """
-
-    # patch to reduce gaps between bokeh's cam circular pixels:
-    camgeom = copy.deepcopy(geom)
-    camgeom.pix_area *= 1.3
-
-    cam = BokehCameraDisplay(camgeom)
-    cam.image = content
-    camlog = BokehCameraDisplay(camgeom)
-
-    logcontent = np.copy(content)
-    for i, x in enumerate(logcontent):
-        # workaround as long as log z-scale is not implemented in bokeh camera:
-        if x <= 0:
-            logcontent[i] = np.log10(np.min(content[content>0]))
-        else:
-            logcontent[i] = np.log10(content[i])
-    camlog.image = logcontent
-    for i in np.where(content <= 0):
-        camlog.glyphs.data_source.data['image'][i] = '#ffffff'
-
-    cluster_i = []
-    cluster_j = []
-    pix_id_in_cluster = []
-    for i in camgeom.pix_id:
-        data = get_pixel_location(i)
-        cluster_i.append(data[0])
-        cluster_j.append(data[1])
-        pix_id_in_cluster.append(data[2])
-
-    for c in [cam, camlog]:
-        c.glyphs.data_source.add(list(c.geom.pix_id), 'pix_id')
-        c.glyphs.data_source.add(list(cam.image), 'value')
-        c.glyphs.data_source.add(cluster_i, 'cluster_i')
-        c.glyphs.data_source.add(cluster_j, 'cluster_j')
-        c.glyphs.data_source.add(pix_id_in_cluster, 'pix_id_in_cluster')
-
-        c.add_colorbar()
-        c.fig.plot_width = pad_width
-        c.fig.plot_height = int(pad_height * 0.85)
-        c.fig.title = Title(text=label)
-        c.fig.grid.visible = False
-        c.fig.axis.visible = True
-        c.fig.xaxis.axis_label = 'X position (m)'
-        c.fig.yaxis.axis_label = 'Y position (m)'
-        c.fig.add_tools(
-            HoverTool(tooltips=[('pix_id', '@pix_id'),
-                                ('value', '@value'),
-                                ('cluster (i,j)', '(@cluster_i, @cluster_j)'),
-                                ('pix in cluster', '@pix_id_in_cluster')],
-                      mode='mouse', point_policy='snap_to_data'))
-
-    tab1 = Panel(child=cam.fig, title='linear')
-    tab2 = Panel(child=camlog.fig, title='logarithmic')
-    p1 = Tabs(tabs=[tab1, tab2])
-
-    p2 = figure(background_fill_color='#ffffff',
-                y_range=(-0.05*cam.image.max(), cam.image.max() * 1.1),
-                x_axis_label='Pixel id',
-                y_axis_label=label)
-    p2.min_border_top = 60
-    p2.min_border_bottom = 70
-    glyphs = p2.circle(x=cam.geom.pix_id, y=cam.image, size=2)
-    glyphs.data_source.add(list(cam.geom.pix_id), 'pix_id')
-    glyphs.data_source.add(list(cam.image), 'value')
-    p2.add_tools(
-        HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
-                  mode='mouse', point_policy='snap_to_data'))
-
-    hist, edges = np.histogram(cam.image, bins=200)
-    p3 = figure(background_fill_color='#ffffff',
-                y_range=(0.7, hist.max() * 1.1), x_axis_label=label,
-                y_axis_label='Number of pixels', y_axis_type='log')
-    p3.quad(top=hist, bottom=0.7, left=edges[:-1], right=edges[1:])
-
-    return [p1, p2, p3]
-
-
-def get_pixel_location(pix_id):
-
-    """
-
-    Parameters
-    ----------
-    pix_id pixel id number
-
-    Returns
-    -------
-    "Hardware" parameters of the pixel:
-    [cluster_i, cluster_j, pixe_id_within_cluster]
-
-    Info from https://forge.in2p3.fr/issues/33587, stored in
-    cta-lstchain/lstchain/io/LST_pixid_to_cluster.txt
-
-    """
-    if len(pixel_hardware_info) > 0:
-        return pixel_hardware_info[pix_id]
-
-    # The first time we read in the data stored in the resources directory:
-    infilename = resource_filename('lstchain',
-                                   'resources/LST_pixid_to_cluster.txt')
-    data = np.genfromtxt(infilename, comments='#',dtype='int')
-
-    pixel_hardware_info.extend([None]*(1 + data[:,0].max()))
-    for d in data:
-        pixel_hardware_info[d[0]] = [d[1], d[2], d[3]]
-
-    return pixel_hardware_info[pix_id]
