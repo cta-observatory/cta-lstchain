@@ -123,8 +123,12 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
         picture threshold calculated using interleaved pedestal events
     """
     high_gain = 0
-    interleaved_events_id = 1
     ped_mean_pe, ped_rms_pe = get_bias_and_rms(dl1_path)
+    # If something bad happed with interleaved pedestal, take pedestal from calibration run
+    if ped_rms_pe.shape == (2, 2, 1855):
+        interleaved_events_id = 1
+    else:
+        interleaved_events_id = 0
     threshold_clean_pe = ped_mean_pe + sigma_clean*ped_rms_pe
     # find pixels with rms = 0 and mean = 0 <=> dead pixels in interleaved
     # pedestal event likely due to stars
