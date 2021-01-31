@@ -101,7 +101,7 @@ def main():
         'n_pixels',
         'wl',
         'r',
-        'log_intensity'
+        'log_intensity',
         'x',
         'y',
     ])
