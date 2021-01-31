@@ -104,6 +104,8 @@ def main():
         'log_intensity',
         'x',
         'y',
+        'disp_dx',
+        'disp_dy',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
