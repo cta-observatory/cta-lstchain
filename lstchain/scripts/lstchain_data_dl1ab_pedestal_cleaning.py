@@ -35,10 +35,8 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from lstchain.image.cleaning.cleaning import (
-    tailcuts_clean_with_pedestal_threshold,
-    get_threshold_from_dl1_file
-)
+from lstchain.image.cleaning.cleaning import get_threshold_from_dl1_file
+
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
@@ -74,13 +72,13 @@ def main():
 
     config = read_configuration_file(args.config_file)
     print(config)
-    pic_th = config['tailcuts_clean_with_pedestal_threshold']['picture_thresh']
-    bound_th = config['tailcuts_clean_with_pedestal_threshold']['boundary_thresh']
+    pic_thresh = config['tailcuts_clean_with_pedestal_threshold']['picture_thresh']
+    bound_thresh = config['tailcuts_clean_with_pedestal_threshold']['boundary_thresh']
     sigma = config['tailcuts_clean_with_pedestal_threshold']['sigma']
     keep_isolated_pixels = config['tailcuts_clean_with_pedestal_threshold']['keep_isolated_pixels']
     min_number_picture_neighbors = config['tailcuts_clean_with_pedestal_threshold']['min_number_picture_neighbors']
-    th_ped_interleave = get_threshold_from_dl1_file(args.input_file, sigma)
-    print(th_ped_interleave)
+    pedestal_threshhold = get_threshold_from_dl1_file(args.input_file, sigma)
+    picture_thresh = np.clip(pedestal_threshhold, pic_thresh, None)
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -123,12 +121,11 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                signal_pixels = tailcuts_clean_with_pedestal_threshold(
+                signal_pixels = tailcuts_clean(
                                     camera_geom,
                                     image,
-                                    th_ped_interleave,
-                                    picture_thresh=pic_th,
-                                    boundary_thresh=bound_th,
+                                    picture_thresh=picture_thresh,
+                                    boundary_thresh=bound_thresh,
                                     keep_isolated_pixels=keep_isolated_pixels,
                                     min_number_picture_neighbors=min_number_picture_neighbors,
                                     )
