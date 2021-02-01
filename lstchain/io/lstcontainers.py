@@ -12,7 +12,7 @@ from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
-from ..reco import utils
+from ..reco import utils, disp
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -48,14 +48,14 @@ class DL1ParametersContainer(Container):
 
     skewness = Field(np.nan, 'measure of the asymmetry')
     kurtosis = Field(np.nan, 'measure of the tailedness')
-    disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
-    disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
-    disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
-    disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
-    disp_sign = Field(None, 'disp_sign')
-    disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
-    src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
+    disp_norm = Field(np.nan, 'disp_norm [m]', unit=u.m)
+    disp_dx = Field(np.nan, 'disp_dx [m]', unit=u.m)
+    disp_dy = Field(np.nan, 'disp_dy [m]', unit=u.m)
+    disp_angle = Field(np.nan, 'disp_angle [rad]', unit=u.rad)
+    disp_sign = Field(np.nan, 'disp_sign')
+    disp_miss = Field(np.nan, 'disp_miss [m]', unit=u.m)
+    src_x = Field(np.nan, 'source x coordinate in camera frame', unit=u.m)
+    src_y = Field(np.nan, 'source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(np.nan, 'Time gradient in the camera')
     intercept = Field(np.nan, 'Intercept')
     leakage_intensity_width_1 = \
@@ -170,13 +170,13 @@ class DL1ParametersContainer(Container):
         ])
 
     def set_disp(self, source_pos, hillas):
-        disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
-        self.disp_norm = disp.norm
-        self.disp_dx = disp.dx
-        self.disp_dy = disp.dy
-        self.disp_angle = disp.angle
-        self.disp_sign = disp.sign
-        self.disp_miss = disp.miss
+        dp = disp.disp_parameters_event(hillas, source_pos[0], source_pos[1])
+        self.disp_norm = dp.norm
+        self.disp_dx = dp.dx
+        self.disp_dy = dp.dy
+        self.disp_angle = dp.angle
+        self.disp_sign = dp.sign
+        self.disp_miss = dp.miss
 
     def set_timing_features(self, geom, image, peak_time, hillas):
         try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
