@@ -35,6 +35,7 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.reco.utils import disp
 
 log = logging.getLogger(__name__)
 
@@ -156,9 +157,11 @@ def main():
                     dl1_container.length = length
                     dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
+                    dl1_container.set_disp(u.Quantity([params['src_x'][ii], params['src_y'][ii]], u.m), hillas)
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
+
 
             output.root[dl1_params_lstcam_key][:] = params
 
