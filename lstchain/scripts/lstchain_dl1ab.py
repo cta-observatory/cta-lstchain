@@ -107,6 +107,9 @@ def main():
         'y',
         'disp_dx',
         'disp_dy',
+        'disp_norm',
+        'disp_angle',
+        'disp_miss',
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
