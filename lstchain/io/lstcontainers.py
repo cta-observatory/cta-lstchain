@@ -12,7 +12,7 @@ from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
-from ..reco import utils, disp
+from ..reco.disp import disp_parameters
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -170,13 +170,13 @@ class DL1ParametersContainer(Container):
         ])
 
     def set_disp(self, source_pos, hillas):
-        dp = disp.disp_parameters_event(hillas, source_pos[0], source_pos[1])
-        self.disp_norm = dp.norm
-        self.disp_dx = dp.dx
-        self.disp_dy = dp.dy
-        self.disp_angle = dp.angle
-        self.disp_sign = dp.sign
-        self.disp_miss = dp.miss
+        disp = disp_parameters(hillas, source_pos[0], source_pos[1])
+        self.disp_norm = disp.norm
+        self.disp_dx = disp.dx
+        self.disp_dy = disp.dy
+        self.disp_angle = disp.angle
+        self.disp_sign = disp.sign
+        self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peak_time, hillas):
         try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
