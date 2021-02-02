@@ -12,7 +12,7 @@ from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
-from ..reco.disp import disp_parameters
+from ..reco.disp import disp_parameters_event
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -170,7 +170,7 @@ class DL1ParametersContainer(Container):
         ])
 
     def set_disp(self, source_pos, hillas):
-        disp = disp_parameters(hillas, source_pos[0], source_pos[1])
+        disp = disp_parameters_event(hillas, source_pos[0], source_pos[1])
         self.disp_norm = disp.norm
         self.disp_dx = disp.dx
         self.disp_dy = disp.dy
