@@ -44,7 +44,7 @@ jobs:
             "git+https://github.com/cta-observatory/ctapipe_io_lst@$CTAPIPE_IO_LST_VERSION" \
             pytest-cov
 
-          pip install -e .
+          pip install .
 
       - name: Tests
         run: |
