@@ -6,6 +6,7 @@ IRFs can be point-like or Full Enclosure
 
 import os
 import numpy as np
+#from pathlib import Path
 
 from ctapipe.core import Tool, traits, Provenance
 from lstchain.io import (read_mc_dl2_to_pyirf,
@@ -55,7 +56,8 @@ class IRFFITSWriter(Tool):
     output_irf_file = traits.Path(
         help="IRF output file",
         directory_ok=False,
-        file_ok=True
+        file_ok=True,
+        default_value="./irf.fits.gz"
         ).tag(config=True)
 
     point_like = traits.Bool(
@@ -110,6 +112,16 @@ class IRFFITSWriter(Tool):
         # self.psf = None
 
     def setup(self):
+        filename = os.path.basename(self.output_irf_file)
+        if filename.split('.')[1:] != ['fits', 'gz']:
+            self.log.error(f"{filename} is not a correct "
+                        "compressed FITS file name. It will be corrected.")
+            filename = filename.split('.')[0]+'.fits.gz'
+            self.output_irf_file = os.path.join(
+                                        os.path.dirname(self.output_irf_file),
+                                        filename
+                                        )
+
         if self.config_file is None:
             self.cuts = read_configuration_file(os.path.join(
                                             os.path.dirname(__file__),
