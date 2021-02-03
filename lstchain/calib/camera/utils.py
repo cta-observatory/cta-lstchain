@@ -43,8 +43,11 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     """
     high_gain = 0
     ped_mean_pe, ped_std_pe = get_bias_and_std(dl1_path)
-    # If something bad happed with interleaved pedestal, take pedestal from calibration run
-    if ped_std_pe.shape == (2, 2, 1855):
+
+    # If problem with interleaved pedestal std values occur, take pedestal
+    # std values from calibration run.
+    # Correct interleaved pedestal std array should have shape (2,2,1855)
+    if ped_std_pe.shape[0] == 2:
         interleaved_events_id = 1
     else:
         interleaved_events_id = 0
