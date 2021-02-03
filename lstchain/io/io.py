@@ -984,9 +984,11 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 def read_mc_dl2_to_pyirf(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
-    Parameters
+
+	Parameters
     ----------
     filename: path
+
     Returns
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
@@ -1014,13 +1016,14 @@ def read_mc_dl2_to_pyirf(filename):
     }
 
     simu_info = read_simu_info_merged_hdf5(filename)
-    pyirf_simu_info = SimulatedEventsInfo(n_showers=simu_info.num_showers * simu_info.shower_reuse,
-                                          energy_min=simu_info.energy_range_min,
-                                          energy_max=simu_info.energy_range_max,
-                                          max_impact=simu_info.max_scatter_range,
-                                          spectral_index=simu_info.spectral_index,
-                                          viewcone=simu_info.max_viewcone_radius,
-                                          )
+    pyirf_simu_info = SimulatedEventsInfo(
+							n_showers=simu_info.num_showers*simu_info.shower_reuse,
+                            energy_min=simu_info.energy_range_min,
+                            energy_max=simu_info.energy_range_max,
+                            max_impact=simu_info.max_scatter_range,
+                            spectral_index=simu_info.spectral_index,
+                            viewcone=simu_info.max_viewcone_radius,
+                            )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
     events = table.QTable.from_pandas(events)
@@ -1038,6 +1041,7 @@ def read_data_dl2_to_QTable(filename):
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+
     Returns
     -------
     `astropy.table.QTable`
@@ -1047,7 +1051,6 @@ def read_data_dl2_to_QTable(filename):
         'gammaness' : 'gh_score',
         'alt_tel': 'pointing_alt',
         'az_tel': 'pointing_az',
-
     }
     unit_mapping = {
         'reco_energy': u.TeV,
@@ -1056,11 +1059,10 @@ def read_data_dl2_to_QTable(filename):
         'reco_alt': u.rad,
         'reco_az': u.rad,
         'dragon_time': u.s,
-        'reco_src_x': u.m,
-        'reco_src_y': u.m
     }
 
-    data = pd.read_hdf(filename, key = dl2_params_lstcam_key).rename(columns=name_mapping)
+    data = pd.read_hdf(filename,
+					key = dl2_params_lstcam_key).rename(columns=name_mapping)
     data = table.QTable.from_pandas(data)
 
 	# Make the columns as Quantity

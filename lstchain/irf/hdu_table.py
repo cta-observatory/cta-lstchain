@@ -22,7 +22,7 @@ DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 
-def create_obs_hdu_index(filename_list, fits_dir):
+def create_obs_hdu_index(filename_list, fits_dir, hdu_index_filename, obs_index_filename):
     """
     Create the obs table and hdu table (below some explanation)
 
@@ -46,8 +46,19 @@ def create_obs_hdu_index(filename_list, fits_dir):
     ----------
     filename_list : list
         list of filenames
-    fits_dir : str
+    fits_dir : Path
         directory containing the fits file
+    hdu_index_filename : str
+        filename for HDU index file
+    obs_index_filename : str
+        filename for OBS index file
+
+    Returns
+    -------
+    hdu_index_list : 'astropy.io.fits.HDUList'
+        HDU list file for HDU index tables
+    obs_index_list : 'astropy.io.fits.HDUList'
+        HDU list file for Obs index table
     """
 
     hdu_index_tables = []
@@ -184,7 +195,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
     hdu_index_header["TELESCOP"] = "CTA"
     hdu_index_header["INSTRUME"] = "LST-1"
 
-    filename_hdu_table = fits_dir/'hdu-index.fits.gz'
+    filename_hdu_table = fits_dir/hdu_index_filename
 
     hdu_index = fits.BinTableHDU(
                         hdu_index_table,
@@ -192,7 +203,6 @@ def create_obs_hdu_index(filename_list, fits_dir):
                         name='HDU INDEX'
                         )
     hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
-    hdu_index_list.writeto(filename_hdu_table, overwrite=True)
 
     obs_index_table = vstack(obs_index_tables)
 
@@ -201,7 +211,7 @@ def create_obs_hdu_index(filename_list, fits_dir):
     obs_index_header['MJDREFI'] = event_table.meta['MJDREFI']
     obs_index_header['MJDREFF'] = event_table.meta['MJDREFF']
 
-    filename_obs_table = fits_dir/'obs-index.fits.gz'
+    filename_obs_table = fits_dir/obs_index_filename
 
     obs_index = fits.BinTableHDU(
                         obs_index_table,
@@ -209,9 +219,8 @@ def create_obs_hdu_index(filename_list, fits_dir):
                         name='OBS INDEX'
                         )
     obs_index_list = fits.HDUList([fits.PrimaryHDU(), obs_index])
-    obs_index_list.writeto(filename_obs_table, overwrite=True)
 
-    return
+    return hdu_index_list, obs_index_list
 
 def create_event_list(data, run_number, source_name):
     """
@@ -288,7 +297,8 @@ def create_event_list(data, run_number, source_name):
     elif round(source_pointing_diff, 1) == 0.:
         mode = 'ON'
     else:
-        mode = 'ON-MISPOINTING' # Either this or modify the method of getting ON mode
+        # Nomenclature is to be worked out or have a separate way to mark mispointings
+        mode = 'UNDETERMINED'
 
     log.error(f'Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg' )
 
@@ -309,6 +319,7 @@ def create_event_list(data, run_number, source_name):
             "STOP" : u.Quantity(t_stop, ndmin=1)
         }
     )
+
     # Adding the meta data
     # Event table metadata
     ev_header = DEFAULT_HEADER.copy()

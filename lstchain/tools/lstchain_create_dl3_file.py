@@ -1,30 +1,32 @@
 """
-Create DL3 FITS file from given data DL2 file, selection cuts and /or IRF FITS files
+Create DL3 FITS file from given data DL2 file,
+selection cuts and/or IRF FITS files
 """
 
 import os
-from pathlib import Path
 import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance
-from lstchain.io import read_data_dl2_to_QTable, read_configuration_file, get_standard_config
+from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
 from lstchain.reco.utils import filter_events
 from lstchain.paths import run_info_from_filename
 from lstchain.irf import create_event_list
 
 from pyirf.utils import calculate_source_fov_offset
 
-from astropy.coordinates.angle_utilities import angular_separation
 from astropy.io import fits
 import astropy.units as u
 
 __all__ = [
     'DataReductionFITSWriter'
-]
+    ]
 
 class DataReductionFITSWriter(Tool):
     name = "DataReductionFITSWriter"
-    description = "Create DL3 FITS file from given data DL2 file, selection cuts and/or IRF FITS file"
+    description = (
+                "Create DL3 FITS file from given data DL2 file,"
+                " selection cuts and/or IRF FITS file"
+                )
 
     input_dl2 = traits.Path(
         help="Input data DL2 file",
@@ -91,11 +93,12 @@ class DataReductionFITSWriter(Tool):
         self.pointing = None
         self.aeff2d = None
         self.edisp2d = None
+        # self.bkg2d = None
+        # self.psf = None
         self.hdulist = None
         self.output_file = None
 
     def setup(self):
-
         if self.config_file is None:
             self.cuts = read_configuration_file(os.path.join(
                                         os.path.dirname(__file__),
@@ -116,7 +119,6 @@ class DataReductionFITSWriter(Tool):
             self.run_number = self.data['obs_id'][0]
 
     def start(self):
-
         self.data['reco_source_fov_offset'] = calculate_source_fov_offset(
                                                     self.data, prefix='reco')
 
@@ -127,7 +129,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.data[self.data["reco_source_fov_offset"] < u.Quantity(
                                         **self.cuts["fixed_cuts"]["source_fov_offset"])]
-        self.log.info("Gemerating Event List")
+        self.log.info("Gemerating event list")
         self.events, self.gti, self.pointing = create_event_list(
                                             data=self.data,
                                             run_number=self.run_number,
@@ -156,12 +158,12 @@ class DataReductionFITSWriter(Tool):
                                         )
 
     def finish(self):
-
         self.output_file = self.output_dl3_path/self.filename_dl3
         if self.output_file.exists():
             self.log.info(f"{self.output_file} exists, will be overwritten")
 
         self.hdulist.writeto(self.output_file, overwrite=True)
+
         Provenance().add_output_file(self.output_file)
 
 def main():

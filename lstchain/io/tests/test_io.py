@@ -9,7 +9,7 @@ from astropy.table import Table
 from lstchain.tests.test_lstchain import mc_gamma_testfile, dl1_file, test_dir
 
 merged_dl1_file = os.path.join(test_dir, 'dl1_merged.h5')
-
+dl2_test_file = os.path.join(test_dir, 'dl2_test.h5')
 
 def test_write_dataframe():
     from lstchain.io.io import write_dataframe
@@ -66,7 +66,7 @@ def test_write_dl2_dataframe():
     from lstchain.io.io import dl2_params_lstcam_key
     dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     from lstchain.io import write_dl2_dataframe
-    write_dl2_dataframe(dl2, os.path.join(test_dir, 'dl2_test.h5'))
+    write_dl2_dataframe(dl2, dl2_test_file)
 
 
 @pytest.mark.run(after='test_r0_to_dl1')

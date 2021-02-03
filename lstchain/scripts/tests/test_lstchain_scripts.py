@@ -22,11 +22,6 @@ dl2_file_new = os.path.join(output_dir, 'dl2_gamma_test_large_new.h5')
 file_model_energy = os.path.join(output_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(output_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(output_dir, 'cls_gh.sav')
-cuts = os.path.join(output_dir, 'cuts.json')
-irf_file = os.path.join(output_dir, 'irf.fits.gz')
-dl3_file = os.path.join(output_dir, 'dl3_gamma_test_large_new.fits')
-dl3_hdu_index = os.path.join(output_dir, 'hdu-index.fits.gz')
-dl3_obs_index = os.path.join(output_dir, 'obs-index.fits.gz')
 
 def find_entry_points(package_name):
     '''from: https://stackoverflow.com/a/47383763/3838691'''
@@ -137,7 +132,7 @@ def test_lstchain_merged_dl1_to_dl2():
     assert os.path.exists(output_file)
 
 
-@pytest.mark.run(after='test_lstchain_trainpipe')
+@pytest.mark.run(after='test_lstchain_mc_trainpipe')
 def test_lstchain_dl1_to_dl2():
     run_program(
         'lstchain_dl1_to_dl2',
@@ -179,89 +174,29 @@ def test_mc_r0_to_dl2():
     )
     assert os.path.exists(dl2_file)
 
-
 @pytest.mark.run(after='test_mc_r0_to_dl2')
 def test_read_mc_dl2_to_pyirf():
-    from lstchain.io.io import read_mc_dl2_to_pyirf
-    import astropy.units as u
+	from lstchain.io.io import read_mc_dl2_to_pyirf
+	import astropy.units as u
 
-    events, sim_info = read_mc_dl2_to_pyirf(dl2_file)
+	events, sim_info = read_mc_dl2_to_pyirf(dl2_file)
 
-    assert 'true_energy' in events.colnames
-    assert sim_info.energy_max == 330 * u.TeV
+	assert 'true_energy' in events.colnames
+	assert sim_info.energy_max == 330 * u.TeV
 
 @pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
 def test_read_data_dl2_to_QTable():
     from lstchain.io.io import read_data_dl2_to_QTable
     import pandas as pd
-    from lstchain.io.io import dl2_params_lstcam_key
 
-    dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
+    dl2_data = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
-    dl2['tel_id'] = dl2['tel_id'].min()
-    dl2['dragon_time'] = dl2["obs_id"]
-    dl2['alt_tel'] = dl2["mc_alt_tel"]
-    dl2['az_tel'] = dl2["mc_az_tel"]
-    dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
+    dl2_data['tel_id'] = dl2_data['tel_id'].min()
+    dl2_data['dragon_time'] = dl2_data["obs_id"]
+    dl2_data['alt_tel'] = dl2_data["mc_alt_tel"]
+    dl2_data['az_tel'] = dl2_data["mc_az_tel"]
+    dl2_data.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
 
     events = read_data_dl2_to_QTable(dl2_file_new)
 
     assert 'gh_score' in events.colnames
-
-@pytest.mark.run(after='test_read_data_dl2_to_QTable')
-def test_irf():
-    from astropy.table import Table
-    import json
-    import os
-
-    # Selection cuts have to be changed for tests
-    data = json.load(open(os.path.join('lstchain/data/data_selection_cuts.json')))
-    data["fixed_cuts"]["gh_score"][0] = 0.3
-    data["events_filters"]["intensity"][0]=0
-    json.dump(data, open(cuts,'x'))
-    # Use Proton spectra for spectral weighting as the test file is diffuse gammas
-    run_program(
-			'lstchain_mc_dl2_to_irf',
-			'-fg', dl2_file,
-			'-o', output_dir,
-			'-conf', cuts,
-			'-pnt', 'True',
-			)
-
-    assert 'EFFAREA' in Table.read(irf_file, hdu='EFFECTIVE AREA').columns
-    assert 'MATRIX' in Table.read(irf_file, hdu='ENERGY DISPERSION').columns
-
-@pytest.mark.run(after='test_irf')
-def test_dl3():
-    from astropy.table import Table
-
-    input_file = dl2_file_new
-
-    run_program(
-            'lstchain_dl2_to_dl3',
-            '-d', input_file,
-            '-o', output_dir,
-            '-add-irf', 'True',
-            '-irf', irf_file,
-            '-s', 'Crab',
-            '-conf', cuts
-            )
-
-    assert os.path.exists(dl3_file)
-    assert 'RA' in Table.read(dl3_file, hdu='events').columns
-    assert 'START' in Table.read(dl3_file, hdu='gti').columns
-    assert 'POINTING' in Table.read(dl3_file, hdu='pointing').meta['EXTNAME']
-
-@pytest.mark.run(after='test_dl3')
-def test_dl3_index():
-    from astropy.table import Table
-
-    run_program(
-            'lstchain_create_dl3_index_files',
-            '-f', dl3_file,
-            )
-
-    assert os.path.exists(dl3_hdu_index)
-    assert os.path.exists(dl3_obs_index)
-    assert 'HDU_CLASS' in Table.read(dl3_hdu_index).columns
-    assert 'OBJECT' in Table.read(dl3_obs_index).columns
