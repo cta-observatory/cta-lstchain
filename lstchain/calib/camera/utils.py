@@ -30,12 +30,20 @@ def get_bias_and_std(dl1_file):
 def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     """
     Function to get picture threshold from dl1 from interleaved pedestal events.
+    Return modified picture threshold for tailcut cleaning method.
+    Allow cleaning the most noisy pixels (for example around the star location).
+    Threshold for each pixel is define as:
+        threshold = pedestal_bias + sigma * pedestal_std.
+    Recommended threshold for cleaning:
+        galactic source: picture_thresh=8, boundary_thresh=4, sigma=3
+        extragalactic source: picture_thresh=6, boundary_thresh=3, sigma=2.5
+        
     Parameters
     ----------
     input_filename: str
         path to dl1 file
     sigma_clean: float
-        cleaning level
+        cleaning level parameter
     Returns
     -------
     picture_thresh: np.ndarray
