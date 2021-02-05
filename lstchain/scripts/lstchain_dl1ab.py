@@ -113,11 +113,12 @@ def main():
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
         dl1_params_input = input.root[dl1_params_lstcam_key].colnames
+        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        if set(dl1_params_input).intersection(disp_params):
+            parameters_to_update.extend(disp_params)
 
         with tables.open_file(args.output_file, mode='a') as output:
-
             params = output.root[dl1_params_lstcam_key].read()
-
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
@@ -154,15 +155,7 @@ def main():
                     dl1_container.length = length
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
-                if ['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'] in dl1_params_input:
-                    parameters_to_update.extend([
-                        'disp_dx',
-                        'disp_dy',
-                        'disp_norm',
-                        'disp_angle',
-                        'disp_sign'
-                    ])
-
+                if set(dl1_params_input).intersection(disp_params):
                     disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
                         dl1_container['x'].to_value(u.m),
                         dl1_container['y'].to_value(u.m),
