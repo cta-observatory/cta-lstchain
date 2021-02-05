@@ -52,11 +52,16 @@ To download the test files locally, run `./download_test_data.sh`.
 It will ask for username and password and requires `wget` to be installed.
 Ask one of the project maintainers for the credentials.
 
-To also run the tests that need those private data file, add `-m private_data`
+To run the tests that need those private data file, add `-m private_data`
 to the pytest call, e.g.:
 
 ```
 pytest -m private_data -v
+```
+
+To run all tests, run
+```
+pytest -m 'private_data or not private_data' -v
 ```
 
 ## Contributing
