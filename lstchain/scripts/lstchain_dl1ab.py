@@ -101,10 +101,7 @@ def main():
         'time_gradient',
         'n_pixels',
         'wl',
-        'r',
-        'log_intensity',
-        'x',
-        'y',
+        'log_intensity'
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
