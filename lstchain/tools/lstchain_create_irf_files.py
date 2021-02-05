@@ -2,6 +2,12 @@
 Create FITS file for IRFs from given MC DL2 files and selection cuts
 MC gamma files can be point-like or diffuse
 IRFs can be point-like or Full Enclosure
+
+Simple usage with argument aliases and default config file for selection cuts:
+$> lstchain_create_irf_files
+--fg /path/to/DL2_MC_gamma_file.h5
+--o /path/to/irf.fits.gz
+--pnt True
 """
 
 import os
@@ -223,7 +229,7 @@ class IRFFITSWriter(Tool):
         migration_bins = np.linspace(0.2, 5, 31)
 
         if self.point_like:
-            self.log.info("Generating point-like IRF HDUs")
+            self.log.info("Generating Point-Like IRF HDUs")
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 

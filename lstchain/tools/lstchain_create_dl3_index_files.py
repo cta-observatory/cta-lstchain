@@ -1,6 +1,11 @@
 """
 Create HDU index files for HDU tables and Obs tables,
 from a given path of DL3 files and a glob pattern to select DL3 files
+
+Simple usage with argument aliases:
+$> lstchain_create_dl3_index_files
+--d /path/to/DL3/files/
+--p dl3*[run_1-run_n]*.fits
 """
 
 from lstchain.irf import create_obs_hdu_index

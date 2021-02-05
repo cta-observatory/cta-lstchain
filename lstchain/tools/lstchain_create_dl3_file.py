@@ -1,6 +1,14 @@
 """
 Create DL3 FITS file from given data DL2 file,
 selection cuts and/or IRF FITS files
+
+Simple usage with argument aliases and default config file for selection cuts:
+$> lstchain_create_irf_files
+--d /path/to/DL2_data_file.h5
+--o /path/to/DL3/file/
+--add_irf True
+--irf /path/to/irf.fits.gz
+--source_name Crab
 """
 
 import os
@@ -129,7 +137,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.data[self.data["reco_source_fov_offset"] < u.Quantity(
                                         **self.cuts["fixed_cuts"]["source_fov_offset"])]
-        self.log.info("Gemerating event list")
+        self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
                                             data=self.data,
                                             run_number=self.run_number,
