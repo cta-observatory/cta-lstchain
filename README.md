@@ -44,6 +44,20 @@ conda env update -n lst-dev -f environment.yml
 pip install -e .
 ```
 
+To run some of the tests, some non-public test data files are needed.
+These tests will not be run locally if the test data is not available,
+but are always run in the CI.
+
+To download the test files locally, run `./download_test_data.sh`.
+It will ask for username and password and requires `wget` to be installed.
+Ask one of the project maintainers for the credentials.
+
+To also run the tests that need those private data file, add `-m private_data`
+to the pytest call, e.g.:
+
+```
+pytest -m private_data -v
+```
 
 ## Contributing
 
@@ -56,5 +70,3 @@ See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.ht
 ## Report issue / Ask a question
 
 Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
-
-
