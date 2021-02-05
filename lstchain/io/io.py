@@ -8,13 +8,13 @@ import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
-from ctapipe.containers import MCHeaderContainer
+from ctapipe.containers import SimulationConfigContainer
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
-from ctapipe.tools.stage1 import Stage1ProcessorTool
+#from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
 from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
     TelescopeDescription, SubarrayDescription

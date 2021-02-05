@@ -43,9 +43,8 @@ class PedestalIntegrator(PedestalCalculator):
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
-        exists=True, directory_ok=False,
+        directory_ok=False,
         help='Path to time sampling correction file',
-        allow_none = True,
     ).tag(config=True)
 
 
@@ -141,18 +140,8 @@ class PedestalIntegrator(PedestalCalculator):
 
         pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
+        self.trigger_time = event.trigger.time
 
-        # real data
-        if event.meta['origin'] != 'hessio':
-
-            self.trigger_time = event.r1.tel[self.tel_id].trigger_time
-
-        else: # patches for MC data
-
-            if event.trig.tels_with_trigger:
-                self.trigger_time = event.trig.gps_time.unix
-            else:
-                self.trigger_time = 0
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
@@ -162,9 +151,11 @@ class PedestalIntegrator(PedestalCalculator):
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
 
+
         self.collect_sample(charge, pixel_mask)
 
         sample_age = self.trigger_time - self.time_start
+
 
         # check if to create a calibration event
         if (self.num_events_seen > 0 and
@@ -222,6 +213,7 @@ class PedestalIntegrator(PedestalCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
 
+
         n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
         shape = (sample_size, n_channels, n_pix)
@@ -229,6 +221,7 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
         self.sample_masked_pixels = np.zeros(shape)
+
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""
@@ -248,9 +241,9 @@ def calculate_time_results(
 ):
     """Calculate and return the sample time"""
     return {
-        'sample_time': (trigger_time - time_start) / 2 * u.s,
-        'sample_time_min': time_start * u.s,
-        'sample_time_max': trigger_time * u.s,
+        'sample_time': (trigger_time - time_start).value / 2 *u.s,
+        'sample_time_min': time_start.value*u.s,
+        'sample_time_max': trigger_time.value*u.s,
     }
 
 
