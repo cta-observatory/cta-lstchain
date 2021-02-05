@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
 from astropy.table import Table
+from matplotlib.cm import get_cmap
 from scipy.stats import norm
 
 from ..io.config import get_standard_config, read_configuration_file
@@ -27,6 +28,8 @@ __all__ = [
     'plot_importances',
     'plot_pos',
     'plot_roc_gamma',
+    'plot_1d_excess',
+    'plot_wobble',
 ]
 
 
@@ -422,6 +425,7 @@ def plot_pos(data, true_hadroness=False):
 def plot_importances(model, features_names, ax=None, **kwargs):
     """
     plot features importances
+    
     Parameters
     ----------
     model: scikit-learn model
@@ -431,7 +435,7 @@ def plot_importances(model, features_names, ax=None, **kwargs):
 
     Returns
     -------
-
+    ax: `matplotlib.pyplot.axis`
     """
 
     ax = plt.gca() if ax is None else ax
@@ -696,3 +700,93 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
         fig.savefig(plot_outfile)
 
     return fig, axes
+
+
+def plot_wobble(source_position, n_points, ax = None):
+    """
+    Plot 2D map of ON/OFF positions w.r.t. to the camera center
+
+    Parameters
+    ----------
+    source_position: Source position in the camera frame, array-like [x,y]
+    n_points: Number of observation points. Rotation angle for each next observation is determined
+    as 360/n_points
+    ax: `matplotlib.pyplot.axes` or None
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axes`
+    """
+    from lstchain.reco.utils import rotate
+    if ax is None:
+        ax = plt.gca()
+    opacity = 0.2
+    marker_size = 20
+    color_map_name = 'Set1'  # https://matplotlib.org/gallery/color/colormap_reference.html
+    colors = get_cmap(color_map_name).colors
+    ax.set_prop_cycle(color=colors)
+
+    rotation_angle = 360./n_points
+    labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
+    ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
+    for off_point in range(n_points):
+        first_point = tuple(rotate(list(zip(source_position[0].to_value(),
+                                            source_position[1].to_value()))[0],
+                                   rotation_angle * off_point)[0])
+        ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity,
+                label=labels[off_point])
+        ax.annotate(labels[off_point], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[off_point])
+
+    ax.set_ylim(-0.7, 0.7)
+    ax.set_xlim(-0.7, 0.7)
+
+    ax.set_ylabel("(m)")
+    ax.set_xlabel("Position in the camera (m)")
+    return ax
+
+
+def plot_1d_excess(named_datasets, lima_significance,
+                   x_label, x_cut, ax=None, x_range_min=0, x_range_max=2,
+                   n_bins=100, opacity=0.2, color_map_name='Set1'):
+    """
+    Plot one-dimensional distribution of signal and backgound events
+    Color maps: https://matplotlib.org/gallery/color/colormap_reference.html
+
+    Parameters
+    ----------
+    named_datasets: Array of datasets to plot in a following form: (<dataset label>, data, overall
+    scale factor)
+    lima_significance: Li&Ma significance of observation
+    x_label: X-axis label
+    x_cut: X cut value
+    ax: `matplotlib.pyplot.axes` or None
+    x_range_min: Bottom value of X
+    x_range_max: Top value of X
+    n_bins: Number of histogram bins along X axis
+    opacity: Plot opaacity
+    color_map_name: Matplotlib colormap name
+
+    Returns
+    -------
+    ax: `matplotlib.pyplot.axes`
+    """
+   
+    if ax is None:
+        ax = plt.gca()
+    colors = get_cmap(color_map_name).colors
+    ax.set_prop_cycle(color=colors)
+
+    hists = []
+    for label, data, factor in named_datasets:
+        hists.append(ax.hist(data, label=label, weights=factor*np.ones_like(data),
+                     bins=n_bins, alpha=opacity, range=[x_range_min, x_range_max]))
+
+    ax.annotate(text=f'Significance Li&Ma = {lima_significance:.2f} $\sigma$\n',
+                 xy=(np.max(hists[0][1]/4), np.max(hists[0][0]/6*5)), size=20, color='r')
+
+    ax.vlines(x=x_cut, ymin=0, ymax=np.max(hists[0][0]*1.2), linestyle='--', linewidth=2,
+               color='black', alpha=opacity)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(r'Number of events')
+    ax.legend(fontsize=12)
+    return ax
