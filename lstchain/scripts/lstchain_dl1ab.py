@@ -152,7 +152,6 @@ def main():
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width
                     dl1_container.length = length
-                    dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
                     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if ['disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'] in dl1_params_input:
