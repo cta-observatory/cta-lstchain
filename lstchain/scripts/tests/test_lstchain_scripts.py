@@ -141,20 +141,20 @@ def test_lstchain_dl1_to_dl2():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-def test_mc_dl1ab():
+def test_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab', 
+    run_program('lstchain_dl1ab',
                 '-f', dl1_file, 
                 '-o', output_file,
                 )
     assert os.path.exists(output_file)
 
 
-@pytest.mark.run(after='test_mc_dl1ab')
-def test_mc_dl1ab_validity():
+@pytest.mark.run(after='test_dl1ab')
+def test_dl1ab_validity():
     dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.h5'), key=dl1_params_lstcam_key)
     dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
+    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
 
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
