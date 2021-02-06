@@ -11,8 +11,7 @@ from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
-from lstchain.calib.camera.r0 import CameraR0Calibrator
-from lstchain.io.lstcontainers import LSTEventType
+from ctapipe.containers import EventType
 
 __all__ = [
     'CalibrationHDF5Writer'
@@ -34,7 +33,6 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-
     one_event = Bool(
         False,
         help='Stop after first calibration event'
@@ -45,35 +43,24 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
-    log_file = Unicode(
-        'None',
-        help='Name of the log file'
-    ).tag(config=True)
-
     calibration_product = traits.create_class_enum_trait(
        CalibrationCalculator,
         default_value='LSTCalibrationCalculator'
     )
 
-    r0calibrator_product =traits.create_class_enum_trait(
-        CameraR0Calibrator,
-        default_value='NullR0Calibrator'
-    )
-
     aliases = Dict(dict(
         input_file='EventSource.input_url',
-        output_file='CalibrationHDF5Writer.output_file',
-        log_file='CalibrationHDF5Writer.log_file',
         max_events='EventSource.max_events',
-        pedestal_file= 'LSTR0Corrections.pedestal_path',
+        min_flatfield_adc='EventSource.min_flatfield_adc',
+        max_flatfield_adc='EventSource.max_flatfield_adc',
+        output_file='CalibrationHDF5Writer.output_file',
         calibration_product='CalibrationHDF5Writer.calibration_product',
-        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product',
+
     ))
 
     classes = List([EventSource,
                     CalibrationCalculator
                     ]
-                   + traits.classes_with_traits(CameraR0Calibrator)
                    + traits.classes_with_traits(CalibrationCalculator)
                    )
 
@@ -113,13 +100,6 @@ class CalibrationHDF5Writer(Tool):
             parent=self,
             subarray = self.eventsource.subarray
         )
-
-        if self.r0calibrator_product:
-            self.r0calibrator = CameraR0Calibrator.from_name(
-                self.r0calibrator_product,
-                parent=self
-            )
-
 
         group_name = 'tel_' + str(self.processor.tel_id)
 
@@ -173,33 +153,25 @@ class CalibrationHDF5Writer(Tool):
                     calib_data = event.mon.tel[tel_id].calibration
                     calib_data.meta['config'] = self.config
 
-                # correct for low level calibration
-                self.r0calibrator.calibrate(event)
 
                 # skip first events which are badly drs4 corrected
                 if not self.simulation and count < events_to_skip:
                     continue
 
-                # reject event without trigger type
-                if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
-                    if LSTEventType.is_unknown(event.lst.tel[tel_id].evt.ucts_trigger_type):
-                        continue
-                    else:
-                        event.r1.tel[tel_id].trigger_type = event.lst.tel[tel_id].evt.ucts_trigger_type
-
                 # if pedestal event
-                if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
+                if event.trigger.event_type==EventType.SKY_PEDESTAL or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                     < self.processor.minimum_hg_charge_median):
+
 
                     new_ped = self.processor.pedestal.calculate_pedestals(event)
 
 
                 # if flat-field event: no calibration  TIB for the moment,
                 # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-                elif LSTEventType.is_calibration(event.r1.tel[tel_id].trigger_type) or (
-                        np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                elif event.trigger.event_type==EventType.FLATFIELD or (
+                        self.simulation and np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                         > self.processor.minimum_hg_charge_median
                         and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
                         < self.processor.maximum_lg_charge_std):
