@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
+from ctapipe_io_lst.event_time import read_night_summary
 
 
 # parse arguments
@@ -25,7 +26,6 @@ required.add_argument('-r', '--run_number', help="Run number if the flat-field d
                       type=int, required=True)
 required.add_argument('-p', '--pedestal_run', help="Run number of the drs4 pedestal run",
                       type=int, required=True)
-
 optional.add_argument('-v', '--version', help="Version of the production",
                       type=int, default=0)
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
@@ -63,6 +63,7 @@ def main():
             raise NameError()
         else:
             input_file = file_list[0]
+        print(f"\n--> Input file: {input_file}")
 
         # find date
         input_dir, name = os.path.split(os.path.abspath(input_file))
@@ -80,6 +81,13 @@ def main():
         if not os.path.exists(pedestal_file):
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
+
+        # search the summary file info
+        file_list = sorted(Path(f"{base_dir}/monitoring/NightSummary/").rglob(f'*Nig*{date}.txt'))
+        night_log = str(file_list[0])
+        summary = read_night_summary(night_log)
+        print(f"\n--> Summary file {night_log}")
+        run_info = summary.loc[run]
 
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
@@ -137,10 +145,16 @@ def main():
         if ff_calibration == 'yes':
             # run lstchain script
             cmd = f"lstchain_create_calibration_file " \
-                  f"--input_file={input_file} --output_file={output_file} --pedestal_file={pedestal_file} " \
-                  f"--FlasherFlatFieldCalculator.time_calibration_path={time_file} --FlasherFlatFieldCalculator.sample_size={stat_events} "\
-                  f"--PedestalIntegrator.sample_size={stat_events}  " \
-                  f"--EventSource.max_events={max_events} --config={config_file}  >  {log_file} 2>&1"
+                  f"--input_file={input_file} --output_file={output_file} "\
+                  f"--EventSource.max_events={max_events} " \
+                  f"--LSTEventSource.EventTimeCalculator.ucts_t0_dragon={int(run_info['ucts_t0_dragon'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.dragon_counter0={int(run_info['dragon_counter0'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.ucts_t0_tib={int(run_info['ucts_t0_tib'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.tib_counter0={int(run_info['tib_counter0'])} " \
+                  f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
+                  f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
+                  f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
+                  f"--config={config_file}  >  {log_file} 2>&1"
 
             print("\n--> RUNNING...")
             os.system(cmd)
