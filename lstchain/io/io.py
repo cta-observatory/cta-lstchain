@@ -45,7 +45,8 @@ __all__ = ['read_simu_info_hdf5',
            'read_dl2_to_pyirf',
            'read_dl2_params',
            'extract_observation_time',
-           'merge_dl2_runs'
+           'merge_dl2_runs',
+           'get_cleaninig_params'
            ]
 
 
@@ -365,7 +366,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
-    This is a temporary solution until we move to ctapipe v0.9.1. 
+    This is a temporary solution until we move to ctapipe v0.9.1.
 
     Parameters
     ----------
@@ -409,7 +410,7 @@ def write_array_info_08(subarray, output_filename):
           output_filename,
           path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
           append=True,
-          serialize_meta=serialize_meta          
+          serialize_meta=serialize_meta
         )
         camera.readout.to_table().write(
           output_filename,
@@ -1139,3 +1140,22 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
+
+def get_cleaninig_params(config, clean_method_name):
+    """
+    Return cleaning parameters from configuration dict.
+
+    Parameters
+    ----------
+    config: configuration dict
+    clean_method_name: name of cleaning method
+
+    Returns
+    -------
+    tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
+    """
+    picture_th = config[clean_method_name]['picture_thresh']
+    boundary_th = config[clean_method_name]['boundary_thresh']
+    isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
+    min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
+    return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Read a HDF5 DL1 file, recompute parameters based on calibrated images and 
+Read a HDF5 DL1 file, recompute parameters based on calibrated images and
 pulse times and a config file and write a new HDF5 file
-Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, 
+Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands,
 intercept, time_gradient
 
 - Input: DL1 data file.
 - Output: DL1 data file.
 
-Usage: 
+Usage:
 
 $> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
@@ -35,6 +35,8 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.io.io import get_cleaninig_params
+from lstchain.calib.camera.utils import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
 
 log = logging.getLogger(__name__)
@@ -80,7 +82,20 @@ def main():
     else:
         config = std_config
 
-    log.info(f"Tailcut config used: {config['tailcut']}")
+    if 'tailcuts_clean_with_pedestal_threshold' in config:
+        clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
+        sigma = config['tailcuts_clean_with_pedestal_threshold']['sigma']
+        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
+        cleaning_params = get_cleaninig_params(config, clean_method_name)
+        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        picture_th = np.clip(pedestal_thresh, pic_th, None)
+        log.info(f"Tailcut clean with pedestal threshold config used:"
+                 f"{config['tailcuts_clean_with_pedestal_threshold']}")
+    else:
+        clean_method_name = 'tailcut'
+        cleaning_params = get_cleaninig_params(config, clean_method_name)
+        picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        log.info(f"Tailcut config used: {config['tailcut']}")
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -126,7 +141,12 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
+                signal_pixels = tailcuts_clean(camera_geom,
+                                               image,
+                                               picture_th,
+                                               boundary_th,
+                                               isolated_pixels,
+                                               min_n_neighbors)
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
