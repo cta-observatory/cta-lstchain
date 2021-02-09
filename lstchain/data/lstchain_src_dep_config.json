@@ -63,7 +63,6 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "n_islands",
     "dist"
   ],
 
@@ -76,7 +75,6 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "n_islands",
     "log_reco_energy",
     "dist"
   ],

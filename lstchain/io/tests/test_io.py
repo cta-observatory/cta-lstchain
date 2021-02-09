@@ -62,7 +62,7 @@ def test_write_dataframe_index():
 
 @pytest.mark.run(after='test_apply_models')
 def test_write_dl2_dataframe():
-    from lstchain.tests.test_lstchain import dl2_file, test_dir
+    from lstchain.tests.test_lstchain import dl2_file
     from lstchain.io.io import dl2_params_lstcam_key
     dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
     from lstchain.io import write_dl2_dataframe

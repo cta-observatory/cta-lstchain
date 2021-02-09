@@ -19,7 +19,7 @@ dl3_hdu_index = os.path.join(test_dir, 'hdu-index.fits.gz')
 dl3_obs_index = os.path.join(test_dir, 'obs-index.fits.gz')
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
-@pytest.mark.parametrize("point_like_IRF", [True, False])
+@pytest.mark.parametrize("point_like_IRF", [True,False])
 def test_create_irf(point_like_IRF):
     """
     Generating an IRF file from a test DL2 files
@@ -58,7 +58,7 @@ def test_create_irf(point_like_IRF):
     )
 
 @pytest.mark.run(after='test_create_irf')
-@pytest.mark.parametrize("add_IRF", [True, False]) 
+@pytest.mark.parametrize("add_IRF", [True,False])
 def test_create_dl3(add_IRF):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
@@ -74,8 +74,6 @@ def test_create_dl3(add_IRF):
     dl2['alt_tel'] = dl2["mc_alt_tel"]
     dl2['az_tel'] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
-
-    events = read_data_dl2_to_QTable(dl2_file_new)
 
     assert (
           run_tool(

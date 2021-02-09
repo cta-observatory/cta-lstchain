@@ -18,9 +18,7 @@ import os
 import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance
-from lstchain.io import (read_mc_dl2_to_pyirf,
-                        read_configuration_file,
-                        get_standard_config)
+from lstchain.io import read_mc_dl2_to_pyirf, read_configuration_file
 from lstchain.reco.utils import filter_events
 
 from astropy.io import fits
@@ -42,7 +40,7 @@ from pyirf.spectral import (
     IRFDOC_ELECTRON_SPECTRUM,
 )
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
-from pyirf.binning import create_bins_per_decade, add_overflow_bins
+from pyirf.binning import create_bins_per_decade #, add_overflow_bins
 
 __all__ = [
     'IRFFITSWriter'

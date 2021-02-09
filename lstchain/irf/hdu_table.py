@@ -1,11 +1,8 @@
 import numpy as np
-import os
 import logging
 
-from lstchain.reco.utils import camera_to_altaz
-
 import astropy.units as u
-from astropy.table import Table, Column, vstack, QTable
+from astropy.table import Table, vstack, QTable
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
@@ -70,8 +67,6 @@ def create_obs_hdu_index(filename_list, fits_dir, hdu_index_filename, obs_index_
         if filepath.is_file():
             try:
                 event_table = Table.read(filepath, hdu="EVENTS")
-                gti_table = Table.read(filepath, hdu="GTI")
-                pointing_table = Table.read(filepath, hdu="POINTING")
             except Exception:
                 log.error(f"fits corrupted for file {file}")
                 continue
@@ -165,11 +160,11 @@ def create_obs_hdu_index(filename_list, fits_dir, hdu_index_filename, obs_index_
         t_obs = Table(
             {'OBS_ID' : [event_table.meta['OBS_ID']],
             'DATE_OBS' : [event_table.meta['DATE_OBS']],
-            'RA_PNT' : [pointing_table.meta['RA_PNT']],
-            'DEC_PNT' : [pointing_table.meta['DEC_PNT']],
-            'ZEN_PNT' : [90 - float(pointing_table.meta['ALT_PNT'])],
-            'ALT_PNT' : [pointing_table.meta['ALT_PNT']],
-            'AZ_PNT' : [pointing_table.meta['AZ_PNT']],
+            'RA_PNT' : [event_table.meta['RA_PNT']],
+            'DEC_PNT' : [event_table.meta['DEC_PNT']],
+            'ZEN_PNT' : [90 - float(event_table.meta['ALT_PNT'])],
+            'ALT_PNT' : [event_table.meta['ALT_PNT']],
+            'AZ_PNT' : [event_table.meta['AZ_PNT']],
             'RA_OBJ' : [event_table.meta['RA_OBJ']],
             'DEC_OBJ' : [event_table.meta['DEC_OBJ']],
             'ONTIME': [event_table.meta["ONTIME"]],
@@ -195,8 +190,6 @@ def create_obs_hdu_index(filename_list, fits_dir, hdu_index_filename, obs_index_
     hdu_index_header["TELESCOP"] = "CTA"
     hdu_index_header["INSTRUME"] = "LST-1"
 
-    filename_hdu_table = fits_dir/hdu_index_filename
-
     hdu_index = fits.BinTableHDU(
                         hdu_index_table,
                         header=hdu_index_header,
@@ -210,8 +203,6 @@ def create_obs_hdu_index(filename_list, fits_dir, hdu_index_filename, obs_index_
     obs_index_header["HDUCLAS2"] = "OBS"
     obs_index_header['MJDREFI'] = event_table.meta['MJDREFI']
     obs_index_header['MJDREFF'] = event_table.meta['MJDREFF']
-
-    filename_obs_table = fits_dir/obs_index_filename
 
     obs_index = fits.BinTableHDU(
                         obs_index_table,
@@ -278,7 +269,7 @@ def create_event_list(data, run_number, source_name):
 
     try:
         object_radec=SkyCoord.from_name(source_name)
-    except:
+    except ValueError:
         log.error('Timeout Error in finding Object in Sesame')
         object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
 

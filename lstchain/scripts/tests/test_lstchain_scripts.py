@@ -144,20 +144,20 @@ def test_lstchain_dl1_to_dl2():
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
-def test_mc_dl1ab():
+def test_dl1ab():
     output_file = os.path.join(output_dir, 'dl1ab.h5')
-    run_program('lstchain_mc_dl1ab',
+    run_program('lstchain_dl1ab',
                 '-f', dl1_file,
                 '-o', output_file,
                 )
     assert os.path.exists(output_file)
 
 
-@pytest.mark.run(after='test_mc_dl1ab')
-def test_mc_dl1ab_validity():
+@pytest.mark.run(after='test_dl1ab')
+def test_dl1ab_validity():
     dl1 = pd.read_hdf(os.path.join(output_dir, 'dl1_gamma_test_large.h5'), key=dl1_params_lstcam_key)
     dl1ab = pd.read_hdf(os.path.join(output_dir, 'dl1ab.h5'), key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4)
+    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
 
 
 @pytest.mark.run(after='test_lstchain_dl1_to_dl2')
@@ -187,8 +187,7 @@ def test_read_mc_dl2_to_pyirf():
 @pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
 def test_read_data_dl2_to_QTable():
     from lstchain.io.io import read_data_dl2_to_QTable
-    import pandas as pd
-
+    
     dl2_data = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
     dl2_data['tel_id'] = dl2_data['tel_id'].min()

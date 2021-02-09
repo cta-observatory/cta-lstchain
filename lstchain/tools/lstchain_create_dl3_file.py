@@ -13,7 +13,6 @@ lstchain_create_irf_files
 """
 
 import os
-import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
