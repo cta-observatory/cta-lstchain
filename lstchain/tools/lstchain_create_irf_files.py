@@ -4,15 +4,15 @@ MC gamma files can be point-like or diffuse
 IRFs can be point-like or Full Enclosure
 
 Simple usage with argument aliases and default config file for selection cuts:
-$> lstchain_create_irf_files
---fg /path/to/DL2_MC_gamma_file.h5
---o /path/to/irf.fits.gz
---pnt True
+
+lstchain_create_irf_files
+    --fg /path/to/DL2_MC_gamma_file.h5
+    --o /path/to/irf.fits.gz
+    --pnt True
 """
 
 import os
 import numpy as np
-#from pathlib import Path
 
 from ctapipe.core import Tool, traits, Provenance
 from lstchain.io import (read_mc_dl2_to_pyirf,
@@ -36,7 +36,7 @@ __all__ = [
 
 class IRFFITSWriter(Tool):
     name = "IRFFITSWriter"
-    description = "Create IRF FITS file from given MC DL2 files and selection cuts"
+    description = __doc__
 
     input_gamma_dl2 = traits.Path(
         help="Input MC gamma DL2 file",
@@ -235,6 +235,8 @@ class IRFFITSWriter(Tool):
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(),]
+        extra_headers = {"TELESCOP":"CTA", "INSTRUME":"LST-1"}
+
         with np.errstate(invalid='ignore', divide='ignore'):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
                 self.effective_area = effective_area_per_energy(
@@ -246,7 +248,8 @@ class IRFFITSWriter(Tool):
                                     true_energy_bins,
                                     fov_offset_bins,
                                     point_like=self.point_like,
-                                    extname = "EFFECTIVE AREA")
+                                    extname = "EFFECTIVE AREA",
+                                    **extra_headers)
                                     )
             else:
                 self.effective_area = effective_area_per_energy_and_fov(
@@ -259,7 +262,8 @@ class IRFFITSWriter(Tool):
                                     true_energy_bins,
                                     fov_offset_bins,
                                     point_like=self.point_like,
-                                    extname = "EFFECTIVE AREA")
+                                    extname = "EFFECTIVE AREA",
+                                    **extra_headers)
                                     )
         # Adding a dimension for FoV offset for effective area
 
@@ -276,7 +280,8 @@ class IRFFITSWriter(Tool):
                             migration_bins,
                             fov_offset_bins,
                             point_like=self.point_like,
-                            extname = "ENERGY DISPERSION")
+                            extname = "ENERGY DISPERSION",
+                            **extra_headers)
                             )
         self.log.info("Energy Dispersion HDU created")
 

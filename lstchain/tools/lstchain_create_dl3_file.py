@@ -3,12 +3,13 @@ Create DL3 FITS file from given data DL2 file,
 selection cuts and/or IRF FITS files
 
 Simple usage with argument aliases and default config file for selection cuts:
-$> lstchain_create_irf_files
---d /path/to/DL2_data_file.h5
---o /path/to/DL3/file/
---add_irf True
---irf /path/to/irf.fits.gz
---source_name Crab
+
+lstchain_create_irf_files
+    --d /path/to/DL2_data_file.h5
+    --o /path/to/DL3/file/
+    --add_irf True
+    --irf /path/to/irf.fits.gz
+    --source_name Crab
 """
 
 import os
@@ -31,10 +32,7 @@ __all__ = [
 
 class DataReductionFITSWriter(Tool):
     name = "DataReductionFITSWriter"
-    description = (
-                "Create DL3 FITS file from given data DL2 file,"
-                " selection cuts and/or IRF FITS file"
-                )
+    description = __doc__
 
     input_dl2 = traits.Path(
         help="Input data DL2 file",

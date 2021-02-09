@@ -3,9 +3,10 @@ Create HDU index files for HDU tables and Obs tables,
 from a given path of DL3 files and a glob pattern to select DL3 files
 
 Simple usage with argument aliases:
-$> lstchain_create_dl3_index_files
---d /path/to/DL3/files/
---p dl3*[run_1-run_n]*.fits
+
+lstchain_create_dl3_index_files
+    --d /path/to/DL3/files/
+    --p dl3*[run_1-run_n]*.fits
 """
 
 from lstchain.irf import create_obs_hdu_index
@@ -17,9 +18,7 @@ __all__ = [
 
 class FITSIndexWriter(Tool):
     name = "FITSIndexWriter"
-    description = (
-                "Create FITS HDU index files from given list of DL3 files"
-                )
+    description = __doc__
 
     input_dl3_dir = traits.Path(
         help = "Input path of DL3 files",
@@ -65,7 +64,7 @@ class FITSIndexWriter(Tool):
             self.file_list.append(f.name)
 
     def start(self):
-        #Retrieving HDULists for both index files
+        # Retrieving HDULists for both index files
         self.hdu_index_list, self.obs_index_list = create_obs_hdu_index(
                                                     self.file_list,
                                                     self.input_dl3_dir,
