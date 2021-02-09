@@ -58,7 +58,7 @@ def test_create_irf(point_like_IRF):
     )
 
 @pytest.mark.run(after='test_create_irf')
-@pytest.mark.parametrize("add_IRF", [True, False])
+@pytest.mark.parametrize("add_IRF", [True, False]) 
 def test_create_dl3(add_IRF):
     """
     Generating an DL3 file from a test DL2 files and test IRF file

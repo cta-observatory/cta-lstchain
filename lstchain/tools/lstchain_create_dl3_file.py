@@ -99,7 +99,7 @@ class DataReductionFITSWriter(Tool):
         self.pointing = None
         self.aeff2d = None
         self.edisp2d = None
-        # self.bkg2d = None
+        self.bkg2d = None
         # self.psf = None
         self.hdulist = None
         self.output_file = None
@@ -146,8 +146,7 @@ class DataReductionFITSWriter(Tool):
             irf = fits.open(self.input_irf)
             self.aeff2d = irf['EFFECTIVE AREA']
             self.edisp2d = irf['ENERGY DISPERSION']
-            # self.bkg2d = irf['BACKGROUND']
-            # self.psf = irf['PSF']
+
             self.log.info("Adding IRF HDUs")
             self.hdulist = fits.HDUList([fits.PrimaryHDU(),
                                         self.events,
@@ -156,6 +155,12 @@ class DataReductionFITSWriter(Tool):
                                         self.aeff2d,
                                         self.edisp2d]
                                         )
+            if len(irf)>3:
+                self.bkg2d = irf['BACKGROUND']
+                # self.psf = irf['PSF']
+                self.hdulist.append(self.bkg2d)
+                # self.hdulist.append(self.psf)
+
         else:
             self.hdulist = fits.HDUList([fits.PrimaryHDU(),
                                         self.events,
