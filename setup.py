@@ -59,7 +59,9 @@ setup(
         'seaborn',
         'scikit-learn',
         'tables',
+        'toml',
         'traitlets',
+        'iminuit~=1.5',
     ],
     package_data={
         'lstchain': ['data/lstchain_standard_config.json',
