@@ -301,6 +301,9 @@ def build_models(filegammas, fileprotons,
     config = replace_config(standard_config, custom_config)
     events_filters = config["events_filters"]
 
+    # Adding a filter on mc_type just for training
+    events_filters['mc_type'] = [0, np.inf]
+
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
