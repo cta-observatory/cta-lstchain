@@ -436,7 +436,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
         raise ValueError("The classifier is predicting more than two classes, "
-                         "the predicted probabilty to assin as gammaness is unclear."
+                         "the predicted probabilty to assign as gammaness is unclear."
                          "Please check training data")
 
     # gammaness is the prediction probability for the first class (0)
