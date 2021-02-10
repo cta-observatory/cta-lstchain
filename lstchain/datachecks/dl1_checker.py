@@ -228,9 +228,8 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # 'with... as...' statements
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
-        # convert parameters from meters to degrees:
-        for var in ['r', 'width', 'length']:
-            parameters[var] *= m2deg
+        # convert cog distance to camera center from meters to degrees:
+        parameters['r'] *= m2deg
         # time gradient from ns/m to ns/deg
         parameters['time_gradient'] /= m2deg
 
