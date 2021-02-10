@@ -187,7 +187,7 @@ def test_read_mc_dl2_to_pyirf():
 @pytest.mark.run(after='test_read_mc_dl2_to_pyirf')
 def test_read_data_dl2_to_QTable():
     from lstchain.io.io import read_data_dl2_to_QTable
-    
+
     dl2_data = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
     dl2_data['tel_id'] = dl2_data['tel_id'].min()
