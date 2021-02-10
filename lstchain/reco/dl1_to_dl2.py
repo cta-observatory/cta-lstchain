@@ -431,8 +431,17 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     dl2['reco_az'] = src_pos_reco.az.rad
 
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
-    probs = classifier.predict_proba(dl2[classification_features])[0:, 0]
-    dl2['gammaness'] = probs
+    probs = classifier.predict_proba(dl2[classification_features])
+
+    # This check is valid as long as we train on only two classes (gammas and protons)
+    if probs.shape[1] > 2:
+        raise ValueError("The classifier is predicting more than two classes, "
+                         "the predicted probabilty to assin as gammaness is unclear."
+                         "Please check training data")
+
+    # gammaness is the prediction probability for the first class (0)
+    dl2['gammaness'] = probs[:, 0]
+
     return dl2
 
 
