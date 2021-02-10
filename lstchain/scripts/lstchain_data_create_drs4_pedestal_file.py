@@ -26,7 +26,7 @@ from astropy.io import fits
 
 
 from ctapipe.io import EventSource
-from ctapipe_io_lst.calibration import LSTR0Corrections
+
 from distutils.util import strtobool
 from lstchain.calib.camera.drs4 import DragonPedestal
 
@@ -44,7 +44,6 @@ parser.add_argument("--output-file", '-o', type=str, action='store',
                     dest='output_file',
                     help="Path where script create pedestal file",
                     default=None, required=True)
-
 
 # Optional arguments
 parser.add_argument("--max-events",

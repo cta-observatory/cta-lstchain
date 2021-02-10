@@ -14,7 +14,7 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 from ctapipe_io_lst.event_time import read_night_summary
-from traitlets.config import Config
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
