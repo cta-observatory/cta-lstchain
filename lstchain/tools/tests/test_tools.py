@@ -64,7 +64,6 @@ def test_create_dl3(add_IRF):
     Generating an DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
-    from lstchain.io.io import read_data_dl2_to_QTable
     from lstchain.io.io import dl2_params_lstcam_key
 
     dl2 = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)

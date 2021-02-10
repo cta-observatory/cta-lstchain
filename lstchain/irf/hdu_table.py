@@ -269,7 +269,7 @@ def create_event_list(data, run_number, source_name):
 
     try:
         object_radec=SkyCoord.from_name(source_name)
-    except ValueError:
+    except Exception:
         log.error('Timeout Error in finding Object in Sesame')
         object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
 

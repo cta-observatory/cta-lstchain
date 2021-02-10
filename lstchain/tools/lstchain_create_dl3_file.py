@@ -83,12 +83,6 @@ class DataReductionFITSWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        """
-        Tool that creates a FITS file of DL3 data for a given data DL2 file,
-        with the given selection cuts and/or IRF FITS file.
-        For getting help run:
-        lstchain_create_dl3_file --help
-        """
         self.data = None
         self.filename_dl3 = None
         self.run_number = None

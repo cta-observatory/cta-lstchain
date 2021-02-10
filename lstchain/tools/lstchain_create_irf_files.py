@@ -115,12 +115,6 @@ class IRFFITSWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        """
-        Tool that creates a compressed FITS file of IRFs for a given MC DL2 file
-        and with the given selection cuts.
-        For getting help run:
-        lstchain_create_irf_files --help
-        """
         self.mc_particle = None
         self.cuts = None
         self.hdus = None

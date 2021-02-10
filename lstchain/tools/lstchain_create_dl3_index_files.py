@@ -41,12 +41,6 @@ class FITSIndexWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        """
-        Tool that creates HDU index files from a given path to DL3 files
-        and a glob search pattern to select DL3 files
-        For getting help run:
-        lstchain_create_dl3_index_files --help
-        """
         self.file_list = []
         self.hdu_index_file = None
         self.obs_index_file = None
