@@ -14,7 +14,7 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 from ctapipe_io_lst.event_time import read_night_summary
-
+from traitlets.config import Config
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -96,16 +96,21 @@ def main():
             exit(1)
         print(f"\n--> Config file {config_file}")
 
-
         #
         # produce drs4 time calibration file
         #
+
         time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
         print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
-                  f"--output-file {time_file} --config {config_file} --pedestal-file {pedestal_file} 2>&1"
+                  f"--output-file {time_file} --config {config_file} " \
+                  f"--ucts-t0-dragon={int(run_info['ucts_t0_dragon'])} " \
+                  f"--dragon-counter0={int(run_info['dragon_counter0'])} " \
+                  f"--ucts-t0-tib={int(run_info['ucts_t0_tib'])} " \
+                  f"--tib-counter0={int(run_info['tib_counter0'])} " \
+                  f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
         else:
@@ -119,7 +124,6 @@ def main():
                 raise NameError()
             else:
                 time_calibration_file = file_list[0]
-                input_dir, name = os.path.split(os.path.abspath(time_calibration_file))
                 cmd = f"ln -sf {time_calibration_file} {time_file}"
                 os.system(cmd)
 

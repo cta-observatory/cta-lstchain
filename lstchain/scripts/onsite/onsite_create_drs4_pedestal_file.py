@@ -86,7 +86,7 @@ def main():
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=300)
+        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=400)
 
         print("\n--> END")
 
