@@ -13,6 +13,7 @@ dependencies:
   - jupyter
   - notebook
   - joblib
+  - toml
   - pip:
       - pytest_runner
       - pytest-ordering
