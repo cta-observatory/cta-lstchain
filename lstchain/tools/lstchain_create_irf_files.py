@@ -262,8 +262,10 @@ class IRFFITSWriter(Tool):
         # The overflow binning added is not needed in the current script
         reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
-        # Gammapy 0.18.2 needs offset bin centers
         if self.mc_particle["gamma"]["mc_type"] == "point-like":
+            # Gammapy 0.18.2 needs offset bin centers for interpolation
+            # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
+            # this workaround is necessary for further analysis using gammapy.
             fov_offset_bins = [0.39,0.4, 0.41] * u.deg
         else:
             # temporary usage of bins as used in MAGIC
@@ -277,7 +279,7 @@ class IRFFITSWriter(Tool):
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(),]
-        extra_headers = {"TELESCOP":"CTA", "INSTRUME":"LST-1", "FOVALIGN":"ALTAZ"}
+        extra_headers = {"TELESCOP":"CTA", "INSTRUME":"LST-1", "FOVALIGN":"RADEC"}
 
         with np.errstate(invalid='ignore', divide='ignore'):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
@@ -285,8 +287,13 @@ class IRFFITSWriter(Tool):
                                                 gammas[gammas["selected"]],
                                                 self.mc_particle["gamma"]["simulation_info"],
                                                 true_energy_bins)
+                # As mentioned above, gammapy 0.18.2 needs offset bin center Values
+                # for doing more than just reading the IRF.The effective area for
+                # point-like IRF with single offset (0.4 deg) needs to be
+                # reshaped and repeat the same values for the area in the second axis
                 self.hdus.append(create_aeff2d_hdu(
-                                    self.effective_area[..., np.newaxis],
+                                    np.repeat(self.effective_area[..., np.newaxis],
+                                                                2, axis=1),
                                     true_energy_bins,
                                     fov_offset_bins,
                                     point_like=self.point_like,

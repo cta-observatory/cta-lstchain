@@ -233,12 +233,17 @@ def create_event_list(data, run_number, source_name):
     """
 
     # Timing parameters
-    lam = 2800 # Average rate of triggered events, taken by hand for now
+    #lam = 2800 # Average rate of triggered events, taken by hand for now
     t_start = data['dragon_time'].value[0]
     t_stop = data['dragon_time'].value[-1]
     time = Time(data['dragon_time'], format='unix', scale="utc")
     date_obs = time[0].to_value('iso', 'date')
     obs_time = t_stop - t_start # All corrections excluded
+    # using method from PR#566
+    deltaT = np.diff(data['dragon_time'].value)
+    deltaT = deltaT[(deltaT > 0) & (deltaT < 0.002)]
+    rate=1/np.mean(deltaT)
+    dead_time = np.amin(deltaT)
 
     # Position parameters
     location = EarthLocation.from_geodetic(
@@ -335,11 +340,10 @@ def create_event_list(data, run_number, source_name):
     ev_header["AZ_PNT"] = round(np.rad2deg(data['pointing_az'].value[0]),6)
     ev_header["RA_OBJ"] = object_radec.ra.value
     ev_header["DEC_OBJ"] = object_radec.dec.value
-    ev_header["FOVALIGN"] = 'ALTAZ'
+    ev_header["FOVALIGN"] = 'RADEC'
 
     ev_header["ONTIME"] = obs_time
-    # Dead time for DRS4 chip is 26 u_sec
-    ev_header["DEADC"] = 1/(1+2.6e-5*lam) # 1/(1 + dead_time*lambda)
+    ev_header["DEADC"] = 1/(1+rate*dead_time)
     ev_header["LIVETIME"] = ev_header["DEADC"]*ev_header["ONTIME"]
 
     # GTI table metadata
