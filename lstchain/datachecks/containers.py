@@ -362,20 +362,20 @@ class DL1DataCheckHistogramBins(Container):
     # 2d histograms
     # width and length vs. image intensity:
     hist_width = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                 np.linspace(0., 1.2, 101)]),
+                                 np.linspace(0., 0.8, 101)]),
                        'hist_width binning')
     hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                  np.linspace(0., 2., 101)]),
+                                  np.linspace(0., 1., 101)]),
                         'hist_length binning')
     hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
                                     np.linspace(-4., 4., 101)]),
                           'hist_skewness binning')
     # time gradient vs. length:
-    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 2.0, 101),
+    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
                                            np.linspace(0., 200., 101)]),
                                  'hist_tgrad_vs_length binning')
     hist_tgrad_vs_length_intensity_gt_200 =\
-        Field(np.array([np.linspace(0., 2.0, 101), np.linspace(0., 50., 101)]),
+        Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
               'hist_tgrad_vs_length_intensity_gt_200 binning')
     # time intercept (image time @ charge c.o.g.) vs. image intensity:
     hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),
