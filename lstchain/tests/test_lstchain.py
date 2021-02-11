@@ -8,6 +8,7 @@ from lstchain.io import standard_config
 from lstchain.reco.utils import filter_events
 import astropy.units as u
 import tables
+from pathlib import Path
 
 test_dir = 'testfiles'
 
@@ -21,6 +22,7 @@ fake_dl1_proton_file = os.path.join(test_dir, 'dl1_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
+r0_file = Path('test_data/real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz')
 
 
 def test_import_calib():
@@ -40,6 +42,11 @@ def test_r0_to_dl1():
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     infile = mc_gamma_testfile
     r0_to_dl1(infile, custom_config=standard_config, output_filename=dl1_file)
+
+
+@pytest.mark.private_data
+def test_r0_available():
+    assert r0_file.is_file()
 
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1():
