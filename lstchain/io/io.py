@@ -1141,7 +1141,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     df = pd.concat(df_list)
     return observation_time, df
 
-def get_cleaninig_params(config, clean_method_name):
+def get_cleaning_parameters(config, clean_method_name):
     """
     Return cleaning parameters from configuration dict.
 

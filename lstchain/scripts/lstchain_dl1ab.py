@@ -35,7 +35,7 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from lstchain.io.io import get_cleaninig_params
+from lstchain.io.io import get_cleaning_parameters
 from lstchain.calib.camera.utils import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
 
@@ -86,14 +86,14 @@ def main():
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config['tailcuts_clean_with_pedestal_threshold']['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
-        cleaning_params = get_cleaninig_params(config, clean_method_name)
+        cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
     else:
         clean_method_name = 'tailcut'
-        cleaning_params = get_cleaninig_params(config, clean_method_name)
+        cleaning_params = get_cleaning_parameters(config, clean_method_name)
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
 
