@@ -262,9 +262,9 @@ class IRFFITSWriter(Tool):
         # The overflow binning added is not needed in the current script
         reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
 
-        # TODO: Generalize FoV offset binning
+        # Gammapy 0.18.2 needs offset bin centers
         if self.mc_particle["gamma"]["mc_type"] == "point-like":
-            fov_offset_bins = [0.2, 0.6] * u.deg
+            fov_offset_bins = [0.39,0.4, 0.41] * u.deg
         else:
             # temporary usage of bins as used in MAGIC
             fov_offset_bins = [0,0.3,0.5,0.7,0.9,1.1] * u.deg
@@ -277,7 +277,7 @@ class IRFFITSWriter(Tool):
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(),]
-        extra_headers = {"TELESCOP":"CTA", "INSTRUME":"LST-1"}
+        extra_headers = {"TELESCOP":"CTA", "INSTRUME":"LST-1", "FOVALIGN":"ALTAZ"}
 
         with np.errstate(invalid='ignore', divide='ignore'):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
