@@ -7,7 +7,8 @@ import numpy as np
 from astropy.units import Quantity
 from astropy.coordinates import Angle
 from ctapipe.core import Container, Field
-from ctapipe.image import leakage, concentration
+from ctapipe.image import leakage_parameters as leakage
+from ctapipe.image import concentration_parameters as concentration
 from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
@@ -129,7 +130,8 @@ class DL1ParametersContainer(Container):
         (e.g. conserving unit definition)
         """
         for key in hillas.keys():
-            self[key] = hillas[key]
+            if key in self.keys():
+                self[key] = hillas[key]
 
     def fill_mc(self, event, tel_pos):
         """

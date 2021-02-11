@@ -491,14 +491,14 @@ def r0_to_dl1(
                     if tag_pix_thr(image):
 
                         # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
+                        numsamples = event.r1.tel[telescope_id].waveform.shape[1]  # not necessarily the same as in r0!
                         bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                         bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
                         # Now set to 0 all samples in unreliable pixels. Important for global peak
                         # integrator in case of crazy pixels!  TBD: can this be done in a simpler
                         # way?
-                        bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
-                                                  np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+                        bad_pixels = bad_pixels_hg | bad_pixels_lg
+                        bad_waveform = np.transpose(np.array(numsamples*[bad_pixels]))
 
                         # print('hg bad pixels:',np.where(bad_pixels_hg))
                         # print('lg bad pixels:',np.where(bad_pixels_lg))
@@ -530,19 +530,27 @@ def r0_to_dl1(
                             #                      mirror_area, True, './')
                             #           (test) plot muon rings as png files
 
-                            # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                            bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
-                            stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+                            # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:
+                            bright_pixels = image > min_pe_for_muon_t_calc
+                            selected_gain = event.r1.tel[telescope_id].selected_gain_channel
+                            mask_hg = bright_pixels & (selected_gain == 0)
+                            mask_lg = bright_pixels & (selected_gain == 1)
+
+                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[mask_hg, :]
+                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[mask_lg, :]
+                            stacked_waveforms_hg = np.sum(bright_pixels_waveforms_hg, axis=0)
+                            stacked_waveforms_lg = np.sum(bright_pixels_waveforms_lg, axis=0)
+
                             # stacked waveforms from all bright pixels; shape (ngains, nsamples)
-                            hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
-                            lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+                            hg_peak_sample = np.argmax(stacked_waveforms_hg, axis=-1)
+                            lg_peak_sample = np.argmax(stacked_waveforms_lg, axis=-1)
 
                         if good_ring:
                             fill_muon_event(-1,
                                             muon_parameters,
                                             good_ring,
                                             event.index.event_id,
-                                            dragon_time,
+                                            dl1_container.dragon_time,
                                             muonintensityparam,
                                             dist_mask,
                                             muonringparam,
