@@ -148,7 +148,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         Read the correction from hdf5 calibration file
         """
 
-        self.mon_data.tels_with_data = self.allowed_tels
         self.log.info(f"read {self.calibration_path}")
 
         try:

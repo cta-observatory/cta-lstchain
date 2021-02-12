@@ -139,7 +139,7 @@ class LSTR0Corrections(CameraR0Calibrator):
         self._load_calib()
 
     def calibrate(self, event):
-        for tel_id in event.r0.tels_with_data:
+        for tel_id in event.r0.tel.keys():
             self.subtract_pedestal(event, tel_id)
             self.time_lapse_corr(event, tel_id)
             self.interpolate_spikes(event, tel_id)
@@ -604,7 +604,7 @@ class NullR0Calibrator(CameraR0Calibrator):
                       "the R0 level, then r1 samples will equal r0 samples")
 
     def calibrate(self, event):
-        for tel_id in event.r0.tels_with_data:
+        for tel_id in event.r0.tel.keys():
             event.r1.tel[tel_id].trigger_type = event.r0.tel[tel_id].trigger_type
             event.r1.tel[tel_id].trigger_time = event.r0.tel[tel_id].trigger_time
             samples = event.r0.tel[tel_id].waveform[:, :, self.r1_sample_start:self.r1_sample_end]

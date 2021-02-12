@@ -63,11 +63,11 @@ def read_simu_info_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
     """
 
     with HDF5TableReader(filename) as reader:
-        mcheader = reader.read('/simulation/run_config', MCHeaderContainer())
+        mcheader = reader.read('/simulation/run_config', SimulationConfigContainer())
         mc = next(mcheader)
 
     return mc
@@ -86,7 +86,7 @@ def read_simu_info_merged_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
 
     """
     with open_file(filename) as file:
@@ -735,8 +735,8 @@ def check_mcheader(mcheader1, mcheader2):
 
     Parameters
     ----------
-    mcheader1: `ctapipe.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.SimulationConfigContainer`
+    mcheader2: `ctapipe.containers.SimulationConfigContainer`
 
     Returns
     -------
