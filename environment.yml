@@ -14,6 +14,7 @@ dependencies:
   - notebook
   - joblib
   - toml
+  - iminuit=1.5
   - pip:
       - pytest_runner
       - pytest-ordering
