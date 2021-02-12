@@ -298,7 +298,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    source: `ctapipe.io.EventSource`
     output_filename: str
     obs_id: float, int, str or None
     """
@@ -346,7 +346,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.DataContainer`
+    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -868,7 +868,7 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:

@@ -654,7 +654,7 @@ def rescale_dl1_charge(event, scaling_factor):
 
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     scaling_factor: float
     """
 

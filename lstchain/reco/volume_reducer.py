@@ -58,7 +58,7 @@ def apply_volume_reduction(event, subarray, config):
 
     Parameters
     ----------
-    event: 'ctapipe.containers.DataContainer'
+    event: 'ctapipe.containers.ArrayEventContainer'
     config: dict
         Read the parameters of the volume reduction method specified in the config file.
 

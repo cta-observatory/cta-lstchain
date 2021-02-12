@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-from ctapipe.io import event_source
+from ctapipe.io import EventSource
 from ctapipe.utils import get_dataset_path
 from ctapipe.calib import CameraCalibrator
 from ctapipe.image.cleaning import tailcuts_clean
@@ -20,7 +20,7 @@ def test_get_volume_reduction_method():
 
 
 def test_check_and_apply_volume_reduction():
-    source = event_source(get_dataset_path('gamma_test.simtel.gz'))
+    source = EventSource(get_dataset_path('gamma_test.simtel.gz'))
     ev = next(iter(source))
     cal = CameraCalibrator(subarray=source.subarray)
     config = get_standard_config()
@@ -36,7 +36,7 @@ def test_check_and_apply_volume_reduction():
 
 
 def test_zero_suppression_tailcut_dilation():
-    source = event_source(get_dataset_path('gamma_test.simtel.gz'))
+    source = EventSource(get_dataset_path('gamma_test.simtel.gz'))
     for i, event in enumerate(source):
         for tel_id in list(event.r0.tels_with_data):
             if tel_id <= 4:

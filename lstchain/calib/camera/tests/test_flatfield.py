@@ -1,7 +1,7 @@
 import numpy as np
 import astropy.units as u
 from ctapipe.calib.camera.flatfield import *
-from ctapipe.containers import EventAndMonDataContainer
+from ctapipe.containers import ArrayEventContainer
 from traitlets.config.loader import Config
 from ctapipe.instrument import SubarrayDescription, TelescopeDescription
 
@@ -36,7 +36,7 @@ def test_flasherflatfieldcalculator():
                                                sample_size=n_events,
                                                tel_id=tel_id, config=config)
     # create one event
-    data = EventAndMonDataContainer()
+    data = ArrayEventContainer()
     data.meta['origin'] = 'test'
 
     # initialize mon and r1 data
