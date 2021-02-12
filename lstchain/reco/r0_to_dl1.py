@@ -175,10 +175,10 @@ def r0_to_dl1(
     calibration_path=None,
     time_calibration_path=None,
     pointing_file_path=None,
-    ucts_t0_dragon=math.nan,
-    dragon_counter0=math.nan,
-    ucts_t0_tib=math.nan,
-    tib_counter0=math.nan
+    ucts_t0_dragon=None,
+    dragon_counter0=None,
+    ucts_t0_tib=None,
+    tib_counter0=None,
 ):
     """
     Chain r0 to dl1
@@ -220,14 +220,14 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-    source_config={
+    source_config = {
         "LSTEventSource": {
             "allowed_tels": [1],
             "EventTimeCalculator": {
-                "ucts_t0_dragon": int(ucts_t0_dragon),
-                "dragon_counter0": int(dragon_counter0),
-                "ucts_t0_tib": int(ucts_t0_tib),
-                "tib_counter0": int(tib_counter0)
+                "ucts_t0_dragon": ucts_t0_dragon,
+                "dragon_counter0": dragon_counter0,
+                "ucts_t0_tib": ucts_t0_tib,
+                "tib_counter0": tib_counter0
             },
             "PointingSource":{
                 "drive_report_path": pointing_file_path
