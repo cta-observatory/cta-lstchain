@@ -45,6 +45,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
     config={
         "LSTEventSource": {
             "allowed_tels": [1],
+            "fill_timestamp": False,
             "LSTR0Corrections":{
                 "drs4_pedestal_path": pedestal_file,
             }

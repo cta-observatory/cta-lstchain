@@ -68,9 +68,7 @@ args = parser.parse_args()
 source_config = {
     "LSTEventSource": {
         "max_events":args.max_events,
-        "EventTimeCalculator": {
-            "use_first_event": True,
-        },
+        "fill_timestamp": False,
     }
 }
 def main():
