@@ -7,6 +7,7 @@ env:
   MPLBACKEND: Agg
   PYTEST_ADDOPTS: --color=yes
   CTAPIPE_IO_LST_VERSION: v0.5.3
+  TEST_DATA_USER: lstchain
 
 jobs:
   tests:
@@ -18,9 +19,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          # get full history and tags
+          fetch-depth: 0
 
       # make sure we have version info
-      - run: git fetch --tags
       - run: git describe --tags
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -40,7 +43,6 @@ jobs:
           conda env create -n ci -f environment.yml
           conda activate ci
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
-          pip install pytest-cov
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
             "git+https://github.com/cta-observatory/ctapipe_io_lst@$CTAPIPE_IO_LST_VERSION" \
