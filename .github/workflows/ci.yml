@@ -21,6 +21,7 @@ jobs:
 
       # make sure we have version info
       - run: git fetch --tags
+      - run: git describe --tags
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -45,6 +46,7 @@ jobs:
             "git+https://github.com/cta-observatory/ctapipe_io_lst@$CTAPIPE_IO_LST_VERSION" \
             pytest-cov
 
+          python lstchain/version.py
           pip install .
 
       - name: Download test data
