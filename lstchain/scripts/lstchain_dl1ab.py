@@ -11,17 +11,18 @@ intercept, time_gradient
 
 Usage: 
 
-$> python lstchain_mc_dl1ab.py 
+$> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 
 """
 
 import argparse
+import logging
 from distutils.util import strtobool
 
+import astropy.units as u
 import numpy as np
 import tables
-import astropy.units as u
 from astropy.table import Table
 from ctapipe.containers import HillasParametersContainer
 from ctapipe.image import hillas_parameters
@@ -34,6 +35,9 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.reco.disp import disp
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     description="Recompute DL1b parameters from a DL1a file")
@@ -55,7 +59,7 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--no-image', action='store', 
+parser.add_argument('--no-image', action='store',
                     type=lambda x: bool(strtobool(x)),
                     dest='noimage',
                     help='Boolean. True to remove the images in output file',
@@ -64,16 +68,19 @@ parser.add_argument('--no-image', action='store',
 args = parser.parse_args()
 
 
-
 def main():
     std_config = get_standard_config()
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
 
     if args.config_file is not None:
         config = replace_config(std_config, read_configuration_file(args.config_file))
     else:
         config = std_config
 
-    print(config['tailcut'])
+    log.info(f"Tailcut config used: {config['tailcut']}")
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -94,7 +101,7 @@ def main():
         'time_gradient',
         'n_pixels',
         'wl',
-        'r',
+        'log_intensity'
     ])
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -105,17 +112,22 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
+        dl1_params_input = input.root[dl1_params_lstcam_key].colnames
+        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        if set(dl1_params_input).intersection(disp_params):
+            parameters_to_update.extend(disp_params)
+
         with tables.open_file(args.output_file, mode='a') as output:
-
             params = output.root[dl1_params_lstcam_key].read()
-
             for ii, row in enumerate(image_table):
-                if ii % 10000 == 0:
-                    print(ii)
+
+                dl1_container.reset()
+
                 image = row['image']
                 peak_time = row['peak_time']
 
                 signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
+
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
@@ -141,20 +153,24 @@ def main():
                     length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
                     dl1_container.width = width
                     dl1_container.length = length
-                    dl1_container.r = np.sqrt(dl1_container.x ** 2 + dl1_container.y ** 2)
+                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
-                else:
-                    # for consistency with r0_to_dl1.py:
-                    for key in dl1_container.keys():
-                        dl1_container[key] = \
-                            u.Quantity(0, dl1_container.fields[key].unit)
+                if set(dl1_params_input).intersection(disp_params):
+                    disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
+                        dl1_container['x'].to_value(u.m),
+                        dl1_container['y'].to_value(u.m),
+                        params['src_x'][ii],
+                        params['src_y'][ii]
+                    )
 
-                    dl1_container.width = u.Quantity(np.nan, u.m)
-                    dl1_container.length = u.Quantity(np.nan, u.m)
-                    dl1_container.wl  = u.Quantity(np.nan, u.m)
+                    dl1_container['disp_dx'] = disp_dx
+                    dl1_container['disp_dy'] = disp_dy
+                    dl1_container['disp_norm'] = disp_norm
+                    dl1_container['disp_angle'] = disp_angle
+                    dl1_container['disp_sign'] = disp_sign
 
-            for p in parameters_to_update:
-                params[ii][p] = u.Quantity(dl1_container[p]).value
+                for p in parameters_to_update:
+                    params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
 

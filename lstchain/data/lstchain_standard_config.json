@@ -67,8 +67,7 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage_intensity_width_2",
-    "n_islands"
+    "leakage_intensity_width_2"
   ],
 
   "classification_features": [
@@ -85,7 +84,6 @@
     "r",
     "time_gradient",
     "leakage_intensity_width_2",
-    "n_islands",
     "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"

@@ -450,7 +450,7 @@ def get_source_dependent_parameters(data, config={}):
 
     src_dep_params = pd.DataFrame(index=data.index)
 
-    is_simu = 'mc_type' in data.columns
+    is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
     
     if is_simu:
         if (data['mc_type'] == 0).all():

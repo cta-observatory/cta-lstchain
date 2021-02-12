@@ -44,14 +44,21 @@ jobs:
             "git+https://github.com/cta-observatory/ctapipe_io_lst@$CTAPIPE_IO_LST_VERSION" \
             pytest-cov
 
-          pip install -e .
+          pip install .
+
+      - name: Download test data
+        env:
+          TEST_DATA_USER: ${{ secrets.test_data_user }}
+          TEST_DATA_PASSWORD: ${{ secrets.test_data_password }}
+        run: |
+          ./download_test_data.sh
 
       - name: Tests
         run: |
-          # github actions starts a new shell for each "step", so we need to 
+          # github actions starts a new shell for each "step", so we need to
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest --cov lstchain --cov-report=xml lstchain
+          pytest --cov lstchain --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v1
