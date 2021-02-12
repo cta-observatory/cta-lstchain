@@ -873,10 +873,10 @@ def write_subarray_tables(writer, event, metadata=None):
     """
     if metadata is not None:
         add_global_metadata(event.index, metadata)
-        add_global_metadata(event.mc, metadata)
+        add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
