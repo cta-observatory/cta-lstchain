@@ -233,6 +233,7 @@ def r0_to_dl1(
                 "drive_report_path": pointing_file_path
             },
             "LSTR0Corrections":{
+                "calibrate_ff_ped": False,
                 "drs4_pedestal_path": pedestal_path,
                 "calibration_path": calibration_path,
                 "drs4_time_calibration_path": time_calibration_path,
@@ -383,9 +384,6 @@ def r0_to_dl1(
                 if ( event.trigger.event_type == EventType.FLATFIELD or
                      event.trigger.event_type == EventType.SKY_PEDESTAL ):
 
-                    # drs4 calibrations (reset the r1 waveform for pedestals and FF)
-                    source.r0_r1_calibrator.apply_drs4_corrections(event)
-
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
@@ -396,7 +394,7 @@ def r0_to_dl1(
                                            event.mon.tel[tel_id],
                                            new_ped=new_ped_event, new_ff=new_ff_event)
 
-                    # calibrate and gain select the event for DL1
+                    # calibrate and gain select the event by hand for DL1
                     source.r0_r1_calibrator.calibrate(event)
 
             # create image for all events

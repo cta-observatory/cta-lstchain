@@ -19,14 +19,14 @@ $> python lstchain_data_create_pedestal_file.py
 
 """
 
-
+from traitlets.config import Config
 import argparse
 import numpy as np
 from astropy.io import fits
 
 
 from ctapipe.io import EventSource
-
+from ctapipe_io_lst.calibration import LSTR0Corrections
 from distutils.util import strtobool
 from lstchain.calib.camera.drs4 import DragonPedestal
 
@@ -44,6 +44,7 @@ parser.add_argument("--output-file", '-o', type=str, action='store',
                     dest='output_file',
                     help="Path where script create pedestal file",
                     default=None, required=True)
+
 
 # Optional arguments
 parser.add_argument("--max-events",
@@ -64,11 +65,18 @@ parser.add_argument('--deltaT', '-s',
 
 args = parser.parse_args()
 
-
+source_config = {
+    "LSTEventSource": {
+        "max_events":args.max_events,
+        "EventTimeCalculator": {
+            "use_first_event": True,
+        },
+    }
+}
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
-    reader = EventSource(input_url=args.input_file, max_events=args.max_events)
+    reader = EventSource(input_url=args.input_file, config=Config(source_config))
     print("--> Number of files", reader.multi_file.num_inputs())
 
     if args.deltaT:
