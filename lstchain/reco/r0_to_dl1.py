@@ -223,6 +223,7 @@ def r0_to_dl1(
     source_config={
         "LSTEventSource": {
             "allowed_tels": [1],
+            "calibrate_flatfields_and_pedestals": False,
             "EventTimeCalculator": {
                 "ucts_t0_dragon": int(ucts_t0_dragon),
                 "dragon_counter0": int(dragon_counter0),
@@ -233,7 +234,6 @@ def r0_to_dl1(
                 "drive_report_path": pointing_file_path
             },
             "LSTR0Corrections":{
-                "calibrate_ff_ped": False,
                 "drs4_pedestal_path": pedestal_path,
                 "calibration_path": calibration_path,
                 "drs4_time_calibration_path": time_calibration_path,
