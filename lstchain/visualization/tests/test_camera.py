@@ -27,11 +27,11 @@ def test_overlay_disp_vector():
 
 
 def test_display_dl1_event():
-    from ctapipe.io import event_source, EventSeeker
+    from ctapipe.io import EventSource, EventSeeker
     from lstchain.tests.test_lstchain import mc_gamma_testfile
     from ctapipe.calib import CameraCalibrator
 
-    source = event_source(mc_gamma_testfile, back_seekable=True)
+    source = EventSource(mc_gamma_testfile, back_seekable=True)
     seeker = EventSeeker(source)
     event = seeker[11]  # event 11 has telescopes 1 and 4 with data
     CameraCalibrator(subarray=source.subarray)(event)

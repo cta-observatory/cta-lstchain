@@ -1,6 +1,6 @@
 import numpy as np
 import astropy.units as u
-from ctapipe.containers import EventAndMonDataContainer
+from ctapipe.containers import ArrayEventContainer
 from ctapipe.instrument import SubarrayDescription, TelescopeDescription
 
 
@@ -32,7 +32,7 @@ def test_pedestal_calculator():
                                         tel_id=tel_id,
                                         subarray=subarray)
     # create one event
-    data = EventAndMonDataContainer()
+    data = ArrayEventContainer()
     data.meta['origin'] = 'test'
 
     # fill the values necessary for the pedestal calculation

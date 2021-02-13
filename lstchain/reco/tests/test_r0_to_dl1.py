@@ -1,10 +1,10 @@
-from ctapipe.containers import DataContainer
+from ctapipe.containers import ArrayEventContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import rescale_dl1_charge
 from copy import copy
 
 def test_rescale_dl1_charge():
-    event = DataContainer()
+    event = ArrayEventContainer()
     tel_ids = [1, 3]
     images = {}
     for tel_id in tel_ids:

@@ -121,7 +121,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         Parameters
         ----------
-        event: ArrayDataContainer
+        event: ArrayArrayEventContainer
 
         """
 

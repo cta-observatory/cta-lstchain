@@ -63,11 +63,11 @@ def read_simu_info_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
     """
 
     with HDF5TableReader(filename) as reader:
-        mcheader = reader.read('/simulation/run_config', MCHeaderContainer())
+        mcheader = reader.read('/simulation/run_config', SimulationConfigContainer())
         mc = next(mcheader)
 
     return mc
@@ -86,7 +86,7 @@ def read_simu_info_merged_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
 
     """
     with open_file(filename) as file:
@@ -298,7 +298,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    source: `ctapipe.io.EventSource`
     output_filename: str
     obs_id: float, int, str or None
     """
@@ -346,7 +346,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.DataContainer`
+    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -735,8 +735,8 @@ def check_mcheader(mcheader1, mcheader2):
 
     Parameters
     ----------
-    mcheader1: `ctapipe.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.SimulationConfigContainer`
+    mcheader2: `ctapipe.containers.SimulationConfigContainer`
 
     Returns
     -------
@@ -868,15 +868,15 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
         add_global_metadata(event.index, metadata)
-        add_global_metadata(event.mc, metadata)
+        add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 

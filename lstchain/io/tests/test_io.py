@@ -111,8 +111,8 @@ def test_trigger_type_in_dl1_params():
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_read_subarray_description():
     from lstchain.io.io import read_subarray_description
-    from ctapipe.io import event_source
-    source = event_source(mc_gamma_testfile)
+    from ctapipe.io import EventSource
+    source = EventSource(mc_gamma_testfile)
     dl1_subarray = read_subarray_description(dl1_file)
     dl1_subarray.peek()
     dl1_subarray.info()

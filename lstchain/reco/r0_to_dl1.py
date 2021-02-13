@@ -175,10 +175,10 @@ def r0_to_dl1(
     calibration_path=None,
     time_calibration_path=None,
     pointing_file_path=None,
-    ucts_t0_dragon=math.nan,
-    dragon_counter0=math.nan,
-    ucts_t0_tib=math.nan,
-    tib_counter0=math.nan
+    ucts_t0_dragon=None,
+    dragon_counter0=None,
+    ucts_t0_tib=None,
+    tib_counter0=None,
 ):
     """
     Chain r0 to dl1
@@ -220,15 +220,15 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-    source_config={
+    source_config = {
         "LSTEventSource": {
             "allowed_tels": [1],
             "calibrate_flatfields_and_pedestals": False,
             "EventTimeCalculator": {
-                "ucts_t0_dragon": int(ucts_t0_dragon),
-                "dragon_counter0": int(dragon_counter0),
-                "ucts_t0_tib": int(ucts_t0_tib),
-                "tib_counter0": int(tib_counter0)
+                "ucts_t0_dragon": ucts_t0_dragon,
+                "dragon_counter0": dragon_counter0,
+                "ucts_t0_tib": ucts_t0_tib,
+                "tib_counter0": tib_counter0
             },
             "PointingSource":{
                 "drive_report_path": pointing_file_path
@@ -293,19 +293,15 @@ def r0_to_dl1(
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
 
-    # get the first event to write array info and mc header
-    event_iter = iter(source)
-    first_event = next(event_iter)
-
     # Write extra information to the DL1 file
     write_array_info(subarray, output_filename)
     write_array_info_08(subarray, output_filename)
 
     if is_simu:
         write_mcheader(
-            first_event.mcheader,
+            source.simulation_config,
             output_filename,
-            obs_id=first_event.index.obs_id,
+            obs_id=source.obs_ids[0],
             filters=filters,
             metadata=metadata,
         )
@@ -344,7 +340,7 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
-        for i, event in enumerate(chain([first_event],  event_iter)):
+        for i, event in enumerate(source):
 
             if i % 100 == 0:
                 logger.info(i)
@@ -561,11 +557,11 @@ def r0_to_dl1(
 
                 # writes mc information per telescope, including photo electron image
                 if is_simu \
-                        and (event.mc.tel[telescope_id].true_image > 0).any() \
+                        and (event.simulation.tel[telescope_id].true_image > 0).any() \
                         and config['write_pe_image']:
-                    event.mc.tel[telescope_id].prefix = ''
+                    event.simulation.tel[telescope_id].prefix = ''
                     writer.write(table_name=f'simulation/{tel_name}',
-                                 containers=[event.mc.tel[telescope_id], extra_im]
+                                 containers=[event.simulation.tel[telescope_id], extra_im]
                                  )
 
         if not is_simu:
@@ -654,7 +650,7 @@ def rescale_dl1_charge(event, scaling_factor):
 
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     scaling_factor: float
     """
 
