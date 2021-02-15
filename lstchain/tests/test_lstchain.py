@@ -35,12 +35,6 @@ def test_import_visualization():
 def test_import_lstio():
     from lstchain import io
 
-def test_import_irf():
-    from lstchain import irf
-
-def test_import_tool():
-    from lstchain import tools
-
 @pytest.mark.run(order=1)
 def test_r0_to_dl1():
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
