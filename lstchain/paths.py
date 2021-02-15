@@ -4,11 +4,7 @@ import os
 from pathlib import Path
 
 
-Run = namedtuple('Run', 'tel_id run subrun stream')
-# set the default of stream to None,
-# should be replaced by using the `defaults` argument to namedtuple (new in 3.7)
-# when support for python 3.6 is dropped
-Run.__new__.__defaults__ = (None, )
+Run = namedtuple('Run', 'tel_id run subrun stream', defaults=(None, ))
 R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+).fits.fz')
 
 DL1_RE = re.compile(
