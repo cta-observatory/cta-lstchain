@@ -23,9 +23,7 @@ def test_create_irf(point_like_IRF):
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
     import json
-    from ctapipe.io import HDF5TableWriter
-    from lstchain.io.io import read_simu_info_hdf5
-
+    
     # Selection cuts have to be changed for tests
     if os.path.exists(cuts):
         open(cuts,'r')
