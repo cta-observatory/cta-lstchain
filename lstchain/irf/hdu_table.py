@@ -228,12 +228,11 @@ def create_event_list(data, run_number, source_name):
     """
 
     # Timing parameters
-    # lam = 2800 # Average rate of triggered events, taken by hand for now
     t_start = data["dragon_time"].value[0]
     t_stop = data["dragon_time"].value[-1]
     time = Time(data["dragon_time"], format="unix", scale="utc")
     date_obs = time[0].to_value("iso", "date")
-    obs_time = t_stop - t_start  # All corrections excluded
+    obs_time = t_stop - t_start
     # using method from PR#566
     deltaT = np.diff(data["dragon_time"].value)
     deltaT = deltaT[(deltaT > 0) & (deltaT < 0.002)]

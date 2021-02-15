@@ -105,11 +105,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
 
-        # Get the run_id from the filename if it is -1 in the obs_id column
-        if self.data["obs_id"][0] <= 0:
-            self.run_number = run_info_from_filename(self.input_dl2)[1]
-        else:
-            self.run_number = self.data["obs_id"][0]
+        self.run_number = run_info_from_filename(self.input_dl2)[1]
 
     def start(self):
         self.data["reco_source_fov_offset"] = calculate_source_fov_offset(

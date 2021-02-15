@@ -8,13 +8,10 @@ from ctapipe.core import run_tool
 from lstchain.tests.test_lstchain import test_dir
 from lstchain.scripts.tests.test_lstchain_scripts import dl2_file
 
-# Create a separate temp folder to store these files?
-dl2_file_pnt_like = os.path.join(test_dir, 'dl2_gamma_test_point_like.h5')
-dl2_file_new = os.path.join(test_dir, 'dl2_gamma_test_large_new.h5')
-merged_dl2_file = os.path.join(test_dir, 'script_merged_dl2.h5')
+dl2_file_new = os.path.join(test_dir, 'dl2_LST-1.Run00_gamma_test_large_new.h5')
 cuts = os.path.join(test_dir, 'cuts.json')
 irf_file = os.path.join(test_dir, 'irf.fits.gz')
-dl3_file = os.path.join(test_dir, 'dl3_gamma_test_large_new.fits')
+dl3_file = os.path.join(test_dir, 'dl3_LST-1.Run00_gamma_test_large_new.fits')
 dl3_hdu_index = os.path.join(test_dir, 'hdu-index.fits.gz')
 dl3_obs_index = os.path.join(test_dir, 'obs-index.fits.gz')
 
@@ -26,6 +23,8 @@ def test_create_irf(point_like_IRF):
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
     import json
+    from ctapipe.io import HDF5TableWriter
+    from lstchain.io.io import read_simu_info_hdf5
 
     # Selection cuts have to be changed for tests
     if os.path.exists(cuts):
@@ -41,6 +40,8 @@ def test_create_irf(point_like_IRF):
               IRFFITSWriter(),
               argv=[
                   f"--input_gamma_dl2={dl2_file}",
+                  f"--input_proton_dl2={dl2_file}",
+                  f"--input_electron_dl2={dl2_file}",
                   f"--output_irf_file={irf_file}",
                   f"--point_like={point_like_IRF}",
                   f"--config_file={cuts}",
