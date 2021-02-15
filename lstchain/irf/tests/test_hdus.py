@@ -18,11 +18,12 @@ dl3_obs_index = os.path.join(test_dir, 'obs-index.fits.gz')
 def test_create_event_list():
     from lstchain.irf.hdu_table import create_event_list
     from lstchain.io.tests.test_io import dl2_test_file
+    import numpy as np
 
     dl2 = pd.read_hdf(dl2_test_file, key = dl2_params_lstcam_key)
     # Adding some necessary columns for reading it as real data file
     dl2['tel_id'] = dl2['tel_id'].min()
-    dl2['dragon_time'] = dl2["obs_id"]
+    dl2['dragon_time'] = dl2['tel_id']+np.arange(0,len(dl2['tel_id'])*1e-5, 1e-5)
     dl2['alt_tel'] = dl2["mc_alt_tel"]
     dl2['az_tel'] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
