@@ -23,30 +23,36 @@ from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescript
 from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
 
-__all__ = ['read_simu_info_hdf5',
-           'read_simu_info_merged_hdf5',
-           'get_dataset_keys',
-           'write_simtel_energy_histogram',
-           'write_mcheader',
-           'write_array_info',
-           'check_thrown_events_histogram',
-           'check_mcheader',
-           'check_metadata',
-           'read_metadata',
-           'auto_merge_h5files',
-           'smart_merge_h5files',
-           'global_metadata',
-           'add_global_metadata',
-           'write_subarray_tables',
-           'write_metadata',
-           'write_dataframe',
-           'write_dl2_dataframe',
-           'write_calibration_data',
-           'read_dl2_to_pyirf',
-           'read_dl2_params',
-           'extract_observation_time',
-           'merge_dl2_runs'
-           ]
+import logging
+
+log = logging.getLogger(__name__)
+
+
+__all__ = [
+    'read_simu_info_hdf5',
+    'read_simu_info_merged_hdf5',
+    'get_dataset_keys',
+    'write_simtel_energy_histogram',
+    'write_mcheader',
+    'write_array_info',
+    'check_thrown_events_histogram',
+    'check_mcheader',
+    'check_metadata',
+    'read_metadata',
+    'auto_merge_h5files',
+    'smart_merge_h5files',
+    'global_metadata',
+    'add_global_metadata',
+    'write_subarray_tables',
+    'write_metadata',
+    'write_dataframe',
+    'write_dl2_dataframe',
+    'write_calibration_data',
+    'read_dl2_to_pyirf',
+    'read_dl2_params',
+    'extract_observation_time',
+    'merge_dl2_runs'
+]
 
 
 
@@ -67,8 +73,8 @@ def read_simu_info_hdf5(filename):
     """
 
     with HDF5TableReader(filename) as reader:
-        mcheader = reader.read('/simulation/run_config', SimulationConfigContainer())
-        mc = next(mcheader)
+        mc_reader = reader.read('/simulation/run_config', SimulationConfigContainer())
+        mc = next(mc_reader)
 
     return mc
 
@@ -92,10 +98,9 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root['simulation/run_config']
         colnames = simu_info.colnames
-        not_to_check = ['num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id']
-        for k in colnames:
-            if k not in not_to_check:
-                assert np.all(simu_info[:][k] == simu_info[0][k])
+        skip = {'num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id'}
+        for k in filter(lambda k: k not in skip, colnames):
+            assert np.all(simu_info[:][k] == simu_info[0][k])
         num_showers = simu_info[:]['num_showers'].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
@@ -265,8 +270,8 @@ def merging_check(file_list):
             for ii, table in read_array_info(filename).items():
                 assert (table == array_info0[ii]).all()
         except:
+            log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
             mergeable_list.remove(filename)
-            print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
 
     return mergeable_list
 
@@ -752,11 +757,9 @@ def check_mcheader(mcheader1, mcheader2):
         if k in keys:
             keys.remove(k)
 
-    keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
         assert mcheader1[k] == mcheader2[k]
-    assert (mcheader1['run_array_direction'] == mcheader2['run_array_direction']).all()
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):

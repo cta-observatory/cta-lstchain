@@ -73,7 +73,9 @@ def test_write_dl2_dataframe():
 def test_merging_check():
     from lstchain.io.io import merging_check
     # the same file should be mergeable with itself
-    [dl1_file, dl1_file] == merging_check([dl1_file, dl1_file])
+
+    assert merging_check([dl1_file, dl1_file]) == [dl1_file, dl1_file]
+
 
 
 @pytest.mark.run(after='test_r0_to_dl1')
