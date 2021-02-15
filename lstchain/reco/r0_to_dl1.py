@@ -221,14 +221,18 @@ def r0_to_dl1(
     custom_calibration = config["custom_calibration"]
 
     source_config = {
+        "EventSource": {
+            "allowed_tels": config["allowed_tels"],
+            "max_events": config["max_events"],
+        },
         "LSTEventSource": {
             "allowed_tels": [1],
             "calibrate_flatfields_and_pedestals": False,
             "EventTimeCalculator": {
-                "ucts_t0_dragon": int(ucts_t0_dragon),
-                "dragon_counter0": int(dragon_counter0),
-                "ucts_t0_tib": int(ucts_t0_tib),
-                "tib_counter0": int(tib_counter0)
+                "ucts_t0_dragon": ucts_t0_dragon,
+                "dragon_counter0": dragon_counter0,
+                "ucts_t0_tib": ucts_t0_tib,
+                "tib_counter0": tib_counter0
             },
             "PointingSource":{
                 "drive_report_path": pointing_file_path
@@ -243,14 +247,8 @@ def r0_to_dl1(
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
     source = EventSource(input_url=input_filename, config=Config(source_config))
-
     subarray = source.subarray
-
     is_simu = source.is_simulation
-
-    source.allowed_tels = config["allowed_tels"]
-    if config["max_events"] is not None:
-        source.max_events = config["max_events"]
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
@@ -264,12 +262,15 @@ def r0_to_dl1(
     # Dictionary to store muon ring parameters
     muon_parameters = create_muon_table()
 
+    # all this will be cleaned up in a next PR related to the configuration files
+    r1_dl1_calibrator = CameraCalibrator(
+        image_extractor_type=config['image_extractor'],
+        config=Config(config),
+        subarray=subarray
+    )
+
+
     if not is_simu:
-
-        # all this will be cleaned up in a next PR related to the configuration files
-
-        r1_dl1_calibrator = CameraCalibrator(image_extractor_type = config['image_extractor'],
-                                             config=Config(config),subarray = subarray)
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
@@ -404,7 +405,7 @@ def r0_to_dl1(
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
 
-            for ii, telescope_id in enumerate(event.trigger.tels_with_trigger):
+            for ii, telescope_id in enumerate(event.dl1.tel.keys()):
 
                 dl1_container.reset()
 
@@ -428,13 +429,17 @@ def r0_to_dl1(
                 if is_simu:
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
+                assert event.dl1.tel[telescope_id].image is not None
+
                 try:
-                    get_dl1(event,
-                            subarray,
-                            telescope_id,
-                            dl1_container=dl1_container,
-                            custom_config=config,
-                            use_main_island=True)
+                    get_dl1(
+                        event,
+                        subarray,
+                        telescope_id,
+                        dl1_container=dl1_container,
+                        custom_config=config,
+                        use_main_island=True,
+                    )
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -556,13 +561,17 @@ def r0_to_dl1(
                                             hg_peak_sample, lg_peak_sample)
 
                 # writes mc information per telescope, including photo electron image
-                if is_simu \
-                        and (event.simulation.tel[telescope_id].true_image > 0).any() \
-                        and config['write_pe_image']:
+                if (
+                    is_simu
+                    and config['write_pe_image']
+                    and event.simulation.tel[telescope_id].true_image is not None
+                    and event.simulation.tel[telescope_id].true_image.any()
+                ):
                     event.simulation.tel[telescope_id].prefix = ''
-                    writer.write(table_name=f'simulation/{tel_name}',
-                                 containers=[event.simulation.tel[telescope_id], extra_im]
-                                 )
+                    writer.write(
+                        table_name=f'simulation/{tel_name}',
+                        containers=[event.simulation.tel[telescope_id], extra_im]
+                    )
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics

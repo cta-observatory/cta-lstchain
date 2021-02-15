@@ -40,7 +40,6 @@ def test_pedestal_calculator():
         (n_gain, n_pixels), dtype=bool
     )
     data.r1.tel[tel_id].waveform = np.full((2, n_pixels, 40), ped_level)
-    data.r1.tel[tel_id].trigger_time = 1000
 
     while ped_calculator.num_events_seen < n_events:
         if ped_calculator.calculate_pedestals(data):

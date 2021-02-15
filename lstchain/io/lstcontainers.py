@@ -137,21 +137,22 @@ class DL1ParametersContainer(Container):
         """
         fill from mc
         """
+        shower = event.simulation.shower
         try:
-            self.mc_energy = event.simulation.energy
+            self.mc_energy = shower.energy
             self.log_mc_energy = np.log10(self.mc_energy.to_value(u.TeV))
-            self.mc_alt = event.simulation.alt
-            self.mc_az = event.simulation.az
-            self.mc_core_x = event.simulation.core_x
-            self.mc_core_y = event.simulation.core_y
-            self.mc_h_first_int = event.simulation.h_first_int
-            self.mc_x_max = event.simulation.x_max
+            self.mc_alt = shower.alt
+            self.mc_az = shower.az
+            self.mc_core_x = shower.core_x
+            self.mc_core_y = shower.core_y
+            self.mc_h_first_int = shower.h_first_int
+            self.mc_x_max = shower.x_max
             self.mc_alt_tel = event.pointing.array_altitude
             self.mc_az_tel = event.pointing.array_azimuth
-            self.mc_type = event.simulation.shower_primary_id
+            self.mc_type = shower.shower_primary_id
             distance = np.sqrt(
-                (event.simulation.core_x - tel_pos[0]) ** 2 +
-                (event.simulation.core_y - tel_pos[1]) ** 2
+                (shower.core_x - tel_pos[0]) ** 2 +
+                (shower.core_y - tel_pos[1]) ** 2
             )
             if np.isfinite(distance):
                 self.mc_core_distance = distance
