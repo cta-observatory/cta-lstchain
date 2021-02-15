@@ -186,7 +186,7 @@ def create_obs_hdu_index(
     hdu_index_header["HDUCLAS1"] = "INDEX"
     hdu_index_header["HDUCLAS2"] = "HDU"
     hdu_index_header["TELESCOP"] = "CTA"
-    hdu_index_header["INSTRUME"] = f"LST-{t_obs["TELLIST"][0]}"
+    hdu_index_header["INSTRUME"] = f"LST-{t_obs['TELLIST'][0]}"
 
     hdu_index = fits.BinTableHDU(
         hdu_index_table, header=hdu_index_header, name="HDU INDEX"
