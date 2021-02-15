@@ -38,7 +38,7 @@ optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", 
 
 
 args = parser.parse_args()
-run = '%05d'%args.run_number
+run = args.run_number
 ped_run = '%05d'%args.pedestal_run
 print(ped_run)
 prod_id = 'v%02d'%args.version
