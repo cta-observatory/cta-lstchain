@@ -38,8 +38,9 @@ optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", 
 
 
 args = parser.parse_args()
-run = args.run_number
-ped_run = args.pedestal_run
+run = '%05d'%args.run_number
+ped_run = '%05d'%args.pedestal_run
+print(ped_run)
 prod_id = 'v%02d'%args.version
 stat_events = args.statistics
 base_dir = args.base_dir
@@ -77,6 +78,7 @@ def main():
             exit(0)
 
         # search the pedestal calibration file
+
         pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run}.0000.fits"
         if not os.path.exists(pedestal_file):
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
