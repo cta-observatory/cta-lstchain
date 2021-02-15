@@ -225,10 +225,10 @@ def r0_to_dl1(
             "allowed_tels": [1],
             "calibrate_flatfields_and_pedestals": False,
             "EventTimeCalculator": {
-                "ucts_t0_dragon": int(ucts_t0_dragon),
-                "dragon_counter0": int(dragon_counter0),
-                "ucts_t0_tib": int(ucts_t0_tib),
-                "tib_counter0": int(tib_counter0)
+                "ucts_t0_dragon": ucts_t0_dragon,
+                "dragon_counter0": dragon_counter0,
+                "ucts_t0_tib": ucts_t0_tib,
+                "tib_counter0": tib_counter0
             },
             "PointingSource":{
                 "drive_report_path": pointing_file_path
