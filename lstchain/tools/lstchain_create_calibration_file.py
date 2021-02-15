@@ -51,8 +51,6 @@ class CalibrationHDF5Writer(Tool):
     aliases = Dict(dict(
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
-        min_flatfield_adc='EventSource.min_flatfield_adc',
-        max_flatfield_adc='EventSource.max_flatfield_adc',
         output_file='CalibrationHDF5Writer.output_file',
         calibration_product='CalibrationHDF5Writer.calibration_product',
 
