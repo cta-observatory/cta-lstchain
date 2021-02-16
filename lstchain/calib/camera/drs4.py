@@ -42,6 +42,7 @@ class DragonPedestal(Component):
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.first_cap_array = np.zeros((self.n_module, n_gain, n_channel))
+        self.failing_pixels_list = None
 
     def fill_pedestal_event(self, event):
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
@@ -84,10 +85,13 @@ class DragonPedestal(Component):
 
     def finalize_pedestal(self):
         if np.sum(self.numped==0) > 0:
-            raise RuntimeError("Not enough events to coverage all capacitor. "
-                               "Please use more events to create pedestal file.")
+            self.failing_pixels_list = np.unique(np.where(self.numped == 0)[1])
+            print("Failing pixels:")
+            print(self.failing_pixels_list)
+            self.meanped = self.meanped / self.numped
         else:
             self.meanped = self.meanped / self.numped
+            print("Everything is OK")
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 7))

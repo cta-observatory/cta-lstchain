@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-""" 
-Script to create pedestal file for low level calibration. 
+"""
+Script to create pedestal file for low level calibration.
 
 To set start sample in waveform --start_r0_waveform i (default i = 11)
 not to use deltaT correction add --deltaT False
@@ -12,9 +12,9 @@ not to use deltaT correction add --deltaT False
 
 Usage:
 
-$> python lstchain_data_create_pedestal_file.py 
---input-file LST-1.1.Run00097.0000.fits.fz 
---output_file drs4_pedestalRun2028.0000.fits 
+$> python lstchain_data_create_pedestal_file.py
+--input-file LST-1.1.Run00097.0000.fits.fz
+--output_file drs4_pedestalRun2028.0000.fits
 --max_events 9000
 
 """
@@ -106,13 +106,12 @@ def main():
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-    primaryhdu = fits.PrimaryHDU(ev.lst.tel[tel_id].svc.pixel_ids)
-    secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
-
-    hdulist = fits.HDUList([primaryhdu, secondhdu])
+    expected_pixel_id = fits.PrimaryHDU(ev.lst.tel[tel_id].svc.pixel_ids)
+    pedestal_mean_array = fits.ImageHDU(np.int16(pedestal.meanped))
+    failing_pixels = fits.ImageHDU(pedestal.failing_pixels_list)
+    hdulist = fits.HDUList([expected_pixel_id, pedestal_mean_array, failing_pixels])
     hdulist.writeto(args.output_file)
 
 
 if __name__ == '__main__':
     main()
-
