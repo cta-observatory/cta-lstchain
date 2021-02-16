@@ -96,7 +96,9 @@
   "mc_image_scaling_factor": 1,
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
-
+  "CameraCalibrator": {
+    "apply_waveform_time_shift": false
+  },
   "time_sampling_correction_path": "default",
   "LocalPeakWindowSum":{
      "window_shift": 4,
