@@ -23,7 +23,6 @@ def test_create_irf(point_like_IRF):
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
     import json
-    
     # Selection cuts have to be changed for tests
     if os.path.exists(cuts):
         open(cuts,'r')
