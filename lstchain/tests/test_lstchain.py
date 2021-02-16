@@ -51,7 +51,7 @@ def test_r0_to_dl1():
 
 
 @pytest.mark.private_data
-def test_r0_to_dl1(tmp_path):
+def test_r0_to_dl1_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
     r0_to_dl1(
