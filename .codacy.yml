@@ -6,6 +6,4 @@ engines:
  pyflakes:
    disable:
      - F999
- bandit:
-   skips: ['B101']
 
