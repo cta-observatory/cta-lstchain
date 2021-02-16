@@ -347,8 +347,9 @@ def r0_to_dl1(
                 logger.info(i)
 
             event.dl0.prefix = ''
-            event.simulation.prefix = 'mc'
             event.trigger.prefix = ''
+            if event.simulation is not None:
+                event.simulation.prefix = 'mc'
 
             dl1_container.reset()
 

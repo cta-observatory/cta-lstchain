@@ -22,7 +22,13 @@ fake_dl1_proton_file = os.path.join(test_dir, 'dl1_fake_proton.simtel.h5')
 file_model_energy = os.path.join(test_dir, 'reg_energy.sav')
 file_model_disp = os.path.join(test_dir, 'reg_disp_vector.sav')
 file_model_gh_sep = os.path.join(test_dir, 'cls_gh.sav')
-r0_file = Path('test_data/real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz')
+
+test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
+test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
+test_calib_path = test_data / 'real/calibration/20200218/v05/calibration.Run2006.0000.hdf5'
+test_drs4_pedestal_path = test_data / 'real/calibration/20200218/v05/drs4_pedestal.Run2005.0000.fits'
+test_time_calib_path = test_data / 'real/calibration/20200218/v05/time_calibration.Run2006.0000.hdf5'
+test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
 
 
 def test_import_calib():
@@ -45,8 +51,27 @@ def test_r0_to_dl1():
 
 
 @pytest.mark.private_data
+def test_r0_to_dl1(tmp_path):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+
+    r0_to_dl1(
+        test_r0_path,
+        output_filename=tmp_path / ('dl1_' + test_r0_path.stem + '.h5'),
+        custom_config=standard_config,
+        pedestal_path=test_drs4_pedestal_path,
+        calibration_path=test_calib_path,
+        time_calibration_path=test_time_calib_path,
+        pointing_file_path=test_drive_report,
+        ucts_t0_dragon=None,
+        dragon_counter0=None,
+        ucts_t0_tib=None,
+        tib_counter0=None,
+    )
+
+
+@pytest.mark.private_data
 def test_r0_available():
-    assert r0_file.is_file()
+    assert test_r0_path.is_file()
 
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1():
