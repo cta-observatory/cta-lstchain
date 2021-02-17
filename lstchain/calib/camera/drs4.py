@@ -84,13 +84,13 @@ class DragonPedestal(Component):
                             numped[gain, pixel, posads] += 1
 
     def finalize_pedestal(self):
-        if np.sum(self.numped==0) > 0:
-            self.failing_pixels_list = np.unique(np.where(self.numped == 0)[1])
+        self.meanped = self.meanped / self.numped
+        pixels_with_nan_value = np.unique(np.where(np.isnan(self.meanped) == True)[1])
+        if len(pixels_with_nan_value) > 0:
+            self.failing_pixels_list = pixels_with_nan_value
             print("Failing pixels:")
             print(self.failing_pixels_list)
-            self.meanped = self.meanped / self.numped
         else:
-            self.meanped = self.meanped / self.numped
             print("Everything is OK")
 
     def get_first_capacitor(self, event, nr):
