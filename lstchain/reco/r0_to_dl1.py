@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 import tables
 from astropy.table import Table
-from astropy.time import Time
 from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
@@ -450,12 +449,10 @@ def r0_to_dl1(
 
                 if not is_simu:
                     dl1_container.ucts_time = 0
-                    # Assumes R1 event source filled the "dragon" timestamp
-                    # as MJD; we convert back to unix timestamp:
-                    dl1_container.dragon_time = Time(event.trigger.time,
-                                                     format='mjd',
-                                                     scale='tai').to_value('unix')
-
+                    # convert Time to unix timestamp in (UTC) to keep compatibility
+                    # with older lstchain
+                    # FIXME: just keep it as time, table writer and reader handle it
+                    dl1_container.dragon_time = event.trigger.time.unix
                     dl1_container.tib_time = 0
 
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
