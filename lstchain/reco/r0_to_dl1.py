@@ -461,7 +461,7 @@ def r0_to_dl1(
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
 
 
-                dl1_container.trigger_time = event.trigger.time
+                dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.trigger_type = event.trigger.event_type
 
                 # FIXME: no need to read telescope characteristics like foclen for every event!
