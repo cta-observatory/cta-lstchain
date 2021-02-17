@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import pkg_resources
 import pytest
+from astropy import units as u
+from astropy.time import Time
 
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key
 from lstchain.io.io import dl1_params_src_dep_lstcam_key
@@ -77,6 +79,12 @@ def test_lstchain_mc_r0_to_dl1():
 
 @pytest.mark.private_data
 def test_lstchain_data_r0_to_dl1():
+    """
+    Test the production of dl1 file from real observed data.
+    The intial timestamps and counters used here are extracted
+    from the night summary file. In this case these values
+    correspond to the third event.
+    """
     run_program(
         "lstchain_data_r0_to_dl1",
         "-f",
@@ -109,6 +117,11 @@ def test_lstchain_data_r0_to_dl1():
 @pytest.mark.private_data
 def test_dl1_realdata_validity():
     dl1_df = pd.read_hdf(real_data_dl1_file, key=dl1_params_lstcam_key)
+    # The first valid timestamp in the test run corresponds
+    # to its third event (see night summary)
+    first_timestamp_nightsummary = 1582059789516351903  # ns
+    first_event_timestamp = dl1_df["dragon_time"].iloc[2]  # third event
+
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
     assert "trigger_type" in dl1_df.columns
@@ -117,6 +130,11 @@ def test_dl1_realdata_validity():
     assert "dragon_time" in dl1_df.columns
     assert "tib_time" in dl1_df.columns
     assert "ucts_time" in dl1_df.columns
+
+    assert np.isclose(
+        (Time(first_event_timestamp, format='unix') -
+         Time(first_timestamp_nightsummary / 1e9, format='unix_tai')
+         ).to_value(u.s), 0)
 
 
 @pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
