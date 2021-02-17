@@ -73,20 +73,17 @@ def create_obs_hdu_index(
         # The column names for the table follows the scheme as shown in
         # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
         # Event list
-        t_events = Table(
-            {
-                "OBS_ID": [event_table.meta["OBS_ID"]],
-                "HDU_TYPE": ["events"],
-                "HDU_CLASS": ["events"],
-                "HDU_CLASS2": [""],
-                "HDU_CLASS3": [""],
-                "HDU_CLASS4": [""],
-                "FILE_DIR": [""],
-                "FILE_NAME": [file],
-                "HDU_NAME": ["events"],
-            },
-            dtype=(">i8", "S6", "S10", "S20", "S20", "S20", "S70", "S54", "S20"),
-        )
+        t_events = {
+                "OBS_ID": event_table.meta["OBS_ID"],
+                "HDU_TYPE": "events",
+                "HDU_CLASS": "events",
+                "HDU_CLASS2": "",
+                "HDU_CLASS3": "",
+                "HDU_CLASS4": "",
+                "FILE_DIR": "",
+                "FILE_NAME": file,
+                "HDU_NAME": "EVENTS",
+            }
         hdu_index_tables.append(t_events)
 
         # GTI
@@ -94,16 +91,16 @@ def create_obs_hdu_index(
 
         t_gti["HDU_TYPE"] = "gti"
         t_gti["HDU_CLASS"] = "gti"
-        t_gti["HDU_NAME"] = "gti"
+        t_gti["HDU_NAME"] = "GTI"
 
         hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
 
-        t_pnt["HDU_TYPE"] = ["pointing"]
-        t_pnt["HDU_CLASS"] = ["pointing"]
-        t_pnt["HDU_NAME"] = ["pointing"]
+        t_pnt["HDU_TYPE"] = "pointing"
+        t_pnt["HDU_CLASS"] = "pointing"
+        t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
 
@@ -112,12 +109,12 @@ def create_obs_hdu_index(
             edisp = Table.read(filepath, hdu="ENERGY DISPERSION")
             t_edisp = t_events.copy()
 
-            t_edisp["HDU_TYPE"] = ["edisp"]
-            t_edisp["HDU_CLASS"] = ["edisp_2d"]
-            t_edisp["HDU_CLASS2"] = ["EDISP"]
-            t_edisp["HDU_CLASS3"] = [edisp.meta["HDUCLAS3"]]
-            t_edisp["HDU_CLASS4"] = ["EDISP_2D"]
-            t_edisp["HDU_NAME"] = ["ENERGY DISPERSION"]
+            t_edisp["HDU_TYPE"] = "edisp"
+            t_edisp["HDU_CLASS"] = "edisp_2d"
+            t_edisp["HDU_CLASS2"] = "EDISP"
+            t_edisp["HDU_CLASS3"] = edisp.meta["HDUCLAS3"]
+            t_edisp["HDU_CLASS4"] = "EDISP_2D"
+            t_edisp["HDU_NAME"] = "ENERGY DISPERSION"
 
             hdu_index_tables.append(t_edisp)
         except KeyError as err:
@@ -127,11 +124,11 @@ def create_obs_hdu_index(
         try:
             Table.read(filepath, hdu="EFFECTIVE AREA")
             t_aeff = t_edisp.copy()
-            t_aeff["HDU_TYPE"] = ["aeff"]
-            t_aeff["HDU_CLASS"] = ["aeff_2d"]
-            t_aeff["HDU_CLASS2"] = ["AEFF"]
-            t_aeff["HDU_CLASS4"] = ["AEFF_2D"]
-            t_aeff["HDU_NAME"] = ["EFFECTIVE AREA"]
+            t_aeff["HDU_TYPE"] = "aeff"
+            t_aeff["HDU_CLASS"] = "aeff_2d"
+            t_aeff["HDU_CLASS2"] = "AEFF"
+            t_aeff["HDU_CLASS4"] = "AEFF_2D"
+            t_aeff["HDU_NAME"] = "EFFECTIVE AREA"
 
             hdu_index_tables.append(t_aeff)
         except KeyError as err:
@@ -141,46 +138,40 @@ def create_obs_hdu_index(
         try:
             Table.read(filepath, hdu="BACKGROUND")
             t_bkg = t_edisp.copy()
-            t_bkg["HDU_TYPE"] = ["bkg"]
-            t_bkg["HDU_CLASS"] = ["bkg_2d"]
-            t_bkg["HDU_CLASS2"] = ["BKG"]
-            t_bkg["HDU_CLASS4"] = ["BKG_2D"]
-            t_bkg["HDU_NAME"] = ["BACKGROUND"]
+            t_bkg["HDU_TYPE"] = "bkg"
+            t_bkg["HDU_CLASS"] = "bkg_2d"
+            t_bkg["HDU_CLASS2"] = "BKG"
+            t_bkg["HDU_CLASS4"] = "BKG_2D"
+            t_bkg["HDU_NAME"] = "BACKGROUND"
 
             hdu_index_tables.append(t_bkg)
         except KeyError as err:
             log.error("Run {0}:{1}".format(t_events["OBS_ID"].data[0], err))
 
         # Obs_table
-        t_obs = Table(
-            {
-                "OBS_ID": [event_table.meta["OBS_ID"]],
-                "DATE_OBS": [event_table.meta["DATE_OBS"]],
-                "RA_PNT": [event_table.meta["RA_PNT"]],
-                "DEC_PNT": [event_table.meta["DEC_PNT"]],
-                "ZEN_PNT": [90 - float(event_table.meta["ALT_PNT"])],
-                "ALT_PNT": [event_table.meta["ALT_PNT"]],
-                "AZ_PNT": [event_table.meta["AZ_PNT"]],
-                "RA_OBJ": [event_table.meta["RA_OBJ"]],
-                "DEC_OBJ": [event_table.meta["DEC_OBJ"]],
-                "ONTIME": [event_table.meta["ONTIME"]],
-                "LIVETIME": [event_table.meta["LIVETIME"]],
-                "DEADC": [event_table.meta["DEADC"]],
-                "TSTART": [event_table.meta["TSTART"]],
-                "TSTOP": [event_table.meta["TSTOP"]],
-                "OBJECT": [event_table.meta["OBJECT"]],
-                "OBS_MODE": [event_table.meta["OBS_MODE"]],
-                "N_TELS": [event_table.meta["N_TELS"]],
-                "TELLIST": [event_table.meta["TELLIST"]],
-            },
-            dtype=(
-                ">i8", ">S12", ">f4", ">f4", ">f4", ">f4", ">f4", ">f4", ">f4",
-		">f4", ">f4", ">f4", ">f8", ">f8", "S20", ">S20", ">i8", "S20",
-            ),
-        )
+        t_obs = {
+                "OBS_ID": event_table.meta["OBS_ID"],
+                "DATE_OBS": event_table.meta["DATE_OBS"],
+                "RA_PNT": event_table.meta["RA_PNT"] * u.deg,
+                "DEC_PNT": event_table.meta["DEC_PNT"] * u.deg,
+                "ZEN_PNT": (90 - float(event_table.meta["ALT_PNT"])) * u.deg,
+                "ALT_PNT": event_table.meta["ALT_PNT"] * u.deg,
+                "AZ_PNT": event_table.meta["AZ_PNT"] * u.deg,
+                "RA_OBJ": event_table.meta["RA_OBJ"] * u.deg,
+                "DEC_OBJ": event_table.meta["DEC_OBJ"] * u.deg,
+                "ONTIME": event_table.meta["ONTIME"] * u.s,
+                "LIVETIME": event_table.meta["LIVETIME"] * u.s,
+                "DEADC": event_table.meta["DEADC"],
+                "TSTART": event_table.meta["TSTART"] * u.s,
+                "TSTOP": event_table.meta["TSTOP"] * u.s,
+                "OBJECT": event_table.meta["OBJECT"],
+                "OBS_MODE": event_table.meta["OBS_MODE"],
+                "N_TELS": event_table.meta["N_TELS"],
+                "TELLIST": event_table.meta["TELLIST"],
+            }
         obs_index_tables.append(t_obs)
 
-    hdu_index_table = vstack(hdu_index_tables)
+    hdu_index_table = Table(hdu_index_tables)
 
     hdu_index_header = DEFAULT_HEADER.copy()
     hdu_index_header["HDUCLAS1"] = "INDEX"
@@ -193,7 +184,7 @@ def create_obs_hdu_index(
     )
     hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
 
-    obs_index_table = vstack(obs_index_tables)
+    obs_index_table = QTable(obs_index_tables)
 
     obs_index_header = hdu_index_header.copy()
     obs_index_header["HDUCLAS2"] = "OBS"
@@ -305,7 +296,7 @@ def create_event_list(data, run_number, source_name):
     ev_header["DATE_OBS"] = date_obs
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
-    ev_header["MJDREFI"] = "40587"  # mjd format
+    ev_header["MJDREFI"] = "40587"  # mjd format for date 01-01-1970
     ev_header["MJDREFF"] = "0"
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
@@ -316,8 +307,8 @@ def create_event_list(data, run_number, source_name):
 
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
-    ev_header["ALT_PNT"] = round(np.rad2deg(data["pointing_alt"].value.mean()), 6)
-    ev_header["AZ_PNT"] = round(np.rad2deg(data["pointing_az"].value[0]), 6)
+    ev_header["ALT_PNT"] = np.rad2deg(data["pointing_alt"].value.mean())
+    ev_header["AZ_PNT"] = np.rad2deg(data["pointing_az"].value[0])
     ev_header["RA_OBJ"] = object_radec.ra.value
     ev_header["DEC_OBJ"] = object_radec.dec.value
     ev_header["FOVALIGN"] = "RADEC"
