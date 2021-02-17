@@ -32,10 +32,11 @@ file_model_gh_sep = output_dir / "cls_gh.sav"
 # Real data files to be produced in the tests
 real_data_dl1_file = output_dir / ('dl1_' + test_r0_path.with_suffix('').stem + '.h5')
 real_data_dl2_file = output_dir / ('dl2_' + test_r0_path.with_suffix('').stem + '.h5')
-# FIXME: improve the muons and datacheck file path naming
+# FIXME: naming criteria of dl1, dl2, muons and datacheck files should be coherent
 # muons_file = output_dir / ('muons_' + test_r0_path.stem)  # This does not work since the stream is stripped out
+# datacheck_file = output_dir / ('datacheck_dl1_' + test_r0_path.with_suffix('').stem + '.h5')
 muons_file = output_dir / 'muons_LST-1.Run02008.0000_first50.fits'
-datacheck_file = output_dir / ('datacheck_dl1_' + test_r0_path.with_suffix('').stem + '.h5')
+datacheck_file = output_dir / 'datacheck_dl1_LST-1.Run02008.0000.h5'
 
 
 def find_entry_points(package_name):
