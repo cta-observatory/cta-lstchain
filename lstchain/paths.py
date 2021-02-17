@@ -1,8 +1,7 @@
+import os
 import re
 from collections import namedtuple
-import os
 from pathlib import Path
-
 
 Run = namedtuple('Run', 'tel_id run subrun stream', defaults=(None, ))
 R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+).fits.fz')
@@ -110,6 +109,7 @@ def parse_dl1_filename(filename):
         raise ValueError(f'Filename {filename} does not match pattern {DL1_RE}')
 
     return _parse_match(m)
+
 
 def parse_datacheck_dl1_filename(filename):
     '''
