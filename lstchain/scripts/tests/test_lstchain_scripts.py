@@ -23,20 +23,21 @@ from lstchain.tests.test_lstchain import (
 )
 
 output_dir = Path(test_dir, "scripts")
+output_dir_realdata = output_dir / "real_data"
 dl1_file = output_dir / "dl1_gamma_test_large.h5"
 merged_dl1_file = output_dir / "script_merged_dl1.h5"
 dl2_file = output_dir / "dl2_gamma_test_large.h5"
 file_model_energy = output_dir / "reg_energy.sav"
 file_model_disp = output_dir / "reg_disp_vector.sav"
 file_model_gh_sep = output_dir / "cls_gh.sav"
-# Real data files to be produced in the tests
-real_data_dl1_file = output_dir / ('dl1_' + test_r0_path.with_suffix('').stem + '.h5')
-real_data_dl2_file = output_dir / ('dl2_' + test_r0_path.with_suffix('').stem + '.h5')
+# Real data files to be produced by the tests
+real_data_dl1_file = output_dir_realdata / ("dl1_" + test_r0_path.with_suffix('').stem + ".h5")
+real_data_dl2_file = output_dir_realdata / ("dl2_" + test_r0_path.with_suffix('').stem + ".h5")
 # FIXME: naming criteria of dl1, dl2, muons and datacheck files should be coherent
-# muons_file = output_dir / ('muons_' + test_r0_path.stem)  # This does not work since the stream is stripped out
-# datacheck_file = output_dir / ('datacheck_dl1_' + test_r0_path.with_suffix('').stem + '.h5')
-muons_file = output_dir / 'muons_LST-1.Run02008.0000_first50.fits'
-datacheck_file = output_dir / 'datacheck_dl1_LST-1.Run02008.0000.h5'
+# muons_file = output_dir / ("muons_" + test_r0_path.stem)  # This does not work since the stream is stripped out
+# datacheck_file = output_dir / ("datacheck_dl1_" + test_r0_path.with_suffix("").stem + ".h5")
+muons_file = output_dir_realdata / "muons_LST-1.Run02008.0000_first50.fits"
+datacheck_file = output_dir_realdata / "datacheck_dl1_LST-1.Run02008.0000.h5"
 
 
 def find_entry_points(package_name):
@@ -81,7 +82,7 @@ def test_lstchain_data_r0_to_dl1():
         "-f",
         test_r0_path,
         "-o",
-        output_dir,
+        output_dir_realdata,
         "--pedestal-file",
         test_drs4_pedestal_path,
         "--calibration-file",
@@ -166,17 +167,13 @@ def test_lstchain_mc_rfperformance():
 
 @pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
 def test_lstchain_merge_dl1_hdf5_files():
-    shutil.copy(dl1_file, os.path.join(output_dir, "dl1_copy.h5"))
+    shutil.copy(dl1_file, output_dir / "dl1_copy.h5")
     run_program(
         "lstchain_merge_hdf5_files",
-        "-d",
-        output_dir,
-        "-o",
-        merged_dl1_file,
-        "--no-image",
-        "True",
+        "-d", output_dir,
+        "-o", merged_dl1_file,
+        "--no-image", "True",
     )
-    # FIXME: test it with smart False option?
     assert os.path.exists(merged_dl1_file)
 
 
@@ -220,7 +217,7 @@ def test_lstchain_realdata_dl1_to_dl2():
         "--path-models",
         output_dir,
         "--output-dir",
-        output_dir,
+        output_dir_realdata,
     )
     assert os.path.exists(real_data_dl2_file)
 
@@ -255,7 +252,7 @@ def test_dl1ab():
 
 @pytest.mark.run(after="test_lstchain_data_r0_to_dl1")
 def test_dl1ab_realdata():
-    output_real_data_dl1ab = output_dir / "dl1ab_realdata.h5"
+    output_real_data_dl1ab = output_dir_realdata / "dl1ab_realdata.h5"
     run_program("lstchain_dl1ab", "-f", real_data_dl1_file, "-o", output_real_data_dl1ab)
     assert os.path.exists(output_real_data_dl1ab)
 
@@ -269,7 +266,7 @@ def test_dl1ab_validity():
 
 @pytest.mark.run(after="test_dl1ab_realdata")
 def test_dl1ab_realdata_validity():
-    output_real_data_dl1ab = output_dir / "dl1ab_realdata.h5"
+    output_real_data_dl1ab = output_dir_realdata / "dl1ab_realdata.h5"
     dl1 = pd.read_hdf(real_data_dl1_file, key=dl1_params_lstcam_key)
     dl1ab = pd.read_hdf(output_real_data_dl1ab, key=dl1_params_lstcam_key)
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
