@@ -31,7 +31,6 @@ from ctapipe.containers import EventType
 from . import disp
 from . import utils
 from .utils import sky_to_camera
-from .utils import unix_tai_to_time
 from .volume_reducer import apply_volume_reduction
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
