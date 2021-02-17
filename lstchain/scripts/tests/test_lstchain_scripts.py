@@ -32,7 +32,7 @@ file_model_gh_sep = output_dir / "cls_gh.sav"
 # Real data files to be produced in the tests
 real_data_dl1_file = output_dir / ('dl1_' + test_r0_path.with_suffix('').stem + '.h5')
 real_data_dl2_file = output_dir / ('dl2_' + test_r0_path.with_suffix('').stem + '.h5')
-# FIXME: improve the muons file path naming
+# FIXME: improve the muons and datacheck file path naming
 # muons_file = output_dir / ('muons_' + test_r0_path.stem)  # This does not work since the stream is stripped out
 muons_file = output_dir / 'muons_LST-1.Run02008.0000_first50.fits'
 datacheck_file = output_dir / ('datacheck_dl1_' + test_r0_path.with_suffix('').stem + '.h5')
@@ -181,7 +181,7 @@ def test_lstchain_merge_dl1_hdf5_files():
 
 @pytest.mark.run(after="test_lstchain_merge_dl1_hdf5_files")
 def test_lstchain_merged_dl1_to_dl2():
-    output_file = merged_dl1_file.replace("dl1", "dl2")
+    output_file = merged_dl1_file.with_name(merged_dl1_file.name.replace('dl1', 'dl2'))
     run_program(
         "lstchain_dl1_to_dl2",
         "-f",
