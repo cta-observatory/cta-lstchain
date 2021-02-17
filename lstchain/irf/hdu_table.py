@@ -118,7 +118,7 @@ def create_obs_hdu_index(
 
             hdu_index_tables.append(t_edisp)
         except KeyError as err:
-            log.error("Run {0}:{1}".format(t_events["OBS_ID"].data[0], err))
+            log.error("Run {0}:{1}".format(t_events["OBS_ID"], err))
 
         # Effective Area
         try:
@@ -132,7 +132,7 @@ def create_obs_hdu_index(
 
             hdu_index_tables.append(t_aeff)
         except KeyError as err:
-            log.error("Run {0}:{1}".format(t_events["OBS_ID"].data[0], err))
+            log.error("Run {0}:{1}".format(t_events["OBS_ID"], err))
 
         # Background
         try:
@@ -146,7 +146,7 @@ def create_obs_hdu_index(
 
             hdu_index_tables.append(t_bkg)
         except KeyError as err:
-            log.error("Run {0}:{1}".format(t_events["OBS_ID"].data[0], err))
+            log.error("Run {0}:{1}".format(t_events["OBS_ID"], err))
 
         # Obs_table
         t_obs = {
