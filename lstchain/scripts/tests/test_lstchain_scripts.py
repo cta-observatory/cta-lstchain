@@ -130,11 +130,11 @@ def test_dl1_realdata_validity():
     assert "dragon_time" in dl1_df.columns
     assert "tib_time" in dl1_df.columns
     assert "ucts_time" in dl1_df.columns
-
     assert np.isclose(
         (Time(first_event_timestamp, format='unix') -
          Time(first_timestamp_nightsummary / 1e9, format='unix_tai')
          ).to_value(u.s), 0)
+    assert np.allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
 
 @pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
