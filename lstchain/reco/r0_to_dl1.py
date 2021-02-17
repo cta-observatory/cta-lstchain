@@ -448,9 +448,9 @@ def r0_to_dl1(
                     )
 
                 if not is_simu:
-                    # !!! to be filled  from the source !!!
                     dl1_container.ucts_time = 0
-                    dl1_container.dragon_time = 0
+                    # Assumes R1 event source filled the "dragon" timestamp:
+                    dl1_container.dragon_time = event.trigger.time
                     dl1_container.tib_time = 0
 
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
