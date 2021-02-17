@@ -34,19 +34,19 @@ test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_2020
 
 
 def test_import_calib():
-    pass
+    from lstchain import calib
 
 
 def test_import_reco():
-    pass
+    from lstchain import reco
 
 
 def test_import_visualization():
-    pass
+    from lstchain import visualization
 
 
 def test_import_lstio():
-    pass
+    from lstchain import io
 
 
 @pytest.mark.run(order=1)
