@@ -60,9 +60,10 @@ def test_r0_to_dl1():
 def test_r0_to_dl1_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
+    output_path = tmp_path / ('dl1_' + test_r0_path.stem + '.h5')
     r0_to_dl1(
         test_r0_path,
-        output_filename=tmp_path / ('dl1_' + test_r0_path.stem + '.h5'),
+        output_filename=output_path,
         custom_config=standard_config,
         pedestal_path=test_drs4_pedestal_path,
         calibration_path=test_calib_path,
@@ -74,6 +75,19 @@ def test_r0_to_dl1_observed(tmp_path):
         tib_counter0=None,
     )
 
+    with tables.open_file(output_path, 'r') as f:
+        images_table = f.root[dl1_images_lstcam_key]
+        params_table = f.root[dl1_params_lstcam_key]
+        assert 'image' in images_table.colnames
+        assert 'peak_time' in images_table.colnames
+        assert 'tel_id' in images_table.colnames
+        assert 'obs_id' in images_table.colnames
+        assert 'event_id' in images_table.colnames
+        assert 'tel_id' in params_table.colnames
+        assert 'event_id' in params_table.colnames
+        assert 'obs_id' in params_table.colnames
+
+
 
 @pytest.mark.private_data
 def test_r0_available():
@@ -83,7 +97,7 @@ def test_r0_available():
 @pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1():
     # test presence of images and parameters
-    with tables.open_file(dl1_file) as f:
+    with tables.open_file(dl1_file, 'r') as f:
         images_table = f.root[dl1_images_lstcam_key]
         params_table = f.root[dl1_params_lstcam_key]
         assert 'image' in images_table.colnames
