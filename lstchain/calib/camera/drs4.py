@@ -85,7 +85,11 @@ class DragonPedestal(Component):
 
     def finalize_pedestal(self):
         self.meanped = self.meanped / self.numped
+<<<<<<< af96b57a18c5af3c262419716b9b52ead3377040
         pixels_with_nan_value = np.unique(np.where(np.isnan(self.meanped) == True)[1])
+=======
+        pixels_with_nan_value = np.unique(np.where(np.isnan(self.meanped))[1])
+>>>>>>> try fix branch
         if len(pixels_with_nan_value) > 0:
             self.failing_pixels_list = pixels_with_nan_value
             print("Failing pixels:")

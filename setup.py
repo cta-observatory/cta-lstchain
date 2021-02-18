@@ -58,6 +58,7 @@ setup(
         'seaborn',
         'scikit-learn',
         'tables',
+        'toml',
         'traitlets',
         'iminuit~=1.5',
     ],
