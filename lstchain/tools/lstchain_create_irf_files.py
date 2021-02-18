@@ -4,12 +4,13 @@ MC gamma files can be point-like or diffuse
 IRFs can be point-like or Full Enclosure
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
-And the Background HDU has to be checked with recent MC data
 
-Simple usage with MC gamma, argument aliases and default config file for selection cuts:
+Simple usage, argument aliases and default config file for selection cuts:
 
 lstchain_create_irf_files
     --fg /path/to/DL2_MC_gamma_file.h5
+    --fp /path/to/DL2_MC_proton_file.h5
+    --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
     --pnt True
 """
@@ -29,12 +30,14 @@ from pyirf.io.gadf import (
     create_aeff2d_hdu,
     create_energy_dispersion_hdu,
     create_background_2d_hdu,
+    create_psf_table_hdu,
 )
 from pyirf.irf import (
     effective_area_per_energy,
     energy_dispersion,
     effective_area_per_energy_and_fov,
     background_2d,
+    psf_table,
 )
 from pyirf.spectral import (
     calculate_event_weights,
@@ -113,7 +116,7 @@ class IRFFITSWriter(Tool):
         self.effective_area = None
         self.edisp = None
         self.backgroud = None
-        # self.psf = None
+        self.psf = None
 
     def setup(self):
         filename = os.path.basename(self.output_irf_file)
@@ -137,30 +140,20 @@ class IRFFITSWriter(Tool):
             self.cuts = read_configuration_file(self.config_file)
 
         # Read and update MC information
-        # Temporary if-else condition to either just use MC gamma or
-        # to also use MC proton and electron to generate Background IRF
-        if self.input_proton_dl2 is None:
-            self.mc_particle = {
-                "gamma": {
-                    "file": str(self.input_gamma_dl2),
-                    "target_spectrum": CRAB_HEGRA,
-                }
-            }
-        else:
-            self.mc_particle = {
-                "gamma": {
-                    "file": str(self.input_gamma_dl2),
-                    "target_spectrum": CRAB_HEGRA,
-                },
-                "proton": {
-                    "file": str(self.input_proton_dl2),
-                    "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-                },
-                "electron": {
-                    "file": str(self.input_electron_dl2),
-                    "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
-                },
-            }
+        self.mc_particle = {
+            "gamma": {
+                "file": str(self.input_gamma_dl2),
+                "target_spectrum": CRAB_HEGRA,
+            },
+            "proton": {
+                "file": str(self.input_proton_dl2),
+                "target_spectrum": IRFDOC_PROTON_SPECTRUM,
+            },
+            "electron": {
+                "file": str(self.input_electron_dl2),
+                "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+            },
+        }
 
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
@@ -203,19 +196,28 @@ class IRFFITSWriter(Tool):
     def start(self):
 
         gammas = self.mc_particle["gamma"]["events"]
+        background = table.vstack(
+                [
+                    self.mc_particle["proton"]["events"],
+                    self.mc_particle["electron"]["events"],
+                ]
+            )
 
         gh_cut = self.cuts["fixed_cuts"]["gh_score"][0]
         self.log.info(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
         gammas = filter_events(gammas, self.cuts["events_filters"])
+        background = filter_events(background, self.cuts["events_filters"])
 
         # Filtering the tels needed to use with the real data
         # Add MAGIC tels when need be
         tel_ids = self.cuts["LST_tels"]["tel_list"]
         for i in tel_ids:
             gammas["selected_tels"] = gammas["tel_id"] == i
+            background["selected_tels"] = background["tel_id"] == i
 
         gammas["selected_gh"] = gammas["gh_score"] > gh_cut
+        background["selected_gh"] = background["gh_score"] > gh_cut
 
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
         if self.point_like:
@@ -235,23 +237,9 @@ class IRFFITSWriter(Tool):
         else:
             gammas["selected"] = gammas["selected_gh"] & gammas["selected_tels"]
 
-        # For Background IRF
-        if self.input_proton_dl2:
-            background = table.vstack(
-                [
-                    self.mc_particle["proton"]["events"],
-                    self.mc_particle["electron"]["events"],
-                ]
-            )
-
-            background = filter_events(background, self.cuts["events_filters"])
-
-            for i in tel_ids:
-                background["selected_tels"] = background["tel_id"] == i
-            background["selected_gh"] = background["gh_score"] > gh_cut
-            background["selected"] = (
-                background["selected_gh"] & background["selected_tels"]
-            )
+        background["selected"] = (
+            background["selected_gh"] & background["selected_tels"]
+        )
 
         # Binning of parameters used in IRFs
         # 12.5 GeV - 51.28 TeV
@@ -259,6 +247,8 @@ class IRFFITSWriter(Tool):
         # add_overflow_bins(***)[1:-1]
         # The overflow binning added is not needed in the current script
         reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
+        # Using the same binning as in pyirf for source_offset_bins
+        source_offset_bins = np.arange(0, 1 + 1e-4, 1e-3) * u.deg
 
         if self.mc_particle["gamma"]["mc_type"] == "point-like":
             # Gammapy 0.18.2 needs offset bin centers for interpolation
@@ -266,7 +256,7 @@ class IRFFITSWriter(Tool):
             # this workaround is necessary for further analysis using gammapy.
             fov_offset_bins = [0.3, 0.5, 0.7] * u.deg
         else:
-            # temporary usage of bins as used in MAGIC
+            # temporary usage of bins
             fov_offset_bins = [0, 0.3, 0.5, 0.7, 0.9, 1.1] * u.deg
         migration_bins = np.linspace(0.2, 5, 31)
 
@@ -319,7 +309,6 @@ class IRFFITSWriter(Tool):
                         **extra_headers,
                     )
                 )
-        # Adding a dimension for FoV offset for effective area
 
         self.log.info("Effective Area HDU created")
         self.edisp = energy_dispersion(
@@ -342,24 +331,39 @@ class IRFFITSWriter(Tool):
         self.log.info("Energy Dispersion HDU created")
 
         # Using the same FOV offset binning as pyirf for now.
-        # Needs to be checked with standard MC files
-        if self.input_proton_dl2:
-            self.background = background_2d(
-                background[background["selected"]],
-                reco_energy_bins=reco_energy_bins,
-                fov_offset_bins=np.arange(0, 11) * u.deg,
-                t_obs=50 * u.hour,
+        self.background = background_2d(
+            background[background["selected"]],
+            reco_energy_bins=reco_energy_bins,
+            fov_offset_bins=np.arange(0, 11) * u.deg,
+            t_obs=50 * u.hour,
+        )
+        self.hdus.append(
+            create_background_2d_hdu(
+                self.background.T,
+                reco_energy_bins,
+                np.arange(0, 11) * u.deg,
+                extname="BACKGROUND",
+                **extra_headers,
             )
-            self.hdus.append(
-                create_background_2d_hdu(
-                    self.background.T,
-                    reco_energy_bins,
-                    np.arange(0, 11) * u.deg,
-                    extname="BACKGROUND",
-                    **extra_headers,
-                )
+        )
+        self.log.info("Background HDU created")
+        self.psf = psf_table(
+            gammas[gammas["selected_gh"] & gammas["selected_tels"]],
+            true_energy_bins,
+            fov_offset_bins=fov_offset_bins,
+            source_offset_bins=source_offset_bins,
+        )
+        self.hdus.append(
+            create_psf_table_hdu(
+                self.psf,
+                true_energy_bins,
+                source_offset_bins,
+                fov_offset_bins,
+                extname="PSF",
+                **extra_headers,
             )
-            self.log.info("Background HDU created")
+        )
+        self.log.info("PSF HDU created")
 
     def finish(self):
         if self.output_irf_file.exists():

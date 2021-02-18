@@ -35,6 +35,8 @@ def create_obs_hdu_index(
     while hdu-index contains the informations about the locations of the other
     HDU (header data units) necessary to the analysis.
 
+    File directory information is currently kept empty in the HDU index table
+
     Parameters
     ----------
     filename_list : list
@@ -111,9 +113,10 @@ def create_obs_hdu_index(
 
             t_edisp["HDU_TYPE"] = "edisp"
             t_edisp["HDU_CLASS"] = "edisp_2d"
-            t_edisp["HDU_CLASS2"] = "EDISP"
+            t_edisp["HDU_CLASS1"] = edisp.meta["HDUCLAS1"]
+            t_edisp["HDU_CLASS2"] = edisp.meta["HDUCLAS2"]
             t_edisp["HDU_CLASS3"] = edisp.meta["HDUCLAS3"]
-            t_edisp["HDU_CLASS4"] = "EDISP_2D"
+            t_edisp["HDU_CLASS4"] = edisp.meta["HDUCLAS4"]
             t_edisp["HDU_NAME"] = "ENERGY DISPERSION"
 
             hdu_index_tables.append(t_edisp)
@@ -122,12 +125,14 @@ def create_obs_hdu_index(
 
         # Effective Area
         try:
-            Table.read(filepath, hdu="EFFECTIVE AREA")
-            t_aeff = t_edisp.copy()
+            aeff = Table.read(filepath, hdu="EFFECTIVE AREA")
+            t_aeff = t_events.copy()
             t_aeff["HDU_TYPE"] = "aeff"
             t_aeff["HDU_CLASS"] = "aeff_2d"
-            t_aeff["HDU_CLASS2"] = "AEFF"
-            t_aeff["HDU_CLASS4"] = "AEFF_2D"
+            t_aeff["HDU_CLASS1"] = aeff.meta["HDUCLAS1"]
+            t_aeff["HDU_CLASS2"] = aeff.meta["HDUCLAS2"]
+            t_aeff["HDU_CLASS3"] = aeff.meta["HDUCLAS3"]
+            t_aeff["HDU_CLASS4"] = aeff.meta["HDUCLAS4"]
             t_aeff["HDU_NAME"] = "EFFECTIVE AREA"
 
             hdu_index_tables.append(t_aeff)
@@ -136,15 +141,33 @@ def create_obs_hdu_index(
 
         # Background
         try:
-            Table.read(filepath, hdu="BACKGROUND")
-            t_bkg = t_edisp.copy()
+            bkg = Table.read(filepath, hdu="BACKGROUND")
+            t_bkg = t_events.copy()
             t_bkg["HDU_TYPE"] = "bkg"
             t_bkg["HDU_CLASS"] = "bkg_2d"
-            t_bkg["HDU_CLASS2"] = "BKG"
-            t_bkg["HDU_CLASS4"] = "BKG_2D"
+            t_bkg["HDU_CLASS1"] = bkg.meta["HDUCLAS1"]
+            t_bkg["HDU_CLASS2"] = bkg.meta["HDUCLAS2"]
+            t_bkg["HDU_CLASS3"] = bkg.meta["HDUCLAS3"]
+            t_bkg["HDU_CLASS4"] = bkg.meta["HDUCLAS4"]
             t_bkg["HDU_NAME"] = "BACKGROUND"
 
             hdu_index_tables.append(t_bkg)
+        except KeyError as err:
+            log.error("Run {0}:{1}".format(t_events["OBS_ID"], err))
+
+        # PSF
+        try:
+            psf = Table.read(filepath, hdu="PSF")
+            t_psf = t_events.copy()
+            t_psf["HDU_TYPE"] = "psf"
+            t_psf["HDU_CLASS"] = "psf_table"
+            t_psf["HDU_CLASS1"] = psf.meta["HDUCLAS1"]
+            t_psf["HDU_CLASS2"] = psf.meta["HDUCLAS2"]
+            t_psf["HDU_CLASS3"] = psf.meta["HDUCLAS3"]
+            t_psf["HDU_CLASS4"] = psf.meta["HDUCLAS4"]
+            t_psf["HDU_NAME"] = "PSF"
+
+            hdu_index_tables.append(t_psf)
         except KeyError as err:
             log.error("Run {0}:{1}".format(t_events["OBS_ID"], err))
 
