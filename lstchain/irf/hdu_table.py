@@ -79,6 +79,7 @@ def create_obs_hdu_index(
                 "OBS_ID": event_table.meta["OBS_ID"],
                 "HDU_TYPE": "events",
                 "HDU_CLASS": "events",
+                "HDU_CLASS1": "EVENTS",
                 "HDU_CLASS2": "",
                 "HDU_CLASS3": "",
                 "HDU_CLASS4": "",
@@ -93,6 +94,7 @@ def create_obs_hdu_index(
 
         t_gti["HDU_TYPE"] = "gti"
         t_gti["HDU_CLASS"] = "gti"
+        t_gti["HDU_CLASS1"] = "GTI"
         t_gti["HDU_NAME"] = "GTI"
 
         hdu_index_tables.append(t_gti)
@@ -102,6 +104,7 @@ def create_obs_hdu_index(
 
         t_pnt["HDU_TYPE"] = "pointing"
         t_pnt["HDU_CLASS"] = "pointing"
+        t_pnt["HDU_CLASS1"] = "POINTING"
         t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
@@ -200,7 +203,7 @@ def create_obs_hdu_index(
     hdu_index_header["HDUCLAS1"] = "INDEX"
     hdu_index_header["HDUCLAS2"] = "HDU"
     hdu_index_header["TELESCOP"] = "CTA"
-    hdu_index_header["INSTRUME"] = f"LST-{t_obs['TELLIST'][0]}"
+    hdu_index_header["INSTRUME"] = f"{t_obs['TELLIST']}"
 
     hdu_index = fits.BinTableHDU(
         hdu_index_table, header=hdu_index_header, name="HDU INDEX"
@@ -240,6 +243,8 @@ def create_event_list(data, run_number, source_name):
         GTI HDU:  `astropy.io.fits.BinTableHDU`
         Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
+
+    tel_list = np.unique(data["tel_id"])
 
     # Timing parameters
     t_start = data["dragon_time"].value[0]
@@ -325,8 +330,8 @@ def create_event_list(data, run_number, source_name):
     ev_header["TIMESYS"] = "UTC"
     ev_header["OBJECT"] = source_name
     ev_header["OBS_MODE"] = mode
-    ev_header["N_TELS"] = data["tel_id"][0]
-    ev_header["TELLIST"] = f'LST-{data["tel_id"][0]}'
+    ev_header["N_TELS"] = len(tel_list)
+    ev_header["TELLIST"] = "LST-"+f" ".join(map(str,tel_list))
 
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
