@@ -344,6 +344,7 @@ def test_dl1ab():
 
 
 @pytest.mark.run(after="test_lstchain_data_r0_to_dl1")
+@pytest.mark.private_data
 def test_dl1ab_realdata():
     output_real_data_dl1ab = output_dir_realdata / "dl1ab_realdata.h5"
     run_program("lstchain_dl1ab", "-f", real_data_dl1_file, "-o", output_real_data_dl1ab)
@@ -358,6 +359,7 @@ def test_dl1ab_validity():
 
 
 @pytest.mark.run(after="test_dl1ab_realdata")
+@pytest.mark.private_data
 def test_dl1ab_realdata_validity():
     output_real_data_dl1ab = output_dir_realdata / "dl1ab_realdata.h5"
     dl1 = pd.read_hdf(real_data_dl1_file, key=dl1_params_lstcam_key)
