@@ -456,6 +456,8 @@ def r0_to_dl1(
 
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
                     dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
+                else:
+                    dl1_container.trigger_type = event.trigger.event_type
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
