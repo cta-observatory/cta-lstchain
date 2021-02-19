@@ -455,13 +455,13 @@ def r0_to_dl1(
                     dl1_container.tib_time = 0
 
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+                    dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
 
 
                 dl1_container.trigger_time = event.trigger.time.unix
-                dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
                 dl1_container.event_type = event.trigger.event_type
 
                 # FIXME: no need to read telescope characteristics like foclen for every event!
