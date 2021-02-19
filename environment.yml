@@ -7,7 +7,7 @@ dependencies:
   - python=3.7
   - astropy>=4.2
   - pip
-  - ctapipe>=0.10.1
+  - ctapipe>=0.10.3
   - gammapy>=0.18
   - h5py
   - ipython
