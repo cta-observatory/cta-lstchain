@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from pkg_resources import resource_filename
-from ctapipe.core.traits import Unicode, List, Int
+from ctapipe.core.traits import Path, List, Int, Unicode
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.image.reducer import DataVolumeReducer
 from ctapipe.image.extractor import ImageExtractor
@@ -29,18 +29,18 @@ class LSTCameraCalibrator(CameraCalibrator):
         help='Name of the DataVolumeReducer to use'
     ).tag(config=True)
 
-    calibration_path = Unicode(
-        '',
+    calibration_path = Path(
+        exists=True, directory_ok=False,
         help='Path to LST calibration file'
     ).tag(config=True)
 
-    time_calibration_path = Unicode(
-        '',
+    time_calibration_path = Path(
+        exists=True, directory_ok=False,
         help='Path to drs4 time calibration file'
     ).tag(config=True)
 
-    time_sampling_correction_path = Unicode(
-        '',
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
         help='Path to time sampling correction file',
         allow_none = True,
     ).tag(config=True)
