@@ -461,7 +461,8 @@ def r0_to_dl1(
 
 
                 dl1_container.trigger_time = event.trigger.time.unix
-                dl1_container.trigger_type = event.trigger.event_type
+                dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
+                dl1_container.event_type = event.trigger.event_type
 
                 # FIXME: no need to read telescope characteristics like foclen for every event!
                 foclen = subarray.tel[telescope_id].optics.equivalent_focal_length

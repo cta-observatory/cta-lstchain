@@ -115,6 +115,7 @@ class DL1ParametersContainer(Container):
     trigger_type = Field(None, "trigger type")
     ucts_trigger_type = Field(None, "UCTS trigger type")
     trigger_time = Field(None, "trigger time")
+    event_type = Field(None, "event type")
 
     # info not available in data
     #num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
