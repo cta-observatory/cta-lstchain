@@ -1,7 +1,5 @@
-import os
 import shutil
 import subprocess as sp
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -17,10 +15,6 @@ from lstchain.io.io import (
     dl1_params_src_dep_lstcam_key
 )
 from lstchain.tests.test_lstchain import (
-    test_dir,
-    mc_gamma_testfile,
-    produce_fake_dl1_proton_file,
-    fake_dl1_proton_file,
     test_drive_report,
     test_drs4_pedestal_path,
     test_calib_path,
@@ -28,16 +22,6 @@ from lstchain.tests.test_lstchain import (
     test_r0_path,
     test_r0_path2
 )
-
-
-output_dir = Path(test_dir, "scripts")
-output_dir_realdata = output_dir / "real_data"
-dl1_file = output_dir / "dl1_gamma_test_large.h5"
-merged_dl1_file = output_dir / "script_merged_dl1.h5"
-dl2_file = output_dir / "dl2_gamma_test_large.h5"
-file_model_energy = output_dir / "reg_energy.sav"
-file_model_disp = output_dir / "reg_disp_vector.sav"
-file_model_gh_sep = output_dir / "cls_gh.sav"
 
 
 def find_entry_points(package_name):
@@ -65,29 +49,56 @@ def run_program(*args):
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
 def test_all_help(script):
-    """Test for all scripts if at least the help works"""
+    """Test for all scripts if at least the help works."""
     run_program(script, "--help")
 
 
-def test_lstchain_mc_r0_to_dl1():
-    input_file = mc_gamma_testfile
-    run_program("lstchain_mc_r0_to_dl1", "-f", input_file, "-o", output_dir)
-    assert os.path.exists(dl1_file)
+@pytest.fixture
+def simulated_dl1ab(tmp_path, simulated_dl1):
+    """Produce a new simulated dl1 file using the dl1ab script."""
+    output_file = tmp_path / "dl1ab.h5"
+    run_program(
+        "lstchain_dl1ab",
+        "-f",
+        simulated_dl1["file"],
+        "-o",
+        output_file
+    )
+    return output_file
+
+
+@pytest.fixture
+def merged_simulated_dl1_file(simulated_dl1):
+    """Produce a merged file from two identical dl1 hdf5 files."""
+    shutil.copy(simulated_dl1["file"], simulated_dl1["path"] / "dl1_copy.h5")
+    merged_dl1_file = simulated_dl1["path"] / "script_merged_dl1.h5"
+    run_program(
+        "lstchain_merge_hdf5_files",
+        "-d", simulated_dl1["path"],
+        "-o", merged_dl1_file,
+        "--no-image", "True"
+    )
+    return merged_dl1_file
 
 
 @pytest.fixture
 def observed_dl1_files(tmp_path):
     """
     Produce dl1, datacheck and muons files from real observed data.
-    The initial timestamps and counters used here are extracted
-    from the night summary file. In this case these values
-    correspond to the third event.
+    The initial timestamps and counters used for the first set of files
+    here are extracted from the night summary. In this case these values
+    correspond to the third event. A second set of files are produced
+    without using the first valid timestamps.
     """
     # FIXME: naming criteria (suffixes, no stream) of dl1, dl2,
     #  muons and datacheck files should be coherent
+
+    # First set of files to be produced
     dl1_output_path1 = tmp_path / ("dl1_" + test_r0_path.with_suffix('').stem + ".h5")
     muons_file1 = tmp_path / "muons_LST-1.Run02008.0000_first50.fits"
     datacheck_file1 = tmp_path / "datacheck_dl1_LST-1.Run02008.0000.h5"
+
+    # Second set of files
     dl1_output_path2 = tmp_path / ("dl1_" + test_r0_path2.with_suffix('').stem + ".h5")
     muons_file2 = tmp_path / "muons_LST-1.Run02008.0100_first50.fits"
     datacheck_file2 = tmp_path / "datacheck_dl1_LST-1.Run02008.0100.h5"
@@ -113,7 +124,7 @@ def observed_dl1_files(tmp_path):
         "--ucts-t0-tib",
         "1582059789516351903",
         "--tib-counter0",
-        "2516351200",
+        "2516351200"
     )
 
     run_program(
@@ -143,6 +154,10 @@ def observed_dl1_files(tmp_path):
     }
 
 
+def test_lstchain_mc_r0_to_dl1(simulated_dl1):
+    assert simulated_dl1["file"].is_file()
+
+
 @pytest.mark.private_data
 def test_lstchain_data_r0_to_dl1(observed_dl1_files):
     assert observed_dl1_files["dl1_file1"].is_file()
@@ -154,17 +169,19 @@ def test_lstchain_data_r0_to_dl1(observed_dl1_files):
 
 
 @pytest.mark.private_data
-def test_dl1_realdata_validity(observed_dl1_files):
+def test_observed_dl1_validity(observed_dl1_files):
     dl1_df = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
     # The first valid timestamp in the test run corresponds
     # to its third event (see night summary)
     first_timestamp_nightsummary = 1582059789516351903  # ns
     first_event_timestamp = dl1_df["dragon_time"].iloc[2]  # third event
 
-    assert 'dl1/event/telescope/monitoring/calibration' in get_dataset_keys(observed_dl1_files["dl1_file1"])
-    assert 'dl1/event/telescope/monitoring/flatfield' in get_dataset_keys(observed_dl1_files["dl1_file1"])
-    assert 'dl1/event/telescope/monitoring/pedestal' in get_dataset_keys(observed_dl1_files["dl1_file1"])
-    assert 'dl1/event/telescope/image/LST_LSTCam' in get_dataset_keys(observed_dl1_files["dl1_file1"])
+    dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
+
+    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
+    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
+    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
+    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
@@ -181,32 +198,25 @@ def test_dl1_realdata_validity(observed_dl1_files):
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
 
-@pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
-def test_add_source_dependent_parameters():
-    run_program("lstchain_add_source_dependent_parameters", "-f", dl1_file)
-    dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
+def test_add_source_dependent_parameters(simulated_dl1):
+    run_program("lstchain_add_source_dependent_parameters", "-f", simulated_dl1["file"])
+    dl1_params_src_dep = pd.read_hdf(simulated_dl1["file"], key=dl1_params_src_dep_lstcam_key)
     assert "alpha" in dl1_params_src_dep.columns
 
 
-@pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
-def test_lstchain_mc_trainpipe():
-    gamma_file = dl1_file
-    proton_file = dl1_file
-
-    run_program(
-        "lstchain_mc_trainpipe", "--fg", gamma_file, "--fp", proton_file, "-o", output_dir
-    )
-
-    assert os.path.exists(file_model_gh_sep)
-    assert os.path.exists(file_model_disp)
-    assert os.path.exists(file_model_energy)
+def test_lstchain_mc_trainpipe(rf_models):
+    assert rf_models["energy"].is_file()
+    assert rf_models["disp"].is_file()
+    assert rf_models["gh_sep"].is_file()
 
 
-@pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
-def test_lstchain_mc_rfperformance():
-    gamma_file = dl1_file
-    produce_fake_dl1_proton_file(dl1_file)
+def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1, fake_dl1_proton_file):
+    gamma_file = simulated_dl1["file"]
     proton_file = fake_dl1_proton_file
+    output_dir = tmp_path
+    file_model_energy = output_dir / "reg_energy.sav"
+    file_model_disp = output_dir / "reg_disp_vector.sav"
+    file_model_gh_sep = output_dir / "cls_gh.sav"
 
     run_program(
         "lstchain_mc_rfperformance",
@@ -222,21 +232,13 @@ def test_lstchain_mc_rfperformance():
         output_dir,
     )
 
-    assert os.path.exists(file_model_gh_sep)
-    assert os.path.exists(file_model_disp)
-    assert os.path.exists(file_model_energy)
+    assert file_model_gh_sep.is_file()
+    assert file_model_disp.is_file()
+    assert file_model_energy.is_file()
 
 
-@pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
-def test_lstchain_merge_dl1_hdf5_files():
-    shutil.copy(dl1_file, output_dir / "dl1_copy.h5")
-    run_program(
-        "lstchain_merge_hdf5_files",
-        "-d", output_dir,
-        "-o", merged_dl1_file,
-        "--no-image", "True",
-    )
-    assert os.path.exists(merged_dl1_file)
+def test_lstchain_merge_dl1_hdf5_files(merged_simulated_dl1_file):
+    assert merged_simulated_dl1_file.is_file()
 
 
 @pytest.mark.private_data
@@ -254,7 +256,7 @@ def test_lstchain_merge_dl1_hdf5_observed_files(tmp_path, observed_dl1_files):
     dl1a_df = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
     dl1b_df = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
-    assert os.path.exists(merged_dl1_observed_file)
+    assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
     assert 'dl1/event/telescope/image/LST_LSTCam' in get_dataset_keys(merged_dl1_observed_file)
     assert 'dl1/event/telescope/parameters/LST_LSTCam' in get_dataset_keys(merged_dl1_observed_file)
@@ -271,49 +273,47 @@ def test_merge_datacheck_files(tmp_path, observed_dl1_files):
     assert (tmp_path / "datacheck_dl1_LST-1.Run02008.pdf").is_file()
 
 
-@pytest.mark.run(after="test_lstchain_merge_dl1_hdf5_files")
-def test_lstchain_merged_dl1_to_dl2():
-    output_file = merged_dl1_file.with_name(merged_dl1_file.name.replace('dl1', 'dl2'))
+def test_lstchain_merged_dl1_to_dl2(tmp_path, merged_simulated_dl1_file, rf_models):
+    output_file = merged_simulated_dl1_file.with_name(
+        merged_simulated_dl1_file.name.replace('dl1', 'dl2')
+    )
     run_program(
         "lstchain_dl1_to_dl2",
         "-f",
-        merged_dl1_file,
+        merged_simulated_dl1_file,
         "-p",
-        output_dir,
-        "-o",
-        output_dir,
+        rf_models["path"],
+        "--output-dir",
+        tmp_path
     )
-    assert os.path.exists(output_file)
+    assert output_file.is_file()
 
 
-@pytest.mark.run(after="test_lstchain_trainpipe")
-def test_lstchain_dl1_to_dl2():
-    run_program(
-        "lstchain_dl1_to_dl2",
-        "-f",
-        dl1_file,
-        "-p",
-        output_dir,
-        "-o",
-        output_dir,
-    )
-    assert os.path.exists(dl2_file)
+def test_lstchain_dl1_to_dl2(simulated_dl2):
+    assert simulated_dl2.is_file()
+    dl2_df = pd.read_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+    assert "gammaness" in dl2_df.columns
+    assert "reco_type" in dl2_df.columns
+    assert "reco_energy" in dl2_df.columns
+    assert "reco_disp_dx" in dl2_df.columns
+    assert "reco_disp_dy" in dl2_df.columns
+    assert "reco_src_x" in dl2_df.columns
+    assert "reco_src_y" in dl2_df.columns
 
 
-@pytest.mark.run(after="test_lstchain_mc_trainpipe")
 @pytest.mark.private_data
-def test_lstchain_realdata_dl1_to_dl2(tmp_path, observed_dl1_files):
+def test_lstchain_observed_dl1_to_dl2(tmp_path, observed_dl1_files,  rf_models):
     real_data_dl2_file = tmp_path / ("dl2_" + test_r0_path.with_suffix('').stem + ".h5")
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
         observed_dl1_files["dl1_file1"],
         "--path-models",
-        output_dir,
+        rf_models["path"],
         "--output-dir",
-        tmp_path,
+        tmp_path
     )
-    assert os.path.exists(real_data_dl2_file)
+    assert real_data_dl2_file.is_file()
     dl2_df = pd.read_hdf(real_data_dl2_file, key=dl2_params_lstcam_key)
     assert "gammaness" in dl2_df.columns
     assert "reco_type" in dl2_df.columns
@@ -326,60 +326,46 @@ def test_lstchain_realdata_dl1_to_dl2(tmp_path, observed_dl1_files):
     assert "reco_disp_dy" in dl2_df.columns
 
 
-@pytest.mark.run(after="test_lstchain_mc_r0_to_dl1")
-def test_dl1ab():
-    output_file = output_dir / "dl1ab.h5"
-    run_program(
-        "lstchain_dl1ab",
-        "-f",
-        dl1_file,
-        "-o",
-        output_file,
-    )
-    assert os.path.exists(output_file)
+def test_dl1ab(simulated_dl1ab):
+    assert simulated_dl1ab.is_file()
 
 
 @pytest.mark.private_data
-def test_dl1ab_realdata(tmp_path, observed_dl1_files):
+def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
     run_program("lstchain_dl1ab", "-f", observed_dl1_files["dl1_file1"], "-o", output_dl1ab)
-    assert os.path.exists(output_dl1ab)
+    assert output_dl1ab.is_file()
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
     np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
 
 
-@pytest.mark.run(after="test_dl1ab")
-def test_dl1ab_validity():
-    dl1 = pd.read_hdf(dl1_file, key=dl1_params_lstcam_key)
-    dl1ab = pd.read_hdf(os.path.join(output_dir, "dl1ab.h5"), key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
+def test_simulated_dl1ab_validity(simulated_dl1, simulated_dl1ab):
+    assert simulated_dl1ab.is_file()
+    dl1_df = pd.read_hdf(simulated_dl1["file"], key=dl1_params_lstcam_key)
+    dl1ab_df = pd.read_hdf(simulated_dl1ab, key=dl1_params_lstcam_key)
+    np.testing.assert_allclose(dl1_df, dl1ab_df, rtol=1e-4, equal_nan=True)
 
 
-@pytest.mark.run(after="test_lstchain_dl1_to_dl2")
-def test_mc_r0_to_dl2():
-    os.remove(dl1_file)
-    os.remove(dl2_file)
-
+def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
+    dl2_file = tmp_path / "dl2_gamma_test_large.h5"
     run_program(
         "lstchain_mc_r0_to_dl2",
-        "-f",
+        "--input-file",
         mc_gamma_testfile,
-        "-p",
-        output_dir,
-        "-s1",
+        "--path-models",
+        rf_models["path"],
+        "--store-dl1",
         "False",
-        "-o",
-        output_dir,
+        "--output-dir",
+        tmp_path
     )
-    assert os.path.exists(dl2_file)
+    assert dl2_file.is_file()
 
 
-@pytest.mark.run(after="test_mc_r0_to_dl2")
-def test_read_dl2_to_pyirf():
+def test_read_dl2_to_pyirf(simulated_dl2):
     from lstchain.io.io import read_dl2_to_pyirf
-    import astropy.units as u
 
-    events, sim_info = read_dl2_to_pyirf(dl2_file)
+    events, sim_info = read_dl2_to_pyirf(simulated_dl2)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV

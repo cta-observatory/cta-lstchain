@@ -26,9 +26,8 @@ def test_overlay_disp_vector():
 
 
 
-def test_display_dl1_event():
+def test_display_dl1_event(mc_gamma_testfile):
     from ctapipe.io import EventSource, EventSeeker
-    from lstchain.tests.test_lstchain import mc_gamma_testfile
     from ctapipe.calib import CameraCalibrator
 
     source = EventSource(mc_gamma_testfile, back_seekable=True)
