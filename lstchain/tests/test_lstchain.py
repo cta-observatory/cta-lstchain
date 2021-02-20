@@ -83,9 +83,9 @@ def test_r0_available():
 
 
 @pytest.mark.run(after='test_r0_to_dl1')
-def test_content_dl1(simulated_dl1):
+def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
-    with tables.open_file(simulated_dl1["file"], 'r') as f:
+    with tables.open_file(simulated_dl1_file, 'r') as f:
         images_table = f.root[dl1_images_lstcam_key]
         params_table = f.root[dl1_params_lstcam_key]
         assert 'image' in images_table.colnames
@@ -98,17 +98,17 @@ def test_content_dl1(simulated_dl1):
         assert 'obs_id' in params_table.colnames
 
 
-def test_get_source_dependent_parameters(simulated_dl1):
+def test_get_source_dependent_parameters(simulated_dl1_file):
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
 
-    dl1_params = pd.read_hdf(simulated_dl1["file"], key=dl1_params_lstcam_key)
+    dl1_params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     src_dep_df = get_source_dependent_parameters(dl1_params, standard_config)
 
 
 @pytest.mark.run(order=2)
-def test_build_models(simulated_dl1, rf_models):
+def test_build_models(simulated_dl1_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import build_models
-    infile = simulated_dl1["file"]
+    infile = simulated_dl1_file
 
     reg_energy, reg_disp, cls_gh = build_models(
         infile,
@@ -125,11 +125,11 @@ def test_build_models(simulated_dl1, rf_models):
 
 
 @pytest.mark.run(order=3)
-def test_apply_models(simulated_dl1, simulated_dl2, rf_models):
+def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import apply_models
     import joblib
 
-    dl1 = pd.read_hdf(simulated_dl1["file"], key=dl1_params_lstcam_key)
+    dl1 = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(
         dl1,
         filters=standard_config["events_filters"],
@@ -141,23 +141,23 @@ def test_apply_models(simulated_dl1, simulated_dl2, rf_models):
     reg_cls_gh = joblib.load(rf_models["gh_sep"])
 
     dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=standard_config)
-    dl2.to_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+    dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
 
-@pytest.fixture
-def fake_dl2_proton_file(tmp_path, simulated_dl2):
+@pytest.fixture(scope="session")
+def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     """
     Produce a fake dl2 proton file by copying the dl2 gamma test file
     and changing mc_type.
     """
-    dl2_proton_file = tmp_path / 'dl2_fake_proton.simtel.h5'
-    events = pd.read_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+    dl2_proton_file = temp_dir_simulated_files / 'dl2_fake_proton.simtel.h5'
+    events = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     events.mc_type = 101
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
 
 
-def test_sensitivity(fake_dl2_proton_file, simulated_dl1, simulated_dl2):
+def test_sensitivity(fake_dl2_proton_file, simulated_dl1_file, simulated_dl2_file):
     from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
 
     nfiles_gammas = 1
@@ -169,9 +169,9 @@ def test_sensitivity(fake_dl2_proton_file, simulated_dl1, simulated_dl2):
     noff = 2
 
     E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(
-        simulated_dl1["file"],
-        simulated_dl1["file"],
-        simulated_dl2,
+        simulated_dl1_file,
+        simulated_dl1_file,
+        simulated_dl2_file,
         fake_dl2_proton_file,
         nfiles_gammas, nfiles_protons,
         eb, gb, tb, noff,
@@ -179,9 +179,9 @@ def test_sensitivity(fake_dl2_proton_file, simulated_dl1, simulated_dl2):
     )
 
     E, best_sens, result, units, dl2 = sensitivity(
-        simulated_dl1["file"],
-        simulated_dl1["file"],
-        simulated_dl2,
+        simulated_dl1_file,
+        simulated_dl1_file,
+        simulated_dl2_file,
         fake_dl2_proton_file,
         nfiles_gammas, nfiles_protons,
         eb, gcut, tcut * (u.deg ** 2), noff,

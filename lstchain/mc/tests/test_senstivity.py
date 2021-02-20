@@ -12,8 +12,8 @@ from lstchain.mc import (
 
 
 @pytest.mark.run(after='test_r0_to_dl1')
-def test_read_sim_par(simulated_dl1):
-    par = read_sim_par(simulated_dl1["file"])
+def test_read_sim_par(simulated_dl1_file):
+    par = read_sim_par(simulated_dl1_file)
 
     assert np.isclose(par['emin'].to_value(), 0.003)
     assert np.isclose(par['emax'].to_value(), 330.0)

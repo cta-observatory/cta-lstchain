@@ -7,13 +7,13 @@ from lstchain.io.io import dl2_params_lstcam_key
 from lstchain.visualization import plot_dl2
 
 
-def test_plot_disp(simulated_dl2):
-    dl2_df = pd.read_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+def test_plot_disp(simulated_dl2_file):
+    dl2_df = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     plot_dl2.plot_disp(dl2_df)
 
 
-def test_direction_results(tmp_path, simulated_dl2):
-    dl2_df = pd.read_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+def test_direction_results(tmp_path, simulated_dl2_file):
+    dl2_df = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     # Strings are required as input for the output files not PosixPath
     plot_dl2.direction_results(
         dl2_df,
@@ -22,8 +22,8 @@ def test_direction_results(tmp_path, simulated_dl2):
     )
 
 
-def test_energy_results(tmp_path, simulated_dl2):
-    dl2_df = pd.read_hdf(simulated_dl2, key=dl2_params_lstcam_key)
+def test_energy_results(tmp_path, simulated_dl2_file):
+    dl2_df = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     # Strings are required as input for the output files not PosixPath
     plot_dl2.energy_results(
         dl2_df,

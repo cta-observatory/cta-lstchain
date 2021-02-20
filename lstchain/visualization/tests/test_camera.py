@@ -25,7 +25,6 @@ def test_overlay_disp_vector():
     overlay_disp_vector(display, disp, hillas)
 
 
-
 def test_display_dl1_event(mc_gamma_testfile):
     from ctapipe.io import EventSource, EventSeeker
     from ctapipe.calib import CameraCalibrator
