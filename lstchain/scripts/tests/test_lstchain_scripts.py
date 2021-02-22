@@ -67,6 +67,13 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
     return output_file
 
 
+def test_add_source_dependent_parameters(simulated_dl1_file):
+    run_program('lstchain_add_source_dependent_parameters', '-f', simulated_dl1_file)
+    dl1_params_src_dep = pd.read_hdf(simulated_dl1_file, key=dl1_params_src_dep_lstcam_key)
+    dl1_params_src_dep.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in dl1_params_src_dep.columns])
+    assert 'alpha' in dl1_params_src_dep['on'].columns
+
+
 @pytest.fixture(scope="session")
 def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
     """Produce a merged file from two identical dl1 hdf5 files."""
