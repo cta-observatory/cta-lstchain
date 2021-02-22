@@ -42,7 +42,7 @@ class DragonPedestal(Component):
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.first_cap_array = np.zeros((self.n_module, n_gain, n_channel))
-        self.failing_pixels_list = None 
+        self.failing_pixels_list = None
 
     def fill_pedestal_event(self, event):
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
@@ -85,13 +85,14 @@ class DragonPedestal(Component):
 
     def finalize_pedestal(self):
         self.meanped = self.meanped / self.numped
-        pixels_with_nan_value = np.unique(np.where(np.isnan(self.meanped))[1])
-        if len(pixels_with_nan_value) > 0:
-            self.failing_pixels_list = pixels_with_nan_value
+        pixels_with_nan_value = np.where(np.isnan(self.meanped).any(axis=0))
+        if len(pixels_with_nan_value[0]) > 0:
+            # Find failing pixels id
+            self.failing_pixels_list = np.unique(pixels_with_nan_value[0])
             print("Failing pixels:")
             print(self.failing_pixels_list)
         else:
-            print("Everything is OK")
+            print("No pixels with nan values")
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 7))
