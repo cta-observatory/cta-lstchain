@@ -69,7 +69,8 @@ def test_lstchain_mc_r0_to_dl1():
 def test_add_source_dependent_parameters():
     run_program('lstchain_add_source_dependent_parameters', '-f', dl1_file)
     dl1_params_src_dep = pd.read_hdf(dl1_file, key=dl1_params_src_dep_lstcam_key)
-    assert 'alpha' in dl1_params_src_dep.columns
+    dl1_params_src_dep.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in dl1_params_src_dep.columns])
+    assert 'alpha' in dl1_params_src_dep['on'].columns
 
 
 @pytest.mark.run(after='test_lstchain_mc_r0_to_dl1')
