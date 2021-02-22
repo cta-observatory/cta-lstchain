@@ -6,7 +6,7 @@ env:
   NUMBA_NUM_THREADS: 1
   MPLBACKEND: Agg
   PYTEST_ADDOPTS: --color=yes
-  CTAPIPE_IO_LST_VERSION: v0.6.4
+  CTAPIPE_IO_LST_VERSION: v0.6.5
 
 jobs:
   tests:
