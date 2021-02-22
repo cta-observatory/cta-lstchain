@@ -12,7 +12,7 @@ from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
-from ..reco import utils
+from ..reco.disp import disp_parameters_event
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -68,14 +68,14 @@ class DL1ParametersContainer(Container):
                                            'border pixels')
     leakage_pixels_width_2 = Field(np.nan, 'Fraction of signal pixels that are '
                                            'in the two outermost rings of pixels')
-    n_pixels = Field(0, 'Number of pixels after cleaning')
+    n_pixels = Field(-1, 'Number of pixels after cleaning')
     concentration_cog = Field(np.nan, 'Fraction of intensity in three pixels '
                                       'closest to the cog')
     concentration_core = Field(np.nan, 'Fraction of intensity inside hillas '
                                        'ellipse')
     concentration_pixel = Field(np.nan, 'Fraction of intensity in brightest '
                                         'pixel')
-    n_islands = Field(0, 'Number of Islands')
+    n_islands = Field(-1, 'Number of Islands')
     alt_tel = Field(None, 'Telescope altitude pointing',
                     unit=u.rad)
     az_tel = Field(None, 'Telescope azimuth pointing',
@@ -95,14 +95,13 @@ class DL1ParametersContainer(Container):
     mc_core_x = Field(None, 'Simulated impact point x position', unit=u.m)
     mc_core_y = Field(None, 'Simulated impact point y position', unit=u.m)
     mc_h_first_int = Field(None, 'Simulated first interaction height', unit=u.m)
-    mc_type = Field(-1, 'Simulated particle type')
+    mc_type = Field(-9999, "MC shower primary ID 0 (gamma), 1(e-),"
+                           "2(mu-), 100*A+Z for nucleons and nuclei,"
+                           "negative for antimatter.")
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
     mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm**2)
     mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
-    mc_shower_primary_id = Field(None, "MC shower primary ID 0 (gamma), 1(e-),"
-                                    "2(mu-), 100*A+Z for nucleons and nuclei,"
-                                    "negative for antimatter.")
 
     hadroness = Field(None, "Hadroness")
     wl = Field(u.Quantity(np.nan), "width/length")
@@ -170,7 +169,7 @@ class DL1ParametersContainer(Container):
         ])
 
     def set_disp(self, source_pos, hillas):
-        disp = utils.disp_parameters(hillas, source_pos[0], source_pos[1])
+        disp = disp_parameters_event(hillas, source_pos[0], source_pos[1])
         self.disp_norm = disp.norm
         self.disp_dx = disp.dx
         self.disp_dy = disp.dy

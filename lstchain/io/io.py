@@ -1,5 +1,7 @@
 import h5py
+from multiprocessing import Pool
 import numpy as np
+import pandas as pd
 from astropy.table import Table, vstack
 import tables
 from tables import open_file
@@ -20,7 +22,6 @@ from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescript
     TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
-import pandas as pd
 
 __all__ = ['read_simu_info_hdf5',
            'read_simu_info_merged_hdf5',
@@ -42,6 +43,9 @@ __all__ = ['read_simu_info_hdf5',
            'write_dl2_dataframe',
            'write_calibration_data',
            'read_dl2_to_pyirf',
+           'read_dl2_params',
+           'extract_observation_time',
+           'merge_dl2_runs'
            ]
 
 
@@ -1065,3 +1069,72 @@ def read_dl2_to_pyirf(filename):
         events[k] *= v
 
     return events, pyirf_simu_info
+
+
+def read_dl2_params(t_filename, columns_to_read=None):
+    '''
+    Read specified parameters from a file with DL2 data
+
+    Parameters
+    ----------
+    t_filename: Input file name
+    columns_to_read: List of interesting columns, optional. If None, then all columns will be read
+
+    Returns
+    -------
+    Pandas dataframe with DL2 data
+    '''
+    if columns_to_read is not None:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)[columns_to_read]
+    else:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)
+
+
+def extract_observation_time(t_df):
+    '''
+    Calculate observation time
+
+    Parameters
+    ----------
+    pandas.DataFrame t_df: Recorded data
+
+    Returns
+    -------
+    Observation duration in seconds
+    '''
+    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
+           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
+
+
+def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
+    """
+    Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.
+
+    Parameters
+    ----------
+    data_tag: lstchain version tag
+    runs: List of run numbers
+    n_process: Number of parallel read processes to use
+
+    Returns
+    -------
+    Pair (observation time, data)
+    """
+    from functools import partial
+    from glob import glob
+    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*') # Current format of LST data path
+
+    pool = Pool(n_process)
+    filelist = []
+    # Create a list of files with matching run numbers
+    for filename in filepath_glob:
+        if any(f'Run{run:05}' in filename for run in runs):
+            filelist.append(filename)
+
+    df_list = pool.map(partial(read_dl2_params, columns_to_read=columns_to_read), filelist)
+
+    observation_times = pool.map(extract_observation_time, df_list)
+
+    observation_time = sum([t.total_seconds() for t in observation_times])
+    df = pd.concat(df_list)
+    return observation_time, df
