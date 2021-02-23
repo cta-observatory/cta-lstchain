@@ -266,6 +266,7 @@ def test_lstchain_merge_dl1_hdf5_observed_files(temp_dir_observed_files, observe
 def test_merge_datacheck_files(temp_dir_observed_files):
     run_program(
         "lstchain_check_dl1",
+        "--batch",
         "--input-file", temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.*.h5",
         "--output-dir", temp_dir_observed_files
     )
