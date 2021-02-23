@@ -205,12 +205,6 @@ def test_observed_dl1_validity(observed_dl1_files):
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
 
-def test_add_source_dependent_parameters(simulated_dl1_file):
-    run_program("lstchain_add_source_dependent_parameters", "-f", simulated_dl1_file)
-    dl1_params_src_dep = pd.read_hdf(simulated_dl1_file, key=dl1_params_src_dep_lstcam_key)
-    assert "alpha" in dl1_params_src_dep.columns
-
-
 def test_lstchain_mc_trainpipe(rf_models):
     assert rf_models["energy"].is_file()
     assert rf_models["disp"].is_file()
