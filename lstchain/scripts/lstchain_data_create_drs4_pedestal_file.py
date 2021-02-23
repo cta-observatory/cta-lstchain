@@ -33,7 +33,6 @@ from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
-
 parser = argparse.ArgumentParser()
 
 # Required arguments
@@ -71,12 +70,12 @@ args = parser.parse_args()
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
-    reader = LSTEventSource(input_url=args.input_file, max_events=args.max_events)
+    reader = LSTEventSource(input_url=args.input_file, max_events=args.max_events, fill_timestamp=False)
     print("--> Number of files", reader.multi_file.num_inputs())
 
+    tel_id = 1
     seeker = EventSeeker(reader)
-    ev = seeker[0]
-    tel_id = ev.r0.tels_with_data[0]
+    ev = seeker.get_event_index(1)
     n_modules = ev.lst.tel[tel_id].svc.num_modules
 
     config = Config({
@@ -91,11 +90,10 @@ def main():
     if args.deltaT:
         print("DeltaT correction active")
         for i, event in enumerate(reader):
-            for tel_id in event.r0.tels_with_data:
-                lst_r0.time_lapse_corr(event, tel_id)
-                pedestal.fill_pedestal_event(event)
-                if i%500 == 0:
-                    print("i = {}, ev id = {}".format(i, event.index.event_id))
+            lst_r0.time_lapse_corr(event, tel_id)
+            pedestal.fill_pedestal_event(event)
+            if i%500 == 0:
+                print("i = {}, ev id = {}".format(i, event.index.event_id))
     else:
         print("DeltaT correction no active")
         for i, event in enumerate(reader):
