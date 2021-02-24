@@ -42,11 +42,10 @@ setup(
     version=version,
     packages=find_packages(),
     install_requires=[
-        'astropy~=4.1',
-        'ctapipe~=0.8.0',
-        'ctapipe-extra~=0.3',
+        "astropy~=4.2",
+        'ctapipe>=0.10.3',
         'ctaplot~=0.5.3',
-        "eventio>=1.1.1,<2.0.0a0",  # at least 1.1.1, but not 2
+        "eventio>=1.5.1,<2.0.0a0",  # at least 1.1.1, but not 2
         'gammapy>=0.18',
         'h5py',
         'joblib',
@@ -64,9 +63,11 @@ setup(
         'iminuit~=1.5',
     ],
     package_data={
-        'lstchain': ['data/lstchain_standard_config.json',
-                     'data/data_selection_cuts.json',
-                     'resources/LST_pixid_to_cluster.txt'],
+        'lstchain': [
+            'data/lstchain_standard_config.json',
+            'data/data_selection_cuts.json',
+            'resources/LST_pixid_to_cluster.txt',
+        ],
     },
     tests_require=[
         'pytest',

@@ -2,6 +2,7 @@
 Create FITS file for IRFs from given MC DL2 files and selection cuts
 MC gamma files can be point-like or diffuse
 IRFs can be point-like or Full Enclosure
+
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
 
@@ -86,6 +87,16 @@ class IRFFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
+    overwrite = traits.Bool(
+        help="If True, overwrites existing output file without asking",
+        default_value=True,
+    ).tag(config=True)
+
+    provenance_log = traits.Path(
+        help="Path for the Provenance log",
+        directory_ok=False,
+    ).tag(config=True)
+
     aliases = {
         "input_gamma_dl2": "IRFFITSWriter.input_gamma_dl2",
         "fg": "IRFFITSWriter.input_gamma_dl2",
@@ -99,6 +110,8 @@ class IRFFITSWriter(Tool):
         "pnt": "IRFFITSWriter.point_like",
         "config_file": "IRFFITSWriter.config_file",
         "conf": "IRFFITSWriter.config_file",
+        "provenance_log": "IRFFITSWriter.provenance_log",
+        "prov": "IRFFITSWriter.provenance_log",
     }
 
     flag = {
@@ -106,6 +119,9 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"point_like": False}},
             "Full Enclosure IRFs will be produced",
         ),
+        "overwrite": ({"IRFFITSWriter": {"overwrite": True}},
+                        "overwrite output file"
+                    )
     }
 
     def __init__(self, **kwargs):
@@ -119,16 +135,14 @@ class IRFFITSWriter(Tool):
         self.psf = None
 
     def setup(self):
-        filename = os.path.basename(self.output_irf_file)
+        filename = self.output_irf_file.name
         if filename.split(".")[1:] != ["fits", "gz"]:
-            self.log.error(
+            self.log.debug(
                 f"{filename} is not a correct "
                 "compressed FITS file name. It will be corrected."
             )
             filename = filename.split(".")[0] + ".fits.gz"
-            self.output_irf_file = os.path.join(
-                os.path.dirname(self.output_irf_file), filename
-            )
+            self.output_irf_file = self.output_irf_file.parent / filename
 
         if self.config_file is None:
             self.cuts = read_configuration_file(
@@ -138,6 +152,12 @@ class IRFFITSWriter(Tool):
             )
         else:
             self.cuts = read_configuration_file(self.config_file)
+
+        if self.output_irf_file.exists() and not self.overwrite:
+            raise ToolConfigurationError(
+                f"Output file {self.output_irf_file} already exists,"
+                " use --overwrite to overwrite"
+            )
 
         # Read and update MC information
         self.mc_particle = {
@@ -154,9 +174,16 @@ class IRFFITSWriter(Tool):
                 "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
             },
         }
+        
+        if not self.provenance_log:
+            self.provenance_log = self.output_irf_file.parent / (self.name + ".provenance.log")
+
+        Provenance().add_input_file(self.input_gamma_dl2)
+        Provenance().add_input_file(self.input_proton_dl2)
+        Provenance().add_input_file(self.input_electron_dl2)
 
         for particle_type, p in self.mc_particle.items():
-            self.log.info(f"Simulated {particle_type.title()} Events:")
+            self.log.debug(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
 
             if p["simulation_info"].viewcone.value == 0.0:
@@ -166,12 +193,12 @@ class IRFFITSWriter(Tool):
                 # For diffuse gamma using Proton Spectra for calculating event weights
                 if particle_type == "gamma":
                     p["target_spectrum"] = IRFDOC_PROTON_SPECTRUM
-                    self.log.info(
+                    self.log.debug(
                         "Proton spectrum used as target spectrum"
                         " for MC diffuse gamma"
                     )
 
-            self.log.info(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
+            self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
 
             p["simulated_spectrum"] = PowerLaw.from_simulation(
                 p["simulation_info"], 50 * u.hour
@@ -191,7 +218,7 @@ class IRFFITSWriter(Tool):
                 assumed_source_az=p["events"]["true_az"],
                 assumed_source_alt=p["events"]["true_alt"],
             )
-            self.log.info(p["simulation_info"])
+            self.log.debug(p["simulation_info"])
 
     def start(self):
 
@@ -204,7 +231,7 @@ class IRFFITSWriter(Tool):
             )
 
         gh_cut = self.cuts["fixed_cuts"]["gh_score"][0]
-        self.log.info(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
+        self.log.debug(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
         gammas = filter_events(gammas, self.cuts["events_filters"])
         background = filter_events(background, self.cuts["events_filters"])
@@ -261,9 +288,9 @@ class IRFFITSWriter(Tool):
         migration_bins = np.linspace(0.2, 5, 31)
 
         if self.point_like:
-            self.log.info("Generating Point-Like IRF HDUs")
+            self.log.debug("Generating Point-Like IRF HDUs")
         else:
-            self.log.info("Generating Full-Enclosure IRF HDUs")
+            self.log.debug("Generating Full-Enclosure IRF HDUs")
 
         # Write HDUs
         self.hdus = [
@@ -310,7 +337,7 @@ class IRFFITSWriter(Tool):
                     )
                 )
 
-        self.log.info("Effective Area HDU created")
+        self.log.debug("Effective Area HDU created")
         self.edisp = energy_dispersion(
             gammas[gammas["selected"]],
             true_energy_bins,
@@ -328,7 +355,7 @@ class IRFFITSWriter(Tool):
                 **extra_headers,
             )
         )
-        self.log.info("Energy Dispersion HDU created")
+        self.log.debug("Energy Dispersion HDU created")
 
         # Using the same FOV offset binning as pyirf for now.
         self.background = background_2d(
@@ -346,7 +373,7 @@ class IRFFITSWriter(Tool):
                 **extra_headers,
             )
         )
-        self.log.info("Background HDU created")
+        self.log.debug("Background HDU created")
         self.psf = psf_table(
             gammas[gammas["selected_gh"] & gammas["selected_tels"]],
             true_energy_bins,
@@ -363,13 +390,11 @@ class IRFFITSWriter(Tool):
                 **extra_headers,
             )
         )
-        self.log.info("PSF HDU created")
+        self.log.debug("PSF HDU created")
 
     def finish(self):
-        if self.output_irf_file.exists():
-            self.log.info(f"{self.output_irf_file} exists, will be overwritten")
 
-        fits.HDUList(self.hdus).writeto(self.output_irf_file, overwrite=True)
+        fits.HDUList(self.hdus).writeto(self.output_irf_file, overwrite=self.overwrite)
         Provenance().add_output_file(self.output_irf_file)
 
 

@@ -2,59 +2,60 @@ import h5py
 from multiprocessing import Pool
 import numpy as np
 import pandas as pd
-
+from astropy.table import Table, vstack
 import tables
 from tables import open_file
 import os
-from tqdm import tqdm
-
+import astropy.units as u
 import ctapipe
+import lstchain
 from ctapipe.io import HDF5TableReader
-from ctapipe.containers import MCHeaderContainer
+from ctapipe.containers import SimulationConfigContainer
 from ctapipe.io import HDF5TableWriter
-from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import (OpticsDescription, CameraGeometry,
-		 CameraDescription, CameraReadout,
-		 TelescopeDescription, SubarrayDescription)
-
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-
-import lstchain
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-
+from tqdm import tqdm
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
-from astropy import table
-from astropy.table import Table, vstack
-import astropy.units as u
-
+from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
+    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
+from astropy import table
 
-__all__ = ['read_simu_info_hdf5',
-           'read_simu_info_merged_hdf5',
-           'get_dataset_keys',
-           'write_simtel_energy_histogram',
-           'write_mcheader',
-           'write_array_info',
-           'check_thrown_events_histogram',
-           'check_mcheader',
-           'check_metadata',
-           'read_metadata',
-           'auto_merge_h5files',
-           'smart_merge_h5files',
-           'global_metadata',
-           'add_global_metadata',
-           'write_subarray_tables',
-           'write_metadata',
-           'write_dataframe',
-           'write_dl2_dataframe',
-           'write_calibration_data',
-           'read_mc_dl2_to_pyirf',
-           'read_data_dl2_to_QTable',
-           'read_dl2_params',
-           'extract_observation_time',
-           'merge_dl2_runs'
-           ]
+import logging
+
+log = logging.getLogger(__name__)
+
+
+__all__ = [
+    'read_simu_info_hdf5',
+    'read_simu_info_merged_hdf5',
+    'get_dataset_keys',
+    'write_simtel_energy_histogram',
+    'write_mcheader',
+    'write_array_info',
+    'check_thrown_events_histogram',
+    'check_mcheader',
+    'check_metadata',
+    'read_metadata',
+    'auto_merge_h5files',
+    'smart_merge_h5files',
+    'global_metadata',
+    'add_global_metadata',
+    'write_subarray_tables',
+    'write_metadata',
+    'write_dataframe',
+    'write_dl2_dataframe',
+    'write_calibration_data',
+    'read_mc_dl2_to_pyirf',
+    'read_data_dl2_to_QTable',
+    'read_dl2_params',
+    'extract_observation_time',
+    'merge_dl2_runs'
+]
+
+
 
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
@@ -62,18 +63,19 @@ dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 dl2_params_src_dep_lstcam_key = 'dl2/event/telescope/parameters_src_dependent/LST_LSTCam'
 
+
 def read_simu_info_hdf5(filename):
     """
     Read simu info from an hdf5 file
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
     """
 
     with HDF5TableReader(filename) as reader:
-        mcheader = reader.read('/simulation/run_config', MCHeaderContainer())
-        mc = next(mcheader)
+        mc_reader = reader.read('/simulation/run_config', SimulationConfigContainer())
+        mc = next(mc_reader)
 
     return mc
 
@@ -91,16 +93,15 @@ def read_simu_info_merged_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
 
     """
     with open_file(filename) as file:
         simu_info = file.root['simulation/run_config']
         colnames = simu_info.colnames
-        not_to_check = ['num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id']
-        for k in colnames:
-            if k not in not_to_check:
-                assert np.all(simu_info[:][k] == simu_info[0][k])
+        skip = {'num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id'}
+        for k in filter(lambda k: k not in skip, colnames):
+            assert np.all(simu_info[:][k] == simu_info[0][k])
         num_showers = simu_info[:]['num_showers'].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
@@ -270,8 +271,8 @@ def merging_check(file_list):
             for ii, table in read_array_info(filename).items():
                 assert (table == array_info0[ii]).all()
         except:
+            log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
             mergeable_list.remove(filename)
-            print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
 
     return mergeable_list
 
@@ -303,7 +304,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    source: `ctapipe.io.EventSource`
     output_filename: str
     obs_id: float, int, str or None
     """
@@ -351,7 +352,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.DataContainer`
+    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -740,8 +741,8 @@ def check_mcheader(mcheader1, mcheader2):
 
     Parameters
     ----------
-    mcheader1: `ctapipe.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.SimulationConfigContainer`
+    mcheader2: `ctapipe.containers.SimulationConfigContainer`
 
     Returns
     -------
@@ -757,11 +758,9 @@ def check_mcheader(mcheader1, mcheader2):
         if k in keys:
             keys.remove(k)
 
-    keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
         assert mcheader1[k] == mcheader2[k]
-    assert (mcheader1['run_array_direction'] == mcheader2['run_array_direction']).all()
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -873,15 +872,15 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
         add_global_metadata(event.index, metadata)
-        add_global_metadata(event.mc, metadata)
+        add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.mc])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
@@ -1030,10 +1029,9 @@ def read_mc_dl2_to_pyirf(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
 
-	Parameters
+    Parameters
     ----------
     filename: path
-
     Returns
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
@@ -1061,19 +1059,17 @@ def read_mc_dl2_to_pyirf(filename):
     }
 
     simu_info = read_simu_info_merged_hdf5(filename)
-    pyirf_simu_info = SimulatedEventsInfo(
-							n_showers=simu_info.num_showers*simu_info.shower_reuse,
-                            energy_min=simu_info.energy_range_min,
-                            energy_max=simu_info.energy_range_max,
-                            max_impact=simu_info.max_scatter_range,
-                            spectral_index=simu_info.spectral_index,
-                            viewcone=simu_info.max_viewcone_radius,
-                            )
+    pyirf_simu_info = SimulatedEventsInfo(n_showers=simu_info.num_showers * simu_info.shower_reuse,
+                                          energy_min=simu_info.energy_range_min,
+                                          energy_max=simu_info.energy_range_max,
+                                          max_impact=simu_info.max_scatter_range,
+                                          spectral_index=simu_info.spectral_index,
+                                          viewcone=simu_info.max_viewcone_radius,
+                                          )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
     events = table.QTable.from_pandas(events)
 
-    # Make the columns as Quantity
     for k, v in unit_mapping.items():
         events[k] *= v
 
@@ -1082,11 +1078,9 @@ def read_mc_dl2_to_pyirf(filename):
 def read_data_dl2_to_QTable(filename):
     """
     Read data DL2 files from lstchain and return QTable format
-
     Parameters
     ----------
     filename: path to the lstchain DL2 file
-
     Returns
     -------
     `astropy.table.QTable`

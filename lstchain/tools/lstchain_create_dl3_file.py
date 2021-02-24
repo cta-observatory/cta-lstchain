@@ -14,7 +14,7 @@ lstchain_create_irf_files
 
 import os
 
-from ctapipe.core import Tool, traits, Provenance
+from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
 from lstchain.reco.utils import filter_events
 from lstchain.paths import run_info_from_filename
@@ -52,13 +52,23 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
+    source_name = traits.Unicode(help="Name of Source").tag(config=True)
+
     config_file = traits.Path(
         help="Config file for selection cuts",
         directory_ok=False,
         file_ok=True,
     ).tag(config=True)
 
-    source_name = traits.Unicode(help="Name of Source").tag(config=True)
+    overwrite = traits.Bool(
+        help="If True, overwrites existing output file without asking",
+        default_value=True,
+    ).tag(config=True)
+
+    provenance_log = traits.Path(
+        help="Path for the Provenance log",
+        directory_ok=False,
+    ).tag(config=True)
 
     aliases = {
         "input_dl2": "DataReductionFITSWriter.input_dl2",
@@ -71,6 +81,14 @@ class DataReductionFITSWriter(Tool):
         "config_file": "DataReductionFITSWriter.config_file",
         "conf": "DataReductionFITSWriter.config_file",
         "source_name": "DataReductionFITSWriter.source_name",
+        "provenance_log": "DataReductionFITSWriter.provenance_log",
+        "prov": "DataReductionFITSWriter.provenance_log",
+    }
+
+    flags = {
+        "overwrite": ({"DataReductionFITSWriter": {"overwrite": True}},
+                        "overwrite output file"
+                    )
     }
 
     def __init__(self, **kwargs):
@@ -103,6 +121,16 @@ class DataReductionFITSWriter(Tool):
         self.filename_dl3 = filename_dl2.replace("dl2", "dl3")
         self.filename_dl3 = self.filename_dl3.replace("h5", "fits")
 
+        if not self.provenance_log:
+            self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
+
+        Provenance().add_input_file(self.input_dl2)
+        self.output_file = self.output_dl3_path / self.filename_dl3
+        if self.output_file.exists() and not self.overwrite:
+            raise ToolConfigurationError(
+                f"Output file {self.output_file} already exists, use --overwrite to overwrite"
+            )
+
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
 
         self.run_number = run_info_from_filename(self.input_dl2)[1]
@@ -123,7 +151,7 @@ class DataReductionFITSWriter(Tool):
             self.data["reco_source_fov_offset"]
             < u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"])
         ]
-        self.log.info("Generating event list")
+        self.log.debug("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
             data=self.data, run_number=self.run_number, source_name=self.source_name
         )
@@ -135,7 +163,7 @@ class DataReductionFITSWriter(Tool):
             self.bkg2d = irf["BACKGROUND"]
             self.psf = irf["PSF"]
 
-            self.log.info("Adding IRF HDUs")
+            self.log.debug("Adding IRF HDUs")
             self.hdulist = fits.HDUList(
                 [
                     fits.PrimaryHDU(),
@@ -154,11 +182,7 @@ class DataReductionFITSWriter(Tool):
             )
 
     def finish(self):
-        self.output_file = self.output_dl3_path / self.filename_dl3
-        if self.output_file.exists():
-            self.log.info(f"{self.output_file} exists, will be overwritten")
-
-        self.hdulist.writeto(self.output_file, overwrite=True)
+        self.hdulist.writeto(self.output_file, overwrite=self.overwrite)
 
         Provenance().add_output_file(self.output_file)
 

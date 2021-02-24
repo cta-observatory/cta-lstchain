@@ -12,7 +12,7 @@ lstchain_create_dl3_index_files
 """
 
 from lstchain.irf import create_obs_hdu_index
-from ctapipe.core import Tool, traits, Provenance
+from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
 __all__ = ["FITSIndexWriter"]
 
@@ -29,11 +29,29 @@ class FITSIndexWriter(Tool):
         help="File pattern to search in the given Path", default_value="dl3*.fits"
     ).tag(config=True)
 
+    overwrite = traits.Bool(
+        help="If True, overwrites existing output file without asking",
+        default_value=True,
+    ).tag(config=True)
+
+    provenance_log = traits.Path(
+        help="Path for the Provenance log",
+        directory_ok=False,
+    ).tag(config=True)
+
     aliases = {
         "input_dl3_dir": "FITSIndexWriter.input_dl3_dir",
         "d": "FITSIndexWriter.input_dl3_dir",
         "file_pattern": "FITSIndexWriter.file_pattern",
         "p": "FITSIndexWriter.file_pattern",
+        "provenance_log": "FITSIndexWriter.provenance_log",
+        "prov": "FITSIndexWriter.provenance_log",
+    }
+
+    flags = {
+        "overwrite": ({"FITSIndexWriter": {"overwrite": True}},
+                        "overwrite output files"
+                    )
     }
 
     def __init__(self, **kwargs):
@@ -53,8 +71,26 @@ class FITSIndexWriter(Tool):
 
         for f in list_files:
             self.file_list.append(f.name)
+            Provenance().add_input_file(f)
+
+        self.hdu_index_file = self.input_dl3_dir / self.hdu_index_filename
+        self.obs_index_file = self.input_dl3_dir / self.obs_index_filename
+
+        if not self.provenance_log:
+            self.provenance_log = self.input_dl3_dir / (self.name + ".provenance.log")
+
+        if self.hdu_index_file.exists() and not self.overwrite:
+            raise ToolConfigurationError(
+                f"Output file {self.hdu_index_file} already exists, use --overwrite to overwrite"
+            )
+        if self.obs_index_file.exists() and not self.overwrite:
+            raise ToolConfigurationError(
+                f"Output file {self.obs_index_file} already exists, use --overwrite to overwrite"
+            )
+
 
     def start(self):
+
         # Retrieving HDULists for both index files
         self.hdu_index_list, self.obs_index_list = create_obs_hdu_index(
             self.file_list,
@@ -62,25 +98,12 @@ class FITSIndexWriter(Tool):
             self.hdu_index_filename,
             self.obs_index_filename,
         )
-        self.log.info("HDULists created for the index files")
+        self.log.debug("HDULists created for the index files")
 
     def finish(self):
-        self.hdu_index_file = self.input_dl3_dir / self.hdu_index_filename
-        self.obs_index_file = self.input_dl3_dir / self.obs_index_filename
 
-        if self.hdu_index_file.exists():
-            self.log.info(
-                f"The HDU index file {self.hdu_index_file} exists,"
-                "it will be overwritten"
-            )
-        if self.obs_index_file.exists():
-            self.log.info(
-                f"The Obs index file {self.obs_index_file} exists,"
-                "it will be overwritten"
-            )
-
-        self.hdu_index_list.writeto(self.hdu_index_file, overwrite=True)
-        self.obs_index_list.writeto(self.obs_index_file, overwrite=True)
+        self.hdu_index_list.writeto(self.hdu_index_file, overwrite=self.overwrite)
+        self.obs_index_list.writeto(self.obs_index_file, overwrite=self.overwrite)
 
         Provenance().add_output_file(self.hdu_index_file)
         Provenance().add_output_file(self.obs_index_file)

@@ -41,5 +41,7 @@ __all__ = [
     'write_metadata',
     'write_subarray_tables',
     'read_simu_info_merged_hdf5',
-    'write_calibration_data'
+    'write_calibration_data',
+    'read_mc_dl2_to_pyirf',
+    'read_data_dl2_to_QTable'
 ]
