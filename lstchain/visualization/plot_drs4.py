@@ -60,6 +60,7 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
     })
     # declare the pedestal component
     pedestal = PedestalIntegrator(tel_id=tel_id,
+                                  time_sampling_correction_path = None,
                                   sample_size=1000,
                                   sample_duration=1000000,
                                   charge_median_cut_outliers=[-10, 10],

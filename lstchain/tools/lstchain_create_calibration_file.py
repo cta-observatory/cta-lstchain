@@ -142,9 +142,10 @@ class CalibrationHDF5Writer(Tool):
 
         try:
             self.log.debug(f"Start loop")
+            self.log.debug(f"If not simulation, skip first {events_to_skip} events")
             for count, event in enumerate(self.eventsource):
 
-                if count % 100 == 0:
+                if count % 100 == 0 and count> events_to_skip:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
@@ -181,13 +182,17 @@ class CalibrationHDF5Writer(Tool):
 
                 # reject event without trigger type
                 if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
-                    continue
+                    if LSTEventType.is_unknown(event.lst.tel[tel_id].evt.ucts_trigger_type):
+                        continue
+                    else:
+                        event.r1.tel[tel_id].trigger_type = event.lst.tel[tel_id].evt.ucts_trigger_type
 
                 # if pedestal event
                 if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                     < self.processor.minimum_hg_charge_median):
+
                     new_ped = self.processor.pedestal.calculate_pedestals(event)
 
 
@@ -199,7 +204,8 @@ class CalibrationHDF5Writer(Tool):
                         and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
                         < self.processor.maximum_lg_charge_std):
 
-                    new_ff = self.processor.flatfield.calculate_relative_gain(event)
+                   new_ff = self.processor.flatfield.calculate_relative_gain(event)
+
                 # write pedestal results when enough statistics or end of file
                 if new_ped or end_of_file:
 

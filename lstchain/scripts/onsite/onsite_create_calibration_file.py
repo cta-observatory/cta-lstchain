@@ -34,6 +34,7 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--default_time_run', help="If 0 time calibration is calculated otherwise create a link to the give run time calibration",type=int, default='1625')
 optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
+optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
 
 
 args = parser.parse_args()
@@ -45,6 +46,7 @@ base_dir = args.base_dir
 default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
+sub_run = '%04d'%args.sub_run
 
 max_events = 1000000
 
@@ -55,7 +57,7 @@ def main():
 
     try:
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
+        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run}*'))
         if len(file_list) == 0:
             print(f">>> Error: Run {run} not found\n")
             raise NameError()
@@ -117,8 +119,8 @@ def main():
 
         # define charge file names
         print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
-        output_file = f"{output_dir}/calibration.Run{run}.0000.hdf5"
-        log_file = f"{output_dir}/log/calibration.Run{run}.0000.log"
+        output_file = f"{output_dir}/calibration.Run{run}.{sub_run}.hdf5"
+        log_file = f"{output_dir}/log/calibration.Run{run}.{sub_run}.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file) and ff_calibration == 'yes':
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
@@ -144,7 +146,7 @@ def main():
             os.system(cmd)
 
             # plot and save some results
-            plot_file=f"{output_dir}/log/calibration.Run{run}.0000.pedestal.Run{ped_run}.0000.pdf"
+            plot_file=f"{output_dir}/log/calibration.Run{run}.{sub_run}.pedestal.Run{ped_run}.0000.pdf"
             print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
             calib.read_file(output_file,tel_id)
             calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
