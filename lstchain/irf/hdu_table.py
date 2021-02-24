@@ -76,17 +76,17 @@ def create_obs_hdu_index(
         # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
         # Event list
         t_events = {
-                "OBS_ID": event_table.meta["OBS_ID"],
-                "HDU_TYPE": "events",
-                "HDU_CLASS": "events",
-                "HDU_CLASS1": "EVENTS",
-                "HDU_CLASS2": "",
-                "HDU_CLASS3": "",
-                "HDU_CLASS4": "",
-                "FILE_DIR": "",
-                "FILE_NAME": file,
-                "HDU_NAME": "EVENTS",
-            }
+            "OBS_ID": event_table.meta["OBS_ID"],
+            "HDU_TYPE": "events",
+            "HDU_CLASS": "events",
+            "HDU_CLASS1": "EVENTS",
+            "HDU_CLASS2": "",
+            "HDU_CLASS3": "",
+            "HDU_CLASS4": "",
+            "FILE_DIR": "",
+            "FILE_NAME": file,
+            "HDU_NAME": "EVENTS",
+        }
         hdu_index_tables.append(t_events)
 
         # GTI
@@ -176,25 +176,25 @@ def create_obs_hdu_index(
 
         # Obs_table
         t_obs = {
-                "OBS_ID": event_table.meta["OBS_ID"],
-                "DATE_OBS": event_table.meta["DATE_OBS"],
-                "RA_PNT": event_table.meta["RA_PNT"] * u.deg,
-                "DEC_PNT": event_table.meta["DEC_PNT"] * u.deg,
-                "ZEN_PNT": (90 - float(event_table.meta["ALT_PNT"])) * u.deg,
-                "ALT_PNT": event_table.meta["ALT_PNT"] * u.deg,
-                "AZ_PNT": event_table.meta["AZ_PNT"] * u.deg,
-                "RA_OBJ": event_table.meta["RA_OBJ"] * u.deg,
-                "DEC_OBJ": event_table.meta["DEC_OBJ"] * u.deg,
-                "ONTIME": event_table.meta["ONTIME"] * u.s,
-                "LIVETIME": event_table.meta["LIVETIME"] * u.s,
-                "DEADC": event_table.meta["DEADC"],
-                "TSTART": event_table.meta["TSTART"] * u.s,
-                "TSTOP": event_table.meta["TSTOP"] * u.s,
-                "OBJECT": event_table.meta["OBJECT"],
-                "OBS_MODE": event_table.meta["OBS_MODE"],
-                "N_TELS": event_table.meta["N_TELS"],
-                "TELLIST": event_table.meta["TELLIST"],
-            }
+            "OBS_ID": event_table.meta["OBS_ID"],
+            "DATE_OBS": event_table.meta["DATE_OBS"],
+            "RA_PNT": event_table.meta["RA_PNT"] * u.deg,
+            "DEC_PNT": event_table.meta["DEC_PNT"] * u.deg,
+            "ZEN_PNT": (90 - float(event_table.meta["ALT_PNT"])) * u.deg,
+            "ALT_PNT": event_table.meta["ALT_PNT"] * u.deg,
+            "AZ_PNT": event_table.meta["AZ_PNT"] * u.deg,
+            "RA_OBJ": event_table.meta["RA_OBJ"] * u.deg,
+            "DEC_OBJ": event_table.meta["DEC_OBJ"] * u.deg,
+            "ONTIME": event_table.meta["ONTIME"] * u.s,
+            "LIVETIME": event_table.meta["LIVETIME"] * u.s,
+            "DEADC": event_table.meta["DEADC"],
+            "TSTART": event_table.meta["TSTART"] * u.s,
+            "TSTOP": event_table.meta["TSTOP"] * u.s,
+            "OBJECT": event_table.meta["OBJECT"],
+            "OBS_MODE": event_table.meta["OBS_MODE"],
+            "N_TELS": event_table.meta["N_TELS"],
+            "TELLIST": event_table.meta["TELLIST"],
+        }
         obs_index_tables.append(t_obs)
 
     hdu_index_table = Table(hdu_index_tables)
@@ -331,7 +331,7 @@ def create_event_list(data, run_number, source_name):
     ev_header["OBJECT"] = source_name
     ev_header["OBS_MODE"] = mode
     ev_header["N_TELS"] = len(tel_list)
-    ev_header["TELLIST"] = "LST-"+f" ".join(map(str,tel_list))
+    ev_header["TELLIST"] = "LST-" + f" ".join(map(str, tel_list))
 
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value

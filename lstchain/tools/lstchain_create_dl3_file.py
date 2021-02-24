@@ -13,6 +13,8 @@ lstchain_create_irf_files
 """
 
 import os
+from astropy.io import fits
+import astropy.units as u
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
@@ -21,9 +23,6 @@ from lstchain.paths import run_info_from_filename
 from lstchain.irf import create_event_list
 
 from pyirf.utils import calculate_source_fov_offset
-
-from astropy.io import fits
-import astropy.units as u
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -86,9 +85,10 @@ class DataReductionFITSWriter(Tool):
     }
 
     flags = {
-        "overwrite": ({"DataReductionFITSWriter": {"overwrite": True}},
-                        "overwrite output file"
-                    )
+        "overwrite": (
+            {"DataReductionFITSWriter": {"overwrite": True}},
+            "overwrite output file",
+        )
     }
 
     def __init__(self, **kwargs):
@@ -172,10 +172,10 @@ class DataReductionFITSWriter(Tool):
                     self.pointing,
                     self.aeff2d,
                     self.edisp2d,
-		            self.bkg2d,
-		            self.psf,
+                    self.bkg2d,
+                    self.psf,
                 ]
-	    )
+            )
         else:
             self.hdulist = fits.HDUList(
                 [fits.PrimaryHDU(), self.events, self.gti, self.pointing]

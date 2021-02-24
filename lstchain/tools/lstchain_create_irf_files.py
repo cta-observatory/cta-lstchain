@@ -119,9 +119,7 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"point_like": False}},
             "Full Enclosure IRFs will be produced",
         ),
-        "overwrite": ({"IRFFITSWriter": {"overwrite": True}},
-                        "overwrite output file"
-                    )
+        "overwrite": ({"IRFFITSWriter": {"overwrite": True}}, "overwrite output file"),
     }
 
     def __init__(self, **kwargs):
@@ -174,9 +172,11 @@ class IRFFITSWriter(Tool):
                 "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
             },
         }
-        
+
         if not self.provenance_log:
-            self.provenance_log = self.output_irf_file.parent / (self.name + ".provenance.log")
+            self.provenance_log = self.output_irf_file.parent / (
+                self.name + ".provenance.log"
+            )
 
         Provenance().add_input_file(self.input_gamma_dl2)
         Provenance().add_input_file(self.input_proton_dl2)
@@ -224,11 +224,11 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
         background = table.vstack(
-                [
-                    self.mc_particle["proton"]["events"],
-                    self.mc_particle["electron"]["events"],
-                ]
-            )
+            [
+                self.mc_particle["proton"]["events"],
+                self.mc_particle["electron"]["events"],
+            ]
+        )
 
         gh_cut = self.cuts["fixed_cuts"]["gh_score"][0]
         self.log.debug(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
@@ -264,9 +264,7 @@ class IRFFITSWriter(Tool):
         else:
             gammas["selected"] = gammas["selected_gh"] & gammas["selected_tels"]
 
-        background["selected"] = (
-            background["selected_gh"] & background["selected_tels"]
-        )
+        background["selected"] = background["selected_gh"] & background["selected_tels"]
 
         # Binning of parameters used in IRFs
         # 12.5 GeV - 51.28 TeV

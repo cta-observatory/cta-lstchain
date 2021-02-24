@@ -49,9 +49,10 @@ class FITSIndexWriter(Tool):
     }
 
     flags = {
-        "overwrite": ({"FITSIndexWriter": {"overwrite": True}},
-                        "overwrite output files"
-                    )
+        "overwrite": (
+            {"FITSIndexWriter": {"overwrite": True}},
+            "overwrite output files",
+        )
     }
 
     def __init__(self, **kwargs):
@@ -87,7 +88,6 @@ class FITSIndexWriter(Tool):
             raise ToolConfigurationError(
                 f"Output file {self.obs_index_file} already exists, use --overwrite to overwrite"
             )
-
 
     def start(self):
 
