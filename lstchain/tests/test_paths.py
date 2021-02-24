@@ -48,6 +48,12 @@ def test_parse_dl1():
     assert run.subrun == 0
     assert run.stream is None
 
+    run = parse_dl1_filename('dl1_LST-1.Run01920.0000_some_custom_junk.hdf5')
+    assert run.tel_id == 1
+    assert run.run == 1920
+    assert run.subrun == 0
+    assert run.stream is None
+
     with pytest.raises(ValueError):
         run = parse_dl1_filename('foo.fits.fz')
 
