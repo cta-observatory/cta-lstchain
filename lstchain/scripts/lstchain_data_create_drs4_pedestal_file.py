@@ -24,14 +24,8 @@ import argparse
 import numpy as np
 from astropy.io import fits
 
-<<<<<<< HEAD
-from ctapipe_io_lst import LSTEventSource
-from ctapipe.io import EventSeeker
-=======
-
 from ctapipe.io import EventSource
-from ctapipe_io_lst.calibration import LSTR0Corrections
->>>>>>> 365258afc85e779a77e9d993bda64a9327afd0f7
+
 from distutils.util import strtobool
 from lstchain.calib.camera.drs4 import DragonPedestal
 
@@ -78,40 +72,9 @@ source_config = {
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
-<<<<<<< HEAD
-    reader = LSTEventSource(input_url=args.input_file, max_events=args.max_events, fill_timestamp=False)
-    print("--> Number of files", reader.multi_file.num_inputs())
 
-    tel_id = 1
-    seeker = EventSeeker(reader)
-    ev = seeker.get_event_index(1)
-    n_modules = ev.lst.tel[tel_id].svc.num_modules
-
-    config = Config({
-        "LSTR0Corrections": {
-            "tel_id": tel_id
-        }
-    })
-    lst_r0 = LSTR0Corrections(config=config)
-
-    pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
-
-    if args.deltaT:
-        print("DeltaT correction active")
-        for i, event in enumerate(reader):
-            lst_r0.time_lapse_corr(event, tel_id)
-            pedestal.fill_pedestal_event(event)
-            if i%500 == 0:
-                print("i = {}, ev id = {}".format(i, event.index.event_id))
-=======
     reader = EventSource(input_url=args.input_file, config=Config(source_config))
     print("--> Number of files", reader.multi_file.num_inputs())
-
-    if args.deltaT:
-        print("DeltaT correction active")
->>>>>>> 365258afc85e779a77e9d993bda64a9327afd0f7
-    else:
-        print("DeltaT correction no active")
 
     for i, event in enumerate(reader):
         for tel_id in event.trigger.tels_with_trigger:
@@ -131,17 +94,10 @@ def main():
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-<<<<<<< HEAD
-    expected_pixel_id = fits.PrimaryHDU(ev.lst.tel[tel_id].svc.pixel_ids)
+    expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
     pedestal_mean_array = fits.ImageHDU(np.int16(pedestal.meanped))
     failing_pixels = fits.ImageHDU(pedestal.failing_pixels_list)
     hdulist = fits.HDUList([expected_pixel_id, pedestal_mean_array, failing_pixels])
-=======
-    primaryhdu = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
-    secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
-
-    hdulist = fits.HDUList([primaryhdu, secondhdu])
->>>>>>> 365258afc85e779a77e9d993bda64a9327afd0f7
     hdulist.writeto(args.output_file)
 
 
