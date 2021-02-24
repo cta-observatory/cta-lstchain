@@ -91,8 +91,6 @@ class DragonPedestal(Component):
             self.failing_pixels_list = np.unique(pixels_with_nan_value[0])
             print("Failing pixels:")
             print(self.failing_pixels_list)
-        else:
-            print("No pixels with nan values")
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 7))
