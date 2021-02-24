@@ -160,7 +160,7 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
 
     Parameters
     ----------
-    data: `pandas.DataFrame`
+    dl2_data: `pandas.DataFrame`
         dl2 MC gamma data - must include the columns `mc_energy` and `reco_energy`
     points_outfile: None or str
         if specified, save the resolution and bias in hdf5 format
@@ -218,6 +218,8 @@ def write_energy_resolutions(outfile, e_bins, res, bias=None, overwrite=False, a
     e_bins: `numpy.ndarray`
     res: `np.ndarray`
     bias: `np.ndarray`
+    overwrite
+    append
     """
     e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
@@ -241,7 +243,8 @@ def write_angular_resolutions(outfile, e_bins, res, overwrite=False, append=True
     outfile: str
     e_bins: `numpy.ndarray`
     res: `np.ndarray`
-    bias: `np.ndarray`
+    overwrite
+    append
     """
     e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
@@ -309,7 +312,7 @@ def plot_disp(data, true_hadroness=False):
 
     plt.plot(bins, y, 'r--', linewidth=2)
 
-    plt.xlabel('$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
+    plt.xlabel(r'$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
 
     plt.figtext(0.15, 0.7, 'Mean: ' + str(round(mu, 4)), fontsize=12)
     plt.figtext(0.15, 0.65, 'Std: ' + str(round(sigma, 4)), fontsize=12)
@@ -322,9 +325,9 @@ def plot_disp(data, true_hadroness=False):
                     )
 
     plt.colorbar(hD[3])
-    plt.xlabel('$disp\_norm_{gammas}$', fontsize=15)
+    plt.xlabel(r'$disp\_norm_{gammas}$', fontsize=15)
 
-    plt.ylabel('$disp\_norm_{rec}$', fontsize=15)
+    plt.ylabel(r'$disp\_norm_{rec}$', fontsize=15)
 
     plt.plot(gammas['disp_norm'], gammas['disp_norm'], "-", color='red')
 
@@ -339,15 +342,15 @@ def plot_disp(data, true_hadroness=False):
 def plot_disp_vector(data):
     fig, axes = plt.subplots(1, 2)
 
-    axes[0].hist2d(data.disp_dx, data.reco_disp_dx, bins=60);
+    axes[0].hist2d(data.disp_dx, data.reco_disp_dx, bins=60)
     axes[0].set_xlabel('mc_disp')
     axes[0].set_ylabel('reco_disp')
     axes[0].set_title('disp_dx')
 
-    axes[1].hist2d(data.disp_dy, data.reco_disp_dy, bins=60);
+    axes[1].hist2d(data.disp_dy, data.reco_disp_dy, bins=60)
     axes[1].set_xlabel('mc_disp')
     axes[1].set_ylabel('reco_disp')
-    axes[1].set_title('disp_dy');
+    axes[1].set_title('disp_dy')
 
 
 def plot_pos(data, true_hadroness=False):
@@ -471,7 +474,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     Parameters
     ----------
     path_models: path the trained models
-    config: None or str
+    config_file: None or str
         Path to the configuration file used to train the models
         If None is provided, it is assumed that the standard configuration has been used
     axes: None or list of `matplotlib.pyplot.axes` objects
@@ -702,7 +705,7 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     return fig, axes
 
 
-def plot_wobble(source_position, n_points, ax = None):
+def plot_wobble(source_position, n_points, ax=None):
     """
     Plot 2D map of ON/OFF positions w.r.t. to the camera center
 
@@ -726,8 +729,8 @@ def plot_wobble(source_position, n_points, ax = None):
     colors = get_cmap(color_map_name).colors
     ax.set_prop_cycle(color=colors)
 
-    rotation_angle = 360./n_points
-    labels = ['Source', ] + [f'OFF {rotation_angle*(x)}' for x in range(1, n_points)]
+    rotation_angle = 360. / n_points
+    labels = ['Source', ] + [f'OFF {rotation_angle * x}' for x in range(1, n_points)]
     ax.plot((0, 0), '.', markersize=marker_size, alpha=opacity, color='black', label="Camera center")
     for off_point in range(n_points):
         first_point = tuple(rotate(list(zip(source_position[0].to_value(),
@@ -735,7 +738,7 @@ def plot_wobble(source_position, n_points, ax = None):
                                    rotation_angle * off_point)[0])
         ax.plot(first_point[0], first_point[1], '.', markersize=marker_size, alpha=opacity,
                 label=labels[off_point])
-        ax.annotate(labels[off_point], xy=(first_point[0]-0.1, first_point[1] + 0.05), label=labels[off_point])
+        ax.annotate(labels[off_point], xy=(first_point[0] - 0.1, first_point[1] + 0.05), label=labels[off_point])
 
     ax.set_ylim(-0.7, 0.7)
     ax.set_xlim(-0.7, 0.7)
@@ -770,7 +773,7 @@ def plot_1d_excess(named_datasets, lima_significance,
     -------
     ax: `matplotlib.pyplot.axes`
     """
-   
+
     if ax is None:
         ax = plt.gca()
     colors = get_cmap(color_map_name).colors
@@ -778,14 +781,14 @@ def plot_1d_excess(named_datasets, lima_significance,
 
     hists = []
     for label, data, factor in named_datasets:
-        hists.append(ax.hist(data, label=label, weights=factor*np.ones_like(data),
-                     bins=n_bins, alpha=opacity, range=[x_range_min, x_range_max]))
+        hists.append(ax.hist(data, label=label, weights=factor * np.ones_like(data),
+                             bins=n_bins, alpha=opacity, range=[x_range_min, x_range_max]))
 
-    ax.annotate(text=f'Significance Li&Ma = {lima_significance:.2f} $\sigma$\n',
-                 xy=(np.max(hists[0][1]/4), np.max(hists[0][0]/6*5)), size=20, color='r')
+    ax.annotate(text=rf'Significance Li&Ma = {lima_significance:.2f} $\sigma$\n',
+                xy=(np.max(hists[0][1] / 4), np.max(hists[0][0] / 6 * 5)), size=20, color='r')
 
-    ax.vlines(x=x_cut, ymin=0, ymax=np.max(hists[0][0]*1.2), linestyle='--', linewidth=2,
-               color='black', alpha=opacity)
+    ax.vlines(x=x_cut, ymin=0, ymax=np.max(hists[0][0] * 1.2), linestyle='--', linewidth=2,
+              color='black', alpha=opacity)
     ax.set_xlabel(x_label)
     ax.set_ylabel(r'Number of events')
     ax.legend(fontsize=12)

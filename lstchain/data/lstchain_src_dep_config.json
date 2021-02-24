@@ -84,6 +84,9 @@
   "custom_calibration": false,
   "write_pe_image": false,
   "mc_image_scaling_factor": 1,
+  "CameraCalibrator": {
+    "apply_waveform_time_shift": false
+  },
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},

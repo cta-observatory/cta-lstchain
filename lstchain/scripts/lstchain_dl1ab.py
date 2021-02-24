@@ -87,8 +87,17 @@ def main():
     camera_geom = CameraGeometry.from_table(cam_table)
 
     dl1_container = DL1ParametersContainer()
-    parameters_to_update = list(HillasParametersContainer().keys())
-    parameters_to_update.extend([
+    parameters_to_update = [
+        'intensity',
+        'x',
+        'y',
+        'r',
+        'phi',
+        'length',
+        'width',
+        'psi',
+        'skewness',
+        'kurtosis',
         'concentration_cog',
         'concentration_core',
         'concentration_pixel',
@@ -102,7 +111,7 @@ def main():
         'n_pixels',
         'wl',
         'log_intensity'
-    ])
+    ]
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.noimage:
