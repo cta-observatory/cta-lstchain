@@ -7,7 +7,6 @@ from astropy.table import Table
 from lstchain.io.io import dl2_params_lstcam_key, read_data_dl2_to_QTable
 
 
-@pytest.mark.private_data
 @pytest.mark.run(after="test_write_dl2_dataframe")
 def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
@@ -50,7 +49,6 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     assert dl3_file.is_file()
 
 
-@pytest.mark.private_data
 @pytest.mark.run(after="test_create_event_list")
 def test_create_obs_hdu_index(simulated_dl2_file):
     from lstchain.irf.hdu_table import create_obs_hdu_index
