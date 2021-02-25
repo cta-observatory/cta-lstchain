@@ -90,8 +90,8 @@ def test_filter_events():
 def test_get_obstime_real():
     t_obs = 600
     rate = 10e3
-    n_events =  np.random.poisson(rate * t_obs)
+    n_events = np.random.poisson(rate * t_obs)
     timestamps = np.sort(np.random.uniform(0, t_obs, n_events))
     events = pd.DataFrame({'dragon_time': timestamps})
-                          
+    
     assert np.isclose(utils.get_effective_time(events)[0].value, t_obs)
