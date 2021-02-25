@@ -40,7 +40,7 @@ class TimeCalibrationHDF5Writer(Tool):
         "glob": "TimeCalibrationHDF5Writer.glob",
         "output": "TimeCorrectionCalculate.calib_file_path",
         "o": "TimeCorrectionCalculate.calib_file_path",
-        "pedestal": "LSTR0Corrections.pedestal_path",
+        "pedestal": "LSTR0Corrections.drs4_pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
     }
 
