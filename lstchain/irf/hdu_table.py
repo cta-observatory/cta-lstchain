@@ -336,7 +336,7 @@ def create_event_list(data, run_number, source_name):
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
-    ev_header["AZ_PNT"] = data["pointing_az"][0].to_value(u.deg)
+    ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
     ev_header["RA_OBJ"] = object_radec.ra.value
     ev_header["DEC_OBJ"] = object_radec.dec.value
     ev_header["FOVALIGN"] = "RADEC"

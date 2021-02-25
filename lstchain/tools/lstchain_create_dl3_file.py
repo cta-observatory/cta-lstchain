@@ -19,7 +19,7 @@ import astropy.units as u
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
 from lstchain.reco.utils import filter_events
-from lstchain.paths import run_info_from_filename
+from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
 
 from pyirf.utils import calculate_source_fov_offset
@@ -117,9 +117,7 @@ class DataReductionFITSWriter(Tool):
         else:
             self.cuts = read_configuration_file(self.config_file)
 
-        filename_dl2 = str(self.input_dl2).split("/")[-1]
-        self.filename_dl3 = filename_dl2.replace("dl2", "dl3")
-        self.filename_dl3 = self.filename_dl3.replace("h5", "fits")
+        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
 
         if not self.provenance_log:
             self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")

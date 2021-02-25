@@ -8,7 +8,7 @@ Simple usage with argument aliases:
 
 lstchain_create_dl3_index_files
     --d /path/to/DL3/files/
-    --p dl3*[run_1-run_n]*.fits
+    --p dl3*[run_1-run_n]*.fits.gz
 """
 
 from lstchain.irf import create_obs_hdu_index

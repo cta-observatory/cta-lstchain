@@ -302,7 +302,8 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(temp_dir_observed_files, observed_dl1_files,  rf_models):
-    real_data_dl2_file = temp_dir_observed_files / ("dl2_" + test_r0_path.with_suffix('').stem + ".h5")
+    real_data_dl2_file = temp_dir_observed_files / (
+        "dl2_" + test_r0_path.with_suffix('').stem + ".h5")
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
@@ -367,15 +368,14 @@ def test_read_mc_dl2_to_pyirf(simulated_dl2_file):
 	import astropy.units as u
 
 	events, sim_info = read_mc_dl2_to_pyirf(simulated_dl2_file)
-
 	assert 'true_energy' in events.colnames
 	assert sim_info.energy_max == 330 * u.TeV
+
 
 def test_read_data_dl2_to_QTable(temp_dir_observed_files):
     from lstchain.io.io import read_data_dl2_to_QTable
 
-    real_data_dl2_file = temp_dir_observed_files / ("dl2_" + test_r0_path.with_suffix('').stem + ".h5")
-
+    real_data_dl2_file = temp_dir_observed_files / (
+        "dl2_" + test_r0_path.with_suffix('').stem + ".h5")
     events = read_data_dl2_to_QTable(real_data_dl2_file)
-
     assert 'gh_score' in events.colnames
