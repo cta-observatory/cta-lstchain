@@ -669,7 +669,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                                  ['Flat-field mean time (ns)',
                                   'Flat-field time std dev (ns)',
                                   'FLATFIELD, pixel-wise pulse time info'],
-                                 batch, pagesize)
+                                 pagesize, batch)
             pdf.savefig()
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['relative_time_mean',
