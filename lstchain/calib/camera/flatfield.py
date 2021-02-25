@@ -6,9 +6,8 @@ import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Unicode, Bool
-from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
-
+from ctapipe.core.traits import  List, Path
+from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -36,19 +35,18 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         [-0.3, 0.3],
         help='Interval of accepted charge values (fraction with respect to camera median value)'
     ).tag(config=True)
-    time_cut_outliers = List(
-        [0, 60],
-        help='Interval (in waveform samples) of accepted time values'
-    ).tag(config=True)
     charge_std_cut_outliers = List(
         [-3, 3],
         help='Interval (number of std) of accepted charge standard deviation around camera median value'
     ).tag(config=True)
-    time_calibration_path = Unicode(
-        None,
-        allow_none = True,
-        help = 'Path to drs4 time calibration file'
-    ).tag(config = True)
+    time_cut_outliers = List(
+        [0, 60], help="Interval (in waveform samples) of accepted time values"
+    ).tag(config=True)
+
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
+        help='Path to time sampling correction file'
+    ).tag(config=True)
 
     def __init__(self, subarray, **kwargs):
 
@@ -81,16 +79,13 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         self.arrival_times = None  # arrival time per event in sample
         self.sample_masked_pixels = None  # masked pixels per event in sample
 
-        if self.time_calibration_path is None:
-            self.time_corrector = None
+        # declare the charge sampling corrector
+        if self.time_sampling_correction_path is not None:
+            self.time_sampling_corrector = TimeSamplingCorrection(
+                    time_sampling_correction_path=self.time_sampling_correction_path
+            )
         else:
-        # look for calibration path otherwise
-            if os.path.exists(self.time_calibration_path):
-                self.time_corrector = PulseTimeCorrection(
-                calib_file_path = self.time_calibration_path)
-            else:
-                msg=f"Time calibration file {self.time_calibration_path} not found!"
-                raise IOError(msg)
+            self.time_sampling_corrector = None
 
 
     def _extract_charge(self, event):
@@ -102,12 +97,18 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         event : general event container
 
         """
-
-        waveforms = event.r1.tel[self.tel_id].waveform
+        # copy the waveform be cause we do not want to change it for the moment
+        waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
         # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
         no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
         no_gain_selection[1] = 1
+        n_pixels = 1855
+
+        # correct the r1 waveform for the sampling time corrections
+        if self.time_sampling_corrector:
+            waveforms*= (self.time_sampling_corrector.get_corrections(event,self.tel_id)
+                         [no_gain_selection, np.arange(n_pixels)])
 
         # Extract charge and time
         charge = 0
@@ -115,9 +116,14 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.extractor:
             charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
 
-            # correct time with drs4 correction if available
-            if self.time_corrector:
-                peak_pos = self.time_corrector.get_corr_pulse(event, peak_pos)
+
+
+        # shift the time if time shift is already defined
+        # (e.g. drs4 waveform time shifts for LST)
+        time_shift = event.calibration.tel[self.tel_id].dl1.time_shift
+        if time_shift is not None:
+                peak_pos -= time_shift
+
 
         return charge, peak_pos
 
@@ -147,14 +153,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # real data
         if event.meta['origin'] != 'hessio':
-            self.trigger_time = event.r1.tel[self.tel_id].trigger_time
-
-        else:  # patches for MC data
-            if event.trig.tels_with_trigger:
-                self.trigger_time = event.trig.gps_time.unix
-            else:
-                self.trigger_time = 0
-
+            self.trigger_time = event.trigger.time
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
@@ -163,9 +162,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
-
-        # correct pulse time with drs4 corrections
-
 
         self.collect_sample(charge, pixel_mask, arrival_time)
 
@@ -186,7 +182,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
     def store_results(self, event):
         """
-         Store stastical results in monitoring container
+         Store statistical results in monitoring container
 
          Parameters
          ----------
@@ -284,9 +280,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (trigger_time - time_start) / 2 * u.s,
-            'sample_time_min': time_start * u.s,
-            'sample_time_max': trigger_time * u.s,
+            'sample_time': (trigger_time - time_start).value / 2 *u.s,
+            'sample_time_min': time_start.value*u.s,
+            'sample_time_max': trigger_time.value*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,
             'time_median': np.ma.getdata(pixel_median)*u.ns,
             'time_std': np.ma.getdata(pixel_std)*u.ns,

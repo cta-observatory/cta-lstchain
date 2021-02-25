@@ -18,8 +18,7 @@ import glob
 import logging
 import numpy as np
 from traitlets.config.loader import Config
-from ctapipe_io_lst import LSTEventSource
-from lstchain.calib.camera.r0 import LSTR0Corrections
+from ctapipe.io import EventSource
 from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 
@@ -57,7 +56,39 @@ parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     help='Path to drs4 pedestal file ',
                     default=None
                     )
+parser.add_argument('--ucts-t0-dragon', action='store', type=float,
+                    dest='ucts_t0_dragon',
+                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
+                          first event of the run with valid timestamp. If none is \
+                          passed, the start-of-the-run timestamp is provided, hence \
+                          Dragon timestamp is not reliable.',
+                    default="NaN"
+                    )
 
+parser.add_argument('--dragon-counter0', action='store', type=float,
+                    dest='dragon_counter0',
+                    help='Dragon counter (pps + 10MHz) in nsecs corresponding \
+                          to the first reliable UCTS of the run. To be provided \
+                          along with ucts_t0_dragon.',
+                    default="NaN"
+                    )
+
+parser.add_argument('--ucts-t0-tib', action='store', type=float,
+                    dest='ucts_t0_tib',
+                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
+                          first event of the run with valid timestamp. If none is \
+                          passed, the start-of-the-run timestamp is provided, hence \
+                          TIB timestamp is not reliable.',
+                    default="NaN"
+                    )
+
+parser.add_argument('--tib-counter0', action='store', type=float,
+                    dest='tib_counter0',
+                    help='First valid TIB counter (pps + 10MHz) in nsecs corresponding \
+                          to the first reliable UCTS of the run when TIB is available. \
+                          To be provided along with ucts_t0_tib.',
+                    default="NaN"
+                    )
 args = parser.parse_args()
 
 
@@ -80,31 +111,40 @@ def main():
     # read the configuration file
     config = Config(config_dic)
 
-    # declare the pedestal calibrator
-    lst_r0 = LSTR0Corrections(pedestal_path=args.pedestal_file, config=config)
+    source_config = Config({
+        "LSTEventSource": {
+            "max_events" : args.max_events,
+            "EventTimeCalculator": {
+                "ucts_t0_dragon": int(args.ucts_t0_dragon),
+                "dragon_counter0": int(args.dragon_counter0),
+                "ucts_t0_tib": int(args.ucts_t0_tib),
+                "tib_counter0": int(args.tib_counter0)
+            },
+            "LSTR0Corrections": {
+                "drs4_pedestal_path": args.pedestal_file,
+            }
+        }
+    })
 
-    reader = LSTEventSource(input_url=path_list[0], max_events=args.max_events)
-    # declare the time corrector
-    timeCorr = TimeCorrectionCalculate(calib_file_path=args.output_file,
-                                       config=config,
-                                       subarray=reader.subarray)
-
-    tel_id = timeCorr.tel_id
+    config.merge(source_config)
 
     for i, path in enumerate(path_list):
+ 
         log.info(f'File {i+1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
-        reader = LSTEventSource(input_url=path, max_events=args.max_events)
+
+        reader = EventSource(input_url=path, config=config)
+
+        if i==0:
+            timeCorr = TimeCorrectionCalculate(calib_file_path=args.output_file,
+                                               config=config,
+                                               subarray=reader.subarray)
+
         for event in reader:
             if event.index.event_id % 5000 == 0:
                 log.info(f'event id = {event.index.event_id}')
-            lst_r0.calibrate(event)
 
-            # Cut in signal to avoid cosmic events
-            if event.r1.tel[tel_id].trigger_type == 4 or (
-                    np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))> 300):
-
-                    timeCorr.calibrate_peak_time(event)
+            timeCorr.calibrate_peak_time(event)
 
     # write output
     timeCorr.finalize()

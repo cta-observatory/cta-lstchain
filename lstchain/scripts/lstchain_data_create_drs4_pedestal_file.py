@@ -19,17 +19,15 @@ $> python lstchain_data_create_pedestal_file.py
 
 """
 
-
+from traitlets.config import Config
 import argparse
 import numpy as np
 from astropy.io import fits
-from numba import prange
 
-from ctapipe.io import event_source
-from ctapipe.io import EventSeeker
+
+from ctapipe.io import EventSource
+from ctapipe_io_lst.calibration import LSTR0Corrections
 from distutils.util import strtobool
-from traitlets.config.loader import Config
-from lstchain.calib.camera.r0 import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
@@ -67,38 +65,34 @@ parser.add_argument('--deltaT', '-s',
 
 args = parser.parse_args()
 
-
+source_config = {
+    "LSTEventSource": {
+        "max_events":args.max_events,
+        "fill_timestamp": False,
+    }
+}
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
-    reader = event_source(input_url=args.input_file, max_events=args.max_events)
+    reader = EventSource(input_url=args.input_file, config=Config(source_config))
     print("--> Number of files", reader.multi_file.num_inputs())
-
-    seeker = EventSeeker(reader)
-    ev = seeker[0]
-    tel_id = ev.r0.tels_with_data[0]
-    n_modules = ev.lst.tel[tel_id].svc.num_modules
-
-    config = Config({
-        "LSTR0Corrections": {
-            "tel_id": tel_id
-        }
-    })
-    lst_r0 = LSTR0Corrections(config=config)
-
-    pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
 
     if args.deltaT:
         print("DeltaT correction active")
-        for i, event in enumerate(reader):
-            for tel_id in event.r0.tels_with_data:
-                lst_r0.time_lapse_corr(event, tel_id)
-                pedestal.fill_pedestal_event(event)
-                if i%500 == 0:
-                    print("i = {}, ev id = {}".format(i, event.index.event_id))
     else:
         print("DeltaT correction no active")
-        for i, event in enumerate(reader):
+
+    for i, event in enumerate(reader):
+        for tel_id in event.trigger.tels_with_trigger:
+
+            if i==0:
+                n_modules = event.lst.tel[tel_id].svc.num_modules
+                pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
+
+            if args.deltaT:
+                reader.r0_r1_calibrator.update_first_capacitors(event)
+                reader.r0_r1_calibrator.time_lapse_corr(event, tel_id)
+
             pedestal.fill_pedestal_event(event)
             if i%500 == 0:
                 print("i = {}, ev id = {}".format(i, event.index.event_id))
@@ -106,7 +100,7 @@ def main():
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-    primaryhdu = fits.PrimaryHDU(ev.lst.tel[tel_id].svc.pixel_ids)
+    primaryhdu = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
     secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
 
     hdulist = fits.HDUList([primaryhdu, secondhdu])
