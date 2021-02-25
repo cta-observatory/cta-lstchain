@@ -5,17 +5,19 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
+  - astropy>=4.2
   - pip
-  - ctapipe=0.8.0
+  - ctapipe>=0.10.3
   - gammapy>=0.18
   - h5py
   - ipython
   - jupyter
   - notebook
   - joblib
+  - toml
   - pip:
       - pytest_runner
       - pytest-ordering
-      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
+      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.6.5
       - ctaplot
       - pyirf~=0.4.0
