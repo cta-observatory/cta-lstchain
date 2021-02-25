@@ -36,6 +36,7 @@ __all__ = [
     'expand_tel_list',
     'extract_source_position',
     'filter_events',
+    'get_effective_time'
     'get_event_pos_in_camera',
     'impute_pointing',
     'linear_imputer',
@@ -611,3 +612,25 @@ def clip_alt(alt):
     to keep astropy happy
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
+
+def get_effecive_time(events):
+    """
+    Calculate the effective observation time of a set 
+    of real data events.
+    Parameters
+    ----------
+    events: pandas DataFrame
+
+    Returns
+    -------
+    teff: float
+    """
+    
+    deltat = np.diff(events['dragon_time'])
+    deltat = deltat[(deltat > 0) & (deltat < 0.002)]
+    rate=1/np.mean(deltat)
+    dead_time = np.amin(deltat)
+    t_elapsed = len(events)/rate * u.s
+    t_eff = t_elapsed/(1+rate*dead_time)
+
+    return t_eff
