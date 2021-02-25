@@ -982,18 +982,12 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
                          pad=2.0, h_pad=3.0, w_pad=3.0)
-        axes[0, 0].plot(contained_muons['hg_peak_sample'],
-                        contained_muons['lg_peak_sample'], 'x', alpha=0.5)
-        axes[0, 0].set_xlabel('High gain peak sample in R1 waveform')
-        axes[0, 0].set_ylabel('Low gain peak sample in R1 waveform')
         binning = np.linspace(-0.5, 38.5, 39)
-        axes[1, 0].hist(contained_muons['hg_peak_sample'], bins=binning,
-                        histtype='step', label='HG')
-        axes[1, 0].hist(contained_muons['lg_peak_sample'], bins=binning,
-                        histtype='step', label='LG')
-        axes[1, 0].set_xlabel('peak sample in R1 waveform')
-        axes[1, 0].set_ylabel('number of rings')
-        axes[1, 0].legend(loc='best')
+        axes[0, 0].hist(contained_muons['hg_peak_sample'], bins=binning,
+                        histtype='step')
+        axes[0, 0].set_xlabel('HG peak sample in R1 waveform')
+        axes[0, 0].set_ylabel('number of rings')
+        axes[0, 0].legend(loc='best')
         axes[0, 1].hist(contained_muons['muon_efficiency'],
                         bins=np.linspace(0., 0.5, 51))
         axes[0, 1].set_xlabel('estimated telescope efficiency for muons')
