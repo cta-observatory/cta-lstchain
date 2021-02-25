@@ -267,23 +267,44 @@ class IRFFITSWriter(Tool):
         background["selected"] = background["selected_gh"] & background["selected_tels"]
 
         # Binning of parameters used in IRFs
-        # 12.5 GeV - 51.28 TeV
-        true_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
+        # Energy bins
+        en_bins = self.cuts["energy_bins"]
+        true_energy_bins = create_bins_per_decade(
+            en_bins["true"][0] * u.TeV, en_bins["true"][1] * u.TeV, en_bins["true"][2]
+        )
         # add_overflow_bins(***)[1:-1]
         # The overflow binning added is not needed in the current script
-        reco_energy_bins = create_bins_per_decade(0.01 * u.TeV, 100 * u.TeV, 5.5)
-        # Using the same binning as in pyirf for source_offset_bins
-        source_offset_bins = np.arange(0, 1 + 1e-4, 1e-3) * u.deg
+        reco_energy_bins = create_bins_per_decade(
+            en_bins["reco"][0] * u.TeV, en_bins["reco"][1] * u.TeV, en_bins["reco"][2]
+        )
+        migration_bins = np.linspace(
+            en_bins["migration"][0], en_bins["migration"][1], en_bins["migration"][2]
+        )
+        # Using the same binning as in pyirf for source_offset_bins and
+        # FoV offset bins for background IRF
+        # Angular bins
+        ang_bins = self.cuts["angular_bins"]
+        source_offset_bins = (
+            np.arange(
+                ang_bins["source_offset"][0],
+                ang_bins["source_offset"][1],
+                ang_bins["source_offset"][2],
+            )
+            * u.deg
+        )
 
         if self.mc_particle["gamma"]["mc_type"] == "point-like":
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            fov_offset_bins = [0.3, 0.5, 0.7] * u.deg
+            fov_offset_bins = ang_bins["single_fov_offset"] * u.deg
         else:
-            # temporary usage of bins
-            fov_offset_bins = [0, 0.3, 0.5, 0.7, 0.9, 1.1] * u.deg
-        migration_bins = np.linspace(0.2, 5, 31)
+            fov_offset_bins = ang_bins["multiple_fov_offset"] * u.deg
+
+        background_offset_bins = (
+            np.arange(ang_bins["source_offset"][0], ang_bins["source_offset"][1])
+            * u.deg
+        )
 
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
@@ -355,18 +376,17 @@ class IRFFITSWriter(Tool):
         )
         self.log.debug("Energy Dispersion HDU created")
 
-        # Using the same FOV offset binning as pyirf for now.
         self.background = background_2d(
             background[background["selected"]],
             reco_energy_bins=reco_energy_bins,
-            fov_offset_bins=np.arange(0, 11) * u.deg,
+            fov_offset_bins=background_offset_bins,
             t_obs=50 * u.hour,
         )
         self.hdus.append(
             create_background_2d_hdu(
                 self.background.T,
                 reco_energy_bins,
-                np.arange(0, 11) * u.deg,
+                background_offset_bins,
                 extname="BACKGROUND",
                 **extra_headers,
             )
