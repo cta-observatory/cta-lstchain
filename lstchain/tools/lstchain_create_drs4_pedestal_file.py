@@ -8,7 +8,7 @@ from tqdm.autonotebook import tqdm
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
-from lstchain.calib.camera.r0 import LSTR0Corrections
+from ctapipe_io_lst.calibration import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
