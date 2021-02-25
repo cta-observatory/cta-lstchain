@@ -6,7 +6,7 @@ import glob
 import numpy as np
 from ctapipe.core import Provenance, Tool, traits
 from ctapipe_io_lst import LSTEventSource
-from lstchain.calib.camera.r0 import LSTR0Corrections
+from ctapipe_io_lst.calibration import LSTR0Corrections
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 from tqdm.autonotebook import tqdm
 
