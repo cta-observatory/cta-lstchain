@@ -613,7 +613,7 @@ def clip_alt(alt):
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
 
-def get_effecive_time(events):
+def get_effective_time(events):
     """
     Calculate the effective observation time of a set 
     of real data events.
@@ -623,7 +623,8 @@ def get_effecive_time(events):
 
     Returns
     -------
-    teff: float
+    t_eff: float
+    t_elapsed: float
     """
     
     deltat = np.diff(events['dragon_time'])
@@ -633,4 +634,4 @@ def get_effecive_time(events):
     t_elapsed = len(events)/rate * u.s
     t_eff = t_elapsed/(1+rate*dead_time)
 
-    return t_eff
+    return t_eff, t_elapsed
