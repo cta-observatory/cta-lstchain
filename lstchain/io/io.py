@@ -1,5 +1,7 @@
 import h5py
+from multiprocessing import Pool
 import numpy as np
+import pandas as pd
 from astropy.table import Table, vstack
 import tables
 from tables import open_file
@@ -8,41 +10,49 @@ import astropy.units as u
 import ctapipe
 import lstchain
 from ctapipe.io import HDF5TableReader
-from ctapipe.containers import MCHeaderContainer
+from ctapipe.containers import SimulationConfigContainer
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
-from ctapipe.tools.stage1 import Stage1ProcessorTool
+#from ctapipe.tools.stage1 import Stage1ProcessorTool
 from astropy.utils import deprecated
 from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
     TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
-import pandas as pd
 
-__all__ = ['read_simu_info_hdf5',
-           'read_simu_info_merged_hdf5',
-           'get_dataset_keys',
-           'write_simtel_energy_histogram',
-           'write_mcheader',
-           'write_array_info',
-           'check_thrown_events_histogram',
-           'check_mcheader',
-           'check_metadata',
-           'read_metadata',
-           'auto_merge_h5files',
-           'smart_merge_h5files',
-           'global_metadata',
-           'add_global_metadata',
-           'write_subarray_tables',
-           'write_metadata',
-           'write_dataframe',
-           'write_dl2_dataframe',
-           'write_calibration_data',
-           'read_dl2_to_pyirf',
-           ]
+import logging
+
+log = logging.getLogger(__name__)
+
+
+__all__ = [
+    'read_simu_info_hdf5',
+    'read_simu_info_merged_hdf5',
+    'get_dataset_keys',
+    'write_simtel_energy_histogram',
+    'write_mcheader',
+    'write_array_info',
+    'check_thrown_events_histogram',
+    'check_mcheader',
+    'check_metadata',
+    'read_metadata',
+    'auto_merge_h5files',
+    'smart_merge_h5files',
+    'global_metadata',
+    'add_global_metadata',
+    'write_subarray_tables',
+    'write_metadata',
+    'write_dataframe',
+    'write_dl2_dataframe',
+    'write_calibration_data',
+    'read_dl2_to_pyirf',
+    'read_dl2_params',
+    'extract_observation_time',
+    'merge_dl2_runs'
+]
 
 
 
@@ -50,7 +60,7 @@ dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
-
+dl2_params_src_dep_lstcam_key = 'dl2/event/telescope/parameters_src_dependent/LST_LSTCam'
 
 
 def read_simu_info_hdf5(filename):
@@ -59,12 +69,12 @@ def read_simu_info_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
     """
 
     with HDF5TableReader(filename) as reader:
-        mcheader = reader.read('/simulation/run_config', MCHeaderContainer())
-        mc = next(mcheader)
+        mc_reader = reader.read('/simulation/run_config', SimulationConfigContainer())
+        mc = next(mc_reader)
 
     return mc
 
@@ -82,16 +92,15 @@ def read_simu_info_merged_hdf5(filename):
 
     Returns
     -------
-    `ctapipe.containers.MCHeaderContainer`
+    `ctapipe.containers.SimulationConfigContainer`
 
     """
     with open_file(filename) as file:
         simu_info = file.root['simulation/run_config']
         colnames = simu_info.colnames
-        not_to_check = ['num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id']
-        for k in colnames:
-            if k not in not_to_check:
-                assert np.all(simu_info[:][k] == simu_info[0][k])
+        skip = {'num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id'}
+        for k in filter(lambda k: k not in skip, colnames):
+            assert np.all(simu_info[:][k] == simu_info[0][k])
         num_showers = simu_info[:]['num_showers'].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
@@ -261,8 +270,8 @@ def merging_check(file_list):
             for ii, table in read_array_info(filename).items():
                 assert (table == array_info0[ii]).all()
         except:
+            log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
             mergeable_list.remove(filename)
-            print(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
 
     return mergeable_list
 
@@ -294,7 +303,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
 
     Parameters
     ----------
-    source: `ctapipe.io.event_source`
+    source: `ctapipe.io.EventSource`
     output_filename: str
     obs_id: float, int, str or None
     """
@@ -342,7 +351,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.DataContainer`
+    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -360,15 +369,58 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
+    This is a temporary solution until we move to ctapipe v0.9.1. 
 
     Parameters
     ----------
     subarray: `ctapipe.instrument.subarray.SubarrayDescription`
     output_filename: str
     """
-    stage1 = Stage1ProcessorTool()
-    stage1.output_path = output_filename
-    stage1._write_instrument_configuration(subarray)
+
+    serialize_meta = True
+
+    subarray.to_table().write(
+      output_filename,
+      path="/configuration/instrument/subarray/layout",
+      serialize_meta=serialize_meta,
+      append=True,
+    )
+
+    subarray.to_table(kind="optics").write(
+      output_filename,
+      path="/configuration/instrument/telescope/optics",
+      append=True,
+      serialize_meta=serialize_meta,
+    )
+
+    for telescope_type in subarray.telescope_types:
+      ids = set(subarray.get_tel_ids_for_type(telescope_type))
+      if len(ids) > 0: # only write if there is a telescope with this camera
+        tel_id = list(ids)[0]
+        camera = subarray.tel[tel_id].camera
+        camera_name = f'geometry_{camera}'
+        with tables.open_file(output_filename, mode='a') as f:
+          telescope_chidren = f.root['/configuration/instrument/telescope']._v_children.keys()
+          if 'camera' in telescope_chidren:
+            cameras_name = f.root['/configuration/instrument/telescope/camera']._v_children.keys()
+            if camera_name in cameras_name:
+              print(
+                f'WARNING during lstchain.io.write_array_info_08():',
+                f'camera {camera_name} seems to be already present in the h5 file.'
+              )
+              continue
+        camera.geometry.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
+          append=True,
+          serialize_meta=serialize_meta          
+        )
+        camera.readout.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/readout_{camera}",
+          append=True,
+          serialize_meta=serialize_meta
+        )
 
 
 @deprecated('09/07/2020', message='this function will disappear in lstchain v0.7')
@@ -688,8 +740,8 @@ def check_mcheader(mcheader1, mcheader2):
 
     Parameters
     ----------
-    mcheader1: `ctapipe.containers.MCHeaderContainer`
-    mcheader2: `ctapipe.containers.MCHeaderContainer`
+    mcheader1: `ctapipe.containers.SimulationConfigContainer`
+    mcheader2: `ctapipe.containers.SimulationConfigContainer`
 
     Returns
     -------
@@ -705,11 +757,9 @@ def check_mcheader(mcheader1, mcheader2):
         if k in keys:
             keys.remove(k)
 
-    keys.remove('run_array_direction') #specific comparison
 
     for k in keys:
         assert mcheader1[k] == mcheader2[k]
-    assert (mcheader1['run_array_direction'] == mcheader2['run_array_direction']).all()
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -821,16 +871,16 @@ def write_subarray_tables(writer, event, metadata=None):
     Parameters
     ----------
     writer: `ctapipe.io.HDF5Writer`
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     metadata: `lstchain.io.lstcontainers.MetaData`
     """
     if metadata is not None:
-        add_global_metadata(event.dl0, metadata)
-        add_global_metadata(event.mc, metadata)
+        add_global_metadata(event.index, metadata)
+        add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.dl0, event.mc])
-    writer.write(table_name="subarray/trigger", containers=[event.dl0, event.trigger])
+    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
+    writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
 def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
@@ -1022,3 +1072,72 @@ def read_dl2_to_pyirf(filename):
         events[k] *= v
 
     return events, pyirf_simu_info
+
+
+def read_dl2_params(t_filename, columns_to_read=None):
+    '''
+    Read specified parameters from a file with DL2 data
+
+    Parameters
+    ----------
+    t_filename: Input file name
+    columns_to_read: List of interesting columns, optional. If None, then all columns will be read
+
+    Returns
+    -------
+    Pandas dataframe with DL2 data
+    '''
+    if columns_to_read is not None:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)[columns_to_read]
+    else:
+        return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)
+
+
+def extract_observation_time(t_df):
+    '''
+    Calculate observation time
+
+    Parameters
+    ----------
+    pandas.DataFrame t_df: Recorded data
+
+    Returns
+    -------
+    Observation duration in seconds
+    '''
+    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
+           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
+
+
+def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
+    """
+    Merge the run sequence in a single dataset and extract correct observation time based on first and last event timestamp in each file.
+
+    Parameters
+    ----------
+    data_tag: lstchain version tag
+    runs: List of run numbers
+    n_process: Number of parallel read processes to use
+
+    Returns
+    -------
+    Pair (observation time, data)
+    """
+    from functools import partial
+    from glob import glob
+    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*') # Current format of LST data path
+
+    pool = Pool(n_process)
+    filelist = []
+    # Create a list of files with matching run numbers
+    for filename in filepath_glob:
+        if any(f'Run{run:05}' in filename for run in runs):
+            filelist.append(filename)
+
+    df_list = pool.map(partial(read_dl2_params, columns_to_read=columns_to_read), filelist)
+
+    observation_times = pool.map(extract_observation_time, df_list)
+
+    observation_time = sum([t.total_seconds() for t in observation_times])
+    df = pd.concat(df_list)
+    return observation_time, df

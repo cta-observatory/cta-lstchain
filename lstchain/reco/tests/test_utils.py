@@ -72,34 +72,17 @@ def test_impute_pointing():
     np.testing.assert_allclose(df.az_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
 
 
-def test_unix_tai_to_utc():
-    from lstchain.reco.utils import unix_tai_to_time, INVALID_TIME
-
-    timestamp_tai = 1579376359.3225002
-    leap_seconds = 37
-    utc_time = unix_tai_to_time(timestamp_tai)
-
-    assert np.isclose(utc_time.unix, timestamp_tai - leap_seconds)
-
-    # test nan values
-    assert unix_tai_to_time(np.nan) == INVALID_TIME
-
-    # test multiple values including nans
-    timestamps = np.array([timestamp_tai, np.nan])
-    assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
-    assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
-
-
 def test_filter_events():
     from lstchain.reco.utils import filter_events
-    df = pd.DataFrame({'a': [1, 2, 3, ],
+    df = pd.DataFrame({'a': [1, 2, 3],
                        'b': [np.nan, 2.2, 3.2],
                        'c': [1, 2, np.inf]}
                       )
-    np.testing.assert_array_equal(filter_events(df, finite_params=['b']),
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b']),
                                   pd.DataFrame({'a': [2, 3], 'b': [2.2, 3.2], 'c': [2, np.inf]}))
-    np.testing.assert_array_equal(filter_events(df, finite_params=['b', 'c']),
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, np.inf], b=[0, np.inf], c=[0, np.inf]), finite_params=['b', 'c']),
                                   pd.DataFrame({'a': [2], 'b': [2.2], 'c': [2]}))
-    np.testing.assert_array_equal(filter_events(df, finite_params=['e']), df)
-    np.testing.assert_array_equal(filter_events(df, filters={'a': [0, 1]}),
+    np.testing.assert_array_equal(filter_events(df, filters=dict(a=[0, 1])),
                                   pd.DataFrame({'a': [1], 'b': [np.nan], 'c': 1}))
+    with np.testing.assert_raises(KeyError):
+        filter_events(df, filters=dict(e=[0, np.inf]))

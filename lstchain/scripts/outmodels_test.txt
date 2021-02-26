@@ -1,0 +1,24 @@
+Given features:  ['log_intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 'skewness', 'kurtosis', 'r', 'time_gradient', 'leakage', 'n_islands']
+Number of events for training:  1865
+Training Random Forest Regressor for Energy Reconstruction...
+Model <class 'sklearn.ensemble._forest.RandomForestRegressor'> trained!
+Given features:  ['log_intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 'skewness', 'kurtosis', 'r', 'time_gradient', 'leakage', 'n_islands']
+Number of events for training:  1865
+Training model <class 'sklearn.ensemble._forest.RandomForestRegressor'> for disp vector regression
+Model <class 'sklearn.ensemble._forest.RandomForestRegressor'> trained!
+Given features:  ['log_intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 'skewness', 'kurtosis', 'r', 'time_gradient', 'leakage', 'n_islands']
+Number of events for training:  1492
+Training Random Forest Regressor for Energy Reconstruction...
+Model <class 'sklearn.ensemble._forest.RandomForestRegressor'> trained!
+Given features:  ['log_intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 'skewness', 'kurtosis', 'r', 'time_gradient', 'leakage', 'n_islands']
+Number of events for training:  1492
+Training model <class 'sklearn.ensemble._forest.RandomForestRegressor'> for disp vector regression
+Model <class 'sklearn.ensemble._forest.RandomForestRegressor'> trained!
+Given features:  ['log_intensity', 'width', 'length', 'x', 'y', 'psi', 'phi', 'wl', 'skewness', 'kurtosis', 'r', 'time_gradient', 'leakage', 'n_islands', 'log_reco_energy', 'reco_disp_dx', 'reco_disp_dy']
+Number of events for training:  605
+Training Random Forest Classifier for Gamma/Hadron separation...
+Random Forest trained!
+/home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/corsikaio/subblocks/dtypes.py:20: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  return np.dtype(dict(**dt))
+/home/maria.bernardos/anaconda3/envs/lst-dev/lib/python3.7/site-packages/sklearn/externals/joblib/__init__.py:15: FutureWarning: sklearn.externals.joblib is deprecated in 0.21 and will be removed in 0.23. Please import this functionality directly from joblib, which can be installed with: pip install joblib. If this warning is raised when loading pickled models, you may need to re-serialize those models with scikit-learn 0.21+.
+  warnings.warn(msg, category=FutureWarning)

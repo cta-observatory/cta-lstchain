@@ -9,6 +9,7 @@ Usage:
 
 $> python lstchain_add_source_dependent_parameters.py 
 --input-file dl1_LST-1.Run02033.0137.h5 
+--config lstchain_src_dep_config.json
 
 """
 
@@ -17,7 +18,11 @@ import argparse
 import pandas as pd
 from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
 from lstchain.io import read_configuration_file, get_standard_config
-from lstchain.io.io import dl1_params_src_dep_lstcam_key, write_dataframe, dl1_params_lstcam_key
+from lstchain.io.io import(
+    dl1_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
+    write_dataframe,
+)
 
 
 parser = argparse.ArgumentParser(description="Add the source dependent parameters to a DL1 file")
@@ -49,9 +54,10 @@ def main():
             pass
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, config)
-    write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key)
  
+    src_dep_df = pd.concat( get_source_dependent_parameters(dl1_params, config), axis=1)
+
+    write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key)
 
 if __name__ == '__main__':
     main()

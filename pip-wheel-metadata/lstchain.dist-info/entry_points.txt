@@ -1,0 +1,23 @@
+[console_scripts]
+lstchain_add_source_dependent_parameters = lstchain.scripts.lstchain_add_source_dependent_parameters:main
+lstchain_check_dl1 = lstchain.scripts.lstchain_check_dl1:main
+lstchain_create_calibration_file = lstchain.tools.lstchain_create_calibration_file:main
+lstchain_data_create_drs4_pedestal_file = lstchain.scripts.lstchain_data_create_drs4_pedestal_file:main
+lstchain_data_create_time_calibration_file = lstchain.scripts.lstchain_data_create_time_calibration_file:main
+lstchain_data_r0_to_dl1 = lstchain.scripts.lstchain_data_r0_to_dl1:main
+lstchain_data_r0_to_dl1_em = lstchain.scripts.lstchain_data_r0_to_dl1_em:main
+lstchain_dl1_muon_analysis = lstchain.scripts.lstchain_dl1_muon_analysis:main
+lstchain_dl1_to_dl2 = lstchain.scripts.lstchain_dl1_to_dl2:main
+lstchain_dl1ab = lstchain.scripts.lstchain_dl1ab:main
+lstchain_mc_r0_to_dl1 = lstchain.scripts.lstchain_mc_r0_to_dl1:main
+lstchain_mc_r0_to_dl1_em = lstchain.scripts.lstchain_mc_r0_to_dl1_em:main
+lstchain_mc_r0_to_dl2 = lstchain.scripts.lstchain_mc_r0_to_dl2:main
+lstchain_mc_rfperformance = lstchain.scripts.lstchain_mc_rfperformance:main
+lstchain_mc_sensitivity = lstchain.scripts.lstchain_mc_sensitivity:main
+lstchain_mc_trainpipe = lstchain.scripts.lstchain_mc_trainpipe:main
+lstchain_merge_hdf5_files = lstchain.scripts.lstchain_merge_hdf5_files:main
+lstchain_merge_muon_files = lstchain.scripts.lstchain_merge_muon_files:main
+lstchain_post_dl2 = lstchain.scripts.lstchain_post_dl2:main
+onsite_create_calibration_file = lstchain.scripts.onsite.onsite_create_calibration_file:main
+onsite_create_drs4_pedestal_file = lstchain.scripts.onsite.onsite_create_drs4_pedestal_file:main
+

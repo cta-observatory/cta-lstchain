@@ -169,7 +169,7 @@ def main():
                      '/dl1datacheck/flatfield']:
             try:
                 node = a.get_node(name)
-            except RuntimeWarning:
+            except Exception:
                 print('   Table', name, 'is missing!')
                 datatables.append(None)
                 continue
@@ -379,8 +379,12 @@ def main():
         for subrun in subruns:
             mufile = 'muons_LST-1.Run{0:05d}.{1:04d}.fits'.format(runnumber, subrun)
 
-            dat = Table.read(mufile, format='fits')
-            if len(dat) == 0:
+            dat = None
+            try:
+                dat = Table.read(mufile, format='fits')
+            except Exception:
+                print('   File', mufile, 'not found - going on')
+            if dat is None or len(dat) == 0:
                 empty_files += 1
                 cosmics['num_contained_mu_rings'].extend([0])
                 cosmics['mu_effi_mean'].extend([np.nan])
