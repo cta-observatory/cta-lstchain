@@ -9,13 +9,22 @@ from traitlets.config import Config
 
 from lstchain.calib.camera.pedestals import PedestalIntegrator
 from ctapipe.visualization import CameraDisplay
+import logging
+
+
+log = logging.getLogger(__name__)
+
+log.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logging.getLogger().addHandler(handler)
+
 
 __all__ = ["plot_pedestals"]
 
 channel = ["HG", "LG"]
 
 
-def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, offset_value=400):
+def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, offset_value=400, sample_size=1000):
     """
     plot pedestal quantities quantities
 
@@ -61,7 +70,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
     pedestal = PedestalIntegrator(
         tel_id=tel_id,
         time_sampling_correction_path=None,
-        sample_size=1000,
+        sample_size=sample_size,
         sample_duration=1000000,
         charge_median_cut_outliers=[-10, 10],
         charge_std_cut_outliers=[-10, 10],
@@ -76,15 +85,15 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
                 f"Given wrong telescope id {tel_id}, files has id {event.trigger.tels_with_trigger[0]}"
             )
 
-        ok = pedestal.calculate_pedestals(event)
-        if ok:
+        are_pedestals_calculated = pedestal.calculate_pedestals(event)
+        if are_pedestals_calculated:
             ped_data = event.mon.tel[tel_id].pedestal
             break
 
     camera_geometry = reader.subarray.tels[tel_id].camera.geometry
     camera_geometry = camera_geometry.transform_to(EngineeringCameraFrame())
 
-    if plot_file is not None:
+    if are_pedestals_calculated and plot_file is not None:
         with PdfPages(plot_file) as pdf:
 
             plt.rc("font", size=15)
@@ -222,3 +231,9 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
 
                 if i == 8:
                     break
+
+    elif not are_pedestals_calculated:
+        log.error("Not able to calculate pedestals or output pdf file not especified.")
+
+    elif plot_file is None:
+        log.warning("Not PDF outputfile specified.")
