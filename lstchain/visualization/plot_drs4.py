@@ -164,6 +164,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
             plt.subplots_adjust(top=0.94, bottom=0.04, right=0.96)
 
             pdf.savefig()
+            plt.close()
 
             # event_reader
             # reader = EventSource(data_file, config=Config(config), max_events=1000)
@@ -217,6 +218,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
                     pad = 420
                     plt.subplots_adjust(top=0.92)
                     pdf.savefig()
+                    plt.close()
 
                 if i == 8:
                     break
