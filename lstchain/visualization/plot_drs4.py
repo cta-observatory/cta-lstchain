@@ -5,7 +5,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 from ctapipe.io import EventSource
 from ctapipe.coordinates import EngineeringCameraFrame
 
-import sys
 from traitlets.config import Config
 
 from lstchain.calib.camera.pedestals import PedestalIntegrator
