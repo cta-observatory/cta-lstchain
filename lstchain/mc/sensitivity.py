@@ -10,6 +10,7 @@ from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
 from pyirf.sensitivity import relative_sensitivity
+from gammapy.stats import WStatCountsStatistic
 
 __all__ = [
     'read_sim_par',
