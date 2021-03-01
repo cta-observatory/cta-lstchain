@@ -47,15 +47,12 @@ __all__ = [
     'sky_to_camera',
     'source_dx_dy',
     'source_side',
-    'unix_tai_to_time',
 ]
 
 # position of the LST1
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
-UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
-INVALID_TIME = UCTS_EPOCH
 
 
 log = logging.getLogger(__name__)
@@ -252,7 +249,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
@@ -614,23 +611,3 @@ def clip_alt(alt):
     to keep astropy happy
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
-
-
-def unix_tai_to_time(timestamp):
-    """
-    Create an astropy.Time object for timestamps in unix tai format.
-    Unix tai format mean seconds since 1970-01-01T00:00 TAI as opposed
-    to 1970-01-01T00:00 UTC for the usual unix timestamps.
-    """
-    scalar = np.isscalar(timestamp)
-
-    timestamp = u.Quantity(timestamp, u.s, ndmin=1)
-    invalid = ~np.isfinite(timestamp)
-    timestamp[invalid] = 0
-
-    t = UCTS_EPOCH + timestamp
-
-    if scalar:
-        return t[0]
-
-    return t

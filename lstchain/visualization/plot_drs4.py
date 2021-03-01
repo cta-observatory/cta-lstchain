@@ -1,12 +1,12 @@
 
 from matplotlib import pyplot as plt
-from traitlets.config.loader import Config
+
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.io import event_source
-from lstchain.calib.camera.r0 import LSTR0Corrections
+from ctapipe.io import EventSource
 from ctapipe.coordinates import EngineeringCameraFrame
 
+from traitlets.config import Config
 
 from lstchain.calib.camera.pedestals import PedestalIntegrator
 from ctapipe.visualization import CameraDisplay
@@ -42,24 +42,31 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
 
     plt.rc('font', size=15)
 
-    # r0 calibrator
-    r0_calib = LSTR0Corrections(pedestal_path=pedestal_file, offset=offset_value,
-                                tel_id=tel_id )
-
+    config={
+        "LSTEventSource": {
+            "allowed_tels": [1],
+            "fill_timestamp": False,
+            "LSTR0Corrections":{
+                "drs4_pedestal_path": pedestal_file,
+            }
+        }
+    }
     # event_reader
-    reader = event_source(data_file, max_events=1000)
+    reader = EventSource(data_file, config=Config(config), max_events=None)
     t = np.linspace(2, 37, 36)
 
     # configuration for the charge integrator
     charge_config = Config({
         "FixedWindowSum": {
-            "window_start": 12,
+            "window_shift": 6,
             "window_width": 12,
+            "peak_index": 18,
         }
 
     })
     # declare the pedestal component
     pedestal = PedestalIntegrator(tel_id=tel_id,
+                                  time_sampling_correction_path = None,
                                   sample_size=1000,
                                   sample_duration=1000000,
                                   charge_median_cut_outliers=[-10, 10],
@@ -69,11 +76,9 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
                                   subarray = reader.subarray)
 
     for i, event in enumerate(reader):
-        if tel_id != event.r0.tels_with_data[0]:
-            raise Exception(f"Given wrong telescope id {tel_id}, files has id {event.r0.tels_with_data[0]}")
+        if tel_id != event.trigger.tels_with_trigger[0]:
+            raise Exception(f"Given wrong telescope id {tel_id}, files has id {event.trigger.tels_with_trigger[0]}")
 
-        # move from R0 to R1
-        r0_calib.calibrate(event)
 
         ok = pedestal.calculate_pedestals(event)
         if ok:
@@ -165,8 +170,13 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
 
         pp.savefig()
 
+    # event_reader
+    #reader = EventSource(data_file, config=Config(config), max_events=1000)
+
     pix = 0
     pad = 420
+    offset_value = reader.r0_r1_calibrator.offset.tel[tel_id]
+
     # plot corrected waveforms of first 8 events
     for i, ev in enumerate(reader):
         for chan in np.arange(2):
@@ -174,29 +184,28 @@ def plot_pedestals(data_file, pedestal_file, run=0 , plot_file="none", tel_id=1,
             if pad == 420:
                 # new figure
 
-                fig = plt.figure(ev.index.event_id, figsize=(12, 24))
+                fig = plt.figure(ev.index.event_id*1000, figsize=(12, 24))
                 fig.suptitle(f"Run {run}, pixel {pix}", fontsize=25)
                 plt.tight_layout()
             pad += 1
             plt.subplot(pad)
 
+            # remove samples at beginning / end of waveform
+            start = reader.r0_r1_calibrator.r1_sample_start.tel[tel_id]
+            end = reader.r0_r1_calibrator.r1_sample_end.tel[tel_id]
+
             plt.subplots_adjust(top=0.92)
             label = f"event {ev.index.event_id}, {channel[chan]}: R0"
-            plt.step(t, ev.r0.tel[tel_id].waveform[chan, pix, 2:38], color="blue", label=label)
+            plt.step(t, ev.r0.tel[tel_id].waveform[chan, pix, start:end], color="blue", label=label)
 
-            r0_calib.subtract_pedestal(ev,tel_id)
-            label = "+ pedestal substraction"
-            plt.step(t, ev.r1.tel[tel_id].waveform[chan, pix, 2:38], color="red", alpha=0.5,  label=label)
+            label = "baseline correction + dt corr + interp. spikes"
 
-            r0_calib.time_lapse_corr(ev,tel_id)
-            r0_calib.interpolate_spikes(ev,tel_id)
-            label = "+ dt corr + interp. spikes"
-            plt.step(t, ev.r1.tel[tel_id].waveform[chan, pix, 2:38],  alpha=0.5, color="green",label=label)
+            plt.step(t, ev.r1.tel[tel_id].waveform[chan, pix]+offset_value,  alpha=0.5, color="green",label=label)
             plt.plot([0, 40], [offset_value, offset_value], 'k--',  label="offset")
             plt.xlabel("time sample [ns]")
             plt.ylabel("counts [ADC]")
             plt.legend()
-            plt.ylim([-50, 500])
+            plt.ylim(200, 600)
 
         if plot_file != "none" and pad == 428:
             pad = 420

@@ -5,10 +5,10 @@ Component for the estimation of the calibration coefficients  events
 import numpy as np
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List, Bool
+from ctapipe.core.traits import  Float, List
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
-from lstchain.io.lstcontainers import LSTEventType
+from ctapipe.containers import EventType
 
 __all__ = [
     'CalibrationCalculator',
@@ -111,30 +111,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
     """
     Calibration calculator for LST camera
     Fills the MonitoringCameraContainer on the base of calibration events
-
-    Parameters:
-    ----------
-    minimum_hg_charge_median :
-              Temporary cut on HG charge till the calibox TIB do not work
-             (default for filter 5.2)
-
-    maximum_lg_charge_std
-             Temporary cut on LG std against Lidar events till the calibox TIB do not work
-            (default for filter 5.2)
-
-    time_calibration_path:
-            Path with the drs4 time calibration corrections
     """
-
-    minimum_hg_charge_median = Float(
-        5000,
-        help='Temporary cut on HG charge till the calibox TIB do not work (default for filter 5.2)'
-    ).tag(config=True)
-
-    maximum_lg_charge_std = Float(
-        300,
-        help='Temporary cut on LG std against Lidar events till the calibox TIB do not work (default for filter 5.2) '
-    ).tag(config=True)
 
 
     def calculate_calibration_coefficients(self, event):
@@ -144,7 +121,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         Parameters
         ----------
-        event: EventAndMonDataContainer
+        event: ArrayArrayEventContainer
 
         """
 
@@ -156,6 +133,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # mask from pedestal and flat-field data
         monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                    status_data.flatfield_failing_pixels)
+
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
@@ -211,27 +189,19 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         new_ped = False
         new_ff = False
 
-        # if pedestal event
-        if LSTEventType.is_pedestal(event.r1.tel[self.tel_id].trigger_type): 
+        # if pedestal event:
+        if event.trigger.event_type == EventType.SKY_PEDESTAL:
 
             new_ped = self.pedestal.calculate_pedestals(event)
 
-
-        # if flat-field event: no calibration  TIB for the moment,
-        # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-        elif LSTEventType.is_calibration(event.r1.tel[self.tel_id].trigger_type) or (
-                np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
-                > self.minimum_hg_charge_median
-                and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
-                < self.maximum_lg_charge_std):
+        # if flat-field event:
+        elif event.trigger.event_type == EventType.FLATFIELD:
 
             new_ff = self.flatfield.calculate_relative_gain(event)
-
 
             # if new ff, calculate new calibration coefficients
             if new_ff:
                 self.calculate_calibration_coefficients(event)
-
 
         return new_ped, new_ff
 

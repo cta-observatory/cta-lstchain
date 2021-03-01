@@ -72,24 +72,6 @@ def test_impute_pointing():
     np.testing.assert_allclose(df.az_tel, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
 
 
-def test_unix_tai_to_utc():
-    from lstchain.reco.utils import unix_tai_to_time, INVALID_TIME
-
-    timestamp_tai = 1579376359.3225002
-    leap_seconds = 37
-    utc_time = unix_tai_to_time(timestamp_tai)
-
-    assert np.isclose(utc_time.unix, timestamp_tai - leap_seconds)
-
-    # test nan values
-    assert unix_tai_to_time(np.nan) == INVALID_TIME
-
-    # test multiple values including nans
-    timestamps = np.array([timestamp_tai, np.nan])
-    assert np.isclose(unix_tai_to_time(timestamps)[0].unix, timestamp_tai - leap_seconds)
-    assert unix_tai_to_time(timestamps)[1] == INVALID_TIME
-
-
 def test_filter_events():
     from lstchain.reco.utils import filter_events
     df = pd.DataFrame({'a': [1, 2, 3],
