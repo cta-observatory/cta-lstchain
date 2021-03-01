@@ -95,9 +95,14 @@ def main():
     pedestal.finalize_pedestal()
 
     expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
-    pedestal_mean_array = fits.ImageHDU(np.int16(pedestal.meanped))
-    failing_pixels = fits.ImageHDU(pedestal.failing_pixels_list)
-    hdulist = fits.HDUList([expected_pixel_id, pedestal_mean_array, failing_pixels])
+    pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped),
+                                   name="pedestal array")
+    failing_pixels_column = fits.Column(name='failing pixels',
+                                        array=pedestal.failing_pixels_array,
+                                        format='K')
+    failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_column],
+                                                    name="failing pixels")
+    hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
     hdulist.writeto(args.output_file)
 
 
