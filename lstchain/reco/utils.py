@@ -622,11 +622,11 @@ def add_delta_t_key(events):
     so events are consecutive.
     Parameters
     ----------
-    events: pandas DataFrame of dl2 events
+    events: pandas DataFrame of dl1 events
 
     Returns
     -------
-    events: pandas DataFrame of dl2 events with delta_t
+    events: pandas DataFrame of dl1 events with delta_t
     """
 
     # Get delta t of real data and add it to the data frame
