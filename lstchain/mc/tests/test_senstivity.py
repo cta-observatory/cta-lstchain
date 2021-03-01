@@ -81,3 +81,10 @@ def test_ring_containment():
     contained, area = ring_containment(np.linspace(0.1, 1, 10), 0.6, 0.2)
     np.testing.assert_allclose(area, 1.256, rtol=1.e-3)
     np.testing.assert_equal(contained, [False, True, True, True, True,
+                                        False, False, False, False, False])
+
+@pytest.mark.run(after='test_apply_models')
+def test_sens():
+    # TODO: define test for sens
+    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
+    pass
