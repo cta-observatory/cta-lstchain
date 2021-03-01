@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import astropy.units as u
 import numpy as np
 import pandas as pd
@@ -118,6 +117,7 @@ def test_build_models(simulated_dl1_file, rf_models):
     )
 
     import joblib
+
 
     joblib.dump(reg_energy, rf_models["energy"])
     joblib.dump(reg_disp, rf_models["disp"])

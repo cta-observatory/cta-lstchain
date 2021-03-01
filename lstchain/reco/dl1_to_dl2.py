@@ -55,9 +55,9 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args'] 
+    regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor    
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -309,6 +309,8 @@ def build_models(filegammas, fileprotons,
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
+    df_proton['mc_type']=101
+
     if config['source_dependent']:
         src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
         src_dep_df_gamma.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_gamma.columns])
@@ -401,7 +403,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
 
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
-      
+
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
     dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
@@ -453,10 +455,6 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     dl2['gammaness'] = probs[:, 0]
 
     return dl2
-<<<<<<< HEAD
-=======
-
-
 
 def get_source_dependent_parameters(data, config):
 
@@ -466,11 +464,11 @@ def get_source_dependent_parameters(data, config):
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
-    
+
     """
 
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
-    
+
     if is_simu:
         if (data['mc_type'] == 0).all():
             data_type = 'mc_gamma'
@@ -478,7 +476,7 @@ def get_source_dependent_parameters(data, config):
             data_type = 'mc_proton'
     else:
         data_type = 'real_data'
-    
+
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config)
 
     # ON position
@@ -490,7 +488,7 @@ def get_source_dependent_parameters(data, config):
         if config.get('observation_mode')=='wobble':
             for ioff in range(config.get('n_off_wobble')):
                 off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
-            
+
                 rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(off_angle) - expected_src_pos_y_m * np.sin(off_angle)
                 rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(off_angle) + expected_src_pos_y_m * np.cos(off_angle)
                 src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
@@ -523,7 +521,7 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
         data['x'],
         data['y'],
         data['psi']                                                                                                                                                                                                   )
-    
+
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
@@ -540,7 +538,7 @@ def get_expected_source_pos(data, data_type, config):
     data: Pandas DataFrame
     data_type: string ('mc_gamma','mc_proton','real_data')
     config: dictionnary containing configuration
-    
+
     """
 
     #For gamma MC, expected source position is actual one for each event
@@ -558,7 +556,7 @@ def get_expected_source_pos(data, data_type, config):
             u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
-        
+
         expected_src_pos_x_m = expected_src_pos.x.to_value(u.m)
         expected_src_pos_y_m = expected_src_pos.y.to_value(u.m)
 
@@ -568,7 +566,7 @@ def get_expected_source_pos(data, data_type, config):
         if config.get('observation_mode') == 'on':
             expected_src_pos_x_m = np.zeros(len(data))
             expected_src_pos_y_m = np.zeros(len(data))
-        
+
         # compute source position in camera coordinate event by event for wobble mode
         if config.get('observation_mode') == 'wobble':
 
@@ -576,9 +574,9 @@ def get_expected_source_pos(data, data_type, config):
                 source_coord  = SkyCoord.from_name(config.get('source_name'))
             else:
                 source_coord  = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
-     
+
             focal_length = OpticsDescription.from_name('LST').equivalent_focal_length
-            
+
             time = data['dragon_time']
             obstime = Time(time, scale='utc', format='unix')
             pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
@@ -587,6 +585,5 @@ def get_expected_source_pos(data, data_type, config):
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
-   
-    return expected_src_pos_x_m, expected_src_pos_y_m 
->>>>>>> a8d06f9cf9bfa08771efb5c7001a51cd990eaa7f
+
+    return expected_src_pos_x_m, expected_src_pos_y_m
