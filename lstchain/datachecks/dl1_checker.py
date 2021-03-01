@@ -234,11 +234,12 @@ def process_dl1_file(filename, bins):
         # by their looks.
         image = image_table.col('image')
 
-        flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD)
+        flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.
 
-        pedestal_mask = (parameters['event_type'] == EventType.SKY_PEDESTAL)
+        pedestal_mask = (parameters['event_type'] ==
+                         EventType.SKY_PEDESTAL.value)
 
         # Now obtain by exclusion the masks for cosmics:
         cosmics_mask = ~(pedestal_mask | flatfield_mask)
