@@ -92,7 +92,7 @@ def test_get_obstime_real():
     rate = 10e3
     n_events = np.random.poisson(rate * t_obs)
     timestamps = np.sort(np.random.uniform(0, t_obs, n_events))
-    deltat = np.insert(timestamps[1:]-timestamps[:-1],0,0)
-    events = pd.DataFrame({'deltat': deltat})
+    delta_t = np.insert(timestamps[1:]-timestamps[:-1],0,0)
+    events = pd.DataFrame({'delta_t': delta_t})
     
     assert np.isclose(utils.get_effective_time(events)[0].value, t_obs)
