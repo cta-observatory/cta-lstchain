@@ -619,7 +619,7 @@ def get_effective_time(events):
     of real data events.
     Parameters
     ----------
-    events: pandas DataFrame
+    events: pandas DataFrame of dl2 events
 
     Returns
     -------
@@ -627,7 +627,7 @@ def get_effective_time(events):
     t_elapsed: float
     """
     
-    deltat = np.diff(events['dragon_time'])
+    deltat = events.deltat[1:]
     deltat = deltat[(deltat > 0) & (deltat < 0.002)]
     rate=1/np.mean(deltat)
     dead_time = np.amin(deltat)

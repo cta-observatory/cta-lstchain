@@ -452,6 +452,13 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, custom_config={})
     # gammaness is the prediction probability for the first class (0)
     dl2['gammaness'] = probs[:, 0]
 
+    # Get delta t of real data and add it to the data frame
+    if 'dragon_time' in dl2.columns:
+        time= np.array(dl2.dragon_time)
+        deltat = np.insert(time[1:]-time[:-1],0,0)
+        dl2['deltat'] = deltat
+        
+    
     return dl2
 
 
