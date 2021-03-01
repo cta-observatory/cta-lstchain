@@ -306,8 +306,16 @@ class IRFFITSWriter(Tool):
             * u.deg
         )
 
+        # For a fixed gh/theta cut, only a header value is added.
+        # For energy dependent cuts, a new HDU should be created
+        # GH_CUT and FOV_OFFSET are temporary non-standard header data
+
+        extra_headers = {"TELESCOP": "CTA", "INSTRUME": "LST-1", "FOVALIGN": "RADEC",
+                        "GH_CUT": gh_cut}
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
+            extra_headers["RAD_MAX"] = str(u.Quantity(**self.cuts["fixed_cuts"]["theta_cut"]))
+            extra_headers["FOV_OFFSET"] = str(u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"]))
         else:
             self.log.debug("Generating Full-Enclosure IRF HDUs")
 
@@ -315,7 +323,7 @@ class IRFFITSWriter(Tool):
         self.hdus = [
             fits.PrimaryHDU(),
         ]
-        extra_headers = {"TELESCOP": "CTA", "INSTRUME": "LST-1", "FOVALIGN": "RADEC"}
+
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
