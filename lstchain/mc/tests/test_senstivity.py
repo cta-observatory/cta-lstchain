@@ -58,7 +58,7 @@ def test_diff_events_after_cut(simulated_dl2_file):
     diff_events_after_cut(events, np.ones(len(events)), 10, 'gammaness', 0.5, 0.5)
     diff_events_after_cut(events, np.ones(len(events)), 10, 'theta2', 0.5, 0.5)
 
-def test_find_cut():
+def test_find_cut(simulated_dl2_file):
     events=pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     events["theta2"]=0.01
     find_cut(events, np.ones(len(events)), 10, 'gammaness', 0.5, 0.5, 0.5)
