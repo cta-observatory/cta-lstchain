@@ -136,30 +136,6 @@ def format_axes_sensitivity(ax):
     ax.set_ylabel(r'E$^2$ $\frac{\mathrm{dN}}{\mathrm{dE}}$ [TeV cm$^{-2}$ s$^{-1}$]')
     ax.grid(ls='--', alpha = .5)
 
-def plot_LST_preliminary_sensitivity(ax, **kwargs):
-    """
-    Plot LST preliminary sensitivity for comparison with the reached one
-
-    Parameters
-    --------
-    ax:    `matplotlib.pyplot.axis`
-
-    Returns
-    --------
-    ax:    `matplotlib.pyplot.axis`
-
-    """
-    s = np.loadtxt('../spectra/data/sensitivity.txt', skiprows = 1)
-    e = s[:,0] * u.TeV
-    sensitivity = s[:,1]
-    sensitivity_flux = sensitivity / 100 * (crab_hegra(e)[0] * e * e).to(u.TeV / (u.cm ** 2 * u.s))
-    ax.loglog(e.to(u.GeV), sensitivity_flux,
-              **kwargs, label = 'LST sensitivity source dependent')
-
-    return ax
-
-
-
 def plot_MAGIC_sensitivity(ax, **kwargs):
     """
     Plot MAGIC sensitivity for comparison with the reached one
