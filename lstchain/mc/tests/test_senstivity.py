@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
+import pandas as pd
 
 from lstchain.mc.sensitivity import (
     process_mc,
     process_real,
     read_sim_par,
+    get_obstime_real,
     calculate_sensitivity,
     calculate_sensitivity_lima,
     calculate_sensitivity_lima_ebin,
@@ -32,7 +34,15 @@ def test_process_mc(simulated_dl2_file):
     process_real(simulated_dl2_file)
     pass
 
-
+def test_get_obstime_real():
+    t_obs = 600
+    rate = 10e3
+    n_events = np.random.poisson(rate * t_obs)
+    timestamps = np.sort(np.random.uniform(0, t_obs, n_events))
+    delta_t = np.insert(timestamps[1:]-timestamps[:-1],0,0)
+    events = pd.DataFrame({'delta_t': delta_t})
+    
+    assert np.isclose(get_obstime_real(events).value, t_obs)
 
 def test_calculate_sensitivity():
     np.testing.assert_allclose(calculate_sensitivity(
