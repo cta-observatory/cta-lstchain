@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
 
-from lstchain.mc import (
+from lstchain.mc.sensitivity import (
+    process_mc,
+    process_real,
     read_sim_par,
     calculate_sensitivity,
     calculate_sensitivity_lima,
@@ -24,10 +26,12 @@ def test_read_sim_par(simulated_dl1_file):
 
 
 @pytest.mark.run(after='test_apply_models')
-def test_process_mc():
-    # TODO: write a test for `test_process_mc` using `dl2` dataframe
-    # dl2 = pd.read_hdf(dl2_file, key=dl2_params_lstcam_key)
+def test_process_mc(simulated_dl2_file):
+    process_mc(simulated_dl2_file, 'gamma')
+    process_mc(simulated_dl2_file, 'proton')
+    process_real(simulated_dl2_file)
     pass
+
 
 
 def test_calculate_sensitivity():
