@@ -170,14 +170,6 @@ def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
     output_filename=None,
     custom_config={},
-    pedestal_path=None,
-    calibration_path=None,
-    time_calibration_path=None,
-    pointing_file_path=None,
-    ucts_t0_dragon=None,
-    dragon_counter0=None,
-    ucts_t0_tib=None,
-    tib_counter0=None,
 ):
     """
     Chain r0 to dl1
@@ -190,15 +182,6 @@ def r0_to_dl1(
     output_filename: str or None
         path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
-    pedestal_path: Path to the DRS4 pedestal file
-    calibration_path: Path to the file with calibration constants and
-        pedestals
-    time_calibration_path: Path to the DRS4 time correction file
-    pointing_file_path: path to the Drive log with the pointing information
-    ucts_t0_dragon: first valid ucts_time
-    dragon_counter0: Dragon counter corresponding to ucts_t0_dragon
-    ucts_t0_tib: first valid ucts_time for the first valid TIB counter
-    tib_counter0: first valid TIB counter
 
     Returns
     -------
@@ -219,33 +202,9 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-    source_config = {
-        "EventSource": {
-            "allowed_tels": config["allowed_tels"],
-            "max_events": config["max_events"],
-        },
-        "LSTEventSource": {
-            "allowed_tels": [1],
-            "calibrate_flatfields_and_pedestals": False,
-            "EventTimeCalculator": {
-                "ucts_t0_dragon": ucts_t0_dragon,
-                "dragon_counter0": dragon_counter0,
-                "ucts_t0_tib": ucts_t0_tib,
-                "tib_counter0": tib_counter0
-            },
-            "PointingSource":{
-                "drive_report_path": pointing_file_path
-            },
-            "LSTR0Corrections":{
-                "drs4_pedestal_path": pedestal_path,
-                "calibration_path": calibration_path,
-                "drs4_time_calibration_path": time_calibration_path,
-            }
-        }
-    }
 
-    # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = EventSource(input_url=input_filename, config=Config(source_config))
+    source = EventSource(input_url=input_filename,
+                         config=Config(config["source_config"]))
     subarray = source.subarray
     is_simu = source.is_simulation
 
