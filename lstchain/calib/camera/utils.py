@@ -16,7 +16,10 @@ def get_bias_and_std(dl1_file):
     bias, std: np.ndarray, np.ndarray
         bias and std in p.e.
     """
-    f = tables.open_file(dl1_file)
+    try:
+        f = tables.open_file(dl1_file)
+    except Exception:
+        raise RuntimeError("No found dl1 file")
     ped = f.root[dl1_params_tel_mon_ped_key]
     ped_charge_mean = np.array(ped.cols.charge_mean)
     ped_charge_std = np.array(ped.cols.charge_std)
@@ -37,7 +40,7 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     Recommended threshold for cleaning:
         galactic source: picture_thresh=8, boundary_thresh=4, sigma=3
         extragalactic source: picture_thresh=6, boundary_thresh=3, sigma=2.5
-        
+
     Parameters
     ----------
     input_filename: str
