@@ -180,7 +180,7 @@ def main():
     r0_to_dl1.r0_to_dl1(
         args.input_file,
         output_filename=output_filename,
-        custom_config=config['source_config'],
+        custom_config=config,
     )
 
 

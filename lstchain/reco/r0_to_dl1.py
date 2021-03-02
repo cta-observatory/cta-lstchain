@@ -203,7 +203,8 @@ def r0_to_dl1(
     custom_calibration = config["custom_calibration"]
 
 
-    source = EventSource(input_url=input_filename, config=Config(config))
+    source = EventSource(input_url=input_filename,
+                         config=Config(config["source_config"]))
     subarray = source.subarray
     is_simu = source.is_simulation
 
