@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import pandas as pd
+from lstchain.io.io import dl2_params_lstcam_key
 
 from lstchain.mc.sensitivity import (
     process_mc,
@@ -12,6 +13,11 @@ from lstchain.mc.sensitivity import (
     calculate_sensitivity_lima_ebin,
     bin_definition,
     ring_containment,
+    diff_events_after_cut_real,
+    diff_events_after_cut,
+    samesign,
+    find_cut,
+    find_cut_real
 )
 
 
@@ -44,6 +50,27 @@ def test_get_obstime_real():
     
     assert np.isclose(get_obstime_real(events).value, t_obs)
 
+def test_diff_events_after_cut(simulated_dl2_file):
+    events=pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
+    events["theta2"]=0.01
+    diff_events_after_cut_real(events, events, 10, 10, 'gammaness', 0.5, 0.5)
+    diff_events_after_cut_real(events, events, 10, 10, 'theta2', 0.5, 0.5)
+    diff_events_after_cut(events, np.ones(len(events)), 10, 'gammaness', 0.5, 0.5)
+    diff_events_after_cut(events, np.ones(len(events)), 10, 'theta2', 0.5, 0.5)
+
+def test_find_cut():
+    events=pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
+    events["theta2"]=0.01
+    find_cut(events, np.ones(len(events)), 10, 'gammaness', 0.5, 0.5, 0.5)
+    find_cut(events, np.ones(len(events)), 10, 'theta2', 0.5, 0.5, 0.5)
+    find_cut_real(events, events, 10, 10, 'gammaness', 0.5, 0.5, 0.5)
+    find_cut_real(events, events, 10, 10, 'theta2', 0.5, 0.5, 0.5)
+    
+def test_samesign():
+    a=1
+    b=-1
+    assert samesign(a,b)==False 
+    
 def test_calculate_sensitivity():
     np.testing.assert_allclose(calculate_sensitivity(
         50, 10, 0.2), 14.14, rtol=1.e-3)
