@@ -23,6 +23,7 @@ import logging
 import sys
 from pathlib import Path
 
+from lstchain.io import  standard_config
 from lstchain.io.config import read_configuration_file
 from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from lstchain.reco import r0_to_dl1
@@ -151,21 +152,35 @@ def main():
         except Exception as e:
             log.error(f'Configuration file could not be read: {e}')
             sys.exit(1)
+    else:
+        config = standard_config
 
-    config["max_events"] = args.max_events
+    # Add to configuration config the parameters provided through command-line,
+    # which supersede those in the file:
+    config['source_config']['EventSource']['max_events'] = args.max_events
+
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['EventTimeCalculator']['ucts_t0_dragon'] = \
+        args.ucts_t0_dragon
+    lst_event_source['EventTimeCalculator']['dragon_counter0'] = \
+        args.dragon_counter0
+    lst_event_source['EventTimeCalculator']['ucts_t0_tib'] = \
+        args.ucts_t0_tib
+    lst_event_source['EventTimeCalculator']['tib_counter0'] = \
+        args.tib_counter0
+    lst_event_source['PointingSource']['drive_report_path'] = \
+        args.pointing_file
+    lst_r0_corrections = lst_event_source['LSTR0Corrections']
+    lst_r0_corrections['drs4_pedestal_path'] = args.pedestal_file
+    lst_r0_corrections['calibration_path'] = args.calibration_file
+    lst_r0_corrections['drs4_time_calibration_path'] = \
+        args.time_calibration_file
+
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,
         output_filename=output_filename,
-        custom_config=config,
-        pedestal_path=args.pedestal_file,
-        calibration_path=args.calibration_file,
-        time_calibration_path=args.time_calibration_file,
-        pointing_file_path=args.pointing_file,
-        ucts_t0_dragon=args.ucts_t0_dragon,
-        dragon_counter0=args.dragon_counter0,
-        ucts_t0_tib=args.ucts_t0_tib,
-        tib_counter0=args.tib_counter0
+        custom_config=config['source_config'],
     )
 
 
