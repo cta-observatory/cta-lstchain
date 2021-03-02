@@ -50,8 +50,7 @@ __all__ = [
     'write_calibration_data',
     'read_dl2_to_pyirf',
     'read_dl2_params',
-    'extract_observation_time',
-    'merge_dl2_runs'
+    'extract_observation_time'
 ]
 
 
@@ -1142,22 +1141,3 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
-
-def get_cleaning_parameters(config, clean_method_name):
-    """
-    Return cleaning parameters from configuration dict.
-
-    Parameters
-    ----------
-    config: configuration dict
-    clean_method_name: name of cleaning method
-
-    Returns
-    -------
-    tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
-    """
-    picture_th = config[clean_method_name]['picture_thresh']
-    boundary_th = config[clean_method_name]['boundary_thresh']
-    isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
-    min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
-    return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors

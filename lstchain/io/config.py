@@ -5,7 +5,8 @@ from copy import copy
 __all__ = [
     'read_configuration_file',
     'get_standard_config',
-    'replace_config'
+    'replace_config',
+    'get_cleaning_parameters'
 ]
 
 
@@ -60,3 +61,22 @@ def replace_config(base_config, new_config):
         config[k] = new_config[k]
 
     return config
+
+def get_cleaning_parameters(config, clean_method_name):
+    """
+    Return cleaning parameters from configuration dict.
+
+    Parameters
+    ----------
+    config: configuration dict
+    clean_method_name: name of cleaning method
+
+    Returns
+    -------
+    tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
+    """
+    picture_th = config[clean_method_name]['picture_thresh']
+    boundary_th = config[clean_method_name]['boundary_thresh']
+    isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
+    min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
+    return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
