@@ -156,45 +156,6 @@ def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
 
-@pytest.fixture(scope="session")
-def test_sensitivity(fake_dl2_proton_file, simulated_dl2_file):
-    from lstchain.mc.sensitivity import (sensitivity_gamma_efficiency,
-                                         sensitivity_gamma_efficiency_real_protons,
-                                         sensitivity_gamma_efficiency_real_data)
-    
-    geff_gammaness = 0.9
-    geff_theta2 = 0.8
-    eb = 10
-    obstime = 50 * 3600 * u.s
-    noff = 2
-    
-    sensitivity_gamma_efficiency(simulated_dl2_file,
-                                 fake_dl2_proton_file,
-                                 1, 1,
-                                 eb,
-                                 geff_gammaness,
-                                 geff_theta2,
-                                 noff,
-                                 obstime)
-    
-    sensitivity_gamma_efficiency_real_protons(simulated_dl2_file,
-                                              fake_dl2_proton_file,
-                                              1,
-                                              eb,
-                                              geff_gammaness,
-                                              geff_theta2,
-                                              noff,
-                                              obstime)
-    
-    sensitivity_gamma_efficiency_real_data(simulated_dl2_file,
-                                           fake_dl2_proton_file,
-                                           0.5,0.5,
-                                           eb,
-                                           geff_gammaness,
-                                           geff_theta2,
-                                           noff,
-                                           obstime)
-
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector
     dx = np.cos(np.pi/3 * np.ones(3))
