@@ -39,6 +39,8 @@ parser.add_argument(
     required=True,
 )
 
+# Optional arguments
+
 parser.add_argument(
     '-o', '--output-dir', type=Path,
     help='Path where to store the reco dl1 events',
@@ -48,23 +50,19 @@ parser.add_argument(
 parser.add_argument(
     '-p', '--pedestal-file', '-p', type=Path,
     dest='pedestal_file',
-    help='Path to a pedestal file',
-    required=True
+    help='Path to a pedestal file'
 )
 
 parser.add_argument(
     '--calibration-file', '--calib', type=Path,
-    help='Path to a calibration file',
-    required=True,
+    help='Path to a calibration file'
 )
 
 parser.add_argument(
     '--time-calibration-file', '-t', type=Path,
-    help='Path to a calibration file for pulse time correction',
-    required=True
+    help='Path to a calibration file for pulse time correction'
 )
 
-# Optional arguments
 parser.add_argument(
     '--config', '-c', type=Path,
     dest='config_file',
@@ -157,24 +155,34 @@ def main():
 
     # Add to configuration config the parameters provided through command-line,
     # which supersede those in the file:
-    config['source_config']['EventSource']['max_events'] = args.max_events
+    if args.max_events is not None:
+        config['source_config']['EventSource']['max_events'] = args.max_events
 
     lst_event_source = config['source_config']['LSTEventSource']
-    lst_event_source['EventTimeCalculator']['ucts_t0_dragon'] = \
-        args.ucts_t0_dragon
-    lst_event_source['EventTimeCalculator']['dragon_counter0'] = \
-        args.dragon_counter0
-    lst_event_source['EventTimeCalculator']['ucts_t0_tib'] = \
-        args.ucts_t0_tib
-    lst_event_source['EventTimeCalculator']['tib_counter0'] = \
-        args.tib_counter0
-    lst_event_source['PointingSource']['drive_report_path'] = \
-        args.pointing_file
+    if args.ucts_t0_dragon is not None:
+        lst_event_source['EventTimeCalculator']['ucts_t0_dragon'] = \
+            args.ucts_t0_dragon
+    if args.dragon_counter0 is not None:
+        lst_event_source['EventTimeCalculator']['dragon_counter0'] = \
+            args.dragon_counter0
+    if args.ucts_t0_tib is not None:
+        lst_event_source['EventTimeCalculator']['ucts_t0_tib'] = \
+            args.ucts_t0_tib
+    if args.tib_counter0 is not None:
+        lst_event_source['EventTimeCalculator']['tib_counter0'] = \
+            args.tib_counter0
+    if args.pointing_file is not None:
+        lst_event_source['PointingSource']['drive_report_path'] = \
+            args.pointing_file
+
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
-    lst_r0_corrections['drs4_pedestal_path'] = args.pedestal_file
-    lst_r0_corrections['calibration_path'] = args.calibration_file
-    lst_r0_corrections['drs4_time_calibration_path'] = \
-        args.time_calibration_file
+    if args.pedestal_file is not None:
+        lst_r0_corrections['drs4_pedestal_path'] = args.pedestal_file
+    if args.calibration_file is not None:
+        lst_r0_corrections['calibration_path'] = args.calibration_file
+    if args.time_calibration_file is not None:
+        lst_r0_corrections['drs4_time_calibration_path'] = \
+            args.time_calibration_file
 
 
     r0_to_dl1.r0_to_dl1(
