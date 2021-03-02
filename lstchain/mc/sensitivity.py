@@ -183,7 +183,7 @@ def get_obstime_real(events):
 
         return t_eff
     else:
-        return 0
+        return -1 * u.s
 
 def get_weights(mc_par, spectral_par):
     """

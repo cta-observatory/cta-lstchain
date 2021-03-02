@@ -123,13 +123,11 @@ def test_ring_containment():
     np.testing.assert_equal(contained, [False, True, True, True, True,
                                         False, False, False, False, False])
 
-
-@pytest.fixture(scope="session")
-def test_sensitivity(fake_dl2_proton_file, simulated_dl2_file):
+def test_sensitivity(simulated_dl2_file):
     from lstchain.mc.sensitivity import (sensitivity_gamma_efficiency,
                                          sensitivity_gamma_efficiency_real_protons,
                                          sensitivity_gamma_efficiency_real_data)
-    
+    import astropy.units as u
     geff_gammaness = 0.9
     geff_theta2 = 0.8
     eb = 10
@@ -137,7 +135,7 @@ def test_sensitivity(fake_dl2_proton_file, simulated_dl2_file):
     noff = 2
     
     sensitivity_gamma_efficiency(simulated_dl2_file,
-                                 fake_dl2_proton_file,
+                                 simulated_dl2_file,
                                  1, 1,
                                  eb,
                                  geff_gammaness,
@@ -146,7 +144,7 @@ def test_sensitivity(fake_dl2_proton_file, simulated_dl2_file):
                                  obstime)
     
     sensitivity_gamma_efficiency_real_protons(simulated_dl2_file,
-                                              fake_dl2_proton_file,
+                                              simulated_dl2_file,
                                               1,
                                               eb,
                                               geff_gammaness,
@@ -155,10 +153,11 @@ def test_sensitivity(fake_dl2_proton_file, simulated_dl2_file):
                                               obstime)
     
     sensitivity_gamma_efficiency_real_data(simulated_dl2_file,
-                                           fake_dl2_proton_file,
-                                           0.5,0.5,
-                                           eb,
+                                           simulated_dl2_file,
+                                           np.zeros(eb),np.ones(eb),
+                                           eb, np.ones(eb+1) * u.TeV,
                                            geff_gammaness,
                                            geff_theta2,
                                            noff,
                                            obstime)
+    
