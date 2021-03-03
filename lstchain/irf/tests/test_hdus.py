@@ -10,7 +10,7 @@ from lstchain.io.io import dl2_params_lstcam_key, read_data_dl2_to_QTable
 @pytest.mark.run(after="test_write_dl2_dataframe")
 def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
-    from lstchain.reco.utils import add_delta_t_key
+    from lstchain.reco.utils import add_delta_t_key, get_effective_time
     import numpy as np
 
     dl2_file_new = simulated_dl2_file.parent / simulated_dl2_file.name.replace(
@@ -24,12 +24,19 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     dl2["tel_id"] = dl2["tel_id"].min()
     dl2["dragon_time"] = dl2["tel_id"] + np.arange(0, len(dl2["tel_id"]) * 1e-3, 1e-3)
     dl2 = add_delta_t_key(dl2)
+    t_eff, t_tot = get_effective_time(dl2)
     dl2["alt_tel"] = dl2["mc_alt_tel"]
     dl2["az_tel"] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
 
     events = read_data_dl2_to_QTable(dl2_file_new)
-    evts, gti, pnt = create_event_list(events, run_number=0, source_name="Crab")
+    evts, gti, pnt = create_event_list(
+        events,
+        run_number=0,
+        source_name="Crab",
+        effective_time=t_eff.value,
+        elapsed_time=t_tot.value,
+    )
 
     assert "TIME" in Table.read(evts).columns
     assert "START" in Table.read(gti).columns

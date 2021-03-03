@@ -18,7 +18,7 @@ import astropy.units as u
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
-from lstchain.reco.utils import filter_events
+from lstchain.reco.utils import filter_events, get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
 
@@ -96,6 +96,8 @@ class DataReductionFITSWriter(Tool):
         self.data = None
         self.filename_dl3 = None
         self.run_number = None
+        self.effective_time = None
+        self.elapsed_time = None
         self.cuts = None
         self.events = None
         self.gti = None
@@ -130,7 +132,7 @@ class DataReductionFITSWriter(Tool):
             )
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-
+        self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
     def start(self):
@@ -151,7 +153,11 @@ class DataReductionFITSWriter(Tool):
         ]
         self.log.debug("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
-            data=self.data, run_number=self.run_number, source_name=self.source_name
+            data=self.data,
+            run_number=self.run_number,
+            source_name=self.source_name,
+            effective_time=self.effective_time.value,
+            elapsed_time=self.elapsed_time.value,
         )
 
         if self.add_irf:

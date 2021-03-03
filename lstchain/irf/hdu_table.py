@@ -7,7 +7,6 @@ from astropy.io import fits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 
-from lstchain.reco.utils import get_effective_time
 from lstchain.__init__ import __version__
 
 __all__ = ["create_obs_hdu_index", "create_event_list"]
@@ -233,7 +232,7 @@ def create_obs_hdu_index(
     return hdu_index_list, obs_index_list
 
 
-def create_event_list(data, run_number, source_name):
+def create_event_list(data, run_number, source_name, effective_time, elapsed_time):
     """
     Create the event_list BinTableHDUs from the given data
 
@@ -245,6 +244,10 @@ def create_event_list(data, run_number, source_name):
                 Int
         Source_name: Name of the source
                 Str
+        Effective_time: Effective time of triggered events of the run
+                Float
+        Elapsed_time: Total elapsed time of triggered events of the run
+                Float
     Returns
     -------
         Events HDU:  `astropy.io.fits.BinTableHDU`
@@ -259,7 +262,6 @@ def create_event_list(data, run_number, source_name):
     t_stop = data["dragon_time"].value[-1]
     time = Time(data["dragon_time"], format="unix", scale="utc")
     date_obs = time[0].to_value("iso", "date")
-    t_eff, t_elapsed = get_effective_time(data)
 
     # Position parameters
     location = EarthLocation.from_geodetic(
@@ -332,10 +334,10 @@ def create_event_list(data, run_number, source_name):
     ev_header["MJDREFF"] = "0"
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
-    ev_header["ONTIME"] = t_elapsed.value
+    ev_header["ONTIME"] = elapsed_time
     ev_header["TELAPSE"] = t_stop - t_start
-    ev_header["DEADC"] = t_eff.value / t_elapsed.value
-    ev_header["LIVETIME"] = t_eff.value
+    ev_header["DEADC"] = effective_time / elapsed_time
+    ev_header["LIVETIME"] = effective_time
 
     ev_header["OBJECT"] = source_name
     ev_header["OBS_MODE"] = mode
