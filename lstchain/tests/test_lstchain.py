@@ -160,39 +160,6 @@ def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
 
-
-def test_sensitivity(fake_dl2_proton_file, simulated_dl1_file, simulated_dl2_file):
-    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
-
-    nfiles_gammas = 1
-    nfiles_protons = 1
-    eb = 10  # Number of energy bins
-    gb = 11  # Number of gammaness bins
-    tb = 10  # Number of theta2 bins
-    obstime = 50 * 3600 * u.s
-    noff = 2
-
-    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(
-        simulated_dl1_file,
-        simulated_dl1_file,
-        simulated_dl2_file,
-        fake_dl2_proton_file,
-        nfiles_gammas, nfiles_protons,
-        eb, gb, tb, noff,
-        obstime
-    )
-
-    E, best_sens, result, units, dl2 = sensitivity(
-        simulated_dl1_file,
-        simulated_dl1_file,
-        simulated_dl2_file,
-        fake_dl2_proton_file,
-        nfiles_gammas, nfiles_protons,
-        eb, gcut, tcut * (u.deg ** 2), noff,
-        obstime
-    )
-
-
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector
     dx = np.cos(np.pi/3 * np.ones(3))
