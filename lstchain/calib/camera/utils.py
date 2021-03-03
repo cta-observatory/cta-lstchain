@@ -16,18 +16,15 @@ def get_bias_and_std(dl1_file):
     bias, std: np.ndarray, np.ndarray
         bias and std in p.e.
     """
-    try:
-        f = tables.open_file(dl1_file)
-    except Exception:
-        raise RuntimeError("No found dl1 file")
-    ped = f.root[dl1_params_tel_mon_ped_key]
-    ped_charge_mean = np.array(ped.cols.charge_mean)
-    ped_charge_std = np.array(ped.cols.charge_std)
-    calib = f.root[dl1_params_tel_mon_cal_key]
-    dc_to_pe = np.array(calib.cols.dc_to_pe)
-    ped_charge_mean_pe = ped_charge_mean * dc_to_pe
-    ped_charge_std_pe = ped_charge_std * dc_to_pe
-    f.close()
+    with tables.open_file(dl1_file) as f:
+        ped = f.root[dl1_params_tel_mon_ped_key]
+        ped_charge_mean = np.array(ped.cols.charge_mean)
+        ped_charge_std = np.array(ped.cols.charge_std)
+        calib = f.root[dl1_params_tel_mon_cal_key]
+        dc_to_pe = np.array(calib.cols.dc_to_pe)
+        ped_charge_mean_pe = ped_charge_mean * dc_to_pe
+        ped_charge_std_pe = ped_charge_std * dc_to_pe
+
     return ped_charge_mean_pe, ped_charge_std_pe
 
 def get_threshold_from_dl1_file(dl1_path, sigma_clean):
