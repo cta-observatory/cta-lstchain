@@ -75,7 +75,8 @@ def get_number_of_subruns(run_number, list_of_run_objects):
     """Obtain the number of sequential files (subruns) of a given run."""
     filtered_run = filter(lambda x: x.run == run_number, list_of_run_objects)
     last_subrun = max(list(filtered_run), key=lambda x: x.subrun)
-    return last_subrun.subrun
+    # Since subruns are counted from 0, the number of files is increased by 1.
+    return last_subrun.subrun + 1
 
 
 def start_of_run_datetime(run_number):
@@ -193,7 +194,7 @@ def write_run_summary_to_file(date, run_numbers, list_of_run_objects):
 
             run_information = (
                 f"{run:05d},"
-                f"{n_subruns:04d},"
+                f"{n_subruns},"
                 f"{type_of_run(run)},"
                 f"{start_of_run_datetime(run)},"
                 f"{dragon_reference_source},"
