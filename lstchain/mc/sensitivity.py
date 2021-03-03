@@ -5,7 +5,7 @@ from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_e
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
-from lstchain.reco.utils import reco_source_position_sky
+from lstchain.reco.utils import reco_source_position_sky, get_effective_time
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
@@ -16,7 +16,6 @@ __all__ = [
     'read_sim_par',
     'process_mc',
     'process_real',
-    'get_obstime_real',
     'get_weights',
     'samesign',
     'diff_events_after_cut',
@@ -130,7 +129,7 @@ def process_mc(dl2_file, mc_type):
 def process_real(dl2_file):
 
     events = pd.read_hdf(dl2_file, key = dl2_params_lstcam_key)
-    obstime_real = get_obstime_real(events)
+    obstime_real = get_effective_time(events)[0]
 
     filter_good_events = (
         (events.leakage_intensity_width_2 < 0.2)
@@ -152,38 +151,6 @@ def process_real(dl2_file):
     events['theta2'] = angdist2.to(u.deg**2)
 
     return gammaness, angdist2.to(u.deg**2),e_reco, events, obstime_real
-
-def get_obstime_real(events):
-    """
-    Calculate the effective observation time of a set 
-    of real data events.
-    Parameters
-    ----------
-    events: pandas DataFrame of dl2 events
-
-    Returns
-    -------
-    t_eff: float
-    t_elapsed: float
-    """
-    if 'delta_t' in events.columns:
-    
-        delta_t = events.delta_t[1:]
-        delta_t = delta_t[(delta_t > 0) & (delta_t < 0.002)]
-        rate=1/np.mean(delta_t)
-        dead_time = np.amin(delta_t)
-        t_elapsed = len(events)/rate * u.s
-        t_eff = t_elapsed/(1+rate*dead_time)
-
-        print("ELAPSED TIME: %.2f s\n" % t_elapsed.to_value(),
-              "EFFECTIVE TIME: %.2f s\n" % t_eff.to_value(),
-              "DEAD TIME: %f s\n" % dead_time,
-              "RATE: %.2f 1/s\n" % rate
-        )
-
-        return t_eff
-    else:
-        return -1 * u.s
 
 def get_weights(mc_par, spectral_par):
     """
