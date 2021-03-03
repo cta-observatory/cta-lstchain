@@ -49,18 +49,22 @@ def test_r0_to_dl1_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
     output_path = tmp_path / ('dl1_' + test_r0_path.stem + '.h5')
+
+    config = standard_config
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['PointingSource']['drive_report_path'] = test_drive_report
+    lst_event_source['LSTR0Corrections']['drs4_pedestal_path'] = \
+        test_drs4_pedestal_path
+    lst_event_source['LSTR0Corrections']['calibration_path'] = \
+        test_calib_path
+    lst_event_source['LSTR0Corrections']['drs4_time_calibration_path']\
+        = test_time_calib_path
+
+
     r0_to_dl1(
         test_r0_path,
         output_filename=output_path,
-        custom_config=standard_config,
-        pedestal_path=test_drs4_pedestal_path,
-        calibration_path=test_calib_path,
-        time_calibration_path=test_time_calib_path,
-        pointing_file_path=test_drive_report,
-        ucts_t0_dragon=None,
-        dragon_counter0=None,
-        ucts_t0_tib=None,
-        tib_counter0=None,
+        custom_config=config
     )
 
     with tables.open_file(output_path, 'r') as f:
