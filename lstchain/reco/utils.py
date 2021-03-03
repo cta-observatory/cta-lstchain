@@ -642,7 +642,7 @@ def get_effective_time(events):
     of real data events.
     Parameters
     ----------
-    events: pandas DataFrame of dl2 events
+    events: pandas DataFrame
 
     Returns
     -------
