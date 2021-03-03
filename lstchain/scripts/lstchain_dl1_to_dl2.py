@@ -22,7 +22,7 @@ import os
 import pandas as pd
 from tables import open_file
 import joblib
-from lstchain.reco.utils import filter_events, impute_pointing
+from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 from lstchain.reco import dl1_to_dl2
 from lstchain.io import (
     read_configuration_file,
@@ -82,7 +82,10 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
-  
+
+    # if real data, add deltat t to dataframe keys
+    data = add_delta_t_key(data)
+        
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
             and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
