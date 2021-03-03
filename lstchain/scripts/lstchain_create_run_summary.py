@@ -82,7 +82,6 @@ def start_of_run_datetime(run_number):
     """
     Get datetime of the start of the run in ISOT format and UTC scale.
     """
-    # TODO: Use pathlib.stat_results instead to get creation file timestamp instead
     filename = args.R0_PATH / args.date / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
     file = protozfits.File(str(filename))
     return file.CameraConfig.header["DATE"]
@@ -91,10 +90,10 @@ def start_of_run_datetime(run_number):
 def type_of_run(run_number, n_events=500):
     """
     Get empirically the type of run based on the percentage of
-    pedestals/mono trigger types from the first 10000 events (?):
+    pedestals/mono trigger types from the first n_events:
     100% mono events (trigger 1): DRS4 pedestal run
     <10% pedestal events (trigger 32): cosmic DATA run
-    Otherwise (~50% mono, ~50% pedestal events): PEDESTAL-CALIBRATION run
+    ~50% mono, ~50% pedestal events: PEDESTAL-CALIBRATION run
     First subrun needs to be open.
     """
     filename = args.R0_PATH / args.date / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
