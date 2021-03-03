@@ -259,13 +259,7 @@ def create_event_list(data, run_number, source_name):
     t_stop = data["dragon_time"].value[-1]
     time = Time(data["dragon_time"], format="unix", scale="utc")
     date_obs = time[0].to_value("iso", "date")
-
     t_eff, t_elapsed = get_effective_time(data)
-    #obs_time = t_stop - t_start
-    #deltaT = np.diff(data["dragon_time"].value)
-    #deltaT = deltaT[(deltaT > 0) & (deltaT < 0.002)]
-    #rate = 1 / np.mean(deltaT)
-    #dead_time = np.amin(deltaT)
 
     # Position parameters
     location = EarthLocation.from_geodetic(
@@ -338,10 +332,10 @@ def create_event_list(data, run_number, source_name):
     ev_header["MJDREFF"] = "0"
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
-    ev_header["ONTIME"] = t_elapsed.value #obs_time
+    ev_header["ONTIME"] = t_elapsed.value
     ev_header["TELAPSE"] = t_stop - t_start
-    ev_header["DEADC"] = t_eff.value/t_elapsed.value #1 / (1 + rate * dead_time)
-    ev_header["LIVETIME"] = t_eff.value #ev_header["DEADC"] * ev_header["ONTIME"]
+    ev_header["DEADC"] = t_eff.value / t_elapsed.value
+    ev_header["LIVETIME"] = t_eff.value
 
     ev_header["OBJECT"] = source_name
     ev_header["OBS_MODE"] = mode
