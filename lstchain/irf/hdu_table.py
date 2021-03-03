@@ -8,15 +8,20 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 
 #from lstchain.reco.utils import get_effective_time
+from lstchain.version import get_version
 
 __all__ = ["create_obs_hdu_index", "create_event_list"]
 
 log = logging.getLogger(__name__)
 
 DEFAULT_HEADER = fits.Header()
+DEFAULT_HEADER["CREATOR"] = f"lstchain v{get_version(pep440=True)}"
 DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
+DEFAULT_HEADER["ORIGIN"] = "CTAO"
+DEFAULT_HEADER["TELESCOP"] = "CTA"
+DEFAULT_HEADER["CREATED"] = Time.now().utc.iso
 
 
 def create_obs_hdu_index(
@@ -187,15 +192,17 @@ def create_obs_hdu_index(
             "AZ_PNT": event_table.meta["AZ_PNT"] * u.deg,
             "RA_OBJ": event_table.meta["RA_OBJ"] * u.deg,
             "DEC_OBJ": event_table.meta["DEC_OBJ"] * u.deg,
-            "ONTIME": event_table.meta["ONTIME"] * u.s,
-            "LIVETIME": event_table.meta["LIVETIME"] * u.s,
-            "DEADC": event_table.meta["DEADC"],
             "TSTART": event_table.meta["TSTART"] * u.s,
             "TSTOP": event_table.meta["TSTOP"] * u.s,
+            "ONTIME": event_table.meta["ONTIME"] * u.s,
+            "TELAPSE": event_table.meta["TELAPSE"] * u.s,
+            "LIVETIME": event_table.meta["LIVETIME"] * u.s,
+            "DEADC": event_table.meta["DEADC"],
             "OBJECT": event_table.meta["OBJECT"],
             "OBS_MODE": event_table.meta["OBS_MODE"],
             "N_TELS": event_table.meta["N_TELS"],
             "TELLIST": event_table.meta["TELLIST"],
+            "INSTRUME": event_table.meta["INSTRUME"],
         }
         obs_index_tables.append(t_obs)
 
@@ -204,8 +211,7 @@ def create_obs_hdu_index(
     hdu_index_header = DEFAULT_HEADER.copy()
     hdu_index_header["HDUCLAS1"] = "INDEX"
     hdu_index_header["HDUCLAS2"] = "HDU"
-    hdu_index_header["TELESCOP"] = "CTA"
-    hdu_index_header["INSTRUME"] = f"{t_obs['TELLIST']}"
+    hdu_index_header["INSTRUME"] = t_obs["INSTRUME"]
 
     hdu_index = fits.BinTableHDU(
         hdu_index_table, header=hdu_index_header, name="HDU INDEX"
@@ -254,11 +260,8 @@ def create_event_list(data, run_number, source_name):
     time = Time(data["dragon_time"], format="unix", scale="utc")
     date_obs = time[0].to_value("iso", "date")
 
-
-    # using method from PR#566
-
     #t_eff, t_elapsed = get_effective_time(data)
-    obs_time = t_stop - t_start #t_elapsed
+    obs_time = t_stop - t_start
     deltaT = np.diff(data["dragon_time"].value)
     deltaT = deltaT[(deltaT > 0) & (deltaT < 0.002)]
     rate = 1 / np.mean(deltaT)
@@ -327,6 +330,7 @@ def create_event_list(data, run_number, source_name):
     ev_header["HDUCLAS1"] = "EVENTS"
 
     ev_header["OBS_ID"] = run_number
+
     ev_header["DATE_OBS"] = date_obs
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
@@ -334,10 +338,18 @@ def create_event_list(data, run_number, source_name):
     ev_header["MJDREFF"] = "0"
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
+    ev_header["ONTIME"] = obs_time #t_elapsed
+    ev_header["TELAPSE"] = t_stop - t_start
+    ev_header["DEADC"] = 1 / (1 + rate * dead_time) #t_eff/t_elapsed
+    ev_header["LIVETIME"] = ev_header["DEADC"] * ev_header["ONTIME"] #t_eff
+
     ev_header["OBJECT"] = source_name
     ev_header["OBS_MODE"] = mode
+
     ev_header["N_TELS"] = len(tel_list)
+    ev_header["MULTIP"] = ev_header["N_TELS"]
     ev_header["TELLIST"] = "LST-" + f" ".join(map(str, tel_list))
+    ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
@@ -346,10 +358,6 @@ def create_event_list(data, run_number, source_name):
     ev_header["RA_OBJ"] = object_radec.ra.value
     ev_header["DEC_OBJ"] = object_radec.dec.value
     ev_header["FOVALIGN"] = "RADEC"
-
-    ev_header["ONTIME"] = obs_time #t_elapsed
-    ev_header["DEADC"] = 1 / (1 + rate * dead_time) #t_eff/t_elapsed
-    ev_header["LIVETIME"] = ev_header["DEADC"] * ev_header["ONTIME"] #t_eff
 
     # GTI table metadata
     gti_header = DEFAULT_HEADER.copy()

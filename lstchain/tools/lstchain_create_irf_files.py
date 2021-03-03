@@ -310,12 +310,20 @@ class IRFFITSWriter(Tool):
         # For energy dependent cuts, a new HDU should be created
         # GH_CUT and FOV_CUT are temporary non-standard header data
 
-        extra_headers = {"TELESCOP": "CTA", "INSTRUME": "LST-1", "FOVALIGN": "RADEC",
-                        "GH_CUT": gh_cut}
+        extra_headers = {
+            "TELESCOP": "CTA",
+            "INSTRUME": "LST-" + f" ".join(map(str, tel_ids)),
+            "FOVALIGN": "RADEC",
+            "GH_CUT": gh_cut,
+        }
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(u.Quantity(**self.cuts["fixed_cuts"]["theta_cut"]))
-            extra_headers["FOV_CUT"] = str(u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"]))
+            extra_headers["RAD_MAX"] = str(
+                u.Quantity(**self.cuts["fixed_cuts"]["theta_cut"])
+            )
+            extra_headers["FOV_CUT"] = str(
+                u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"])
+            )
         else:
             self.log.debug("Generating Full-Enclosure IRF HDUs")
 
@@ -323,7 +331,6 @@ class IRFFITSWriter(Tool):
         self.hdus = [
             fits.PrimaryHDU(),
         ]
-
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
