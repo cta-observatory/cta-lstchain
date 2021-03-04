@@ -668,7 +668,7 @@ def get_effective_time(events):
     # the first even in a file.
     # We want this to calculate the actual trigger rate, on which the dead
     # time depends.
-    delta_t = events.delta_t
+    delta_t = events['delta_t']
     delta_t = delta_t[delta_t>0.]
 
     # dead time per event (minimum observed delta_t, ):
