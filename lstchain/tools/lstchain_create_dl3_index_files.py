@@ -29,6 +29,11 @@ class FITSIndexWriter(Tool):
         help="File pattern to search in the given Path", default_value="dl3*.fits"
     ).tag(config=True)
 
+    add_fits_dir_meta = traits.Bool(
+        help="If True, adds the path of fits files in HDU index table",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=True,
@@ -46,6 +51,8 @@ class FITSIndexWriter(Tool):
         "p": "FITSIndexWriter.file_pattern",
         "provenance_log": "FITSIndexWriter.provenance_log",
         "prov": "FITSIndexWriter.provenance_log",
+        "add_fits_dir_meta": "FITSIndexWriter.add_fits_dir_meta",
+        "add_fdir": "FITSIndexWriter.add_fits_dir_meta",
     }
 
     flags = {
@@ -97,6 +104,7 @@ class FITSIndexWriter(Tool):
             self.input_dl3_dir,
             self.hdu_index_filename,
             self.obs_index_filename,
+            self.add_fits_dir_meta,
         )
         self.log.debug("HDULists created for the index files")
 

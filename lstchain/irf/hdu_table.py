@@ -24,7 +24,11 @@ DEFAULT_HEADER["CREATED"] = Time.now().utc.iso
 
 
 def create_obs_hdu_index(
-    filename_list, fits_dir, hdu_index_filename, obs_index_filename
+    filename_list,
+    fits_dir,
+    hdu_index_filename,
+    obs_index_filename,
+    add_fits_dir_meta=False,
 ):
     """
     Create the obs table and hdu table
@@ -41,7 +45,7 @@ def create_obs_hdu_index(
     while hdu-index contains the informations about the locations of the other
     HDU (header data units) necessary to the analysis.
 
-    File directory information is currently kept empty in the HDU index table
+    File directory information is currently kept optional in the HDU index table
 
     Parameters
     ----------
@@ -53,6 +57,8 @@ def create_obs_hdu_index(
         filename for HDU index file
     obs_index_filename : str
         filename for OBS index file
+    add_fits_dir_meta : Bool
+        True for adding directory path of FITS file in HDU index table
 
     Returns
     -------
@@ -93,6 +99,9 @@ def create_obs_hdu_index(
             "FILE_NAME": file,
             "HDU_NAME": "EVENTS",
         }
+        if add_fits_dir_meta:
+            t_events["FILE_DIR"] = str(fits_dir)
+
         hdu_index_tables.append(t_events)
 
         # GTI
