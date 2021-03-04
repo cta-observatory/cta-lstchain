@@ -81,3 +81,4 @@ distribute-*.tar.gz
 *.pstats
 target
 .mypy_cache
+test_data
