@@ -33,10 +33,8 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input": "EventSource.input_url",
-        "i": "EventSource.input_url",
-        "output": "PedestalFITSWriter.output",
-        "o": "PedestalFITSWriter.output",
+        ("i", "input"): "EventSource.input_url",
+        ("o", "output"): "PedestalFITSWriter.output",
     }
 
     flags = {
