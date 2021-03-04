@@ -19,8 +19,12 @@ DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 DEFAULT_HEADER["ORIGIN"] = "CTA"
-DEFAULT_HEADER["TELESCOP"] = "CTA"
+DEFAULT_HEADER["TELESCOP"] = "CTA-N"
 DEFAULT_HEADER["CREATED"] = Time.now().utc.iso
+
+location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
+
+wobble_offset = 0.4
 
 
 def create_obs_hdu_index(
@@ -273,9 +277,6 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
     date_obs = time[0].to_value("iso", "date")
 
     # Position parameters
-    location = EarthLocation.from_geodetic(
-        -17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m
-    )
     reco_alt = data["reco_alt"]
     reco_az = data["reco_az"]
     pointing_alt = data["pointing_alt"]
@@ -300,8 +301,8 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
     source_pointing_diff = object_radec.separation(
         SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
     ).deg
-    # Assuming wobble offset is fixed to 0.4
-    if round(source_pointing_diff, 1) == 0.4:
+
+    if round(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
     elif round(source_pointing_diff, 1) > 1:
         mode = "OFF"

@@ -2,7 +2,7 @@ import h5py
 from multiprocessing import Pool
 import numpy as np
 import pandas as pd
-from astropy.table import Table, vstack
+from astropy.table import Table, vstack, QTable
 import tables
 from tables import open_file
 import os
@@ -28,7 +28,6 @@ from ctapipe.instrument import (
     SubarrayDescription,
 )
 from pyirf.simulations import SimulatedEventsInfo
-from astropy import table
 
 import logging
 
@@ -1146,7 +1145,7 @@ def read_mc_dl2_to_pyirf(filename):
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
         columns=name_mapping
     )
-    events = table.QTable.from_pandas(events)
+    events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
         events[k] *= v
@@ -1164,6 +1163,8 @@ def read_data_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`
     """
+    #from lstchain.reco.utils import get_effective_time
+
     # Mapping
     name_mapping = {
         "gammaness": "gh_score",
@@ -1180,7 +1181,8 @@ def read_data_dl2_to_QTable(filename):
     }
 
     data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
-    data = table.QTable.from_pandas(data)
+
+    data = QTable.from_pandas(data)
 
     # Make the columns as Quantity
     for k, v in unit_mapping.items():

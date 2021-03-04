@@ -23,18 +23,19 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     dl2["tel_id"] = dl2["tel_id"].min()
     dl2["dragon_time"] = dl2["tel_id"] + np.arange(0, len(dl2["tel_id"]) * 1e-3, 1e-3)
     dl2 = add_delta_t_key(dl2)
-    t_eff, t_tot = get_effective_time(dl2)
     dl2["alt_tel"] = dl2["mc_alt_tel"]
     dl2["az_tel"] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
 
     events = read_data_dl2_to_QTable(dl2_file_new)
+    t_eff, t_tot = get_effective_time(events)
+
     evts, gti, pnt = create_event_list(
         events,
         run_number=0,
         source_name="Crab",
-        effective_time=t_eff,
-        elapsed_time=t_tot,
+        effective_time=t_eff.value,
+        elapsed_time=t_tot.value,
     )
 
     assert "TIME" in Table.read(evts).columns

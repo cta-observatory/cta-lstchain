@@ -311,7 +311,7 @@ class IRFFITSWriter(Tool):
         # GH_CUT and FOV_CUT are temporary non-standard header data
 
         extra_headers = {
-            "TELESCOP": "CTA",
+            "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, tel_ids)),
             "FOVALIGN": "RADEC",
             "GH_CUT": gh_cut,
