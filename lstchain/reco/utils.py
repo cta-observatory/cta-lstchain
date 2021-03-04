@@ -652,13 +652,11 @@ def get_effective_time(events):
 
     Returns
     -------
-    t_eff: float
-    t_elapsed: float
+    t_eff: astropy Quantity (in seconds, if input has no units)
+    t_elapsed: astropy Quantity (ditto)
     """
     timestamp = np.array(events['dragon_time'])
     delta_t = np.array(events['delta_t'])
-
-    print('HOLA', type(timestamp))
 
     if type(timestamp) is not u.Quantity:
         timestamp *= u.s
