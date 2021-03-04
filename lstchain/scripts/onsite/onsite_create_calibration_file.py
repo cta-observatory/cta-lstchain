@@ -108,10 +108,8 @@ def main():
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
                   f"--output-file {time_file} --config {config_file} " \
-                  f"--ucts-t0-dragon={int(run_info['ucts_t0_dragon'])} " \
-                  f"--dragon-counter0={int(run_info['dragon_counter0'])} " \
-                  f"--ucts-t0-tib={int(run_info['ucts_t0_tib'])} " \
-                  f"--tib-counter0={int(run_info['tib_counter0'])} " \
+                  f"--dragon-reference-time={int(run_info['ucts_t0_dragon'])} " \
+                  f"--dragon-reference-counter={int(run_info['dragon_counter0'])} " \
                   f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
@@ -153,10 +151,8 @@ def main():
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} "\
                   f"--EventSource.max_events={max_events} " \
-                  f"--LSTEventSource.EventTimeCalculator.ucts_t0_dragon={int(run_info['ucts_t0_dragon'])} " \
-                  f"--LSTEventSource.EventTimeCalculator.dragon_counter0={int(run_info['dragon_counter0'])} " \
-                  f"--LSTEventSource.EventTimeCalculator.ucts_t0_tib={int(run_info['ucts_t0_tib'])} " \
-                  f"--LSTEventSource.EventTimeCalculator.tib_counter0={int(run_info['tib_counter0'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_time={int(run_info['ucts_t0_dragon'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_counter={int(run_info['dragon_counter0'])} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
                   f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
