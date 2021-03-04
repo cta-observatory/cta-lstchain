@@ -128,7 +128,7 @@ class DataReductionFITSWriter(Tool):
         self.output_file = self.output_dl3_path / self.filename_dl3
         if self.output_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
-                f"Output file {self.output_file} already exists,"\
+                f"Output file {self.output_file} already exists,"
                 " use --overwrite to overwrite"
             )
 

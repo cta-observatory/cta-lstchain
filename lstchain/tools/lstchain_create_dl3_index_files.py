@@ -89,12 +89,12 @@ class FITSIndexWriter(Tool):
 
         if self.hdu_index_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
-                f"Output file {self.hdu_index_file} already exists,"\
+                f"Output file {self.hdu_index_file} already exists,"
                 "use --overwrite to overwrite"
             )
         if self.obs_index_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
-                f"Output file {self.obs_index_file} already exists,"\
+                f"Output file {self.obs_index_file} already exists,"
                 " use --overwrite to overwrite"
             )
 

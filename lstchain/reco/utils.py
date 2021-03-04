@@ -25,30 +25,30 @@ from ctapipe.coordinates import CameraFrame
 from . import disp
 
 __all__ = [
-    'add_delta_t_key',
-    'alt_to_theta',
-    'az_to_phi',
-    'cal_cam_source_pos',
-    'camera_to_altaz',
-    'cartesian_to_polar',
-    'clip_alt',
-    'compute_alpha',
-    'compute_theta2',
-    'expand_tel_list',
-    'extract_source_position',
-    'filter_events',
-    'get_effective_time',
-    'get_event_pos_in_camera',
-    'impute_pointing',
-    'linear_imputer',
-    'polar_to_cartesian',
-    'predict_source_position_in_camera',
-    'radec_to_camera',
-    'reco_source_position_sky',
-    'rotate',
-    'sky_to_camera',
-    'source_dx_dy',
-    'source_side',
+    "add_delta_t_key",
+    "alt_to_theta",
+    "az_to_phi",
+    "cal_cam_source_pos",
+    "camera_to_altaz",
+    "cartesian_to_polar",
+    "clip_alt",
+    "compute_alpha",
+    "compute_theta2",
+    "expand_tel_list",
+    "extract_source_position",
+    "filter_events",
+    "get_effective_time",
+    "get_event_pos_in_camera",
+    "impute_pointing",
+    "linear_imputer",
+    "polar_to_cartesian",
+    "predict_source_position_in_camera",
+    "radec_to_camera",
+    "reco_source_position_sky",
+    "rotate",
+    "sky_to_camera",
+    "source_dx_dy",
+    "source_side",
 ]
 
 # position of the LST1
@@ -707,8 +707,8 @@ def get_effective_time(events):
     t_eff: astropy Quantity (in seconds, if input has no units)
     t_elapsed: astropy Quantity (ditto)
     """
-    timestamp = np.array(events['dragon_time'])
-    delta_t = np.array(events['delta_t'])
+    timestamp = np.array(events["dragon_time"])
+    delta_t = np.array(events["delta_t"])
 
     if not isinstance(timestamp, u.Quantity):
         timestamp *= u.s
@@ -722,11 +722,11 @@ def get_effective_time(events):
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
     # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff<0.1*u.s])
+    t_elapsed = np.sum(time_diff[time_diff < 0.1 * u.s])
 
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t>0.]
+    delta_t = delta_t[delta_t > 0.0]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
@@ -741,8 +741,8 @@ def get_effective_time(events):
     # events. But this truncation would hardly be noticeable for the typical
     # cosmics rates, and 200 Hz of interleaved events.
 
-    rate = 1/(np.mean(delta_t) - dead_time)
+    rate = 1 / (np.mean(delta_t) - dead_time)
 
-    t_eff = t_elapsed / (1 + rate*dead_time)
+    t_eff = t_elapsed / (1 + rate * dead_time)
 
     return t_eff, t_elapsed
