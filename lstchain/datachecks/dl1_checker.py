@@ -27,6 +27,7 @@ import pandas as pd
 import tables
 from astropy import units as u
 from astropy.table import Table, vstack
+from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
@@ -96,7 +97,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # try to determine which trigger_type tag is more reliable for
     # identifying interleaved pedestals. We check which one has
     # more values == 32, which is the pedestal tag. The one called
-    # "trigger_type" seems to be the TIB trigger type. The fastest way to do
+    # "trigger_type" is the TIB trigger type. The fastest way to do
     # this for the whole run seems to be using normal pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
     for filename in filenames:
@@ -111,14 +112,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
 
     # Choose what source to use for obtaining the trigger type:
-    trigger_source = 'ucts_trigger_type'
-
-    # Commented lines below, because the criterion of who has more "pedestal
-    # tags" (==32) does not seem reliable to indicate which source of the
-    # trigger type is more reliable:
-    #
-    # if num_pedestals['ucts_trigger_type'] > num_pedestals['trigger_type']:
-    #    trigger_source = 'ucts_trigger_type'
+    trigger_source = 'event_type'
 
     # create container for the histograms' binnings, to be saved in the hdf5
     # output file:
@@ -127,7 +121,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
     with Pool(max_cores) as pool:
-        func_args = [(filename, histogram_binning, trigger_source) for
+        func_args = [(filename, histogram_binning) for
                      filename in filenames]
         dl1datacheck = pool.starmap(process_dl1_file, func_args)
     # NOTE: the above does not seem to improve execution time on Mac OS X.
@@ -136,8 +130,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # or... process the files sequentially:
     # dl1datacheck = list([None]*len(filenames))
     # for i, filename in enumerate(filenames):
-    #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning,
-    #     trigger_source)
+    #     dl1datacheck[i] = process_dl1_file(filename, histogram_binning)
 
     # NOTE: I do not think we may have memory problems, but if needed we could
     # write out the containers as they are produced.
@@ -183,15 +176,13 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     return
 
 
-def process_dl1_file(filename, bins, trigger_source='trigger_type'):
+def process_dl1_file(filename, bins):
     """
 
     Parameters
     ----------
     filename: string, or Path, input DL1 .h5 file to be checked
     bins: DL1DataCheckHistogramBins container indicating binning of histograms
-    trigger_source: string, name of one of the trigger tags present in the
-    DL1 file
 
     Returns
     -------
@@ -242,23 +233,13 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # trigger type tags are not reliable. We first identify flatfield events
         # by their looks.
         image = image_table.col('image')
-        # define criteria for detecting flatfield events, since as of 20200418
-        # there is no reliable event tagging for those. We require a minimum
-        # fraction of pixels with a charge above a sufficiently large value:
-        ff_min_pixel_charge_median = 40.
-        ff_max_pixel_charge_stddev = 20.
 
-        flatfield_mask = ((np.median(image, axis=1) >
-                           ff_min_pixel_charge_median) &
-                          (np.std(image, axis=1) <
-                           ff_max_pixel_charge_stddev))
+        flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.
 
-        # then use trigger_source (name of one of the trigger tags in the DL1
-        # file) to try to identify pedestals on the parameters table (but we
-        # trust better the above empirical identification of flatfield events):
-        pedestal_mask = (parameters[trigger_source] == 32) & ~flatfield_mask
+        pedestal_mask = (parameters['event_type'] ==
+                         EventType.SKY_PEDESTAL.value)
 
         # Now obtain by exclusion the masks for cosmics:
         cosmics_mask = ~(pedestal_mask | flatfield_mask)
@@ -365,7 +346,6 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         # Read the binning of the stored histograms, and the info on
         # the source from which the trigger type info has been read:
         hist_binning = file.root.dl1datacheck.histogram_binning
-        trigger_source = file.root.dl1datacheck.used_trigger_tag[0].decode()
 
         group = file.root.dl1datacheck
         # get the tables for each type of events, check first in each case that
@@ -393,7 +373,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             raise RuntimeError
 
         dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
-        labels = ['flatfield (guessed)', 'pedestals (from ' + trigger_source + ')',
+        labels = ['flatfield (guessed)', 'pedestals',
                   'cosmics']
         labels = [x for i, x in enumerate(labels)
                   if dl1dcheck_tables[i] is not None]
@@ -669,7 +649,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                                  ['Flat-field mean time (ns)',
                                   'Flat-field time std dev (ns)',
                                   'FLATFIELD, pixel-wise pulse time info'],
-                                 batch, pagesize)
+                                 pagesize, batch)
             pdf.savefig()
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['relative_time_mean',
@@ -981,32 +961,33 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
         fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
-                         pad=2.0, h_pad=3.0, w_pad=3.0)
-        axes[0, 0].plot(contained_muons['hg_peak_sample'],
-                        contained_muons['lg_peak_sample'], 'x', alpha=0.5)
-        axes[0, 0].set_xlabel('High gain peak sample in R1 waveform')
-        axes[0, 0].set_ylabel('Low gain peak sample in R1 waveform')
+                         pad=3.0, h_pad=3.0, w_pad=2.0)
         binning = np.linspace(-0.5, 38.5, 39)
-        axes[1, 0].hist(contained_muons['hg_peak_sample'], bins=binning,
-                        histtype='step', label='HG')
-        axes[1, 0].hist(contained_muons['lg_peak_sample'], bins=binning,
-                        histtype='step', label='LG')
-        axes[1, 0].set_xlabel('peak sample in R1 waveform')
-        axes[1, 0].set_ylabel('number of rings')
-        axes[1, 0].legend(loc='best')
+        axes[0, 0].hist(contained_muons['hg_peak_sample'], bins=binning,
+                        histtype='step')
+        axes[0, 0].set_xlabel('HG peak sample in R1 waveform')
+        axes[0, 0].set_ylabel('number of rings')
+
+        axes[1, 0].plot(contained_muons['ring_completeness'],
+                        contained_muons['ring_size'] /
+                        contained_muons['ring_radius'], 'x', alpha=0.5)
+        axes[1, 0].set_xlabel('ring completeness')
+        axes[1, 0].set_ylabel('ring light (p.e.) / ring radius (deg)')
+
         axes[0, 1].hist(contained_muons['muon_efficiency'],
                         bins=np.linspace(0., 0.5, 51))
         axes[0, 1].set_xlabel('estimated telescope efficiency for muons')
         axes[0, 1].set_ylabel('number of rings')
+
         axes[1, 1].plot(contained_muons['ring_width'],
                         contained_muons['muon_efficiency'], 'x', alpha=0.5)
         axes[1, 1].set_xlim(0., 0.3)
         axes[1, 1].set_ylim(0., 0.5)
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
+
         axes[0, 2].errorbar(good_subruns, mean_effi, yerr=sem_effi, fmt='o',
                             markersize=3.)
-
         axes[0, 2].set_xlabel('subrun index')
         axes[0, 2].set_ylabel('estimated telescope efficiency for muons')
         axes[0, 2].grid(linewidth=0.3, linestyle=':')

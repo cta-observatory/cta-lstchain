@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-""" 
-Script to create pedestal file for low level calibration. 
+"""
+Script to create pedestal file for low level calibration.
 
 To set start sample in waveform --start_r0_waveform i (default i = 11)
 not to use deltaT correction add --deltaT False
@@ -12,9 +12,9 @@ not to use deltaT correction add --deltaT False
 
 Usage:
 
-$> python lstchain_data_create_pedestal_file.py 
---input-file LST-1.1.Run00097.0000.fits.fz 
---output_file drs4_pedestalRun2028.0000.fits 
+$> python lstchain_data_create_pedestal_file.py
+--input-file LST-1.1.Run00097.0000.fits.fz
+--output_file drs4_pedestalRun2028.0000.fits
 --max_events 9000
 
 """
@@ -24,12 +24,10 @@ import argparse
 import numpy as np
 from astropy.io import fits
 
-
 from ctapipe.io import EventSource
-from ctapipe_io_lst.calibration import LSTR0Corrections
+
 from distutils.util import strtobool
 from lstchain.calib.camera.drs4 import DragonPedestal
-
 
 
 parser = argparse.ArgumentParser()
@@ -74,13 +72,9 @@ source_config = {
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
+
     reader = EventSource(input_url=args.input_file, config=Config(source_config))
     print("--> Number of files", reader.multi_file.num_inputs())
-
-    if args.deltaT:
-        print("DeltaT correction active")
-    else:
-        print("DeltaT correction no active")
 
     for i, event in enumerate(reader):
         for tel_id in event.trigger.tels_with_trigger:
@@ -100,13 +94,17 @@ def main():
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-    primaryhdu = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
-    secondhdu = fits.ImageHDU(np.int16(pedestal.meanped))
-
-    hdulist = fits.HDUList([primaryhdu, secondhdu])
+    expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
+    pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped),
+                                   name="pedestal array")
+    failing_pixels_column = fits.Column(name='failing pixels',
+                                        array=pedestal.failing_pixels_array,
+                                        format='K')
+    failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_column],
+                                                    name="failing pixels")
+    hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
     hdulist.writeto(args.output_file)
 
 
 if __name__ == '__main__':
     main()
-

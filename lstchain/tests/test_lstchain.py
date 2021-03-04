@@ -15,6 +15,7 @@ from lstchain.reco.utils import filter_events
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
+test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
 test_calib_path = test_data / 'real/calibration/20200218/v05/calibration.Run2006.0000.hdf5'
 test_drs4_pedestal_path = test_data / 'real/calibration/20200218/v05/drs4_pedestal.Run2005.0000.fits'
 test_time_calib_path = test_data / 'real/calibration/20200218/v05/time_calibration.Run2006.0000.hdf5'
@@ -49,18 +50,22 @@ def test_r0_to_dl1_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
     output_path = tmp_path / ('dl1_' + test_r0_path.stem + '.h5')
+
+    config = standard_config
+    lst_event_source = config['source_config']['LSTEventSource']
+    lst_event_source['PointingSource']['drive_report_path'] = test_drive_report
+    lst_event_source['LSTR0Corrections']['drs4_pedestal_path'] = \
+        test_drs4_pedestal_path
+    lst_event_source['LSTR0Corrections']['calibration_path'] = \
+        test_calib_path
+    lst_event_source['LSTR0Corrections']['drs4_time_calibration_path']\
+        = test_time_calib_path
+
+
     r0_to_dl1(
         test_r0_path,
         output_filename=output_path,
-        custom_config=standard_config,
-        pedestal_path=test_drs4_pedestal_path,
-        calibration_path=test_calib_path,
-        time_calibration_path=test_time_calib_path,
-        pointing_file_path=test_drive_report,
-        ucts_t0_dragon=None,
-        dragon_counter0=None,
-        ucts_t0_tib=None,
-        tib_counter0=None,
+        custom_config=config
     )
 
     with tables.open_file(output_path, 'r') as f:
@@ -155,39 +160,6 @@ def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     events.mc_type = 101
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
-
-
-def test_sensitivity(fake_dl2_proton_file, simulated_dl1_file, simulated_dl2_file):
-    from lstchain.mc.sensitivity import find_best_cuts_sensitivity, sensitivity
-
-    nfiles_gammas = 1
-    nfiles_protons = 1
-    eb = 10  # Number of energy bins
-    gb = 11  # Number of gammaness bins
-    tb = 10  # Number of theta2 bins
-    obstime = 50 * 3600 * u.s
-    noff = 2
-
-    E, best_sens, result, units, gcut, tcut = find_best_cuts_sensitivity(
-        simulated_dl1_file,
-        simulated_dl1_file,
-        simulated_dl2_file,
-        fake_dl2_proton_file,
-        nfiles_gammas, nfiles_protons,
-        eb, gb, tb, noff,
-        obstime
-    )
-
-    E, best_sens, result, units, dl2 = sensitivity(
-        simulated_dl1_file,
-        simulated_dl1_file,
-        simulated_dl2_file,
-        fake_dl2_proton_file,
-        nfiles_gammas, nfiles_protons,
-        eb, gcut, tcut * (u.deg ** 2), noff,
-        obstime
-    )
-
 
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector
