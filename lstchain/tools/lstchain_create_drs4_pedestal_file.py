@@ -8,7 +8,6 @@ from tqdm.autonotebook import tqdm
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
 from ctapipe.io import EventSource
-from ctapipe_io_lst.calibration import LSTR0Corrections
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
@@ -44,7 +43,7 @@ class PedestalFITSWriter(Tool):
         )
     }
 
-    classes = [EventSource, LSTR0Corrections, DragonPedestal]
+    classes = [EventSource, DragonPedestal]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,18 +57,16 @@ class PedestalFITSWriter(Tool):
         self.eventsource = None
         self.pixel_ids = None
         self.pedestal = None
-        self.lst_r0 = None
 
     def setup(self):
 
         self.log.debug("Opening file")
         self.eventsource = EventSource.from_config(parent=self)
-        self.lst_r0 = self.add_component(LSTR0Corrections(parent=self))
 
     def start(self):
 
         for event in self.eventsource:
-            tel_id = event.r0.tels_with_data[0]
+            tel_id = event.trigger.tels_with_trigger[0]
             self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
             self.pedestal = DragonPedestal(
                 tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules
@@ -90,16 +87,19 @@ class PedestalFITSWriter(Tool):
         ):
             if self.deltaT:
                 for tel_id in event.r0.tels_with_data:
-                    self.lst_r0.time_lapse_corr(event, tel_id)
+                    self.eventsource.r0_r1_calibrator.update_first_capacitors(event)
+                    self.eventsource.r0_r1_calibrator.time_lapse_corr(event, tel_id)
             self.pedestal.fill_pedestal_event(event)
 
         self.pedestal.complete_pedestal()
 
     def finish(self):
 
-        primaryhdu = fits.PrimaryHDU(self.pixel_ids)
-        secondhdu = fits.ImageHDU(np.int16(self.pedestal.meanped))
-        hdulist = fits.HDUList([primaryhdu, secondhdu])
+        expected_pixel_id = fits.PrimaryHDU(self.pixel_ids)
+        pedestal_array = fits.ImageHDU(np.int16(self.pedestal.meanped), name="pedestal array")
+        failing_pixels_col = fits.Column(name='failing pixels', array=self.pedestal.failing_pixels_array, format='K')
+        failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_col], name="failing pixels")
+        hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
         hdulist.writeto(self.output, overwrite=True)
 
         Provenance().add_output_file(self.output, role="mon.tel.pedestal")
