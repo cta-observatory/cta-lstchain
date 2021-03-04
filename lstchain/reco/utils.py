@@ -25,7 +25,7 @@ from ctapipe.coordinates import CameraFrame
 from . import disp
 
 __all__ = [
-    'add_delta_t_key'
+    'add_delta_t_key',
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
@@ -37,7 +37,7 @@ __all__ = [
     'expand_tel_list',
     'extract_source_position',
     'filter_events',
-    'get_effective_time'
+    'get_effective_time',
     'get_event_pos_in_camera',
     'impute_pointing',
     'linear_imputer',
@@ -638,23 +638,59 @@ def add_delta_t_key(events):
 
 def get_effective_time(events):
     """
-    Calculate the effective observation time of a set 
-    of real data events.
+    Calculate the effective observation time of a set of real data events
+    from a sky observation. delta_t (s) must be the time elapsed from the
+    previous *triggered* event, regardless of whether the list of events
+    contains all triggered events or not. It can be a list only of events
+    which e.g. have valid image parameters. Besides delta_t, each event must
+    have dragon_time, a timestamp (s)
+
     Parameters
     ----------
-    events: pandas DataFrame
+    events: pandas DataFrame or astropy.table.QTable
+    If a dataframe, units are assumed to be seconds
 
     Returns
     -------
-    t_eff: float
-    t_elapsed: float
+    t_eff: astropy Quantity (in seconds, if input has no units)
+    t_elapsed: astropy Quantity (ditto)
     """
-    
-    delta_t = events.delta_t[1:]
-    delta_t = delta_t[(delta_t > 0) & (delta_t < 0.002)]
-    rate=1/np.mean(delta_t)
+    timestamp = np.array(events['dragon_time'])
+    delta_t = np.array(events['delta_t'])
+
+    if not isinstance(timestamp, u.Quantity):
+        timestamp *= u.s
+    if not isinstance(delta_t, u.Quantity):
+        delta_t *= u.s
+
+    # time differences between the events in the table (which in general are
+    # NOT all triggered events):
+    time_diff = np.diff(timestamp)
+
+    # elapsed time: sum of those time differences, excluding large ones which
+    # might indicate the DAQ was stopped (e.g. if the table contains more
+    # than one run). We set 0.1 s as limit to decide a "break" occurred:
+    t_elapsed = np.sum(time_diff[time_diff<0.1*u.s])
+
+    # delta_t is the time elapsed since the previous triggered event.
+    # We exclude the null values that might be set for the first even in a file.
+    delta_t = delta_t[delta_t>0.]
+
+    # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
-    t_elapsed = len(events)/rate * u.s
-    t_eff = t_elapsed/(1+rate*dead_time)
+
+    # Estimate the "true external rate", i.e. what we would see in absence of
+    # dead time. For a Poisson process with fixed dead time per event,
+    # it can be shown that the expected value of delta_t is
+    # <delta_t> = dead_time + 1/rate
+    # Note that the formula is not strictly correct if we have interleaved
+    # events (pedestal and flatfield) at regular intervals, because the
+    # delta_t will never be larger than the time between interleaved
+    # events. But this truncation would hardly be noticeable for the typical
+    # cosmics rates, and 200 Hz of interleaved events.
+
+    rate = 1/(np.mean(delta_t) - dead_time)
+
+    t_eff = t_elapsed / (1 + rate*dead_time)
 
     return t_eff, t_elapsed
