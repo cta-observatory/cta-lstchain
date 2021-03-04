@@ -6,7 +6,7 @@ env:
   NUMBA_NUM_THREADS: 1
   MPLBACKEND: Agg
   PYTEST_ADDOPTS: --color=yes
-  CTAPIPE_IO_LST_VERSION: v0.6.5
+  CTAPIPE_IO_LST_VERSION: v0.7.0
 
 jobs:
   tests:
@@ -16,7 +16,7 @@ jobs:
         # we currently only support python 3.7 since traitlets 5 requires 3.7
         # and protozfits does not support python 3.8.
         python-version: [3.7, ]
-        ctapipe-version: [v0.10.3]
+        ctapipe-version: [v0.10.4]
 
     steps:
       - uses: actions/checkout@v2

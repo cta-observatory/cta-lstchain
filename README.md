@@ -56,12 +56,12 @@ To run the tests that need those private data file, add `-m private_data`
 to the pytest call, e.g.:
 
 ```
-pytest -m private_data -v
+pytest -m private_data -v lstchain
 ```
 
 To run all tests, run
 ```
-pytest -m 'private_data or not private_data' -v
+pytest -m 'private_data or not private_data' -v lstchain
 ```
 
 ## Contributing
