@@ -33,8 +33,8 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
         events,
         run_number=0,
         source_name="Crab",
-        effective_time=t_eff.value,
-        elapsed_time=t_tot.value,
+        effective_time=t_eff,
+        elapsed_time=t_tot,
     )
 
     assert "TIME" in Table.read(evts).columns

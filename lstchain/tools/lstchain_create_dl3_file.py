@@ -157,8 +157,8 @@ class DataReductionFITSWriter(Tool):
             data=self.data,
             run_number=self.run_number,
             source_name=self.source_name,
-            effective_time=self.effective_time.value,
-            elapsed_time=self.elapsed_time.value,
+            effective_time=self.effective_time,
+            elapsed_time=self.elapsed_time,
         )
 
         if self.add_irf:
