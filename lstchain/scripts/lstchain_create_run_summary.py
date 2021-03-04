@@ -115,7 +115,7 @@ def type_of_run(run_number, n_events=500):
 def initial_timestamps(run_number):
     """
     Get initial valid timestamps from the first subrun.
-    Write down the Dragon module used and reference event_id.
+    Write down the reference Dragon module used, reference event_id.
     Taken from ctapipe_io_lst.event_time.
     """
     filename = args.R0_PATH / args.date / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
@@ -124,7 +124,7 @@ def initial_timestamps(run_number):
 
         for event in source:
             lst = event.lst.tel[tel_id]
-            # Start fo the run timestamps (nanoseconds) in UNIX TAI
+            # Start of the run timestamp (nanoseconds) in UNIX TAI
             run_date = int(round(Time(lst.svc.date, format="unix").unix_tai)) * int(1e9)
             # Get the first available module
             module_index = np.where(lst.evt.module_status != 0)[0][0]
