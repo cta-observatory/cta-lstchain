@@ -1,6 +1,5 @@
 import os
 import pytest
-import pandas as pd
 from ctapipe.core import run_tool
 
 
@@ -51,8 +50,7 @@ def test_create_dl3(temp_dir_observed_files, add_IRF):
     from lstchain.tests.test_lstchain import test_r0_path
 
     real_data_dl2_file = temp_dir_observed_files / (
-        "dl2_" + test_r0_path.with_suffix("").stem + ".h5"
-    )
+        "dl2_" + test_r0_path.with_suffix('').stem + ".h5")
     irf_file = temp_dir_observed_files / "irf.fits.gz"
     cuts = temp_dir_observed_files / "cuts.json"
 

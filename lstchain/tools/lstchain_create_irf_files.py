@@ -19,7 +19,7 @@ lstchain_create_irf_files
 import os
 import numpy as np
 
-from ctapipe.core import Tool, traits, Provenance
+from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_pyirf, read_configuration_file
 from lstchain.reco.utils import filter_events
 
@@ -312,7 +312,7 @@ class IRFFITSWriter(Tool):
 
         extra_headers = {
             "TELESCOP": "CTA",
-            "INSTRUME": "LST-" + f" ".join(map(str, tel_ids)),
+            "INSTRUME": "LST-" + " ".join(map(str, tel_ids)),
             "FOVALIGN": "RADEC",
             "GH_CUT": gh_cut,
         }

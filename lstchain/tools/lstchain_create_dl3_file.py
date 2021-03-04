@@ -128,7 +128,8 @@ class DataReductionFITSWriter(Tool):
         self.output_file = self.output_dl3_path / self.filename_dl3
         if self.output_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
-                f"Output file {self.output_file} already exists, use --overwrite to overwrite"
+                f"Output file {self.output_file} already exists,"\
+                " use --overwrite to overwrite"
             )
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
@@ -142,7 +143,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = filter_events(self.data, self.cuts["events_filters"])
 
-        # Separate cuts for angular separations, for now. Will be included later in filter_events
+        # Separate cuts for angular separations, for now
         self.data = self.data[
             self.data["gh_score"] > self.cuts["fixed_cuts"]["gh_score"][0]
         ]

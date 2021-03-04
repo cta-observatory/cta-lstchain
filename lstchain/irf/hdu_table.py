@@ -2,7 +2,7 @@ import numpy as np
 import logging
 
 import astropy.units as u
-from astropy.table import Table, vstack, QTable
+from astropy.table import Table, QTable
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
@@ -353,7 +353,7 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
 
     ev_header["N_TELS"] = len(tel_list)
     ev_header["MULTIP"] = ev_header["N_TELS"]
-    ev_header["TELLIST"] = "LST-" + f" ".join(map(str, tel_list))
+    ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
     ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
