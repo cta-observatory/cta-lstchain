@@ -35,11 +35,9 @@ class TimeCalibrationHDF5Writer(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input": "TimeCalibrationHDF5Writer.input",
-        "i": "TimeCalibrationHDF5Writer.input",
+        ("i", "input"): "TimeCalibrationHDF5Writer.input",
+        ("o", "output"): "TimeCorrectionCalculate.calib_file_path",
         "glob": "TimeCalibrationHDF5Writer.glob",
-        "output": "TimeCorrectionCalculate.calib_file_path",
-        "o": "TimeCorrectionCalculate.calib_file_path",
         "pedestal": "LSTR0Corrections.drs4_pedestal_path",
         "max_events": "TimeCalibrationHDF5Writer.max_events",
     }
