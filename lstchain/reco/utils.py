@@ -639,36 +639,41 @@ def add_delta_t_key(events):
 def get_effective_time(events):
     """
     Calculate the effective observation time of a set of real data events
-    from a sky observation. delta_t must be the time elapsed from the previous
-    *triggered* event, regardless of whether the list of events contains all
-    triggered events or not. It can be a list only of events which e.g. have
-    valid image parameters. Besides delta_t, each event must have
-    dragon_time, a timestamp (all in seconds)
+    from a sky observation. delta_t (s) must be the time elapsed from the
+    previous *triggered* event, regardless of whether the list of events
+    contains all triggered events or not. It can be a list only of events
+    which e.g. have valid image parameters. Besides delta_t, each event must
+    have dragon_time, a timestamp (s)
 
     Parameters
     ----------
-    events: pandas DataFrame
+    events: pandas DataFrame or astropy.table.QTable
+    If a dataframe, units are assumed to be seconds
 
     Returns
     -------
-    t_eff: float
-    t_elapsed: float
+    t_eff: astropy Quantity (in seconds, if input has no units)
+    t_elapsed: astropy Quantity (ditto)
     """
+    timestamp = np.array(events['dragon_time'])
+    delta_t = np.array(events['delta_t'])
+
+    if not isinstance(timestamp, u.Quantity):
+        timestamp *= u.s
+    if not isinstance(delta_t, u.Quantity):
+        delta_t *= u.s
 
     # time differences between the events in the table (which in general are
     # NOT all triggered events):
-    time_diff = np.diff(events['dragon_time'])
+    time_diff = np.diff(timestamp)
+
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
     # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff<0.1])
+    t_elapsed = np.sum(time_diff[time_diff<0.1*u.s])
 
-    # Get delta_t, the time elapsed since the previous triggered event.
-    # We exclude the first event, for which delta_t might be set to 0 if it is
-    # the first even in a file.
-    # We want this to calculate the actual trigger rate, on which the dead
-    # time depends.
-    delta_t = events['delta_t']
+    # delta_t is the time elapsed since the previous triggered event.
+    # We exclude the null values that might be set for the first even in a file.
     delta_t = delta_t[delta_t>0.]
 
     # dead time per event (minimum observed delta_t, ):
