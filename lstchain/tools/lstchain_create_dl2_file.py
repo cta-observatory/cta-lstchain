@@ -42,11 +42,9 @@ class ReconstructionHDF5Writer(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input": "ReconstructionHDF5Writer.input",
-        "i": "ReconstructionHDF5Writer.input",
+        ("i", "input"): "ReconstructionHDF5Writer.input",
+        ("o", "output"): "ReconstructionHDF5Writer.output_dir",
         "models": "ReconstructionHDF5Writer.path_models",
-        "output": "ReconstructionHDF5Writer.output_dir",
-        "o": "ReconstructionHDF5Writer.output_dir",
         "config": "ReconstructionHDF5Writer.config_file",
     }
 
