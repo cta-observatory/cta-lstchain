@@ -18,7 +18,7 @@ from lstchain.io.io import (
     dl1_params_src_dep_lstcam_key,
 )
 from lstchain.reco import dl1_to_dl2
-from lstchain.reco.utils import filter_events, impute_pointing
+from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 from tables import open_file
 
 
@@ -72,6 +72,7 @@ class ReconstructionHDF5Writer(Tool):
 
         self.log.info("Reading DL1 file")
         self.data = pd.read_hdf(self.input, key=dl1_params_lstcam_key)
+        self.data = add_delta_t_key(self.data)
         if self.configuration["source_dependent"]:
             data_src_dep = pd.read_hdf(self.input, key=dl1_params_src_dep_lstcam_key)
             self.data = pd.concat([self.data, data_src_dep], axis=1)
