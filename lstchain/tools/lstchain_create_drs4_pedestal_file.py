@@ -65,13 +65,10 @@ class PedestalFITSWriter(Tool):
 
     def start(self):
 
-        for event in self.eventsource:
-            tel_id = event.trigger.tels_with_trigger[0]
-            self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
-            self.pedestal = DragonPedestal(
-                tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules
-            )
-            break
+        event = next(iter(self.eventsource))
+        tel_id = event.trigger.tels_with_trigger[0]
+        self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
+        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
 
         if self.deltaT:
             self.log.info("DeltaT correction active")
