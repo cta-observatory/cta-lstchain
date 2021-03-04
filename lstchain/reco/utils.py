@@ -658,9 +658,9 @@ def get_effective_time(events):
     timestamp = np.array(events['dragon_time'])
     delta_t = np.array(events['delta_t'])
 
-    if type(timestamp) is not u.Quantity:
+    if not isinstance(timestamp, u.Quantity):
         timestamp *= u.s
-    if type(delta_t) is not u.Quantity:
+    if not isinstance(delta_t, u.Quantity):
         delta_t *= u.s
 
     # time differences between the events in the table (which in general are
