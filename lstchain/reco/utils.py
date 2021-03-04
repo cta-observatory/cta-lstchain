@@ -21,7 +21,6 @@ from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from astropy.utils import deprecated
 from ctapipe.coordinates import CameraFrame
-from ctapipe.containers import EventType
 
 from . import disp
 
@@ -658,7 +657,7 @@ def get_effective_time(events):
 
     # time differences between the events in the table (which in general are
     # NOT all triggered events):
-    time_diff = np.diff(events.dragon_time)
+    time_diff = np.diff(events['dragon_time'])
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
     # than one run). We set 0.1 s as limit to decide a "break" occurred:
@@ -669,7 +668,8 @@ def get_effective_time(events):
     # the first even in a file.
     # We want this to calculate the actual trigger rate, on which the dead
     # time depends.
-    delta_t = events.delta_t[1:]
+    delta_t = events.delta_t
+    delta_t = delta_t[delta_t>0.]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)

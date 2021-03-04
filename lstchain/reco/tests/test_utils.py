@@ -2,7 +2,6 @@ from lstchain.reco import utils
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
-from ctapipe.containers import EventType
 import numpy as np
 import pandas as pd
 
@@ -90,7 +89,7 @@ def test_filter_events():
 
 def test_get_obstime_real():
     # times in seconds, rates in s^-1
-    t_obs = 60
+    t_obs = 600
     dead_time_per_event = 7e-6
     cosmics_rate = 1e4
     # interleaved event rates:
@@ -116,7 +115,7 @@ def test_get_obstime_real():
     recorded_events = delta_t > dead_time_per_event
 
     # true effective time:
-    true_t_eff = t_obs * recorded_events.sum() / len(timestamps)
+    true_t_eff = t_obs - dead_time_per_event * recorded_events.sum()
 
     # we'll write only 80% of the remaining events - this simulates triggered
     # events which are no longer present in the DL2 event list
@@ -128,5 +127,5 @@ def test_get_obstime_real():
     t_eff, t_elapsed = utils.get_effective_time(events)
     print(t_obs, t_elapsed, true_t_eff, t_eff)
 
-    # test accuracy to 0.5%:
-    assert np.isclose(t_eff, true_t_eff, rtol=5e-3)
+    # test accuracy to 0.05%:
+    assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
