@@ -31,7 +31,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
                 f"--input_electron_dl2={simulated_dl2_file}",
                 f"--output_irf_file={irf_file}",
                 f"--point_like={point_like_IRF}",
-                f"--config_file={cuts}",
+                f"--config={cuts}",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -41,8 +41,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
-@pytest.mark.parametrize("add_IRF", [True, False])
-def test_create_dl3(temp_dir_observed_files, add_IRF):
+def test_create_dl3(temp_dir_observed_files):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
     """
@@ -60,9 +59,8 @@ def test_create_dl3(temp_dir_observed_files, add_IRF):
             argv=[
                 f"--input_dl2={real_data_dl2_file}",
                 f"--output_dl3_path={temp_dir_observed_files}",
-                f"--add_irf={add_IRF}",
                 f"--input_irf={irf_file}",
-                f"--config_file={cuts}",
+                f"--config={cuts}",
                 "--source_name=Crab",
             ],
             cwd=temp_dir_observed_files,

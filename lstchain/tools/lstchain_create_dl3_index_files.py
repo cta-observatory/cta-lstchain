@@ -29,7 +29,7 @@ class FITSIndexWriter(Tool):
         help="File pattern to search in the given Path", default_value="dl3*.fits"
     ).tag(config=True)
 
-    add_fits_dir_meta = traits.Bool(
+    add_fits_dir = traits.Bool(
         help="If True, adds the path of fits files in HDU index table",
         default_value=False,
     ).tag(config=True)
@@ -45,30 +45,26 @@ class FITSIndexWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input_dl3_dir": "FITSIndexWriter.input_dl3_dir",
-        "d": "FITSIndexWriter.input_dl3_dir",
-        "file_pattern": "FITSIndexWriter.file_pattern",
-        "p": "FITSIndexWriter.file_pattern",
-        "provenance_log": "FITSIndexWriter.provenance_log",
-        "prov": "FITSIndexWriter.provenance_log",
-        "add_fits_dir_meta": "FITSIndexWriter.add_fits_dir_meta",
-        "add_fdir": "FITSIndexWriter.add_fits_dir_meta",
+        ("d", "input_dl3_dir"): "FITSIndexWriter.input_dl3_dir",
+        ("p", "file_pattern"): "FITSIndexWriter.file_pattern",
+        "add_fits_dir": "FITSIndexWriter.add_fits_dir",
+        ("prov", "provenance_log"): "FITSIndexWriter.provenance_log",
     }
 
     flags = {
         "overwrite": (
             {"FITSIndexWriter": {"overwrite": True}},
             "overwrite output files",
-        )
+        ),
+        "add_fits_dir": (
+            {"FITSIndexWriter": {"add_fits_dir": False}},
+            "Add directory of FITS file to HDU Index table",
+        ),
     }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.file_list = []
-        self.hdu_index_file = None
-        self.obs_index_file = None
-        self.hdu_index_list = None
-        self.obs_index_list = None
         self.hdu_index_filename = "hdu-index.fits.gz"
         self.obs_index_filename = "obs-index.fits.gz"
 
@@ -106,7 +102,7 @@ class FITSIndexWriter(Tool):
             self.input_dl3_dir,
             self.hdu_index_filename,
             self.obs_index_filename,
-            self.add_fits_dir_meta,
+            self.add_fits_dir,
         )
         self.log.debug("HDULists created for the index files")
 

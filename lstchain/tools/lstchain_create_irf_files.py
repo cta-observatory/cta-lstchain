@@ -6,7 +6,7 @@ IRFs can be point-like or Full Enclosure
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
 
-Simple usage, argument aliases and default config file for selection cuts:
+Simple usage, argument aliases and standard config file for selection cuts:
 
 lstchain_create_irf_files
     --fg /path/to/DL2_MC_gamma_file.h5
@@ -14,9 +14,9 @@ lstchain_create_irf_files
     --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
     --pnt True
+    --config /path/to/cta-lstchain/lstchain/data/data_selection_cuts.json
 """
 
-import os
 import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -81,12 +81,6 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    config_file = traits.Path(
-        help="Config file for selection cuts",
-        directory_ok=False,
-        file_ok=True,
-    ).tag(config=True)
-
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=True,
@@ -98,20 +92,12 @@ class IRFFITSWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        "input_gamma_dl2": "IRFFITSWriter.input_gamma_dl2",
-        "fg": "IRFFITSWriter.input_gamma_dl2",
-        "input_proton_dl2": "IRFFITSWriter.input_proton_dl2",
-        "fp": "IRFFITSWriter.input_proton_dl2",
-        "input_electron_dl2": "IRFFITSWriter.input_electron_dl2",
-        "fe": "IRFFITSWriter.input_electron_dl2",
-        "output_irf_file": "IRFFITSWriter.output_irf_file",
-        "o": "IRFFITSWriter.output_irf_file",
-        "point_like": "IRFFITSWriter.point_like",
-        "pnt": "IRFFITSWriter.point_like",
-        "config_file": "IRFFITSWriter.config_file",
-        "conf": "IRFFITSWriter.config_file",
-        "provenance_log": "IRFFITSWriter.provenance_log",
-        "prov": "IRFFITSWriter.provenance_log",
+        ("fg", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
+        ("fp", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
+        ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
+        ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
+        ("pnt", "point_like"): "IRFFITSWriter.point_like",
+        ("prov", "provenance_log"): "IRFFITSWriter.provenance_log",
     }
 
     flag = {
@@ -124,13 +110,6 @@ class IRFFITSWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.mc_particle = None
-        self.cuts = None
-        self.hdus = None
-        self.effective_area = None
-        self.edisp = None
-        self.backgroud = None
-        self.psf = None
 
     def setup(self):
         filename = self.output_irf_file.name
@@ -142,14 +121,7 @@ class IRFFITSWriter(Tool):
             filename = filename.split(".")[0] + ".fits.gz"
             self.output_irf_file = self.output_irf_file.parent / filename
 
-        if self.config_file is None:
-            self.cuts = read_configuration_file(
-                os.path.join(
-                    os.path.dirname(__file__), "../data/data_selection_cuts.json"
-                )
-            )
-        else:
-            self.cuts = read_configuration_file(self.config_file)
+        self.cuts = read_configuration_file(self.config_file)
 
         if self.output_irf_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
@@ -181,6 +153,8 @@ class IRFFITSWriter(Tool):
         Provenance().add_input_file(self.input_gamma_dl2)
         Provenance().add_input_file(self.input_proton_dl2)
         Provenance().add_input_file(self.input_electron_dl2)
+
+    def start(self):
 
         for particle_type, p in self.mc_particle.items():
             self.log.debug(f"Simulated {particle_type.title()} Events:")
@@ -219,8 +193,6 @@ class IRFFITSWriter(Tool):
                 assumed_source_alt=p["events"]["true_alt"],
             )
             self.log.debug(p["simulation_info"])
-
-    def start(self):
 
         gammas = self.mc_particle["gamma"]["events"]
         background = table.vstack(
