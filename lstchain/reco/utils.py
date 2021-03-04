@@ -726,7 +726,7 @@ def get_effective_time(events):
 
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t > 0.0]
+    delta_t = delta_t[delta_t > 0.0 * u.s]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
