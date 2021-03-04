@@ -83,7 +83,7 @@ class DragonPedestal(Component):
                             meanped[gain, pixel, posads] += val
                             numped[gain, pixel, posads] += 1
 
-    def finalize_pedestal(self):
+    def complete_pedestal(self):
         self.meanped = self.meanped / self.numped
         pixels_with_nan_value = np.where(np.isnan(self.meanped).any(axis=0))
         if len(pixels_with_nan_value[0]) > 0:
