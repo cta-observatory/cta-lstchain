@@ -2,6 +2,7 @@ from lstchain.reco import utils
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+from astropy.table import QTable
 import numpy as np
 import pandas as pd
 
@@ -116,6 +117,7 @@ def test_get_obstime_real():
 
     # true effective time:
     true_t_eff = t_obs - dead_time_per_event * recorded_events.sum()
+    true_t_eff *= u.s
 
     # we'll write only 80% of the remaining events - this simulates triggered
     # events which are no longer present in the DL2 event list
@@ -123,9 +125,16 @@ def test_get_obstime_real():
 
     events = pd.DataFrame({'delta_t': delta_t[recorded_events][cut],
                            'dragon_time': timestamps[recorded_events][cut]})
-
     t_eff, t_elapsed = utils.get_effective_time(events)
     print(t_obs, t_elapsed, true_t_eff, t_eff)
+    # test accuracy to 0.05%:
+    assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
+    # now test with a QTable:
+    a = delta_t[recorded_events][cut]*u.s
+    b = timestamps[recorded_events][cut]*u.s
+    events = QTable([a, b], names=('delta_t', 'dragon_time'))
+    t_eff, t_elapsed = utils.get_effective_time(events)
+    print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
