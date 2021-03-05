@@ -5,15 +5,11 @@ Read a HDF5 DL1 file, recompute parameters based on calibrated images and
 pulse times and a config file and write a new HDF5 file
 Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands,
 intercept, time_gradient
-
 - Input: DL1 data file.
 - Output: DL1 data file.
-
 Usage:
-
 $> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
-
 """
 
 import argparse
@@ -38,6 +34,8 @@ from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.calib.camera.utils import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
+
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +65,12 @@ parser.add_argument('--no-image', action='store',
                     help='Boolean. True to remove the images in output file',
                     default=False)
 
+parser.add_argument('--pedestal-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='pedestal_cleaning',
+                    help='Boolean. True to use pedestal cleaning',
+                    default=False)
+
 args = parser.parse_args()
 
 
@@ -82,9 +86,10 @@ def main():
     else:
         config = std_config
 
-    if 'tailcuts_clean_with_pedestal_threshold' in config:
+    if args.pedestal_cleaning:
+        print("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
-        sigma = config['tailcuts_clean_with_pedestal_threshold']['sigma']
+        sigma = config[clean_method_name]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
