@@ -211,7 +211,7 @@ class LSTCameraCalibrator(CameraCalibrator):
 
             else:
             # keep both HG and LG
-                gain_mask = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+                gain_mask = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
                 gain_mask[1] = 1
         else:
             # gain selection already performed in EvB: (0=HG, 1=LG)
@@ -241,7 +241,7 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
 
         # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
         no_gain_selection[1] = 1
 
 

@@ -100,7 +100,7 @@ class PedestalIntegrator(PedestalCalculator):
         waveforms = np.copy(event.r1.tel[self.tel_id].waveform)
 
         # pedestal event do not have gain selection
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
         no_gain_selection[1] = 1
         n_pixels = 1855
 
