@@ -20,6 +20,7 @@ from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
 from lstchain.paths import parse_r0_filename
+from lstchain import __version__
 
 log = logging.getLogger(__name__)
 
@@ -219,6 +220,7 @@ def main():
         for col, dtype in dtypes.items()
     })
     run_summary.meta["date"] = datetime.strptime(args.date, "%Y%m%d").date().isoformat()
+    run_summary.meta['lstchain_version'] = __version__
     run_summary.add_column(run_numbers, name="run_id", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
