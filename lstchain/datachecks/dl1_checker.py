@@ -386,19 +386,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                  verticalalignment='center')
         plt.text(0.1, 0.6, 'First shower event UTC: ', fontsize=24,
                  horizontalalignment='left', verticalalignment='center')
-        plt.text(0.1, 0.5, '    UCTS: ' +
-                 str(datetime.utcfromtimestamp \
-                         (table_cosmics.col('ucts_time')[0][0])),
-                 fontsize=24, horizontalalignment='left',
-                 verticalalignment='center')
-        plt.text(0.1, 0.43, '    Dragon: ' +
+        plt.text(0.1, 0.5, '    (from Dragon time): ' +
                  str(datetime.utcfromtimestamp \
                          (table_cosmics.col('dragon_time')[0][0])),
-                 fontsize=24, horizontalalignment='left',
-                 verticalalignment='center')
-        plt.text(0.1, 0.36, '    TIB: ' +
-                 str(datetime.utcfromtimestamp \
-                         (table_cosmics.col('tib_time')[0][0])),
                  fontsize=24, horizontalalignment='left',
                  verticalalignment='center')
         axes.axis('off')
@@ -438,10 +428,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
 
-        for time_type in ['ucts_time', 'tib_time', 'dragon_time']:
-            axes[0, 0].plot(table_cosmics.col('sampled_event_ids').flatten(),
-                            table_cosmics.col(time_type).flatten(),
-                            label=time_type)
+        axes[0, 0].plot(table_cosmics.col('sampled_event_ids').flatten(),
+        table_cosmics.col('dragon_time').flatten(),
+        label='dragon_time')
         axes[0, 0].set_xlabel('event id')
         axes[0, 0].set_ylabel('timestamp')
         axes[0, 0].legend(loc='best')
@@ -474,18 +463,6 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         axes[1, 1].set_xlabel('time (UTC)')
         axes[1, 1].set_ylabel('telescope altitude (deg)')
         axes[1, 1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-        pdf.savefig()
-
-        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=pagesize)
-        fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
-
-        for i, time_type in enumerate(['ucts_time', 'tib_time', 'dragon_time']):
-            axes[i].plot(table_cosmics.col('sampled_event_ids').flatten(),
-                         table_cosmics.col(time_type).flatten(),
-                         label=time_type)
-            axes[i].set_xlabel('event id')
-            axes[i].set_ylabel('timestamp')
-            axes[i].legend(loc='best')
         pdf.savefig()
 
         if table_pedestals is None or len(table_pedestals) == 0:
