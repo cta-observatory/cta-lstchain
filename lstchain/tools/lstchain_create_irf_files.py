@@ -93,26 +93,29 @@ class IRFFITSWriter(Tool):
         ),
     ).tag(config=True)
 
-    fixed_cuts = traits.Dict(
-        help="Enter the fixed selection cut values for "
-        "gh_score(gammaness), theta and source_fov_offset",
-        default_value=dict(
-            {
-                "gh_score": 0.6,
-                "theta_cut": 0.2,
-                "source_fov_offset": 2.83,
-            }
-        ),
+    fixed_gh_cut = traits.Float(
+        help="Enter fixed selection cut for gh_score (gammaness)",
+        default_value=0.6,
     ).tag(config=True)
 
-    tel_ids = traits.Dict(
-        help="Enter the relevant tel ids for LST and MAGIC",
-        default_value=dict(
-            {
-                "LST_tels": [1],
-                "MAGIC_tels": [1, 2],
-            }
-        ),
+    fixed_theta_cut = traits.Float(
+        help="Enter fixed selection cut for theta",
+        default_value=0.2,
+    ).tag(config=True)
+
+    fixed_source_fov_offset_cut = traits.Float(
+        help="Enter fixed selection cut for source FoV offset",
+        default_value=2.83,
+    ).tag(config=True)
+
+    lst_tel_ids = traits.List(
+        help="Enter the list of selected LST telescope ids",
+        default_value=[1],
+    ).tag(config=True)
+
+    magic_tel_ids = traits.List(
+        help="Enter the list of selected MAGIC telescope ids",
+        default_value=[1, 2],
     ).tag(config=True)
 
     true_energy_bins = traits.List(
@@ -281,26 +284,26 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
 
-        gh_cut = self.fixed_cuts["gh_score"]
-        self.log.debug(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
+        self.log.debug(
+            f"Using fixed G/H cut of {self.fixed_gh_cut} to calculate theta cuts"
+        )
 
         gammas = filter_events(gammas, self.event_filters)
 
         # Filtering the tels needed to use with the real data
         # Add MAGIC tels when need be
-        tel_ids = self.tel_ids["LST_tels"]
-        for i in tel_ids:
+        for i in self.lst_tel_ids:
             gammas["selected_tels"] = gammas["tel_id"] == i
 
-        gammas["selected_gh"] = gammas["gh_score"] > gh_cut
+        gammas["selected_gh"] = gammas["gh_score"] > self.fixed_gh_cut
 
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
         if self.point_like:
             gammas["selected_theta"] = gammas["theta"] < u.Quantity(
-                self.fixed_cuts["theta_cut"] * u.deg
+                self.fixed_theta_cut * u.deg
             )
             gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
-                self.fixed_cuts["source_fov_offset"] * u.deg
+                self.fixed_source_fov_offset_cut * u.deg
             )
             # Combining selection cuts
             gammas["selected"] = (
@@ -360,8 +363,8 @@ class IRFFITSWriter(Tool):
             )
 
             background = filter_events(background, self.event_filters)
-            background["selected_gh"] = background["gh_score"] > gh_cut
-            for i in tel_ids:
+            background["selected_gh"] = background["gh_score"] > self.fixed_gh_cut
+            for i in self.lst_tel_ids:
                 background["selected_tels"] = background["tel_id"] == i
             background["selected"] = (
                 background["selected_gh"] & background["selected_tels"]
@@ -377,17 +380,15 @@ class IRFFITSWriter(Tool):
         # GH_CUT and FOV_CUT are temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
-            "INSTRUME": "LST-" + " ".join(map(str, tel_ids)),
+            "INSTRUME": "LST-" + " ".join(map(str, self.lst_tel_ids)),
             "FOVALIGN": "RADEC",
-            "GH_CUT": gh_cut,
+            "GH_CUT": self.fixed_gh_cut,
         }
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(
-                u.Quantity(self.fixed_cuts["theta_cut"] * u.deg)
-            )
+            extra_headers["RAD_MAX"] = str(u.Quantity(self.fixed_theta_cut * u.deg))
             extra_headers["FOV_CUT"] = str(
-                u.Quantity(self.fixed_cuts["source_fov_offset"] * u.deg)
+                u.Quantity(self.fixed_source_fov_offset_cut * u.deg)
             )
         else:
             self.log.debug("Generating Full-Enclosure IRF HDUs")

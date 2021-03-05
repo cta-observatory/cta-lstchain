@@ -61,16 +61,14 @@ class DataReductionFITSWriter(Tool):
         ),
     ).tag(config=True)
 
-    fixed_cuts = traits.Dict(
-        help="Enter the fixed selection cut values for "
-        "gh_score(gammaness), theta and source_fov_offset",
-        default_value=dict(
-            {
-                "gh_score": 0.6,
-                "theta_cut": 0.2,
-                "source_fov_offset": 2.83,
-            }
-        ),
+    fixed_gh_cut = traits.Float(
+        help="Enter fixed selection cut for gh_score (gammaness)",
+        default_value=0.6,
+    ).tag(config=True)
+
+    fixed_source_fov_offset_cut = traits.Float(
+        help="Enter fixed selection cut for source FoV offset",
+        default_value=2.83,
     ).tag(config=True)
 
     alpha = traits.Float(
@@ -78,13 +76,9 @@ class DataReductionFITSWriter(Tool):
         default_value=8.0,
     ).tag(config=True)
 
-    tel_ids = traits.Dict(
-        help="Enter the relevant tel ids for LST and MAGIC",
-        default_value=dict(
-            {
-                "LST_tels": [1],
-            }
-        ),
+    lst_tel_ids = traits.List(
+        help="Enter the list of selected LST telescope ids",
+        default_value=[1],
     ).tag(config=True)
 
     source_name = traits.Unicode(help="Name of Source").tag(config=True)
@@ -137,10 +131,10 @@ class DataReductionFITSWriter(Tool):
 
         self.data = filter_events(self.data, self.event_filters)
         # Separate cuts for angular separations, for now
-        self.data = self.data[self.data["gh_score"] > self.fixed_cuts["gh_score"]]
+        self.data = self.data[self.data["gh_score"] > self.fixed_gh_cut]
         self.data = self.data[
             self.data["reco_source_fov_offset"]
-            < u.Quantity(self.fixed_cuts["source_fov_offset"] * u.deg)
+            < u.Quantity(self.fixed_source_fov_offset_cut * u.deg)
         ]
 
         self.log.info("Generating event list")
