@@ -9,10 +9,8 @@
       "allowed_tels": [1],
       "calibrate_flatfields_and_pedestals": false,
       "EventTimeCalculator": {
-        "ucts_t0_dragon": null,
-        "dragon_counter0": null,
-        "ucts_t0_tib": null,
-        "tib_counter0": null
+        "dragon_reference_counter": null,
+        "dragon_reference_time": null
       },
       "PointingSource":{
         "drive_report_path": null

@@ -75,7 +75,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--ucts-t0-dragon', type=int,
+    '--dragon-reference-time', type=int,
     help=(
         'UCTS timestamp in nsecs, unix format and TAI scale of the'
         ' first event of the run with valid timestamp. If none is'
@@ -85,30 +85,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--dragon-counter0', type=int,
+    '--dragon-reference-counter', type=int,
     help=(
         'Dragon counter (pps + 10MHz) in nsecs corresponding'
         ' to the first reliable UCTS of the run. To be provided'
         ' along with ucts_t0_dragon.'
-    ),
-)
-
-parser.add_argument(
-    '--ucts-t0-tib', type=int,
-    help=(
-        'UCTS timestamp in nsecs, unix format and TAI scale of the'
-        ' first event of the run with valid timestamp. If none is'
-        ' passed, the start-of-the-run timestamp is provided, hence'
-        ' TIB timestamp is not reliable.'
-    ),
-)
-
-parser.add_argument(
-    '--tib-counter0', type=int,
-    help=(
-        'First valid TIB counter (pps + 10MHz) in nsecs corresponding'
-        ' to the first reliable UCTS of the run when TIB is available.'
-        ' To be provided along with ucts_t0_tib.'
     ),
 )
 
@@ -159,21 +140,14 @@ def main():
         config['source_config']['EventSource']['max_events'] = args.max_events
 
     lst_event_source = config['source_config']['LSTEventSource']
-    if args.ucts_t0_dragon is not None:
-        lst_event_source['EventTimeCalculator']['ucts_t0_dragon'] = \
-            args.ucts_t0_dragon
-    if args.dragon_counter0 is not None:
-        lst_event_source['EventTimeCalculator']['dragon_counter0'] = \
-            args.dragon_counter0
-    if args.ucts_t0_tib is not None:
-        lst_event_source['EventTimeCalculator']['ucts_t0_tib'] = \
-            args.ucts_t0_tib
-    if args.tib_counter0 is not None:
-        lst_event_source['EventTimeCalculator']['tib_counter0'] = \
-            args.tib_counter0
+    time_calculator = lst_event_source['EventTimeCalculator']
+
+    if args.dragon_reference_time is not None:
+        time_calculator['dragon_reference_time'] = args.dragon_reference_time
+    if args.dragon_reference_counter is not None:
+        time_calculator['dragon_reference_counter'] = args.dragon_reference_counter
     if args.pointing_file is not None:
-        lst_event_source['PointingSource']['drive_report_path'] = \
-            args.pointing_file
+        lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
 
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:
@@ -181,8 +155,7 @@ def main():
     if args.calibration_file is not None:
         lst_r0_corrections['calibration_path'] = args.calibration_file
     if args.time_calibration_file is not None:
-        lst_r0_corrections['drs4_time_calibration_path'] = \
-            args.time_calibration_file
+        lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
 
 
     r0_to_dl1.r0_to_dl1(

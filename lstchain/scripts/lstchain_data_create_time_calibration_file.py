@@ -56,39 +56,25 @@ parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     help='Path to drs4 pedestal file ',
                     default=None
                     )
-parser.add_argument('--ucts-t0-dragon', action='store', type=float,
-                    dest='ucts_t0_dragon',
-                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp. If none is \
-                          passed, the start-of-the-run timestamp is provided, hence \
-                          Dragon timestamp is not reliable.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--dragon-reference-time', type=int,
+    help=(
+        'UCTS timestamp in nsecs, unix format and TAI scale of the'
+        ' first event of the run with valid timestamp. If none is'
+        ' passed, the start-of-the-run timestamp is provided, hence'
+        ' Dragon timestamp is not reliable.'
+    )
+)
 
-parser.add_argument('--dragon-counter0', action='store', type=float,
-                    dest='dragon_counter0',
-                    help='Dragon counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run. To be provided \
-                          along with ucts_t0_dragon.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--dragon-reference-counter', type=int,
+    help=(
+        'Dragon counter (pps + 10MHz) in nsecs corresponding'
+        'to the first reliable UCTS of the run. To be provided'
+        'along with ucts_t0_dragon.'
+    ),
+)
 
-parser.add_argument('--ucts-t0-tib', action='store', type=float,
-                    dest='ucts_t0_tib',
-                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp. If none is \
-                          passed, the start-of-the-run timestamp is provided, hence \
-                          TIB timestamp is not reliable.',
-                    default="NaN"
-                    )
-
-parser.add_argument('--tib-counter0', action='store', type=float,
-                    dest='tib_counter0',
-                    help='First valid TIB counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run when TIB is available. \
-                          To be provided along with ucts_t0_tib.',
-                    default="NaN"
-                    )
 args = parser.parse_args()
 
 
@@ -103,22 +89,18 @@ def main():
     log.info(f'list of files: {path_list}')
 
     config_dic = {}
-    if args.config_file is not None:
-        try:
-            config_dic = read_configuration_file(args.config_file)
-        except("Custom configuration could not be loaded !!!"):
-            pass
     # read the configuration file
+    if args.config_file is not None:
+        config_dic = read_configuration_file(args.config_file)
+
     config = Config(config_dic)
 
     source_config = Config({
         "LSTEventSource": {
             "max_events" : args.max_events,
             "EventTimeCalculator": {
-                "ucts_t0_dragon": int(args.ucts_t0_dragon),
-                "dragon_counter0": int(args.dragon_counter0),
-                "ucts_t0_tib": int(args.ucts_t0_tib),
-                "tib_counter0": int(args.tib_counter0)
+                "dragon_reference_time": args.dragon_reference_time,
+                "dragon_reference_counter": args.dragon_reference_counter,
             },
             "LSTR0Corrections": {
                 "drs4_pedestal_path": args.pedestal_file,
@@ -129,7 +111,6 @@ def main():
     config.merge(source_config)
 
     for i, path in enumerate(path_list):
- 
         log.info(f'File {i+1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
 
