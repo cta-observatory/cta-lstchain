@@ -52,17 +52,11 @@ class DataReductionFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
-    provenance_log = traits.Path(
-        help="Path for the Provenance log",
-        directory_ok=False,
-    ).tag(config=True)
-
     aliases = {
         ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
         "source_name": "DataReductionFITSWriter.source_name",
-        ("prov", "provenance_log"): "DataReductionFITSWriter.provenance_log",
     }
 
     flags = {
@@ -78,13 +72,11 @@ class DataReductionFITSWriter(Tool):
     def setup(self):
 
         self.cuts = read_configuration_file(self.config_file)
-
         self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
-
-        if not self.provenance_log:
-            self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
+        self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)
+
         self.output_file = self.output_dl3_path / self.filename_dl3
         if self.output_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
@@ -103,17 +95,16 @@ class DataReductionFITSWriter(Tool):
         )
 
         self.data = filter_events(self.data, self.cuts["events_filters"])
-
         # Separate cuts for angular separations, for now
         self.data = self.data[
             self.data["gh_score"] > self.cuts["fixed_cuts"]["gh_score"][0]
         ]
-
         self.data = self.data[
             self.data["reco_source_fov_offset"]
             < u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"])
         ]
-        self.log.debug("Generating event list")
+
+        self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
             data=self.data,
             run_number=self.run_number,
@@ -122,30 +113,15 @@ class DataReductionFITSWriter(Tool):
             elapsed_time=self.elapsed_time.value,
         )
 
+        self.hdulist = fits.HDUList(
+            [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
+        )
         if self.input_irf:
             irf = fits.open(self.input_irf)
-            self.aeff2d = irf["EFFECTIVE AREA"]
-            self.edisp2d = irf["ENERGY DISPERSION"]
-            self.bkg2d = irf["BACKGROUND"]
-            self.psf = irf["PSF"]
+            self.log.info("Adding IRF HDUs")
 
-            self.log.debug("Adding IRF HDUs")
-            self.hdulist = fits.HDUList(
-                [
-                    fits.PrimaryHDU(),
-                    self.events,
-                    self.gti,
-                    self.pointing,
-                    self.aeff2d,
-                    self.edisp2d,
-                    self.bkg2d,
-                    self.psf,
-                ]
-            )
-        else:
-            self.hdulist = fits.HDUList(
-                [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
-            )
+            for irf_hdu in irf[1:]:
+                self.hdulist.append(irf_hdu)
 
     def finish(self):
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)

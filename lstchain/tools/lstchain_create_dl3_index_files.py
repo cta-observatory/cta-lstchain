@@ -39,16 +39,10 @@ class FITSIndexWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
-    provenance_log = traits.Path(
-        help="Path for the Provenance log",
-        directory_ok=False,
-    ).tag(config=True)
-
     aliases = {
         ("d", "input_dl3_dir"): "FITSIndexWriter.input_dl3_dir",
         ("p", "file_pattern"): "FITSIndexWriter.file_pattern",
         "add_fits_dir": "FITSIndexWriter.add_fits_dir",
-        ("prov", "provenance_log"): "FITSIndexWriter.provenance_log",
     }
 
     flags = {
@@ -80,8 +74,7 @@ class FITSIndexWriter(Tool):
         self.hdu_index_file = self.input_dl3_dir / self.hdu_index_filename
         self.obs_index_file = self.input_dl3_dir / self.obs_index_filename
 
-        if not self.provenance_log:
-            self.provenance_log = self.input_dl3_dir / (self.name + ".provenance.log")
+        self.provenance_log = self.input_dl3_dir / (self.name + ".provenance.log")
 
         if self.hdu_index_file.exists() and not self.overwrite:
             raise ToolConfigurationError(
