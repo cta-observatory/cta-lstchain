@@ -126,18 +126,6 @@ def simulated_irf_file(temp_dir_observed_files, simulated_dl2_file):
     Produce test irf file from the simulated dl2 test file.
     Using the same test file for gamma, proton and electron inputs
     """
-    import os
-    import json
-
-    cuts = temp_dir_observed_files / "cuts.json"
-
-    if os.path.exists(cuts):
-        open(cuts, "r")
-    else:
-        data = json.load(open(os.path.join("lstchain/data/data_selection_cuts.json")))
-        data["fixed_cuts"]["gh_score"][0] = 0.3
-        data["events_filters"]["intensity"][0] = 0
-        json.dump(data, open(cuts, "x"))
 
     irf_file = simulated_dl2_file.parent / "irf.fits.gz"
     run_program(
@@ -150,7 +138,5 @@ def simulated_irf_file(temp_dir_observed_files, simulated_dl2_file):
         simulated_dl2_file,
         "--output_irf_file",
         irf_file,
-        "--config",
-        cuts,
     )
     return irf_file

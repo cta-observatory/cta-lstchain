@@ -5,10 +5,13 @@ MC gamma files can be point-like or diffuse
 IRFs can be point-like or Full Enclosure
 Background HDU maybe added if proton and electron MC are provided
 
+Change the selection parameters as need be.
+The default values are also written in lstchain/data/data_selection_cuts.json
+
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
 
-Usage for all 4 IRFs, argument aliases and standard config file for selection cuts:
+Usage for all 4 IRFs, argument aliases and default parameter selection values:
 
 lstchain_create_irf_files
     --fg /path/to/DL2_MC_gamma_file.h5
@@ -16,13 +19,12 @@ lstchain_create_irf_files
     --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
     --pnt False
-    --config /path/to/cta-lstchain/lstchain/data/data_selection_cuts.json
 """
 
 import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io import read_mc_dl2_to_pyirf, read_configuration_file
+from lstchain.io import read_mc_dl2_to_pyirf
 from lstchain.reco.utils import filter_events
 
 from astropy.io import fits
@@ -78,6 +80,80 @@ class IRFFITSWriter(Tool):
         default_value="./irf.fits.gz",
     ).tag(config=True)
 
+    event_filters = traits.Dict(
+        help="Enter the event filters for standard parameters - "
+        "intensity, leakage_intensity_width_2, r, wl",
+        default_value=dict(
+            {
+                "intensity": [100, np.inf],
+                "r": [0, 1],
+                "wl": [0.1, 1],
+                "leakage_intensity_width_2": [0, 0.2],
+            }
+        ),
+    ).tag(config=True)
+
+    fixed_cuts = traits.Dict(
+        help="Enter the fixed selection cut values for "
+        "gh_score(gammaness), theta and source_fov_offset",
+        default_value=dict(
+            {
+                "gh_score": 0.6,
+                "theta_cut": 0.2,
+                "source_fov_offset": 2.83,
+            }
+        ),
+    ).tag(config=True)
+
+    tel_ids = traits.Dict(
+        help="Enter the relevant tel ids for LST and MAGIC",
+        default_value=dict(
+            {
+                "LST_tels": [1],
+                "MAGIC_tels": [1, 2],
+            }
+        ),
+    ).tag(config=True)
+
+    true_energy_bins = traits.List(
+        help="Enter values to get true energy (TeV) bins as "
+        "[e_min, e_max, bins_per_decade]",
+        default_value=[0.01, 100, 5.5],
+    ).tag(config=True)
+
+    reco_energy_bins = traits.List(
+        help="Enter values to get reco energy (TeV) bins as "
+        "[e_min, e_max, bins_per_decade]",
+        default_value=[0.01, 100, 5.5],
+    ).tag(config=True)
+
+    energy_migra_bins = traits.List(
+        help="Enter values to get energy migration bins as [min, max, bins]",
+        default_value=[0.2, 5, 31],
+    ).tag(config=True)
+
+    single_fov_offset_bins = traits.List(
+        help="Enter the list of bins for single FOV offset binning",
+        default_value=[0.3, 0.5, 0.7],
+    ).tag(config=True)
+
+    mult_fov_offset_bins = traits.List(
+        help="Enter the list of bins for multiple FOV offset binning",
+        default_value=[0, 0.3, 0.5, 0.7, 0.9, 1.1],
+    ).tag(config=True)
+
+    bkg_fov_offset_bins = traits.List(
+        help="Enter the range of values for multiple FOV offset binning "
+        "for Background IRF as [o_min, o_max]",
+        default_value=[0, 11],
+    ).tag(config=True)
+
+    source_offset = traits.List(
+        help="Enter values to get source offset binning for PSF IRF "
+        "as [o_min, o_max, bin_width]",
+        default_value=[0, 1.0001, 0.001],
+    ).tag(config=True)
+
     point_like = traits.Bool(
         help="True for point-like IRF, False for Full Enclosure",
         default_value=False,
@@ -108,6 +184,12 @@ class IRFFITSWriter(Tool):
         super().__init__(**kwargs)
 
     def setup(self):
+
+        if self.output_irf_file.exists() and not self.overwrite:
+            raise ToolConfigurationError(
+                f"Output file {self.output_irf_file} already exists,"
+                " use --overwrite to overwrite"
+            )
         filename = self.output_irf_file.name
         if filename.split(".")[1:] != ["fits", "gz"]:
             self.log.debug(
@@ -116,14 +198,6 @@ class IRFFITSWriter(Tool):
             )
             filename = filename.split(".")[0] + ".fits.gz"
             self.output_irf_file = self.output_irf_file.parent / filename
-
-        self.cuts = read_configuration_file(self.config_file)
-
-        if self.output_irf_file.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                f"Output file {self.output_irf_file} already exists,"
-                " use --overwrite to overwrite"
-            )
 
         if self.input_proton_dl2 and self.input_electron_dl2 is not None:
             self.only_gamma_irf = False
@@ -207,14 +281,14 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
 
-        gh_cut = self.cuts["fixed_cuts"]["gh_score"][0]
+        gh_cut = self.fixed_cuts["gh_score"]
         self.log.debug(f"Using fixed G/H cut of {gh_cut} to calculate theta cuts")
 
-        gammas = filter_events(gammas, self.cuts["events_filters"])
+        gammas = filter_events(gammas, self.event_filters)
 
         # Filtering the tels needed to use with the real data
         # Add MAGIC tels when need be
-        tel_ids = self.cuts["LST_tels"]["tel_list"]
+        tel_ids = self.tel_ids["LST_tels"]
         for i in tel_ids:
             gammas["selected_tels"] = gammas["tel_id"] == i
 
@@ -223,10 +297,10 @@ class IRFFITSWriter(Tool):
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
         if self.point_like:
             gammas["selected_theta"] = gammas["theta"] < u.Quantity(
-                **self.cuts["fixed_cuts"]["theta_cut"]
+                self.fixed_cuts["theta_cut"] * u.deg
             )
             gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
-                **self.cuts["fixed_cuts"]["source_fov_offset"]
+                self.fixed_cuts["source_fov_offset"] * u.deg
             )
             # Combining selection cuts
             gammas["selected"] = (
@@ -240,27 +314,31 @@ class IRFFITSWriter(Tool):
 
         # Binning of parameters used in IRFs
         # Energy bins
-        en_bins = self.cuts["energy_bins"]
         true_energy_bins = create_bins_per_decade(
-            en_bins["true"][0] * u.TeV, en_bins["true"][1] * u.TeV, en_bins["true"][2]
+            self.true_energy_bins[0] * u.TeV,
+            self.true_energy_bins[1] * u.TeV,
+            self.true_energy_bins[2],
         )
         # add_overflow_bins(***)[1:-1]
         # The overflow binning added is not needed in the current script
         reco_energy_bins = create_bins_per_decade(
-            en_bins["reco"][0] * u.TeV, en_bins["reco"][1] * u.TeV, en_bins["reco"][2]
+            self.reco_energy_bins[0] * u.TeV,
+            self.reco_energy_bins[1] * u.TeV,
+            self.reco_energy_bins[2],
         )
         migration_bins = np.linspace(
-            en_bins["migration"][0], en_bins["migration"][1], en_bins["migration"][2]
+            self.energy_migra_bins[0],
+            self.energy_migra_bins[1],
+            self.energy_migra_bins[2],
         )
         # Using the same binning as in pyirf for source_offset_bins and
         # FoV offset bins for background IRF
         # Angular bins
-        ang_bins = self.cuts["angular_bins"]
         source_offset_bins = (
             np.arange(
-                ang_bins["source_offset"][0],
-                ang_bins["source_offset"][1],
-                ang_bins["source_offset"][2],
+                self.source_offset[0],
+                self.source_offset[1],
+                self.source_offset[2],
             )
             * u.deg
         )
@@ -269,9 +347,9 @@ class IRFFITSWriter(Tool):
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            fov_offset_bins = ang_bins["single_fov_offset"] * u.deg
+            fov_offset_bins = self.single_fov_offset_bins * u.deg
         else:
-            fov_offset_bins = ang_bins["multiple_fov_offset"] * u.deg
+            fov_offset_bins = self.mult_fov_offset_bins * u.deg
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -281,7 +359,7 @@ class IRFFITSWriter(Tool):
                 ]
             )
 
-            background = filter_events(background, self.cuts["events_filters"])
+            background = filter_events(background, self.event_filters)
             background["selected_gh"] = background["gh_score"] > gh_cut
             for i in tel_ids:
                 background["selected_tels"] = background["tel_id"] == i
@@ -290,7 +368,7 @@ class IRFFITSWriter(Tool):
             )
 
             background_offset_bins = (
-                np.arange(ang_bins["source_offset"][0], ang_bins["source_offset"][1])
+                np.arange(self.bkg_fov_offset_bins[0], self.bkg_fov_offset_bins[1])
                 * u.deg
             )
 
@@ -306,10 +384,10 @@ class IRFFITSWriter(Tool):
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
             extra_headers["RAD_MAX"] = str(
-                u.Quantity(**self.cuts["fixed_cuts"]["theta_cut"])
+                u.Quantity(self.fixed_cuts["theta_cut"] * u.deg)
             )
             extra_headers["FOV_CUT"] = str(
-                u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"])
+                u.Quantity(self.fixed_cuts["source_fov_offset"] * u.deg)
             )
         else:
             self.log.debug("Generating Full-Enclosure IRF HDUs")

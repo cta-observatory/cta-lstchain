@@ -2,21 +2,24 @@
 Create DL3 FITS file from given data DL2 file,
 selection cuts and/or IRF FITS files
 
-Simple usage with argument aliases and standard config file for selection cuts:
+Change the selection parameters as need be.
+The default values are also written in lstchain/data/data_selection_cuts.json
+
+Simple usage with argument aliases and default parameter selection values:
 
 lstchain_create_irf_files
     --d /path/to/DL2_data_file.h5
     --o /path/to/DL3/file/
     --irf /path/to/irf.fits.gz
     --source_name Crab
-    --config /path/to/cta-lstchain/lstchain/data/data_selection_cuts.json
 """
 
 from astropy.io import fits
 import astropy.units as u
+import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io import read_data_dl2_to_QTable, read_configuration_file
+from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import filter_events, get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
@@ -45,6 +48,45 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
+    event_filters = traits.Dict(
+        help="Enter the event filters for standard parameters - "
+        "intensity, leakage_intensity_width_2, r, wl",
+        default_value=dict(
+            {
+                "intensity": [100, np.inf],
+                "r": [0, 1],
+                "wl": [0.1, 1],
+                "leakage_intensity_width_2": [0, 0.2],
+            }
+        ),
+    ).tag(config=True)
+
+    fixed_cuts = traits.Dict(
+        help="Enter the fixed selection cut values for "
+        "gh_score(gammaness), theta and source_fov_offset",
+        default_value=dict(
+            {
+                "gh_score": 0.6,
+                "theta_cut": 0.2,
+                "source_fov_offset": 2.83,
+            }
+        ),
+    ).tag(config=True)
+
+    alpha = traits.Float(
+        help="Enter the selection cut for source dependent parameter - alpha",
+        default_value=8.0,
+    ).tag(config=True)
+
+    tel_ids = traits.Dict(
+        help="Enter the relevant tel ids for LST and MAGIC",
+        default_value=dict(
+            {
+                "LST_tels": [1],
+            }
+        ),
+    ).tag(config=True)
+
     source_name = traits.Unicode(help="Name of Source").tag(config=True)
 
     overwrite = traits.Bool(
@@ -71,7 +113,6 @@ class DataReductionFITSWriter(Tool):
 
     def setup(self):
 
-        self.cuts = read_configuration_file(self.config_file)
         self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
@@ -94,14 +135,12 @@ class DataReductionFITSWriter(Tool):
             self.data, prefix="reco"
         )
 
-        self.data = filter_events(self.data, self.cuts["events_filters"])
+        self.data = filter_events(self.data, self.event_filters)
         # Separate cuts for angular separations, for now
-        self.data = self.data[
-            self.data["gh_score"] > self.cuts["fixed_cuts"]["gh_score"][0]
-        ]
+        self.data = self.data[self.data["gh_score"] > self.fixed_cuts["gh_score"]]
         self.data = self.data[
             self.data["reco_source_fov_offset"]
-            < u.Quantity(**self.cuts["fixed_cuts"]["source_fov_offset"])
+            < u.Quantity(self.fixed_cuts["source_fov_offset"] * u.deg)
         ]
 
         self.log.info("Generating event list")
