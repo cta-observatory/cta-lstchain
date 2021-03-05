@@ -80,17 +80,19 @@ class IRFFITSWriter(Tool):
         default_value="./irf.fits.gz",
     ).tag(config=True)
 
-    event_filters = traits.Dict(
-        help="Enter the event filters for standard parameters - "
-        "intensity, leakage_intensity_width_2, r, wl",
-        default_value=dict(
-            {
-                "intensity": [100, np.inf],
-                "r": [0, 1],
-                "wl": [0.1, 1],
-                "leakage_intensity_width_2": [0, 0.2],
-            }
-        ),
+    intensity = traits.Int(
+        help="Enter the minimum value of intensity of events",
+        default_value=100,
+    ).tag(config=True)
+
+    wl = traits.Float(
+        help="Enter the minimum value of wl for events",
+        default_value=0.1,
+    ).tag(config=True)
+
+    leakage_intensity_width_2 = traits.Float(
+        help="Enter the maximum value for leakage_intensity_width_2 of events",
+        default_value=0.2,
     ).tag(config=True)
 
     fixed_gh_cut = traits.Float(
@@ -173,6 +175,24 @@ class IRFFITSWriter(Tool):
         ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
         ("pnt", "point_like"): "IRFFITSWriter.point_like",
+        ("int", "intensity"): "IRFFITSWriter.intensity",
+        "wl": "IRFFITSWriter.wl",
+        ("leak_2", "leakage_intensity_width_2"):
+            "IRFFITSWriter.leakage_intensity_width_2",
+        ("gh", "fixed_gh_cut"): "IRFFITSWriter.fixed_gh_cut",
+        ("theta", "fixed_theta_cut"): "IRFFITSWriter.fixed_theta_cut",
+        ("src_fov", "fixed_source_fov_offset_cut"):
+            "IRFFITSWriter.fixed_source_fov_offset_cut",
+        "alpha": "IRFFITSWriter.alpha",
+        "lst_tel_ids": "IRFFITSWriter.lst_tel_ids",
+        "magic_tel_ids": "IRFFITSWriter.magic_tel_ids",
+        ("e_true", "true_energy_bins"): "IRFFITSWriter.true_energy_bins",
+        ("e_reco", "reco_energy_bins"): "IRFFITSWriter.reco_energy_bins",
+        ("e_migra", "energy_migra_bins"): "IRFFITSWriter.energy_migra_bins",
+        ("sing_fov", "single_fov_offset_bins"): "IRFFITSWriter.single_fov_offset_bins",
+        ("mult_fov", "mult_fov_offset_bins"): "IRFFITSWriter.mult_fov_offset_bins",
+        ("bkg_fov", "bkg_fov_offset_bins"): "IRFFITSWriter.bkg_fov_offset_bins",
+        ("src_off", "source_offset"): "IRFFITSWriter.source_offset",
     }
 
     flag = {
@@ -206,6 +226,12 @@ class IRFFITSWriter(Tool):
             self.only_gamma_irf = False
         else:
             self.only_gamma_irf = True
+
+        self.event_filters = {
+            "intensity": [self.intensity, np.inf],
+            "wl": [self.wl, 1],
+            "leakage_intensity_width_2": [0, self.leakage_intensity_width_2],
+        }
 
         # Read and update MC information
         if self.only_gamma_irf:

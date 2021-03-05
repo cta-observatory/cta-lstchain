@@ -48,17 +48,19 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
-    event_filters = traits.Dict(
-        help="Enter the event filters for standard parameters - "
-        "intensity, leakage_intensity_width_2, r, wl",
-        default_value=dict(
-            {
-                "intensity": [100, np.inf],
-                "r": [0, 1],
-                "wl": [0.1, 1],
-                "leakage_intensity_width_2": [0, 0.2],
-            }
-        ),
+    intensity = traits.Int(
+        help="Enter the minimum value of intensity of events",
+        default_value=100,
+    ).tag(config=True)
+
+    wl = traits.Float(
+        help="Enter the minimum value of wl for events",
+        default_value=0.1,
+    ).tag(config=True)
+
+    leakage_intensity_width_2 = traits.Float(
+        help="Enter the maximum value for leakage_intensity_width_2 of events",
+        default_value=0.2,
     ).tag(config=True)
 
     fixed_gh_cut = traits.Float(
@@ -92,6 +94,16 @@ class DataReductionFITSWriter(Tool):
         ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
+        ("int", "intensity"): "DataReductionFITSWriter.intensity",
+        "wl": "DataReductionFITSWriter.wl",
+        ("leak_2", "leakage_intensity_width_2"):
+            "DataReductionFITSWriter.leakage_intensity_width_2",
+        ("gh", "fixed_gh_cut"): "DataReductionFITSWriter.fixed_gh_cut",
+        ("theta", "fixed_theta_cut"): "DataReductionFITSWriter.fixed_theta_cut",
+        ("src_fov", "fixed_source_fov_offset_cut"):
+            "DataReductionFITSWriter.fixed_source_fov_offset_cut",
+        "alpha": "DataReductionFITSWriter.alpha",
+        "lst_tel_ids": "DataReductionFITSWriter.lst_tel_ids",
         "source_name": "DataReductionFITSWriter.source_name",
     }
 
@@ -111,6 +123,12 @@ class DataReductionFITSWriter(Tool):
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)
+
+        self.event_filters = {
+            "intensity": [self.intensity, np.inf],
+            "wl": [self.wl, 1],
+            "leakage_intensity_width_2": [0, self.leakage_intensity_width_2],
+        }
 
         self.output_file = self.output_dl3_path / self.filename_dl3
         if self.output_file.exists() and not self.overwrite:
