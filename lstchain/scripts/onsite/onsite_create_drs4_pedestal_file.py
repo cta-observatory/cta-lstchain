@@ -12,6 +12,7 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_drs4 as drs4
 import os
+from ctapipe_io_lst.event_time import read_night_summary
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -55,6 +56,7 @@ def main():
         input_dir, name = os.path.split(os.path.abspath(input_file))
         path, date = input_dir.rsplit('/', 1)
 
+
         # verify and make output dir
         output_dir = f"{base_dir}/calibration/{date}/{prod_id}"
         if not os.path.exists(output_dir):
@@ -78,15 +80,17 @@ def main():
                 exit(1)
 
         # run lstchain script
-        cmd = f"lstchain_data_create_drs4_pedestal_file --input-file {input_file} " \
-              f"--output-file {output_file} --max-events {max_events}"
+        cmd = f"lstchain_data_create_drs4_pedestal_file " \
+              f"--input-file {input_file} " \
+              f"--output-file {output_file} " \
+              f"--max-events {max_events}"
 
         os.system(cmd)
 
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=300)
+        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=400)
 
         print("\n--> END")
 

@@ -1,5 +1,5 @@
 """
-Functions to check the contents ofLST DL1 files and associated muon ring files
+Functions to check the contents of LST DL1 files and associated muon ring files
 """
 
 __all__ = [
@@ -11,41 +11,45 @@ __all__ = [
     'merge_dl1datacheck_files'
 ]
 
-import h5py
 import logging
+import os
+from datetime import datetime
+from multiprocessing import Pool
+from pathlib import Path
+
+import h5py
 import matplotlib.colors as colors
 import matplotlib.dates as dates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import os
 import pandas as pd
 import tables
-
 from astropy import units as u
 from astropy.table import Table, vstack
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
-from datetime import datetime
+# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
+# from bokeh.models.widgets import Panel
+from matplotlib.backends.backend_pdf import PdfPages
+from scipy.stats import poisson, sem
+
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
     run_to_muon_filename, run_to_datacheck_dl1_filename
-# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
-# from bokeh.models.widgets import Panel
-from matplotlib.backends.backend_pdf import PdfPages
-from multiprocessing import Pool
-from pathlib import Path
-from scipy.stats import poisson, sem
 
-def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
+
+def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False):
     """
 
     Parameters
     ----------
+    batch: bool, run in batch mode
+    create_pdf: bool, create PDF file
     filenames: string, Path, or a list of them, _sorted_ (by growing subrun
     index). Name(s) of the input DL1 .h5 file(s)
     output_path: directory where output will be written
@@ -90,7 +94,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
             raise FileNotFoundError
 
     # try to determine which trigger_type tag is more reliable for
-    # identifying interlaved pedestals. We check which one has
+    # identifying interleaved pedestals. We check which one has
     # more values == 32, which is the pedestal tag. The one called
     # "trigger_type" seems to be the TIB trigger type. The fastest way to do
     # this for the whole run seems to be using normal pytables:
@@ -98,7 +102,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     for filename in filenames:
         with tables.open_file(filename,
                               root_uep='/dl1/event/telescope/parameters') as f:
-            for name in trig_tags.keys():
+            for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
     num_pedestals = {'trigger_type':
                          (np.array(trig_tags['trigger_type']) == 32).sum(),
@@ -173,7 +177,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False):
     # files in the same directory as the DL1 files (assuming all of them are
     # in the same directory as the first one!)
     if create_pdf:
-        plot_datacheck(datacheck_filename, output_path,
+        plot_datacheck(datacheck_filename, output_path, batch,
                        muons_dir=os.path.dirname(filenames[0]))
 
     return
@@ -201,12 +205,6 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
 
     logger = logging.getLogger(__name__)
 
-    # define criteria for detecting flatfield events, since as of 20200418
-    # there is no reliable event tagging for those. We require a minimum
-    # fraction of pixels with a charge above a sufficiently large value:
-    ff_min_pixel_charge_median = 40.
-    ff_max_pixel_charge_stddev = 20.
-
     logger.info(f'Opening file {filename}')
     subrun_index = parse_dl1_filename(os.path.basename(filename)).subrun
 
@@ -221,16 +219,15 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         Table.read(filename, path='instrument/telescope/optics')
     equivalent_focal_length = \
         optics_description_table['equivalent_focal_length']
-    m2deg = np.rad2deg(u.m/equivalent_focal_length*u.rad)/u.m
+    m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     with tables.open_file(filename) as file:
         # unfortunately pandas.read_hdf does not seem compatible with
         # 'with... as...' statements
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
-        # convert parameters from meters to degrees:
-        for var in ['r', 'width', 'length']:
-            parameters[var] *= m2deg
+        # convert cog distance to camera center from meters to degrees:
+        parameters['r'] *= m2deg
         # time gradient from ns/m to ns/deg
         parameters['time_gradient'] /= m2deg
 
@@ -245,6 +242,12 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         # trigger type tags are not reliable. We first identify flatfield events
         # by their looks.
         image = image_table.col('image')
+        # define criteria for detecting flatfield events, since as of 20200418
+        # there is no reliable event tagging for those. We require a minimum
+        # fraction of pixels with a charge above a sufficiently large value:
+        ff_min_pixel_charge_median = 40.
+        ff_max_pixel_charge_stddev = 20.
+
         flatfield_mask = ((np.median(image, axis=1) >
                            ff_min_pixel_charge_median) &
                           (np.std(image, axis=1) <
@@ -302,16 +305,17 @@ def process_dl1_file(filename, bins, trigger_source='trigger_type'):
         else:
             dl1datacheck_cosmics = None
 
-
         return dl1datacheck_pedestals, dl1datacheck_flatfield, \
                dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
+def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None):
     """
 
     Parameters
     ----------
+    batch: bool, run in batch mode
+    muons_dir
     datacheck_filename: list of strings, or pathlib.Path, name(s) of .h5
     files produced by the function check_dl1, starting from DL1 event files
     If it is a list of file names, we expect each of the files to correspond to
@@ -389,7 +393,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             raise RuntimeError
 
         dl1dcheck_tables = [table_flatfield, table_pedestals, table_cosmics]
-        labels = ['flatfield (guessed)', 'pedestals (from '+trigger_source+')',
+        labels = ['flatfield (guessed)', 'pedestals (from ' + trigger_source + ')',
                   'cosmics']
         labels = [x for i, x in enumerate(labels)
                   if dl1dcheck_tables[i] is not None]
@@ -402,18 +406,18 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                  verticalalignment='center')
         plt.text(0.1, 0.6, 'First shower event UTC: ', fontsize=24,
                  horizontalalignment='left', verticalalignment='center')
-        plt.text(0.1, 0.5, '    UCTS: '+
-                 str(datetime.utcfromtimestamp\
+        plt.text(0.1, 0.5, '    UCTS: ' +
+                 str(datetime.utcfromtimestamp \
                          (table_cosmics.col('ucts_time')[0][0])),
                  fontsize=24, horizontalalignment='left',
                  verticalalignment='center')
-        plt.text(0.1, 0.43, '    Dragon: '+
-                 str(datetime.utcfromtimestamp\
+        plt.text(0.1, 0.43, '    Dragon: ' +
+                 str(datetime.utcfromtimestamp \
                          (table_cosmics.col('dragon_time')[0][0])),
                  fontsize=24, horizontalalignment='left',
                  verticalalignment='center')
-        plt.text(0.1, 0.36, '    TIB: '+
-                 str(datetime.utcfromtimestamp\
+        plt.text(0.1, 0.36, '    TIB: ' +
+                 str(datetime.utcfromtimestamp \
                          (table_cosmics.col('tib_time')[0][0])),
                  fontsize=24, horizontalalignment='left',
                  verticalalignment='center')
@@ -484,7 +488,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         # regular event intervals. We get the mean per row (typically =subrun):
         mean_dragon_time = np.mean(dragon_time, axis=1)
         mpl_times = np.array([dates.date2num(datetime.utcfromtimestamp(x))
-                                             for x in mean_dragon_time])
+                              for x in mean_dragon_time])
         axes[1, 1].plot_date(mpl_times, alt_deg, fmt=fmt, xdate=True,
                              tz='utc')
         axes[1, 1].set_xlabel('time (UTC)')
@@ -504,7 +508,6 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             axes[i].legend(loc='best')
         pdf.savefig()
 
-
         if table_pedestals is None or len(table_pedestals) == 0:
             write_error_page('pedestals', pagesize)
         else:
@@ -523,7 +526,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  ['Pedestal mean charge (p.e.)',
                                   'Pedestal charge std dev (p.e.)',
                                   'PEDESTALS, pixel-wise charge info'],
-                                 pagesize, norm='log')
+                                 pagesize, batch, norm='log')
         pdf.savefig()
 
         if table_flatfield is None or len(table_flatfield) == 0:
@@ -541,9 +544,9 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['charge_mean', 'charge_stddev'],
                                  ['Flat-field mean charge (p.e.)',
-                                 'Flat-field charge std dev (p.e.)',
-                                 'FLATFIELD, pixel-wise charge info'], pagesize,
-                                 norm='log')
+                                  'Flat-field charge std dev (p.e.)',
+                                  'FLATFIELD, pixel-wise charge info'], pagesize,
+                                 batch, norm='log')
         pdf.savefig()
 
         # Displaying and saving of FUTURE bokeh display, not yet active:
@@ -562,7 +565,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             for table in dl1dcheck_tables:
                 contents = np.sum(table.col(hist), axis=0)
                 axes.flatten()[i].hist(bins[:-1], bins, histtype='step',
-                                       weights=contents/contents.sum(),
+                                       weights=contents / contents.sum(),
                                        label=table.name)
             axes.flatten()[i].set_yscale('log')
             axes.flatten()[i].set_xscale('log')
@@ -578,7 +581,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         # Find the thresholds (in pe) for which the event numbers are stored:
         colnames = [name for name in table_cosmics.colnames
                     if name.find('num_pulses_above') == 0]
-        threshold = [int(name[name.find('above_')+6:name.find('_pe')])
+        threshold = [int(name[name.find('above_') + 6:name.find('_pe')])
                      for name in colnames]
 
         for table, tname in zip([table_pedestals, table_cosmics],
@@ -603,7 +606,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             # total number of entries for this event type:
             norm = table.col('num_events').sum()
             if norm > 0:
-                fraction = np.array(pix_events)/norm
+                fraction = np.array(pix_events) / norm
             for i, frac in enumerate(fraction):
                 zscale = 'log' if threshold[i] < 200 and frac.sum() > 0 \
                     else 'lin'
@@ -614,7 +617,8 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                 cam.add_colorbar(ax=axes.flatten()[i], format='%.0e', pad=0.01)
                 # same range for all cameras:
                 axes.flatten()[i].set_xlim((axes[0, 0].get_xlim()))
-                cam.show()
+                if not batch:
+                    cam.show()
             for i in [1, 2, 4]:
                 axes.flatten()[i].set_ylabel('')
             axes[1, 2].set_xscale('log')
@@ -640,9 +644,9 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             figb, axesb = plt.subplots(nrows=2, ncols=1, figsize=pagesize)
             figb.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
             figb.suptitle(
-                    table.name.upper() + ', relative frequency of pixel '
-                                         'charges, camera averages',
-                    fontsize='xx-large')
+                table.name.upper() + ', relative frequency of pixel '
+                                     'charges, camera averages',
+                fontsize='xx-large')
             for i, y in enumerate(['num_pulses_above_0010_pe',
                                    'num_pulses_above_0030_pe']):
                 if np.mean(table.col(y), axis=1).max() > 0:
@@ -665,7 +669,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                  ['Flat-field mean time (ns)',
                                   'Flat-field time std dev (ns)',
                                   'FLATFIELD, pixel-wise pulse time info'],
-                                 pagesize)
+                                 batch, pagesize)
             pdf.savefig()
             plot_mean_and_stddev(table_flatfield, engineering_geom,
                                  ['relative_time_mean',
@@ -674,7 +678,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                                   'Flat-field time std dev (ns)',
                                   'FLATFIELD, pixel-wise pulse time relative '
                                   'to camera mean'],
-                                 pagesize)
+                                 pagesize, batch)
 
         pdf.savefig()
 
@@ -683,7 +687,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
                              ['Cosmics mean time (ns)',
                               'Cosmics time std dev (ns)',
                               'COSMICS, pixel-wise pulse time info for pixel '
-                              'charge > 1 p.e.'], pagesize)
+                              'charge > 1 p.e.'], pagesize, batch)
         pdf.savefig()
 
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=pagesize)
@@ -698,14 +702,16 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             cam = CameraDisplay(engineering_geom, event_fraction, ax=axes[i, 0],
                                 norm='lin', title=titles[i])
             cam.add_colorbar(ax=axes[i, 0])
-            cam.show()
+            if not batch:
+                cam.show()
             camlog = CameraDisplay(engineering_geom, event_fraction,
                                    ax=axes[i, 1], norm='log', title=titles[i])
             camlog.add_colorbar(ax=axes[i, 1])
             # lines below needed to get all camera displays of equal size:
             axes[i, 0].set_xlim((axes[0, 0].get_xlim()))
             axes[i, 1].set_xlim((axes[0, 0].get_xlim()))
-            cam.show()
+            if not batch:
+                cam.show()
             # select pixels which are not on the edge of the camera:
             pix_inside = np.array([len(neig) == 6 for neig in geom.neighbors])
             # histogram the fraction of image cogs contained in those inner
@@ -714,39 +720,39 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             gt0 = event_fraction > 0
             axes[i, 2].set_xscale('log')
 
-            nbins = 1001;
+            nbins = 1001
             epb = (events_per_pix[pix_inside & gt0].max() -
-                   events_per_pix[pix_inside & gt0].min()) / (nbins-1)
-            epb = int(epb+1.)
+                   events_per_pix[pix_inside & gt0].min()) / (nbins - 1)
+            epb = int(epb + 1.)
             # make sure the same number of integers in each bin (otherwise we
-            # will get "spikes" in the Poisson distributiopn later.number of
+            # will get "spikes" in the Poisson distribution later.number of
             # bins has to be large to achieve reasonable bin width with linear
             # binning, needed to avoid the spikes.
-            xmin = events_per_pix[pix_inside & gt0].min()-0.5
-            xmax = xmin + (nbins-1)*epb
-            # convert to event fraction:
+            xmin = events_per_pix[pix_inside & gt0].min() - 0.5
+            xmax = xmin + (nbins - 1) * epb
+            #  convert to event fraction:
             xmin /= all_events
             xmax /= all_events
 
-            _, bins, _ = axes[i, 2].\
+            _, bins, _ = axes[i, 2]. \
                 hist(event_fraction[pix_inside & gt0],
                      bins=np.linspace(xmin, xmax, nbins))
-                     #bins=np.logspace(np.log10(xmin), np.log10(xmax), nbins))
+            # bins=np.logspace(np.log10(xmin), np.log10(xmax), nbins))
             # average event content:
-            mu = np.sum(events_per_pix[pix_inside])/pix_inside.sum()
+            mu = np.sum(events_per_pix[pix_inside]) / pix_inside.sum()
             # get distribution of contents according to Poisson, integrating
             # the distribution within the same bins of the histogram above:
-            poiss = np.array([poisson.cdf(x2*all_events, mu) -
-                              poisson.cdf(x1*all_events, mu) for
+            poiss = np.array([poisson.cdf(x2 * all_events, mu) -
+                              poisson.cdf(x1 * all_events, mu) for
                               x1, x2 in zip(bins[:-1], bins[1:])])
             # from probability to number of pixels:
             npixels = poiss * pix_inside.sum()
             # log bin centers:
-            k = np.sqrt(bins[:-1]*bins[1:])
+            k = np.sqrt(bins[:-1] * bins[1:])
             axes[i, 2].plot(k[npixels > 0], npixels[npixels > 0],
                             drawstyle='steps-mid',
                             label='Poisson for uniform density')
-            axes[i, 2].set_ylim(top=1.2*axes[i, 2].get_ylim()[1])
+            axes[i, 2].set_ylim(top=1.2 * axes[i, 2].get_ylim()[1])
             axes[i, 2].legend(loc='best')
             axes[i, 2].set_xlabel('Fraction of events')
             axes[i, 2].set_ylabel('# of pixels (excluding edge pixels)')
@@ -760,11 +766,11 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         for i, hist in enumerate(histos):
             bins = hist_binning.col(hist)[0]
             # normalize bin content by area of the corresponding ring:
-            ringarea = np.pi*(bins[1:]**2-bins[:-1]**2)*u.deg**2
+            ringarea = np.pi * (bins[1:] ** 2 - bins[:-1] ** 2) * u.deg ** 2
 
             axes[i, 0].hist(bins[:-1], bins,
                             weights=np.sum(table_cosmics.col(hist), axis=0) /
-                            ringarea.value, histtype='step')
+                                    ringarea.value, histtype='step')
             axes[i, 0].set_xlabel('distance (deg)')
             axes[i, 0].set_ylabel('events per deg2')
         axes[0, 0].set_title('cog radial distribution')
@@ -904,7 +910,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         fmt = '-'
         if len(subrun_list) == 1:
             fmt = 'o'
-        axes[0, 0].set_ylim(0, num_rings.max()*1.15)
+        axes[0, 0].set_ylim(0, num_rings.max() * 1.15)
         axes[0, 0].plot(subrun_list, num_rings, fmt, label='all rings in files')
         axes[0, 0].plot(subrun_list, num_contained_rings, fmt,
                         label='contained rings')
@@ -913,7 +919,7 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
 
         muon_rate = num_rings / elapsed_t
         contained_muon_rate = num_contained_rings / elapsed_t
-        axes[0, 1].set_ylim(0, muon_rate.max()*1.15)
+        axes[0, 1].set_ylim(0, muon_rate.max() * 1.15)
         axes[0, 1].plot(subrun_list, muon_rate, fmt, label='all rings in files')
         axes[0, 1].plot(subrun_list, contained_muon_rate, fmt,
                         label='contained rings')
@@ -923,16 +929,16 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
             axes[0, j].set_xlabel('subrun index')
         axes[1, 0].hist(muons_table['ring_containment'],
                         bins=np.linspace(0., 1., 51),
-                        weights=np.ones(len(muons_table))/num_rings.sum())
+                        weights=np.ones(len(muons_table)) / num_rings.sum())
         axes[1, 0].set_xlabel('ring containment')
         binning = np.linspace(0., 1., 31)
         axes[1, 1].hist(muons_table['ring_completeness'],
                         bins=binning, histtype='step',
-                        weights=np.ones(len(muons_table))/num_rings.sum(),
+                        weights=np.ones(len(muons_table)) / num_rings.sum(),
                         label='all rings in files')
         axes[1, 1].hist(contained_muons['ring_completeness'], bins=binning,
                         histtype='step',
-                        weights=np.ones(len(contained_muons))/num_rings.sum(),
+                        weights=np.ones(len(contained_muons)) / num_rings.sum(),
                         label='contained rings')
         axes[1, 1].set_xlabel('ring completeness')
         axes[1, 1].legend(loc='best')
@@ -944,13 +950,13 @@ def plot_datacheck(datacheck_filename, out_path=None, muons_dir=None):
         fig.suptitle('MUON RINGS with containment = 1', fontsize='xx-large')
         fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.97],
                          pad=3.0, h_pad=3.0, w_pad=2.0)
-        axes[0, 0].hist(np.sqrt(contained_muons['ring_center_x']**2. +
-                                contained_muons['ring_center_y']**2.),
+        axes[0, 0].hist(np.sqrt(contained_muons['ring_center_x'] ** 2. +
+                                contained_muons['ring_center_y'] ** 2.),
                         bins=np.linspace(0., 2., 51))
         axes[0, 0].set_xlabel('ring center, distance from camera center (m)')
         axes[0, 0].set_ylabel('number of rings')
         axes[1, 0].plot(contained_muons['impact_parameter'],
-                           contained_muons['ring_completeness'], 'x', alpha=0.5)
+                        contained_muons['ring_completeness'], 'x', alpha=0.5)
         axes[1, 0].set_xlabel('reconstructed impact parameter (m)')
         axes[1, 0].set_ylabel('ring completeness')
         axes[0, 1].plot(contained_muons['ring_radius'],
@@ -1047,10 +1053,10 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
     trig_types = np.unique(tt[:, 0])
     num_triggers = np.array([(tt[:, 1][tt[:, 0] == trig]).sum()
                              for trig in trig_types])
-    x = np.arange(2+len(trig_types))
+    x = np.arange(2 + len(trig_types))
     # for better display, leave some space on the sides of the bars:
     y = np.append([0], np.append(num_triggers, [0]))
-    labels = ['']+[str(i) for i in trig_types]+['']
+    labels = [''] + [str(i) for i in trig_types] + ['']
     width = 0.3
     axes.bar(x, y, width)
     axes.set_xticks(x)
@@ -1060,10 +1066,11 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
     axes.set_ylabel('number of events')
 
 
-def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
+def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False, norm='lin'):
     """
     Parameters
     ----------
+    batch: bool, run in batch mode
     table:  python table containing pixel-wise information to be displayed
     camgeom: camera geometry
     columns: list of 2 strings, columns of 'table', first one is the mean and
@@ -1106,14 +1113,16 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, norm='lin'):
     cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
                         title=labels[0])
     cam.add_colorbar(ax=axes[0, 0])
-    cam.show()
+    if not batch:
+        cam.show()
     cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0], norm=norm,
                         title=labels[1])
     cam.add_colorbar(ax=axes[1, 0])
     # line below needed to get the top and bottom camera displays of equal size:
     axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
-    cam.show()
-    # plot mean vs. pixe_id and as histogram:
+    if not batch:
+        cam.show()
+    # plot mean vs. pixel_id and as histogram:
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
     axes[0, 1].set_ylabel(labels[0])
@@ -1170,7 +1179,7 @@ def merge_dl1datacheck_files(file_list):
 
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
-    # get run number and build the name of the merged file:
+    #  get run number and build the name of the merged file:
     file = parse_datacheck_dl1_filename(os.path.basename(first_file_name))
     merged_filename = run_to_datacheck_dl1_filename(file.tel_id, file.run,
                                                     None, None)
@@ -1231,7 +1240,7 @@ def merge_dl1datacheck_files(file_list):
                                str(filename))
 
         cosmics.append(file.root.dl1datacheck.cosmics[:])
-        file. close()
+        file.close()
 
     merged_file.close()
 

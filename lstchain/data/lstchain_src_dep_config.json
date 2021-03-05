@@ -63,7 +63,6 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "n_islands",
     "dist"
   ],
 
@@ -76,7 +75,6 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "n_islands",
     "log_reco_energy",
     "dist"
   ],
@@ -86,6 +84,9 @@
   "custom_calibration": false,
   "write_pe_image": false,
   "mc_image_scaling_factor": 1,
+  "CameraCalibrator": {
+    "apply_waveform_time_shift": false
+  },
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},
@@ -106,6 +107,12 @@
   "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
+
+  "observation_mode": "wobble",
+  "n_off_wobble": 3,
+  "source_name": "Crab Nebula",
+  "source_ra":83.63308333,
+  "source_dec":22.0145,
 
   "volume_reducer":{
     "algorithm": null,

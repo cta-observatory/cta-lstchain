@@ -42,10 +42,10 @@ setup(
     version=version,
     packages=find_packages(),
     install_requires=[
-        "astropy~=4.0,>=4.0.2",
-        'ctapipe~=0.8.0',
+        "astropy~=4.2",
+        'ctapipe>=0.10.3',
         'ctaplot~=0.5.5',
-        "eventio>=1.1.1,<2.0.0a0",  # at least 1.1.1, but not 2
+        "eventio>=1.5.1,<2.0.0a0",  # at least 1.1.1, but not 2
         'gammapy>=0.18',
         'h5py',
         'joblib',
@@ -58,12 +58,15 @@ setup(
         'seaborn',
         'scikit-learn',
         'tables',
+        'toml',
         'traitlets',
         'iminuit~=1.5',
     ],
     package_data={
-        'lstchain': ['data/lstchain_standard_config.json',
-                     'resources/LST_pixid_to_cluster.txt'],
+        'lstchain': [
+            'data/lstchain_standard_config.json',
+            'resources/LST_pixid_to_cluster.txt',
+        ],
     },
     tests_require=[
         'pytest',

@@ -6,7 +6,7 @@ from numba import jit, njit, prange
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import ImageExtractor
-
+from ctapipe.containers import EventType
 
 __all__ = ['TimeCorrectionCalculate']
 
@@ -102,7 +102,8 @@ class TimeCorrectionCalculate(Component):
         ----------
         event : `ctapipe` event-container
         """
-        if event.r1.tel[self.tel_id].trigger_type == 1:
+
+        if event.trigger.event_type == EventType.FLATFIELD:
             for nr_module in prange(0, n_modules):
                 self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
 

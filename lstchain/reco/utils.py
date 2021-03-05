@@ -31,7 +31,10 @@ __all__ = [
     'camera_to_altaz',
     'cartesian_to_polar',
     'clip_alt',
+    'compute_alpha',
+    'compute_theta2',
     'expand_tel_list',
+    'extract_source_position',
     'filter_events',
     'get_event_pos_in_camera',
     'impute_pointing',
@@ -40,21 +43,103 @@ __all__ = [
     'predict_source_position_in_camera',
     'radec_to_camera',
     'reco_source_position_sky',
+    'rotate',
     'sky_to_camera',
     'source_dx_dy',
     'source_side',
-    'unix_tai_to_time',
 ]
 
 # position of the LST1
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 obstime = Time('2018-11-01T02:00')
 horizon_frame = AltAz(location=location, obstime=obstime)
-UCTS_EPOCH = Time('1970-01-01T00:00:00', scale='tai', format='isot')
-INVALID_TIME = UCTS_EPOCH
 
 
 log = logging.getLogger(__name__)
+def rotate(flat_object, degree=0, origin=(0, 0)):
+    """
+    Rotate 2D object around given axle
+
+    Parameters:
+    -----------
+    array-like flat_object: 2D object to rotate
+    tuple origin: rotation axle coordinates
+    int degree: rotation angle in degrees
+
+    Returns:
+    --------
+    NDArray with new coordinates
+    """
+    angle = np.deg2rad(degree)
+    rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                                [np.sin(angle), np.cos(angle)]])
+    rotation_axis_coordinates = np.asarray(origin)
+    res = [(rotation_matrix @ (point.T-rotation_axis_coordinates.T) +
+                       rotation_axis_coordinates.T).T for point in np.atleast_2d(flat_object)]
+    return res
+
+
+def extract_source_position(data, observed_source_name, equivalent_focal_length = 28*u.m):
+    """
+    Extract source position from data
+
+    Parameters:
+    -----------
+    pandas.DataFrame data: input data
+    str observed_source_name: Name of the observed source
+    astropy.units.m equivalent_focal_length: Equivalent focal length of a telescope
+
+    Returns:
+    --------
+    2D array of coordinates of the source in form [(x),(y)] in astropy.units.m
+    """
+    observed_source = SkyCoord.from_name(observed_source_name)
+    obstime = pd.to_datetime(data['dragon_time'], unit='s')
+    pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
+    pointing_az = u.Quantity(data['az_tel'], u.rad, copy=False)
+    source_pos_camera = radec_to_camera(observed_source, obstime,
+                                        pointing_alt, pointing_az, focal=equivalent_focal_length)
+    source_position = [source_pos_camera.x, source_pos_camera.y]
+    return source_position
+
+
+def compute_theta2(data, source_position, conversion_factor=2.0):
+    """
+    Computes a square of theta (angle from z-axis) from camera frame coordinates
+
+    Parameters:
+    -----------
+    pandas.DataFrame data: Input data
+    2D array (x,y) source_position: Observed source position in astropy.units.m
+    float conversion_factor: Conversion factor (default 0.1/0.05 deg/m)
+
+    Returns:
+    -------
+    Array with `theta2` values
+    """
+    reco_src_x = np.array(data['reco_src_x']) * u.m
+    reco_src_y = np.array(data['reco_src_y']) * u.m
+    return conversion_factor**2 * ((source_position[0] - reco_src_x)**2 +
+                                   (source_position[1] - reco_src_y)**2)
+
+
+def compute_alpha(data):
+    """
+    Computes the angle between the shower major axis and polar angle of the shower centroid
+
+    Parameters:
+    -----------
+    pandas.DataFrame data: Input data
+
+    Returns:
+    --------
+    Array with `alpha` values
+    """
+    # phi and psi range [-np.pi, +np.pi]
+    alpha = np.mod(data['phi'] - data['psi'], np.pi)  # alpha in [0, np.pi]
+    alpha = np.minimum(np.pi - alpha, alpha)  # put alpha in [0, np.pi/2]
+
+    return np.rad2deg(alpha)
 
 
 def alt_to_theta(alt):
@@ -164,7 +249,7 @@ def get_event_pos_in_camera(event, tel):
     Return the position of the source in the camera frame
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     tel: `ctapipe.instruement.telescope.TelescopeDescription`
 
     Returns
@@ -526,23 +611,3 @@ def clip_alt(alt):
     to keep astropy happy
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
-
-
-def unix_tai_to_time(timestamp):
-    """
-    Create an astropy.Time object for timestamps in unix tai format.
-    Unix tai format mean seconds since 1970-01-01T00:00 TAI as opposed
-    to 1970-01-01T00:00 UTC for the usual unix timestamps.
-    """
-    scalar = np.isscalar(timestamp)
-
-    timestamp = u.Quantity(timestamp, u.s, ndmin=1)
-    invalid = ~np.isfinite(timestamp)
-    timestamp[invalid] = 0
-
-    t = UCTS_EPOCH + timestamp
-
-    if scalar:
-        return t[0]
-
-    return t

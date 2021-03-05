@@ -23,20 +23,17 @@ from ctapipe.image import (
 )
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.instrument import OpticsDescription
-from ctapipe.io import event_source, HDF5TableWriter
+from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
-
+from ctapipe.calib.camera import CameraCalibrator
+from ctapipe.containers import EventType
 from . import disp
 from . import utils
 from .utils import sky_to_camera
-from .utils import unix_tai_to_time
 from .volume_reducer import apply_volume_reduction
 from ..calib.camera import lst_calibration, load_calibrator_from_config
-from ..calib.camera.calib import load_gain_selector_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..calib.camera.calibrator import LSTCameraCalibrator
-from ..calib.camera.r0 import LSTR0Corrections
 from ..datachecks.dl1_checker import check_dl1
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -59,7 +56,6 @@ from ..io.io import add_column_table
 from ..io.io import write_array_info_08
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-from ..pointing import PointingPosition
 from ..io.io import dl1_params_lstcam_key
 
 logger = logging.getLogger(__name__)
@@ -178,10 +174,10 @@ def r0_to_dl1(
     calibration_path=None,
     time_calibration_path=None,
     pointing_file_path=None,
-    ucts_t0_dragon=math.nan,
-    dragon_counter0=math.nan,
-    ucts_t0_tib=math.nan,
-    tib_counter0=math.nan
+    ucts_t0_dragon=None,
+    dragon_counter0=None,
+    ucts_t0_tib=None,
+    tib_counter0=None,
 ):
     """
     Chain r0 to dl1
@@ -208,6 +204,7 @@ def r0_to_dl1(
     -------
 
     """
+
     if output_filename is None:
         try:
             run = parse_r0_filename(input_filename)
@@ -221,17 +218,36 @@ def r0_to_dl1(
     config = replace_config(standard_config, custom_config)
 
     custom_calibration = config["custom_calibration"]
-    gain_selector = load_gain_selector_from_config(config)
+
+    source_config = {
+        "EventSource": {
+            "allowed_tels": config["allowed_tels"],
+            "max_events": config["max_events"],
+        },
+        "LSTEventSource": {
+            "allowed_tels": [1],
+            "calibrate_flatfields_and_pedestals": False,
+            "EventTimeCalculator": {
+                "ucts_t0_dragon": ucts_t0_dragon,
+                "dragon_counter0": dragon_counter0,
+                "ucts_t0_tib": ucts_t0_tib,
+                "tib_counter0": tib_counter0
+            },
+            "PointingSource":{
+                "drive_report_path": pointing_file_path
+            },
+            "LSTR0Corrections":{
+                "drs4_pedestal_path": pedestal_path,
+                "calibration_path": calibration_path,
+                "drs4_time_calibration_path": time_calibration_path,
+            }
+        }
+    }
 
     # FIXME for ctapipe 0.8, str should be removed, as Path is supported
-    source = event_source(str(input_filename))
+    source = EventSource(input_url=input_filename, config=Config(source_config))
     subarray = source.subarray
-
     is_simu = source.is_simulation
-
-    source.allowed_tels = config["allowed_tels"]
-    if config["max_events"] is not None:
-        source.max_events = config["max_events"]
 
     metadata = global_metadata(source)
     write_metadata(metadata, output_filename)
@@ -245,42 +261,23 @@ def r0_to_dl1(
     # Dictionary to store muon ring parameters
     muon_parameters = create_muon_table()
 
+    # all this will be cleaned up in a next PR related to the configuration files
+    r1_dl1_calibrator = CameraCalibrator(
+        image_extractor_type=config['image_extractor'],
+        config=Config(config),
+        subarray=subarray
+    )
+
+
     if not is_simu:
-
-        # TODO : add DRS4 calibration config in config file, read it and pass it here
-        r0_r1_calibrator = LSTR0Corrections(
-            pedestal_path=pedestal_path, tel_id=1,
-        )
-
-        # all this will be cleaned up in a next PR related to the configuration files
-
-        r1_dl1_calibrator = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                time_calibration_path = time_calibration_path,
-                                                extractor_product = config['image_extractor'],
-                                                gain_threshold = Config(config).gain_selector_config['threshold'],
-                                                charge_scale = config['charge_scale'],
-                                                config = Config(config),
-                                                allowed_tels = [1],
-                                                subarray = subarray
-                                                )
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
-        r1_dl1_calibrator_for_muon_rings = LSTCameraCalibrator(calibration_path = calibration_path,
-                                                               time_calibration_path = time_calibration_path,
-                                                               extractor_product = config['image_extractor_for_muons'],
-                                                               gain_threshold = Config(config).gain_selector_config['threshold'],
-                                                               charge_scale=config['charge_scale'],
-                                                               config = Config(config),
-                                                               allowed_tels = [1],
-                                                               subarray = subarray)
-
+        r1_dl1_calibrator_for_muon_rings = CameraCalibrator(image_extractor_type = config['image_extractor_for_muons'],
+                                                            config=Config(config),subarray = subarray)
 
         # Component to process interleaved pedestal and flat-fields
         calib_config = Config(config[config['calibration_product']])
-
-        # set time calibration path for flatfield trailet ()
-        calib_config.FlasherFlatFieldCalculator.time_calibration_path = time_calibration_path
 
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
@@ -293,17 +290,8 @@ def r0_to_dl1(
 
     dl1_container = DL1ParametersContainer()
 
-    if pointing_file_path:
-        # Open drive report
-        pointings = PointingPosition(drive_path=pointing_file_path)
-        drive_data = pointings._read_drive_report()
-
     extra_im = ExtraImageInfo()
     extra_im.prefix = ''  # get rid of the prefix
-
-    # get the first event to write array info and mc header
-    event_iter = iter(source)
-    first_event = next(event_iter)
 
     # Write extra information to the DL1 file
     write_array_info(subarray, output_filename)
@@ -311,9 +299,9 @@ def r0_to_dl1(
 
     if is_simu:
         write_mcheader(
-            first_event.mcheader,
+            source.simulation_config,
             output_filename,
-            obs_id=first_event.index.obs_id,
+            obs_id=source.obs_ids[0],
             filters=filters,
             metadata=metadata,
         )
@@ -352,19 +340,15 @@ def r0_to_dl1(
         writer._h5file.filters = filters
         logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
-        first_valid_ucts = None
-        first_valid_ucts_tib = None
-        previous_ucts_time_unix = []
-        previous_ucts_trigger_type = []
-
-        for i, event in enumerate(chain([first_event],  event_iter)):
+        for i, event in enumerate(source):
 
             if i % 100 == 0:
                 logger.info(i)
 
             event.dl0.prefix = ''
-            event.mc.prefix = 'mc'
             event.trigger.prefix = ''
+            if event.simulation is not None:
+                event.simulation.prefix = 'mc'
 
             dl1_container.reset()
 
@@ -384,28 +368,34 @@ def r0_to_dl1(
 
                     tel_id = calibration_calculator.tel_id
 
+                    #initialize the event monitoring data
+                    event.mon = source.r0_r1_calibrator.mon_data
+
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,
                                            calibration_index,
-                                           r1_dl1_calibrator.mon_data.tel[tel_id],
+                                           event.mon.tel[tel_id],
                                            new_ped=True, new_ff=True)
 
-                # drs4 calibrations
-                r0_r1_calibrator.calibrate(event)
+                # flat-field or pedestal:
+                if ( event.trigger.event_type == EventType.FLATFIELD or
+                     event.trigger.event_type == EventType.SKY_PEDESTAL ):
 
-                # process interleaved events (pedestals, ff, calibration)
-                new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
+                    # process interleaved events (pedestals, ff, calibration)
+                    new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
 
-                # write monitoring containers if updated
-                if new_ped_event or new_ff_event:
-                    write_calibration_data(writer,
-                                       calibration_index,
-                                       event.mon.tel[tel_id],
-                                       new_ped=new_ped_event, new_ff=new_ff_event)
+                    # write monitoring containers if updated
+                    if new_ped_event or new_ff_event:
+                        write_calibration_data(writer,
+                                           calibration_index,
+                                           event.mon.tel[tel_id],
+                                           new_ped=new_ped_event, new_ff=new_ff_event)
 
-                # calibrate and extract image from event
-                r1_dl1_calibrator(event)
+                    # calibrate and gain select the event by hand for DL1
+                    source.r0_r1_calibrator.calibrate(event)
 
+            # create image for all events
+            r1_dl1_calibrator(event)
 
             # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
             # When the last version of the method is implemented, vol. reduction will be done at dl0
@@ -415,7 +405,7 @@ def r0_to_dl1(
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
 
-            for ii, telescope_id in enumerate(event.r0.tels_with_data):
+            for ii, telescope_id in enumerate(event.dl1.tel.keys()):
 
                 dl1_container.reset()
 
@@ -439,13 +429,17 @@ def r0_to_dl1(
                 if is_simu:
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
+                assert event.dl1.tel[telescope_id].image is not None
+
                 try:
-                    get_dl1(event,
-                            subarray,
-                            telescope_id,
-                            dl1_container=dl1_container,
-                            custom_config=config,
-                            use_main_island=True)
+                    get_dl1(
+                        event,
+                        subarray,
+                        telescope_id,
+                        dl1_container=dl1_container,
+                        custom_config=config,
+                        use_main_island=True,
+                    )
 
                 except HillasParameterizationError:
                     logging.exception(
@@ -453,192 +447,24 @@ def r0_to_dl1(
                     )
 
                 if not is_simu:
-                    # GPS + WRS + UCTS is now working in its nominal configuration.
-                    # These TS are stored into ucts_time container.
-                    # TS can be alternatively calculated from the TIB and
-                    # Dragon modules counters based on the first valid UCTS TS
-                    # as the reference point. For the time being, the three TS
-                    # are stored in the DL1 files for checking purposes.
+                    dl1_container.ucts_time = 0
+                    # convert Time to unix timestamp in (UTC) to keep compatibility
+                    # with older lstchain
+                    # FIXME: just keep it as time, table writer and reader handle it
+                    dl1_container.dragon_time = event.trigger.time.unix
+                    dl1_container.tib_time = 0
 
-                    module_id = 82  # Get counters from the central Dragon module
-
-                    if math.isnan(ucts_t0_dragon) and math.isnan(dragon_counter0) \
-                            and math.isnan(ucts_t0_tib) and math.isnan(tib_counter0):
-                        # Dragon/TIB timestamps not based on a valid absolute reference timestamp
-
-                        dragon_time = (
-                                event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
-                        )
-
-                        tib_time = (
-                                event.lst.tel[telescope_id].svc.date +
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
-                        )
-
-                        if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
-                            # UCTS presence flag is OK
-                            ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
-
-                            if first_valid_ucts is None:
-                                first_valid_ucts = ucts_time
-
-                                initial_dragon_counter = (
-                                        event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                        event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
-                                )
-                                logger.warning(
-                                    f"Dragon timestamps not based on a valid absolute reference timestamp. "
-                                    f"Consider using the following initial values \n"
-                                    f"Event ID: {event.index.event_id}, "
-                                    f"First valid UCTS timestamp: {first_valid_ucts:.9f} s, "
-                                    f"corresponding Dragon counter {initial_dragon_counter:.9f} s"
-                                )
-
-                            if event.lst.tel[telescope_id].evt.extdevices_presence & 1 \
-                                    and first_valid_ucts_tib is None:
-                                # Both TIB and UCTS presence flags are OK
-                                first_valid_ucts_tib = ucts_time
-
-                                initial_tib_counter = (
-                                        event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                        event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
-                                )
-                                logger.warning(
-                                    f"TIB timestamps not based on a valid absolute reference timestamp. "
-                                    f"Consider using the following initial values \n"
-                                    f"Event ID: {event.index.event_id}, UCTS timestamp corresponding to "
-                                    f"the first valid TIB counter: {first_valid_ucts_tib:.9f} s, "
-                                    f"corresponding TIB counter {initial_tib_counter:.9f} s"
-                                )
-                        else:
-                            ucts_time = math.nan
-
-                    else:
-                        # Dragon/TIB timestamps based on a valid absolute reference UCTS timestamp
-                        dragon_time = (
-                                (ucts_t0_dragon - dragon_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.pps_counter[module_id] +
-                                event.lst.tel[telescope_id].evt.tenMHz_counter[module_id] * 10 ** (-7)
-                        )
-
-                        tib_time = (
-                                (ucts_t0_tib - tib_counter0) * 1e-9 +  # secs
-                                event.lst.tel[telescope_id].evt.tib_pps_counter +
-                                event.lst.tel[telescope_id].evt.tib_tenMHz_counter * 10 ** (-7)
-                        )
-
-                        if event.lst.tel[telescope_id].evt.extdevices_presence & 2:
-                            # UCTS presence flag is OK
-                            ucts_time = event.lst.tel[telescope_id].evt.ucts_timestamp * 1e-9  # secs
-                            if first_valid_ucts is None:
-                                first_valid_ucts = ucts_time
-                            if first_valid_ucts_tib is None \
-                                    and event.lst.tel[telescope_id].evt.extdevices_presence & 1:
-                                first_valid_ucts_tib = ucts_time
-                        else:
-                            ucts_time = math.nan
-
-                    # FIXME: directly use unix_tai format whenever astropy v4.1 is out
-                    ucts_time_utc = unix_tai_to_time(ucts_time)
-                    dragon_time_utc = unix_tai_to_time(dragon_time)
-                    tib_time_utc = unix_tai_to_time(tib_time)
-
-                    dl1_container.ucts_time = ucts_time_utc.unix
-                    dl1_container.dragon_time = dragon_time_utc.unix
-                    dl1_container.tib_time = tib_time_utc.unix
-
-                    # Until the TIB trigger_type is fully reliable, we also add
-                    # the ucts_trigger_type to the data
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
+                    dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
+                else:
+                    dl1_container.trigger_type = event.trigger.event_type
 
-                    # Due to a DAQ bug, sometimes there are 'jumps' in the
-                    # UCTS info in the raw files. After one such jump,
-                    # all the UCTS info attached to an event actually
-                    # corresponds to the next event. This one-event
-                    # shift stays like that until there is another jump
-                    # (then it becomes a 2-event shift and so on). We will
-                    # keep track of those jumps, by storing the UCTS info
-                    # of the previously read events in the list
-                    # previous_ucts_time_unix. The list has one element
-                    # for each of the jumps, so if there has been just
-                    # one jump we have the UCTS info of the previous
-                    # event only (which truly corresponds to the
-                    # current event). If there have been n jumps, we keep
-                    # the past n events. The info to be used for
-                    # the current event is always the first element of
-                    # the array, previous_ucts_time_unix[0], whereas the
-                    # current event's (wrong) ucts info is placed last in
-                    # the array. Each time the first array element is
-                    # used, it is removed and the rest move up in the
-                    # list. We have another similar array for the trigger
-                    # types, previous_ucts_trigger_type
-                    #
-                    if len(previous_ucts_time_unix) > 0:
-                        # keep the time & trigger type read for this
-                        # event (which really correspond to a later event):
-                        current_ucts_time = dl1_container.ucts_time
-                        current_ucts_trigger_type = dl1_container.ucts_trigger_type
-                        # put in dl1_container the proper time for this
-                        # event:
-                        dl1_container.ucts_time = \
-                            previous_ucts_time_unix.pop(0)
-                        dl1_container.ucts_trigger_type = \
-                            previous_ucts_trigger_type.pop(0)
+                dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
+                dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
 
-                        # now put the current values last in the list,
-                        # for later use:
-                        previous_ucts_time_unix.append(current_ucts_time)
-                        previous_ucts_trigger_type.\
-                            append(current_ucts_trigger_type)
 
-                    # Now check consistency of UCTS and Dragon times. If
-                    # UCTS time is ahead of Dragon time by more than
-                    # 1.e-6 s, most likely the UCTS info has been
-                    # lost for this event (i.e. there has been another
-                    # 'jump' of those described above), and the one we have
-                    # actually corresponds to the next event. So we put it
-                    # back first in the list, to assign it to the next
-                    # event. We also move the other elements down in the
-                    # list,  which will now be one element longer.
-                    # We leave the current event with the same time,
-                    # which will be approximately correct (depending on
-                    # event rate), and set its ucts_trigger_type to -1,
-                    # which will tell us a jump happened and hence this
-                    # event does not have proper UCTS info.
-
-                    if dl1_container.ucts_time - dl1_container.dragon_time > 1.e-6:
-                        previous_ucts_time_unix.\
-                            insert( 0, dl1_container.ucts_time)
-                        previous_ucts_trigger_type.\
-                            insert(0, dl1_container.ucts_trigger_type)
-                        dl1_container.ucts_trigger_type = -1
-
-                    # Select the timestamps to be used for pointing interpolation
-                    if config['timestamps_pointing'] == "ucts":
-                        event_timestamps = dl1_container.ucts_time
-                    elif config['timestamps_pointing'] == "dragon":
-                        event_timestamps = dragon_time_utc.unix
-                    elif config['timestamps_pointing'] == "tib":
-                        event_timestamps = tib_time_utc.unix
-                    else:
-                        raise ValueError("The timestamps_pointing option is not a valid one. \
-                                         Try ucts (default), dragon or tib.")
-
-                    if pointing_file_path and event_timestamps > 0:
-                        azimuth, altitude = pointings.cal_pointingposition(event_timestamps, drive_data)
-                        event.pointing.tel[telescope_id].azimuth = azimuth
-                        event.pointing.tel[telescope_id].altitude = altitude
-                        dl1_container.az_tel = azimuth
-                        dl1_container.alt_tel = altitude
-                    else:
-                        dl1_container.az_tel = u.Quantity(np.nan, u.rad)
-                        dl1_container.alt_tel = u.Quantity(np.nan, u.rad)
-
-                dl1_container.trigger_time = event.r0.tel[telescope_id].trigger_time
-                dl1_container.trigger_type = event.r0.tel[telescope_id].trigger_type
+                dl1_container.trigger_time = event.trigger.time.unix
+                dl1_container.event_type = event.trigger.event_type
 
                 # FIXME: no need to read telescope characteristics like foclen for every event!
                 foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
@@ -669,14 +495,14 @@ def r0_to_dl1(
                     if tag_pix_thr(image):
 
                         # re-calibrate r1 to obtain new dl1, using a more adequate pulse integrator for muon rings
-                        numsamples = event.r1.tel[telescope_id].waveform.shape[2]  # not necessarily the same as in r0!
+                        numsamples = event.r1.tel[telescope_id].waveform.shape[1]  # not necessarily the same as in r0!
                         bad_pixels_hg = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                         bad_pixels_lg = event.mon.tel[telescope_id].calibration.unusable_pixels[1]
                         # Now set to 0 all samples in unreliable pixels. Important for global peak
                         # integrator in case of crazy pixels!  TBD: can this be done in a simpler
                         # way?
-                        bad_waveform = np.array(([np.transpose(np.array(numsamples*[bad_pixels_hg])),
-                                                  np.transpose(np.array(numsamples*[bad_pixels_lg]))]))
+                        bad_pixels = bad_pixels_hg | bad_pixels_lg
+                        bad_waveform = np.transpose(np.array(numsamples*[bad_pixels]))
 
                         # print('hg bad pixels:',np.where(bad_pixels_hg))
                         # print('lg bad pixels:',np.where(bad_pixels_lg))
@@ -708,19 +534,27 @@ def r0_to_dl1(
                             #                      mirror_area, True, './')
                             #           (test) plot muon rings as png files
 
-                            # Now we want to obtain the waveform sample (in HG and LG) at which the ring light peaks:
-                            bright_pixels_waveforms = event.r1.tel[telescope_id].waveform[:, image > min_pe_for_muon_t_calc, :]
-                            stacked_waveforms = np.sum(bright_pixels_waveforms, axis=-2)
+                            # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:
+                            bright_pixels = image > min_pe_for_muon_t_calc
+                            selected_gain = event.r1.tel[telescope_id].selected_gain_channel
+                            mask_hg = bright_pixels & (selected_gain == 0)
+                            mask_lg = bright_pixels & (selected_gain == 1)
+
+                            bright_pixels_waveforms_hg = event.r1.tel[telescope_id].waveform[mask_hg, :]
+                            bright_pixels_waveforms_lg = event.r1.tel[telescope_id].waveform[mask_lg, :]
+                            stacked_waveforms_hg = np.sum(bright_pixels_waveforms_hg, axis=0)
+                            stacked_waveforms_lg = np.sum(bright_pixels_waveforms_lg, axis=0)
+
                             # stacked waveforms from all bright pixels; shape (ngains, nsamples)
-                            hg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[0]
-                            lg_peak_sample = np.argmax(stacked_waveforms, axis=-1)[1]
+                            hg_peak_sample = np.argmax(stacked_waveforms_hg, axis=-1)
+                            lg_peak_sample = np.argmax(stacked_waveforms_lg, axis=-1)
 
                         if good_ring:
                             fill_muon_event(-1,
                                             muon_parameters,
                                             good_ring,
                                             event.index.event_id,
-                                            dragon_time,
+                                            dl1_container.dragon_time,
                                             muonintensityparam,
                                             dist_mask,
                                             muonringparam,
@@ -732,13 +566,17 @@ def r0_to_dl1(
                                             hg_peak_sample, lg_peak_sample)
 
                 # writes mc information per telescope, including photo electron image
-                if is_simu \
-                        and (event.mc.tel[telescope_id].true_image > 0).any() \
-                        and config['write_pe_image']:
-                    event.mc.tel[telescope_id].prefix = ''
-                    writer.write(table_name=f'simulation/{tel_name}',
-                                 containers=[event.mc.tel[telescope_id], extra_im]
-                                 )
+                if (
+                    is_simu
+                    and config['write_pe_image']
+                    and event.simulation.tel[telescope_id].true_image is not None
+                    and event.simulation.tel[telescope_id].true_image.any()
+                ):
+                    event.simulation.tel[telescope_id].prefix = ''
+                    writer.write(
+                        table_name=f'simulation/{tel_name}',
+                        containers=[event.simulation.tel[telescope_id], extra_im]
+                    )
 
         if not is_simu:
             # at the end of event loop ask calculation of remaining interleaved statistics
@@ -748,12 +586,6 @@ def r0_to_dl1(
                                    calibration_index,
                                    event.mon.tel[tel_id],
                                    new_ped=new_ped, new_ff=new_ff)
-
-    if first_valid_ucts is None:
-        logger.warning("Not valid UCTS timestamp found")
-
-    if first_valid_ucts_tib is None:
-        logger.warning("Not valid TIB counter value found")
 
     if is_simu:
         # Reconstruct source position from disp for all events and write the result in the output file
@@ -832,7 +664,7 @@ def rescale_dl1_charge(event, scaling_factor):
 
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     scaling_factor: float
     """
 

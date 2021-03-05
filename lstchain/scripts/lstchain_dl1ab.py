@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+
+"""
+Read a HDF5 DL1 file, recompute parameters based on calibrated images and 
+pulse times and a config file and write a new HDF5 file
+Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, 
+intercept, time_gradient
+
+- Input: DL1 data file.
+- Output: DL1 data file.
+
+Usage: 
+
+$> python lstchain_dl1ab.py
+--input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
+
+"""
+
+import argparse
+import logging
+from distutils.util import strtobool
+
+import astropy.units as u
+import numpy as np
+import tables
+from astropy.table import Table
+from ctapipe.containers import HillasParametersContainer
+from ctapipe.image import hillas_parameters
+from ctapipe.image.cleaning import tailcuts_clean
+from ctapipe.image.morphology import number_of_islands
+from ctapipe.instrument import CameraGeometry, OpticsDescription
+
+from lstchain.io import get_dataset_keys, auto_merge_h5files
+from lstchain.io.config import get_standard_config
+from lstchain.io.config import read_configuration_file, replace_config
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.reco.disp import disp
+
+log = logging.getLogger(__name__)
+
+parser = argparse.ArgumentParser(
+    description="Recompute DL1b parameters from a DL1a file")
+
+# Required arguments
+parser.add_argument('--input-file', '-f', action='store', type=str,
+                    dest='input_file',
+                    help='path to the DL1a file ',
+                    default=None, required=True)
+
+parser.add_argument('--output-file', '-o', action='store', type=str,
+                    dest='output_file',
+                    help='key for the table of new parameters',
+                    default=None, required=True)
+# Optional arguments
+parser.add_argument('--config', '-c', action='store', type=str,
+                    dest='config_file',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied',
+                    default=None
+                    )
+
+parser.add_argument('--no-image', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='noimage',
+                    help='Boolean. True to remove the images in output file',
+                    default=False)
+
+args = parser.parse_args()
+
+
+def main():
+    std_config = get_standard_config()
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
+
+    if args.config_file is not None:
+        config = replace_config(std_config, read_configuration_file(args.config_file))
+    else:
+        config = std_config
+
+    log.info(f"Tailcut config used: {config['tailcut']}")
+
+    foclen = OpticsDescription.from_name('LST').equivalent_focal_length
+    cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
+    camera_geom = CameraGeometry.from_table(cam_table)
+
+    dl1_container = DL1ParametersContainer()
+    parameters_to_update = [
+        'intensity',
+        'x',
+        'y',
+        'r',
+        'phi',
+        'length',
+        'width',
+        'psi',
+        'skewness',
+        'kurtosis',
+        'concentration_cog',
+        'concentration_core',
+        'concentration_pixel',
+        'leakage_intensity_width_1',
+        'leakage_intensity_width_2',
+        'leakage_pixels_width_1',
+        'leakage_pixels_width_2',
+        'n_islands',
+        'intercept',
+        'time_gradient',
+        'n_pixels',
+        'wl',
+        'log_intensity'
+    ]
+
+    nodes_keys = get_dataset_keys(args.input_file)
+    if args.noimage:
+        nodes_keys.remove(dl1_images_lstcam_key)
+
+    auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
+
+    with tables.open_file(args.input_file, mode='r') as input:
+        image_table = input.root[dl1_images_lstcam_key]
+        dl1_params_input = input.root[dl1_params_lstcam_key].colnames
+        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        if set(dl1_params_input).intersection(disp_params):
+            parameters_to_update.extend(disp_params)
+
+        with tables.open_file(args.output_file, mode='a') as output:
+            params = output.root[dl1_params_lstcam_key].read()
+            for ii, row in enumerate(image_table):
+
+                dl1_container.reset()
+
+                image = row['image']
+                peak_time = row['peak_time']
+
+                signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
+
+                n_pixels = np.count_nonzero(signal_pixels)
+                if n_pixels > 0:
+                    num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    n_pixels_on_island = np.bincount(island_labels.astype(np.int))
+                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    max_island_label = np.argmax(n_pixels_on_island)
+                    signal_pixels[island_labels != max_island_label] = False
+
+                    hillas = hillas_parameters(camera_geom[signal_pixels], image[signal_pixels])
+
+                    dl1_container.fill_hillas(hillas)
+                    dl1_container.set_timing_features(camera_geom[signal_pixels],
+                                                      image[signal_pixels],
+                                                      peak_time[signal_pixels],
+                                                      hillas)
+
+                    dl1_container.set_leakage(camera_geom, image, signal_pixels)
+                    dl1_container.set_concentration(camera_geom, image, hillas)
+                    dl1_container.n_islands = num_islands
+                    dl1_container.wl = dl1_container.width / dl1_container.length
+                    dl1_container.n_pixels = n_pixels
+                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                    dl1_container.width = width
+                    dl1_container.length = length
+                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
+
+                if set(dl1_params_input).intersection(disp_params):
+                    disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
+                        dl1_container['x'].to_value(u.m),
+                        dl1_container['y'].to_value(u.m),
+                        params['src_x'][ii],
+                        params['src_y'][ii]
+                    )
+
+                    dl1_container['disp_dx'] = disp_dx
+                    dl1_container['disp_dy'] = disp_dy
+                    dl1_container['disp_norm'] = disp_norm
+                    dl1_container['disp_angle'] = disp_angle
+                    dl1_container['disp_sign'] = disp_sign
+
+                for p in parameters_to_update:
+                    params[ii][p] = u.Quantity(dl1_container[p]).value
+
+            output.root[dl1_params_lstcam_key][:] = params
+
+
+if __name__ == '__main__':
+    main()

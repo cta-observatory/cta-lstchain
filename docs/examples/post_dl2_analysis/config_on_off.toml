@@ -1,0 +1,30 @@
+[input]
+data_tag = 'v0.5.1_v03'
+columns_to_read = ['alt_tel', 'az_tel', 'dragon_time', 'gammaness', 'intensity', 'leakage2_intensity', 'n_pixels', 'phi', 'psi', 'reco_src_x', 'reco_src_y', 'wl']
+
+[output]
+interactive = false
+directory = '/tmp'
+
+[preselection]
+intensity = [300, 1000000]
+leakage2_intensity = [0.0, 0.2]
+wl = [0.01, 1.0]
+gammaness = [0.9, 1.0]
+n_pixels = [0, 2000]
+
+[analysis]
+type = 'on_off'
+runs_on = [1874, 1875, 1876,  1878, 1879, 1880]
+runs_off = [1877, 1881]
+[analysis.parameters]
+n_points = 4
+[analysis.selection]
+theta2 =  [0.075, 0.5, 2.0] # cut, normalization range min, normalization range max
+alpha = [5.0, 20.0, 80.0] # cut, normalization range min, normalization range max
+
+[plot_style]
+[plot_style.figure]
+figsize = 12
+[plot_style.font]
+size = 20

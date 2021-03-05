@@ -1,14 +1,9 @@
+import os
 import re
 from collections import namedtuple
-import os
 from pathlib import Path
 
-
-Run = namedtuple('Run', 'tel_id run subrun stream')
-# set the default of stream to None,
-# should be replaced by using the `defaults` argument to namedtuple (new in 3.7)
-# when support for python 3.6 is dropped
-Run.__new__.__defaults__ = (None, )
+Run = namedtuple('Run', 'tel_id run subrun stream', defaults=(None, ))
 R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+).fits.fz')
 
 DL1_RE = re.compile(
@@ -16,14 +11,14 @@ DL1_RE = re.compile(
     r'(?:.(\d+))?'       # stream is optional
     r'.Run(\d+)'         # run number
     r'.(\d+)'            # subrun number
-    r'(?:.fits)?'        # fits extension is optional (old files had it)
+    r'(?:.*)'            # allow arbitray stuff between the run part and the extension
     r'.(?:h5|hdf5|hdf)'  # usual extensions for hdf5 files
 )
 DC_DL1_RE = re.compile(
     r'datacheck_dl1_LST-(\d+)'  # tel_id
     r'.Run(\d+)'                # run number
-    r'(?:.(\d+))?'                  # subrun number is optional
-    r'(?:.fits)?'               # fits extension is optional (old files had it)
+    r'(?:.(\d+))?'              # subrun number is optional
+    r'(?:.*)'                   # allow arbitray stuff between the run part and the extension
     r'.(?:h5|hdf5|hdf)'         # usual extensions for hdf5 files
 )
 
@@ -114,6 +109,7 @@ def parse_dl1_filename(filename):
         raise ValueError(f'Filename {filename} does not match pattern {DL1_RE}')
 
     return _parse_match(m)
+
 
 def parse_datacheck_dl1_filename(filename):
     '''

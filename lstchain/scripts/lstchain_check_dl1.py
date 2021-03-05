@@ -52,7 +52,7 @@ optional.add_argument('--output-dir', default='.', type=str,
                       help='Directory where the output files will be written'
                       )
 
-# path for muons .fits files. If not given, it is asssumed that the files are
+# path for muons .fits files. If not given, it is assumed that the files are
 # in the same directory of the input files (either of the dl1 type
 # or of the datacheck_dl1 type)
 optional.add_argument('--muons-dir', default=None, type=str,
@@ -66,6 +66,9 @@ optional.add_argument('--max-cores', default=4, type=int,
                       )
 optional.add_argument('--omit-pdf', action='store_true',
                       help='Do NOT create the data check pdf file'
+                      )
+optional.add_argument('--batch', '-b', action='store_true',
+                      help='Run the script without plotting output'
                       )
 
 args, unknown = parser.parse_known_args()
@@ -99,12 +102,12 @@ def main():
     # output pdf with the check plots (since nothing else can be done with
     # that input, the create_pdf argument is ignored in that case:
     if os.path.basename(filenames[0]).startswith("datacheck_dl1"):
-        plot_datacheck(filenames, args.output_dir, args.muons_dir)
+        plot_datacheck(filenames, args.output_dir, args.batch, args.muons_dir)
         return
 
     # otherwise, do the full analysis to produce the dl1_datacheck h5 file
     # and the associated pdf:
-    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf)
+    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf, args.batch)
 
 
 if __name__ == '__main__':

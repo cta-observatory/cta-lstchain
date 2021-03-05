@@ -32,86 +32,91 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', type=Path,
-                    dest='input_file',
-                    help='Path to the .fits.fz file with the raw events',
-                    default=None, required=True)
+parser.add_argument(
+    '-f', '--input-file', type=Path,
+    help='Path to the .fits.fz file with the raw events',
+    required=True,
+)
 
-parser.add_argument('--output-dir', '-o', type=Path,
-                    dest='output_dir',
-                    help='Path where to store the reco dl1 events',
-                    default='./dl1_data/')
+parser.add_argument(
+    '-o', '--output-dir', type=Path,
+    help='Path where to store the reco dl1 events',
+    default='./dl1_data/'
+)
 
-parser.add_argument('--pedestal-file', '-p', action='store', type=str,
-                    dest='pedestal_file',
-                    help='Path to a pedestal file',
-                    default=None, required=True
-                    )
+parser.add_argument(
+    '-p', '--pedestal-file', '-p', type=Path,
+    dest='pedestal_file',
+    help='Path to a pedestal file',
+    required=True
+)
 
-parser.add_argument('--calibration-file', '--calib', action='store', type=str,
-                    dest='calibration_file',
-                    help='Path to a calibration file',
-                    default=None, required=True
-                    )
+parser.add_argument(
+    '--calibration-file', '--calib', type=Path,
+    help='Path to a calibration file',
+    required=True,
+)
 
-parser.add_argument('--time-calibration-file', '-t', action='store', type=str,
-                    dest='time_calibration_file',
-                    help='Path to a calibration file for pulse time correction',
-                    default=None, required=True
-                    )
+parser.add_argument(
+    '--time-calibration-file', '-t', type=Path,
+    help='Path to a calibration file for pulse time correction',
+    required=True
+)
 
 # Optional arguments
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    '--config', '-c', type=Path,
+    dest='config_file',
+    help='Path to a configuration file. If none is given, a standard configuration is applied',
+)
 
-parser.add_argument('--pointing-file', '--pointing', action='store', type=str,
-                    dest='pointing_file',
-                    help='Path to the Drive log file with the pointing information.',
-                    default=None
-                    )
+parser.add_argument(
+    '--pointing-file', '--pointing', action='store', type=Path,
+    help='Path to the Drive log file with the pointing information.',
+)
 
-parser.add_argument('--ucts-t0-dragon', action='store', type=float,
-                    dest='ucts_t0_dragon',
-                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp. If none is \
-                          passed, the start-of-the-run timestamp is provided, hence \
-                          Dragon timestamp is not reliable.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--ucts-t0-dragon', type=int,
+    help=(
+        'UCTS timestamp in nsecs, unix format and TAI scale of the'
+        ' first event of the run with valid timestamp. If none is'
+        ' passed, the start-of-the-run timestamp is provided, hence'
+        ' Dragon timestamp is not reliable.'
+    ),
+)
 
-parser.add_argument('--dragon-counter0', action='store', type=float,
-                    dest='dragon_counter0',
-                    help='Dragon counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run. To be provided \
-                          along with ucts_t0_dragon.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--dragon-counter0', type=int,
+    help=(
+        'Dragon counter (pps + 10MHz) in nsecs corresponding'
+        ' to the first reliable UCTS of the run. To be provided'
+        ' along with ucts_t0_dragon.'
+    ),
+)
 
-parser.add_argument('--ucts-t0-tib', action='store', type=float,
-                    dest='ucts_t0_tib',
-                    help='UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp. If none is \
-                          passed, the start-of-the-run timestamp is provided, hence \
-                          TIB timestamp is not reliable.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--ucts-t0-tib', type=int,
+    help=(
+        'UCTS timestamp in nsecs, unix format and TAI scale of the'
+        ' first event of the run with valid timestamp. If none is'
+        ' passed, the start-of-the-run timestamp is provided, hence'
+        ' TIB timestamp is not reliable.'
+    ),
+)
 
-parser.add_argument('--tib-counter0', action='store', type=float,
-                    dest='tib_counter0',
-                    help='First valid TIB counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run when TIB is available. \
-                          To be provided along with ucts_t0_tib.',
-                    default="NaN"
-                    )
+parser.add_argument(
+    '--tib-counter0', type=int,
+    help=(
+        'First valid TIB counter (pps + 10MHz) in nsecs corresponding'
+        ' to the first reliable UCTS of the run when TIB is available.'
+        ' To be provided along with ucts_t0_tib.'
+    ),
+)
 
-parser.add_argument('--max-events', '--maxevts', action='store', type=int,
-                    dest='max_events',
-                    help='Maximum number of events to be processed.',
-                    default=int(1e15)
-                    )
+parser.add_argument(
+    '--max-events', type=int,
+    help='Maximum number of events to be processed.',
+)
 
 args = parser.parse_args()
 
@@ -162,6 +167,7 @@ def main():
         ucts_t0_tib=args.ucts_t0_tib,
         tib_counter0=args.tib_counter0
     )
+
 
 
 if __name__ == '__main__':
