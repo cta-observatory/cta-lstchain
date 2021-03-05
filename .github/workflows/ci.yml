@@ -6,7 +6,6 @@ env:
   NUMBA_NUM_THREADS: 1
   MPLBACKEND: Agg
   PYTEST_ADDOPTS: --color=yes
-  CTAPIPE_IO_LST_VERSION: v0.7.0
 
 jobs:
   tests:
@@ -46,7 +45,6 @@ jobs:
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            "git+https://github.com/cta-observatory/ctapipe_io_lst@$CTAPIPE_IO_LST_VERSION" \
             pytest-cov
 
           echo "pip install ."
