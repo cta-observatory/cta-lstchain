@@ -32,7 +32,7 @@ from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.io.config import get_cleaning_parameters
-from lstchain.calib.camera.utils import get_threshold_from_dl1_file
+from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
 
 import sys
