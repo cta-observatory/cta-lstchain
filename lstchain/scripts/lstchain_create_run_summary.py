@@ -91,9 +91,9 @@ def type_of_run(date_path, run_number, n_events=500):
 
     with LSTEventSource(input_url=filename, max_events=n_events) as source:
         n_pedestal_events = sum(
-            1 for event in source if event.trigger.event_type == EventType.SKY_PEDESTAL
+            event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
         )
-        n_sky_events = sum(1 for event in source if event.trigger.event_type == EventType.SUBARRAY)
+        n_sky_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
 
     # FIXME: Do this classification in some other way?
     if n_sky_events / n_events > 0.999:
@@ -182,7 +182,6 @@ def main():
     Initial dragon counter
     Dragon module ID used to take the counter values
     """
-    # TODO: Be able to create file incrementally run-by-run
 
     args = parser.parse_args()
 
@@ -191,14 +190,14 @@ def main():
     list_of_files = get_list_of_files(date_path)
     list_of_run_objects = get_list_of_runs(list_of_files)
     run_numbers, n_subruns = get_runs_and_subruns(list_of_run_objects)
-    #    list_type_of_runs = [type_of_run(run) for run in run_numbers]
+    list_type_of_runs = [type_of_run(date_path, run) for run in run_numbers]
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
 
     run_summary = Table(reference_counters)
     run_summary.add_column(run_numbers, name="run_numbers", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
-    #    run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
-    run_summary.write(args.output_dir / f"RunSummary_{args.date}.csv", format="ascii.csv")
+    run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
+    run_summary.write(args.output_dir / f"RunSummary_{args.date}.csv", format="ascii.ecsv")
 
 
 if __name__ == "__main__":
