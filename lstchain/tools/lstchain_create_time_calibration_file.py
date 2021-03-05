@@ -2,12 +2,9 @@
 Create drs4 time correction coefficients.
 """
 import glob
-from traitlets.config.loader import Config
 
 from ctapipe.core import Provenance, Tool, traits
 from ctapipe.io import EventSource
-from ctapipe_io_lst.event_time import EventTimeCalculator
-from ctapipe_io_lst.calibration import LSTR0Corrections
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 from tqdm.autonotebook import tqdm
 
@@ -36,11 +33,11 @@ class TimeCalibrationHDF5Writer(Tool):
         "glob": "TimeCalibrationHDF5Writer.glob",
         "max-events": "EventSource.max_events",
         "pedestal": "LSTR0Corrections.drs4_pedestal_path",
-        # "dragon-reference-time": "EventTimeCalculator.ucts_t0_dragon",
-        # "dragon-reference-counter": "EventTimeCalculator.dragon_counter0",
+        "dragon-reference-time": "EventTimeCalculator.dragon_reference_time",
+        "dragon-reference-counter": "EventTimeCalculator.dragon_reference_counter",
     }
 
-    classes = [EventSource, LSTR0Corrections, TimeCorrectionCalculate, EventTimeCalculator]
+    classes = [TimeCorrectionCalculate] + traits.classes_with_traits(EventSource)
 
     def __init__(self, **kwargs):
 
