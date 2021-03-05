@@ -122,59 +122,58 @@ def read_counters(run_number):
     """
     pattern = args.R0_PATH / args.date / f"LST-1.*.Run{run_number:05d}.0000.fits.fz"
     try:
-         f = MultiFiles(glob(str(pattern)))
-         first_event = next(f)
+        f = MultiFiles(glob(str(pattern)))
+        first_event = next(f)
 
-         if first_event.event_id != 1:
-             raise ValueError("Must be used on first file streams (subrun)")
+        if first_event.event_id != 1:
+            raise ValueError("Must be used on first file streams (subrun)")
 
-         module_index = np.where(first_event.lstcam.module_status)[0][0]
-         module_id = np.where(f.camera_config.lstcam.expected_modules_id == module_index)[0][0]
-         dragon_counters = first_event.lstcam.counters.view(DRAGON_COUNTERS_DTYPE)
-         dragon_reference_counter = combine_counters(
-             dragon_counters["pps_counter"][module_index],
-             dragon_counters["tenMHz_counter"][module_index],
-         )
+        module_index = np.where(first_event.lstcam.module_status)[0][0]
+        module_id = np.where(f.camera_config.lstcam.expected_modules_id == module_index)[0][0]
+        dragon_counters = first_event.lstcam.counters.view(DRAGON_COUNTERS_DTYPE)
+        dragon_reference_counter = combine_counters(
+            dragon_counters["pps_counter"][module_index],
+            dragon_counters["tenMHz_counter"][module_index],
+        )
 
-         ucts_available = bool(first_event.lstcam.extdevices_presence & 2)
-         run_start = int(round(Time(f.camera_config.date, format="unix").unix_tai)) * int(1e9)
+        ucts_available = bool(first_event.lstcam.extdevices_presence & 2)
+        run_start = int(round(Time(f.camera_config.date, format="unix").unix_tai)) * int(1e9)
 
-         if ucts_available:
-             if int(f.camera_config.lstcam.idaq_version) > 37201:
-                 cdts = first_event.lstcam.cdts_data.view(CDTS_AFTER_37201_DTYPE)
-             else:
-                 cdts = first_event.lstcam.cdts_data.view(CDTS_BEFORE_37201_DTYPE)
+        if ucts_available:
+            if int(f.camera_config.lstcam.idaq_version) > 37201:
+                cdts = first_event.lstcam.cdts_data.view(CDTS_AFTER_37201_DTYPE)
+            else:
+                cdts = first_event.lstcam.cdts_data.view(CDTS_BEFORE_37201_DTYPE)
 
-             ucts_timestamp = cdts["timestamp"][0]
-             dragon_reference_time = ucts_timestamp
-             dragon_reference_source = "ucts"
-         else:
-             ucts_timestamp = -1
-             dragon_reference_time = run_start
-             dragon_reference_source = "run_start"
+            ucts_timestamp = cdts["timestamp"][0]
+            dragon_reference_time = ucts_timestamp
+            dragon_reference_source = "ucts"
+        else:
+            ucts_timestamp = -1
+            dragon_reference_time = run_start
+            dragon_reference_source = "run_start"
 
-         return dict(
-             ucts_timestamp=ucts_timestamp,
-             run_start=run_start,
-             dragon_reference_time=dragon_reference_time,
-             dragon_reference_module_id=module_id,
-             dragon_reference_module_index=module_index,
-             dragon_reference_counter=dragon_reference_counter,
-             dragon_reference_source=dragon_reference_source,
-         )
-    except AttributeError as err:
+        return dict(
+            ucts_timestamp=ucts_timestamp,
+            run_start=run_start,
+            dragon_reference_time=dragon_reference_time,
+            dragon_reference_module_id=module_id,
+            dragon_reference_module_index=module_index,
+            dragon_reference_counter=dragon_reference_counter,
+            dragon_reference_source=dragon_reference_source,
+        )
+    except AttributeError:
         log.error(f"Files {pattern} do not contain events")
 
-        return dict(                                                                                                   
-             ucts_timestamp=-1,                                                                             
-             run_start=-1,                                                                                       
-             dragon_reference_time=-1,                                                               
-             dragon_reference_module_id=-1,                                                                     
-             dragon_reference_module_index=-1,                                                                
-             dragon_reference_counter=-1,                                                         
-             dragon_reference_source=None,                                                           
-         )
-
+        return dict(
+            ucts_timestamp=-1,
+            run_start=-1,
+            dragon_reference_time=-1,
+            dragon_reference_module_id=-1,
+            dragon_reference_module_index=-1,
+            dragon_reference_counter=-1,
+            dragon_reference_source=None,
+        )
 
 
 def main(date):
@@ -196,13 +195,13 @@ def main(date):
     list_of_run_objects = get_list_of_runs(list_of_files)
     run_numbers, n_subruns = get_runs_and_subruns(list_of_run_objects)
     #    list_type_of_runs = [type_of_run(run) for run in run_numbers]
-    dict_run_timestamps = [read_counters(run) for run in run_numbers]
+    reference_counters = [read_counters(run) for run in run_numbers]
 
-    run_summary = Table(dict_run_timestamps)
+    run_summary = Table(reference_counters)
     run_summary.add_column(run_numbers, name="run_numbers", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     #    run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
-    run_summary.write(args.output_dir / f"RunSummary_{date}.txt", format="ascii.csv")
+    run_summary.write(args.output_dir / f"RunSummary_{date}.csv", format="ascii.csv")
 
 
 if __name__ == "__main__":
