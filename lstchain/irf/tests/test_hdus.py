@@ -45,14 +45,13 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     dl3_file = dl2_file_new.name.replace("dl2", "dl3")
     dl3_file = simulated_dl2_file.parent / dl3_file.replace(".h5", ".fits")
     # create a temp dl3 file to test indexing function
-    edisp = fits.open(simulated_irf_file)["ENERGY DISPERSION"]
-    aeff = fits.open(simulated_irf_file)["EFFECTIVE AREA"]
-    bkg = fits.open(simulated_irf_file)["BACKGROUND"]
-    psf = fits.open(simulated_irf_file)["PSF"]
 
     temp_hdulist = fits.HDUList(
-        [fits.PrimaryHDU(), evts, gti, pnt, aeff, edisp, bkg, psf]
+        [fits.PrimaryHDU(), evts, gti, pnt]
     )
+    for f in fits.open(simulated_irf_file)[1:]:
+        temp_hdulist.append(f)
+        
     temp_hdulist.writeto(dl3_file, overwrite=True)
 
     assert dl3_file.is_file()

@@ -88,7 +88,6 @@ class IRFFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
-
     aliases = {
         ("fg", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
         ("fp", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
@@ -163,8 +162,8 @@ class IRFFITSWriter(Tool):
             self.log.info("All particles MC used to produce IRFs")
 
         self.provenance_log = self.output_irf_file.parent / (
-                self.name + ".provenance.log"
-            )
+            self.name + ".provenance.log"
+        )
 
     def start(self):
 
@@ -286,7 +285,9 @@ class IRFFITSWriter(Tool):
             background["selected_gh"] = background["gh_score"] > gh_cut
             for i in tel_ids:
                 background["selected_tels"] = background["tel_id"] == i
-            background["selected"] = background["selected_gh"] & background["selected_tels"]
+            background["selected"] = (
+                background["selected_gh"] & background["selected_tels"]
+            )
 
             background_offset_bins = (
                 np.arange(ang_bins["source_offset"][0], ang_bins["source_offset"][1])
