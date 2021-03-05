@@ -86,6 +86,8 @@ def main():
     else:
         config = std_config
 
+    use_only_main_island = True
+
     if args.pedestal_cleaning:
         print("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
