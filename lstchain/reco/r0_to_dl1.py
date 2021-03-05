@@ -129,7 +129,7 @@ def get_dl1(
         num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
         if use_main_island:
-            n_pixels_on_island = np.bincount(island_labels.astype(np.int))
+            n_pixels_on_island = np.bincount(island_labels)
             n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
