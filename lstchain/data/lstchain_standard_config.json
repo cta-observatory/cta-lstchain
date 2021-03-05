@@ -43,7 +43,8 @@
     "boundary_thresh":4,
     "sigma":3,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "min_number_picture_neighbors":1,
+    "use_only_main_island":false
   },
 
     "random_forest_regressor_args": {
