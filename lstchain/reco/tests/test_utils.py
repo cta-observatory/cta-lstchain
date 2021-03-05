@@ -2,6 +2,7 @@ from lstchain.reco import utils
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+from astropy.table import QTable
 import numpy as np
 import pandas as pd
 
@@ -88,11 +89,52 @@ def test_filter_events():
         filter_events(df, filters=dict(e=[0, np.inf]))
 
 def test_get_obstime_real():
+    # times in seconds, rates in s^-1
     t_obs = 600
-    rate = 10e3
-    n_events = np.random.poisson(rate * t_obs)
-    timestamps = np.sort(np.random.uniform(0, t_obs, n_events))
-    delta_t = np.insert(timestamps[1:]-timestamps[:-1],0,0)
-    events = pd.DataFrame({'delta_t': delta_t})
-    
-    assert np.isclose(utils.get_effective_time(events)[0].value, t_obs)
+    dead_time_per_event = 7e-6
+    cosmics_rate = 1e4
+    # interleaved event rates:
+    pedestal_rate = 100
+    flatfield_rate = 100
+    # starting times for interleaved events (arbitrary):
+    t0_pedestal = 0
+    t0_flatfield = 0.002
+    n_cosmics = np.random.poisson(cosmics_rate * t_obs)
+
+    timestamps = np.random.uniform(0, t_obs, n_cosmics)
+    timestamps = np.append(timestamps, np.arange(t0_pedestal, t_obs,
+                                                 1/pedestal_rate))
+    timestamps = np.append(timestamps, np.arange(t0_flatfield, t_obs,
+                                                 1/flatfield_rate))
+    # sort events by timestamp:
+    timestamps.sort()
+
+    # time to previous event:
+    delta_t = np.insert(np.diff(timestamps), 0, 0)
+
+    # now remove events which are closer than dead_time_per_event
+    recorded_events = delta_t > dead_time_per_event
+
+    # true effective time:
+    true_t_eff = t_obs - dead_time_per_event * recorded_events.sum()
+    true_t_eff *= u.s
+
+    # we'll write only 80% of the remaining events - this simulates triggered
+    # events which are no longer present in the DL2 event list
+    cut = np.random.uniform(0., 1., recorded_events.sum()) > 0.2
+
+    events = pd.DataFrame({'delta_t': delta_t[recorded_events][cut],
+                           'dragon_time': timestamps[recorded_events][cut]})
+    t_eff, t_elapsed = utils.get_effective_time(events)
+    print(t_obs, t_elapsed, true_t_eff, t_eff)
+    # test accuracy to 0.05%:
+    assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
+
+    # now test with a QTable:
+    a = delta_t[recorded_events][cut]*u.s
+    b = timestamps[recorded_events][cut]*u.s
+    events = QTable([a, b], names=('delta_t', 'dragon_time'))
+    t_eff, t_elapsed = utils.get_effective_time(events)
+    print(t_obs, t_elapsed, true_t_eff, t_eff)
+    # test accuracy to 0.05%:
+    assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
