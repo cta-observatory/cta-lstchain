@@ -16,7 +16,7 @@ file, then the output file names contain the run and subrun index (otherwise,
 only the run index)
 
 The script can also be run over one file of type datacheck_dl1_*.h5, and then
-only the plotting part ios executed.
+only the plotting part is executed.
 
 The muons_*.fits files which are produced together with the DL1 event files
 must be available in the same directory as the input files (of whatever
@@ -43,7 +43,9 @@ optional = parser.add_argument_group('optional arguments')
 # input file(s). Wildcards can be used, but inside quotes e.g. "dl1*.h5"
 required.add_argument('--input-file', type=str, required=True,
                       help='Path to DL1 data file(s) (containing pixel-wise '
-                           'charge information and image parameters)'
+                           'charge information and image parameters) OR to '
+                           'datacheck_dl1_*.h5 files (only plotting part is '
+                           'executed in that case)'
                       )
 
 # Optional arguments

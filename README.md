@@ -12,6 +12,15 @@ are unit tested and should be working as long as the build status is passing.
 
 - You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
 
+
+### macOS requirements
+
+lstchain depends on `protozfits` to read LST raw data via `ctapipe_io_lst`.
+Currently, prebuilt binaries are only available on linux.
+On macOS, you will need `protobuf` and `zeromq` installed so that the
+module can be build from source by `pip`.
+We recommend using `homebrew` and then `brew install zeromq protobuf`.
+
 ### As user
 
 ```
@@ -56,12 +65,12 @@ To run the tests that need those private data file, add `-m private_data`
 to the pytest call, e.g.:
 
 ```
-pytest -m private_data -v
+pytest -m private_data -v lstchain
 ```
 
 To run all tests, run
 ```
-pytest -m 'private_data or not private_data' -v
+pytest -m 'private_data or not private_data' -v lstchain
 ```
 
 ## Contributing

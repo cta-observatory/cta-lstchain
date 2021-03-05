@@ -124,14 +124,10 @@ def observed_dl1_files(temp_dir_observed_files):
         test_time_calib_path,
         "--pointing-file",
         test_drive_report,
-        "--ucts-t0-dragon",
+        "--dragon-reference-time",
         "1582059789516351903",
-        "--dragon-counter0",
+        "--dragon-reference-counter",
         "2516351600",
-        "--ucts-t0-tib",
-        "1582059789516351903",
-        "--tib-counter0",
-        "2516351200"
     )
 
     run_program(

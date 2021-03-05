@@ -23,6 +23,7 @@ import logging
 import sys
 from pathlib import Path
 
+from lstchain.io import  standard_config
 from lstchain.io.config import read_configuration_file
 from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from lstchain.reco import r0_to_dl1
@@ -38,6 +39,8 @@ parser.add_argument(
     required=True,
 )
 
+# Optional arguments
+
 parser.add_argument(
     '-o', '--output-dir', type=Path,
     help='Path where to store the reco dl1 events',
@@ -47,23 +50,19 @@ parser.add_argument(
 parser.add_argument(
     '-p', '--pedestal-file', '-p', type=Path,
     dest='pedestal_file',
-    help='Path to a pedestal file',
-    required=True
+    help='Path to a pedestal file'
 )
 
 parser.add_argument(
     '--calibration-file', '--calib', type=Path,
-    help='Path to a calibration file',
-    required=True,
+    help='Path to a calibration file'
 )
 
 parser.add_argument(
     '--time-calibration-file', '-t', type=Path,
-    help='Path to a calibration file for pulse time correction',
-    required=True
+    help='Path to a calibration file for pulse time correction'
 )
 
-# Optional arguments
 parser.add_argument(
     '--config', '-c', type=Path,
     dest='config_file',
@@ -76,7 +75,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--ucts-t0-dragon', type=int,
+    '--dragon-reference-time', type=int,
     help=(
         'UCTS timestamp in nsecs, unix format and TAI scale of the'
         ' first event of the run with valid timestamp. If none is'
@@ -86,30 +85,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--dragon-counter0', type=int,
+    '--dragon-reference-counter', type=int,
     help=(
         'Dragon counter (pps + 10MHz) in nsecs corresponding'
         ' to the first reliable UCTS of the run. To be provided'
         ' along with ucts_t0_dragon.'
-    ),
-)
-
-parser.add_argument(
-    '--ucts-t0-tib', type=int,
-    help=(
-        'UCTS timestamp in nsecs, unix format and TAI scale of the'
-        ' first event of the run with valid timestamp. If none is'
-        ' passed, the start-of-the-run timestamp is provided, hence'
-        ' TIB timestamp is not reliable.'
-    ),
-)
-
-parser.add_argument(
-    '--tib-counter0', type=int,
-    help=(
-        'First valid TIB counter (pps + 10MHz) in nsecs corresponding'
-        ' to the first reliable UCTS of the run when TIB is available.'
-        ' To be provided along with ucts_t0_tib.'
     ),
 )
 
@@ -151,21 +131,37 @@ def main():
         except Exception as e:
             log.error(f'Configuration file could not be read: {e}')
             sys.exit(1)
+    else:
+        config = standard_config
 
-    config["max_events"] = args.max_events
+    # Add to configuration config the parameters provided through command-line,
+    # which supersede those in the file:
+    if args.max_events is not None:
+        config['source_config']['EventSource']['max_events'] = args.max_events
+
+    lst_event_source = config['source_config']['LSTEventSource']
+    time_calculator = lst_event_source['EventTimeCalculator']
+
+    if args.dragon_reference_time is not None:
+        time_calculator['dragon_reference_time'] = args.dragon_reference_time
+    if args.dragon_reference_counter is not None:
+        time_calculator['dragon_reference_counter'] = args.dragon_reference_counter
+    if args.pointing_file is not None:
+        lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
+
+    lst_r0_corrections = lst_event_source['LSTR0Corrections']
+    if args.pedestal_file is not None:
+        lst_r0_corrections['drs4_pedestal_path'] = args.pedestal_file
+    if args.calibration_file is not None:
+        lst_r0_corrections['calibration_path'] = args.calibration_file
+    if args.time_calibration_file is not None:
+        lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
+
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,
         output_filename=output_filename,
         custom_config=config,
-        pedestal_path=args.pedestal_file,
-        calibration_path=args.calibration_file,
-        time_calibration_path=args.time_calibration_file,
-        pointing_file_path=args.pointing_file,
-        ucts_t0_dragon=args.ucts_t0_dragon,
-        dragon_counter0=args.dragon_counter0,
-        ucts_t0_tib=args.ucts_t0_tib,
-        tib_counter0=args.tib_counter0
     )
 
 

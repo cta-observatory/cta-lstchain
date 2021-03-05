@@ -15,7 +15,7 @@ from bokeh.models import ColumnDataSource, CustomJS, Slider, RangeSlider
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
-from ctapipe.instrument import CameraGeometry
+from ctapipe.instrument import CameraGeometry, PixelShape
 from pkg_resources import resource_filename
 
 import numpy as np
@@ -68,7 +68,7 @@ class CameraDisplay:
         self._use_notebook = use_notebook
         self._handle = None
 
-        order = 6 if geom.pix_type == "hexagonal" else 4
+        order = 6 if geom.pix_type == PixelShape.HEXAGON else 4
         xs, ys = _generate_bokeh_multi_polygon_arrays(geom, order=order)
 
         self.datasource = bokeh.plotting.ColumnDataSource(

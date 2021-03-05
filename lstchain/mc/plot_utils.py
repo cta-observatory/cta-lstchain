@@ -14,6 +14,7 @@ __all__ = [
     'format_axes_array',
     'format_axes_sensitivity',
     'plot_Crab_SED',
+    'plot_LST_preliminary_sensitivity',
     'plot_sensitivity',
     'sensitivity_minimization_plot',
     'sensitivity_plot_comparison',
@@ -28,7 +29,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
 
     Parameters
     --------
-    ax:    `matplotlib.pyplot.axis`  
+    ax:    `matplotlib.pyplot.axis`
     sensitivity:  `numpy.ndarray`  sensitivity array
     energy_bin:    `int`  energy bin number
     n_bins_gammaness:    `int`  number of bins in gammaness
@@ -36,7 +37,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
 
     Returns
     --------
-    ax:    `matplotlib.pyplot.axis`  
+    ax:    `matplotlib.pyplot.axis`
 
     """
 
@@ -59,12 +60,12 @@ def format_axes_ebin(ax, img):
 
     Parameters
     --------
-    ax:    `matplotlib.pyplot.axis`  
-    img:    `matplotlib.image.AxesImage`  
+    ax:    `matplotlib.pyplot.axis`
+    img:    `matplotlib.image.AxesImage`
 
     Returns
     --------
-    ax:    `matplotlib.pyplot.axis`  
+    ax:    `matplotlib.pyplot.axis`
 
     """
 
@@ -91,14 +92,14 @@ def format_axes_array(ax, arr_i, arr_j, plot):
 
     Parameters
     --------
-    ax:    `matplotlib.pyplot.axis`  
-    arr_i: `int` i index for the square plot  
+    ax:    `matplotlib.pyplot.axis`
+    arr_i: `int` i index for the square plot
     arr_j: `int` j index for the square plot
-    plot:  `matplotlib.pyplot.figure`  
+    plot:  `matplotlib.pyplot.figure`
 
     Returns
     --------
-    ax:    `matplotlib.pyplot.axis`  
+    ax:    `matplotlib.pyplot.axis`
     """
     ax.set_aspect(0.5)
     if ((arr_i == 0) and (arr_j == 0)):
@@ -177,19 +178,19 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     return ax
 
 
-def plot_sensitivity(energy, sensitivity, ax=None):
+def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
     """
     Plot the achieved sensitivity
 
     Parameters
     --------
-    ax:          `matplotlib.pyplot.axis`  
+    ax:          `matplotlib.pyplot.axis`
     energy:      `astropy.units.quantity.Quantity`  energy array
     sensitivity: `numpy.ndarray`  sensitivity array (bins of energy)
 
     Returns
     --------
-    ax:    `matplotlib.pyplot.axis`  
+    ax:    `matplotlib.pyplot.axis`
 
     """
     ax = plt.gca() if ax is None else ax
@@ -202,12 +203,14 @@ def plot_sensitivity(energy, sensitivity, ax=None):
 
     ax.set_yscale("log")
     ax.set_xscale("log")
+
     ax.errorbar(egeom[mask].to_value(),
                 (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
                                             * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(),
                 xerr=binsize[mask].to_value(), marker='o', color='C3', label='Sensitivity')
 
     return ax
+
 
 def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2, energy, sensitivity_3Darray):
     """
@@ -226,7 +229,7 @@ def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2
 
     Returns
     --------
-    figarr: `matplotlib.pyplot.figure`   
+    figarr: `matplotlib.pyplot.figure`
 
     """
 
