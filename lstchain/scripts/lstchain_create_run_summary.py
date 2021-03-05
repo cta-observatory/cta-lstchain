@@ -47,6 +47,16 @@ parser.add_argument(
     default="./",
 )
 
+dtypes = {
+    'ucts_timestamp': np.int64,
+    'run_start': np.int64,
+    'dragon_reference_time': np.int64,
+    'dragon_reference_module_id': np.int16,
+    'dragon_reference_module_index': np.int16,
+    'dragon_reference_counter': np.uint64,
+    'dragon_reference_source': str,
+}
+
 
 def get_list_of_files(r0_path):
     """Get the list of R0 files from a given date."""
@@ -144,11 +154,11 @@ def read_counters(date_path, run_number):
             else:
                 cdts = first_event.lstcam.cdts_data.view(CDTS_BEFORE_37201_DTYPE)
 
-            ucts_timestamp = cdts["timestamp"][0]
+            ucts_timestamp = np.int64(cdts["timestamp"][0])
             dragon_reference_time = ucts_timestamp
             dragon_reference_source = "ucts"
         else:
-            ucts_timestamp = -1
+            ucts_timestamp = np.int64(-1)
             dragon_reference_time = run_start
             dragon_reference_source = "run_start"
 
@@ -193,20 +203,25 @@ def main():
 
     date_path = args.r0_path / args.date
 
-    list_of_files = get_list_of_files(date_path)
-    list_of_run_objects = get_list_of_runs(list_of_files)
-    run_numbers, n_subruns = get_runs_and_subruns(list_of_run_objects)
+    files = get_list_of_files(date_path)
+    runs = get_list_of_runs(files)
+    run_numbers, n_subruns = get_runs_and_subruns(runs)
+
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
-    list_type_of_runs = [
+
+    run_types = [
         type_of_run(date_path, run, counters)
         for run, counters in zip(run_numbers, reference_counters)
     ]
 
-    run_summary = Table(reference_counters)
+    run_summary = Table({
+        col: np.array([d[col] for d in reference_counters], dtype=dtype)
+        for col, dtype in dtypes.items()
+    })
     run_summary.meta["date"] = datetime.strptime(args.date, "%Y%m%d").date().isoformat()
-    run_summary.add_column(run_numbers, name="run_numbers", index=0)
+    run_summary.add_column(run_numbers, name="run_id", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
-    run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
+    run_summary.add_column(run_types, name="run_type", index=2)
     run_summary.write(
         args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=","
     )
