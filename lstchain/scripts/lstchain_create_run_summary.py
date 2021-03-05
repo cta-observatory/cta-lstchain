@@ -21,8 +21,9 @@ from ctapipe_io_lst import (
     MultiFiles,
 )
 from ctapipe_io_lst.event_time import combine_counters
-from lstchain.paths import parse_r0_filename
+from traitlets.config import Config
 
+from lstchain.paths import parse_r0_filename
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +35,6 @@ parser.add_argument(
     help="Date for the creation of the run summary in format YYYYMMDD",
     required=True,
 )
-# TODO: default today()
 
 parser.add_argument(
     "--r0-path",
@@ -78,7 +78,7 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
     return run, number_of_files
 
 
-def type_of_run(date_path, run_number, n_events=500):
+def type_of_run(date_path, run_number, counters, n_events=500):
     """
     Get empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
@@ -89,21 +89,30 @@ def type_of_run(date_path, run_number, n_events=500):
     """
     filename = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
 
-    with LSTEventSource(input_url=filename, max_events=n_events) as source:
-        n_pedestal_events = sum(
-            event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
-        )
-        n_sky_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
+    config = Config()
+    config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
+    config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
 
-    # FIXME: Do this classification in some other way?
-    if n_sky_events / n_events > 0.999:
-        run_type = "DRS4"
-    elif n_pedestal_events / n_events > 0.1:
-        run_type = "CALI"
-    elif n_pedestal_events / n_events < 0.1:
-        run_type = "DATA"
-    else:
-        run_type = "UNKW"
+    try:
+        with LSTEventSource(filename, config=config, max_events=n_events) as source:
+            n_pedestal_events = sum(
+                event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
+            )
+            n_sky_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
+
+        if n_sky_events / n_events > 0.999:
+            run_type = "DRS4"
+        elif n_pedestal_events / n_events > 0.1:
+            run_type = "CALI"
+        elif n_pedestal_events / n_events < 0.1:
+            run_type = "DATA"
+        else:
+            run_type = "CONF"
+
+    except AttributeError:
+        log.error(f"Files {filename} do not contain events")
+
+        run_type = "CONF"
 
     return run_type
 
@@ -190,14 +199,19 @@ def main():
     list_of_files = get_list_of_files(date_path)
     list_of_run_objects = get_list_of_runs(list_of_files)
     run_numbers, n_subruns = get_runs_and_subruns(list_of_run_objects)
-    list_type_of_runs = [type_of_run(date_path, run) for run in run_numbers]
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
+    list_type_of_runs = [
+        type_of_run(date_path, run, counters)
+        for run, counters in zip(run_numbers, reference_counters)
+    ]
 
     run_summary = Table(reference_counters)
     run_summary.add_column(run_numbers, name="run_numbers", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
-    run_summary.write(args.output_dir / f"RunSummary_{args.date}.csv", format="ascii.ecsv")
+    run_summary.write(
+        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=","
+    )
 
 
 if __name__ == "__main__":
