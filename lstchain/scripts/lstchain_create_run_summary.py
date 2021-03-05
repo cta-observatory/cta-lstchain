@@ -31,7 +31,6 @@ parser = argparse.ArgumentParser(description="Create run summary file")
 parser.add_argument(
     "-d",
     "--date",
-    type=str,
     help="Date for the creation of the run summary in format YYYYMMDD",
     required=True,
 )
@@ -40,7 +39,6 @@ parser.add_argument(
 parser.add_argument(
     "--r0-path",
     type=Path,
-    dest="R0_PATH",
     help="Path to the R0 files. Default is /fefs/aswg/data/real/R0",
     default=Path("/fefs/aswg/data/real/R0"),
 )
@@ -49,20 +47,15 @@ parser.add_argument(
     "-o",
     "--output-dir",
     type=Path,
-    dest="output_dir",
     help="Directory in which Run Summary file is written",
     default="./",
 )
 
 
-args = parser.parse_args()
-
-
-def get_list_of_files(date):
+def get_list_of_files(r0_path):
     """Get the list of R0 files from a given date."""
-    path_r0 = args.R0_PATH / date
     # FIXME: use regular expressions from lstchain.paths.R0_RE
-    list_of_files = path_r0.glob("LST*.fits.fz")
+    list_of_files = r0_path.glob("LST*.fits.fz")
     return list_of_files
 
 
@@ -85,7 +78,7 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
     return run, number_of_files
 
 
-def type_of_run(run_number, n_events=500):
+def type_of_run(date_path, run_number, n_events=500):
     """
     Get empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
@@ -94,7 +87,7 @@ def type_of_run(run_number, n_events=500):
     ~50% mono, ~50% pedestal events: PEDESTAL-CALIBRATION run
     First subrun needs to be open.
     """
-    filename = args.R0_PATH / args.date / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
+    filename = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
 
     with LSTEventSource(input_url=filename, max_events=n_events) as source:
         n_pedestal_events = sum(
@@ -115,12 +108,12 @@ def type_of_run(run_number, n_events=500):
     return run_type
 
 
-def read_counters(run_number):
+def read_counters(date_path, run_number):
     """
     Get initial valid timestamps from the first subrun.
     Write down the reference Dragon module used, reference event_id.
     """
-    pattern = args.R0_PATH / args.date / f"LST-1.*.Run{run_number:05d}.0000.fits.fz"
+    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000.fits.fz"
     try:
         f = MultiFiles(glob(str(pattern)))
         first_event = next(f)
@@ -176,7 +169,7 @@ def read_counters(run_number):
         )
 
 
-def main(date):
+def main():
     """
     Write run summary to a file the following information per run:
     Run number
@@ -191,18 +184,22 @@ def main(date):
     """
     # TODO: Be able to create file incrementally run-by-run
 
-    list_of_files = get_list_of_files(date)
+    args = parser.parse_args()
+
+    date_path = args.r0_path / args.date
+
+    list_of_files = get_list_of_files(date_path)
     list_of_run_objects = get_list_of_runs(list_of_files)
     run_numbers, n_subruns = get_runs_and_subruns(list_of_run_objects)
     #    list_type_of_runs = [type_of_run(run) for run in run_numbers]
-    reference_counters = [read_counters(run) for run in run_numbers]
+    reference_counters = [read_counters(date_path, run) for run in run_numbers]
 
     run_summary = Table(reference_counters)
     run_summary.add_column(run_numbers, name="run_numbers", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     #    run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
-    run_summary.write(args.output_dir / f"RunSummary_{date}.csv", format="ascii.csv")
+    run_summary.write(args.output_dir / f"RunSummary_{args.date}.csv", format="ascii.csv")
 
 
 if __name__ == "__main__":
-    main(args.date)
+    main()
