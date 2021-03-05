@@ -99,7 +99,6 @@ class DataReductionFITSWriter(Tool):
         ("leak_2", "leakage_intensity_width_2"):
             "DataReductionFITSWriter.leakage_intensity_width_2",
         ("gh", "fixed_gh_cut"): "DataReductionFITSWriter.fixed_gh_cut",
-        ("theta", "fixed_theta_cut"): "DataReductionFITSWriter.fixed_theta_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataReductionFITSWriter.fixed_source_fov_offset_cut",
         "alpha": "DataReductionFITSWriter.alpha",

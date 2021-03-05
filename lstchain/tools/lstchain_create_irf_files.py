@@ -183,7 +183,6 @@ class IRFFITSWriter(Tool):
         ("theta", "fixed_theta_cut"): "IRFFITSWriter.fixed_theta_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "IRFFITSWriter.fixed_source_fov_offset_cut",
-        "alpha": "IRFFITSWriter.alpha",
         "lst_tel_ids": "IRFFITSWriter.lst_tel_ids",
         "magic_tel_ids": "IRFFITSWriter.magic_tel_ids",
         ("e_true", "true_energy_bins"): "IRFFITSWriter.true_energy_bins",
