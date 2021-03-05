@@ -33,9 +33,12 @@ def test_read_sim_par(simulated_dl1_file):
 
 @pytest.mark.run(after='test_apply_models')
 def test_process_mc(simulated_dl2_file):
-    #Write some delta_t in the example dl2 file
+    #Write some delta_t and dragon_time in the example dl2 file
     dl2 = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     dl2["delta_t"]=0.0005
+    timestamps = np.random.uniform(0, 600, len(dl2))
+    timestamps.sort()
+    dl2["dragon_time"]=timestamps
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     process_mc(simulated_dl2_file, 'gamma')
     process_mc(simulated_dl2_file, 'proton')
@@ -58,12 +61,12 @@ def test_find_cut(simulated_dl2_file):
     find_cut(events, np.ones(len(events)), 10, 'theta2', 0.5, 0.5, 0.5)
     find_cut_real(events, events, 10, 10, 'gammaness', 0.5, 0.5, 0.5)
     find_cut_real(events, events, 10, 10, 'theta2', 0.5, 0.5, 0.5)
-    
+
 def test_samesign():
     a=1
     b=-1
-    assert samesign(a,b)==False 
-    
+    assert samesign(a,b)==False
+
 def test_calculate_sensitivity():
     np.testing.assert_allclose(calculate_sensitivity(
         50, 10, 0.2), 14.14, rtol=1.e-3)
@@ -124,17 +127,20 @@ def test_sensitivity(simulated_dl2_file):
     import astropy.units as u
 
 
-    #Write some delta_t in the example dl2 file
+    #Write some delta_t and timestamps in the example dl2 file
     dl2 = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
     dl2["delta_t"]=0.0005
+    timestamps = np.random.uniform(0, 600, len(dl2))
+    timestamps.sort()
+    dl2["dragon_time"]=timestamps
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
-    
+
     geff_gammaness = 0.9
     geff_theta2 = 0.8
     eb = 10
     obstime = 50 * 3600 * u.s
     noff = 2
-    
+
     sensitivity_gamma_efficiency(simulated_dl2_file,
                                  simulated_dl2_file,
                                  1, 1,
@@ -143,7 +149,7 @@ def test_sensitivity(simulated_dl2_file):
                                  geff_theta2,
                                  noff,
                                  obstime)
-    
+
     sensitivity_gamma_efficiency_real_protons(simulated_dl2_file,
                                               simulated_dl2_file,
                                               1,
@@ -152,7 +158,7 @@ def test_sensitivity(simulated_dl2_file):
                                               geff_theta2,
                                               noff,
                                               obstime)
-    
+
     sensitivity_gamma_efficiency_real_data(simulated_dl2_file,
                                            simulated_dl2_file,
                                            np.zeros(eb),np.ones(eb),
@@ -161,4 +167,3 @@ def test_sensitivity(simulated_dl2_file):
                                            geff_theta2,
                                            noff,
                                            obstime)
-    
