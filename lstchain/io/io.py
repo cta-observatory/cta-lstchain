@@ -50,7 +50,8 @@ __all__ = [
     'write_calibration_data',
     'read_dl2_to_pyirf',
     'read_dl2_params',
-    'extract_observation_time'
+    'extract_observation_time',
+    'merge_dl2_runs'
 ]
 
 
