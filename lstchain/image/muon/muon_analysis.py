@@ -8,9 +8,7 @@ from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.image.muon import MuonRingFitter
 from ctapipe.image.muon.features import ring_completeness, ring_containment
 
-# TEMPORAL PATCH until ctapipe's MuonIntensityFitter allows using pixel masks:
-# from ctapipe.image.muon import MuonIntensityFitter
-from lstchain.image.muon import MuonIntensityFitter
+from ctapipe.image.muon import MuonIntensityFitter
 from lstchain.image.muon import plot_muon_event
 
 __all__ = [
@@ -193,7 +191,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
          ])
 
     if candidate_clean_ring:
-        intensity_fitter = MuonIntensityFitter(subarray)
+        intensity_fitter = MuonIntensityFitter(subarray, hole_radius_m=0.308)
 
         # Use same hard-coded value for pedestal fluctuations as the previous
         # version of ctapipe:

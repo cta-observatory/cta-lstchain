@@ -25,6 +25,7 @@ from ctapipe.coordinates import CameraFrame
 from . import disp
 
 __all__ = [
+    'add_delta_t_key'
     'alt_to_theta',
     'az_to_phi',
     'cal_cam_source_pos',
@@ -36,6 +37,7 @@ __all__ = [
     'expand_tel_list',
     'extract_source_position',
     'filter_events',
+    'get_effective_time'
     'get_event_pos_in_camera',
     'impute_pointing',
     'linear_imputer',
@@ -611,3 +613,48 @@ def clip_alt(alt):
     to keep astropy happy
     """
     return np.clip(alt, -90.*u.deg, 90.*u.deg)
+
+def add_delta_t_key(events):
+    """
+    Adds the time difference with the previous event to a real data
+    dataframe.
+    Should be only used only with non-filtered data frames,
+    so events are consecutive.
+    Parameters
+    ----------
+    events: pandas DataFrame of dl1 events
+
+    Returns
+    -------
+    events: pandas DataFrame of dl1 events with delta_t
+    """
+
+    # Get delta t of real data and add it to the data frame
+    if 'dragon_time' in events.columns:
+        time= np.array(events.dragon_time)
+        delta_t = np.insert(np.diff(time),0,0)
+        events['delta_t'] = delta_t
+    return events
+
+def get_effective_time(events):
+    """
+    Calculate the effective observation time of a set 
+    of real data events.
+    Parameters
+    ----------
+    events: pandas DataFrame
+
+    Returns
+    -------
+    t_eff: float
+    t_elapsed: float
+    """
+    
+    delta_t = events.delta_t[1:]
+    delta_t = delta_t[(delta_t > 0) & (delta_t < 0.002)]
+    rate=1/np.mean(delta_t)
+    dead_time = np.amin(delta_t)
+    t_elapsed = len(events)/rate * u.s
+    t_eff = t_elapsed/(1+rate*dead_time)
+
+    return t_eff, t_elapsed
