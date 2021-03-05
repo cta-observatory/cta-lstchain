@@ -6,6 +6,7 @@ the reference timestamp and counter of the run.
 
 import argparse
 import logging
+from datetime import datetime
 from glob import glob
 from pathlib import Path
 
@@ -13,13 +14,8 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (
-    CDTS_AFTER_37201_DTYPE,
-    CDTS_BEFORE_37201_DTYPE,
-    DRAGON_COUNTERS_DTYPE,
-    LSTEventSource,
-    MultiFiles,
-)
+from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
+                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
@@ -95,6 +91,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
 
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
+            source.log.setLevel(logging.ERROR)
             n_pedestal_events = sum(
                 event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
             )
@@ -206,6 +203,7 @@ def main():
     ]
 
     run_summary = Table(reference_counters)
+    run_summary.meta["date"] = datetime.strptime(args.date, "%Y%m%d").date().isoformat()
     run_summary.add_column(run_numbers, name="run_numbers", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(list_type_of_runs, name="type_of_run", index=2)
