@@ -15,9 +15,11 @@ dependencies:
   - notebook
   - joblib
   - toml
+  - protobuf  # for protozfits
+  - zeromq    # for protozfits
   - pip:
       - pytest_runner
       - pytest-ordering
-      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.7.0
+      - ctapipe_io_lst~=0.8.0
       - ctaplot
       - pyirf~=0.4.0
