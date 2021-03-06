@@ -400,8 +400,3 @@ def test_create_run_summary(tmp_path):
     assert "dragon_reference_module_index" in run_summary_table.columns
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
-
-
-
-
-
