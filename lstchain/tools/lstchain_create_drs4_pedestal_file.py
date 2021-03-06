@@ -34,6 +34,8 @@ class PedestalFITSWriter(Tool):
     aliases = {
         ("i", "input"): "EventSource.input_url",
         ("o", "output"): "PedestalFITSWriter.output",
+        "max-events": "EventSource.max_events",
+        "start-r0-waveform": "DragonPedestal.r0_sample_start",
     }
 
     flags = {
@@ -68,7 +70,7 @@ class PedestalFITSWriter(Tool):
         event = next(iter(self.eventsource))
         tel_id = event.trigger.tels_with_trigger[0]
         self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
-        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules)
+        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules, config=self.config)
 
         if self.deltaT:
             self.log.info("DeltaT correction active")
