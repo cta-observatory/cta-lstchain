@@ -14,8 +14,13 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
-                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
+from ctapipe_io_lst import (
+    CDTS_AFTER_37201_DTYPE,
+    CDTS_BEFORE_37201_DTYPE,
+    DRAGON_COUNTERS_DTYPE,
+    LSTEventSource,
+    MultiFiles,
+)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
@@ -49,13 +54,13 @@ parser.add_argument(
 )
 
 dtypes = {
-    'ucts_timestamp': np.int64,
-    'run_start': np.int64,
-    'dragon_reference_time': np.int64,
-    'dragon_reference_module_id': np.int16,
-    'dragon_reference_module_index': np.int16,
-    'dragon_reference_counter': np.uint64,
-    'dragon_reference_source': str,
+    "ucts_timestamp": np.int64,
+    "run_start": np.int64,
+    "dragon_reference_time": np.int64,
+    "dragon_reference_module_id": np.int16,
+    "dragon_reference_module_index": np.int16,
+    "dragon_reference_counter": np.uint64,
+    "dragon_reference_source": str,
 }
 
 
@@ -67,6 +72,11 @@ def get_list_of_files(r0_path):
     ----------
     r0_path : pathlib.Path
         Path to the R0 files
+
+    Returns
+    -------
+    list_of_files: pathlib.Path.glob
+        List of files
     """
     # FIXME: use regular expressions from lstchain.paths.R0_RE
     list_of_files = r0_path.glob("LST*.fits.fz")
@@ -74,7 +84,17 @@ def get_list_of_files(r0_path):
 
 
 def get_list_of_runs(list_of_files):
-    """Get the sorted list of run objects from R0 filenames."""
+    """
+    Get the sorted list of run objects from R0 filenames.
+
+    Parameters
+    ----------
+    list_of_files : pathlib.Path.glob
+        List of files
+    Returns
+    -------
+    list_of_run_objects
+    """
     return sorted(parse_r0_filename(file) for file in list_of_files)
 
 
@@ -87,11 +107,12 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
     ----------
     list_of_run_objects
     stream: int, optional
-        Number of the stream to obtain the number of sequential files (default is 1)
+        Number of the stream to obtain the number of sequential files (default is 1).
 
     Returns
     -------
-    object
+    (run, number_of_files) : tuple
+        Run numbers and corresponding subrun of each run.
     """
     list_filtered_stream = filter(lambda x: x.stream == stream, list_of_run_objects)
 
@@ -112,14 +133,19 @@ def type_of_run(date_path, run_number, counters, n_events=500):
 
     Parameters
     ----------
-    date_path
-    run_number
-    counters
-    n_events
+    date_path : pathlib.Path
+        Path to the R0 files
+    run_number : int
+        Run id
+    counters : dict
+        Dict containing the reference counters and timestamps
+    n_events : int
+        Number of events used to infer the type of the run
 
     Returns
     -------
-    object
+    run_type: str
+        Type of run (DRS4, CALI, DATA, CONF)
     """
 
     list_of_files = sorted(date_path.glob(f"LST-1.1.Run{run_number:05d}.*.fits.fz"))
@@ -172,7 +198,7 @@ def read_counters(date_path, run_number):
 
     Returns
     -------
-    dict
+    dict: reference counters and timestamps
     """
     pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
     try:
@@ -233,16 +259,17 @@ def read_counters(date_path, run_number):
 
 def main():
     """
-    Write run summary to a file the following information per run:
-    Run number
-    Number of subruns
-    Type of run
-    Start_of_the_run
-    Event ID used to take time reference
-    Reference_source ("ucts" or "run_date")
-    Reference_timestamp
-    Initial dragon counter
-    Dragon module ID used to take the counter values
+    Build an astropy Table with run summary information and write it
+    as ECSV file with the following information (one row per run):
+     - run_id
+     - number of subruns
+     - type of run (DRS4, CALI, DATA, CONF)
+     - start of the run
+     - dragon reference UCTS timestamp if available (-1 otherwise)
+     - dragon reference time source ("ucts" or "run_date")
+     - dragon_reference_module_id
+     - dragon_reference_module_index
+     - dragon_reference_counter
     """
 
     args = parser.parse_args()
@@ -260,12 +287,14 @@ def main():
         for run, counters in zip(run_numbers, reference_counters)
     ]
 
-    run_summary = Table({
-        col: np.array([d[col] for d in reference_counters], dtype=dtype)
-        for col, dtype in dtypes.items()
-    })
+    run_summary = Table(
+        {
+            col: np.array([d[col] for d in reference_counters], dtype=dtype)
+            for col, dtype in dtypes.items()
+        }
+    )
     run_summary.meta["date"] = datetime.strptime(args.date, "%Y%m%d").date().isoformat()
-    run_summary.meta['lstchain_version'] = __version__
+    run_summary.meta["lstchain_version"] = __version__
     run_summary.add_column(run_numbers, name="run_id", index=0)
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
