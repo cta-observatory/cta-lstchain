@@ -5,7 +5,6 @@ from pathlib import Path
 
 Run = namedtuple('Run', 'tel_id run subrun stream', defaults=(None, ))
 R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+)(?:.*).fits.fz')
-#R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+).fits.fz')
 
 DL1_RE = re.compile(
     r'dl1_LST-(\d+)'     # tel_id
