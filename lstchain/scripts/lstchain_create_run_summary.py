@@ -60,7 +60,14 @@ dtypes = {
 
 
 def get_list_of_files(r0_path):
-    """Get the list of R0 files from a given date."""
+    """
+    Get the list of R0 files from a given date.
+
+    Parameters
+    ----------
+    r0_path : pathlib.Path
+        Path to the R0 files
+    """
     # FIXME: use regular expressions from lstchain.paths.R0_RE
     list_of_files = r0_path.glob("LST*.fits.fz")
     return list_of_files
@@ -73,8 +80,18 @@ def get_list_of_runs(list_of_files):
 
 def get_runs_and_subruns(list_of_run_objects, stream=1):
     """
-    Get the list of run numbers and the number of sequenctial files (subruns)
+    Get the list of run numbers and the number of sequential files (subruns)
     of each run.
+
+    Parameters
+    ----------
+    list_of_run_objects
+    stream: int, optional
+        Number of the stream to obtain the number of sequential files (default is 1)
+
+    Returns
+    -------
+    object
     """
     list_filtered_stream = filter(lambda x: x.stream == stream, list_of_run_objects)
 
@@ -89,12 +106,24 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     """
     Get empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
-    100% mono events (trigger 1): DRS4 pedestal run
-    <10% pedestal events (trigger 32): cosmic DATA run
-    ~50% mono, ~50% pedestal events: PEDESTAL-CALIBRATION run
-    First subrun needs to be open.
+    DRS4 pedestal run: 100% mono events (trigger_type == 1)
+    cosmic data run: <10% pedestal events (trigger_type == 32)
+    pedestal-calibration run: ~50% mono, ~50% pedestal events
+
+    Parameters
+    ----------
+    date_path
+    run_number
+    counters
+    n_events
+
+    Returns
+    -------
+    object
     """
-    filename = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
+
+    list_of_files = sorted(date_path.glob(f"LST-1.1.Run{run_number:05d}.*.fits.fz"))
+    filename = list_of_files[0]
 
     config = Config()
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
@@ -103,22 +132,26 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
             source.log.setLevel(logging.ERROR)
-            n_pedestal_events = sum(
+            pedestal_events = sum(
                 event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
             )
-            n_sky_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
+        with LSTEventSource(filename, config=config, max_events=n_events) as source:
+            source.log.setLevel(logging.ERROR)
+            mono_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
 
-        if n_sky_events / n_events > 0.999:
+        num_events = min(pedestal_events + mono_events, n_events)
+
+        if mono_events / num_events > 0.999:
             run_type = "DRS4"
-        elif n_pedestal_events / n_events > 0.1:
+        elif pedestal_events / num_events > 0.1:
             run_type = "CALI"
-        elif n_pedestal_events / n_events < 0.1:
+        elif pedestal_events / num_events < 0.1:
             run_type = "DATA"
         else:
             run_type = "CONF"
 
-    except AttributeError:
-        log.error(f"Files {filename} do not contain events")
+    except (AttributeError, AssertionError):
+        log.error(f"Files {filename} do not contain events or CameraConfig")
 
         run_type = "CONF"
 
@@ -129,8 +162,19 @@ def read_counters(date_path, run_number):
     """
     Get initial valid timestamps from the first subrun.
     Write down the reference Dragon module used, reference event_id.
+
+    Parameters
+    ----------
+    date_path: pathlib.Path
+        Directory that contains the R0 files
+    run_number: int
+        Number of the run
+
+    Returns
+    -------
+    dict
     """
-    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000.fits.fz"
+    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
     try:
         f = MultiFiles(glob(str(pattern)))
         first_event = next(f)
@@ -172,8 +216,9 @@ def read_counters(date_path, run_number):
             dragon_reference_counter=dragon_reference_counter,
             dragon_reference_source=dragon_reference_source,
         )
-    except AttributeError:
-        log.error(f"Files {pattern} do not contain events")
+
+    except (AttributeError, AssertionError):
+        log.error(f"Files {pattern} do not contain events or CameraConfig")
 
         return dict(
             ucts_timestamp=-1,
