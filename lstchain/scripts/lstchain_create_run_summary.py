@@ -6,6 +6,7 @@ the reference timestamp and counter of the run.
 
 import argparse
 import logging
+from collections import Counter
 from datetime import datetime
 from glob import glob
 from pathlib import Path
@@ -24,8 +25,8 @@ from ctapipe_io_lst import (
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
-from lstchain.paths import parse_r0_filename
 from lstchain import __version__
+from lstchain.paths import parse_r0_filename
 
 log = logging.getLogger(__name__)
 
@@ -158,16 +159,16 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
             source.log.setLevel(logging.ERROR)
-            pedestal_events = sum(
-                event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
-            )
-            mono_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
 
-        if mono_events / n_events > 0.999:
+            event_type_counts = Counter(event.trigger.event_type for event in source)
+            n_pedestals = event_type_counts[EventType.SKY_PEDESTAL]
+            n_subarray = event_type_counts[EventType.SUBARRAY]
+
+        if n_subarray / n_events > 0.999:
             run_type = "DRS4"
-        elif pedestal_events / n_events > 0.1:
+        elif n_pedestals / n_events > 0.1:
             run_type = "CALI"
-        elif pedestal_events / n_events < 0.1:
+        elif n_pedestals / n_events < 0.1:
             run_type = "DATA"
         else:
             run_type = "CONF"
