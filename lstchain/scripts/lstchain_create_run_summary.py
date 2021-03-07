@@ -172,8 +172,13 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         else:
             run_type = "CONF"
 
-    except (AttributeError, AssertionError):
-        log.error(f"Files {filename} do not contain events or CameraConfig")
+    except (AttributeError, AssertionError) as err:
+        log.error(f"File {filename} has error: {err}")
+
+        run_type = "CONF"
+
+    except ValueError as err:
+        log.error(f"File {filename} has error: {err}")
 
         run_type = "CONF"
 
@@ -239,8 +244,8 @@ def read_counters(date_path, run_number):
             dragon_reference_source=dragon_reference_source,
         )
 
-    except (AttributeError, AssertionError):
-        log.error(f"Files {pattern} do not contain events or CameraConfig")
+    except (AttributeError, AssertionError) as err:
+        log.error(f"Files {pattern} have error: {err}")
 
         return dict(
             ucts_timestamp=-1,
