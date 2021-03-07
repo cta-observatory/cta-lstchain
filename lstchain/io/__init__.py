@@ -3,6 +3,7 @@ from .lstcontainers import (
     DL1ParametersContainer,
     DispContainer,
 )
+from.dataselection import DataSelection, DataBinning
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
@@ -44,4 +45,6 @@ __all__ = [
     "write_calibration_data",
     "read_mc_dl2_to_pyirf",
     "read_data_dl2_to_QTable",
+    "DataSelection",
+    "DataBinning",
 ]

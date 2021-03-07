@@ -1,9 +1,13 @@
 """
 Create DL3 FITS file from given data DL2 file,
-selection cuts and/or IRF FITS files
+selection cuts and/or IRF FITS files.
 
-Change the selection parameters as need be.
-The default values are also written in lstchain/data/data_selection_cuts.json
+The selection cuts can be taken either from command-line arguments
+or a config file.
+
+Change the selection parameters as need be using the aliases.
+The default values are written in the DataSelection Component and
+in lstchain/data/data_selection_cuts.json
 
 Simple usage with argument aliases and default parameter selection values:
 
@@ -16,13 +20,13 @@ lstchain_create_irf_files
 
 from astropy.io import fits
 import astropy.units as u
-import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import filter_events, get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
+from lstchain.io import DataSelection
 
 from pyirf.utils import calculate_source_fov_offset
 
@@ -48,41 +52,6 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
-    intensity = traits.Int(
-        help="Enter the minimum value of intensity of events",
-        default_value=100,
-    ).tag(config=True)
-
-    wl = traits.Float(
-        help="Enter the minimum value of wl for events",
-        default_value=0.1,
-    ).tag(config=True)
-
-    leakage_intensity_width_2 = traits.Float(
-        help="Enter the maximum value for leakage_intensity_width_2 of events",
-        default_value=0.2,
-    ).tag(config=True)
-
-    fixed_gh_cut = traits.Float(
-        help="Enter fixed selection cut for gh_score (gammaness)",
-        default_value=0.6,
-    ).tag(config=True)
-
-    fixed_source_fov_offset_cut = traits.Float(
-        help="Enter fixed selection cut for source FoV offset",
-        default_value=2.83,
-    ).tag(config=True)
-
-    alpha = traits.Float(
-        help="Enter the selection cut for source dependent parameter - alpha",
-        default_value=8.0,
-    ).tag(config=True)
-
-    lst_tel_ids = traits.List(
-        help="Enter the list of selected LST telescope ids",
-        default_value=[1],
-    ).tag(config=True)
-
     source_name = traits.Unicode(help="Name of Source").tag(config=True)
 
     overwrite = traits.Bool(
@@ -90,19 +59,22 @@ class DataReductionFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
+    classes = ([DataSelection])
+
     aliases = {
         ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
-        ("int", "intensity"): "DataReductionFITSWriter.intensity",
-        "wl": "DataReductionFITSWriter.wl",
+        ("len", "length"): "DataSelection.length",
+        ("w", "width"): "DataSelection.width",
+        "r": "DataSelection.r",
+        "wl": "DataSelection.wl",
         ("leak_2", "leakage_intensity_width_2"):
-            "DataReductionFITSWriter.leakage_intensity_width_2",
-        ("gh", "fixed_gh_cut"): "DataReductionFITSWriter.fixed_gh_cut",
+            "DataSelection.leakage_intensity_width_2",
+        ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
-            "DataReductionFITSWriter.fixed_source_fov_offset_cut",
-        "alpha": "DataReductionFITSWriter.alpha",
-        "lst_tel_ids": "DataReductionFITSWriter.lst_tel_ids",
+            "DataSelection.fixed_source_fov_offset_cut",
+        ("alpha", "src_dep_alpha"): "DataSelection.src_dep_alpha",
         "source_name": "DataReductionFITSWriter.source_name",
     }
 
@@ -123,11 +95,7 @@ class DataReductionFITSWriter(Tool):
 
         Provenance().add_input_file(self.input_dl2)
 
-        self.event_filters = {
-            "intensity": [self.intensity, np.inf],
-            "wl": [self.wl, 1],
-            "leakage_intensity_width_2": [0, self.leakage_intensity_width_2],
-        }
+        self.data_sel = DataSelection(parent=self)
 
         self.output_file = self.output_dl3_path / self.filename_dl3
         if self.output_file.exists() and not self.overwrite:
@@ -146,12 +114,12 @@ class DataReductionFITSWriter(Tool):
             self.data, prefix="reco"
         )
 
-        self.data = filter_events(self.data, self.event_filters)
-        # Separate cuts for angular separations, for now
-        self.data = self.data[self.data["gh_score"] > self.fixed_gh_cut]
+        self.data = filter_events(self.data, self.data_sel.event_filters())
+
+        self.data = self.data[self.data["gh_score"] > self.data_sel.fixed_gh_cut]
         self.data = self.data[
             self.data["reco_source_fov_offset"]
-            < u.Quantity(self.fixed_source_fov_offset_cut * u.deg)
+            < u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)
         ]
 
         self.log.info("Generating event list")

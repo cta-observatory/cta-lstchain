@@ -1,12 +1,14 @@
 """
 Create FITS file for IRFs from given MC DL2 files and selection cuts
+taken either from command-line arguments or a config file.
 
-MC gamma files can be point-like or diffuse
-IRFs can be point-like or Full Enclosure
-Background HDU maybe added if proton and electron MC are provided
+MC gamma files can be point-like or diffuse.
+IRFs can be point-like or Full Enclosure.
+Background HDU maybe added if proton and electron MC are provided.
 
-Change the selection parameters as need be.
-The default values are also written in lstchain/data/data_selection_cuts.json
+Change the selection parameters as need be using the aliases.
+The default values are written in the DataSelection Component and
+in lstchain/data/data_selection_cuts.json
 
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
@@ -26,6 +28,7 @@ import numpy as np
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_pyirf
 from lstchain.reco.utils import filter_events
+from lstchain.io import DataSelection, DataBinning
 
 from astropy.io import fits
 import astropy.units as u
@@ -52,7 +55,6 @@ from pyirf.spectral import (
     IRFDOC_ELECTRON_SPECTRUM,
 )
 from pyirf.utils import calculate_source_fov_offset, calculate_theta
-from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 
 __all__ = ["IRFFITSWriter"]
 
@@ -80,85 +82,6 @@ class IRFFITSWriter(Tool):
         default_value="./irf.fits.gz",
     ).tag(config=True)
 
-    intensity = traits.Int(
-        help="Enter the minimum value of intensity of events",
-        default_value=100,
-    ).tag(config=True)
-
-    wl = traits.Float(
-        help="Enter the minimum value of wl for events",
-        default_value=0.1,
-    ).tag(config=True)
-
-    leakage_intensity_width_2 = traits.Float(
-        help="Enter the maximum value for leakage_intensity_width_2 of events",
-        default_value=0.2,
-    ).tag(config=True)
-
-    fixed_gh_cut = traits.Float(
-        help="Enter fixed selection cut for gh_score (gammaness)",
-        default_value=0.6,
-    ).tag(config=True)
-
-    fixed_theta_cut = traits.Float(
-        help="Enter fixed selection cut for theta",
-        default_value=0.2,
-    ).tag(config=True)
-
-    fixed_source_fov_offset_cut = traits.Float(
-        help="Enter fixed selection cut for source FoV offset",
-        default_value=2.83,
-    ).tag(config=True)
-
-    lst_tel_ids = traits.List(
-        help="Enter the list of selected LST telescope ids",
-        default_value=[1],
-    ).tag(config=True)
-
-    magic_tel_ids = traits.List(
-        help="Enter the list of selected MAGIC telescope ids",
-        default_value=[1, 2],
-    ).tag(config=True)
-
-    true_energy_bins = traits.List(
-        help="Enter values to get true energy (TeV) bins as "
-        "[e_min, e_max, bins_per_decade]",
-        default_value=[0.01, 100, 5.5],
-    ).tag(config=True)
-
-    reco_energy_bins = traits.List(
-        help="Enter values to get reco energy (TeV) bins as "
-        "[e_min, e_max, bins_per_decade]",
-        default_value=[0.01, 100, 5.5],
-    ).tag(config=True)
-
-    energy_migra_bins = traits.List(
-        help="Enter values to get energy migration bins as [min, max, bins]",
-        default_value=[0.2, 5, 31],
-    ).tag(config=True)
-
-    single_fov_offset_bins = traits.List(
-        help="Enter the list of bins for single FOV offset binning",
-        default_value=[0.3, 0.5, 0.7],
-    ).tag(config=True)
-
-    mult_fov_offset_bins = traits.List(
-        help="Enter the list of bins for multiple FOV offset binning",
-        default_value=[0, 0.3, 0.5, 0.7, 0.9, 1.1],
-    ).tag(config=True)
-
-    bkg_fov_offset_bins = traits.List(
-        help="Enter the range of values for multiple FOV offset binning "
-        "for Background IRF as [o_min, o_max]",
-        default_value=[0, 11],
-    ).tag(config=True)
-
-    source_offset = traits.List(
-        help="Enter values to get source offset binning for PSF IRF "
-        "as [o_min, o_max, bin_width]",
-        default_value=[0, 1.0001, 0.001],
-    ).tag(config=True)
-
     point_like = traits.Bool(
         help="True for point-like IRF, False for Full Enclosure",
         default_value=False,
@@ -169,29 +92,34 @@ class IRFFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
+    classes = ([DataSelection, DataBinning])
+
     aliases = {
         ("fg", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
         ("fp", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
         ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
         ("pnt", "point_like"): "IRFFITSWriter.point_like",
-        ("int", "intensity"): "IRFFITSWriter.intensity",
-        "wl": "IRFFITSWriter.wl",
+        ("int", "intensity"): "DataSelection.intensity",
+        ("len", "length"): "DataSelection.length",
+        ("w", "width"): "DataSelection.width",
+        "r": "DataSelection.r",
+        "wl": "DataSelection.wl",
         ("leak_2", "leakage_intensity_width_2"):
-            "IRFFITSWriter.leakage_intensity_width_2",
-        ("gh", "fixed_gh_cut"): "IRFFITSWriter.fixed_gh_cut",
-        ("theta", "fixed_theta_cut"): "IRFFITSWriter.fixed_theta_cut",
+            "DataSelection.leakage_intensity_width_2",
+        ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
+        ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
-            "IRFFITSWriter.fixed_source_fov_offset_cut",
-        "lst_tel_ids": "IRFFITSWriter.lst_tel_ids",
-        "magic_tel_ids": "IRFFITSWriter.magic_tel_ids",
-        ("e_true", "true_energy_bins"): "IRFFITSWriter.true_energy_bins",
-        ("e_reco", "reco_energy_bins"): "IRFFITSWriter.reco_energy_bins",
-        ("e_migra", "energy_migra_bins"): "IRFFITSWriter.energy_migra_bins",
-        ("sing_fov", "single_fov_offset_bins"): "IRFFITSWriter.single_fov_offset_bins",
-        ("mult_fov", "mult_fov_offset_bins"): "IRFFITSWriter.mult_fov_offset_bins",
-        ("bkg_fov", "bkg_fov_offset_bins"): "IRFFITSWriter.bkg_fov_offset_bins",
-        ("src_off", "source_offset"): "IRFFITSWriter.source_offset",
+            "DataSelection.fixed_source_fov_offset_cut",
+        "lst_tel_ids": "DataSelection.lst_tel_ids",
+        "magic_tel_ids": "DataSelection.magic_tel_ids",
+        ("etrue", "true_energy_bins"): "DataBinning.true_energy_bins",
+        ("ereco", "reco_energy_bins"): "DataBinning.reco_energy_bins",
+        ("emigra", "energy_migra_bins"): "DataBinning.energy_migra_bins",
+        ("sing_fov", "single_fov_offset_bins"): "DataBinning.single_fov_offset_bins",
+        ("mult_fov", "multiple_fov_offset_bins"): "DataBinning.multiple_fov_offset_bins",
+        ("bkg_fov", "bkg_fov_offset_bins"): "DataBinning.bkg_fov_offset_bins",
+        ("src_off", "source_offset_bins"): "DataBinning.source_offset_bins",
     }
 
     flag = {
@@ -226,11 +154,8 @@ class IRFFITSWriter(Tool):
         else:
             self.only_gamma_irf = True
 
-        self.event_filters = {
-            "intensity": [self.intensity, np.inf],
-            "wl": [self.wl, 1],
-            "leakage_intensity_width_2": [0, self.leakage_intensity_width_2],
-        }
+        self.data_sel = DataSelection(parent=self)
+        self.data_bin = DataBinning(parent=self)
 
         # Read and update MC information
         if self.only_gamma_irf:
@@ -310,25 +235,25 @@ class IRFFITSWriter(Tool):
         gammas = self.mc_particle["gamma"]["events"]
 
         self.log.debug(
-            f"Using fixed G/H cut of {self.fixed_gh_cut} to calculate theta cuts"
+            f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut} to calculate theta cuts"
         )
 
-        gammas = filter_events(gammas, self.event_filters)
+        gammas = filter_events(gammas, self.data_sel.event_filters())
 
         # Filtering the tels needed to use with the real data
         # Add MAGIC tels when need be
-        for i in self.lst_tel_ids:
+        for i in self.data_sel.lst_tel_ids:
             gammas["selected_tels"] = gammas["tel_id"] == i
 
-        gammas["selected_gh"] = gammas["gh_score"] > self.fixed_gh_cut
+        gammas["selected_gh"] = gammas["gh_score"] > self.data_sel.fixed_gh_cut
 
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
         if self.point_like:
             gammas["selected_theta"] = gammas["theta"] < u.Quantity(
-                self.fixed_theta_cut * u.deg
+                self.data_sel.fixed_theta_cut * u.deg
             )
             gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
-                self.fixed_source_fov_offset_cut * u.deg
+                self.data_sel.fixed_source_fov_offset_cut * u.deg
             )
             # Combining selection cuts
             gammas["selected"] = (
@@ -341,43 +266,18 @@ class IRFFITSWriter(Tool):
             gammas["selected"] = gammas["selected_gh"] & gammas["selected_tels"]
 
         # Binning of parameters used in IRFs
-        # Energy bins
-        true_energy_bins = create_bins_per_decade(
-            self.true_energy_bins[0] * u.TeV,
-            self.true_energy_bins[1] * u.TeV,
-            self.true_energy_bins[2],
-        )
-        # add_overflow_bins(***)[1:-1]
-        # The overflow binning added is not needed in the current script
-        reco_energy_bins = create_bins_per_decade(
-            self.reco_energy_bins[0] * u.TeV,
-            self.reco_energy_bins[1] * u.TeV,
-            self.reco_energy_bins[2],
-        )
-        migration_bins = np.linspace(
-            self.energy_migra_bins[0],
-            self.energy_migra_bins[1],
-            self.energy_migra_bins[2],
-        )
-        # Using the same binning as in pyirf for source_offset_bins and
-        # FoV offset bins for background IRF
-        # Angular bins
-        source_offset_bins = (
-            np.arange(
-                self.source_offset[0],
-                self.source_offset[1],
-                self.source_offset[2],
-            )
-            * u.deg
-        )
+        true_energy_bins = self.data_bin.true_energy()
+        reco_energy_bins = self.data_bin.reco_energy()
+        migration_bins = self.data_bin.energy_migration()
+        source_offset_bins = self.data_bin.source_offset()
 
         if self.mc_particle["gamma"]["mc_type"] == "point-like":
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            fov_offset_bins = self.single_fov_offset_bins * u.deg
+            fov_offset_bins = self.data_bin.single_fov_offset_bins * u.deg
         else:
-            fov_offset_bins = self.mult_fov_offset_bins * u.deg
+            fov_offset_bins = self.data_bin.multiple_fov_offset_bins * u.deg
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -387,41 +287,38 @@ class IRFFITSWriter(Tool):
                 ]
             )
 
-            background = filter_events(background, self.event_filters)
-            background["selected_gh"] = background["gh_score"] > self.fixed_gh_cut
-            for i in self.lst_tel_ids:
+            background = filter_events(background, self.data_sel.event_filters())
+            background["selected_gh"] = background["gh_score"] > self.data_sel.fixed_gh_cut
+            for i in self.data_sel.lst_tel_ids:
                 background["selected_tels"] = background["tel_id"] == i
             background["selected"] = (
                 background["selected_gh"] & background["selected_tels"]
             )
 
-            background_offset_bins = (
-                np.arange(self.bkg_fov_offset_bins[0], self.bkg_fov_offset_bins[1])
-                * u.deg
-            )
+            background_offset_bins = self.data_bin.background_offset()
 
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU should be created
         # GH_CUT and FOV_CUT are temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
-            "INSTRUME": "LST-" + " ".join(map(str, self.lst_tel_ids)),
+            "INSTRUME": "LST-" + " ".join(map(str, self.data_sel.lst_tel_ids)),
             "FOVALIGN": "RADEC",
-            "GH_CUT": self.fixed_gh_cut,
+            "GH_CUT": self.data_sel.fixed_gh_cut,
         }
         if self.point_like:
             self.log.debug("Generating Point-Like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(u.Quantity(self.fixed_theta_cut * u.deg))
+            extra_headers["RAD_MAX"] = str(u.Quantity(
+                        self.data_sel.fixed_theta_cut * u.deg
+                        ))
             extra_headers["FOV_CUT"] = str(
-                u.Quantity(self.fixed_source_fov_offset_cut * u.deg)
+                u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)
             )
         else:
             self.log.debug("Generating Full-Enclosure IRF HDUs")
 
         # Write HDUs
-        self.hdus = [
-            fits.PrimaryHDU(),
-        ]
+        self.hdus = [fits.PrimaryHDU(), ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
