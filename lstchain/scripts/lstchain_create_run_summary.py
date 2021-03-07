@@ -161,17 +161,13 @@ def type_of_run(date_path, run_number, counters, n_events=500):
             pedestal_events = sum(
                 event.trigger.event_type == EventType.SKY_PEDESTAL for event in source
             )
-        with LSTEventSource(filename, config=config, max_events=n_events) as source:
-            source.log.setLevel(logging.ERROR)
             mono_events = sum(event.trigger.event_type == EventType.SUBARRAY for event in source)
 
-        num_events = min(pedestal_events + mono_events, n_events)
-
-        if mono_events / num_events > 0.999:
+        if mono_events / n_events > 0.999:
             run_type = "DRS4"
-        elif pedestal_events / num_events > 0.1:
+        elif pedestal_events / n_events > 0.1:
             run_type = "CALI"
-        elif pedestal_events / num_events < 0.1:
+        elif pedestal_events / n_events < 0.1:
             run_type = "DATA"
         else:
             run_type = "CONF"
