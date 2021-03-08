@@ -86,8 +86,6 @@ def main():
     else:
         config = std_config
 
-    use_only_main_island = True
-
     if args.pedestal_cleaning:
         print("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
@@ -96,7 +94,6 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         picture_th = np.clip(pedestal_thresh, pic_th, None)
-        use_only_main_island = config[clean_method_name]["use_only_main_island"]
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
     else:
@@ -104,6 +101,10 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
+
+    use_only_main_island = True
+    if "use_only_main_island" in config[clean_method_name].keys():
+        use_only_main_island = config[clean_method_name]["use_only_main_island"]
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")

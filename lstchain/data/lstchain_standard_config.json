@@ -36,7 +36,8 @@
     "picture_thresh":6,
     "boundary_thresh":3,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "min_number_picture_neighbors":1,
+    "use_only_main_island":true
   },
   "tailcuts_clean_with_pedestal_threshold": {
     "picture_thresh":8,
