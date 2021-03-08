@@ -28,6 +28,7 @@ class DL1DataCheckContainer(Container):
     subrun_index = Field(-1, 'Subrun index')
     elapsed_time = Field(-1, 'Subrun time duration (from Dragon)')
     num_events = Field(-1, 'Total number of events')
+    num_cleaned_events = Field(-1, 'Number of events surviving cleaning')
     trigger_type = Field(None, 'Number of events per trigger type')
     ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
     mean_alt_tel = Field(None, 'Mean telescope altitude')
@@ -117,6 +118,7 @@ class DL1DataCheckContainer(Container):
         self.elapsed_time = table['dragon_time'][len(table)-1] - \
                             table['dragon_time'][0]
         self.num_events = mask.sum()
+        self.num_cleaned_events = np.isfinite(table['intensity'][mask]).sum()
         self.ucts_trigger_type = \
             count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
