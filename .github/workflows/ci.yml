@@ -50,6 +50,8 @@ jobs:
           echo "pip install ."
           pip install .
 
+          echo "import coverage; coverage.process_startup()" > $(python -m site --user-site)/sitecustomize.py
+
       - name: Download test data
         env:
           TEST_DATA_USER: ${{ secrets.test_data_user }}
