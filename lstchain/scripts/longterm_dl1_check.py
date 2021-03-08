@@ -95,6 +95,7 @@ def main():
                   'num_cosmics': [],
                   'num_pedestals': [],
                   'num_flatfield': [],
+                  'num_pedestals_after_cleaning': [],
                   'num_contained_mu_rings': [],
                   'ff_charge_mean': [],   # camera average of mean pix FF charge
                   'ff_charge_mean_err': [], # uncertainty of the above
@@ -138,7 +139,7 @@ def main():
     # of the vector columns we cannot write this out using pandas:
     class pixwise_info(tables.IsDescription):
         runnumber = tables.Int32Col()
-        time = tables.Float32Col()
+        time = tables.Float64Col()
         ff_pix_charge_mean = tables.Float32Col(shape=(numpixels))
         ff_pix_charge_stddev = tables.Float32Col(shape=(numpixels))
         ff_pix_rel_time_mean = tables.Float32Col(shape=(numpixels))
@@ -259,6 +260,9 @@ def main():
             events_in_run = nevents.sum()
 
             runsummary['num_pedestals'].extend([table.col('num_events').sum()])
+            runsummary['num_pedestals_after_cleaning'].extend([table.col(
+                    'num_cleaned_events').sum()])
+
             runsummary['ped_fraction_pulses_above10'].extend([(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum()/
                                                              runsummary['num_pedestals'][-1]])
             runsummary['ped_fraction_pulses_above30'].extend([(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum()/
@@ -290,6 +294,7 @@ def main():
 
         else:
             runsummary['num_pedestals'].extend([np.nan])
+            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ped_fraction_pulses_above10'].extend([np.nan])
             runsummary['ped_fraction_pulses_above30'].extend([np.nan])
             runsummary['ped_charge_mean'].extend([np.nan])
@@ -581,7 +586,7 @@ def plot(filename='longterm_dl1_check.h5'):
     fig_altitude.y_range = Range1d(altmin.min()*0.95, altmax.max()*1.05)
     row1 = [fig_altitude]
     grid0b = gridplot([row1], sizing_mode=None, plot_width=pad_width,
-                     plot_height=pad_height)
+                      plot_height=pad_height)
     page0b.child = grid0b
     page0b.title = 'Pointing'
 
@@ -745,8 +750,20 @@ def plot(filename='longterm_dl1_check.h5'):
     fig_ped_stddev.y_range = \
         Range1d(0.,1.1*np.max(runsummary['ped_charge_stddev']))
 
+    frac = runsummary['num_pedestals_after_cleaning'] / \
+           runsummary['num_pedestals']
+    err = np.sqrt(frac*(1-frac)/runsummary['num_pedestals'])
+    fig_ped_clean_fraction = show_graph(
+            x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
+            y=frac, xlabel='date',
+            ylabel='Fraction of pedestals surviving cleaning',
+            ey=err, xtype='datetime', ytype='linear',
+            point_labels=run_titles)
+
     row1 = [fig_ped, fig_ped_stddev]
-    grid6 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+    row2 = [fig_ped_clean_fraction]
+
+    grid6 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page6.child = grid6
     page6.title = "Interleaved pedestals, averages"
@@ -817,8 +834,8 @@ def plot(filename='longterm_dl1_check.h5'):
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
 
-    tabs = Tabs(tabs=[page0, page0b, page1, page2, page3, page4, page5, page6,
-                      page7])
+    tabs = Tabs(tabs=[page0, page0b, page1, page2,
+                      page3, page4, page5, page6, page7])
     show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 
