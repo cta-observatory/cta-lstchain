@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from ctapipe.core import Provenance, Tool, ToolConfigurationError, traits
-from lstchain.io import get_dataset_keys, replace_config, standard_config, write_dl2_dataframe
+from lstchain.io import get_dataset_keys, write_dl2_dataframe
 from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
                             dl1_params_src_dep_lstcam_key,
                             dl2_params_src_dep_lstcam_key, write_dataframe)
@@ -35,6 +35,19 @@ class ReconstructionHDF5Writer(Tool):
         directory_ok=False,
         exists=True,
     ).tag(config=True)
+    source_dependent = traits.Bool(
+        default_value=False,
+        help="Is the analysis source dependent?"
+    ).tag(config=True)
+    events_filters = traits.Dict(
+        help="Dictionary with information to filter events"
+    ).tag(config=True)
+    classification_features = traits.List(
+        help="List of classification features"
+    ).tag(config=True)
+    regression_features = traits.List(
+        help="List of regression features"
+    ).tag(config=True)
     output_dir = traits.Path(help="Path where to store the reconstructed DL2", file_ok=False).tag(config=True)
 
     aliases = {
@@ -43,6 +56,7 @@ class ReconstructionHDF5Writer(Tool):
         "energy-model": "ReconstructionHDF5Writer.path_energy_model",
         "disp-model": "ReconstructionHDF5Writer.path_disp_model",
         "gh-model": "ReconstructionHDF5Writer.path_gh_model",
+        "source-dependent": "ReconstructionHDF5Writer.source_dependent"
     }
 
     def __init__(self, **kwargs):
@@ -53,25 +67,19 @@ class ReconstructionHDF5Writer(Tool):
         For getting help run:
         lstchain_create_dl2_file --help
         """
-        self.data_ind = None
-        self.data_src_dep = None
-        self.dl2_ind = None
-        self.dl2_src_dep_level = None
-        self.dl2_src_dep_dict = {}
-        self.reg_energy = None
-        self.reg_disp_vector = None
-        self.cls_gh = None
-
-        self._dict_conf = replace_config(standard_config, self.get_current_config())
 
     def setup(self):
 
-        if self.config_file is None:
-            raise ToolConfigurationError("Please provide configuration file with --config parameter")
+        if not len(self.config["events_filters"]):
+            raise ToolConfigurationError("Information on events filtering not found in config.")
+        if not len(self.config["classification_features"]):
+            raise ToolConfigurationError("Information on classification features not found in config.")
+        if not len(self.config["regression_features"]):
+            raise ToolConfigurationError("Information on regression features not found in config.")
 
         self.log.info("Reading DL1 file")
         self.data_ind = pd.read_hdf(self.input, key=dl1_params_lstcam_key)
-        if self._dict_conf["source_dependent"]:
+        if self.source_dependent:
             self.data_src_dep = pd.read_hdf(self.input, key=dl1_params_src_dep_lstcam_key)
         self.log.info("Reading RF models")
         self.reg_energy = joblib.load(self.path_energy_model)
@@ -97,18 +105,18 @@ class ReconstructionHDF5Writer(Tool):
 
         # source-independent analysis
         self.log.info("Applying models")
-        if not self._dict_conf["source_dependent"]:
+        if not self.source_dependent:
             self.data_ind = filter_events(
                 self.data_ind,
-                filters=self._dict_conf["events_filters"],
-                finite_params=self._dict_conf["regression_features"] + self._dict_conf["classification_features"],
+                filters=self.config["events_filters"],
+                finite_params=self.config["regression_features"] + self.config["classification_features"],
             )
             self.dl2_ind = dl1_to_dl2.apply_models(
                 self.data_ind,
                 self.cls_gh,
                 self.reg_energy,
                 self.reg_disp_vector,
-                custom_config=self._dict_conf,
+                custom_config=self.config,
             )
         # source-dependent analysis
         else:
@@ -120,15 +128,15 @@ class ReconstructionHDF5Writer(Tool):
                 self.data_src_dep.append(self.data_src_dep[k])
                 self.data_src_dep = filter_events(
                     self.data_src_dep,
-                    filters=self._dict_conf["events_filters"],
-                    finite_params=self._dict_conf["regression_features"] + self._dict_conf["classification_features"],
+                    filters=self.config["events_filters"],
+                    finite_params=self.config["regression_features"] + self.config["classification_features"],
                 )
                 dl2_level_df = dl1_to_dl2.apply_models(
                     self.data_src_dep,
                     self.cls_gh,
                     self.reg_energy,
                     self.reg_disp_vector,
-                    custom_config=self._dict_conf,
+                    custom_config=self.config,
                 )
                 self.dl2_src_dep_dict[k] = dl2_level_df.drop(self.data_ind.keys(), axis=1)
                 if i == 0:
@@ -167,7 +175,7 @@ class ReconstructionHDF5Writer(Tool):
                     h5in.copy_node(k, g, overwrite=True)
 
         # write h5 file
-        if not self._dict_conf["source_dependent"]:
+        if not self.source_dependent:
             write_dl2_dataframe(self.dl2_ind, output_file)
         else:
             write_dl2_dataframe(self.dl2_src_dep_level, output_file)
