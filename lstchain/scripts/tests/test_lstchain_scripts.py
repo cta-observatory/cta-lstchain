@@ -131,6 +131,14 @@ def observed_dl1_files(temp_dir_observed_files):
     )
 
     run_program(
+            "lstchain_check_dl1.py",
+            "-b",
+            "--omit-pdf",
+            "--input-file",
+            dl1_output_path1
+    )
+
+    run_program(
         "lstchain_data_r0_to_dl1",
         "-f",
         test_r0_path2,
@@ -144,6 +152,14 @@ def observed_dl1_files(temp_dir_observed_files):
         test_time_calib_path,
         "--pointing-file",
         test_drive_report
+    )
+
+    run_program(
+            "lstchain_check_dl1.py",
+            "-b",
+            "--omit-pdf",
+            "--input-file",
+            dl1_output_path2
     )
 
     return {
