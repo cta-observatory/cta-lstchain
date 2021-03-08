@@ -40,9 +40,7 @@ ALL_SCRIPTS = find_entry_points("lstchain")
 
 
 def run_program(*args):
-    env = os.environ.copy()
-    env['COVERAGE_PROCESS_START'] = 'true'
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", env=env)
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
 
     if result.returncode != 0:
         raise ValueError(
