@@ -109,7 +109,7 @@ class TimeCorrectionCalculate(Component):
 
             pixel_ids = event.lst.tel[self.tel_id].svc.pixel_ids
             waveforms = event.r1.tel[self.tel_id].waveform
-            no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int)
+            no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
             # select both gain
             charge, peak_time = self.extractor(
                     event.r1.tel[self.tel_id].waveform[:, :, :],

@@ -129,7 +129,7 @@ def get_dl1(
         num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
         if use_main_island:
-            n_pixels_on_island = np.bincount(island_labels.astype(np.int))
+            n_pixels_on_island = np.bincount(island_labels)
             n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
@@ -565,10 +565,6 @@ def r0_to_dl1(
         muon_output_filename = Path(dir, name)
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
-
-        # Produce the dl1 datacheck .h5 file:
-        check_dl1(output_filename, Path(output_filename).parent,
-                  max_cores=1, create_pdf=False)
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
