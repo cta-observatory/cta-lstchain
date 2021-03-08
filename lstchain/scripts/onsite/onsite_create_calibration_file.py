@@ -78,7 +78,7 @@ def main():
 
         # search the pedestal calibration file
 
-        pedestal_file = f"{output_dir}/drs4_pedestal.Run{'%05d'%ped_run}.0000.fits"
+        pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run:05d}.0000.fits"
         if not os.path.exists(pedestal_file):
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
