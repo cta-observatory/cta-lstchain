@@ -67,5 +67,6 @@ jobs:
 
       - uses: codecov/codecov-action@v1
         with:
+          # disable gcov, not needed
           functionalities:
-            gcov: false
+            - gcov
