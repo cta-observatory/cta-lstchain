@@ -15,7 +15,6 @@ from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 from ctapipe_io_lst.event_time import read_night_summary
 
-
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
                                  formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -36,7 +35,6 @@ optional.add_argument('--ff_calibration', help="Perform the charge calibration (
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
 
-
 args = parser.parse_args()
 run = args.run_number
 ped_run = args.pedestal_run
@@ -49,7 +47,6 @@ tel_id = args.tel_id
 sub_run = args.sub_run
 
 max_events = 1000000
-
 
 def main():
 
@@ -77,7 +74,6 @@ def main():
             exit(0)
 
         # search the pedestal calibration file
-
         pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run:05d}.0000.fits"
         if not os.path.exists(pedestal_file):
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
@@ -100,7 +96,6 @@ def main():
         #
         # produce drs4 time calibration file
         #
-
         time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.hdf5"
         print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
