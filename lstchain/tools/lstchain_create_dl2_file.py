@@ -74,9 +74,9 @@ class ReconstructionHDF5Writer(Tool):
 
     def setup(self):
 
-        if not len(self.config["classification_features"]):
+        if not len(self.classification_features):
             raise ToolConfigurationError("Information on classification features not found in config.")
-        if not len(self.config["regression_features"]):
+        if not len(self.regression_features):
             raise ToolConfigurationError("Information on regression features not found in config.")
 
         self.log.info("Reading DL1 file")
@@ -110,8 +110,8 @@ class ReconstructionHDF5Writer(Tool):
         if not self.source_dependent:
             self.data_ind = filter_events(
                 self.data_ind,
-                filters=self.config["events_filters"],
-                finite_params=self.config["regression_features"] + self.config["classification_features"],
+                filters=self.events_filters,
+                finite_params=self.regression_features + self.classification_features,
             )
             self.dl2_ind = dl1_to_dl2.apply_models(
                 self.data_ind,
@@ -130,8 +130,8 @@ class ReconstructionHDF5Writer(Tool):
                 self.data_src_dep.append(self.data_src_dep[k])
                 self.data_src_dep = filter_events(
                     self.data_src_dep,
-                    filters=self.config["events_filters"],
-                    finite_params=self.config["regression_features"] + self.config["classification_features"],
+                    filters=self.events_filters,
+                    finite_params=self.regression_features + self.classification_features,
                 )
                 dl2_level_df = dl1_to_dl2.apply_models(
                     self.data_src_dep,
