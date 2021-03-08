@@ -419,9 +419,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                             table.col('num_events'), fmt, label=label)
 
         axes[1, 0].set_ylabel('rate (events/s)')
-        axes[1, 0].set_yscale('log')
         axes[1, 1].set_ylabel('Fraction of events surviving cleaning')
-        axes[1, 0].set_yscale('linear')
         for j in (0, 1):
             axes[1, j].set_xlabel('subrun index')
             axes[1, j].legend(loc='best')

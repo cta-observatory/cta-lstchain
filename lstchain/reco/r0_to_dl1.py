@@ -566,10 +566,6 @@ def r0_to_dl1(
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
 
-        # Produce the dl1 datacheck .h5 file:
-        # check_dl1(output_filename, Path(output_filename).parent,
-        #          max_cores=1, create_pdf=False)
-
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
     """
