@@ -24,7 +24,11 @@ class CalibrationHDF5Writer(Tool):
         directory_ok=False,
         default_value="calibration.hdf5",
     ).tag(config=True)
-
+    drs4_pedestal_path = traits.Path(
+        help="Path of the DRS4 pedestal file",
+        directory_ok=False,
+        exists=True,
+    ).tag(config=True)
     progress_bar = traits.Bool(
         help="Show progress bar during processing",
         default_value=True,
@@ -39,9 +43,10 @@ class CalibrationHDF5Writer(Tool):
         ("o", "output_file"): "CalibrationHDF5Writer.output",
         "max_events": "EventSource.max_events",
         "calibration_product": "CalibrationHDF5Writer.calibration_product",
+        "drs4_pedestal_path": "LSTR0Corrections.drs4_pedestal_path"
     }
 
-    classes = [EventSource] + traits.classes_with_traits(CalibrationCalculator)
+    classes = [] + traits.classes_with_traits(EventSource) + traits.classes_with_traits(CalibrationCalculator)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
