@@ -134,11 +134,15 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import apply_models
     import joblib
 
+    events_filters = standard_config["ReconstructionHDF5Writer"]["events_filters"]
+    regression_features = standard_config["ReconstructionHDF5Writer"]["regression_features"]
+    classification_features = standard_config["ReconstructionHDF5Writer"]["classification_features"]
+
     dl1 = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     dl1 = filter_events(
         dl1,
-        filters=standard_config["events_filters"],
-        finite_params=standard_config['regression_features'] + standard_config['classification_features']
+        filters=events_filters,
+        finite_params=regression_features + classification_features
     )
 
     reg_energy = joblib.load(rf_models["energy"])

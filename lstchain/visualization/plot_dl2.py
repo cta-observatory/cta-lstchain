@@ -499,7 +499,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     fig.suptitle('Features importances')
 
     ### Regression models ###
-    reg_features_names = config['regression_features']
+    reg_features_names = config["ReconstructionHDF5Writer"]["regression_features"]
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
     disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
@@ -511,7 +511,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     axes[1].set_title("energy")
 
     ### Classification model ###
-    clf_features_names = config['classification_features']
+    clf_features_names = config["ReconstructionHDF5Writer"]["classification_features"]
     clf = joblib.load(os.path.join(path_models, "cls_gh.sav"))
 
     plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)

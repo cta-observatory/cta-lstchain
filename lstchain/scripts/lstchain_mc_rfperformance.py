@@ -102,11 +102,12 @@ def main():
         custom_config=config,
     )
 
+    events_filters = config["ReconstructionHDF5Writer"]["events_filters"]
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
-                           config["events_filters"],
+                           events_filters,
                            )
     proton = filter_events(pd.read_hdf(args.protontest, key=dl1_params_lstcam_key),
-                           config["events_filters"],
+                           events_filters,
                            )
 
     data = pd.concat([gammas, proton], ignore_index=True)

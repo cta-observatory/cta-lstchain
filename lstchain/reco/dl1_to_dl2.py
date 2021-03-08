@@ -54,8 +54,8 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args'] 
-    features = config['regression_features']
+    regression_args = config["ReconstructionHDF5Writer"]["random_forest_regressor_args"]
+    features = config["ReconstructionHDF5Writer"]["regression_features"]
     model = RandomForestRegressor    
 
     print("Given features: ", features)
@@ -87,8 +87,8 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
+    regression_args = config["ReconstructionHDF5Writer"]["random_forest_regressor_args"]
+    features = config["ReconstructionHDF5Writer"]["regression_features"]
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -120,8 +120,8 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
+    regression_args = config["ReconstructionHDF5Writer"]["random_forest_regressor_args"]
+    features = config["ReconstructionHDF5Writer"]["regression_features"]
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -153,8 +153,8 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
-    features = config["classification_features"]
+    classification_args = config["ReconstructionHDF5Writer"]["random_forest_classifier_args"]
+    features = config["ReconstructionHDF5Writer"]["classification_features"]
     model = RandomForestClassifier
 
     print("Given features: ", features)
@@ -189,8 +189,8 @@ def train_reco(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
+    regression_args = config["ReconstructionHDF5Writer"]["random_forest_regressor_args"]
+    features = config["ReconstructionHDF5Writer"]["regression_features"]
     model = RandomForestRegressor
 
     print("Given features: ", features)
@@ -233,8 +233,8 @@ def train_sep(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
-    features = config["classification_features"]
+    classification_args = config["ReconstructionHDF5Writer"]["random_forest_classifier_args"]
+    features = config["ReconstructionHDF5Writer"]["classification_features"]
     model = RandomForestClassifier
 
 
@@ -300,7 +300,9 @@ def build_models(filegammas, fileprotons,
     """
 
     config = replace_config(standard_config, custom_config)
-    events_filters = config["events_filters"]
+    events_filters = config["ReconstructionHDF5Writer"]["events_filters"]
+    regression_features = config["ReconstructionHDF5Writer"]["regression_features"]
+    classification_features = config["ReconstructionHDF5Writer"]["classification_features"]
 
     # Adding a filter on mc_type just for training
     events_filters['mc_type'] = [-9000, np.inf]
@@ -319,12 +321,12 @@ def build_models(filegammas, fileprotons,
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
-                                   finite_params=config['regression_features'] + config['classification_features'],
+                                   finite_params=regression_features + classification_features,
                                    )
 
     df_proton = utils.filter_events(df_proton,
                                     filters=events_filters,
-                                    finite_params=config['regression_features'] + config['classification_features'],
+                                    finite_params=regression_features + classification_features,
                                     )
 
 
@@ -345,8 +347,8 @@ def build_models(filegammas, fileprotons,
 
     #Apply the regressors to the test set
 
-    test['log_reco_energy'] = temp_reg_energy.predict(test[config['regression_features']])
-    disp_vector = temp_reg_disp_vector.predict(test[config['regression_features']])
+    test['log_reco_energy'] = temp_reg_energy.predict(test[regression_features])
+    disp_vector = temp_reg_disp_vector.predict(test[regression_features])
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
 
@@ -398,8 +400,8 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
 
     dl2 = dl1.copy()
 
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
+    regression_features = config["ReconstructionHDF5Writer"]["regression_features"]
+    classification_features = config["ReconstructionHDF5Writer"]["classification_features"]
       
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
