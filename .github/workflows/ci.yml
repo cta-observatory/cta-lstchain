@@ -50,6 +50,9 @@ jobs:
           echo "pip install ."
           pip install .
 
+          # To measure coverage when using subprocess for testing scripts we create sitecustomize.py
+          # as specified in https://coverage.readthedocs.io/en/latest/subprocess.html
+          # to initialize the coverage start up.
           mkdir -p "$(python -m site --user-site)"
           echo "import coverage; coverage.process_startup()" > "$(python -m site --user-site)/sitecustomize.py"
 
