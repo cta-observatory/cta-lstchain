@@ -754,8 +754,7 @@ def plot(filename='longterm_dl1_check.h5'):
            runsummary['num_pedestals']
     err = np.sqrt(frac*(1-frac)/runsummary['num_pedestals'])
     fig_ped_clean_fraction = show_graph(
-            x=pd.to_datetime(runsummary['time'], origin='unix',
-            unit='s'),
+            x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
             y=frac, xlabel='date',
             ylabel='Fraction of pedestals surviving cleaning',
             ey=err, xtype='datetime', ytype='linear',
