@@ -24,6 +24,7 @@ lstchain_create_irf_files
 """
 
 import numpy as np
+import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_pyirf
@@ -92,7 +93,7 @@ class IRFFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
-    classes = ([DataSelection, DataBinning])
+    classes = [DataSelection, DataBinning]
 
     aliases = {
         ("fg", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
@@ -127,19 +128,27 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"point_like": False}},
             "Full Enclosure IRFs will be produced",
         ),
-        "overwrite": ({"IRFFITSWriter": {"overwrite": True}}, "overwrite output file"),
+        "overwrite": (
+            {"IRFFITSWriter": {"overwrite": False}},
+            "overwrites output file if True",
+        )
     }
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config=None, **kwargs):
+        super().__init__(config=config, **kwargs)
 
     def setup(self):
 
-        if self.output_irf_file.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                f"Output file {self.output_irf_file} already exists,"
-                " use --overwrite to overwrite"
-            )
+        if self.output_irf_file.absolute().exists():
+            if self.overwrite:
+                self.log.warning(f"Overwriting {self.output_irf_file}")
+                self.output_irf_file.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Output file {self.output_irf_file} already exists,"
+                    " use --overwrite to overwrite"
+                )
+                sys.exit(1)
         filename = self.output_irf_file.name
         if filename.split(".")[1:] != ["fits", "gz"]:
             self.log.debug(
@@ -234,9 +243,7 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
 
-        self.log.debug(
-            f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut} to calculate theta cuts"
-        )
+        self.log.info(f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut}")
 
         gammas = filter_events(gammas, self.data_sel.event_filters())
 
@@ -288,7 +295,9 @@ class IRFFITSWriter(Tool):
             )
 
             background = filter_events(background, self.data_sel.event_filters())
-            background["selected_gh"] = background["gh_score"] > self.data_sel.fixed_gh_cut
+            background["selected_gh"] = (
+                background["gh_score"] > self.data_sel.fixed_gh_cut
+            )
             for i in self.data_sel.lst_tel_ids:
                 background["selected_tels"] = background["tel_id"] == i
             background["selected"] = (
@@ -307,15 +316,15 @@ class IRFFITSWriter(Tool):
             "GH_CUT": self.data_sel.fixed_gh_cut,
         }
         if self.point_like:
-            self.log.debug("Generating Point-Like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(u.Quantity(
-                        self.data_sel.fixed_theta_cut * u.deg
-                        ))
+            self.log.info("Generating Point-Like IRF HDUs")
+            extra_headers["RAD_MAX"] = str(
+                u.Quantity(self.data_sel.fixed_theta_cut * u.deg)
+            )
             extra_headers["FOV_CUT"] = str(
                 u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)
             )
         else:
-            self.log.debug("Generating Full-Enclosure IRF HDUs")
+            self.log.info("Generating Full-Enclosure IRF HDUs")
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
@@ -359,7 +368,7 @@ class IRFFITSWriter(Tool):
                     )
                 )
 
-        self.log.debug("Effective Area HDU created")
+        self.log.info("Effective Area HDU created")
         self.edisp = energy_dispersion(
             gammas[gammas["selected"]],
             true_energy_bins,
@@ -377,7 +386,7 @@ class IRFFITSWriter(Tool):
                 **extra_headers,
             )
         )
-        self.log.debug("Energy Dispersion HDU created")
+        self.log.info("Energy Dispersion HDU created")
 
         if not self.only_gamma_irf:
             self.background = background_2d(
@@ -395,7 +404,7 @@ class IRFFITSWriter(Tool):
                     **extra_headers,
                 )
             )
-            self.log.debug("Background HDU created")
+            self.log.info("Background HDU created")
 
         if not self.point_like:
             self.psf = psf_table(
@@ -414,7 +423,7 @@ class IRFFITSWriter(Tool):
                     **extra_headers,
                 )
             )
-            self.log.debug("PSF HDU created")
+            self.log.info("PSF HDU created")
 
     def finish(self):
 

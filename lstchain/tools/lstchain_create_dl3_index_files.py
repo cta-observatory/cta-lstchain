@@ -10,7 +10,7 @@ lstchain_create_dl3_index_files
     --d /path/to/DL3/files/
     --p dl3*[run_1-run_n]*.fits.gz
 """
-
+import sys
 from lstchain.irf import create_obs_hdu_index
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
@@ -47,8 +47,8 @@ class FITSIndexWriter(Tool):
 
     flags = {
         "overwrite": (
-            {"FITSIndexWriter": {"overwrite": True}},
-            "overwrite output files",
+            {"FITSIndexWriter": {"overwrite": False}},
+            "overwrite output files if True",
         ),
         "add_fits_dir": (
             {"FITSIndexWriter": {"add_fits_dir": False}},
@@ -71,21 +71,34 @@ class FITSIndexWriter(Tool):
             self.file_list.append(f.name)
             Provenance().add_input_file(f)
 
-        self.hdu_index_file = self.input_dl3_dir / self.hdu_index_filename
-        self.obs_index_file = self.input_dl3_dir / self.obs_index_filename
+        self.hdu_index_file = self.input_dl3_dir.absolute() / self.hdu_index_filename
+        self.obs_index_file = self.input_dl3_dir.absolute() / self.obs_index_filename
 
         self.provenance_log = self.input_dl3_dir / (self.name + ".provenance.log")
 
-        if self.hdu_index_file.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                f"Output file {self.hdu_index_file} already exists,"
-                "use --overwrite to overwrite"
-            )
-        if self.obs_index_file.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                f"Output file {self.obs_index_file} already exists,"
-                " use --overwrite to overwrite"
-            )
+        if self.hdu_index_file.exists():
+            if self.overwrite:
+                self.log.warning(f"Overwriting {self.hdu_index_file}")
+                self.hdu_index_file.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Output file {self.hdu_index_file} already exists,"
+                    "use --overwrite to overwrite"
+                )
+                sys.exit(1)
+
+        if self.obs_index_file.exists():
+            if self.overwrite:
+                self.log.warning(f"Overwriting {self.obs_index_file}")
+                self.obs_index_file.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Output file {self.obs_index_file} already exists,"
+                    " use --overwrite to overwrite"
+                )
+                sys.exit(1)
+        self.log.debug("HDU Index file: %s", self.hdu_index_file)
+        self.log.debug("OBS Index file: %s", self.obs_index_file)
 
     def start(self):
 

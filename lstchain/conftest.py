@@ -121,7 +121,7 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
 
 
 @pytest.fixture(scope="session")
-def simulated_irf_file(temp_dir_observed_files, simulated_dl2_file):
+def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
     """
     Produce test irf file from the simulated dl2 test file.
     Using the same test file for gamma, proton and electron inputs
@@ -137,6 +137,6 @@ def simulated_irf_file(temp_dir_observed_files, simulated_dl2_file):
         "--input_electron_dl2",
         simulated_dl2_file,
         "--output_irf_file",
-        irf_file,
+        irf_file
     )
     return irf_file

@@ -6,7 +6,7 @@
     "r": [0, 1],
     "wl": [0.1, 1],
     "leakage_intensity_width_2": [0, 0.2],
-    "fixed_gh_cut": 0.6,
+    "fixed_gh_cut": 0.8,
     "fixed_theta_cut": 0.2,
     "fixed_source_fov_offset_cut": 2.83,
     "src_dep_alpha": 8,

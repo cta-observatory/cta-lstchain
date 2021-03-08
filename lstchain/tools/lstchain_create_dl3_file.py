@@ -11,7 +11,7 @@ in lstchain/data/data_selection_cuts.json
 
 Simple usage with argument aliases and default parameter selection values:
 
-lstchain_create_irf_files
+lstchain_create_dl3_file
     --d /path/to/DL2_data_file.h5
     --o /path/to/DL3/file/
     --irf /path/to/irf.fits.gz
@@ -20,6 +20,7 @@ lstchain_create_irf_files
 
 from astropy.io import fits
 import astropy.units as u
+import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
@@ -59,12 +60,13 @@ class DataReductionFITSWriter(Tool):
         default_value=True,
     ).tag(config=True)
 
-    classes = ([DataSelection])
+    classes = [DataSelection]
 
     aliases = {
         ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
+        ("int", "intensity"): "DataSelection.intensity",
         ("len", "length"): "DataSelection.length",
         ("w", "width"): "DataSelection.width",
         "r": "DataSelection.r",
@@ -80,13 +82,13 @@ class DataReductionFITSWriter(Tool):
 
     flags = {
         "overwrite": (
-            {"DataReductionFITSWriter": {"overwrite": True}},
-            "overwrite output file",
+            {"DataReductionFITSWriter": {"overwrite": False}},
+            "overwrite output file if True",
         ),
     }
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config=None, **kwargs):
+        super().__init__(config=config, **kwargs)
 
     def setup(self):
 
@@ -97,12 +99,19 @@ class DataReductionFITSWriter(Tool):
 
         self.data_sel = DataSelection(parent=self)
 
-        self.output_file = self.output_dl3_path / self.filename_dl3
-        if self.output_file.exists() and not self.overwrite:
-            raise ToolConfigurationError(
-                f"Output file {self.output_file} already exists,"
-                " use --overwrite to overwrite"
-            )
+        self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
+        if self.output_file.exists():
+            if self.overwrite:
+                self.log.warning(f"Overwriting {self.output_file}")
+                self.output_file.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Output file {self.output_file} already exists,"
+                    " use --overwrite to overwrite"
+                )
+                sys.exit(1)
+
+        self.log.debug("Output DL3 file: %s", self.output_file)
 
     def start(self):
 
@@ -117,6 +126,7 @@ class DataReductionFITSWriter(Tool):
         self.data = filter_events(self.data, self.data_sel.event_filters())
 
         self.data = self.data[self.data["gh_score"] > self.data_sel.fixed_gh_cut]
+
         self.data = self.data[
             self.data["reco_source_fov_offset"]
             < u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)

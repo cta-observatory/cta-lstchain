@@ -3,18 +3,18 @@ from lstchain.io import DataSelection, DataBinning
 
 
 class temp_sel(DataSelection):
-    DataSelection.intensity = [0, 100]
+    DataSelection.intensity = [0, 10000]
     DataSelection.length = [0, 100]
     DataSelection.width = [0, 100]
-    DataSelection.r = [0, 100]
-    DataSelection.wl = [0, 100]
-    DataSelection.leakage_intensity_width_2 = [0, 100]
-    DataSelection.fixed_gh_cut = 100
-    DataSelection.fixed_theta_cut = 100
-    DataSelection.fixed_source_fov_offset_cut = 100
-    DataSelection.src_dep_alpha = 100
-    DataSelection.lst_tel_ids = [1, 2, 3]
-    DataSelection.magic_tel_ids = [1, 2, 3]
+    DataSelection.r = [0, 1]
+    DataSelection.wl = [0, 1]
+    DataSelection.leakage_intensity_width_2 = [0, 1]
+    DataSelection.fixed_gh_cut = 0.5
+    DataSelection.fixed_theta_cut = 1
+    DataSelection.fixed_source_fov_offset_cut = 2
+    DataSelection.src_dep_alpha = 10
+    DataSelection.lst_tel_ids = [1]
+    DataSelection.magic_tel_ids = [1, 2]
 
 
 class temp_bin(DataBinning):
@@ -22,7 +22,7 @@ class temp_bin(DataBinning):
     DataBinning.reco_energy_bins = [0.1, 100, 5]
     DataBinning.energy_migra_bins = [0.1, 100, 5]
     DataBinning.single_fov_offset_bins = [0.1, 0.2, 0.3]
-    DataBinning.multiple_fov_offset_bins = [0.1, 0.2, 0.3]
+    DataBinning.multiple_fov_offset_bins = [0.1, 0.2, 0.3, 0.4]
     DataBinning.bkg_fov_offset_bins = [1, 10]
     DataBinning.source_offset_bins = [0.1, 1., 0.05]
 
@@ -32,7 +32,7 @@ def test_data_selection():
 
     evt = tempsel.event_filters()
     assert 'r' in evt
-
+    
 
 def test_data_binning():
     tempbin = temp_bin()
