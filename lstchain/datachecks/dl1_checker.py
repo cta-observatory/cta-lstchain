@@ -406,21 +406,22 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             if len(table.col('subrun_index')) == 1:
                 fmt = 'o'
 
-            axes[1, 0].plot(table.col('subrun_index'), table.col('num_events'),
-                            fmt, label=label)
             # elapsed time: would better to take it always from the cosmics
             # table (will be closer to the true one), but number of entries
             # of tables can be different if e.g. pedestals or flatfield events
             # are missing in some subruns!
             elapsed_t = table.col('elapsed_time')
-            axes[1, 1].plot(table.col('subrun_index'),
+            axes[1, 0].plot(table.col('subrun_index'),
                             table.col('num_events') / elapsed_t, fmt,
                             label=label)
-        axes[1, 0].set_ylabel('number of events')
-        axes[1, 1].set_ylabel('rate (events/s)')
+            axes[1, 1].plot(table.col('subrun_index'),
+                            table.col('num_cleaned_events') /
+                            table.col('num_events'), fmt, label=label)
+
+        axes[1, 0].set_ylabel('rate (events/s)')
+        axes[1, 1].set_ylabel('Fraction of events surviving cleaning')
         for j in (0, 1):
             axes[1, j].set_xlabel('subrun index')
-            axes[1, j].set_yscale('log')
             axes[1, j].legend(loc='best')
 
         pdf.savefig()
