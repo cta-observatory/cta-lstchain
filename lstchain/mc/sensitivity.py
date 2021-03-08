@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import astropy.units as u
-from .plot_utils import sensitivity_minimization_plot, plot_positions_survived_events
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
