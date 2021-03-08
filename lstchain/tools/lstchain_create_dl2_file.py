@@ -16,6 +16,13 @@ from tables import open_file
 
 
 class ReconstructionHDF5Writer(Tool):
+    """
+    Tool that generates a HDF5 file with reconstructed energy, disp and gammaness of events.
+
+    For getting help run:
+    lstchain_create_dl2_file --help
+    """
+
     name = "ReconstructionHDF5Writer"
     description = "Generate a HDF5 file with reconstructed energy, disp and gammaness of events"
 
@@ -64,15 +71,6 @@ class ReconstructionHDF5Writer(Tool):
             'Perform source dependent analysis',
         )
     }
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        """
-        Tool that generates a HDF5 file with reconstructed energy, disp and gammaness of events.
-
-        For getting help run:
-        lstchain_create_dl2_file --help
-        """
 
     def setup(self):
 
