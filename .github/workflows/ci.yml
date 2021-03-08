@@ -66,3 +66,6 @@ jobs:
           pytest --cov lstchain --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v1
+        with:
+          functionalities:
+            gcov: false
