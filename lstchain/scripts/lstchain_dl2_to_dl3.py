@@ -13,7 +13,7 @@ from lstchain.io import (
 )
 
 
-parser = argparse.ArgumentParser(description="DL2 to DL3")
+parser = argparse.ArgumentParser(description="DL2 to DL3 dummy stage for hiperta_stream tests")
 
 # Required arguments
 parser.add_argument('--input-file', '-f', type=str,
