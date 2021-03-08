@@ -56,7 +56,13 @@ class ReconstructionHDF5Writer(Tool):
         "energy-model": "ReconstructionHDF5Writer.path_energy_model",
         "disp-model": "ReconstructionHDF5Writer.path_disp_model",
         "gh-model": "ReconstructionHDF5Writer.path_gh_model",
-        "source-dependent": "ReconstructionHDF5Writer.source_dependent"
+    }
+
+    flags = {
+        'source-dependent': (
+            {'ReconstructionHDF5Writer': {'source_dependent': True}},
+            'Perform source dependent analysis',
+        )
     }
 
     def __init__(self, **kwargs):
@@ -70,8 +76,6 @@ class ReconstructionHDF5Writer(Tool):
 
     def setup(self):
 
-        if not len(self.config["events_filters"]):
-            raise ToolConfigurationError("Information on events filtering not found in config.")
         if not len(self.config["classification_features"]):
             raise ToolConfigurationError("Information on classification features not found in config.")
         if not len(self.config["regression_features"]):
