@@ -23,7 +23,7 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     deltaT = traits.Bool(
-        help="Flag to use deltaT correction. Default=False", default_value=False
+        help="Use delta T correction", default_value=False
     ).tag(config=True)
 
     progress_bar = traits.Bool(
@@ -37,11 +37,10 @@ class PedestalFITSWriter(Tool):
         "max-events": "EventSource.max_events",
         "start-r0-waveform": "DragonPedestal.r0_sample_start",
     }
-
     flags = {
         "deltaT": (
-            {"PedestalFITSWriter": {"deltaT": False}},
-            "Flag to use deltaT correction. Default is False",
+            {"PedestalFITSWriter": {"deltaT": True}},
+            "Activate delta T corrections",
         )
     }
 
@@ -73,9 +72,9 @@ class PedestalFITSWriter(Tool):
         self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules, config=self.config)
 
         if self.deltaT:
-            self.log.info("DeltaT correction active")
+            self.log.info("Delta T correction active")
         else:
-            self.log.info("DeltaT correction not active")
+            self.log.info("Delta T correction not active")
 
         for event in tqdm(
             self.eventsource,
