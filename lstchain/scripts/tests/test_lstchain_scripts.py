@@ -131,7 +131,7 @@ def observed_dl1_files(temp_dir_observed_files):
     )
 
     run_program(
-            "lstchain_check_dl1.py",
+            "lstchain_check_dl1",
             "-b",
             "--omit-pdf",
             "--input-file",
@@ -155,7 +155,7 @@ def observed_dl1_files(temp_dir_observed_files):
     )
 
     run_program(
-            "lstchain_check_dl1.py",
+            "lstchain_check_dl1",
             "-b",
             "--omit-pdf",
             "--input-file",
