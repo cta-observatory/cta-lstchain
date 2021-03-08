@@ -57,10 +57,6 @@ class CalibrationHDF5Writer(Tool):
         For getting help run:
         lstchain_create_calibration --help
         """
-
-        self.eventsource = None
-        self.processor = None
-        self.writer = None
         self.simulation = False
         self.tot_events = 0
 
