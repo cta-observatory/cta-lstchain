@@ -134,6 +134,8 @@ def observed_dl1_files(temp_dir_observed_files):
             "lstchain_check_dl1",
             "-b",
             "--omit-pdf",
+            "--output-dir",
+            temp_dir_observed_files,
             "--input-file",
             dl1_output_path1
     )
@@ -158,6 +160,8 @@ def observed_dl1_files(temp_dir_observed_files):
             "lstchain_check_dl1",
             "-b",
             "--omit-pdf",
+            "--output-dir",
+            temp_dir_observed_files,
             "--input-file",
             dl1_output_path2
     )
