@@ -19,12 +19,11 @@ lstchain_create_dl3_file
 """
 
 from astropy.io import fits
-import astropy.units as u
 import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
-from lstchain.reco.utils import filter_events, get_effective_time
+from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
 from lstchain.io import DataSelection
@@ -76,13 +75,13 @@ class DataReductionFITSWriter(Tool):
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
-        ("alpha", "src_dep_alpha"): "DataSelection.src_dep_alpha",
         "source_name": "DataReductionFITSWriter.source_name",
+        "overwrite": "DataReductionFITSWriter.overwrite",
     }
 
     flags = {
         "overwrite": (
-            {"DataReductionFITSWriter": {"overwrite": False}},
+            {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
         ),
     }
@@ -116,6 +115,9 @@ class DataReductionFITSWriter(Tool):
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        # Check to see if the data table is indeed a QTable
+        self.data_sel(self.data)
+        self.log.info("Data Table checked to be a QTable")
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
@@ -123,14 +125,9 @@ class DataReductionFITSWriter(Tool):
             self.data, prefix="reco"
         )
 
-        self.data = filter_events(self.data, self.data_sel.event_filters())
-
-        self.data = self.data[self.data["gh_score"] > self.data_sel.fixed_gh_cut]
-
-        self.data = self.data[
-            self.data["reco_source_fov_offset"]
-            < u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)
-        ]
+        self.data = self.data_sel.filter_cut(self.data)
+        self.data = self.data_sel.gh_cut(self.data)
+        self.data = self.data_sel.reco_src_fov_offset_cut(self.data)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(

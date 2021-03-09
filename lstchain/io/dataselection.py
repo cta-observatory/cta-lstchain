@@ -1,7 +1,10 @@
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Float, List
+from lstchain.reco.utils import filter_events
+
 import numpy as np
 import astropy.units as u
+from astropy.table import QTable
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 
 __all__ = ["DataSelection", "DataBinning"]
@@ -67,49 +70,48 @@ class DataSelection(Component):
         default_value=3,
     ).tag(config=True)
 
-    src_dep_alpha = Float(
-        help="Selection cut for source dependent parameter - alpha",
-        default_value=8.0,
-    ).tag(config=True)
-
     lst_tel_ids = List(
         help="List of selected LST telescope ids",
         trait=Int(),
         default_value=[1],
     ).tag(config=True)
 
-    magic_tel_ids = List(
-        help="List of selected MAGIC telescope ids",
-        trait=Int(),
-        default_value=[1, 2],
-    ).tag(config=True)
-
-    aliases = {
-        ("int", "intensity"): "DataSelection.intensity",
-        ("len", "length"): "DataSelection.length",
-        ("w", "width"): "DataSelection.width",
-        "r": "DataSelection.r",
-        "wl": "DataSelection.wl",
-        (
-            "leak_2",
-            "leakage_intensity_width_2",
-        ): "DataSelection.leakage_intensity_width_2",
-        ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
-        ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
-        (
-            "src_fov",
-            "fixed_source_fov_offset_cut",
-        ): "DataSelection.fixed_source_fov_offset_cut",
-        ("alpha", "src_dep_alpha"): "DataSelection.src_dep_alpha",
-        "lst_tel_ids": "DataSelection.lst_tel_ids",
-        "magic_tel_ids": "DataSelection.magic_tel_ids",
-    }
-
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
 
-    def __call__(self):
-        pass
+    def __call__(self, data):
+        """
+        Check if the table passed is QTable or not
+        """
+        if type(data).__name__ != 'QTable':
+            self.log.debug("Data table is not of QTable class")
+            pass
+
+    def filter_cut(self, data):
+        return filter_events(data, self.event_filters())
+
+    def gh_cut(self, data):
+        return data[data["gh_score"] > self.fixed_gh_cut]
+
+    def theta_cut(self, data):
+        return data[data["theta"] < u.Quantity(self.fixed_theta_cut) * u.deg]
+
+    def true_src_fov_offset_cut(self, data):
+        return data[
+                data["true_source_fov_offset"] < u.Quantity(
+                    self.fixed_source_fov_offset_cut) * u.deg
+            ]
+
+    def reco_src_fov_offset_cut(self, data):
+        return data[
+                data["reco_source_fov_offset"] < u.Quantity(
+                    self.fixed_source_fov_offset_cut) * u.deg
+            ]
+
+    def tel_ids_filter(self, data):
+        for i in self.lst_tel_ids:
+            data["sel_tel"] = data["tel_id"] == i
+        return data[data["sel_tel"]]
 
     def event_filters(self):
         """
@@ -192,9 +194,6 @@ class DataBinning(Component):
 
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
-
-    def __call__(self):
-        pass
 
     def true_energy(self):
         """

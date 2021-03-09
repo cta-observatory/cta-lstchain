@@ -4,6 +4,9 @@ from a given path of DL3 files and a glob pattern to select DL3 files
 The index filenames are the standard as per
 http://gamma-astro-data-formats.readthedocs.io/en/latest/
 
+To add the FITS directory information in the HDU index table, enter
+--add_fits_dir True
+
 Simple usage with argument aliases:
 
 lstchain_create_dl3_index_files
@@ -43,11 +46,12 @@ class FITSIndexWriter(Tool):
         ("d", "input_dl3_dir"): "FITSIndexWriter.input_dl3_dir",
         ("p", "file_pattern"): "FITSIndexWriter.file_pattern",
         "add_fits_dir": "FITSIndexWriter.add_fits_dir",
+        "overwrite": "FITSIndexWriter.overwrite",
     }
 
     flags = {
         "overwrite": (
-            {"FITSIndexWriter": {"overwrite": False}},
+            {"FITSIndexWriter": {"overwrite": True}},
             "overwrite output files if True",
         ),
         "add_fits_dir": (

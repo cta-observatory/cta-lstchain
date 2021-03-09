@@ -28,7 +28,6 @@ import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_pyirf
-from lstchain.reco.utils import filter_events
 from lstchain.io import DataSelection, DataBinning
 
 from astropy.io import fits
@@ -113,7 +112,6 @@ class IRFFITSWriter(Tool):
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
         "lst_tel_ids": "DataSelection.lst_tel_ids",
-        "magic_tel_ids": "DataSelection.magic_tel_ids",
         ("etrue", "true_energy_bins"): "DataBinning.true_energy_bins",
         ("ereco", "reco_energy_bins"): "DataBinning.reco_energy_bins",
         ("emigra", "energy_migra_bins"): "DataBinning.energy_migra_bins",
@@ -121,6 +119,7 @@ class IRFFITSWriter(Tool):
         ("mult_fov", "multiple_fov_offset_bins"): "DataBinning.multiple_fov_offset_bins",
         ("bkg_fov", "bkg_fov_offset_bins"): "DataBinning.bkg_fov_offset_bins",
         ("src_off", "source_offset_bins"): "DataBinning.source_offset_bins",
+        "overwrite": "IRFFITSWriter.overwrite",
     }
 
     flag = {
@@ -129,8 +128,8 @@ class IRFFITSWriter(Tool):
             "Full Enclosure IRFs will be produced",
         ),
         "overwrite": (
-            {"IRFFITSWriter": {"overwrite": False}},
-            "overwrites output file if True",
+            {"IRFFITSWriter": {"overwrite": True}},
+            "overwrites output file",
         )
     }
 
@@ -206,7 +205,9 @@ class IRFFITSWriter(Tool):
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
-
+            # Check to see if the data table is indeed a QTable
+            self.data_sel(p["events"])
+            self.log.info("Data Table checked to be a QTable")
             if p["simulation_info"].viewcone.value == 0.0:
                 p["mc_type"] = "point-like"
             else:
@@ -245,32 +246,14 @@ class IRFFITSWriter(Tool):
 
         self.log.info(f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut}")
 
-        gammas = filter_events(gammas, self.data_sel.event_filters())
-
-        # Filtering the tels needed to use with the real data
-        # Add MAGIC tels when need be
-        for i in self.data_sel.lst_tel_ids:
-            gammas["selected_tels"] = gammas["tel_id"] == i
-
-        gammas["selected_gh"] = gammas["gh_score"] > self.data_sel.fixed_gh_cut
+        gammas = self.data_sel.filter_cut(gammas)
+        gammas = self.data_sel.tel_ids_filter(gammas)
+        gammas = self.data_sel.gh_cut(gammas)
 
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
         if self.point_like:
-            gammas["selected_theta"] = gammas["theta"] < u.Quantity(
-                self.data_sel.fixed_theta_cut * u.deg
-            )
-            gammas["selected_fov"] = gammas["true_source_fov_offset"] < u.Quantity(
-                self.data_sel.fixed_source_fov_offset_cut * u.deg
-            )
-            # Combining selection cuts
-            gammas["selected"] = (
-                gammas["selected_theta"]
-                & gammas["selected_gh"]
-                & gammas["selected_fov"]
-                & gammas["selected_tels"]
-            )
-        else:
-            gammas["selected"] = gammas["selected_gh"] & gammas["selected_tels"]
+            gammas = self.data_sel.theta_cut(gammas)
+            gammas = self.data_sel.true_src_fov_offset_cut(gammas)
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy()
@@ -294,15 +277,9 @@ class IRFFITSWriter(Tool):
                 ]
             )
 
-            background = filter_events(background, self.data_sel.event_filters())
-            background["selected_gh"] = (
-                background["gh_score"] > self.data_sel.fixed_gh_cut
-            )
-            for i in self.data_sel.lst_tel_ids:
-                background["selected_tels"] = background["tel_id"] == i
-            background["selected"] = (
-                background["selected_gh"] & background["selected_tels"]
-            )
+            background = self.data_sel.filter_cut(background)
+            background = self.data_sel.tel_ids_filter(background)
+            background = self.data_sel.gh_cut(background)
 
             background_offset_bins = self.data_bin.background_offset()
 
@@ -332,7 +309,7 @@ class IRFFITSWriter(Tool):
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point-like":
                 self.effective_area = effective_area_per_energy(
-                    gammas[gammas["selected"]],
+                    gammas,
                     self.mc_particle["gamma"]["simulation_info"],
                     true_energy_bins,
                 )
@@ -352,7 +329,7 @@ class IRFFITSWriter(Tool):
                 )
             else:
                 self.effective_area = effective_area_per_energy_and_fov(
-                    gammas[gammas["selected"]],
+                    gammas,
                     self.mc_particle["gamma"]["simulation_info"],
                     true_energy_bins,
                     fov_offset_bins,
@@ -370,7 +347,7 @@ class IRFFITSWriter(Tool):
 
         self.log.info("Effective Area HDU created")
         self.edisp = energy_dispersion(
-            gammas[gammas["selected"]],
+            gammas,
             true_energy_bins,
             fov_offset_bins,
             migration_bins,
@@ -390,7 +367,7 @@ class IRFFITSWriter(Tool):
 
         if not self.only_gamma_irf:
             self.background = background_2d(
-                background[background["selected"]],
+                background,
                 reco_energy_bins=reco_energy_bins,
                 fov_offset_bins=background_offset_bins,
                 t_obs=50 * u.hour,
@@ -408,7 +385,7 @@ class IRFFITSWriter(Tool):
 
         if not self.point_like:
             self.psf = psf_table(
-                gammas[gammas["selected_gh"] & gammas["selected_tels"]],
+                gammas,
                 true_energy_bins,
                 fov_offset_bins=fov_offset_bins,
                 source_offset_bins=source_offset_bins,
