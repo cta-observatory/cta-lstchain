@@ -70,16 +70,6 @@ args = parser.parse_args()
 
 def main():
 
-    # We need to reorganize (hiperta --> lstchain) the dl1 file first
-    os.rename(args.input_file, args.input_file.replace('dl1_', 'dl1_aligned_ctapipe08_'))
-
-    input_reorganizer = args.input_file.replace('dl1_', 'dl1_aligned_ctapipe08_')
-    output_reorganizer = args.input_file
-
-    hiperta_lstchain_reorganzier(input_reorganizer, output_reorganizer)
-    # TODO erase dl1_hiperta ?
-    # os.remove(args.input_file)
-
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -89,12 +79,10 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    # data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
-    data = pd.read_hdf(output_reorganizer, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        # data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_src_dep = pd.read_hdf(output_reorganizer, key=dl1_params_src_dep_lstcam_key)
+        data_src_dep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data = pd.concat([data, data_src_dep], axis=1)
   
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
@@ -131,8 +119,7 @@ def main():
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
 
-    # dl1_keys = get_dataset_keys(args.input_file)
-    dl1_keys = get_dataset_keys(output_reorganizer)
+    dl1_keys = get_dataset_keys(args.input_file)
     if dl1_images_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_images_lstcam_key)
     if dl1_params_lstcam_key in dl1_keys:
@@ -141,8 +128,7 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    # with open_file(args.input_file, 'r') as h5in:
-    with open_file(output_reorganizer, 'r') as h5in:
+    with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
 
             # Write the selected DL1 info
