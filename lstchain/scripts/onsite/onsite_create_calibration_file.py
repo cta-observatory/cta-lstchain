@@ -13,8 +13,6 @@ import os
 from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
-from ctapipe_io_lst.event_time import read_night_summary
-
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -38,7 +36,6 @@ optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", 
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC. Default = 4000", type=float, default=4000)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC. Default = 12000", type=float, default=12000)
 
-
 args = parser.parse_args()
 run = args.run_number
 ped_run = '%05d'%args.pedestal_run
@@ -54,7 +51,6 @@ min_ff = args.min_ff
 max_ff = args.max_ff
 
 max_events = 1000000
-
 
 def main():
 
@@ -89,13 +85,14 @@ def main():
             exit(0)
 
         # search the summary file info
-        file_list = sorted(Path(f"{base_dir}/monitoring/NightSummary/").rglob(f'*Nig*{date}.txt'))
-        run_summary_path = str(file_list[0])
-        if not os.path.exists(run_summary_path):
-            print(f">>> Run summary file {run_summary_path} do not exists. \n Exit ")
-            exit(1)
+        file_list = sorted(Path(f"{base_dir}/monitoring/RunSummary/").rglob(f'RunSummary_{date}.ecsv'))
+        if len(file_list) == 0:
+            print(f">>> Error: night summary file RumSummary_{date}.ecsv not found in {base_dir}/monitoring/NightSummary/ \n")
+            raise NameError()
+        else:
+            run_summary_path = str(file_list[0])
 
-        print(f"\n--> Config file {config_file}")
+
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
@@ -113,7 +110,7 @@ def main():
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
                   f"--output-file {time_file} --config {config_file} " \
-                  f"--run-summary-file={run_summary_path)} " \
+                  f"--run-summary-file={run_summary_path} " \
                   f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
