@@ -35,6 +35,8 @@ optional.add_argument('--default_time_run', help="If 0 time calibration is calcu
 optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
+optional.add_argument('--min_ff', help="Min FF intensity cut in ADC. Default = 4000", type=float, default=4000)
+optional.add_argument('--max_ff', help="Max FF intensity cut in ADC. Default = 12000", type=float, default=12000)
 
 
 args = parser.parse_args()
@@ -48,6 +50,8 @@ default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
 sub_run = '%04d'%args.sub_run
+min_ff = args.min_ff
+max_ff = args.max_ff
 
 max_events = 1000000
 
@@ -86,11 +90,12 @@ def main():
 
         # search the summary file info
         file_list = sorted(Path(f"{base_dir}/monitoring/NightSummary/").rglob(f'*Nig*{date}.txt'))
-        night_log = str(file_list[0])
-        summary = read_night_summary(night_log)
-        print(f"\n--> Summary file {night_log}")
-        run_info = summary.loc[run]
+        run_summary_path = str(file_list[0])
+        if not os.path.exists(run_summary_path):
+            print(f">>> Run summary file {run_summary_path} do not exists. \n Exit ")
+            exit(1)
 
+        print(f"\n--> Config file {config_file}")
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
@@ -108,8 +113,7 @@ def main():
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
                   f"--output-file {time_file} --config {config_file} " \
-                  f"--dragon-reference-time={int(run_info['ucts_t0_dragon'])} " \
-                  f"--dragon-reference-counter={int(run_info['dragon_counter0'])} " \
+                  f"--run-summary-file={run_summary_path)} " \
                   f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
@@ -151,8 +155,7 @@ def main():
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} "\
                   f"--EventSource.max_events={max_events} " \
-                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_time={int(run_info['ucts_t0_dragon'])} " \
-                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_counter={int(run_info['dragon_counter0'])} " \
+                  f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
                   f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \

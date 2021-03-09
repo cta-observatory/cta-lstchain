@@ -56,24 +56,11 @@ parser.add_argument('--pedestal-file', '-p', action='store', type=str,
                     help='Path to drs4 pedestal file ',
                     default=None
                     )
-parser.add_argument(
-    '--dragon-reference-time', type=int,
-    help=(
-        'UCTS timestamp in nsecs, unix format and TAI scale of the'
-        ' first event of the run with valid timestamp. If none is'
-        ' passed, the start-of-the-run timestamp is provided, hence'
-        ' Dragon timestamp is not reliable.'
-    )
-)
-
-parser.add_argument(
-    '--dragon-reference-counter', type=int,
-    help=(
-        'Dragon counter (pps + 10MHz) in nsecs corresponding'
-        'to the first reliable UCTS of the run. To be provided'
-        'along with ucts_t0_dragon.'
-    ),
-)
+parser.add_argument('--run-summary-path',  action='store', type=str,
+                    dest='run_summary_path',
+                    help='Path to run summary file ',
+                    default=None
+                    )
 
 args = parser.parse_args()
 
@@ -99,8 +86,7 @@ def main():
         "LSTEventSource": {
             "max_events" : args.max_events,
             "EventTimeCalculator": {
-                "dragon_reference_time": args.dragon_reference_time,
-                "dragon_reference_counter": args.dragon_reference_counter,
+                "run_summary_path": args.run_summary_path,
             },
             "LSTR0Corrections": {
                 "drs4_pedestal_path": args.pedestal_file,
