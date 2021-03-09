@@ -149,7 +149,8 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         Type of run (DRS4, CALI, DATA, CONF)
     """
 
-    list_of_files = sorted(date_path.glob(f"LST-1.1.Run{run_number:05d}.*.fits.fz"))
+    pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
+    list_of_files = sorted(date_path.glob(pattern))
     filename = list_of_files[0]
 
     config = Config()
@@ -173,13 +174,8 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         else:
             run_type = "CONF"
 
-    except (AttributeError, AssertionError) as err:
-        log.error(f"File {filename} has error: {err}")
-
-        run_type = "CONF"
-
-    except ValueError as err:
-        log.error(f"File {filename} has error: {err}")
+    except (AttributeError, ValueError, IOError) as err:
+        log.exception(f"File {filename} has error: {err!r}")
 
         run_type = "CONF"
 
@@ -202,9 +198,9 @@ def read_counters(date_path, run_number):
     -------
     dict: reference counters and timestamps
     """
-    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
+    pattern = f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
     try:
-        f = MultiFiles(glob(str(pattern)))
+        f = MultiFiles(date_path.glob(pattern))
         first_event = next(f)
 
         if first_event.event_id != 1:
@@ -245,7 +241,7 @@ def read_counters(date_path, run_number):
             dragon_reference_source=dragon_reference_source,
         )
 
-    except (AttributeError, AssertionError) as err:
+    except Exception as err:
         log.error(f"Files {pattern} have error: {err}")
 
         return dict(
