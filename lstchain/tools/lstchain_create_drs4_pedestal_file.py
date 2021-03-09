@@ -7,7 +7,7 @@ from tqdm.autonotebook import tqdm
 
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
-from ctapipe.io import EventSource
+from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
@@ -50,16 +50,16 @@ class PedestalFITSWriter(Tool):
         )
     }
 
-    classes = [EventSource, DragonPedestal]
+    classes = [LSTEventSource, DragonPedestal]
 
     def setup(self):
 
         self.log.debug("Opening file")
-        self.eventsource = EventSource(parent=self)
-        event = next(iter(self.eventsource))
-        tel_id = event.trigger.tels_with_trigger[0]
-        self.pixel_ids = event.lst.tel[tel_id].svc.pixel_ids
-        self.pedestal = DragonPedestal(tel_id=tel_id, n_module=event.lst.tel[tel_id].svc.num_modules, parent=self)
+        self.eventsource = LSTEventSource(parent=self)
+        self.pixel_ids = self.eventsource.camera_config.expected_pixels_id
+        self.pedestal = DragonPedestal(
+            tel_id=self.eventsource.tel_id, n_module=self.eventsource.camera_config.lstcam.num_modules, parent=self
+        )
 
     def start(self):
 
@@ -82,7 +82,7 @@ class PedestalFITSWriter(Tool):
 
         expected_pixel_id = fits.PrimaryHDU(self.pixel_ids)
         pedestal_array = fits.ImageHDU(np.int16(self.pedestal.meanped), name="pedestal array")
-        failing_pixels_col = fits.Column(name='failing pixels', array=self.pedestal.failing_pixels_array, format='K')
+        failing_pixels_col = fits.Column(name="failing pixels", array=self.pedestal.failing_pixels_array, format="K")
         failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_col], name="failing pixels")
         hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
         hdulist.writeto(self.output)
