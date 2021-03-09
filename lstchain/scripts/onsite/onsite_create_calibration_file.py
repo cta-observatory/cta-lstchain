@@ -149,6 +149,7 @@ def main():
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} "\
                   f"--EventSource.max_events={max_events} " \
+                  f"--EventSource.default_trigger_type=tib " \
                   f"--EventSource.min_flatfield_adc={min_ff} " \
                   f"--EventSource.max_flatfield_adc={max_ff} " \
                   f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
