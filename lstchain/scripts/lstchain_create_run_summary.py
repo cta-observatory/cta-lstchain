@@ -8,19 +8,15 @@ import argparse
 import logging
 from collections import Counter
 from datetime import datetime
+from glob import glob
 from pathlib import Path
 
 import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (
-    CDTS_AFTER_37201_DTYPE,
-    CDTS_BEFORE_37201_DTYPE,
-    DRAGON_COUNTERS_DTYPE,
-    LSTEventSource,
-    MultiFiles,
-)
+from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
+                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
@@ -203,9 +199,9 @@ def read_counters(date_path, run_number):
     -------
     dict: reference counters and timestamps
     """
-    pattern = f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
+    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
     try:
-        f = MultiFiles(date_path.glob(pattern))
+        f = MultiFiles(glob(str(pattern)))
         first_event = next(f)
 
         if first_event.event_id != 1:
@@ -279,8 +275,8 @@ def main():
 
     date_path = args.r0_path / args.date
 
-    files = get_list_of_files(date_path)
-    runs = get_list_of_runs(files)
+    file_list = get_list_of_files(date_path)
+    runs = get_list_of_runs(file_list)
     run_numbers, n_subruns = get_runs_and_subruns(runs)
 
     reference_counters = [read_counters(date_path, run) for run in run_numbers]
