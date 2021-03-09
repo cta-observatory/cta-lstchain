@@ -15,6 +15,7 @@ from lstchain.io.io import (
     dl1_params_src_dep_lstcam_key,
 )
 from lstchain.tests.test_lstchain import (
+    test_data,
     test_drive_report,
     test_drs4_pedestal_path,
     test_calib_path,
@@ -106,17 +107,13 @@ def observed_dl1_files(temp_dir_observed_files):
     #  muons and datacheck files should be coherent
 
     # First set of files to be produced
-    dl1_output_path1 = temp_dir_observed_files / (
-        "dl1_" + test_r0_path.with_suffix("").stem + ".h5"
-    )
-    muons_file1 = temp_dir_observed_files / "muons_LST-1.Run02008.0000_first50.fits"
+    dl1_output_path1 = temp_dir_observed_files / "dl1_LST-1.Run02008.0000.h5"
+    muons_file1 = temp_dir_observed_files / "muons_LST-1.Run02008.0000.fits"
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
 
     # Second set of files
-    dl1_output_path2 = temp_dir_observed_files / (
-        "dl1_" + test_r0_path2.with_suffix("").stem + ".h5"
-    )
-    muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100_first50.fits"
+    dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
+    muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100.fits"
     datacheck_file2 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0100.h5"
 
     run_program(
@@ -140,13 +137,13 @@ def observed_dl1_files(temp_dir_observed_files):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path1
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path1,
     )
 
     run_program(
@@ -166,13 +163,13 @@ def observed_dl1_files(temp_dir_observed_files):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path2
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path2,
     )
 
     return {
@@ -351,7 +348,7 @@ def test_lstchain_observed_dl1_to_dl2(
     temp_dir_observed_files, observed_dl1_files, rf_models
 ):
     real_data_dl2_file = temp_dir_observed_files / (
-        "dl2_" + test_r0_path.with_suffix("").stem + ".h5"
+        observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
     run_program(
         "lstchain_dl1_to_dl2",
@@ -423,11 +420,44 @@ def test_read_mc_dl2_to_pyirf(simulated_dl2_file):
     assert sim_info.energy_max == 330 * u.TeV
 
 
-def test_read_data_dl2_to_QTable(temp_dir_observed_files):
+@pytest.mark.private_data
+def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
     from lstchain.io.io import read_data_dl2_to_QTable
 
     real_data_dl2_file = temp_dir_observed_files / (
-        "dl2_" + test_r0_path.with_suffix("").stem + ".h5"
+        observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
     events = read_data_dl2_to_QTable(real_data_dl2_file)
     assert "gh_score" in events.colnames
+
+
+@pytest.mark.private_data
+def test_create_run_summary(tmp_path):
+    from astropy.table import Table
+    from datetime import datetime
+
+    date = "20200218"
+    r0_path = test_data / "real/R0"
+    run_summary_file = tmp_path / f"RunSummary_{date}.ecsv"
+    run_program(
+        "lstchain_create_run_summary",
+        "--date", date,
+        "--r0-path", r0_path,
+        "--output-dir", tmp_path
+    )
+    assert run_summary_file.is_file()
+
+    run_summary_table = Table.read(run_summary_file)
+
+    assert run_summary_table.meta["date"] == datetime.strptime(date, "%Y%m%d").date().isoformat()
+    assert "lstchain_version" in run_summary_table.meta
+    assert "run_id" in run_summary_table.columns
+    assert "n_subruns" in run_summary_table.columns
+    assert "run_type" in run_summary_table.columns
+    assert "ucts_timestamp" in run_summary_table.columns
+    assert "run_start" in run_summary_table.columns
+    assert "dragon_reference_time" in run_summary_table.columns
+    assert "dragon_reference_module_id" in run_summary_table.columns
+    assert "dragon_reference_module_index" in run_summary_table.columns
+    assert "dragon_reference_counter" in run_summary_table.columns
+    assert "dragon_reference_source" in run_summary_table.columns

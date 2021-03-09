@@ -17,7 +17,9 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
     if os.path.exists(sel_cuts_file):
         open(sel_cuts_file, 'r')
     else:
-        data = json.load(open(os.path.join('./lstchain/data/data_selection_cuts.json')))
+        data = json.load(
+            open(os.path.join('./lstchain/data/data_selection_cuts.json'))
+        )
         data["DataSelection"]["fixed_gh_cut"] = 0.3
         data["DataSelection"]["intensity"] = [0, 10000]
         json.dump(data, open(sel_cuts_file, 'x'), indent=3)
@@ -41,15 +43,14 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
-def test_create_dl3(temp_dir_observed_files):
+def test_create_dl3(temp_dir_observed_files, observed_dl1_files):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
-    from lstchain.tests.test_lstchain import test_r0_path
 
     real_data_dl2_file = temp_dir_observed_files / (
-        "dl2_" + test_r0_path.with_suffix("").stem + ".h5"
+        observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
     irf_file = temp_dir_observed_files / "irf.fits.gz"
     sel_cuts_file = temp_dir_observed_files / "sel_cuts.json"
