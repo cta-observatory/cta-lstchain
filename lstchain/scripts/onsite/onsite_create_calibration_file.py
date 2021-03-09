@@ -156,7 +156,7 @@ def main():
             os.system(cmd)
 
             # plot and save some results
-            plot_file=f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.pedestal.Run{ped_run:04d}.0000.pdf"
+            plot_file=f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.pedestal.Run{ped_run:05d}.0000.pdf"
             print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
             calib.read_file(output_file,tel_id)
             calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
