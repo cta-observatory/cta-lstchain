@@ -94,7 +94,7 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.2f}")
+                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
