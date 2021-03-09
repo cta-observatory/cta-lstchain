@@ -115,10 +115,10 @@ def get_dl1(
         use_main_island = cleaning_parameters.pop("use_only_main_island")
 
     # time constraint for image cleaning: ewquire at least one neighbor
-    # within delta_t:
-    delta_t = None
-    if "delta_t" in cleaning_parameters.keys():
-        delta_t = cleaning_parameters.pop("delta_t")
+    # within delta_time:
+    delta_time = None
+    if "delta_time" in cleaning_parameters.keys():
+        delta_time = cleaning_parameters.pop("delta_time")
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -142,10 +142,10 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-        if delta_t is not None:
+        if delta_time is not None:
             new_mask = apply_time_delta_cleaning(camera_geometry,
                                                  signal_pixels,
-                                                 peak_time, 1, delta_t)
+                                                 peak_time, 1, delta_time)
             signal_pixels = new_mask
 
         if np.sum(signal_pixels) > 0:
