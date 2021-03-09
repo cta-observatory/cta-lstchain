@@ -4,9 +4,9 @@ from ctapipe.core import run_tool
 from lstchain.tools.lstchain_create_dl2_file import ReconstructionHDF5Writer
 
 
-def test_create_dl2_file(temp_dir_simulated_file, simulated_dl1_file, rf_models):
+def test_create_dl2_file(temp_dir, simulated_dl1_file, rf_models):
 
-    config = Path("./lstchain/data/lstchain_standard_config.json").absolute()
+    config = Path("./lstchain/data/dl2_tool_config.json").absolute()
 
     assert (
         run_tool(
@@ -14,7 +14,7 @@ def test_create_dl2_file(temp_dir_simulated_file, simulated_dl1_file, rf_models)
             argv=[
                 f"--config={config}",
                 f"--input={simulated_dl1_file}",
-                f"--output={temp_dir_simulated_file}",
+                f"--output={temp_dir}",
                 f"--energy-model={rf_models['energy']}",
                 f"--disp-model={rf_models['disp']}",
                 f"--gh-model={rf_models['gh_sep']}",
