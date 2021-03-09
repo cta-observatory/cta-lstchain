@@ -51,7 +51,7 @@ parser.add_argument(
     "--output-dir",
     type=Path,
     help="Directory in which Run Summary file is written",
-    default="./",
+    default="/fefs/aswg/data/real/monitoring/RunSummary",
 )
 
 dtypes = {
@@ -79,9 +79,7 @@ def get_list_of_files(r0_path):
     list_of_files: pathlib.Path.glob
         List of files
     """
-    # FIXME: use regular expressions from lstchain.paths.R0_RE
-    list_of_files = r0_path.glob("LST*.fits.fz")
-    return list_of_files
+    return r0_path.glob("LST*.fits.fz")
 
 
 def get_list_of_runs(list_of_files):
@@ -126,11 +124,14 @@ def get_runs_and_subruns(list_of_run_objects, stream=1):
 
 def type_of_run(date_path, run_number, counters, n_events=500):
     """
-    Get empirically the type of run based on the percentage of
+    Guessing empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
     DRS4 pedestal run: 100% mono events (trigger_type == 1)
     cosmic data run: <10% pedestal events (trigger_type == 32)
     pedestal-calibration run: ~50% mono, ~50% pedestal events
+    Otherwise the run is not expected to be processed.
+    This method may not give always the correct type.
+    At some point this should be taken directly from TCU.
 
     Parameters
     ----------
@@ -155,6 +156,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     config = Config()
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
     config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
+    config.EventTimeCalculator.dragon_reference_module_id = int(counters["dragon_reference_module_id"])
 
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
