@@ -182,10 +182,14 @@ def main():
                     # if delta_time has been set, we require at least one
                     # neighbor within delta_time to accept a pixel in the image:
                     if delta_time is not None:
+                        cleaned_pixel_times = peak_time
+                        # makes sure only signal pixels are used in the time
+                        # check:
+                        cleaned_pixel_times[~signal_pixels] = np.nan
                         new_mask = apply_time_delta_cleaning(camera_geom,
                                                              signal_pixels,
-                                                             peak_time, 1,
-                                                             delta_time)
+                                                             cleaned_pixel_times,
+                                                             1, delta_time)
                         signal_pixels = new_mask
 
                     if np.sum(signal_pixels) > 0:
