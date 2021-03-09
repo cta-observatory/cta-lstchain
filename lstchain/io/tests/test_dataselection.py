@@ -15,9 +15,7 @@ def test_data_selection(simulated_dl2_file):
     tempsel.fixed_gh_cut = 0.5
     tempsel.fixed_theta_cut = 1
     tempsel.fixed_source_fov_offset_cut = 2
-    tempsel.src_dep_alpha = 10
     tempsel.lst_tel_ids = [1]
-    tempsel.magic_tel_ids = [1, 2]
 
     data, _ = read_mc_dl2_to_pyirf(simulated_dl2_file)
 
@@ -35,8 +33,7 @@ def test_data_binning():
     tempbin.true_energy_bins = [0.1, 100, 5]
     tempbin.reco_energy_bins = [0.1, 100, 5]
     tempbin.energy_migra_bins = [0.1, 100, 5]
-    tempbin.single_fov_offset_bins = [0.1, 0.2, 0.3]
-    tempbin.multiple_fov_offset_bins = [0.1, 0.2, 0.3, 0.4]
+    tempbin.fov_offset_bins = [0.1, 0.2, 0.3]
     tempbin.bkg_fov_offset_bins = [1, 10]
     tempbin.source_offset_bins = [0.1, 1., 0.05]
 
@@ -44,7 +41,7 @@ def test_data_binning():
     e_reco = tempbin.reco_energy()
     e_migra = tempbin.energy_migration()
     src_off = tempbin.source_offset()
-    bkg_off = tempbin.background_offset()
+    bkg_off = tempbin.bkg_offset()
 
     assert len(e_true) == 15
     assert len(e_reco) == 15

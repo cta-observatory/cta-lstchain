@@ -11,6 +11,7 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
     from lstchain.reco.utils import add_delta_t_key, get_effective_time
     import numpy as np
+    from astropy.coordinates import SkyCoord
 
     dl2_file_new = simulated_dl2_file.parent / simulated_dl2_file.name.replace(
         ".h5", "_new.h5"
@@ -34,6 +35,7 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
         events,
         run_number=0,
         source_name="Crab",
+        source_pos=SkyCoord(ra=83.633, dec=22.01, unit="deg"),
         effective_time=t_eff.value,
         elapsed_time=t_tot.value,
     )
@@ -51,7 +53,7 @@ def test_create_event_list(simulated_dl2_file, simulated_irf_file):
     )
     for f in fits.open(simulated_irf_file)[1:]:
         temp_hdulist.append(f)
-        
+
     temp_hdulist.writeto(dl3_file, overwrite=True)
 
     assert dl3_file.is_file()

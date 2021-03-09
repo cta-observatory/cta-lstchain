@@ -4,7 +4,6 @@ from lstchain.reco.utils import filter_events
 
 import numpy as np
 import astropy.units as u
-from astropy.table import QTable
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 
 __all__ = ["DataSelection", "DataBinning"]

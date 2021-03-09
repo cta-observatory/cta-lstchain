@@ -251,7 +251,7 @@ class IRFFITSWriter(Tool):
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            if len(self.data_bin.fov_offset_bins)!=3:
+            if len(self.data_bin.fov_offset_bins) != 3:
                 self.log.critical("Offset binning is not appropriate for single offset")
 
         fov_offset_bins = self.data_bin.fov_offset_bins * u.deg

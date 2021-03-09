@@ -299,7 +299,7 @@ def create_event_list(
     ).transform_to(frame="icrs")
 
     # Observation modes
-    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos).value
+    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos).to_value()
 
     if round(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
@@ -357,12 +357,12 @@ def create_event_list(
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
-    ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
-    ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
+    ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
+    ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
     ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
-    ev_header["RA_OBJ"] = source_pos.ra.value
-    ev_header["DEC_OBJ"] = source_pos.dec.value
+    ev_header["RA_OBJ"] = source_pos.ra.to_value()
+    ev_header["DEC_OBJ"] = source_pos.dec.to_value()
     ev_header["FOVALIGN"] = "RADEC"
 
     # GTI table metadata
@@ -380,8 +380,8 @@ def create_event_list(
     pnt_header["HDUCLAS1"] = "POINTING"
 
     pnt_header["OBS_ID"] = run_number
-    pnt_header["RA_PNT"] = tel_pnt_sky_pos.ra.value
-    pnt_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
+    pnt_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
+    pnt_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
     pnt_header["ALT_PNT"] = ev_header["ALT_PNT"]
     pnt_header["AZ_PNT"] = ev_header["AZ_PNT"]
     pnt_header["TIME"] = t_start

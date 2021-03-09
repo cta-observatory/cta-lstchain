@@ -1,6 +1,7 @@
 import pytest
 from ctapipe.core import run_tool
 
+
 @pytest.mark.parametrize("point_like_IRF", [True, False])
 def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF):
     """

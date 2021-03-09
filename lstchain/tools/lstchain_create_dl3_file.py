@@ -16,8 +16,8 @@ lstchain_create_dl3_file
     --o /path/to/DL3/file/
     --irf /path/to/irf.fits.gz
     --source_name Crab
-    --source_ra 83.633
-    --source_dec
+    --source_ra 83.633deg
+    --source_dec 22.01deg
 """
 
 from astropy.io import fits
@@ -124,11 +124,9 @@ class DataReductionFITSWriter(Tool):
                 "Either provide both RA and DEC values for the source or none"
             )
         else:
-            self.source_pos = SkyCoord(
-                ra=self.source_ra, dec=self.source_dec, unit="deg"
-            )
+            self.source_pos = SkyCoord(ra=self.source_ra, dec=self.source_dec)
 
-        self.log.debug("Output DL3 file: %s", self.output_file)
+        self.log.debug(f"Output DL3 file: {self.output_file}")
 
     def start(self):
 
