@@ -55,7 +55,8 @@ __all__ = [
 ]
 
 
-
+dl1_params_tel_mon_ped_key = 'dl1/event/telescope/monitoring/pedestal'
+dl1_params_tel_mon_cal_key = '/dl1/event/telescope/monitoring/calibration'
 dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
 dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
 dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
@@ -369,7 +370,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadat
 def write_array_info_08(subarray, output_filename):
     """
     Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
-    This is a temporary solution until we move to ctapipe v0.9.1. 
+    This is a temporary solution until we move to ctapipe v0.9.1.
 
     Parameters
     ----------
@@ -413,7 +414,7 @@ def write_array_info_08(subarray, output_filename):
           output_filename,
           path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
           append=True,
-          serialize_meta=serialize_meta          
+          serialize_meta=serialize_meta
         )
         camera.readout.to_table().write(
           output_filename,
