@@ -4,21 +4,21 @@ from collections import namedtuple
 from pathlib import Path
 
 Run = namedtuple('Run', 'tel_id run subrun stream', defaults=(None, ))
-R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+).fits.fz')
+R0_RE = re.compile(r'LST-(\d+).(\d+).Run(\d+).(\d+)(?:.*).fits.fz')
 
 DL1_RE = re.compile(
     r'dl1_LST-(\d+)'     # tel_id
     r'(?:.(\d+))?'       # stream is optional
     r'.Run(\d+)'         # run number
     r'.(\d+)'            # subrun number
-    r'(?:.*)'            # allow arbitray stuff between the run part and the extension
+    r'(?:.*)'            # allow arbitrary stuff between the run part and the extension
     r'.(?:h5|hdf5|hdf)'  # usual extensions for hdf5 files
 )
 DC_DL1_RE = re.compile(
     r'datacheck_dl1_LST-(\d+)'  # tel_id
     r'.Run(\d+)'                # run number
     r'(?:.(\d+))?'              # subrun number is optional
-    r'(?:.*)'                   # allow arbitray stuff between the run part and the extension
+    r'(?:.*)'                   # allow arbitrary stuff between the run part and the extension
     r'.(?:h5|hdf5|hdf)'         # usual extensions for hdf5 files
 )
 
