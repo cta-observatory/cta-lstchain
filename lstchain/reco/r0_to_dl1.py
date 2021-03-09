@@ -109,12 +109,16 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
     cleaning_parameters = config["tailcut"]
+    use_main_island = True
+    if "use_only_main_island" in cleaning_parameters.keys():
+        # we use pop because ctapipe won't recognize that keyword in tailcuts
+        use_main_island = cleaning_parameters.pop("use_only_main_island")
 
-    use_main_island = cleaning_parameters.pop("use_only_main_island",
-                                              default=False)
     # time constraint for image cleaning: require at least one neighbor
     # within delta_time:
-    delta_time = cleaning_parameters.pop("delta_time", default=None)
+    delta_time = None
+    if "delta_time" in cleaning_parameters:
+        delta_time = cleaning_parameters.pop("delta_time")
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
