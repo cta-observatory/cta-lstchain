@@ -45,7 +45,7 @@ def main():
 
     try:
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.0000*'))
+        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run:05d}.0000*'))
         if len(file_list) == 0:
             print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
             raise NameError()
@@ -70,7 +70,7 @@ def main():
             os.makedirs(log_dir, exist_ok=True)
 
         # define output file
-        output_file = f"{output_dir}/drs4_pedestal.Run{run}.0000.fits"
+        output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.fits"
         if os.path.exists(output_file):
             print(f">>> Output file {output_file} exists already. ")
             if query_yes_no("Do you want to remove it?"):
@@ -88,7 +88,7 @@ def main():
         os.system(cmd)
 
         # plot and save some results
-        plot_file=f"{output_dir}/log/drs4_pedestal.Run{run}.0000.pdf"
+        plot_file=f"{output_dir}/log/drs4_pedestal.Run{run:05d}.0000.pdf"
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
         drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=400)
 

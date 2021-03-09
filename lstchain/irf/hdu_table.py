@@ -245,7 +245,7 @@ def create_obs_hdu_index(
     return hdu_index_list, obs_index_list
 
 
-def create_event_list(data, run_number, source_name, effective_time, elapsed_time):
+def create_event_list(data, run_number, source_ra, source_dec, effective_time, elapsed_time):
     """
     Create the event_list BinTableHDUs from the given data
 
@@ -286,9 +286,9 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time, location=location)
     ).transform_to(frame="icrs")
     tel_pnt_sky_pos = SkyCoord(
-        alt=pointing_alt[0],
-        az=pointing_az[0],
-        frame=AltAz(obstime=time[0], location=location),
+        alt=pointing_alt.mean(),
+        az=pointing_az.mean(),
+        frame=AltAz(obstime=time.mean(), location=location),
     ).transform_to(frame="icrs")
 
     try:
@@ -298,9 +298,7 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
         object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
 
     # Observation modes
-    source_pointing_diff = object_radec.separation(
-        SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
-    ).deg
+    source_pointing_diff = object_radec.separation(tel_pnt_sky_pos)
 
     if round(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
@@ -312,17 +310,17 @@ def create_event_list(data, run_number, source_name, effective_time, elapsed_tim
         # Nomenclature is to be worked out or have a separate way to mark mispointings
         mode = "UNDETERMINED"
 
-    log.error(
+    log.info(
         f"Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg"
     )
 
     event_table = QTable(
         {
-            "EVENT_ID": u.Quantity(data["event_id"]),
-            "TIME": u.Quantity(data["dragon_time"]),
-            "RA": u.Quantity(src_sky_pos.ra.to(u.deg)),
-            "DEC": u.Quantity(src_sky_pos.dec.to(u.deg)),
-            "ENERGY": u.Quantity(data["reco_energy"]),
+            "EVENT_ID": data["event_id"],
+            "TIME": data["dragon_time"],
+            "RA": src_sky_pos.ra.to(u.deg),
+            "DEC": src_sky_pos.dec.to(u.deg),
+            "ENERGY": data["reco_energy"],
         }
     )
     gti_table = QTable(

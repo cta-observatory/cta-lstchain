@@ -13,7 +13,6 @@ lstchain_create_dl3_index_files
     --d /path/to/DL3/files/
     --p dl3*[run_1-run_n]*.fits.gz
 """
-import sys
 from lstchain.irf import create_obs_hdu_index
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
@@ -89,8 +88,7 @@ class FITSIndexWriter(Tool):
                     f"Output file {self.hdu_index_file} already exists,"
                     "use --overwrite to overwrite"
                 )
-                sys.exit(1)
-
+                
         if self.obs_index_file.exists():
             if self.overwrite:
                 self.log.warning(f"Overwriting {self.obs_index_file}")

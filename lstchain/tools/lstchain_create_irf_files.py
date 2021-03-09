@@ -24,7 +24,6 @@ lstchain_create_irf_files
 """
 
 import numpy as np
-import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_pyirf
@@ -115,8 +114,7 @@ class IRFFITSWriter(Tool):
         ("etrue", "true_energy_bins"): "DataBinning.true_energy_bins",
         ("ereco", "reco_energy_bins"): "DataBinning.reco_energy_bins",
         ("emigra", "energy_migra_bins"): "DataBinning.energy_migra_bins",
-        ("sing_fov", "single_fov_offset_bins"): "DataBinning.single_fov_offset_bins",
-        ("mult_fov", "multiple_fov_offset_bins"): "DataBinning.multiple_fov_offset_bins",
+        ("fov_off", "fov_offset_bins"): "DataBinning.fov_offset_bins",
         ("bkg_fov", "bkg_fov_offset_bins"): "DataBinning.bkg_fov_offset_bins",
         ("src_off", "source_offset_bins"): "DataBinning.source_offset_bins",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -133,8 +131,8 @@ class IRFFITSWriter(Tool):
         )
     }
 
-    def __init__(self, config=None, **kwargs):
-        super().__init__(config=config, **kwargs)
+    #def __init__(self, config=None, **kwargs):
+    #    super().__init__(config=config, **kwargs)
 
     def setup(self):
 
@@ -147,10 +145,10 @@ class IRFFITSWriter(Tool):
                     f"Output file {self.output_irf_file} already exists,"
                     " use --overwrite to overwrite"
                 )
-                sys.exit(1)
+
         filename = self.output_irf_file.name
-        if filename.split(".")[1:] != ["fits", "gz"]:
-            self.log.debug(
+        if filename.split(".")[1] != "fits":
+            self.log.warning(
                 f"{filename} is not a correct "
                 "compressed FITS file name. It will be corrected."
             )
@@ -165,36 +163,28 @@ class IRFFITSWriter(Tool):
         self.data_sel = DataSelection(parent=self)
         self.data_bin = DataBinning(parent=self)
 
-        # Read and update MC information
-        if self.only_gamma_irf:
-            self.mc_particle = {
-                "gamma": {
-                    "file": str(self.input_gamma_dl2),
-                    "target_spectrum": CRAB_HEGRA,
-                },
-            }
-            Provenance().add_input_file(self.input_gamma_dl2)
-            self.log.info("Only gamma MC used to generate IRFs")
+        self.mc_particle = {
+            "gamma": {
+                "file": str(self.input_gamma_dl2),
+                "target_spectrum": CRAB_HEGRA,
+            },
+        }
+        Provenance().add_input_file(self.input_gamma_dl2)
 
-        else:
-            self.mc_particle = {
-                "gamma": {
-                    "file": str(self.input_gamma_dl2),
-                    "target_spectrum": CRAB_HEGRA,
-                },
-                "proton": {
-                    "file": str(self.input_proton_dl2),
-                    "target_spectrum": IRFDOC_PROTON_SPECTRUM,
-                },
-                "electron": {
-                    "file": str(self.input_electron_dl2),
-                    "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
-                },
+        # Read and update MC information
+        if not self.only_gamma_irf:
+            self.mc_particle["proton"] = {
+                "file": str(self.input_proton_dl2),
+                "target_spectrum": IRFDOC_PROTON_SPECTRUM,
             }
-            Provenance().add_input_file(self.input_gamma_dl2)
+
+            self.mc_particle["electron"] = {
+                "file": str(self.input_electron_dl2),
+                "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
+            }
+
             Provenance().add_input_file(self.input_proton_dl2)
             Provenance().add_input_file(self.input_electron_dl2)
-            self.log.info("All particles MC used to produce IRFs")
 
         self.provenance_log = self.output_irf_file.parent / (
             self.name + ".provenance.log"
@@ -205,9 +195,7 @@ class IRFFITSWriter(Tool):
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
-            # Check to see if the data table is indeed a QTable
-            self.data_sel(p["events"])
-            self.log.info("Data Table checked to be a QTable")
+
             if p["simulation_info"].viewcone.value == 0.0:
                 p["mc_type"] = "point-like"
             else:
@@ -265,9 +253,10 @@ class IRFFITSWriter(Tool):
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            fov_offset_bins = self.data_bin.single_fov_offset_bins * u.deg
-        else:
-            fov_offset_bins = self.data_bin.multiple_fov_offset_bins * u.deg
+            if len(self.data_bin.fov_offset_bins)!=3:
+                self.log.critical("Offset binning is not appropriate for single offset")
+            #fov_offset_bins = self.data_bin.multiple_fov_offset_bins * u.deg
+        fov_offset_bins = self.data_bin.fov_offset_bins * u.deg
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -281,7 +270,7 @@ class IRFFITSWriter(Tool):
             background = self.data_sel.tel_ids_filter(background)
             background = self.data_sel.gh_cut(background)
 
-            background_offset_bins = self.data_bin.background_offset()
+            background_offset_bins = self.data_bin.bkg_offset()
 
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU should be created

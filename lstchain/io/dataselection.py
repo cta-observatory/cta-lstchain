@@ -76,17 +76,6 @@ class DataSelection(Component):
         default_value=[1],
     ).tag(config=True)
 
-    def __init__(self, parent=None, **kwargs):
-        super().__init__(parent=parent, **kwargs)
-
-    def __call__(self, data):
-        """
-        Check if the table passed is QTable or not
-        """
-        if type(data).__name__ != 'QTable':
-            self.log.debug("Data table is not of QTable class")
-            pass
-
     def filter_cut(self, data):
         return filter_events(data, self.event_filters())
 
@@ -153,16 +142,10 @@ class DataBinning(Component):
         default_value=[0.2, 5, 31],
     ).tag(config=True)
 
-    single_fov_offset_bins = List(
-        help="List of bins for single FOV offset binning",
+    fov_offset_bins = List(
+        help="List of bins for FOV offset binning",
         trait=Float(),
         default_value=[0.3, 0.5, 0.7],
-    ).tag(config=True)
-
-    multiple_fov_offset_bins = List(
-        help="List of bins for multiple FOV offset binning",
-        trait=Float(),
-        default_value=[0, 0.3, 0.5, 0.7, 0.9, 1.1],
     ).tag(config=True)
 
     bkg_fov_offset_bins = List(
@@ -178,9 +161,6 @@ class DataBinning(Component):
         trait=Float(),
         default_value=[0, 1.0001, 0.001],
     ).tag(config=True)
-
-    def __init__(self, parent=None, **kwargs):
-        super().__init__(parent=parent, **kwargs)
 
     def true_energy(self):
         """
@@ -237,7 +217,7 @@ class DataBinning(Component):
         )
         return self.source_offset
 
-    def background_offset(self):
+    def bkg_offset(self):
         """
         Creates bins for FoV offset for Background IRF,
         Using the same binning as in pyirf example.

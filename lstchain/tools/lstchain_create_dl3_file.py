@@ -19,7 +19,6 @@ lstchain_create_dl3_file
 """
 
 from astropy.io import fits
-import sys
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
@@ -108,16 +107,12 @@ class DataReductionFITSWriter(Tool):
                     f"Output file {self.output_file} already exists,"
                     " use --overwrite to overwrite"
                 )
-                sys.exit(1)
 
         self.log.debug("Output DL3 file: %s", self.output_file)
 
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-        # Check to see if the data table is indeed a QTable
-        self.data_sel(self.data)
-        self.log.info("Data Table checked to be a QTable")
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
