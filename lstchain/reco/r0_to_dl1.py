@@ -85,7 +85,6 @@ def get_dl1(
         telescope_id,
         dl1_container=None,
         custom_config={},
-        use_main_island=True,
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -101,8 +100,6 @@ def get_dl1(
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         superseeds the standard configuration
-    use_main_island: `bool` Use only the main island
-        to calculate DL1 parameters
 
     Returns
     -------
@@ -111,6 +108,11 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
     cleaning_parameters = config["tailcut"]
+    use_main_island = True
+    if "use_only_main_island" in cleaning_parameters.keys():
+        # we use pop because ctapipe won't recognize that keyword in tailcuts
+        use_main_island = cleaning_parameters.pop('use_only_main_island')
+
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -397,7 +399,6 @@ def r0_to_dl1(
                         telescope_id,
                         dl1_container=dl1_container,
                         custom_config=config,
-                        use_main_island=True,
                     )
 
                 except HillasParameterizationError:

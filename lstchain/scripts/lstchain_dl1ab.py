@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Read a HDF5 DL1 file, recompute parameters based on calibrated images and 
+Read a HDF5 DL1 file, recompute parameters based on calibrated images and
 pulse times and a config file and write a new HDF5 file
-Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands, 
+Updated parameters are : Hillas paramaters, wl, r, leakage, n_islands,
 intercept, time_gradient
-
 - Input: DL1 data file.
 - Output: DL1 data file.
-
-Usage: 
-
+Usage:
 $> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
-
 """
 
 import argparse
@@ -35,7 +31,11 @@ from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.io.config import get_cleaning_parameters
+from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
+
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +65,12 @@ parser.add_argument('--no-image', action='store',
                     help='Boolean. True to remove the images in output file',
                     default=False)
 
+parser.add_argument('--pedestal-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='pedestal_cleaning',
+                    help='Boolean. True to use pedestal cleaning',
+                    default=False)
+
 args = parser.parse_args()
 
 
@@ -80,7 +86,25 @@ def main():
     else:
         config = std_config
 
-    log.info(f"Tailcut config used: {config['tailcut']}")
+    if args.pedestal_cleaning:
+        print("Pedestal cleaning")
+        clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
+        sigma = config[clean_method_name]['sigma']
+        pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
+        cleaning_params = get_cleaning_parameters(config, clean_method_name)
+        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        picture_th = np.clip(pedestal_thresh, pic_th, None)
+        log.info(f"Tailcut clean with pedestal threshold config used:"
+                 f"{config['tailcuts_clean_with_pedestal_threshold']}")
+    else:
+        clean_method_name = 'tailcut'
+        cleaning_params = get_cleaning_parameters(config, clean_method_name)
+        picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        log.info(f"Tailcut config used: {config['tailcut']}")
+
+    use_only_main_island = True
+    if "use_only_main_island" in config[clean_method_name].keys():
+        use_only_main_island = config[clean_method_name]["use_only_main_island"]
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -135,15 +159,21 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                signal_pixels = tailcuts_clean(camera_geom, image, **config['tailcut'])
+                signal_pixels = tailcuts_clean(camera_geom,
+                                               image,
+                                               picture_th,
+                                               boundary_th,
+                                               isolated_pixels,
+                                               min_n_neighbors)
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
-                    n_pixels_on_island = np.bincount(island_labels)
+                    n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
                     n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
                     max_island_label = np.argmax(n_pixels_on_island)
-                    signal_pixels[island_labels != max_island_label] = False
+                    if use_only_main_island:
+                        signal_pixels[island_labels != max_island_label] = False
 
                     hillas = hillas_parameters(camera_geom[signal_pixels], image[signal_pixels])
 
