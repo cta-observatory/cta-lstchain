@@ -114,10 +114,10 @@ def get_dl1(
         # we use pop because ctapipe won't recognize that keyword in tailcuts
         use_main_island = cleaning_parameters.pop("use_only_main_island")
 
-    # time constraint for image cleaning: ewquire at least one neighbor
+    # time constraint for image cleaning: require at least one neighbor
     # within delta_time:
     delta_time = None
-    if "delta_time" in cleaning_parameters.keys():
+    if "delta_time" in cleaning_parameters:
         delta_time = cleaning_parameters.pop("delta_time")
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container

@@ -103,11 +103,11 @@ def main():
         log.info(f"Tailcut config used: {config['tailcut']}")
 
     use_only_main_island = True
-    if "use_only_main_island" in config[clean_method_name].keys():
+    if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
 
     delta_time = None
-    if "delta_time" in config[clean_method_name].keys():
+    if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
