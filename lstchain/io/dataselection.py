@@ -179,19 +179,6 @@ class DataBinning(Component):
         default_value=[0, 1.0001, 0.001],
     ).tag(config=True)
 
-    aliases = {
-        ("etrue", "true_energy_bins"): "DataBinning.true_energy_bins",
-        ("ereco", "reco_energy_bins"): "DataBinning.reco_energy_bins",
-        ("emigra", "energy_migra_bins"): "DataBinning.energy_migra_bins",
-        ("sing_fov", "single_fov_offset_bins"): "DataBinning.single_fov_offset_bins",
-        (
-            "mult_fov",
-            "multiple_fov_offset_bins",
-        ): "DataBinning.multiple_fov_offset_bins",
-        ("bkg_fov", "bkg_fov_offset_bins"): "DataBinning.bkg_fov_offset_bins",
-        ("src_off", "source_offset_bins"): "DataBinning.source_offset_bins",
-    }
-
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
 
