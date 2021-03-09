@@ -148,7 +148,10 @@ def get_dl1(
                                                  peak_time, 1, delta_time)
             signal_pixels = new_mask
 
-        if np.sum(signal_pixels) > 0:
+        # count surviving pixels
+        n_pixels = np.count_nonzero(signal_pixels)
+
+        if n_pixels > 0:
             hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
 
             # Fill container

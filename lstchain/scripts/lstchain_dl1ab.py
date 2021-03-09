@@ -93,6 +93,8 @@ def main():
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
+                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.2f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
@@ -192,7 +194,10 @@ def main():
                                                              1, delta_time)
                         signal_pixels = new_mask
 
-                    if np.sum(signal_pixels) > 0:
+                    # count the surviving pixels
+                    n_pixels = np.count_nonzero(signal_pixels)
+
+                    if n_pixels > 0:
                         hillas = hillas_parameters(camera_geom[signal_pixels],
                                                    image[signal_pixels])
 
