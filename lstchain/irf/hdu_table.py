@@ -245,7 +245,9 @@ def create_obs_hdu_index(
     return hdu_index_list, obs_index_list
 
 
-def create_event_list(data, run_number, source_ra, source_dec, effective_time, elapsed_time):
+def create_event_list(
+    data, run_number, source_name, source_pos, effective_time, elapsed_time
+):
     """
     Create the event_list BinTableHDUs from the given data
 
@@ -257,6 +259,8 @@ def create_event_list(data, run_number, source_ra, source_dec, effective_time, e
                 Int
         Source_name: Name of the source
                 Str
+        Source_pos: Ra/Dec position of the source
+                'astropy.coordinates.SkyCoord'
         Effective_time: Effective time of triggered events of the run
                 Float
         Elapsed_time: Total elapsed time of triggered events of the run
@@ -275,6 +279,9 @@ def create_event_list(data, run_number, source_ra, source_dec, effective_time, e
     t_stop = data["dragon_time"].value[-1]
     time = Time(data["dragon_time"], format="unix", scale="utc")
     date_obs = time[0].to_value("iso", "date")
+    mean_time = Time(
+        data["dragon_time"].value.mean()*u.s, format="unix", scale="utc"
+    )
 
     # Position parameters
     reco_alt = data["reco_alt"]
@@ -288,17 +295,11 @@ def create_event_list(data, run_number, source_ra, source_dec, effective_time, e
     tel_pnt_sky_pos = SkyCoord(
         alt=pointing_alt.mean(),
         az=pointing_az.mean(),
-        frame=AltAz(obstime=time.mean(), location=location),
+        frame=AltAz(obstime=mean_time, location=location),
     ).transform_to(frame="icrs")
 
-    try:
-        object_radec = SkyCoord.from_name(source_name)
-    except Exception:
-        log.error("Name resolve error in finding the Object in Sesame")
-        object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
-
     # Observation modes
-    source_pointing_diff = object_radec.separation(tel_pnt_sky_pos)
+    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos).value
 
     if round(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
@@ -311,7 +312,8 @@ def create_event_list(data, run_number, source_ra, source_dec, effective_time, e
         mode = "UNDETERMINED"
 
     log.info(
-        f"Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg"
+        "Source pointing difference with camera pointing"
+        f" is {source_pointing_diff:.3f} deg"
     )
 
     event_table = QTable(
@@ -359,8 +361,8 @@ def create_event_list(data, run_number, source_ra, source_dec, effective_time, e
     ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.value
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
     ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
-    ev_header["RA_OBJ"] = object_radec.ra.value
-    ev_header["DEC_OBJ"] = object_radec.dec.value
+    ev_header["RA_OBJ"] = source_pos.ra.value
+    ev_header["DEC_OBJ"] = source_pos.dec.value
     ev_header["FOVALIGN"] = "RADEC"
 
     # GTI table metadata

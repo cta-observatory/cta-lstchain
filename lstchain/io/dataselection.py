@@ -52,22 +52,22 @@ class DataSelection(Component):
     leakage_intensity_width_2 = List(
         help="Range for leakage_intensity_width_2 of event filter",
         trait=Float(),
-        default_value=[0, 1],
+        default_value=[0, 0.2],
     ).tag(config=True)
 
     fixed_gh_cut = Float(
         help="Fixed selection cut for gh_score (gammaness)",
-        default_value=0.5,
+        default_value=0.6,
     ).tag(config=True)
 
     fixed_theta_cut = Float(
         help="Fixed selection cut for theta",
-        default_value=0.5,
+        default_value=0.2,
     ).tag(config=True)
 
     fixed_source_fov_offset_cut = Float(
         help="Fixed selection cut for source FoV offset",
-        default_value=3,
+        default_value=2.83,
     ).tag(config=True)
 
     lst_tel_ids = List(

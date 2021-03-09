@@ -7,8 +7,9 @@ IRFs can be point-like or Full Enclosure.
 Background HDU maybe added if proton and electron MC are provided.
 
 Change the selection parameters as need be using the aliases.
-The default values are written in the DataSelection Component and
-in lstchain/data/data_selection_cuts.json
+The default values are written in the DataSelection and DataBinning Component
+and in lstchain/data/data_selection_cuts.json
+The default fov_offset_bins is for single offset
 
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
@@ -20,7 +21,7 @@ lstchain_create_irf_files
     --fp /path/to/DL2_MC_proton_file.h5
     --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
-    --pnt False
+    --pnt True
 """
 
 import numpy as np
@@ -130,9 +131,6 @@ class IRFFITSWriter(Tool):
             "overwrites output file",
         )
     }
-
-    #def __init__(self, config=None, **kwargs):
-    #    super().__init__(config=config, **kwargs)
 
     def setup(self):
 
@@ -255,7 +253,7 @@ class IRFFITSWriter(Tool):
             # this workaround is necessary for further analysis using gammapy.
             if len(self.data_bin.fov_offset_bins)!=3:
                 self.log.critical("Offset binning is not appropriate for single offset")
-            #fov_offset_bins = self.data_bin.multiple_fov_offset_bins * u.deg
+
         fov_offset_bins = self.data_bin.fov_offset_bins * u.deg
 
         if not self.only_gamma_irf:

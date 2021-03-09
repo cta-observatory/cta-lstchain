@@ -88,7 +88,7 @@ class FITSIndexWriter(Tool):
                     f"Output file {self.hdu_index_file} already exists,"
                     "use --overwrite to overwrite"
                 )
-                
+
         if self.obs_index_file.exists():
             if self.overwrite:
                 self.log.warning(f"Overwriting {self.obs_index_file}")
@@ -98,7 +98,7 @@ class FITSIndexWriter(Tool):
                     f"Output file {self.obs_index_file} already exists,"
                     " use --overwrite to overwrite"
                 )
-                sys.exit(1)
+
         self.log.debug("HDU Index file: %s", self.hdu_index_file)
         self.log.debug("OBS Index file: %s", self.obs_index_file)
 

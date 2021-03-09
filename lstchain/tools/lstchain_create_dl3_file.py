@@ -16,9 +16,12 @@ lstchain_create_dl3_file
     --o /path/to/DL3/file/
     --irf /path/to/irf.fits.gz
     --source_name Crab
+    --source_ra 83.633
+    --source_dec
 """
 
 from astropy.io import fits
+from astropy.coordinates import SkyCoord
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
@@ -53,6 +56,10 @@ class DataReductionFITSWriter(Tool):
 
     source_name = traits.Unicode(help="Name of Source").tag(config=True)
 
+    source_ra = traits.Unicode(help="RA position of the source").tag(config=True)
+
+    source_dec = traits.Unicode(help="DEC position of the source").tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=True,
@@ -75,6 +82,8 @@ class DataReductionFITSWriter(Tool):
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
         "source_name": "DataReductionFITSWriter.source_name",
+        "source_ra": "DataReductionFITSWriter.source_ra",
+        "source_dec": "DataReductionFITSWriter.source_dec",
         "overwrite": "DataReductionFITSWriter.overwrite",
     }
 
@@ -108,6 +117,17 @@ class DataReductionFITSWriter(Tool):
                     " use --overwrite to overwrite"
                 )
 
+        if not (self.source_ra or self.source_dec):
+            self.source_pos = SkyCoord.from_name(self.source_name)
+        elif bool(self.source_ra) != bool(self.source_dec):
+            raise ToolConfigurationError(
+                "Either provide both RA and DEC values for the source or none"
+            )
+        else:
+            self.source_pos = SkyCoord(
+                ra=self.source_ra, dec=self.source_dec, unit="deg"
+            )
+
         self.log.debug("Output DL3 file: %s", self.output_file)
 
     def start(self):
@@ -129,6 +149,7 @@ class DataReductionFITSWriter(Tool):
             data=self.data,
             run_number=self.run_number,
             source_name=self.source_name,
+            source_pos=self.source_pos,
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
         )
