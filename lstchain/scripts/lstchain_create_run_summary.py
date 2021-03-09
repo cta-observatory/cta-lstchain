@@ -151,6 +151,10 @@ def type_of_run(date_path, run_number, counters, n_events=500):
 
     pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
     list_of_files = sorted(date_path.glob(pattern))
+    if len(list_of_files) == 0:
+        log.error(f'First subrun not found for {pattern}')
+        return 'CONF'
+
     filename = list_of_files[0]
 
     config = Config()
@@ -175,7 +179,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
             run_type = "CONF"
 
     except (AttributeError, ValueError, IOError) as err:
-        log.exception(f"File {filename} has error: {err!r}")
+        log.error(f"File {filename} has error: {err!r}")
 
         run_type = "CONF"
 
