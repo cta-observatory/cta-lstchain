@@ -62,15 +62,12 @@ __all__ = [
 ]
 
 
+dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = (
-    "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-)
-dl2_params_src_dep_lstcam_key = (
-    "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
-)
+dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 
 def read_simu_info_hdf5(filename):
@@ -429,37 +426,33 @@ def write_array_info_08(subarray, output_filename):
     )
 
     for telescope_type in subarray.telescope_types:
-        ids = set(subarray.get_tel_ids_for_type(telescope_type))
-        if len(ids) > 0:  # only write if there is a telescope with this camera
-            tel_id = list(ids)[0]
-            camera = subarray.tel[tel_id].camera
-            camera_name = f"geometry_{camera}"
-            with tables.open_file(output_filename, mode="a") as f:
-                telescope_chidren = f.root[
-                    "/configuration/instrument/telescope"
-                ]._v_children.keys()
-                if "camera" in telescope_chidren:
-                    cameras_name = f.root[
-                        "/configuration/instrument/telescope/camera"
-                    ]._v_children.keys()
-                    if camera_name in cameras_name:
-                        print(
-                            f"WARNING during lstchain.io.write_array_info_08():",
-                            f"camera {camera_name} seems to be already present in the h5 file.",
-                        )
-                        continue
-            camera.geometry.to_table().write(
-                output_filename,
-                path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
-                append=True,
-                serialize_meta=serialize_meta,
-            )
-            camera.readout.to_table().write(
-                output_filename,
-                path=f"/configuration/instrument/telescope/camera/readout_{camera}",
-                append=True,
-                serialize_meta=serialize_meta,
-            )
+      ids = set(subarray.get_tel_ids_for_type(telescope_type))
+      if len(ids) > 0: # only write if there is a telescope with this camera
+        tel_id = list(ids)[0]
+        camera = subarray.tel[tel_id].camera
+        camera_name = f'geometry_{camera}'
+        with tables.open_file(output_filename, mode='a') as f:
+          telescope_chidren = f.root['/configuration/instrument/telescope']._v_children.keys()
+          if 'camera' in telescope_chidren:
+            cameras_name = f.root['/configuration/instrument/telescope/camera']._v_children.keys()
+            if camera_name in cameras_name:
+              print(
+                f'WARNING during lstchain.io.write_array_info_08():',
+                f'camera {camera_name} seems to be already present in the h5 file.'
+              )
+              continue
+        camera.geometry.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
+          append=True,
+          serialize_meta=serialize_meta
+        )
+        camera.readout.to_table().write(
+          output_filename,
+          path=f"/configuration/instrument/telescope/camera/readout_{camera}",
+          append=True,
+          serialize_meta=serialize_meta
+        )
 
 
 @deprecated("09/07/2020", message="this function will disappear in lstchain v0.7")
