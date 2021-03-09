@@ -8,7 +8,6 @@ import argparse
 import logging
 from collections import Counter
 from datetime import datetime
-from glob import glob
 from pathlib import Path
 
 import numpy as np
@@ -126,10 +125,10 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     """
     Guessing empirically the type of run based on the percentage of
     pedestals/mono trigger types from the first n_events:
-    DRS4 pedestal run: 100% mono events (trigger_type == 1)
-    cosmic data run: <10% pedestal events (trigger_type == 32)
-    pedestal-calibration run: ~50% mono, ~50% pedestal events
-    Otherwise the run is not expected to be processed.
+    DRS4 pedestal run (DRS4): 100% mono events (trigger_type == 1)
+    cosmic data run (DATA): <10% pedestal events (trigger_type == 32)
+    pedestal-calibration run (PEDCALIB): ~50% mono, ~50% pedestal events
+    Otherwise (ERROR) the run is not expected to be processed.
     This method may not give always the correct type.
     At some point this should be taken directly from TCU.
 
@@ -147,21 +146,21 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     Returns
     -------
     run_type: str
-        Type of run (DRS4, CALI, DATA, CONF)
+        Type of run (DRS4, PEDCALIB, DATA, ERROR)
     """
 
     pattern = f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
     list_of_files = sorted(date_path.glob(pattern))
     if len(list_of_files) == 0:
-        log.error(f'First subrun not found for {pattern}')
-        return 'CONF'
+        log.error(f"First subrun not found for {pattern}")
+        return "ERROR"
 
     filename = list_of_files[0]
 
     config = Config()
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
     config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
-    config.EventTimeCalculator.dragon_reference_module_id = int(counters["dragon_reference_module_id"])
+    config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
 
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
@@ -174,16 +173,16 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         if n_subarray / n_events > 0.999:
             run_type = "DRS4"
         elif n_pedestals / n_events > 0.1:
-            run_type = "CALI"
+            run_type = "PEDCALIB"
         elif n_pedestals / n_events < 0.1:
             run_type = "DATA"
         else:
-            run_type = "CONF"
+            run_type = "ERROR"
 
-    except (AttributeError, ValueError, IOError) as err:
+    except (AttributeError, ValueError, IOError, IndexError) as err:
         log.error(f"File {filename} has error: {err!r}")
 
-        run_type = "CONF"
+        run_type = "ERROR"
 
     return run_type
 
