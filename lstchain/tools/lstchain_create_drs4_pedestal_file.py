@@ -29,7 +29,7 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     deltaT = traits.Bool(
-        help="Use delta T correction", default_value=False
+        help="Use delta T correction", default_value=True
     ).tag(config=True)
 
     progress_bar = traits.Bool(
@@ -44,9 +44,9 @@ class PedestalFITSWriter(Tool):
         "start-r0-waveform": "DragonPedestal.r0_sample_start",
     }
     flags = {
-        "deltaT": (
-            {"PedestalFITSWriter": {"deltaT": True}},
-            "Activate delta T corrections",
+        "no-delta-t": (
+            {"PedestalFITSWriter": {"deltaT": False}},
+            "Switch off delta T corrections",
         )
     }
 
@@ -70,11 +70,11 @@ class PedestalFITSWriter(Tool):
             unit="ev",
             disable=not self.progress_bar,
         ):
-            if self.deltaT:
-                for tel_id in event.r0.tels_with_data:
+            for tel_id in event.trigger.tels_with_trigger:
+                if self.deltaT:
                     self.eventsource.r0_r1_calibrator.update_first_capacitors(event)
                     self.eventsource.r0_r1_calibrator.time_lapse_corr(event, tel_id)
-            self.pedestal.fill_pedestal_event(event)
+                self.pedestal.fill_pedestal_event(event)
 
     def finish(self):
 
