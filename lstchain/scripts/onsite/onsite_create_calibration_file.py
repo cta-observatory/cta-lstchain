@@ -96,7 +96,7 @@ def main():
         #
         # produce drs4 time calibration file
         #
-        time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.hdf5"
+        time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
         print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
@@ -125,7 +125,7 @@ def main():
 
         # define charge file names
         print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
-        output_file = f"{output_dir}/calibration.Run{run:05d}.{sub_run:04d}.hdf5"
+        output_file = f"{output_dir}/calibration.Run{run:05d}.{sub_run:04d}.h5"
         log_file = f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file) and ff_calibration == 'yes':
