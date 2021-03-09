@@ -79,6 +79,8 @@ class ReconstructionHDF5Writer(Tool):
         if not len(self.regression_features):
             raise ToolConfigurationError("Information on regression features not found in config.")
 
+    def start(self):
+
         self.log.info("Reading DL1 file")
         self.data_ind = pd.read_hdf(self.input, key=dl1_params_lstcam_key)
         if self.source_dependent:
@@ -87,8 +89,6 @@ class ReconstructionHDF5Writer(Tool):
         self.reg_energy = joblib.load(self.path_energy_model)
         self.reg_disp_vector = joblib.load(self.path_disp_model)
         self.cls_gh = joblib.load(self.path_gh_model)
-
-    def start(self):
 
         self.data_ind = add_delta_t_key(self.data_ind)
         # dealing with pointing missing values
