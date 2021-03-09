@@ -194,7 +194,6 @@ class DataBinning(Component):
             self.true_energy_bins[1] * u.TeV,
             self.true_energy_bins[2],
         )
-
         return self.true_energy
 
     def reco_energy(self):

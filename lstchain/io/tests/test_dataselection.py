@@ -2,37 +2,6 @@ import pytest
 from lstchain.io import DataSelection, DataBinning
 
 
-"""class temp_sel(DataSelection):
-    DataSelection.intensity = [0, 1000]
-    DataSelection.length = [0, 1]
-    DataSelection.width = [0, 1]
-    DataSelection.r = [0, 1]
-    DataSelection.wl = [0, 1]
-    DataSelection.leakage_intensity_width_2 = [0, 1]
-    DataSelection.fixed_gh_cut = 0.5
-    DataSelection.fixed_theta_cut = 1
-    DataSelection.fixed_source_fov_offset_cut = 2
-    DataSelection.src_dep_alpha = 10
-    DataSelection.lst_tel_ids = [1]
-    DataSelection.magic_tel_ids = [1, 2]
-
-    def __init__(self):
-        super().__init__()
-
-
-class temp_bin(DataBinning):
-    DataBinning.true_energy_bins = [0.1, 100, 5]
-    DataBinning.reco_energy_bins = [0.1, 100, 5]
-    DataBinning.energy_migra_bins = [0.1, 100, 5]
-    DataBinning.single_fov_offset_bins = [0.1, 0.2, 0.3]
-    DataBinning.multiple_fov_offset_bins = [0.1, 0.2, 0.3, 0.4]
-    DataBinning.bkg_fov_offset_bins = [1, 10]
-    DataBinning.source_offset_bins = [0.1, 1., 0.05]
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-"""
-
 def test_data_selection(simulated_dl2_file):
     from lstchain.io import read_mc_dl2_to_pyirf
 
