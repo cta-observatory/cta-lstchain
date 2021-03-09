@@ -3,7 +3,7 @@ import numpy as np
 
 from numba import jit, njit, prange
 
-from ctapipe.core import Component
+from ctapipe.core import Component, Provenance
 from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.containers import EventType
@@ -194,6 +194,10 @@ class TimeCorrectionCalculate(Component):
         else:
             self.mean_values_per_bin = self.mean_values_per_bin / self.entries_per_bin
             self.save_to_hdf5_file()
+            Provenance().add_output_file(
+                self.calib_file_path,
+                role='mon.tel.calibration'
+            )
 
     def fit(self, pixel_id, gain):
         """
