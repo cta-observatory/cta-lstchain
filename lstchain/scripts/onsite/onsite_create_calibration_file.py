@@ -15,7 +15,6 @@ from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 from ctapipe_io_lst.event_time import read_night_summary
 
-
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
                                  formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -36,21 +35,18 @@ optional.add_argument('--ff_calibration', help="Perform the charge calibration (
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
 
-
 args = parser.parse_args()
 run = args.run_number
-ped_run = '%05d'%args.pedestal_run
-print(ped_run)
+ped_run = args.pedestal_run
 prod_id = 'v%02d'%args.version
 stat_events = args.statistics
 base_dir = args.base_dir
 default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
-sub_run = '%04d'%args.sub_run
+sub_run = args.sub_run
 
 max_events = 1000000
-
 
 def main():
 
@@ -58,7 +54,7 @@ def main():
 
     try:
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run}*'))
+        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
             print(f">>> Error: Run {run} not found\n")
             raise NameError()
@@ -78,8 +74,7 @@ def main():
             exit(0)
 
         # search the pedestal calibration file
-
-        pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run}.0000.fits"
+        pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run:05d}.0000.fits"
         if not os.path.exists(pedestal_file):
             print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
             exit(0)
@@ -101,8 +96,7 @@ def main():
         #
         # produce drs4 time calibration file
         #
-
-        time_file = f"{output_dir}/time_calibration.Run{run}.0000.hdf5"
+        time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
         print(f"\n***** PRODUCE TIME CALIBRATION FILE ***** ")
         if default_time_run is 0:
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
@@ -131,8 +125,8 @@ def main():
 
         # define charge file names
         print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
-        output_file = f"{output_dir}/calibration.Run{run}.{sub_run}.hdf5"
-        log_file = f"{output_dir}/log/calibration.Run{run}.{sub_run}.log"
+        output_file = f"{output_dir}/calibration.Run{run:05d}.{sub_run:04d}.h5"
+        log_file = f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.log"
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file) and ff_calibration == 'yes':
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
@@ -162,7 +156,7 @@ def main():
             os.system(cmd)
 
             # plot and save some results
-            plot_file=f"{output_dir}/log/calibration.Run{run}.{sub_run}.pedestal.Run{ped_run}.0000.pdf"
+            plot_file=f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.pedestal.Run{ped_run:05d}.0000.pdf"
             print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
             calib.read_file(output_file,tel_id)
             calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
