@@ -104,17 +104,21 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
     cleaning_parameters = config["tailcut"]
+    cleaning_parameters_for_tailcuts = cleaning_parameters.copy()
     use_main_island = True
     if "use_only_main_island" in cleaning_parameters.keys():
-        # we use pop because ctapipe won't recognize that keyword in tailcuts
-        use_main_island = cleaning_parameters.pop("use_only_main_island")
+        use_main_island = cleaning_parameters["use_only_main_island"]
 
     # time constraint for image cleaning: require at least one neighbor
     # within delta_time:
     delta_time = None
     if "delta_time" in cleaning_parameters:
-        delta_time = cleaning_parameters.pop("delta_time")
+        delta_time = cleaning_parameters["delta_time"]
 
+    # we use pop because ctapipe won't recognize that keyword in tailcuts
+    cleaning_parameters_for_tailcuts.pop("delta_time")
+    cleaning_parameters_for_tailcuts.pop("use_only_main_island")
+    
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
@@ -124,7 +128,7 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters_for_tailcuts)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
