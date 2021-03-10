@@ -131,6 +131,8 @@ def observed_dl1_files(temp_dir_observed_files):
         "1582059789516351903",
         "--dragon-reference-counter",
         "2516351600",
+        "--dragon-module-id",
+        "132",
     )
 
     run_program(
