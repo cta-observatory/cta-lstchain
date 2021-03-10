@@ -128,7 +128,7 @@ def main():
                 os.remove(output_file)
             else:
                 print(f"\n--> Stop")
-                exit(0)
+                exit(1)
 
         print(f"\n--> Log file {log_file}")
 
