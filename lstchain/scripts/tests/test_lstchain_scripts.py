@@ -14,15 +14,7 @@ from lstchain.io.io import (
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key
 )
-from lstchain.tests.test_lstchain import (
-    test_data,
-    test_drive_report,
-    test_drs4_pedestal_path,
-    test_calib_path,
-    test_time_calib_path,
-    test_r0_path,
-    test_r0_path2
-)
+from lstchain.tests.test_lstchain import test_data
 
 
 def find_entry_points(package_name):
@@ -87,95 +79,6 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "--no-image", "True"
     )
     return merged_dl1_file
-
-
-@pytest.mark.private_data
-@pytest.fixture(scope="session")
-def observed_dl1_files(temp_dir_observed_files):
-    """
-    Produce dl1, datacheck and muons files from real observed data.
-    The initial timestamps and counters used for the first set of files
-    here are extracted from the night summary. In this case these values
-    correspond to the third event. A second set of files are produced
-    without using the first valid timestamps.
-    """
-    # FIXME: naming criteria (suffixes, no stream) of dl1, dl2,
-    #  muons and datacheck files should be coherent
-
-    # First set of files to be produced
-    dl1_output_path1 = temp_dir_observed_files / "dl1_LST-1.Run02008.0000.h5"
-    muons_file1 = temp_dir_observed_files / "muons_LST-1.Run02008.0000.fits"
-    datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
-
-    # Second set of files
-    dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
-    muons_file2 = temp_dir_observed_files / "muons_LST-1.Run02008.0100.fits"
-    datacheck_file2 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0100.h5"
-
-    run_program(
-        "lstchain_data_r0_to_dl1",
-        "-f",
-        test_r0_path,
-        "-o",
-        temp_dir_observed_files,
-        "--pedestal-file",
-        test_drs4_pedestal_path,
-        "--calibration-file",
-        test_calib_path,
-        "--time-calibration-file",
-        test_time_calib_path,
-        "--pointing-file",
-        test_drive_report,
-        "--dragon-reference-time",
-        "1582059789516351903",
-        "--dragon-reference-counter",
-        "2516351600",
-    )
-
-    run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path1
-    )
-
-    run_program(
-        "lstchain_data_r0_to_dl1",
-        "-f",
-        test_r0_path2,
-        "-o",
-        temp_dir_observed_files,
-        "--pedestal-file",
-        test_drs4_pedestal_path,
-        "--calibration-file",
-        test_calib_path,
-        "--time-calibration-file",
-        test_time_calib_path,
-        "--pointing-file",
-        test_drive_report
-    )
-
-    run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path2
-    )
-
-    return {
-        'dl1_file1': dl1_output_path1,
-        'muons1': muons_file1,
-        'datacheck1': datacheck_file1,
-        'dl1_file2': dl1_output_path2,
-        'muons2': muons_file2,
-        'datacheck2': datacheck_file2
-    }
 
 
 def test_lstchain_mc_r0_to_dl1(simulated_dl1_file):
@@ -325,19 +228,9 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
 
 
 @pytest.mark.private_data
-def test_lstchain_observed_dl1_to_dl2(temp_dir_observed_files, observed_dl1_files,  rf_models):
-    real_data_dl2_file = temp_dir_observed_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
-    run_program(
-        "lstchain_dl1_to_dl2",
-        "--input-file",
-        observed_dl1_files["dl1_file1"],
-        "--path-models",
-        rf_models["path"],
-        "--output-dir",
-        temp_dir_observed_files
-    )
-    assert real_data_dl2_file.is_file()
-    dl2_df = pd.read_hdf(real_data_dl2_file, key=dl2_params_lstcam_key)
+def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
+    assert observed_dl2_file.is_file()
+    dl2_df = pd.read_hdf(observed_dl2_file, key=dl2_params_lstcam_key)
     assert "gammaness" in dl2_df.columns
     assert "reco_type" in dl2_df.columns
     assert "reco_energy" in dl2_df.columns
