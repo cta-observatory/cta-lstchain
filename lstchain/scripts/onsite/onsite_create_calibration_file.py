@@ -59,8 +59,7 @@ def main():
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found\n")
-            raise NameError()
+            raise IOError(f"Run {run} not found\n")
         else:
             input_file = file_list[0]
         print(f"\n--> Input file: {input_file}")
@@ -72,26 +71,23 @@ def main():
         # verify output dir
         output_dir = f"{base_dir}/calibration/{date}/{prod_id}"
         if not os.path.exists(output_dir):
-            print(f">>> Error: The output directory {output_dir} do not exist")
-            print(f">>>        You must create the drs4 pedestal file to create it.\n Exit")
-            exit(0)
+            raise IOError(f"Output directory {output_dir} does not exist\n")
 
         # search the pedestal calibration file
         pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run:05d}.0000.fits"
         if not os.path.exists(pedestal_file):
-            print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
-            exit(0)
+            raise IOError(f"Pedestal file {pedestal_file} does not exist.\n ")
 
         # search the summary file info
         run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
         if not os.path.exists(run_summary_path):
-            raise NameError(f">>> Night summary file {run_summary_path} not found\n")
+            raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
-            print(f">>> Config file {config_file} do not exists. \n Exit ")
-            exit(1)
+            raise IOError(f"Config file {config_file} does not exists. \n")
+
         print(f"\n--> Config file {config_file}")
 
         #
@@ -114,8 +110,7 @@ def main():
                 Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run{default_time_run}*'))
 
             if len(file_list) == 0:
-                print(f">>> Error: time calibration file for run {default_time_run} not found\n")
-                raise NameError()
+                raise IOError(f"Time calibration file for run {default_time_run} not found\n")
             else:
                 time_calibration_file = file_list[0]
                 cmd = f"ln -sf {time_calibration_file} {time_file}"
@@ -133,7 +128,7 @@ def main():
                 os.remove(output_file)
             else:
                 print(f"\n--> Stop")
-                exit(1)
+                exit(0)
 
         print(f"\n--> Log file {log_file}")
 
