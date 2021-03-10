@@ -1,6 +1,7 @@
 import pytest
 from ctapipe.core import run_tool
 
+
 @pytest.mark.parametrize("point_like_IRF", [True, False])
 def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF):
     """
@@ -49,6 +50,9 @@ def test_create_dl3(temp_dir_observed_files, simulated_dl2_file):
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
     from lstchain.reco.utils import add_delta_t_key
     import numpy as np
+    import pandas as pd
+    from lstchain.io.io import dl2_params_lstcam_key
+
     # Temporary use of simulated data
     dl2_file_new = temp_dir_observed_files / "dl2_LST-1.0001.h5"
 
