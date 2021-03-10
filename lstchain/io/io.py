@@ -198,6 +198,8 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
+    merge_arrays: bool
+    filters
     """
 
     if nodes_keys is None:
