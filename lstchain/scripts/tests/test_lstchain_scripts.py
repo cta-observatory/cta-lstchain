@@ -90,9 +90,24 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
     return merged_dl1_file
 
 
+@pytest.fixture(scope='session')
+def run_summary_path(temp_dir_observed_files):
+    date = "20200218"
+    r0_path = test_data / "real/R0"
+    run_summary_path = temp_dir_observed_files / f"RunSummary_{date}.ecsv"
+    run_program(
+        "lstchain_create_run_summary",
+        "--date", date,
+        "--r0-path", r0_path,
+        "--output-dir", temp_dir_observed_files
+    )
+
+    return run_summary_path
+
+
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
-def observed_dl1_files(temp_dir_observed_files):
+def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     """
     Produce dl1, datacheck and muons files from real observed data.
     The initial timestamps and counters used for the first set of files
@@ -158,7 +173,9 @@ def observed_dl1_files(temp_dir_observed_files):
         "--time-calibration-file",
         test_time_calib_path,
         "--pointing-file",
-        test_drive_report
+        test_drive_report,
+        '--run-summary-path',
+        run_summary_path,
     )
 
     run_program(
@@ -394,22 +411,15 @@ def test_read_dl2_to_pyirf(simulated_dl2_file):
 
 
 @pytest.mark.private_data
-def test_create_run_summary(tmp_path):
+def test_run_summary(run_summary_path):
     from astropy.table import Table
     from datetime import datetime
 
     date = "20200218"
-    r0_path = test_data / "real/R0"
-    run_summary_file = tmp_path / f"RunSummary_{date}.ecsv"
-    run_program(
-        "lstchain_create_run_summary",
-        "--date", date,
-        "--r0-path", r0_path,
-        "--output-dir", tmp_path
-    )
-    assert run_summary_file.is_file()
 
-    run_summary_table = Table.read(run_summary_file)
+    assert run_summary_path.is_file()
+
+    run_summary_table = Table.read(run_summary_path)
 
     assert run_summary_table.meta["date"] == datetime.strptime(date, "%Y%m%d").date().isoformat()
     assert "lstchain_version" in run_summary_table.meta
