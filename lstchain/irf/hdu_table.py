@@ -9,7 +9,7 @@ from astropy.time import Time
 
 from lstchain.__init__ import __version__
 
-__all__ = ["create_obs_hdu_index", "create_event_list"]
+__all__ = ["create_obs_index_hdu", "create_hdu_index_hdu", "create_event_list"]
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ DEFAULT_HEADER["CREATED"] = Time.now().utc.iso
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 
 wobble_offset = 0.4
+
 
 def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
     """

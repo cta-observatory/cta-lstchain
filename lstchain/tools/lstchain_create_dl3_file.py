@@ -71,13 +71,7 @@ class DataReductionFITSWriter(Tool):
         ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
-        ("int", "intensity"): "DataSelection.intensity",
-        ("len", "length"): "DataSelection.length",
-        ("w", "width"): "DataSelection.width",
-        "r": "DataSelection.r",
-        "wl": "DataSelection.wl",
-        ("leak_2", "leakage_intensity_width_2"):
-            "DataSelection.leakage_intensity_width_2",
+        ("evt", "event_filters"): "DataSelection.event_filters",
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",

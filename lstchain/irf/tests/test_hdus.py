@@ -51,7 +51,7 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
 def test_create_obs_hdu_index(observed_dl2_file):
     from lstchain.irf.hdu_table import create_hdu_index_hdu, create_obs_index_hdu
 
-    dl3_file = "dl3_LST-1.Run02008.fits"
+    dl3_file = "dl3_LST-1.Run02008.0000.fits"
     hdu_list = create_hdu_index_hdu(
         [dl3_file],
         observed_dl2_file.parent,

@@ -2,8 +2,7 @@ import pytest
 from ctapipe.core import run_tool
 
 
-@pytest.mark.parametrize("point_like_IRF", [True, False])
-def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF):
+def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
     """
     Generating an IRF file from a test DL2 files
     """
@@ -33,7 +32,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
                 f"--input_proton_dl2={simulated_dl2_file}",
                 f"--input_electron_dl2={simulated_dl2_file}",
                 f"--output_irf_file={irf_file}",
-                f"--point_like={point_like_IRF}",
+                "--point_like=False",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -43,7 +42,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
-def test_create_dl3(temp_dir_observed_files, temp_observed_dl2_file):
+def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
     """
@@ -57,7 +56,7 @@ def test_create_dl3(temp_dir_observed_files, temp_observed_dl2_file):
             DataReductionFITSWriter(),
             argv=[
                 f"--config={sel_cuts_file}",
-                f"--input_dl2={temp_observed_dl2_file}",
+                f"--input_dl2={observed_dl2_file}",
                 f"--output_dl3_path={temp_dir_observed_files}",
                 f"--input_irf={irf_file}",
                 "--source_name=Crab",

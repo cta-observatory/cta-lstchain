@@ -13,7 +13,7 @@ lstchain_create_dl3_index_files
     --d /path/to/DL3/files/
     --p dl3*[run_1-run_n]*.fits.gz
 """
-from lstchain.irf import create_obs_hdu_index
+from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
 __all__ = ["FITSIndexWriter"]
@@ -105,12 +105,16 @@ class FITSIndexWriter(Tool):
     def start(self):
 
         # Retrieving HDULists for both index files
-        self.hdu_index_list, self.obs_index_list = create_obs_hdu_index(
+        self.hdu_index_list = create_hdu_index_hdu(
             self.file_list,
             self.input_dl3_dir,
             self.hdu_index_filename,
-            self.obs_index_filename,
             self.add_fits_dir,
+        )
+        self.obs_index_list = create_obs_index_hdu(
+            self.file_list,
+            self.input_dl3_dir,
+            self.obs_index_filename,
         )
         self.log.debug("HDULists created for the index files")
 

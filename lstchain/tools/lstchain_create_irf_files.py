@@ -21,7 +21,7 @@ lstchain_create_irf_files
     --fp /path/to/DL2_MC_proton_file.h5
     --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
-    --pnt True
+    --pnt False
 """
 
 import numpy as np
@@ -100,24 +100,13 @@ class IRFFITSWriter(Tool):
         ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
         ("pnt", "point_like"): "IRFFITSWriter.point_like",
-        ("int", "intensity"): "DataSelection.intensity",
-        ("len", "length"): "DataSelection.length",
-        ("w", "width"): "DataSelection.width",
-        "r": "DataSelection.r",
-        "wl": "DataSelection.wl",
-        ("leak_2", "leakage_intensity_width_2"):
-            "DataSelection.leakage_intensity_width_2",
+        ("evt", "event_filters"): "DataSelection.event_filters",
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
         "lst_tel_ids": "DataSelection.lst_tel_ids",
-        ("etrue", "true_energy_bins"): "DataBinning.true_energy_bins",
-        ("ereco", "reco_energy_bins"): "DataBinning.reco_energy_bins",
-        ("emigra", "energy_migra_bins"): "DataBinning.energy_migra_bins",
-        ("fov_off", "fov_offset_bins"): "DataBinning.fov_offset_bins",
-        ("bkg_fov", "bkg_fov_offset_bins"): "DataBinning.bkg_fov_offset_bins",
-        ("src_off", "source_offset_bins"): "DataBinning.source_offset_bins",
+        "config": "DataSelection.config",
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
@@ -200,11 +189,17 @@ class IRFFITSWriter(Tool):
                 p["mc_type"] = "diffuse"
                 # For diffuse gamma using Proton Spectra for calculating event weights
                 if particle_type == "gamma":
-                    p["target_spectrum"] = IRFDOC_PROTON_SPECTRUM
-                    self.log.debug(
-                        "Proton spectrum used as target spectrum"
-                        " for MC diffuse gamma"
-                    )
+                    if not self.point_like:
+                        p["target_spectrum"] = IRFDOC_PROTON_SPECTRUM
+                        self.log.debug(
+                            "Proton spectrum used as target spectrum"
+                            " for MC diffuse gamma"
+                        )
+                    else:
+                        raise ToolConfigurationError(
+                            "Diffuse MC gamma cannot be used for generating "
+                            "point-like IRFs. Use appropriate MC and IRF type."
+                        )
 
             self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
 
@@ -242,19 +237,19 @@ class IRFFITSWriter(Tool):
             gammas = self.data_sel.true_src_fov_offset_cut(gammas)
 
         # Binning of parameters used in IRFs
-        true_energy_bins = self.data_bin.true_energy()
-        reco_energy_bins = self.data_bin.reco_energy()
-        migration_bins = self.data_bin.energy_migration()
-        source_offset_bins = self.data_bin.source_offset()
+        true_energy_bins = self.data_bin.true_energy_bins()
+        reco_energy_bins = self.data_bin.reco_energy_bins()
+        migration_bins = self.data_bin.energy_migration_bins()
+        source_offset_bins = self.data_bin.source_offset_bins()
 
-        if self.mc_particle["gamma"]["mc_type"] == "point-like":
+        if self.point_like:
             # Gammapy 0.18.2 needs offset bin centers for interpolation
             # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
             # this workaround is necessary for further analysis using gammapy.
-            if len(self.data_bin.fov_offset_bins) != 3:
+            if len(self.data_bin.fov_offset_bins()) != 3:
                 self.log.critical("Offset binning is not appropriate for single offset")
 
-        fov_offset_bins = self.data_bin.fov_offset_bins * u.deg
+        fov_offset_bins = self.data_bin.fov_offset_bins()
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -268,7 +263,7 @@ class IRFFITSWriter(Tool):
             background = self.data_sel.tel_ids_filter(background)
             background = self.data_sel.gh_cut(background)
 
-            background_offset_bins = self.data_bin.bkg_offset()
+            background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU should be created

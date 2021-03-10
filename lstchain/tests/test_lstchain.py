@@ -15,7 +15,6 @@ from lstchain.reco.utils import filter_events
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
-test_r0_path3 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0201.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
 test_calib_path = test_data / 'real/calibration/20200218/v05/calibration.Run2006.0000.hdf5'
 test_drs4_pedestal_path = test_data / 'real/calibration/20200218/v05/drs4_pedestal.Run2005.0000.fits'

@@ -1,5 +1,5 @@
 from ctapipe.core import Component
-from ctapipe.core.traits import Int, Float, List
+from ctapipe.core.traits import Int, Float, List, Dict
 from lstchain.reco.utils import filter_events
 
 import numpy as np
@@ -18,40 +18,16 @@ class DataSelection(Component):
     filter_events() can be used.
     """
 
-    intensity = List(
-        help="Range of intensity of event filter",
-        trait=Float(),
-        default_value=[0, np.inf],
-    ).tag(config=True)
-
-    length = List(
-        help="Range of length for event filter",
-        trait=Float(),
-        default_value=[0, np.inf],
-    ).tag(config=True)
-
-    width = List(
-        help="Range of width for event filter",
-        trait=Float(),
-        default_value=[0, np.inf],
-    ).tag(config=True)
-
-    r = List(
-        help="Range of r for event filter",
-        trait=Float(),
-        default_value=[0, 1],
-    ).tag(config=True)
-
-    wl = List(
-        help="Range of wl for event filter",
-        trait=Float(),
-        default_value=[0.01, 1],
-    ).tag(config=True)
-
-    leakage_intensity_width_2 = List(
-        help="Range for leakage_intensity_width_2 of event filter",
-        trait=Float(),
-        default_value=[0, 0.2],
+    event_filters = Dict(
+        help="Dict of event filter parameters",
+        default_value={
+            "intensity": [0, np.inf],
+            "length": [0, np.inf],
+            "width": [0, np.inf],
+            "r": [0, 1],
+            "wl": [0.01, 1],
+            "leakage_intensity_width_2": [0, 1],
+        },
     ).tag(config=True)
 
     fixed_gh_cut = Float(
@@ -76,44 +52,35 @@ class DataSelection(Component):
     ).tag(config=True)
 
     def filter_cut(self, data):
-        return filter_events(data, self.event_filters())
+        return filter_events(data, self.event_filters)
 
     def gh_cut(self, data):
         return data[data["gh_score"] > self.fixed_gh_cut]
 
     def theta_cut(self, data):
-        return data[data["theta"] < u.Quantity(self.fixed_theta_cut) * u.deg]
+        return data[data["theta"] < u.Quantity(
+            self.fixed_theta_cut
+            ) * u.deg
+        ]
 
     def true_src_fov_offset_cut(self, data):
         return data[
                 data["true_source_fov_offset"] < u.Quantity(
-                    self.fixed_source_fov_offset_cut) * u.deg
+                    self.fixed_source_fov_offset_cut
+                    ) * u.deg
             ]
 
     def reco_src_fov_offset_cut(self, data):
         return data[
                 data["reco_source_fov_offset"] < u.Quantity(
-                    self.fixed_source_fov_offset_cut) * u.deg
+                    self.fixed_source_fov_offset_cut
+                    ) * u.deg
             ]
 
     def tel_ids_filter(self, data):
         for i in self.lst_tel_ids:
             data["sel_tel"] = data["tel_id"] == i
         return data[data["sel_tel"]]
-
-    def event_filters(self):
-        """
-        Creates a dict for filter_events() function
-        """
-        self.evt_filter = {
-            "intensity": self.intensity,
-            "width": self.width,
-            "length": self.length,
-            "r": self.r,
-            "wl": self.wl,
-            "leakage_intensity_width_2": self.leakage_intensity_width_2,
-        }
-        return self.evt_filter
 
 
 class DataBinning(Component):
@@ -122,106 +89,113 @@ class DataBinning(Component):
     generating IRFs as per pyIRF requirements.
     """
 
-    true_energy_bins = List(
-        help="Values to get true energy (TeV) binning as "
-        "[e_min, e_max, bins_per_decade]",
-        trait=Float(),
-        default_value=[0.01, 100, 5.5],
+    energy_bins = Dict(
+        help="Binning Dict information for the 3 Energy bins",
+        default_value={
+            "true_energy_min": 0.01,
+            "true_energy_max": 100,
+            "true_energy_n_bins_per_decade": 5.5,
+            "reco_energy_min": 0.01,
+            "reco_energy_max": 100,
+            "reco_energy_n_bins_per_decade": 5.5,
+            "energy_migration_min": 0.2,
+            "energy_migration_max": 5,
+            "energy_migration_n_bins": 31
+        },
     ).tag(config=True)
 
-    reco_energy_bins = List(
-        help="Values to get reco energy (TeV) binning as "
-        "[e_min, e_max, bins_per_decade]",
-        trait=Float(),
-        default_value=[0.01, 100, 5.5],
+    angular_bins = Dict(
+        help="Binning Dict information for 3 angular bins",
+        default_value={
+            "fov_offset_min": 0.3,
+            "fov_offset_max": 0.7,
+            "fov_offset_n_edges": 3,
+            "bkg_fov_offset_min": 0,
+            "bkg_fov_offset_max": 10,
+            "bkg_fov_offset_n_edges": 21,
+            "source_offset_min": 0.0001,
+            "source_offset_max": 1.0001,
+            "source_offset_n_edges": 1000
+        },
     ).tag(config=True)
 
-    energy_migra_bins = List(
-        help="Values to get energy migration binning as [min, max, bins]",
-        default_value=[0.2, 5, 31],
-    ).tag(config=True)
-
-    fov_offset_bins = List(
-        help="List of bins for FOV offset binning",
-        trait=Float(),
-        default_value=[0.3, 0.5, 0.7],
-    ).tag(config=True)
-
-    bkg_fov_offset_bins = List(
-        help="Range of values for multiple FOV offset binning "
-        "for Background IRF as [o_min, o_max]",
-        trait=Float(),
-        default_value=[0, 11],
-    ).tag(config=True)
-
-    source_offset_bins = List(
-        help="Values to get source offset binning for PSF IRF "
-        "as [o_min, o_max, bin_width]",
-        trait=Float(),
-        default_value=[0, 1.0001, 0.001],
-    ).tag(config=True)
-
-    def true_energy(self):
+    def true_energy_bins(self):
         """
         Creates bins per decade for true MC energy using pyirf function.
 
         The overflow binning added is not needed at the current stage
         It can be used as - add_overflow_bins(***)[1:-1]
         """
-        self.true_energy = create_bins_per_decade(
-            self.true_energy_bins[0] * u.TeV,
-            self.true_energy_bins[1] * u.TeV,
-            self.true_energy_bins[2],
+        true_energy = create_bins_per_decade(
+            self.energy_bins["true_energy_min"] * u.TeV,
+            self.energy_bins["true_energy_max"] * u.TeV,
+            self.energy_bins["true_energy_n_bins_per_decade"],
         )
-        return self.true_energy
+        return true_energy
 
-    def reco_energy(self):
+    def reco_energy_bins(self):
         """
         Creates bins per decade for reconstructed MC energy using pyirf function.
 
         The overflow binning added is not needed at the current stage
         It can be used as - add_overflow_bins(***)[1:-1]
         """
-        self.reco_energy = create_bins_per_decade(
-            self.reco_energy_bins[0] * u.TeV,
-            self.reco_energy_bins[1] * u.TeV,
-            self.reco_energy_bins[2],
+        reco_energy = create_bins_per_decade(
+            self.energy_bins["reco_energy_min"] * u.TeV,
+            self.energy_bins["reco_energy_max"] * u.TeV,
+            self.energy_bins["reco_energy_n_bins_per_decade"],
         )
-        return self.reco_energy
+        return reco_energy
 
-    def energy_migration(self):
+    def energy_migration_bins(self):
         """
         Creates bins for energy migration.
         """
-        self.energy_migration = np.linspace(
-            self.energy_migra_bins[0],
-            self.energy_migra_bins[1],
-            self.energy_migra_bins[2],
+        energy_migration = np.geomspace(
+            self.energy_bins["energy_migration_min"],
+            self.energy_bins["energy_migration_max"],
+            self.energy_bins["energy_migration_n_bins"],
         )
-        return self.energy_migration
+        return energy_migration
 
-    def source_offset(self):
+    def fov_offset_bins(self):
+        """
+        Creates bins for single/multiple FoV offset
+        """
+        fov_offset = (
+            np.linspace(
+                self.angular_bins["fov_offset_min"],
+                self.angular_bins["fov_offset_max"],
+                self.angular_bins["fov_offset_n_edges"],
+            ) * u.deg
+        )
+        return fov_offset
+
+    def bkg_fov_offset_bins(self):
+        """
+        Creates bins for FoV offset for Background IRF,
+        Using the same binning as in pyirf example.
+        """
+        background_offset = (
+            np.linspace(
+                self.angular_bins["bkg_fov_offset_min"],
+                self.angular_bins["bkg_fov_offset_max"],
+                self.angular_bins["bkg_fov_offset_n_edges"],
+            ) * u.deg
+        )
+        return background_offset
+
+    def source_offset_bins(self):
         """
         Creates bins for source offset for generating PSF IRF.
         Using the same binning as in pyirf example.
         """
 
-        self.source_offset = (
-            np.arange(
-                self.source_offset_bins[0],
-                self.source_offset_bins[1],
-                self.source_offset_bins[2],
-            )
-            * u.deg
+        source_offset = (
+            np.linspace(
+                self.angular_bins["source_offset_max"],
+                self.angular_bins["source_offset_max"],
+                self.angular_bins["source_offset_n_edges"],
+            ) * u.deg
         )
-        return self.source_offset
-
-    def bkg_offset(self):
-        """
-        Creates bins for FoV offset for Background IRF,
-        Using the same binning as in pyirf example.
-        """
-        self.background_offset = (
-            np.arange(self.bkg_fov_offset_bins[0], self.bkg_fov_offset_bins[1]) * u.deg
-        )
-        return self.background_offset
+        return source_offset
