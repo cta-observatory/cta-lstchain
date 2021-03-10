@@ -63,6 +63,13 @@ dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
 dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
 dl2_params_src_dep_lstcam_key = 'dl2/event/telescope/parameters_src_dependent/LST_LSTCam'
 
+HDF5_ZSTD_FILTERS = tables.Filters(
+    complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
+    complib='blosc:zstd',   # compression using blosc/zstd
+    fletcher32=True,        # attach a checksum to each chunk for error correction
+    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
+)
+
 
 def read_simu_info_hdf5(filename):
     """
@@ -183,7 +190,7 @@ def stack_tables_h5files(filenames_list, output_filename='merged.h5', keys=None)
 
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False):
+def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
     """
     Automatic merge of HDF5 files.
     A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
@@ -201,25 +208,31 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
         keys = set(nodes_keys)
 
     bar = tqdm(total=len(file_list))
-    with open_file(output_filename, 'w') as merge_file:
+    with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
                 if type(f1.root[k]) == tables.table.Table:
-                    merge_file.create_table(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                                            os.path.basename(k),
-                                            createparents=True,
-                                            obj=f1.root[k].read())
+                    merge_file.create_table(
+                        os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                        os.path.basename(k),
+                        createparents=True,
+                        obj=f1.root[k].read()
+                    )
                 if type(f1.root[k]) == tables.array.Array:
                     if merge_arrays:
-                        merge_file.create_earray(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                                                os.path.basename(k),
-                                                createparents=True,
-                                                obj=f1.root[k].read())
+                        merge_file.create_earray(
+                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.basename(k),
+                            createparents=True,
+                            obj=f1.root[k].read()
+                        )
                     else:
-                        merge_file.create_array(os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                                                os.path.basename(k),
-                                                createparents=True,
-                                                obj=f1.root[k].read())
+                        merge_file.create_array(
+                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.basename(k),
+                            createparents=True,
+                            obj=f1.root[k].read()
+                        )
         bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
@@ -298,7 +311,7 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     write_metadata(metadata0, output_filename)
 
 
-def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=None, metadata={}):
+def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
     """
     Write the energy histogram from a simtel source to a HDF5 file
 
@@ -345,7 +358,7 @@ def read_simtel_energy_histogram(filename):
     return hist
 
 
-def write_mcheader(mcheader, output_filename, obs_id=None, filters=None, metadata=None):
+def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata=None):
     """
     Write the mcheader from an event container to a HDF5 file
 
