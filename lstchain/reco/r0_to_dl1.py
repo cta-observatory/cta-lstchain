@@ -20,6 +20,7 @@ from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
     tailcuts_clean,
+    apply_time_delta_cleaning,
 )
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.instrument import OpticsDescription
@@ -111,8 +112,13 @@ def get_dl1(
     use_main_island = True
     if "use_only_main_island" in cleaning_parameters.keys():
         # we use pop because ctapipe won't recognize that keyword in tailcuts
-        use_main_island = cleaning_parameters.pop('use_only_main_island')
+        use_main_island = cleaning_parameters.pop("use_only_main_island")
 
+    # time constraint for image cleaning: require at least one neighbor
+    # within delta_time:
+    delta_time = None
+    if "delta_time" in cleaning_parameters:
+        delta_time = cleaning_parameters.pop("delta_time")
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -136,35 +142,42 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-        hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
+        if delta_time is not None:
+            new_mask = apply_time_delta_cleaning(camera_geometry,
+                                                 signal_pixels,
+                                                 peak_time, 1, delta_time)
+            signal_pixels = new_mask
 
-        # Fill container
-        dl1_container.fill_hillas(hillas)
+        # count surviving pixels
+        n_pixels = np.count_nonzero(signal_pixels)
 
-        # convert ctapipe's width and length (in m) to deg:
-        foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-        width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-        length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-        dl1_container.width = width
-        dl1_container.length = length
-        dl1_container.wl = dl1_container.width / dl1_container.length
+        if n_pixels > 0:
+            hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
 
-        dl1_container.set_timing_features(camera_geometry[signal_pixels],
-                                          image[signal_pixels],
-                                          peak_time[signal_pixels],
-                                          hillas)
-        dl1_container.set_leakage(camera_geometry, image, signal_pixels)
-        dl1_container.set_concentration(camera_geometry, image, hillas)
-        dl1_container.n_pixels = n_pixels
-        dl1_container.n_islands = num_islands
-        dl1_container.set_telescope_info(subarray, telescope_id)
+            # Fill container
+            dl1_container.fill_hillas(hillas)
 
-        dl1_container.log_intensity = np.log10(dl1_container.intensity)
+            # convert ctapipe's width and length (in m) to deg:
+            foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
+            width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+            length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+            dl1_container.width = width
+            dl1_container.length = length
+            dl1_container.wl = dl1_container.width / dl1_container.length
 
-    else:
-        # We set other fields which still make sense for a non-parametrized
-        # image:
-        dl1_container.set_telescope_info(subarray, telescope_id)
+            dl1_container.set_timing_features(camera_geometry[signal_pixels],
+                                              image[signal_pixels],
+                                              peak_time[signal_pixels],
+                                              hillas)
+            dl1_container.set_leakage(camera_geometry, image, signal_pixels)
+            dl1_container.set_concentration(camera_geometry, image, hillas)
+            dl1_container.n_pixels = n_pixels
+            dl1_container.n_islands = num_islands
+            dl1_container.log_intensity = np.log10(dl1_container.intensity)
+
+    # We set other fields which still make sense for a non-parametrized
+    # image:
+    dl1_container.set_telescope_info(subarray, telescope_id)
 
     return dl1_container
 

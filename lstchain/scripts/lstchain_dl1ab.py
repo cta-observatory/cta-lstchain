@@ -22,7 +22,7 @@ import tables
 from astropy.table import Table
 from ctapipe.containers import HillasParametersContainer
 from ctapipe.image import hillas_parameters
-from ctapipe.image.cleaning import tailcuts_clean
+from ctapipe.image.cleaning import tailcuts_clean, apply_time_delta_cleaning
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.instrument import CameraGeometry, OpticsDescription
 
@@ -93,6 +93,8 @@ def main():
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
+                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
@@ -103,8 +105,12 @@ def main():
         log.info(f"Tailcut config used: {config['tailcut']}")
 
     use_only_main_island = True
-    if "use_only_main_island" in config[clean_method_name].keys():
+    if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
+
+    delta_time = None
+    if "delta_time" in config[clean_method_name]:
+        delta_time = config[clean_method_name]["delta_time"]
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
     cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
@@ -175,24 +181,42 @@ def main():
                     if use_only_main_island:
                         signal_pixels[island_labels != max_island_label] = False
 
-                    hillas = hillas_parameters(camera_geom[signal_pixels], image[signal_pixels])
+                    # if delta_time has been set, we require at least one
+                    # neighbor within delta_time to accept a pixel in the image:
+                    if delta_time is not None:
+                        cleaned_pixel_times = peak_time
+                        # makes sure only signal pixels are used in the time
+                        # check:
+                        cleaned_pixel_times[~signal_pixels] = np.nan
+                        new_mask = apply_time_delta_cleaning(camera_geom,
+                                                             signal_pixels,
+                                                             cleaned_pixel_times,
+                                                             1, delta_time)
+                        signal_pixels = new_mask
 
-                    dl1_container.fill_hillas(hillas)
-                    dl1_container.set_timing_features(camera_geom[signal_pixels],
-                                                      image[signal_pixels],
-                                                      peak_time[signal_pixels],
-                                                      hillas)
+                    # count the surviving pixels
+                    n_pixels = np.count_nonzero(signal_pixels)
 
-                    dl1_container.set_leakage(camera_geom, image, signal_pixels)
-                    dl1_container.set_concentration(camera_geom, image, hillas)
-                    dl1_container.n_islands = num_islands
-                    dl1_container.wl = dl1_container.width / dl1_container.length
-                    dl1_container.n_pixels = n_pixels
-                    width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                    length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-                    dl1_container.width = width
-                    dl1_container.length = length
-                    dl1_container.log_intensity = np.log10(dl1_container.intensity)
+                    if n_pixels > 0:
+                        hillas = hillas_parameters(camera_geom[signal_pixels],
+                                                   image[signal_pixels])
+
+                        dl1_container.fill_hillas(hillas)
+                        dl1_container.set_timing_features(camera_geom[signal_pixels],
+                                                          image[signal_pixels],
+                                                          peak_time[signal_pixels],
+                                                          hillas)
+
+                        dl1_container.set_leakage(camera_geom, image, signal_pixels)
+                        dl1_container.set_concentration(camera_geom, image, hillas)
+                        dl1_container.n_islands = num_islands
+                        dl1_container.wl = dl1_container.width / dl1_container.length
+                        dl1_container.n_pixels = n_pixels
+                        width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+                        length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                        dl1_container.width = width
+                        dl1_container.length = length
+                        dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if set(dl1_params_input).intersection(disp_params):
                     disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(

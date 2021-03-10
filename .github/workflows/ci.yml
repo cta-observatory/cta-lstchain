@@ -63,6 +63,9 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest --cov lstchain --cov-report=xml -m 'private_data or not private_data' lstchain
+          pytest --cov --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v1
+        with:
+          # disable gcov, not needed
+          functionalities: gcov
