@@ -197,7 +197,6 @@ def temp_observed_dl2_file(temp_dir_observed_files, temp_observed_dl1_file, rf_m
         rf_models["path"],
         "--output-dir",
         temp_dir_observed_files,
-
     )
 
     return temp_observed_dl2_file
