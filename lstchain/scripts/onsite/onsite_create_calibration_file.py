@@ -83,13 +83,9 @@ def main():
             exit(0)
 
         # search the summary file info
-        file_list = sorted(Path(f"{base_dir}/monitoring/RunSummary/").rglob(f'RunSummary_{date}.ecsv'))
-        if len(file_list) == 0:
-            print(f">>> Error: night summary file RumSummary_{date}.ecsv not found in {base_dir}/monitoring/NightSummary/ \n")
-            raise NameError()
-        else:
-            run_summary_path = str(file_list[0])
-
+        run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
+        if not os.path.exists(run_summary_path):
+            raise NameError(f">>> Night summary file {run_summary_path} not found\n")
 
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
