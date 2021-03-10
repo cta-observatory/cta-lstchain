@@ -140,3 +140,64 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
         irf_file
     )
     return irf_file
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def temp_observed_dl1_file(temp_dir_observed_files):
+    """
+    Produce a temporary DL1 file for general usage
+    """
+    from lstchain.tests.test_lstchain import (
+        test_drs4_pedestal_path,
+        test_calib_path,
+        test_time_calib_path,
+        test_drive_report,
+        test_r0_path3,
+    )
+
+    temp_observed_dl1_file = temp_dir_observed_files / "dl1_LST-1.Run02008.0201.h5"
+
+    run_program(
+        "lstchain_data_r0_to_dl1",
+        "-f",
+        test_r0_path3,
+        "-o",
+        temp_dir_observed_files,
+        "--pedestal-file",
+        test_drs4_pedestal_path,
+        "--calibration-file",
+        test_calib_path,
+        "--time-calibration-file",
+        test_time_calib_path,
+        "--pointing-file",
+        test_drive_report,
+        "--dragon-reference-time",
+        "1582059789516351903",
+        "--dragon-reference-counter",
+        "2516351600",
+    )
+
+    return temp_observed_dl1_file
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def temp_observed_dl2_file(temp_dir_observed_files, temp_observed_dl1_file, rf_models):
+    """
+    Produce a temporary DL2 file for general usage
+    """
+    temp_observed_dl2_file = temp_dir_observed_files / "dl2_LST-1.Run02008.0201.h5"
+
+    run_program(
+        "lstchain_dl1_to_dl2",
+        "-f",
+        temp_observed_dl1_file,
+        "-p",
+        rf_models["path"],
+        "--output-dir",
+        temp_dir_observed_files,
+
+    )
+
+    return temp_observed_dl2_file

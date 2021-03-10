@@ -43,19 +43,19 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file, point_like_IRF)
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
-def test_create_dl3(temp_dir_observed_files, simulated_dl2_file):
+def test_create_dl3(temp_dir_observed_files, simulated_dl2_file, temp_observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
-    from lstchain.reco.utils import add_delta_t_key
+    """    from lstchain.reco.utils import add_delta_t_key
     import numpy as np
     import pandas as pd
     from lstchain.io.io import dl2_params_lstcam_key
 
     # Temporary use of simulated data
     dl2_file_new = temp_dir_observed_files / "dl2_LST-1.Run0001.h5"
-
+    #real_data_dl2_file = temp_dir_observed_files / "dl2_LST-1.Run02008.0000.h5"
     dl2 = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
     # Adding some necessary columns for reading it as real data file
@@ -66,7 +66,7 @@ def test_create_dl3(temp_dir_observed_files, simulated_dl2_file):
     dl2["alt_tel"] = dl2["mc_alt_tel"]
     dl2["az_tel"] = dl2["mc_az_tel"]
     dl2.to_hdf(dl2_file_new, key=dl2_params_lstcam_key)
-
+    """
     """real_data_dl2_file = temp_dir_observed_files / (
         observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )"""
@@ -78,7 +78,7 @@ def test_create_dl3(temp_dir_observed_files, simulated_dl2_file):
             DataReductionFITSWriter(),
             argv=[
                 f"--config={sel_cuts_file}",
-                f"--input_dl2={dl2_file_new}",
+                f"--input_dl2={temp_observed_dl2_file}",
                 f"--output_dl3_path={temp_dir_observed_files}",
                 f"--input_irf={irf_file}",
                 "--source_name=Crab"
