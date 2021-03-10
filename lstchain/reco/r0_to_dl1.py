@@ -148,8 +148,8 @@ def get_dl1(
             cleaned_pixel_times[~signal_pixels] = np.nan
 
             new_mask = apply_time_delta_cleaning(camera_geometry,
-                                                 cleaned_pixel_times,
-                                                 peak_time, 1, delta_time)
+                                                 signal_pixels,
+                                                 cleaned_pixel_times, 1, delta_time)
             signal_pixels = new_mask
 
         # count surviving pixels
