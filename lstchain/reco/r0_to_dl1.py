@@ -115,6 +115,9 @@ def get_dl1(
     if "delta_time" in cleaning_parameters:
         delta_time = cleaning_parameters["delta_time"]
 
+    print('use_main_island', use_main_island)
+    print('delta_time', delta_time)
+        
     # we use pop because ctapipe won't recognize that keyword in tailcuts
     cleaning_parameters_for_tailcuts.pop("delta_time")
     cleaning_parameters_for_tailcuts.pop("use_only_main_island")
@@ -142,8 +145,13 @@ def get_dl1(
             signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
+            cleaned_pixel_times = peak_time
+            # makes sure only signal pixels are used in the time
+            # check:
+            cleaned_pixel_times[~signal_pixels] = np.nan
+
             new_mask = apply_time_delta_cleaning(camera_geometry,
-                                                 signal_pixels,
+                                                 cleaned_pixel_times,
                                                  peak_time, 1, delta_time)
             signal_pixels = new_mask
 
