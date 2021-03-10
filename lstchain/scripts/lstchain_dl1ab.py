@@ -113,7 +113,7 @@ def main():
         delta_time = config[clean_method_name]["delta_time"]
 
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length
-    cam_table = Table.read(args.input_file, path="instrument/telescope/camera/LSTCam")
+    cam_table = Table.read(args.input_file, path="configuration/instrument/telescope/camera/geometry_LSTCam")
     camera_geom = CameraGeometry.from_table(cam_table)
 
     dl1_container = DL1ParametersContainer()

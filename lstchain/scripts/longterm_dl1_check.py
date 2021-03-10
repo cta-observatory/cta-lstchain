@@ -488,10 +488,10 @@ def main():
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):
     cam_description_table = \
-        Table.read(files[0], path='instrument/telescope/camera/LSTCam')
+        Table.read(files[0], path='configuration/instrument/telescope/camera/geometry_LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
     geom.to_table().write(output_file_name,
-                          path=f'/instrument/telescope/camera/LSTCam',
+                          path=f'/configuration/instrument/telescope/camera/geometry_LSTCam',
                           append=True, serialize_meta=True)
 
     plot(output_file_name)
@@ -501,7 +501,7 @@ def plot(filename='longterm_dl1_check.h5'):
 
     # First read in the camera geometry:
     cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+        Table.read(filename, path='configuration/instrument/telescope/camera/geometry_LSTCam')
     camgeom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 

@@ -154,10 +154,10 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # we assume that cam geom is the same in all files, & write the first one
     # we convert units from m to deg
     cam_description_table = \
-        Table.read(filenames[0], path='instrument/telescope/camera/LSTCam')
+        Table.read(filenames[0], path='configuration/instrument/telescope/camera/geometry_LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
     geom.to_table().write(datacheck_filename,
-                          path=f'/instrument/telescope/camera/LSTCam',
+                          path=f'configuration/instrument/telescope/camera/geometry_LSTCam',
                           append=True, serialize_meta=True)
 
     # write out also which trigger tag has been used for finding pedestals:
@@ -203,13 +203,16 @@ def process_dl1_file(filename, bins):
     dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
 
-    cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
+    cam_description_table = Table.read(
+        filename,
+        path='configuration/instrument/telescope/camera/geometry_LSTCam'
+    )
     geom = CameraGeometry.from_table(cam_description_table)
-    optics_description_table = \
-        Table.read(filename, path='instrument/telescope/optics')
-    equivalent_focal_length = \
-        optics_description_table['equivalent_focal_length']
+    optics_description_table = Table.read(
+        filename,
+        path='configuration/instrument/telescope/optics'
+    )
+    equivalent_focal_length = optics_description_table['equivalent_focal_length']
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     with tables.open_file(filename) as file:
@@ -332,7 +335,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
     # Read camera geometry
     cam_description_table = \
         Table.read(datacheck_filename,
-                   path='instrument/telescope/camera/LSTCam')
+                   path='configuration/instrument/telescope/camera/geometry_LSTCam')
     geom = CameraGeometry.from_table(cam_description_table)
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
@@ -1206,11 +1209,13 @@ def merge_dl1datacheck_files(file_list):
 
     # For copying the camera geometry we use astropy tables to avoid a
     # NaturalNameWarning from tables/path.py
-    cam_description_table = \
-        Table.read(first_file_name, path='instrument/telescope/camera/LSTCam')
+    cam_description_table = Table.read(
+        first_file_name,
+        path='configuration/instrument/telescope/camera/geometry_LSTCam'
+    )
     geom = CameraGeometry.from_table(cam_description_table)
     geom.to_table().write(merged_filename,
-                          path=f'/instrument/telescope/camera/LSTCam',
+                          path=f'configuration/instrument/telescope/camera/geometry_LSTCam',
                           append=True, serialize_meta=True)
 
     return merged_filename

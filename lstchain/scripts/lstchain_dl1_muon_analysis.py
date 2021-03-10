@@ -117,7 +117,7 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
-        cam_description_table = Table.read(filename, path="instrument/telescope/camera/LSTCam")
+        cam_description_table = Table.read(filename, path="configuration/instrument/telescope/camera/geometry_LSTCam")
         geom = CameraGeometry.from_table(cam_description_table)
 
         subarray = read_subarray_description(filename, subarray_name='LST-1')
