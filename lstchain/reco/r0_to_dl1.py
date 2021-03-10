@@ -42,6 +42,7 @@ from ..io import (
     DL1ParametersContainer,
     replace_config,
     standard_config,
+    HDF5_ZSTD_FILTERS,
 )
 from ..io import (
     add_global_metadata,
@@ -72,12 +73,6 @@ __all__ = [
 cleaning_method = tailcuts_clean
 
 
-filters = tables.Filters(
-    complevel=5,            # enable compression, with level 0=disabled, 9=max
-    complib='blosc:zstd',   # compression using blosc
-    fletcher32=True,        # attach a checksum to each chunk for error correction
-    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
-)
 
 
 def get_dl1(
@@ -276,7 +271,7 @@ def r0_to_dl1(
             source.simulation_config,
             output_filename,
             obs_id=source.obs_ids[0],
-            filters=filters,
+            filters=HDF5_ZSTD_FILTERS,
             metadata=metadata,
         )
 
@@ -284,7 +279,7 @@ def r0_to_dl1(
         filename=output_filename,
         group_name='dl1/event',
         mode='a',
-        filters=filters,
+        filters=HDF5_ZSTD_FILTERS,
         add_prefix=True,
         # overwrite=True,
     ) as writer:
@@ -311,7 +306,7 @@ def r0_to_dl1(
 
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
-        writer._h5file.filters = filters
+        writer._h5file.filters = HDF5_ZSTD_FILTERS
         logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
         for i, event in enumerate(source):
