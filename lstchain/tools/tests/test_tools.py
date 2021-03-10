@@ -54,7 +54,7 @@ def test_create_dl3(temp_dir_observed_files, simulated_dl2_file):
     from lstchain.io.io import dl2_params_lstcam_key
 
     # Temporary use of simulated data
-    dl2_file_new = temp_dir_observed_files / "dl2_LST-1.0001.h5"
+    dl2_file_new = temp_dir_observed_files / "dl2_LST-1.Run0001.h5"
 
     dl2 = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
