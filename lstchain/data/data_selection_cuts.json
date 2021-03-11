@@ -26,9 +26,9 @@
       "energy_migration_n_bins": 31
     },
     "angular_bins": {
-      "fov_offset_min": 0.1,
-      "fov_offset_max": 1.1,
-      "fov_offset_n_edges": 11,
+      "fov_offset_min": 0.3,
+      "fov_offset_max": 0.7,
+      "fov_offset_n_edges": 3,
       "bkg_fov_offset_min": 0,
       "bkg_fov_offset_max": 10,
       "bkg_fov_offset_n_edges": 21,

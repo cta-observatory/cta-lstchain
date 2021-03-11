@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
-from ctapipe_io_lst.event_time import read_night_summary
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -34,6 +33,8 @@ optional.add_argument('--default_time_run', help="If 0 time calibration is calcu
 optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
+optional.add_argument('--min_ff', help="Min FF intensity cut in ADC. Default = 4000", type=float, default=4000)
+optional.add_argument('--max_ff', help="Max FF intensity cut in ADC. Default = 12000", type=float, default=12000)
 
 args = parser.parse_args()
 run = args.run_number
@@ -44,6 +45,8 @@ base_dir = args.base_dir
 default_time_run = args.default_time_run
 ff_calibration = args.ff_calibration
 tel_id = args.tel_id
+min_ff = args.min_ff
+max_ff = args.max_ff
 sub_run = args.sub_run
 
 max_events = 1000000
@@ -56,8 +59,7 @@ def main():
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found\n")
-            raise NameError()
+            raise IOError(f"Run {run} not found\n")
         else:
             input_file = file_list[0]
         print(f"\n--> Input file: {input_file}")
@@ -69,28 +71,23 @@ def main():
         # verify output dir
         output_dir = f"{base_dir}/calibration/{date}/{prod_id}"
         if not os.path.exists(output_dir):
-            print(f">>> Error: The output directory {output_dir} do not exist")
-            print(f">>>        You must create the drs4 pedestal file to create it.\n Exit")
-            exit(0)
+            raise IOError(f"Output directory {output_dir} does not exist\n")
 
         # search the pedestal calibration file
         pedestal_file = f"{output_dir}/drs4_pedestal.Run{ped_run:05d}.0000.fits"
         if not os.path.exists(pedestal_file):
-            print(f">>> Error: The pedestal file {pedestal_file} do not exist.\n Exit")
-            exit(0)
+            raise IOError(f"Pedestal file {pedestal_file} does not exist.\n ")
 
         # search the summary file info
-        file_list = sorted(Path(f"{base_dir}/monitoring/NightSummary/").rglob(f'*Nig*{date}.txt'))
-        night_log = str(file_list[0])
-        summary = read_night_summary(night_log)
-        print(f"\n--> Summary file {night_log}")
-        run_info = summary.loc[run]
+        run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
+        if not os.path.exists(run_summary_path):
+            raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
         # define config file
         config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
         if not os.path.exists(config_file):
-            print(f">>> Config file {config_file} do not exists. \n Exit ")
-            exit(1)
+            raise IOError(f"Config file {config_file} does not exists. \n")
+
         print(f"\n--> Config file {config_file}")
 
         #
@@ -102,8 +99,7 @@ def main():
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
                   f"--output-file {time_file} --config {config_file} " \
-                  f"--dragon-reference-time={int(run_info['ucts_t0_dragon'])} " \
-                  f"--dragon-reference-counter={int(run_info['dragon_counter0'])} " \
+                  f"--run-summary-file={run_summary_path} " \
                   f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
@@ -114,8 +110,7 @@ def main():
                 Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run{default_time_run}*'))
 
             if len(file_list) == 0:
-                print(f">>> Error: time calibration file for run {default_time_run} not found\n")
-                raise NameError()
+                raise IOError(f"Time calibration file for run {default_time_run} not found\n")
             else:
                 time_calibration_file = file_list[0]
                 cmd = f"ln -sf {time_calibration_file} {time_file}"
@@ -145,8 +140,10 @@ def main():
             cmd = f"lstchain_create_calibration_file " \
                   f"--input_file={input_file} --output_file={output_file} "\
                   f"--EventSource.max_events={max_events} " \
-                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_time={int(run_info['ucts_t0_dragon'])} " \
-                  f"--LSTEventSource.EventTimeCalculator.dragon_reference_counter={int(run_info['dragon_counter0'])} " \
+                  f"--EventSource.default_trigger_type=tib " \
+                  f"--EventSource.min_flatfield_adc={min_ff} " \
+                  f"--EventSource.max_flatfield_adc={max_ff} " \
+                  f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
                   f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
                   f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
