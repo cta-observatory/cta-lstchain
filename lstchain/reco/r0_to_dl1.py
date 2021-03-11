@@ -398,7 +398,7 @@ def r0_to_dl1(
                 tel.prefix = ''  # don't really need one
                 # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
                 #tel_name = str(subarray.tel[telescope_id])[4:]
-                tel_name = f'{str(subarray.tel[telescope_id])[4:]}-{telescope_id}'
+                tel_name = f'{str(subarray.tel[telescope_id])[4:]}_{telescope_id}'
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
@@ -592,7 +592,7 @@ def r0_to_dl1(
             if telescope_id in config['source_config']['EventSource']['allowed_tels']:
                 logger.debug('Add DISP parameters for telescope %s' %telescope_id)
                 #tel_name = str(subarray.tel[telescope_id])[4:]
-                tel_name = f'{str(subarray.tel[telescope_id])[4:]}-{telescope_id}'
+                tel_name = f'{str(subarray.tel[telescope_id])[4:]}_{telescope_id}'
                 logger.debug('Telescope name is %s' %tel_name)
                 focal = subarray.tel[telescope_id].optics.equivalent_focal_length
                 add_disp_to_parameters_table(output_filename, f'dl1/event/telescope/parameters/{tel_name}', focal)
