@@ -17,7 +17,6 @@ from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
 #from ctapipe.tools.stage1 import Stage1ProcessorTool
-from astropy.utils import deprecated
 from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
     TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
@@ -253,9 +252,9 @@ def merging_check(file_list):
     """
     Check that a list of hdf5 files are compatible for merging regarding:
      - array info
-     - MC simu info
-     - MC histograms
      - metadata
+     - MC simu info (only for simulations)
+     - MC histograms (only for simulations)
 
     Parameters
     ----------
@@ -268,22 +267,29 @@ def merging_check(file_list):
     assert len(file_list) > 1, "The list of files is too short"
     mergeable_list = file_list.copy()
 
-    filename0 = mergeable_list[0]
-    array_info0 = read_array_info(filename0)
-    mcheader0 = read_simu_info_hdf5(filename0)
-    thrown_events_hist0 = read_simtel_energy_histogram(filename0)
-    metadata0 = read_metadata(filename0)
+    first_file = mergeable_list[0]
+    subarray_info0 = SubarrayDescription.from_hdf(first_file)
+    metadata0 = read_metadata(first_file)
+
+    if subarray_info0.name == "MonteCarloArray":
+        mcheader0 = read_simu_info_hdf5(first_file)
+        thrown_events_hist0 = read_simtel_energy_histogram(first_file)
+
     for filename in mergeable_list[1:]:
         try:
-            mcheader = read_simu_info_hdf5(filename)
-            thrown_events_hist = read_simtel_energy_histogram(filename)
             metadata = read_metadata(filename)
             check_metadata(metadata0, metadata)
-            check_mcheader(mcheader0, mcheader)
-            check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
-            for ii, table in read_array_info(filename).items():
-                assert (table == array_info0[ii]).all()
-        except:
+            subarray_info = SubarrayDescription.from_hdf(filename)
+
+            if subarray_info0.name == "MonteCarloArray":
+                mcheader = read_simu_info_hdf5(filename)
+                thrown_events_hist = read_simtel_energy_histogram(filename)
+                check_mcheader(mcheader0, mcheader)
+                check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
+
+            assert subarray_info == subarray_info0
+
+        except AssertionError:
             log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
             mergeable_list.remove(filename)
 
@@ -298,6 +304,8 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     ----------
     file_list: list of paths to hdf5 files
     output_filename: path to the merged file
+    node_keys
+    merge_arrays: bool
     """
     smart_list = merging_check(file_list)
     auto_merge_h5files(smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
@@ -365,7 +373,6 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -377,29 +384,6 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
     with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
         extramc.obs_id = obs_id
         writer.write("run_config", [extramc, mcheader])
-
-
-# @deprecated('09/07/2020', message='will be removed in lstchain v0.7')
-# def read_array_info(filename):
-#     """
-#     Read array information from HDF5 file.
-#
-#     Parameters
-#     ----------
-#     filename: path
-#
-#     Returns
-#     -------
-#     dict
-#     """
-#     array_info = dict()
-#     with open_file(filename) as file:
-#         array_info['layout'] = Table(file.root['/instrument/subarray/layout'].read())
-#         array_info['optics'] = Table(file.root['/instrument/telescope/optics'].read())
-#         for camera in file.root['/instrument/telescope/camera/']:
-#             if type(camera) is tables.table.Table:
-#                 array_info[camera.name] = Table(camera.read())
-#     return array_info
 
 
 def read_single_optics(filename, telescope_name):
@@ -439,7 +423,7 @@ def read_optics(filename):
 
     Returns
     -------
-    dictionnary of ctapipe.instrument.optics.OpticsDescription by telescope names
+    dictionary of ctapipe.instrument.optics.OpticsDescription by telescope names
     """
     telescope_optics_path = "/configuration/instrument/telescope/optics"
     telescope_optics_table = Table.read(filename, path=telescope_optics_path)
@@ -477,7 +461,7 @@ def read_camera_geometries(filename):
 
     Returns
     -------
-    dictionnary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
+    dictionary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
     """
     subarray_layout_path = 'configuration/instrument/subarray/layout'
     camera_geoms = {}
@@ -609,7 +593,7 @@ def read_telescopes_positions(filename):
 
     Returns
     -------
-    dictionnary of telescopes positions by tel_id
+    dictionary of telescopes positions by tel_id
     """
     subarray_table = read_subarray_table(filename)
     pos_dict = {}
@@ -626,6 +610,7 @@ def read_subarray_description(filename, subarray_name='LST-1'):
     Parameters
     ----------
     filename: str
+    subarray_name : str
 
     Returns
     -------
@@ -658,7 +643,6 @@ def check_mcheader(mcheader1, mcheader2):
               ]:
         if k in keys:
             keys.remove(k)
-
 
     for k in keys:
         assert mcheader1[k] == mcheader2[k]
@@ -698,7 +682,6 @@ def write_metadata(metadata, output_filename):
                 file.root._v_attrs[k] = attribute
             else:
                 file.root._v_attrs[k] = metadata[k]
-
 
 
 def read_metadata(filename):
@@ -858,7 +841,6 @@ def add_column_table(table, ColClass, col_label, values):
     return newtable
 
 
-
 def recursive_copy_node(src_file, dir_file, path):
     """
     Copy a node recursively from a src file to a dir file without copying the tables/arrays in the node
@@ -873,7 +855,7 @@ def recursive_copy_node(src_file, dir_file, path):
     path_split = path.split('/')
     while '' in path_split:
         path_split.remove('')
-    assert len(path_split)>0
+    assert len(path_split) > 0
     src_file.copy_node('/',
                        name=path_split[0],
                        newparent=dir_file.root,
@@ -895,7 +877,6 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     mon_event.calibration.prefix = ''
     mon_index.prefix = ''
 
-
     # update index
     if new_ped:
         mon_index.pedestal_id += 1
@@ -903,7 +884,6 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ff:
         mon_index.flatfield_id += 1
         mon_index.calibration_id += 1
-
 
     if new_ped:
         # write ped container
@@ -977,7 +957,7 @@ def read_dl2_to_pyirf(filename):
 
 
 def read_dl2_params(t_filename, columns_to_read=None):
-    '''
+    """
     Read specified parameters from a file with DL2 data
 
     Parameters
@@ -988,7 +968,7 @@ def read_dl2_params(t_filename, columns_to_read=None):
     Returns
     -------
     Pandas dataframe with DL2 data
-    '''
+    """
     if columns_to_read is not None:
         return pd.read_hdf(t_filename, key=dl2_params_lstcam_key)[columns_to_read]
     else:
@@ -996,7 +976,7 @@ def read_dl2_params(t_filename, columns_to_read=None):
 
 
 def extract_observation_time(t_df):
-    '''
+    """
     Calculate observation time
 
     Parameters
@@ -1006,7 +986,7 @@ def extract_observation_time(t_df):
     Returns
     -------
     Observation duration in seconds
-    '''
+    """
     return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
            pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
 
@@ -1019,6 +999,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     ----------
     data_tag: lstchain version tag
     runs: List of run numbers
+    columns_to_read
     n_process: Number of parallel read processes to use
 
     Returns
@@ -1027,7 +1008,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     """
     from functools import partial
     from glob import glob
-    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*') # Current format of LST data path
+    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*')  # Current format of LST data path
 
     pool = Pool(n_process)
     filelist = []
