@@ -103,22 +103,12 @@ def get_dl1(
     """
 
     config = replace_config(standard_config, custom_config)
-    cleaning_parameters = config["tailcut"]
-    cleaning_parameters_for_tailcuts = cleaning_parameters.copy()
-    use_main_island = True
-    if "use_only_main_island" in cleaning_parameters.keys():
-        use_main_island = cleaning_parameters["use_only_main_island"]
 
-    # time constraint for image cleaning: require at least one neighbor
-    # within delta_time:
-    delta_time = None
-    if "delta_time" in cleaning_parameters:
-        delta_time = cleaning_parameters["delta_time"]
+    # pop delta_time and use_main_island, so we can cleaning_parameters to tailcuts
+    cleaning_parameters = config["tailcut"].copy()
+    delta_time = cleaning_parameters.pop("delta_time", None)
+    use_main_island = cleaning_parameters.pop("use_only_main_island", True)
 
-    # we use pop because ctapipe won't recognize that keyword in tailcuts
-    cleaning_parameters_for_tailcuts.pop("delta_time")
-    cleaning_parameters_for_tailcuts.pop("use_only_main_island")
-    
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
@@ -128,7 +118,7 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters_for_tailcuts)
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
@@ -147,10 +137,13 @@ def get_dl1(
             # check:
             cleaned_pixel_times[~signal_pixels] = np.nan
 
-            new_mask = apply_time_delta_cleaning(camera_geometry,
-                                                 signal_pixels,
-                                                 cleaned_pixel_times, 1, delta_time)
-            signal_pixels = new_mask
+            signal_pixels = apply_time_delta_cleaning(
+                camera_geometry,
+                signal_pixels,
+                cleaned_pixel_times,
+                min_number_neighbors=1,
+                time_limit=delta_time
+            )
 
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
