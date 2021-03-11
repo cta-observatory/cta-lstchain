@@ -12,7 +12,6 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_drs4 as drs4
 import os
-from ctapipe_io_lst.event_time import read_night_summary
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
