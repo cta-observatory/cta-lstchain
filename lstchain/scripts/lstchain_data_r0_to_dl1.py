@@ -92,6 +92,22 @@ parser.add_argument(
         ' along with ucts_t0_dragon.'
     ),
 )
+parser.add_argument(
+    '--dragon-module-id', type=int,
+    help=(
+        'Dragon module to use for the timestamp calculation (pps + 10MHz)'
+        ' to the first reliable UCTS of the run. To be provided'
+        ' along with ucts_t0_dragon.'
+    ),
+)
+
+parser.add_argument(
+    '-r', '--run-summary-path', type=Path,
+    help=(
+        'Path to the run summary of the correct night.'
+        ' Used to extract dragon reference values'
+    )
+)
 
 parser.add_argument(
     '--max-events', type=int,
@@ -146,6 +162,11 @@ def main():
         time_calculator['dragon_reference_time'] = args.dragon_reference_time
     if args.dragon_reference_counter is not None:
         time_calculator['dragon_reference_counter'] = args.dragon_reference_counter
+    if args.dragon_module_id is not None:
+        time_calculator['dragon_module_id'] = args.dragon_module_id
+    if args.run_summary_path is not None:
+        time_calculator['run_summary_path'] = args.run_summary_path
+
     if args.pointing_file is not None:
         lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
 

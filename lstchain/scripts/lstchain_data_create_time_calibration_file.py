@@ -27,53 +27,29 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input-file", action='store', type=str,
-                    dest='input_file',
+parser.add_argument("--input-file",
                     help="Path to fits.fz file used to create the time calibration file. \
                     Allowed to use regular expression in given path to process subruns",
-                    default=None, required=True)
+                    required=True)
 
-parser.add_argument("--output-file", action='store', type=str,
-                    dest='output_file',
+parser.add_argument("--output-file",
                     help="Path where script creates the time calibration file",
-                    default=None, required=True)
+                    required=True)
 
 # Optional argument
-parser.add_argument("--max-events",
-                    dest='max_events',
+parser.add_argument("--max-events", type=int,
                     help="Maximum numbers of events to read. Default = 20000",
-                    type=int,
                     default=20000)
 
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument('--config', '-c',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied')
 
-parser.add_argument('--pedestal-file', '-p', action='store', type=str,
-                    dest='pedestal_file',
-                    help='Path to drs4 pedestal file ',
-                    default=None
-                    )
-parser.add_argument(
-    '--dragon-reference-time', type=int,
-    help=(
-        'UCTS timestamp in nsecs, unix format and TAI scale of the'
-        ' first event of the run with valid timestamp. If none is'
-        ' passed, the start-of-the-run timestamp is provided, hence'
-        ' Dragon timestamp is not reliable.'
-    )
-)
+parser.add_argument('--pedestal-file', '-p',
+                    help='Path to drs4 pedestal file ')
 
-parser.add_argument(
-    '--dragon-reference-counter', type=int,
-    help=(
-        'Dragon counter (pps + 10MHz) in nsecs corresponding'
-        'to the first reliable UCTS of the run. To be provided'
-        'along with ucts_t0_dragon.'
-    ),
-)
+parser.add_argument('--run-summary-path',
+                    help='Path to run summary file ')
+
 
 args = parser.parse_args()
 
@@ -98,9 +74,9 @@ def main():
     source_config = Config({
         "LSTEventSource": {
             "max_events" : args.max_events,
+            "default_trigger_type" : 'tib',
             "EventTimeCalculator": {
-                "dragon_reference_time": args.dragon_reference_time,
-                "dragon_reference_counter": args.dragon_reference_counter,
+                "run_summary_path": args.run_summary_path,
             },
             "LSTR0Corrections": {
                 "drs4_pedestal_path": args.pedestal_file,
