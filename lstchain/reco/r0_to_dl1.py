@@ -116,8 +116,8 @@ def get_dl1(
         delta_time = cleaning_parameters["delta_time"]
 
     # we use pop because ctapipe won't recognize that keyword in tailcuts
-    cleaning_parameters_for_tailcuts.pop("delta_time")
-    cleaning_parameters_for_tailcuts.pop("use_only_main_island")
+    cleaning_parameters_for_tailcuts.pop("delta_time", None)
+    cleaning_parameters_for_tailcuts.pop("use_only_main_island", None)
     
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
