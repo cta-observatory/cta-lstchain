@@ -33,28 +33,24 @@ def test_data_selection(simulated_dl2_file):
 def test_data_binning():
     tempbin = DataBinning()
 
-    tempbin.energy_bins = {
-        "true_energy_min": 0.01,
-        "true_energy_max": 100,
-        "true_energy_n_bins_per_decade": 5.5,
-        "reco_energy_min": 0.01,
-        "reco_energy_max": 100,
-        "reco_energy_n_bins_per_decade": 5.5,
-        "energy_migration_min": 0.2,
-        "energy_migration_max": 5,
-        "energy_migration_n_bins": 15
-    }
-    tempbin.angular_bins = {
-        "fov_offset_min": 0.1,
-        "fov_offset_max": 1.1,
-        "fov_offset_n_edges": 9,
-        "bkg_fov_offset_min": 0,
-        "bkg_fov_offset_max": 10,
-        "bkg_fov_offset_n_edges": 11,
-        "source_offset_min": 0,
-        "source_offset_max": 1.0001,
-        "source_offset_n_edges": 1001
-    }
+    tempbin.true_energy_min = 0.01
+    tempbin.true_energy_max = 100
+    tempbin.true_energy_n_bins_per_decade = 5.5
+    tempbin.reco_energy_min = 0.01
+    tempbin.reco_energy_max = 100
+    tempbin.reco_energy_n_bins_per_decade = 5.5
+    tempbin.energy_migration_min = 0.2
+    tempbin.energy_migration_max = 5
+    tempbin.energy_migration_n_bins = 15
+    tempbin.fov_offset_min = 0.1
+    tempbin.fov_offset_max = 1.1
+    tempbin.fov_offset_n_edges = 9
+    tempbin.bkg_fov_offset_min = 0
+    tempbin.bkg_fov_offset_max = 10
+    tempbin.bkg_fov_offset_n_edges = 11
+    tempbin.source_offset_min = 0
+    tempbin.source_offset_max = 1.0001
+    tempbin.source_offset_n_edges = 1001
 
     e_true = tempbin.true_energy_bins()
     e_reco = tempbin.reco_energy_bins()

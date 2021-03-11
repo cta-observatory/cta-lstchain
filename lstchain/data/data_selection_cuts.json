@@ -14,27 +14,23 @@
     "lst_tel_ids": [1]
   },
   "DataBinning": {
-    "energy_bins": {
-      "true_energy_min": 0.01,
-      "true_energy_max": 100,
-      "true_energy_n_bins_per_decade": 5.5,
-      "reco_energy_min": 0.01,
-      "reco_energy_max": 100,
-      "reco_energy_n_bins_per_decade": 5.5,
-      "energy_migration_min": 0.2,
-      "energy_migration_max": 5,
-      "energy_migration_n_bins": 31
-    },
-    "angular_bins": {
-      "fov_offset_min": 0.3,
-      "fov_offset_max": 0.7,
-      "fov_offset_n_edges": 3,
-      "bkg_fov_offset_min": 0,
-      "bkg_fov_offset_max": 10,
-      "bkg_fov_offset_n_edges": 21,
-      "source_offset_min": 0.0001,
-      "source_offset_max": 1.0001,
-      "source_offset_n_edges": 1000
-    }
+    "true_energy_min": 0.01,
+    "true_energy_max": 100,
+    "true_energy_n_bins_per_decade": 5.5,
+    "reco_energy_min": 0.01,
+    "reco_energy_max": 100,
+    "reco_energy_n_bins_per_decade": 5.5,
+    "energy_migration_min": 0.2,
+    "energy_migration_max": 5,
+    "energy_migration_n_bins": 31,
+    "fov_offset_min": 0.3,
+    "fov_offset_max": 0.7,
+    "fov_offset_n_edges": 3,
+    "bkg_fov_offset_min": 0,
+    "bkg_fov_offset_max": 10,
+    "bkg_fov_offset_n_edges": 21,
+    "source_offset_min": 0.0001,
+    "source_offset_max": 1.0001,
+    "source_offset_n_edges": 1000
   }
 }

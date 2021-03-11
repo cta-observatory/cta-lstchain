@@ -89,34 +89,94 @@ class DataBinning(Component):
     generating IRFs as per pyIRF requirements.
     """
 
-    energy_bins = Dict(
-        help="Binning Dict information for the 3 Energy bins",
-        default_value={
-            "true_energy_min": 0.01,
-            "true_energy_max": 100,
-            "true_energy_n_bins_per_decade": 5.5,
-            "reco_energy_min": 0.01,
-            "reco_energy_max": 100,
-            "reco_energy_n_bins_per_decade": 5.5,
-            "energy_migration_min": 0.2,
-            "energy_migration_max": 5,
-            "energy_migration_n_bins": 31
-        },
+    true_energy_min = Float(
+        help="Minimum value for True Energy bins in TeV units",
+        default_value=0.01,
     ).tag(config=True)
 
-    angular_bins = Dict(
-        help="Binning Dict information for 3 angular bins",
-        default_value={
-            "fov_offset_min": 0.3,
-            "fov_offset_max": 0.7,
-            "fov_offset_n_edges": 3,
-            "bkg_fov_offset_min": 0,
-            "bkg_fov_offset_max": 10,
-            "bkg_fov_offset_n_edges": 21,
-            "source_offset_min": 0.0001,
-            "source_offset_max": 1.0001,
-            "source_offset_n_edges": 1000
-        },
+    true_energy_max = Float(
+        help="Maximum value for True Energy bins in TeV units",
+        default_value=100,
+    ).tag(config=True)
+
+    true_energy_n_bins_per_decade = Float(
+        help="Number of edges per decade for True Energy bins",
+        default_value=5.5,
+    ).tag(config=True)
+
+    reco_energy_min = Float(
+        help="Minimum value for Reco Energy bins in TeV units",
+        default_value=0.01,
+    ).tag(config=True)
+
+    reco_energy_max = Float(
+        help="Maximum value for Reco Energy bins in TeV units",
+        default_value=100,
+    ).tag(config=True)
+
+    reco_energy_n_bins_per_decade = Float(
+        help="Number of edges per decade for Reco Energy bins",
+        default_value=5.5,
+    ).tag(config=True)
+
+    energy_migration_min = Float(
+        help="Minimum value of Energy Migration matrix",
+        default_value=0.2,
+    ).tag(config=True)
+
+    energy_migration_max = Float(
+        help="Maximum value of Energy Migration matrix",
+        default_value=5,
+    ).tag(config=True)
+
+    energy_migration_n_bins = Int(
+        help="Number of bins in log scale for Energy Migration matrix",
+        default_value=31,
+    ).tag(config=True)
+
+    fov_offset_min = Float(
+        help="Minimum value for FoV Offset bins",
+        default_value=0.3,
+    ).tag(config=True)
+
+    fov_offset_max = Float(
+        help="Maximum value for FoV offset bins",
+        default_value=0.7,
+    ).tag(config=True)
+
+    fov_offset_n_edges = Int(
+        help="Number of edges for FoV offset bins",
+        default_value=3,
+    ).tag(config=True)
+
+    bkg_fov_offset_min = Float(
+        help="Minimum value for FoV offset bins for Background IRF",
+        default_value=0,
+    ).tag(config=True)
+
+    bkg_fov_offset_max = Float(
+        help="Maximum value for FoV offset bins for Background IRF",
+        default_value=10,
+    ).tag(config=True)
+
+    bkg_fov_offset_n_edges = Int(
+        help="Number of edges for FoV offset bins for Background IRF",
+        default_value=21,
+    ).tag(config=True)
+
+    source_offset_min = Float(
+        help="Minimum value for Source offset for PSF IRF",
+        default_value=0.0001,
+    ).tag(config=True)
+
+    source_offset_max = Float(
+        help="Maximum value for Source offset for PSF IRF",
+        default_value=1.0001,
+    ).tag(config=True)
+
+    source_offset_n_edges = Int(
+        help="Number of edges for Source offset for PSF IRF",
+        default_value=1000,
     ).tag(config=True)
 
     def true_energy_bins(self):
@@ -127,9 +187,9 @@ class DataBinning(Component):
         It can be used as - add_overflow_bins(***)[1:-1]
         """
         true_energy = create_bins_per_decade(
-            self.energy_bins["true_energy_min"] * u.TeV,
-            self.energy_bins["true_energy_max"] * u.TeV,
-            self.energy_bins["true_energy_n_bins_per_decade"],
+            self.true_energy_min * u.TeV,
+            self.true_energy_max * u.TeV,
+            self.true_energy_n_bins_per_decade,
         )
         return true_energy
 
@@ -141,9 +201,9 @@ class DataBinning(Component):
         It can be used as - add_overflow_bins(***)[1:-1]
         """
         reco_energy = create_bins_per_decade(
-            self.energy_bins["reco_energy_min"] * u.TeV,
-            self.energy_bins["reco_energy_max"] * u.TeV,
-            self.energy_bins["reco_energy_n_bins_per_decade"],
+            self.reco_energy_min * u.TeV,
+            self.reco_energy_max * u.TeV,
+            self.reco_energy_n_bins_per_decade,
         )
         return reco_energy
 
@@ -152,9 +212,9 @@ class DataBinning(Component):
         Creates bins for energy migration.
         """
         energy_migration = np.geomspace(
-            self.energy_bins["energy_migration_min"],
-            self.energy_bins["energy_migration_max"],
-            self.energy_bins["energy_migration_n_bins"],
+            self.energy_migration_min,
+            self.energy_migration_max,
+            self.energy_migration_n_bins,
         )
         return energy_migration
 
@@ -164,9 +224,9 @@ class DataBinning(Component):
         """
         fov_offset = (
             np.linspace(
-                self.angular_bins["fov_offset_min"],
-                self.angular_bins["fov_offset_max"],
-                self.angular_bins["fov_offset_n_edges"],
+                self.fov_offset_min,
+                self.fov_offset_max,
+                self.fov_offset_n_edges,
             ) * u.deg
         )
         return fov_offset
@@ -178,9 +238,9 @@ class DataBinning(Component):
         """
         background_offset = (
             np.linspace(
-                self.angular_bins["bkg_fov_offset_min"],
-                self.angular_bins["bkg_fov_offset_max"],
-                self.angular_bins["bkg_fov_offset_n_edges"],
+                self.bkg_fov_offset_min,
+                self.bkg_fov_offset_max,
+                self.bkg_fov_offset_n_edges,
             ) * u.deg
         )
         return background_offset
@@ -193,9 +253,9 @@ class DataBinning(Component):
 
         source_offset = (
             np.linspace(
-                self.angular_bins["source_offset_max"],
-                self.angular_bins["source_offset_max"],
-                self.angular_bins["source_offset_n_edges"],
+                self.source_offset_max,
+                self.source_offset_max,
+                self.source_offset_n_edges,
             ) * u.deg
         )
         return source_offset
