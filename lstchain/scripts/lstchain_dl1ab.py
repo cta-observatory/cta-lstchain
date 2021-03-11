@@ -19,23 +19,19 @@ from distutils.util import strtobool
 import astropy.units as u
 import numpy as np
 import tables
-from astropy.table import Table
-from ctapipe.containers import HillasParametersContainer
 from ctapipe.image import hillas_parameters
 from ctapipe.image.cleaning import tailcuts_clean, apply_time_delta_cleaning
 from ctapipe.image.morphology import number_of_islands
-from ctapipe.instrument import CameraGeometry, OpticsDescription
+from ctapipe.instrument import SubarrayDescription
 
+from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.io import get_dataset_keys, auto_merge_h5files
+from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from lstchain.io.config import get_cleaning_parameters
-from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.reco.disp import disp
-
-import sys
 
 log = logging.getLogger(__name__)
 
@@ -112,9 +108,10 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
-    foclen = OpticsDescription.from_name('LST').equivalent_focal_length
-    cam_table = Table.read(args.input_file, path="configuration/instrument/telescope/camera/geometry_LSTCam")
-    camera_geom = CameraGeometry.from_table(cam_table)
+    subarray_info = SubarrayDescription.from_hdf(args.input_file)
+
+    foclen = subarray_info.optics_types[0].equivalent_focal_length
+    camera_geom = subarray_info.camera_types[0].geometry
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [

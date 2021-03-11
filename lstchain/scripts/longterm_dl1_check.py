@@ -15,23 +15,26 @@ showing the evolution of many such values.
 
 """
 
-from astropy.table import Table
 import copy
 import glob
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import tables
-
+from astropy.table import Table
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
 from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool, Range1d
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
-from ctapipe.instrument import CameraGeometry
 from ctapipe.coordinates import EngineeringCameraFrame
+from ctapipe.instrument import CameraGeometry
+from ctapipe.instrument import SubarrayDescription
+
 from lstchain.visualization.bokeh import show_camera
-from pathlib import Path
+
 
 def main():
 
@@ -487,12 +490,8 @@ def main():
 
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):
-    cam_description_table = \
-        Table.read(files[0], path='configuration/instrument/telescope/camera/geometry_LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(output_file_name,
-                          path=f'/configuration/instrument/telescope/camera/geometry_LSTCam',
-                          append=True, serialize_meta=True)
+    subarray_info = SubarrayDescription.from_hdf(files[0])
+    subarray_info.to_hdf(output_file_name)
 
     plot(output_file_name)
 
@@ -500,9 +499,8 @@ def main():
 def plot(filename='longterm_dl1_check.h5'):
 
     # First read in the camera geometry:
-    cam_description_table = \
-        Table.read(filename, path='configuration/instrument/telescope/camera/geometry_LSTCam')
-    camgeom = CameraGeometry.from_table(cam_description_table)
+    subarray_info = SubarrayDescription.from_hdf(filename)
+    camgeom = subarray_info.camera_types[0].geometry
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
     file = tables.open_file('longterm_dl1_check.h5')
