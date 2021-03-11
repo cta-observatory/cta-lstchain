@@ -27,40 +27,29 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input-file", action='store', type=str,
-                    dest='input_file',
+parser.add_argument("--input-file",
                     help="Path to fits.fz file used to create the time calibration file. \
                     Allowed to use regular expression in given path to process subruns",
-                    default=None, required=True)
+                    required=True)
 
-parser.add_argument("--output-file", action='store', type=str,
-                    dest='output_file',
+parser.add_argument("--output-file",
                     help="Path where script creates the time calibration file",
-                    default=None, required=True)
+                    required=True)
 
 # Optional argument
-parser.add_argument("--max-events",
-                    dest='max_events',
+parser.add_argument("--max-events", type=int,
                     help="Maximum numbers of events to read. Default = 20000",
-                    type=int,
                     default=20000)
 
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument('--config', '-c',
+                    help='Path to a configuration file. If none is given, a standard configuration is applied')
 
-parser.add_argument('--pedestal-file', '-p', action='store', type=str,
-                    dest='pedestal_file',
-                    help='Path to drs4 pedestal file ',
-                    default=None
-                    )
-parser.add_argument('--run-summary-path',  action='store', type=str,
-                    dest='run_summary_path',
-                    help='Path to run summary file ',
-                    default=None
-                    )
+parser.add_argument('--pedestal-file', '-p',
+                    help='Path to drs4 pedestal file ')
+
+parser.add_argument('--run-summary-path',
+                    help='Path to run summary file ')
+
 
 args = parser.parse_args()
 
