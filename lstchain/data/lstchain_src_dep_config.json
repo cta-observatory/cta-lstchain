@@ -1,4 +1,28 @@
 {
+  "source_config" : {
+    "EventSource": {
+      "allowed_tels": [1, 2, 3, 4],
+      "max_events": null
+    },
+    "LSTEventSource": {
+      "default_trigger_type": "ucts",
+      "allowed_tels": [1],
+      "calibrate_flatfields_and_pedestals": false,
+      "EventTimeCalculator": {
+        "dragon_reference_counter": null,
+        "dragon_reference_time": null
+      },
+      "PointingSource":{
+        "drive_report_path": null
+      },
+      "LSTR0Corrections":{
+        "drs4_pedestal_path": null,
+        "calibration_path": null,
+        "drs4_time_calibration_path": null
+      }
+    }
+  },
+
   "events_filters": {
     "intensity": [0, Infinity],
     "width": [0, Infinity],
@@ -8,13 +32,16 @@
     "leakage_intensity_width_2": [0, 1]
   },
 
-  "tailcut": {
+  "tailcuts_clean_with_pedestal_threshold": {
     "picture_thresh":6,
     "boundary_thresh":3,
+    "sigma":2.5,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
   },
-
+    
     "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
