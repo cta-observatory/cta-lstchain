@@ -249,7 +249,7 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     assert output_dl1ab.is_file()
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-4, equal_nan=True)
+    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-3, equal_nan=True)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
