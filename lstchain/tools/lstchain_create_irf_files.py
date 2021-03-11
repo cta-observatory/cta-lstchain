@@ -28,7 +28,7 @@ lstchain_create_irf_files
 import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io import read_mc_dl2_to_pyirf
+from lstchain.io import read_mc_dl2_to_QTable
 from lstchain.io import DataSelection, DataBinning
 
 from astropy.io import fits
