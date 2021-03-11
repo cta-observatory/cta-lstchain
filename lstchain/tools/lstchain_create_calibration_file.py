@@ -60,6 +60,7 @@ class CalibrationHDF5Writer(Tool):
                     CalibrationCalculator
                     ]
                    + traits.classes_with_traits(CalibrationCalculator)
+                   + traits.classes_with_traits(EventSource)
                    )
 
     def __init__(self, **kwargs):
@@ -74,9 +75,7 @@ class CalibrationHDF5Writer(Tool):
         """
         self.eventsource = None
         self.processor = None
-        self.container = None
         self.writer = None
-        self.r0calibrator = None
         self.tot_events = 0
         self.simulation = False
 
@@ -84,6 +83,10 @@ class CalibrationHDF5Writer(Tool):
 
         self.log.debug(f"Open  file")
         self.eventsource = EventSource.from_config(parent=self)
+
+        tel_id = self.eventsource.lst_service.telescope_id
+        if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
+            raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
 
         # if data remember how many event in the files
         if "LSTEventSource" in str(type(self.eventsource)):
@@ -99,7 +102,7 @@ class CalibrationHDF5Writer(Tool):
             subarray = self.eventsource.subarray
         )
 
-        group_name = 'tel_' + str(self.processor.tel_id)
+        group_name = 'tel_' + str(tel_id)
 
         self.log.debug(f"Open output file {self.output_file}")
 
@@ -110,7 +113,7 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
-        tel_id = self.processor.tel_id
+        tel_id = self.eventsource.lst_service.telescope_id
         new_ped = False
         new_ff = False
         end_of_file = False
