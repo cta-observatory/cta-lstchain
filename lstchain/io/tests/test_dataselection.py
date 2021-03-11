@@ -3,7 +3,7 @@ from lstchain.io import DataSelection, DataBinning
 
 
 def test_data_selection(simulated_dl2_file):
-    from lstchain.io import read_mc_dl2_to_pyirf
+    from lstchain.io import read_mc_dl2_to_QTable
 
     tempsel = DataSelection()
     tempsel.event_filters = {
@@ -19,7 +19,7 @@ def test_data_selection(simulated_dl2_file):
     tempsel.fixed_source_fov_offset_cut = 2
     tempsel.lst_tel_ids = [1]
 
-    data, _ = read_mc_dl2_to_pyirf(simulated_dl2_file)
+    data, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
 
     data_filter = tempsel.filter_cut(data)
     data_gh = tempsel.gh_cut(data)

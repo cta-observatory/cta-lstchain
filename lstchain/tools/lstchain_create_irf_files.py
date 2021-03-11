@@ -181,7 +181,7 @@ class IRFFITSWriter(Tool):
 
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
-            p["events"], p["simulation_info"] = read_mc_dl2_to_pyirf(p["file"])
+            p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
 
             if p["simulation_info"].viewcone.value == 0.0:
                 p["mc_type"] = "point-like"

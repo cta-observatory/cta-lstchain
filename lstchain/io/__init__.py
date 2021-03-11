@@ -18,7 +18,7 @@ from .io import (
     write_subarray_tables,
     read_simu_info_merged_hdf5,
     write_calibration_data,
-    read_mc_dl2_to_pyirf,
+    read_mc_dl2_to_QTable,
     read_data_dl2_to_QTable,
     HDF5_ZSTD_FILTERS,
 )
@@ -44,7 +44,7 @@ __all__ = [
     'read_simu_info_merged_hdf5',
     'write_calibration_data',
     'HDF5_ZSTD_FILTERS',
-    'read_mc_dl2_to_pyirf',
+    'read_mc_dl2_to_QTable',
     'read_data_dl2_to_QTable',
     'DataSelection',
     'DataBinning',

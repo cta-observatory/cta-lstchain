@@ -54,7 +54,7 @@ __all__ = [
     "write_dataframe",
     "write_dl2_dataframe",
     "write_calibration_data",
-    "read_mc_dl2_to_pyirf",
+    "read_mc_dl2_to_QTable",
     "read_data_dl2_to_QTable",
     "read_dl2_params",
     "extract_observation_time",
@@ -1096,13 +1096,15 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
         )
 
 
-def read_mc_dl2_to_pyirf(filename):
+def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
+    - astropy.table.QTable
 
     Parameters
     ----------
     filename: path
+
     Returns
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
@@ -1156,6 +1158,7 @@ def read_data_dl2_to_QTable(filename):
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+
     Returns
     -------
     `astropy.table.QTable`
