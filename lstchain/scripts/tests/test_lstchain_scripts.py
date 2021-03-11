@@ -14,7 +14,6 @@ from lstchain.io.io import (
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key
 )
-from lstchain.tests.test_lstchain import test_data
 
 
 def find_entry_points(package_name):
@@ -284,22 +283,15 @@ def test_read_dl2_to_pyirf(simulated_dl2_file):
 
 
 @pytest.mark.private_data
-def test_create_run_summary(tmp_path):
+def test_run_summary(run_summary_path):
     from astropy.table import Table
     from datetime import datetime
 
     date = "20200218"
-    r0_path = test_data / "real/R0"
-    run_summary_file = tmp_path / f"RunSummary_{date}.ecsv"
-    run_program(
-        "lstchain_create_run_summary",
-        "--date", date,
-        "--r0-path", r0_path,
-        "--output-dir", tmp_path
-    )
-    assert run_summary_file.is_file()
 
-    run_summary_table = Table.read(run_summary_file)
+    assert run_summary_path.is_file()
+
+    run_summary_table = Table.read(run_summary_path)
 
     assert run_summary_table.meta["date"] == datetime.strptime(date, "%Y%m%d").date().isoformat()
     assert "lstchain_version" in run_summary_table.meta
