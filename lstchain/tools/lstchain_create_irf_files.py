@@ -14,14 +14,15 @@ The default fov_offset_bins is for single offset
 Currently using spectral weighting with the spectra given in pyirf.
 It has to be updated with the ones in lstchain.spectra
 
-Usage for all 4 IRFs, argument aliases and default parameter selection values:
+Usage for all 4 IRFs, argument aliases, flags and default parameter selection values:
 
 lstchain_create_irf_files
     --fg /path/to/DL2_MC_gamma_file.h5
     --fp /path/to/DL2_MC_proton_file.h5
     --fe /path/to/DL2_MC_electron_file.h5
     --o /path/to/irf.fits.gz
-    --pnt False
+    --overwrite
+    --point_like (Only for point-like IRFs)
 """
 
 import numpy as np
@@ -89,7 +90,7 @@ class IRFFITSWriter(Tool):
 
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
-        default_value=True,
+        default_value=False,
     ).tag(config=True)
 
     classes = [DataSelection, DataBinning]
@@ -99,7 +100,6 @@ class IRFFITSWriter(Tool):
         ("fp", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
         ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
-        ("pnt", "point_like"): "IRFFITSWriter.point_like",
         ("evt", "event_filters"): "DataSelection.event_filters",
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
@@ -110,9 +110,9 @@ class IRFFITSWriter(Tool):
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
-    flag = {
+    flags = {
         "point_like": (
-            {"IRFFITSWriter": {"point_like": False}},
+            {"IRFFITSWriter": {"point_like": True}},
             "Full Enclosure IRFs will be produced",
         ),
         "overwrite": (

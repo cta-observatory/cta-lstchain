@@ -9,7 +9,7 @@ Change the selection parameters as need be using the aliases.
 The default values are written in the DataSelection Component and
 in lstchain/data/data_selection_cuts.json
 
-Simple usage with argument aliases and default parameter selection values:
+Simple usage with argument aliases, flags and default parameter selection values:
 
 lstchain_create_dl3_file
     --d /path/to/DL2_data_file.h5
@@ -18,6 +18,7 @@ lstchain_create_dl3_file
     --source_name Crab
     --source_ra 83.633deg
     --source_dec 22.01deg
+    --overwrite
 """
 
 from astropy.io import fits
@@ -62,7 +63,7 @@ class DataReductionFITSWriter(Tool):
 
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
-        default_value=True,
+        default_value=False,
     ).tag(config=True)
 
     classes = [DataSelection]
@@ -78,7 +79,6 @@ class DataReductionFITSWriter(Tool):
         "source_name": "DataReductionFITSWriter.source_name",
         "source_ra": "DataReductionFITSWriter.source_ra",
         "source_dec": "DataReductionFITSWriter.source_dec",
-        "overwrite": "DataReductionFITSWriter.overwrite",
     }
 
     flags = {

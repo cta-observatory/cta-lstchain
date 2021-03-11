@@ -32,7 +32,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
                 f"--input_proton_dl2={simulated_dl2_file}",
                 f"--input_electron_dl2={simulated_dl2_file}",
                 f"--output_irf_file={irf_file}",
-                "--point_like=False",
+                "--overwrite",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -60,6 +60,9 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
                 f"--output_dl3_path={temp_dir_observed_files}",
                 f"--input_irf={irf_file}",
                 "--source_name=Crab",
+                "--source_ra=83.633deg",
+                "--source_dec=22.01deg",
+                "--overwrite",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -81,6 +84,7 @@ def test_index_dl3_files(temp_dir_observed_files):
             argv=[
                 f"--input_dl3_dir={temp_dir_observed_files}",
                 "--file_pattern=dl3*fits.gz",
+                "--overwrite",
             ],
             cwd=temp_dir_observed_files,
         )
