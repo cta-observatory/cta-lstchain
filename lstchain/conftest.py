@@ -13,7 +13,8 @@ from lstchain.tests.test_lstchain import (
     test_calib_path,
     test_time_calib_path,
     test_r0_path,
-    test_r0_path2
+    test_r0_path2,
+    test_data,
 )
 
 
@@ -71,9 +72,24 @@ def simulated_dl1_file(temp_dir_simulated_files, mc_gamma_testfile):
     return output_dl1_path
 
 
+@pytest.fixture(scope='session')
+def run_summary_path(temp_dir_observed_files):
+    date = "20200218"
+    r0_path = test_data / "real/R0"
+    run_summary_path = temp_dir_observed_files / f"RunSummary_{date}.ecsv"
+    run_program(
+        "lstchain_create_run_summary",
+        "--date", date,
+        "--r0-path", r0_path,
+        "--output-dir", temp_dir_observed_files
+    )
+
+    return run_summary_path
+
+
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
-def observed_dl1_files(temp_dir_observed_files):
+def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     """
     Produce dl1, datacheck and muons files from real observed data.
     The initial timestamps and counters used for the first set of files
@@ -112,6 +128,8 @@ def observed_dl1_files(temp_dir_observed_files):
         "1582059789516351903",
         "--dragon-reference-counter",
         "2516351600",
+        "--dragon-module-id",
+        "132",
     )
 
     run_program(
@@ -137,7 +155,9 @@ def observed_dl1_files(temp_dir_observed_files):
         "--time-calibration-file",
         test_time_calib_path,
         "--pointing-file",
-        test_drive_report
+        test_drive_report,
+        '--run-summary-path',
+        run_summary_path,
     )
 
     run_program(
