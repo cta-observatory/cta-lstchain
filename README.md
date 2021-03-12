@@ -24,7 +24,7 @@ We recommend using `homebrew` and then `brew install zeromq protobuf`.
 ### As user
 
 ```
-LSTCHAIN_VER=0.6.3
+LSTCHAIN_VER=0.7.0
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
