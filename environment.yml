@@ -5,7 +5,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
-  - astropy>=4.2
+  - astropy~=4.2
   - pip
   - ctapipe~=0.10.5
   - gammapy>=0.18
