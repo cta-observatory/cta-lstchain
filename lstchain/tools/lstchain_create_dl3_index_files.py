@@ -13,7 +13,7 @@ lstchain_create_dl3_index_files
     -d /path/to/DL3/files/
     -p dl3*[run_1-run_n]*.fits.gz
     --overwrite
-    --add_fits_dir (if the fits_dir info is to be indexed)
+    --add-fits-dir (if the fits_dir info is to be indexed)
 """
 from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -44,8 +44,8 @@ class FITSIndexWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        ("d", "input_dl3_dir"): "FITSIndexWriter.input_dl3_dir",
-        ("p", "file_pattern"): "FITSIndexWriter.file_pattern",
+        ("d", "input-dl3-dir"): "FITSIndexWriter.input_dl3_dir",
+        ("p", "file-pattern"): "FITSIndexWriter.file_pattern",
     }
 
     flags = {

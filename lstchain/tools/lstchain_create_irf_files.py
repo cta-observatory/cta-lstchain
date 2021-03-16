@@ -22,7 +22,7 @@ lstchain_create_irf_files
     -e /path/to/DL2_MC_electron_file.h5
     -o /path/to/irf.fits.gz
     --overwrite
-    --point_like (Only for point_like IRFs)
+    --point-like (Only for point_like IRFs)
 """
 
 import numpy as np
@@ -96,14 +96,14 @@ class IRFFITSWriter(Tool):
     classes = [DataSelection, DataBinning]
 
     aliases = {
-        ("g", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
-        ("p", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
-        ("e", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
-        ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
-        ("evt", "event_filters"): "DataSelection.event_filters",
-        ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
-        ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
-        ("src-fov", "fixed_source_fov_offset_cut"):
+        ("g", "input-gamma-dl2"): "IRFFITSWriter.input_gamma_dl2",
+        ("p", "input-proton-dl2"): "IRFFITSWriter.input_proton_dl2",
+        ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
+        ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
+        ("evt", "event-filters"): "DataSelection.event_filters",
+        ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
+        ("theta", "fixed-theta-cut"): "DataSelection.fixed_theta_cut",
+        ("src-fov", "fixed-source-fov-offset-cut"):
             "DataSelection.fixed_source_fov_offset_cut",
         "allowed-tels": "DataSelection.allowed_tels",
         "config": "DataSelection.config",

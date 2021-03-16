@@ -15,9 +15,9 @@ lstchain_create_dl3_file
     -d /path/to/DL2_data_file.h5
     -o /path/to/DL3/file/
     -irf /path/to/irf.fits.gz
-    --source_name Crab
-    --source_ra 83.633deg
-    --source_dec 22.01deg
+    --source-name Crab
+    --source-ra 83.633deg
+    --source-dec 22.01deg
     --overwrite
 """
 
@@ -69,12 +69,12 @@ class DataReductionFITSWriter(Tool):
     classes = [DataSelection]
 
     aliases = {
-        ("d", "input_dl2"): "DataReductionFITSWriter.input_dl2",
-        ("o", "output_dl3_path"): "DataReductionFITSWriter.output_dl3_path",
-        ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
-        ("evt", "event_filters"): "DataSelection.event_filters",
-        ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
-        ("src-fov", "fixed_source_fov_offset_cut"):
+        ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
+        ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
+        ("irf", "input-irf"): "DataReductionFITSWriter.input_irf",
+        ("evt", "event-filters"): "DataSelection.event_filters",
+        ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
+        ("src-fov", "fixed-source-fov-offset-cut"):
             "DataSelection.fixed_source_fov_offset_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
