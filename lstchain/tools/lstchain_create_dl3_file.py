@@ -12,9 +12,9 @@ in lstchain/data/data_selection_cuts.json
 Simple usage with argument aliases, flags and default parameter selection values:
 
 lstchain_create_dl3_file
-    --d /path/to/DL2_data_file.h5
-    --o /path/to/DL3/file/
-    --irf /path/to/irf.fits.gz
+    -d /path/to/DL2_data_file.h5
+    -o /path/to/DL3/file/
+    -irf /path/to/irf.fits.gz
     --source_name Crab
     --source_ra 83.633deg
     --source_dec 22.01deg
@@ -74,11 +74,11 @@ class DataReductionFITSWriter(Tool):
         ("irf", "input_irf"): "DataReductionFITSWriter.input_irf",
         ("evt", "event_filters"): "DataSelection.event_filters",
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
-        ("src_fov", "fixed_source_fov_offset_cut"):
+        ("src-fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
-        "source_name": "DataReductionFITSWriter.source_name",
-        "source_ra": "DataReductionFITSWriter.source_ra",
-        "source_dec": "DataReductionFITSWriter.source_dec",
+        "source-name": "DataReductionFITSWriter.source_name",
+        "source-ra": "DataReductionFITSWriter.source_ra",
+        "source-dec": "DataReductionFITSWriter.source_dec",
     }
 
     flags = {

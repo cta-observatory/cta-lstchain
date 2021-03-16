@@ -73,7 +73,7 @@ class DataSelection(Component):
         ]
 
     def allowed_tels_filter(self, data):
-        mask = np.ones(len(data), dtype=bool)
+        mask = np.zeros(len(data), dtype=bool)
         for tel_id in self.allowed_tels:
             mask |= data["tel_id"] == tel_id
         return data[mask]

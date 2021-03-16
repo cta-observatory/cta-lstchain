@@ -2,8 +2,8 @@
 Create FITS file for IRFs from given MC DL2 files and selection cuts
 taken either from command-line arguments or a config file.
 
-MC gamma files can be point-like or diffuse.
-IRFs can be point-like or Full Enclosure.
+MC gamma files can be point_like or diffuse.
+IRFs can be point_like or Full Enclosure.
 Background HDU maybe added if proton and electron MC are provided.
 
 Change the selection parameters as need be using the aliases.
@@ -17,12 +17,12 @@ It has to be updated with the ones in lstchain.spectra
 Usage for all 4 IRFs, argument aliases, flags and default parameter selection values:
 
 lstchain_create_irf_files
-    --fg /path/to/DL2_MC_gamma_file.h5
-    --fp /path/to/DL2_MC_proton_file.h5
-    --fe /path/to/DL2_MC_electron_file.h5
-    --o /path/to/irf.fits.gz
+    -g /path/to/DL2_MC_gamma_file.h5
+    -p /path/to/DL2_MC_proton_file.h5
+    -e /path/to/DL2_MC_electron_file.h5
+    -o /path/to/irf.fits.gz
     --overwrite
-    --point_like (Only for point-like IRFs)
+    --point_like (Only for point_like IRFs)
 """
 
 import numpy as np
@@ -84,7 +84,7 @@ class IRFFITSWriter(Tool):
     ).tag(config=True)
 
     point_like = traits.Bool(
-        help="True for point-like IRF, False for Full Enclosure",
+        help="True for point_like IRF, False for Full Enclosure",
         default_value=False,
     ).tag(config=True)
 
@@ -96,22 +96,22 @@ class IRFFITSWriter(Tool):
     classes = [DataSelection, DataBinning]
 
     aliases = {
-        ("fg", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
-        ("fp", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
-        ("fe", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
+        ("g", "input_gamma_dl2"): "IRFFITSWriter.input_gamma_dl2",
+        ("p", "input_proton_dl2"): "IRFFITSWriter.input_proton_dl2",
+        ("e", "input_electron_dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output_irf_file"): "IRFFITSWriter.output_irf_file",
         ("evt", "event_filters"): "DataSelection.event_filters",
         ("gh", "fixed_gh_cut"): "DataSelection.fixed_gh_cut",
         ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
-        ("src_fov", "fixed_source_fov_offset_cut"):
+        ("src-fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
-        "allowed_tels": "DataSelection.allowed_tels",
+        "allowed-tels": "DataSelection.allowed_tels",
         "config": "DataSelection.config",
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
     flags = {
-        "point_like": (
+        "point-like": (
             {"IRFFITSWriter": {"point_like": True}},
             "Full Enclosure IRFs will be produced",
         ),
@@ -184,7 +184,7 @@ class IRFFITSWriter(Tool):
             p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
 
             if p["simulation_info"].viewcone.value == 0.0:
-                p["mc_type"] = "point-like"
+                p["mc_type"] = "point_like"
             else:
                 p["mc_type"] = "diffuse"
                 # For diffuse gamma using Proton Spectra for calculating event weights
@@ -198,7 +198,7 @@ class IRFFITSWriter(Tool):
                     else:
                         raise ToolConfigurationError(
                             "Diffuse MC gamma cannot be used for generating "
-                            "point-like IRFs. Use appropriate MC and IRF type."
+                            "point_like IRFs. Use appropriate MC and IRF type."
                         )
 
             self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
@@ -275,7 +275,7 @@ class IRFFITSWriter(Tool):
             "GH_CUT": self.data_sel.fixed_gh_cut,
         }
         if self.point_like:
-            self.log.info("Generating Point-Like IRF HDUs")
+            self.log.info("Generating point_like IRF HDUs")
             extra_headers["RAD_MAX"] = str(
                 u.Quantity(self.data_sel.fixed_theta_cut * u.deg)
             )
@@ -289,7 +289,7 @@ class IRFFITSWriter(Tool):
         self.hdus = [fits.PrimaryHDU(), ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
-            if self.mc_particle["gamma"]["mc_type"] == "point-like":
+            if self.mc_particle["gamma"]["mc_type"] == "point_like":
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
@@ -297,7 +297,7 @@ class IRFFITSWriter(Tool):
                 )
                 # As mentioned above, gammapy 0.18.2 needs offset bin center Values
                 # for doing more than just reading the IRF.The effective area for
-                # point-like IRF with single offset (0.4 deg) needs to be
+                # point_like IRF with single offset (0.4 deg) needs to be
                 # reshaped and repeat the same values for the area in the second axis
                 self.hdus.append(
                     create_aeff2d_hdu(
