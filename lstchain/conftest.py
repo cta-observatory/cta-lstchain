@@ -264,13 +264,13 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
     irf_file = simulated_dl2_file.parent / "irf.fits.gz"
     run_program(
         "lstchain_create_irf_files",
-        "--input_gamma_dl2",
+        "--input-gamma-dl2",
         simulated_dl2_file,
-        "--input_proton_dl2",
+        "--input-proton-dl2",
         simulated_dl2_file,
-        "--input_electron_dl2",
+        "--input-electron-dl2",
         simulated_dl2_file,
-        "--output_irf_file",
+        "--output-irf-file",
         irf_file
     )
     return irf_file
