@@ -105,7 +105,7 @@ class IRFFITSWriter(Tool):
         ("theta", "fixed_theta_cut"): "DataSelection.fixed_theta_cut",
         ("src_fov", "fixed_source_fov_offset_cut"):
             "DataSelection.fixed_source_fov_offset_cut",
-        "lst_tel_ids": "DataSelection.lst_tel_ids",
+        "allowed_tels": "DataSelection.allowed_tels",
         "config": "DataSelection.config",
         "overwrite": "IRFFITSWriter.overwrite",
     }
@@ -228,7 +228,7 @@ class IRFFITSWriter(Tool):
         self.log.info(f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut}")
 
         gammas = self.data_sel.filter_cut(gammas)
-        gammas = self.data_sel.tel_ids_filter(gammas)
+        gammas = self.data_sel.allowed_tels_filter(gammas)
         gammas = self.data_sel.gh_cut(gammas)
 
         # point_like = True for point like IRFs, False for Full Enclosure IRFs
@@ -260,7 +260,7 @@ class IRFFITSWriter(Tool):
             )
 
             background = self.data_sel.filter_cut(background)
-            background = self.data_sel.tel_ids_filter(background)
+            background = self.data_sel.allowed_tels_filter(background)
             background = self.data_sel.gh_cut(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
@@ -270,7 +270,7 @@ class IRFFITSWriter(Tool):
         # GH_CUT and FOV_CUT are temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
-            "INSTRUME": "LST-" + " ".join(map(str, self.data_sel.lst_tel_ids)),
+            "INSTRUME": "LST-" + " ".join(map(str, self.data_sel.allowed_tels)),
             "FOVALIGN": "RADEC",
             "GH_CUT": self.data_sel.fixed_gh_cut,
         }

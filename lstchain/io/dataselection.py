@@ -45,8 +45,8 @@ class DataSelection(Component):
         default_value=2.83,
     ).tag(config=True)
 
-    lst_tel_ids = List(
-        help="List of selected LST telescope ids",
+    allowed_tels = List(
+        help="List of allowed LST telescope ids",
         trait=Int(),
         default_value=[1],
     ).tag(config=True)
@@ -58,29 +58,25 @@ class DataSelection(Component):
         return data[data["gh_score"] > self.fixed_gh_cut]
 
     def theta_cut(self, data):
-        return data[data["theta"] < u.Quantity(
-            self.fixed_theta_cut
-            ) * u.deg
-        ]
+        return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
 
     def true_src_fov_offset_cut(self, data):
         return data[
-                data["true_source_fov_offset"] < u.Quantity(
-                    self.fixed_source_fov_offset_cut
-                    ) * u.deg
-            ]
+            data["true_source_fov_offset"].to_value(u.deg)
+            < self.fixed_source_fov_offset_cut
+        ]
 
     def reco_src_fov_offset_cut(self, data):
         return data[
-                data["reco_source_fov_offset"] < u.Quantity(
-                    self.fixed_source_fov_offset_cut
-                    ) * u.deg
-            ]
+            data["reco_source_fov_offset"].to_value(u.deg)
+            < self.fixed_source_fov_offset_cut
+        ]
 
-    def tel_ids_filter(self, data):
-        for i in self.lst_tel_ids:
-            data["sel_tel"] = data["tel_id"] == i
-        return data[data["sel_tel"]]
+    def allowed_tels_filter(self, data):
+        mask = np.ones(len(data), dtype=bool)
+        for tel_id in self.allowed_tels:
+            mask |= data["tel_id"] == tel_id
+        return data[mask]
 
 
 class DataBinning(Component):
@@ -227,7 +223,8 @@ class DataBinning(Component):
                 self.fov_offset_min,
                 self.fov_offset_max,
                 self.fov_offset_n_edges,
-            ) * u.deg
+            )
+            * u.deg
         )
         return fov_offset
 
@@ -241,7 +238,8 @@ class DataBinning(Component):
                 self.bkg_fov_offset_min,
                 self.bkg_fov_offset_max,
                 self.bkg_fov_offset_n_edges,
-            ) * u.deg
+            )
+            * u.deg
         )
         return background_offset
 
@@ -256,6 +254,7 @@ class DataBinning(Component):
                 self.source_offset_max,
                 self.source_offset_max,
                 self.source_offset_n_edges,
-            ) * u.deg
+            )
+            * u.deg
         )
         return source_offset

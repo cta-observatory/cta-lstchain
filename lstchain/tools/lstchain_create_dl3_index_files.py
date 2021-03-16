@@ -30,7 +30,7 @@ class FITSIndexWriter(Tool):
     ).tag(config=True)
 
     file_pattern = traits.Unicode(
-        help="File pattern to search in the given Path", default_value="dl3*.fits"
+        help="File pattern to search in the given Path", default_value="dl3*.fits*"
     ).tag(config=True)
 
     add_fits_dir = traits.Bool(

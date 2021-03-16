@@ -17,13 +17,13 @@ def test_data_selection(simulated_dl2_file):
     tempsel.fixed_gh_cut = 0.5
     tempsel.fixed_theta_cut = 1
     tempsel.fixed_source_fov_offset_cut = 2
-    tempsel.lst_tel_ids = [1]
+    tempsel.allowed_tels = [1]
 
     data, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
 
     data_filter = tempsel.filter_cut(data)
     data_gh = tempsel.gh_cut(data)
-    data_tel = tempsel.tel_ids_filter(data)
+    data_tel = tempsel.allowed_tels_filter(data)
 
     assert data_filter["intensity"].max() < 1000
     assert data_gh["gh_score"].max() > 0.5

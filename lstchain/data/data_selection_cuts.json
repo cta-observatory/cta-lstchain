@@ -11,7 +11,7 @@
     "fixed_gh_cut": 0.7,
     "fixed_theta_cut": 0.2,
     "fixed_source_fov_offset_cut": 2.83,
-    "lst_tel_ids": [1]
+    "allowed_tels": [1]
   },
   "DataBinning": {
     "true_energy_min": 0.01,
