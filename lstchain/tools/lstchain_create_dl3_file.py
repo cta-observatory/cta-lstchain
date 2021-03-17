@@ -74,8 +74,6 @@ class DataReductionFITSWriter(Tool):
         ("irf", "input-irf"): "DataReductionFITSWriter.input_irf",
         ("evt", "event-filters"): "DataSelection.event_filters",
         ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
-        ("src-fov", "fixed-source-fov-offset-cut"):
-            "DataSelection.fixed_source_fov_offset_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -128,13 +126,8 @@ class DataReductionFITSWriter(Tool):
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
-        self.data["reco_source_fov_offset"] = calculate_source_fov_offset(
-            self.data, prefix="reco"
-        )
-
         self.data = self.data_sel.filter_cut(self.data)
         self.data = self.data_sel.gh_cut(self.data)
-        self.data = self.data_sel.reco_src_fov_offset_cut(self.data)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(

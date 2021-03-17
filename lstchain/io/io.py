@@ -1163,8 +1163,7 @@ def read_data_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`
     """
-    #from lstchain.reco.utils import get_effective_time
-
+    
     # Mapping
     name_mapping = {
         "gammaness": "gh_score",

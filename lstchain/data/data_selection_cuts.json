@@ -10,7 +10,6 @@
     },
     "fixed_gh_cut": 0.7,
     "fixed_theta_cut": 0.2,
-    "fixed_source_fov_offset_cut": 2.83,
     "allowed_tels": [1]
   },
   "DataBinning": {
@@ -24,8 +23,8 @@
     "energy_migration_max": 5,
     "energy_migration_n_bins": 31,
     "fov_offset_min": 0.3,
-    "fov_offset_max": 0.7,
-    "fov_offset_n_edges": 3,
+    "fov_offset_max": 0.5,
+    "fov_offset_n_edges": 2,
     "bkg_fov_offset_min": 0,
     "bkg_fov_offset_max": 10,
     "bkg_fov_offset_n_edges": 21,

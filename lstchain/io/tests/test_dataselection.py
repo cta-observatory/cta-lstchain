@@ -16,7 +16,6 @@ def test_data_selection(simulated_dl2_file):
     }
     tempsel.fixed_gh_cut = 0.5
     tempsel.fixed_theta_cut = 1
-    tempsel.fixed_source_fov_offset_cut = 2
     tempsel.allowed_tels = [1]
 
     data, _ = read_mc_dl2_to_QTable(simulated_dl2_file)

@@ -40,11 +40,6 @@ class DataSelection(Component):
         default_value=0.2,
     ).tag(config=True)
 
-    fixed_source_fov_offset_cut = Float(
-        help="Fixed selection cut for source FoV offset",
-        default_value=2.83,
-    ).tag(config=True)
-
     allowed_tels = List(
         help="List of allowed LST telescope ids",
         trait=Int(),
@@ -59,18 +54,6 @@ class DataSelection(Component):
 
     def theta_cut(self, data):
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
-
-    def true_src_fov_offset_cut(self, data):
-        return data[
-            data["true_source_fov_offset"].to_value(u.deg)
-            < self.fixed_source_fov_offset_cut
-        ]
-
-    def reco_src_fov_offset_cut(self, data):
-        return data[
-            data["reco_source_fov_offset"].to_value(u.deg)
-            < self.fixed_source_fov_offset_cut
-        ]
 
     def allowed_tels_filter(self, data):
         mask = np.zeros(len(data), dtype=bool)
@@ -132,17 +115,17 @@ class DataBinning(Component):
 
     fov_offset_min = Float(
         help="Minimum value for FoV Offset bins",
-        default_value=0.3,
+        default_value=0.1,
     ).tag(config=True)
 
     fov_offset_max = Float(
         help="Maximum value for FoV offset bins",
-        default_value=0.7,
+        default_value=1.1,
     ).tag(config=True)
 
     fov_offset_n_edges = Int(
         help="Number of edges for FoV offset bins",
-        default_value=3,
+        default_value=9,
     ).tag(config=True)
 
     bkg_fov_offset_min = Float(

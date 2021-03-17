@@ -9,10 +9,6 @@ Background HDU maybe added if proton and electron MC are provided.
 Change the selection parameters as need be using the aliases.
 The default values are written in the DataSelection and DataBinning Component
 and in lstchain/data/data_selection_cuts.json
-The default fov_offset_bins is for single offset
-
-Currently using spectral weighting with the spectra given in pyirf.
-It has to be updated with the ones in lstchain.spectra
 
 Usage for all 4 IRFs, argument aliases, flags and default parameter selection values:
 
@@ -103,8 +99,6 @@ class IRFFITSWriter(Tool):
         ("evt", "event-filters"): "DataSelection.event_filters",
         ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
         ("theta", "fixed-theta-cut"): "DataSelection.fixed_theta_cut",
-        ("src-fov", "fixed-source-fov-offset-cut"):
-            "DataSelection.fixed_source_fov_offset_cut",
         "allowed-tels": "DataSelection.allowed_tels",
         "config": "DataSelection.config",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -187,30 +181,19 @@ class IRFFITSWriter(Tool):
                 p["mc_type"] = "point_like"
             else:
                 p["mc_type"] = "diffuse"
-                # For diffuse gamma using Proton Spectra for calculating event weights
-                if particle_type == "gamma":
-                    if not self.point_like:
-                        p["target_spectrum"] = IRFDOC_PROTON_SPECTRUM
-                        self.log.debug(
-                            "Proton spectrum used as target spectrum"
-                            " for MC diffuse gamma"
-                        )
-                    else:
-                        raise ToolConfigurationError(
-                            "Diffuse MC gamma cannot be used for generating "
-                            "point_like IRFs. Use appropriate MC and IRF type."
-                        )
 
             self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
 
-            p["simulated_spectrum"] = PowerLaw.from_simulation(
-                p["simulation_info"], 50 * u.hour
-            )
-            p["events"]["weight"] = calculate_event_weights(
-                p["events"]["true_energy"],
-                p["target_spectrum"],
-                p["simulated_spectrum"],
-            )
+            # Calculating event weights for Background IRF
+            if particle_type != "gamma":
+                p["simulated_spectrum"] = PowerLaw.from_simulation(
+                    p["simulation_info"], 50 * u.hour
+                )
+                p["events"]["weight"] = calculate_event_weights(
+                    p["events"]["true_energy"],
+                    p["target_spectrum"],
+                    p["simulated_spectrum"],
+                )
 
             for prefix in ("true", "reco"):
                 k = f"{prefix}_source_fov_offset"
@@ -231,10 +214,10 @@ class IRFFITSWriter(Tool):
         gammas = self.data_sel.allowed_tels_filter(gammas)
         gammas = self.data_sel.gh_cut(gammas)
 
-        # point_like = True for point like IRFs, False for Full Enclosure IRFs
+        # With point_like flag for point like IRFs.
+        # Without point_like flag for Full Enclosure IRFs
         if self.point_like:
             gammas = self.data_sel.theta_cut(gammas)
-            gammas = self.data_sel.true_src_fov_offset_cut(gammas)
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -243,13 +226,10 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         if self.point_like:
-            # Gammapy 0.18.2 needs offset bin centers for interpolation
-            # Using just 2 'edges' like [0.2,0.6] works fine for reading the IRF but,
-            # this workaround is necessary for further analysis using gammapy.
-            if len(self.data_bin.fov_offset_bins()) != 3:
-                self.log.critical("Offset binning is not appropriate for single offset")
-
-        fov_offset_bins = self.data_bin.fov_offset_bins()
+            mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
+            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+        else:
+            fov_offset_bins = self.data_bin.fov_offset_bins()
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -276,12 +256,7 @@ class IRFFITSWriter(Tool):
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(
-                u.Quantity(self.data_sel.fixed_theta_cut * u.deg)
-            )
-            extra_headers["FOV_CUT"] = str(
-                u.Quantity(self.data_sel.fixed_source_fov_offset_cut * u.deg)
-            )
+            extra_headers["RAD_MAX"] = str(self.data_sel.fixed_theta_cut * u.deg)
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
@@ -295,13 +270,10 @@ class IRFFITSWriter(Tool):
                     self.mc_particle["gamma"]["simulation_info"],
                     true_energy_bins,
                 )
-                # As mentioned above, gammapy 0.18.2 needs offset bin center Values
-                # for doing more than just reading the IRF.The effective area for
-                # point_like IRF with single offset (0.4 deg) needs to be
-                # reshaped and repeat the same values for the area in the second axis
                 self.hdus.append(
                     create_aeff2d_hdu(
-                        np.repeat(self.effective_area[..., np.newaxis], 2, axis=1),
+                        # add one dimension for single FOV offset
+                        self.effective_area[..., np.newaxis],
                         true_energy_bins,
                         fov_offset_bins,
                         point_like=self.point_like,
