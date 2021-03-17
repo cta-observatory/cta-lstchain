@@ -3,6 +3,7 @@ from .lstcontainers import (
     DL1ParametersContainer,
     DispContainer,
 )
+from .event_selection import EventSelector
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
@@ -28,6 +29,7 @@ __all__ = [
     'read_configuration_file',
     'DL1ParametersContainer',
     'DispContainer',
+    'EventSelector',
     'get_dataset_keys',
     'auto_merge_h5files',
     'smart_merge_h5files',
