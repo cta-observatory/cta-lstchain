@@ -25,7 +25,7 @@ class EventSelector(Component):
 
     finite_params = List(
 	help="List of parameters to ensure finite values",
-	default_value={"intensity", "length", "width"},
+	default_value=["intensity", "length", "width"],
     ).tag(config=True)
 
 
