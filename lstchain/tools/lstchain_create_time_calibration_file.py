@@ -40,11 +40,9 @@ class TimeCalibrationHDF5Writer(Tool):
         ("i", "input"): "TimeCalibrationHDF5Writer.input",
         ("o", "output"): "TimeCorrectionCalculate.calib_file_path",
         "glob": "TimeCalibrationHDF5Writer.glob",
-        "max-events": "EventSource.max_events",
+        "max-events": "LSTEventSource.max_events",
         "pedestal": "LSTR0Corrections.drs4_pedestal_path",
-        "dragon-reference-time": "EventTimeCalculator.dragon_reference_time",
-        "dragon-reference-counter": "EventTimeCalculator.dragon_reference_counter",
-        "dragon_module_id": "EventTimeCalculator.dragon_module_id",
+        "run-summary-path": "EventTimeCalculator.run_summary_path"
     }
 
     classes = [TimeCorrectionCalculate, LSTEventSource, LSTR0Corrections, EventTimeCalculator]
@@ -58,7 +56,7 @@ class TimeCalibrationHDF5Writer(Tool):
     def start(self):
 
         for j, path in enumerate(self.path_list):
-            self.eventsource = LSTEventSource(input_url=path, parent=self)
+            self.eventsource = LSTEventSource(input_url=path, default_trigger_type="tib", parent=self)
             self.log.info(f"File {j + 1} out of {len(self.path_list)}")
             self.log.info(f"Processing: {path}")
 
