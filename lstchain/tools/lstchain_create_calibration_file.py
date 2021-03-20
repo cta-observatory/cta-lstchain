@@ -13,6 +13,13 @@ from lstchain.io import add_config_metadata, add_global_metadata, global_metadat
 
 
 class CalibrationHDF5Writer(Tool):
+    """
+    Tool that generates a HDF5 file with camera calibration coefficients.
+    Input file must contain interleaved pedestal and flat-field events.
+
+    For getting help run:
+    lstchain_create_calibration_file --help
+    """
 
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
@@ -43,33 +50,29 @@ class CalibrationHDF5Writer(Tool):
         ("o", "output_file"): "CalibrationHDF5Writer.output",
         "max_events": "EventSource.max_events",
         "calibration_product": "CalibrationHDF5Writer.calibration_product",
-        "drs4_pedestal_path": "LSTR0Corrections.drs4_pedestal_path"
+        "drs4_pedestal_path": "LSTR0Corrections.drs4_pedestal_path",
+    }
+
+    flags = {
+        "one-event": (
+            {"CalibrationHDF5Writer": {"one_event": True}},
+            "Stop after first calibration event",
+        )
     }
 
     classes = [] + traits.classes_with_traits(EventSource) + traits.classes_with_traits(CalibrationCalculator)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        """
-        Tool that generates a HDF5 file with camera calibration coefficients.
-        Input file must contain interleaved pedestal and flat-field events.
-        
-        For getting help run:
-        lstchain_create_calibration --help
-        """
-        self.simulation = False
-        self.tot_events = 0
-
     def setup(self):
 
+        self.tot_events = 0
+        self.simulation = False
+
         self.eventsource = EventSource.from_config(parent=self)
-        self.log.debug(self.eventsource.input_url)
+        self.tel_id = self.eventsource.lst_service.telescope_id
+        if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[self.tel_id] is None:
+            raise IOError("Missing (mandatory) drs4 pedestal file in traitlets")
 
-        tel_id = self.eventsource.lst_service.telescope_id
-        if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
-            raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
-
-        # if data remember how many event in the files
+        # if data remember how many events in the files
         if "LSTEventSource" in str(type(self.eventsource)):
             self.tot_events = len(self.eventsource.multi_file)
             self.log.debug(f"Input file has file {self.tot_events} events")
@@ -81,32 +84,56 @@ class CalibrationHDF5Writer(Tool):
             self.calibration_product, parent=self, subarray=self.eventsource.subarray
         )
 
-        self.log.debug(f"Open output file {self.output}")
         self.writer = HDF5TableWriter(
             filename=self.output,
-            group_name=f"tel_{self.processor.tel_id}",
+            group_name=f"tel_{self.tel_id}",
             overwrite=True,
         )
 
     def start(self):
         """Calibration coefficient calculator"""
 
-        metadata = global_metadata(self.eventsource)
-        write_metadata(metadata, self.output_file)
-
-        tel_id = self.eventsource.lst_service.telescope_id
         new_ped = False
         new_ff = False
         end_of_file = False
 
-                    add_config_metadata(ped_data, self.config)
-                    add_global_metadata(ped_data, metadata)
-                    add_config_metadata(ff_data, self.config)
-                    add_global_metadata(ff_data, metadata)
-                    add_config_metadata(status_data, self.config)
-                    add_global_metadata(status_data, metadata)
-                    add_config_metadata(calib_data, self.config)
-                    add_global_metadata(calib_data, metadata)
+        # skip the first events which are badly drs4 corrected
+        events_to_skip = 1000
+
+        self.log.debug(f"Start loop")
+        for count, event in tqdm(
+            enumerate(self.eventsource),
+            desc=self.eventsource.__class__.__name__,
+            total=self.tot_events,
+            unit="ev",
+            disable=not self.progress_bar,
+        ):
+
+            # if last event write results
+            max_events_reached = (
+                self.eventsource.max_events is not None and count == self.eventsource.max_events - 1
+            )
+            if count == self.tot_events - 1 or max_events_reached:
+                self.log.debug(f"Last event, count = {count}")
+                end_of_file = True
+
+            # save the config - to be retrieved as data.meta['config']
+            if count == 0:
+                if self.simulation:
+                    self.initialize_pixel_status(event.mon.tel[self.tel_id], event.r1.tel[self.tel_id].waveform.shape)
+
+                ped_data = event.mon.tel[self.tel_id].pedestal
+                ped_data.meta["config"] = self.config
+
+                ff_data = event.mon.tel[self.tel_id].flatfield
+                ff_data.meta["config"] = self.config
+
+                status_data = event.mon.tel[self.tel_id].pixel_status
+                status_data.meta["config"] = self.config
+
+                calib_data = event.mon.tel[self.tel_id].calibration
+                calib_data.meta["config"] = self.config
+
             # skip first events which are badly drs4 corrected
             if not self.simulation and count < events_to_skip:
                 continue
@@ -114,7 +141,7 @@ class CalibrationHDF5Writer(Tool):
             if event.trigger.event_type == EventType.SKY_PEDESTAL or (
 
                 self.simulation
-                and np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                and np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
                 < self.processor.minimum_hg_charge_median
             ):
 
@@ -124,9 +151,9 @@ class CalibrationHDF5Writer(Tool):
             # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
             elif event.trigger.event_type == EventType.FLATFIELD or (
                 self.simulation
-                and np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                and np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
                 > self.processor.minimum_hg_charge_median
-                and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
+                and np.std(np.sum(event.r1.tel[self.tel_id].waveform[1], axis=1))
                 < self.processor.maximum_lg_charge_std
             ):
 
@@ -177,7 +204,7 @@ class CalibrationHDF5Writer(Tool):
                 if self.one_event:
                     break
 
-                # self.writer.write('mon', event.mon.tel[tel_id])
+                # self.writer.write('mon', event.mon.tel[self.tel_id])
 
     def finish(self):
         Provenance().add_output_file(
@@ -186,20 +213,20 @@ class CalibrationHDF5Writer(Tool):
         )
         self.writer.close()
 
+    @staticmethod
+    def initialize_pixel_status(mon_camera_container, shape):
+        """
+        Initialize the pixel status container in the case of
+        simulation events (this should be done in the event source, but
+        added here for the moment)
+        """
+        # initialize the container
+        status_container = PixelStatusContainer()
+        status_container.hardware_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
+        status_container.pedestal_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
+        status_container.flatfield_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
 
-def initialize_pixel_status(mon_camera_container, shape):
-    """
-    Initialize the pixel status container in the case of
-    simulation events (this should be done in the event source, but
-    added here for the moment)
-    """
-    # initialize the container
-    status_container = PixelStatusContainer()
-    status_container.hardware_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
-    status_container.pedestal_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
-    status_container.flatfield_failing_pixels = np.zeros((shape[0], shape[1]), dtype=bool)
-
-    mon_camera_container.pixel_status = status_container
+        mon_camera_container.pixel_status = status_container
 
 
 def main():
