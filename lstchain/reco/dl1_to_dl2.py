@@ -310,7 +310,7 @@ def build_models(filegammas, fileprotons,
     df_gamma = pd.read_hdf(filegammas, key=dl1_params_lstcam_key)
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
-    if config['source_dependent']:
+    if config["ReconstructionHDF5Writer"]["source_dependent"]:
         src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
         src_dep_df_gamma.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_gamma.columns])
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)

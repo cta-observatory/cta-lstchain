@@ -120,8 +120,8 @@ def main():
         dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
                                       custom_config=config)
 
-    # Source-dependent analysis
-    if config['source_dependent']:
+    #Source-dependent analysis
+    if config["ReconstructionHDF5Writer"]["source_dependent"]:
         data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data_srcdep.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
@@ -178,7 +178,7 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
-    if not config['source_dependent']:
+    if not config["ReconstructionHDF5Writer"]["source_dependent"]:
         write_dl2_dataframe(dl2, output_file)
 
     else:

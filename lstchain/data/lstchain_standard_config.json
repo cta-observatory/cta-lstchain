@@ -22,24 +22,16 @@
       }
     }
   },
-
-  "tailcut": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
-  "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
-    "sigma":2.5,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
+  "ReconstructionHDF5Writer": {
+    "source_dependent": false,
+    "events_filters": {
+      "intensity": [0, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "wl": [0, 1],
+      "r": [0, 1],
+      "leakage_intensity_width_2": [0, 1]
+    },
     "random_forest_regressor_args": {
       "max_depth": 50,
       "min_samples_leaf": 2,
@@ -111,6 +103,23 @@
       "reco_disp_dy"
     ]
   },
+  "tailcut": {
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  },
+  "tailcuts_clean_with_pedestal_threshold": {
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "sigma":2.5,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  },
   "allowed_tels": [1, 2, 3, 4],
   "custom_calibration": false,
   "write_pe_image": false,
@@ -134,7 +143,6 @@
 
   "timestamps_pointing":"ucts",
 
-  "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
 

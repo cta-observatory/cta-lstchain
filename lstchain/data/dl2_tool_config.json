@@ -1,30 +1,13 @@
 {
   "ReconstructionHDF5Writer": {
+    "source_dependent": false,
     "events_filters": {
-      "intensity": [
-        0,
-        Infinity
-      ],
-      "width": [
-        0,
-        Infinity
-      ],
-      "length": [
-        0,
-        Infinity
-      ],
-      "wl": [
-        0,
-        1
-      ],
-      "r": [
-        0,
-        1
-      ],
-      "leakage_intensity_width_2": [
-        0,
-        1
-      ]
+      "intensity": [0, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "wl": [0, 1],
+      "r": [0, 1],
+      "leakage_intensity_width_2": [0, 1]
     },
     "random_forest_regressor_args": {
       "max_depth": 50,
