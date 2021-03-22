@@ -66,8 +66,8 @@ def main():
 
     config_dic = {}
     # read the configuration file
-    if args.config_file is not None:
-        config_dic = read_configuration_file(args.config_file)
+    if args.config is not None:
+        config_dic = read_configuration_file(args.config)
 
     config = Config(config_dic)
 
