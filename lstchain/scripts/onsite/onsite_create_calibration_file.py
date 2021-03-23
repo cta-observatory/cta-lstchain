@@ -99,7 +99,7 @@ def main():
             print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
             cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
                   f"--output-file {time_file} --config {config_file} " \
-                  f"--run-summary-file={run_summary_path} " \
+                  f"--run-summary-path={run_summary_path} " \
                   f"--pedestal-file {pedestal_file} 2>&1"
             print("\n--> RUNNING...")
             os.system(cmd)
