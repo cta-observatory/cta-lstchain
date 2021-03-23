@@ -520,35 +520,35 @@ def filter_events(events,
                   finite_params=None,
                   ):
     """
-    Apply data filtering to a pandas dataframe or astropy QTable.
-    The QTable object will be converted to pandas dataframe and used.
+    Apply data filtering to a pandas dataframe or astropy Table.
+    The Table object will be converted to pandas dataframe and used.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
     Returning filter is converted to a numpy object so that it can be used by both dataframe
-    and qtable inputs
+    and table inputs
 
     Parameters
     ----------
-    events: `pandas.DataFrame` or 'astropy.table.QTable'
+    events: `pandas.DataFrame` or 'astropy.table.Table'
     filters: dict containing events features names and their filtering range
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
 
     Returns
     -------
-    `pandas.DataFrame` or 'astropy.table.QTable'
+    `pandas.DataFrame` or 'astropy.table.Table'
     """
-    from astropy.table import QTable
+    from astropy.table import Table
 
-    if isinstance(events, QTable):
+    if isinstance(events, Table):
         events_df = events.to_pandas()
     else:
         events_df = events
 
     filter = np.ones(len(events_df), dtype=bool)
 
-    for k in filters.keys():
-        filter &= (events_df[k] >= filters[k][0]) & (events_df[k] <= filters[k][1])
+    for col, (lower_limit, upper_limit) in filters.items():
+        filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
         
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
