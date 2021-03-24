@@ -66,6 +66,7 @@ setup(
     package_data={
         'lstchain': [
             'data/lstchain_standard_config.json',
+            'data/onsite_camera_calibration_param.json',
             'resources/LST_pixid_to_cluster.txt',
         ],
     },
