@@ -168,7 +168,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
             datacheck_filename,
             output_path,
             batch,
-            uons_dir=os.path.dirname(filenames[0]),
+            muons_dir=os.path.dirname(filenames[0]),
             tel_id=first_file.tel_id
         )
 
