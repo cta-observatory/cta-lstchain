@@ -67,6 +67,8 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
+parser.add_argument('--tel-id', type=int, help='Telescope ID (default: 1)', default=1)
+
 args = parser.parse_args()
 
 
@@ -83,7 +85,7 @@ def main():
         config = std_config
 
     if args.pedestal_cleaning:
-        print("Pedestal cleaning")
+        log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
         sigma = config[clean_method_name]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
@@ -109,9 +111,8 @@ def main():
         delta_time = config[clean_method_name]["delta_time"]
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
-
-    foclen = subarray_info.optics_types[0].equivalent_focal_length
-    camera_geom = subarray_info.camera_types[0].geometry
+    foclen = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
+    camera_geom = subarray_info.tel[args.tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [

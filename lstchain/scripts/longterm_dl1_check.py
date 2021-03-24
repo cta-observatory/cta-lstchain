@@ -30,7 +30,6 @@ from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool, Range1d
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.instrument import CameraGeometry
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.visualization.bokeh import show_camera
@@ -124,7 +123,6 @@ def main():
                   'mu_lg_peak_sample_mean': [],
                   'mu_lg_peak_sample_stddev': [],
                   'mu_intensity_mean': []}
-
 
     # and another one for pixel-wise run averages:
     pixwise_runsummary = {'ff_pix_charge_mean': [],
@@ -496,11 +494,11 @@ def main():
     plot(output_file_name)
 
 
-def plot(filename='longterm_dl1_check.h5'):
+def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     # First read in the camera geometry:
     subarray_info = SubarrayDescription.from_hdf(filename)
-    camgeom = subarray_info.camera_types[0].geometry
+    camgeom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
     file = tables.open_file('longterm_dl1_check.h5')
@@ -895,6 +893,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 point_policy='snap_to_data'))
 
     return fig
+
 
 if __name__ == '__main__':
     main()

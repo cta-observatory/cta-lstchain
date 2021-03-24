@@ -88,7 +88,7 @@ def get_dl1(
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
-        superseeds the standard configuration
+        supersedes the standard configuration
 
     Returns
     -------

@@ -164,19 +164,26 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # files in the same directory as the DL1 files (assuming all of them are
     # in the same directory as the first one!)
     if create_pdf:
-        plot_datacheck(datacheck_filename, output_path, batch,
-                       muons_dir=os.path.dirname(filenames[0]))
+        plot_datacheck(
+            datacheck_filename,
+            output_path,
+            batch,
+            uons_dir=os.path.dirname(filenames[0]),
+            tel_id=first_file.tel_id
+        )
 
     return
 
 
-def process_dl1_file(filename, bins):
+def process_dl1_file(filename, bins, tel_id=1):
     """
 
     Parameters
     ----------
     filename: string, or Path, input DL1 .h5 file to be checked
     bins: DL1DataCheckHistogramBins container indicating binning of histograms
+    tel_id: int
+        Telescope ID (default=1)
 
     Returns
     -------
@@ -198,8 +205,8 @@ def process_dl1_file(filename, bins):
     dl1datacheck_cosmics = DL1DataCheckContainer()
 
     subarray_info = SubarrayDescription.from_hdf(filename)
-    geom = subarray_info.camera_types[0].geometry
-    equivalent_focal_length = subarray_info.optics_types[0].equivalent_focal_length
+    geom = subarray_info.tel[tel_id].camera.geometry
+    equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     with tables.open_file(filename) as file:
@@ -280,18 +287,20 @@ def process_dl1_file(filename, bins):
                dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None):
+def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None, tel_id=1):
     """
 
     Parameters
     ----------
-    batch: bool, run in batch mode
-    muons_dir
     datacheck_filename: list of strings, or pathlib.Path, name(s) of .h5
     files produced by the function check_dl1, starting from DL1 event files
     If it is a list of file names, we expect each of the files to correspond to
     one subrun of the same run.
     out_path: optional; if not given, it will be the same of file filename
+    batch: bool, run in batch mode
+    muons_dir
+    tel_id: int
+        Telescope ID (default=1)
 
     Returns
     -------
@@ -321,7 +330,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
 
     # Read camera geometry
     subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
-    geom = subarray_info.camera_types[0].geometry
+    geom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
@@ -1139,7 +1148,7 @@ def merge_dl1datacheck_files(file_list):
     if str(merged_filename) in file_list:
         file_list.remove(str(merged_filename))
 
-    print(file_list)
+    logger.info(file_list)
 
     merged_file = tables.open_file(merged_filename, 'w')
     merged_file.create_group('/', 'dl1datacheck')

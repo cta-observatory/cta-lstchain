@@ -117,7 +117,7 @@ def main():
         print('Opening file', filename)
 
         subarray_info = SubarrayDescription.from_hdf(filename)
-        geom = subarray_info.camera_types[0].geometry
+        geom = subarray_info.tel[lst1_tel_id].camera.geometry
 
         subarray = read_subarray_description(filename, subarray_name='LST-1')
 
