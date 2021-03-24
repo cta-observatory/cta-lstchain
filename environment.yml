@@ -15,8 +15,7 @@ dependencies:
   - notebook
   - joblib
   - toml
-  - protobuf  # for protozfits
-  - zeromq    # for protozfits
+  - protozfits=2.0
   - pip:
       - pytest_runner
       - pytest-ordering
