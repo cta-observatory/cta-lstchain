@@ -9,16 +9,6 @@ Background HDU maybe added if proton and electron MC are provided.
 Change the selection parameters as need be using the aliases.
 The default values are written in the DataSelection and DataBinning Component
 and in lstchain/data/data_selection_cuts.json
-
-Usage for all 4 IRFs, argument aliases, flags and default parameter selection values:
-
-lstchain_create_irf_files
-    -g /path/to/DL2_MC_gamma_file.h5
-    -p /path/to/DL2_MC_proton_file.h5
-    -e /path/to/DL2_MC_electron_file.h5
-    -o /path/to/irf.fits.gz
-    --overwrite
-    --point-like (Only for point_like IRFs)
 """
 
 import numpy as np
@@ -47,7 +37,7 @@ from pyirf.irf import (
 from pyirf.spectral import (
     calculate_event_weights,
     PowerLaw,
-    CRAB_HEGRA,
+    CRAB_MAGIC_JHEAP2015,
     IRFDOC_PROTON_SPECTRUM,
     IRFDOC_ELECTRON_SPECTRUM,
 )
@@ -59,6 +49,38 @@ __all__ = ["IRFFITSWriter"]
 class IRFFITSWriter(Tool):
     name = "IRFFITSWriter"
     description = __doc__
+    example = """
+    To generate IRFs from MC gamma only, using default cuts/binning:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --overwrite
+
+    Or to generate all 4 IRFs, using default cuts/binning:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -p /path/to/DL2_MC_proton_file.h5
+        -e /path/to/DL2_MC_electron_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+
+    Or use a config file for cuts and binning information:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --config /path/to/config.json
+
+    Or pass the selection cuts from command-line:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --gh 0.9
+        --theta 0.2
+        --t_obs 50
+    """
 
     input_gamma_dl2 = traits.Path(
         help="Input MC gamma DL2 file", exists=True, directory_ok=False, file_ok=True
@@ -96,9 +118,9 @@ class IRFFITSWriter(Tool):
         ("p", "input-proton-dl2"): "IRFFITSWriter.input_proton_dl2",
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
-        ("evt", "event-filters"): "DataSelection.event_filters",
         ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
         ("theta", "fixed-theta-cut"): "DataSelection.fixed_theta_cut",
+        ("t_irf", "irf_obs_time"): "DataSelection.irf_obs_time",
         "allowed-tels": "DataSelection.allowed_tels",
         "config": "DataSelection.config",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -147,10 +169,12 @@ class IRFFITSWriter(Tool):
         self.mc_particle = {
             "gamma": {
                 "file": str(self.input_gamma_dl2),
-                "target_spectrum": CRAB_HEGRA,
+                "target_spectrum": CRAB_MAGIC_JHEAP2015,
             },
         }
         Provenance().add_input_file(self.input_gamma_dl2)
+
+        self.t_obs = self.data_sel.irf_obs_time * u.hour
 
         # Read and update MC information
         if not self.only_gamma_irf:
@@ -187,8 +211,9 @@ class IRFFITSWriter(Tool):
             # Calculating event weights for Background IRF
             if particle_type != "gamma":
                 p["simulated_spectrum"] = PowerLaw.from_simulation(
-                    p["simulation_info"], 50 * u.hour
+                    p["simulation_info"], self.t_obs
                 )
+
                 p["events"]["weight"] = calculate_event_weights(
                     p["events"]["true_energy"],
                     p["target_spectrum"],
@@ -324,7 +349,7 @@ class IRFFITSWriter(Tool):
                 background,
                 reco_energy_bins=reco_energy_bins,
                 fov_offset_bins=background_offset_bins,
-                t_obs=50 * u.hour,
+                t_obs=self.t_obs,
             )
             self.hdus.append(
                 create_background_2d_hdu(

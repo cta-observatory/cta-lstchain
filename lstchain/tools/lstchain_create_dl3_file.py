@@ -8,17 +8,6 @@ or a config file.
 Change the selection parameters as need be using the aliases.
 The default values are written in the DataSelection Component and
 in lstchain/data/data_selection_cuts.json
-
-Simple usage with argument aliases, flags and default parameter selection values:
-
-lstchain_create_dl3_file
-    -d /path/to/DL2_data_file.h5
-    -o /path/to/DL3/file/
-    -irf /path/to/irf.fits.gz
-    --source-name Crab
-    --source-ra 83.633deg
-    --source-dec 22.01deg
-    --overwrite
 """
 
 from astropy.io import fits
@@ -39,6 +28,39 @@ __all__ = ["DataReductionFITSWriter"]
 class DataReductionFITSWriter(Tool):
     name = "DataReductionFITSWriter"
     description = __doc__
+    example = """
+    To generate DL3 file from an observed data DL2 file, using default cuts:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        -irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+
+    Or use a config file for the cuts:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        -irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --overwrite
+        --config /path/to/config.json
+
+    Or pass the selection cuts from command-line:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        -irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --gh 0.9
+        --theta 0.2
+        --overwrite
+    """
 
     input_dl2 = traits.Path(
         help="Input data DL2 file", exists=True, directory_ok=False, file_ok=True
@@ -72,7 +94,6 @@ class DataReductionFITSWriter(Tool):
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input-irf"): "DataReductionFITSWriter.input_irf",
-        ("evt", "event-filters"): "DataSelection.event_filters",
         ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",

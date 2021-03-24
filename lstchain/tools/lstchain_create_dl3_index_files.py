@@ -6,14 +6,6 @@ http://gamma-astro-data-formats.readthedocs.io/en/latest/
 
 To add the FITS directory information in the HDU index table, enter
 --add_fits_dir True
-
-Simple usage with argument aliases and flags:
-
-lstchain_create_dl3_index_files
-    -d /path/to/DL3/files/
-    -p dl3*[run_1-run_n]*.fits.gz
-    --overwrite
-    --add-fits-dir (if the fits_dir info is to be indexed)
 """
 from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -24,6 +16,18 @@ __all__ = ["FITSIndexWriter"]
 class FITSIndexWriter(Tool):
     name = "FITSIndexWriter"
     description = __doc__
+    example = """
+    To create DL3 index files with default values:
+    > lstchain_create_dl3_index_files
+        -d /path/to/DL3/files/
+
+    Or specify some more configurations:
+    > lstchain_create_dl3_index_files
+        -d /path/to/DL3/files/
+        -p dl3*[run_1-run_n]*.fits.gz
+        --overwrite
+        --add-fits-dir
+    """
 
     input_dl3_dir = traits.Path(
         help="Input path of DL3 files", exists=True, directory_ok=True, file_ok=False

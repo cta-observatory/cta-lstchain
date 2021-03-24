@@ -16,6 +16,7 @@ def test_data_selection(simulated_dl2_file):
     }
     tempsel.fixed_gh_cut = 0.5
     tempsel.fixed_theta_cut = 1
+    tempsel.irf_obs_time = 50
     tempsel.allowed_tels = [1]
 
     data, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
