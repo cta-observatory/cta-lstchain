@@ -63,10 +63,11 @@ setup(
         'iminuit~=1.5',
     ],
     package_data={
-        "lstchain": [
-            "data/lstchain_standard_config.json",
-            "data/data_selection_cuts.json",
-            "resources/LST_pixid_to_cluster.txt",
+        'lstchain': [
+            'data/lstchain_standard_config.json',
+            'data/onsite_camera_calibration_param.json',
+            'data/data_selection_cuts.json',
+            'resources/LST_pixid_to_cluster.txt',
         ],
     },
     tests_require=[

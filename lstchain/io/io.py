@@ -16,17 +16,9 @@ from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
-
 # from ctapipe.tools.stage1 import Stage1ProcessorTool
-from astropy.utils import deprecated
-from ctapipe.instrument import (
-    OpticsDescription,
-    CameraGeometry,
-    CameraDescription,
-    CameraReadout,
-    TelescopeDescription,
-    SubarrayDescription,
-)
+from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
+    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
 
 import logging
@@ -35,30 +27,29 @@ log = logging.getLogger(__name__)
 
 
 __all__ = [
-    "read_simu_info_hdf5",
-    "read_simu_info_merged_hdf5",
-    "get_dataset_keys",
-    "write_simtel_energy_histogram",
-    "write_mcheader",
-    "write_array_info",
-    "check_thrown_events_histogram",
-    "check_mcheader",
-    "check_metadata",
-    "read_metadata",
-    "auto_merge_h5files",
-    "smart_merge_h5files",
-    "global_metadata",
-    "add_global_metadata",
-    "write_subarray_tables",
-    "write_metadata",
-    "write_dataframe",
-    "write_dl2_dataframe",
-    "write_calibration_data",
-    "read_mc_dl2_to_QTable",
-    "read_data_dl2_to_QTable",
-    "read_dl2_params",
-    "extract_observation_time",
-    "merge_dl2_runs",
+    'read_simu_info_hdf5',
+    'read_simu_info_merged_hdf5',
+    'get_dataset_keys',
+    'write_simtel_energy_histogram',
+    'write_mcheader',
+    'check_thrown_events_histogram',
+    'check_mcheader',
+    'check_metadata',
+    'read_metadata',
+    'auto_merge_h5files',
+    'smart_merge_h5files',
+    'global_metadata',
+    'add_global_metadata',
+    'write_subarray_tables',
+    'write_metadata',
+    'write_dataframe',
+    'write_dl2_dataframe',
+    'write_calibration_data',
+    'read_mc_dl2_to_QTable',
+    'read_data_dl2_to_QTable',
+    'read_dl2_params',
+    'extract_observation_time',
+    'merge_dl2_runs'
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -201,7 +192,6 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-
 def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
     """
     Automatic merge of HDF5 files.
@@ -212,6 +202,8 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     file_list: list of path
     output_filename: path
     nodes_keys: list of path
+    merge_arrays: bool
+    filters
     """
 
     if nodes_keys is None:
@@ -265,9 +257,9 @@ def merging_check(file_list):
     """
     Check that a list of hdf5 files are compatible for merging regarding:
      - array info
-     - MC simu info
-     - MC histograms
      - metadata
+     - MC simu info (only for simulations)
+     - MC histograms (only for simulations)
 
     Parameters
     ----------
@@ -280,23 +272,30 @@ def merging_check(file_list):
     assert len(file_list) > 1, "The list of files is too short"
     mergeable_list = file_list.copy()
 
-    filename0 = mergeable_list[0]
-    array_info0 = read_array_info(filename0)
-    mcheader0 = read_simu_info_hdf5(filename0)
-    thrown_events_hist0 = read_simtel_energy_histogram(filename0)
-    metadata0 = read_metadata(filename0)
+    first_file = mergeable_list[0]
+    subarray_info0 = SubarrayDescription.from_hdf(first_file)
+    metadata0 = read_metadata(first_file)
+
+    if subarray_info0.name == "MonteCarloArray":
+        mcheader0 = read_simu_info_hdf5(first_file)
+        thrown_events_hist0 = read_simtel_energy_histogram(first_file)
+
     for filename in mergeable_list[1:]:
         try:
-            mcheader = read_simu_info_hdf5(filename)
-            thrown_events_hist = read_simtel_energy_histogram(filename)
             metadata = read_metadata(filename)
             check_metadata(metadata0, metadata)
-            check_mcheader(mcheader0, mcheader)
-            check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
-            for ii, table in read_array_info(filename).items():
-                assert (table == array_info0[ii]).all()
-        except:
-            log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
+            subarray_info = SubarrayDescription.from_hdf(filename)
+
+            if subarray_info0.name == "MonteCarloArray":
+                mcheader = read_simu_info_hdf5(filename)
+                thrown_events_hist = read_simtel_energy_histogram(filename)
+                check_mcheader(mcheader0, mcheader)
+                check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
+
+            assert subarray_info == subarray_info0
+
+        except AssertionError:
+            log.exception(f"{filename} cannot be smart merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
@@ -312,6 +311,8 @@ def smart_merge_h5files(
     ----------
     file_list: list of paths to hdf5 files
     output_filename: path to the merged file
+    node_keys
+    merge_arrays: bool
     """
     smart_list = merging_check(file_list)
     auto_merge_h5files(
@@ -385,7 +386,6 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
     Parameters
     ----------
     output_filename: str
-    event: `ctapipe.io.ArrayEventContainer`
     """
 
     extramc = ExtraMCInfo()
@@ -399,144 +399,6 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
     ) as writer:
         extramc.obs_id = obs_id
         writer.write("run_config", [extramc, mcheader])
-
-
-@deprecated("09/07/2020", message="this function will disappear in lstchain v0.7")
-def write_array_info_08(subarray, output_filename):
-    """
-    Write the array info to a ctapipe v0.8 compatible DL1 HDF5 file
-    This is a temporary solution until we move to ctapipe v0.9.1.
-
-    Parameters
-    ----------
-    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
-    output_filename: str
-    """
-
-    serialize_meta = True
-
-    subarray.to_table().write(
-        output_filename,
-        path="/configuration/instrument/subarray/layout",
-        serialize_meta=serialize_meta,
-        append=True,
-    )
-
-    subarray.to_table(kind="optics").write(
-        output_filename,
-        path="/configuration/instrument/telescope/optics",
-        append=True,
-        serialize_meta=serialize_meta,
-    )
-
-    for telescope_type in subarray.telescope_types:
-      ids = set(subarray.get_tel_ids_for_type(telescope_type))
-      if len(ids) > 0: # only write if there is a telescope with this camera
-        tel_id = list(ids)[0]
-        camera = subarray.tel[tel_id].camera
-        camera_name = f'geometry_{camera}'
-        with tables.open_file(output_filename, mode='a') as f:
-          telescope_chidren = f.root['/configuration/instrument/telescope']._v_children.keys()
-          if 'camera' in telescope_chidren:
-            cameras_name = f.root['/configuration/instrument/telescope/camera']._v_children.keys()
-            if camera_name in cameras_name:
-              print(
-                f'WARNING during lstchain.io.write_array_info_08():',
-                f'camera {camera_name} seems to be already present in the h5 file.'
-              )
-              continue
-        camera.geometry.to_table().write(
-          output_filename,
-          path=f"/configuration/instrument/telescope/camera/geometry_{camera}",
-          append=True,
-          serialize_meta=serialize_meta
-        )
-        camera.readout.to_table().write(
-          output_filename,
-          path=f"/configuration/instrument/telescope/camera/readout_{camera}",
-          append=True,
-          serialize_meta=serialize_meta
-        )
-
-
-@deprecated("09/07/2020", message="this function will disappear in lstchain v0.7")
-def write_array_info(subarray, output_filename):
-    """
-    Write the array info to a HDF5 file
-        - layout info is writen in '/instrument/subarray/layout'
-        - optics info is writen in '/instrument/telescope/optics'
-        - camera info is writen in '/instrument/telescope/camera/{camera}' for each camera in the array
-
-    Parameters
-    ----------
-    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
-    output_filename: str
-    """
-
-    serialize_meta = True
-
-    subarray.to_table().write(
-        output_filename,
-        path="/instrument/subarray/layout",
-        serialize_meta=serialize_meta,
-        append=True,
-    )
-
-    subarray.to_table(kind="optics").write(
-        output_filename,
-        path="/instrument/telescope/optics",
-        append=True,
-        serialize_meta=serialize_meta,
-    )
-    for telescope_type in subarray.telescope_types:
-        ids = set(subarray.get_tel_ids_for_type(telescope_type))
-        if len(ids) > 0:  # only write if there is a telescope with this camera
-            tel_id = list(ids)[0]
-            camera = subarray.tel[tel_id].camera
-            camera_name = str(camera)
-
-            with tables.open_file(output_filename, mode="a") as f:
-                telescope_chidren = f.root["instrument/telescope"]._v_children.keys()
-                if "camera" in telescope_chidren:
-                    cameras_name = f.root[
-                        "instrument/telescope/camera"
-                    ]._v_children.keys()
-                    if camera_name in cameras_name:
-                        print(
-                            f"WARNING during lstchain.io.write_array_info():",
-                            f"camera {camera_name} seems to be already present in the h5 file.",
-                        )
-                        continue
-
-            camera.geometry.to_table().write(
-                output_filename,
-                path=f"/instrument/telescope/camera/{camera_name}",
-                append=True,
-                serialize_meta=serialize_meta,
-            )
-
-
-@deprecated("09/07/2020", message="will be removed in lstchain v0.7")
-def read_array_info(filename):
-    """
-    Read array information from HDF5 file.
-
-    Parameters
-    ----------
-    filename: path
-
-    Returns
-    -------
-    dict
-    """
-    array_info = dict()
-    with open_file(filename) as file:
-        array_info["layout"] = Table(file.root["/instrument/subarray/layout"].read())
-        array_info["optics"] = Table(file.root["/instrument/telescope/optics"].read())
-        for camera in file.root["/instrument/telescope/camera/"]:
-            if type(camera) is tables.table.Table:
-                array_info[camera.name] = Table(camera.read())
-    return array_info
 
 
 def read_single_optics(filename, telescope_name):
@@ -580,7 +442,7 @@ def read_optics(filename):
 
     Returns
     -------
-    dictionnary of ctapipe.instrument.optics.OpticsDescription by telescope names
+    dictionary of ctapipe.instrument.optics.OpticsDescription by telescope names
     """
     telescope_optics_path = "/configuration/instrument/telescope/optics"
     telescope_optics_table = Table.read(filename, path=telescope_optics_path)
@@ -622,7 +484,7 @@ def read_camera_geometries(filename):
 
     Returns
     -------
-    dictionnary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
+    dictionary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
     """
     subarray_layout_path = "configuration/instrument/subarray/layout"
     camera_geoms = {}
@@ -766,7 +628,7 @@ def read_telescopes_positions(filename):
 
     Returns
     -------
-    dictionnary of telescopes positions by tel_id
+    dictionary of telescopes positions by tel_id
     """
     subarray_table = read_subarray_table(filename)
     pos_dict = {}
@@ -785,6 +647,7 @@ def read_subarray_description(filename, subarray_name="LST-1"):
     Parameters
     ----------
     filename: str
+    subarray_name : str
 
     Returns
     -------
@@ -1037,17 +900,15 @@ def recursive_copy_node(src_file, dir_file, path):
     path: path to the node in `src_file`
 
     """
-    path_split = path.split("/")
-    while "" in path_split:
-        path_split.remove("")
+    path_split = path.split('/')
+    while '' in path_split:
+        path_split.remove('')
     assert len(path_split) > 0
-    src_file.copy_node(
-        "/",
-        name=path_split[0],
-        newparent=dir_file.root,
-        newname=path_split[0],
-        recursive=False,
-    )
+    src_file.copy_node('/',
+                       name=path_split[0],
+                       newparent=dir_file.root,
+                       newname=path_split[0],
+                       recursive=False)
     if len(path_split) > 1:
         recursive_path = os.path.join("/", path_split[0])
         for p in path_split[1:]:
@@ -1062,10 +923,10 @@ def recursive_copy_node(src_file, dir_file, path):
 
 
 def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
-    mon_event.pedestal.prefix = ""
-    mon_event.flatfield.prefix = ""
-    mon_event.calibration.prefix = ""
-    mon_index.prefix = ""
+    mon_event.pedestal.prefix = ''
+    mon_event.flatfield.prefix = ''
+    mon_event.calibration.prefix = ''
+    mon_index.prefix = ''
 
     # update index
     if new_ped:
@@ -1078,7 +939,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name=f"telescope/monitoring/pedestal",
+            table_name="telescope/monitoring/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
@@ -1163,7 +1024,7 @@ def read_data_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`
     """
-    
+
     # Mapping
     name_mapping = {
         "gammaness": "gh_score",
@@ -1221,9 +1082,8 @@ def extract_observation_time(t_df):
     -------
     Observation duration in seconds
     """
-    return pd.to_datetime(
-        t_df.dragon_time.iat[len(t_df) - 1], unit="s"
-    ) - pd.to_datetime(t_df.dragon_time.iat[0], unit="s")
+    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
+           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
 
 
 def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
@@ -1234,6 +1094,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     ----------
     data_tag: lstchain version tag
     runs: List of run numbers
+    columns_to_read
     n_process: Number of parallel read processes to use
 
     Returns
@@ -1242,10 +1103,7 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     """
     from functools import partial
     from glob import glob
-
-    filepath_glob = glob(
-        f"/fefs/aswg/data/real/DL2/*/{data_tag}/*"
-    )  # Current format of LST data path
+    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*')  # Current format of LST data path
 
     pool = Pool(n_process)
     filelist = []
