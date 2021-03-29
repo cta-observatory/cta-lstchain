@@ -63,6 +63,11 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None, required=False)
 
+parser.add_argument('--tel-id', '-tid', action='store', type=str,
+                    dest='tel_id',
+                    help='Telescope id - used to read Telescope or Optics info such as the focal length',
+                    default=1)
+
 args = parser.parse_args()
 
 
