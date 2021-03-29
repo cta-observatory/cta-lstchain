@@ -19,8 +19,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
         data = json.load(
             open(os.path.join('./lstchain/data/data_selection_cuts.json'))
         )
-        data["DataSelection"]["fixed_gh_cut"] = 0.3
-        data["DataSelection"]["intensity"] = [0, 10000]
+        data["EventSelector"]["filters"]["intensity"] = [100, 10000]
         json.dump(data, open(sel_cuts_file, "x"), indent=3)
 
     assert (

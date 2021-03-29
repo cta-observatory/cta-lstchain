@@ -1,16 +1,15 @@
 import pytest
-from lstchain.io import EventSelector, DataBinning
+from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
+import numpy as np
+import pandas as pd
+from astropy.table import QTable
+import astropy.units as u
 
 
 def test_event_selection():
-    import pandas as pd
-    import numpy as np
-    from astropy.table import Table
-    import astropy.units as u
-
     evt_fil = EventSelector()
 
-    data_t = Table(
+    data_t = QTable(
         {
             "a": u.Quantity([1, 2, 3], unit=u.kg),
             "b": u.Quantity([np.nan, 2.2, 3.2], unit=u.m),
@@ -30,7 +29,7 @@ def test_event_selection():
 
     np.testing.assert_array_equal(
         data_t,
-        Table(
+        QTable(
             {
                 "a": u.Quantity([2], unit=u.kg),
                 "b": u.Quantity([2.2], unit=u.m),
@@ -38,6 +37,24 @@ def test_event_selection():
             }
         ),
     )
+
+
+def test_dl3_fixed_cuts():
+    temp_cuts = DL3FixedCuts()
+
+    temp_cuts.fixed_gh_cut = 0.7
+    temp_cuts.fixed_theta_cut = 0.2
+    temp_cuts.allowed_tels = [1, 2]
+
+    temp_data = QTable({
+        "gh_score": u.Quantity(np.arange(0.1, 1.1, 0.1)),
+        "theta": u.Quantity(np.arange(0., 1., 0.1), unit=u.deg),
+        "tel_id": u.Quantity([1, 1, 2, 2, 1, 2, 1, 3, 4, 5])
+        })
+
+    assert len(temp_cuts.gh_cut(temp_data)) == 4
+    assert len(temp_cuts.theta_cut(temp_data)) == 2
+    assert len(temp_cuts.allowed_tels_filter(temp_data)) == 7
 
 
 def test_data_binning():

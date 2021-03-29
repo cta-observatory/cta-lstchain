@@ -5,19 +5,14 @@ from astropy.table import Table
 @pytest.mark.run(after="test_write_dl2_dataframe")
 def test_create_event_list(observed_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
-    from lstchain.io.io import dl2_params_lstcam_key, read_data_dl2_to_QTable
-    from lstchain.reco.utils import add_delta_t_key, get_effective_time
+    from lstchain.io.io import read_data_dl2_to_QTable
+    from lstchain.reco.utils import get_effective_time
     from astropy.coordinates import SkyCoord
     from astropy.io import fits
-    import pandas as pd
-
-    dl2 = pd.read_hdf(observed_dl2_file, key=dl2_params_lstcam_key)
-
-    dl2 = add_delta_t_key(dl2)
-    dl2.to_hdf(observed_dl2_file, key=dl2_params_lstcam_key)
 
     events = read_data_dl2_to_QTable(observed_dl2_file)
     t_eff, t_tot = get_effective_time(events)
+    events = events[events["intensity"] > 200]
 
     evts, gti, pnt = create_event_list(
         events,
@@ -51,7 +46,9 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
 def test_create_obs_hdu_index(observed_dl2_file):
     from lstchain.irf.hdu_table import create_hdu_index_hdu, create_obs_index_hdu
 
-    dl3_file = "dl3_LST-1.Run02008.0000.fits"
+    dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
+    dl3_file = dl3_file.replace(".h5", ".fits")
+
     hdu_list = create_hdu_index_hdu(
         [dl3_file],
         observed_dl2_file.parent,
