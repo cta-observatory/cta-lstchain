@@ -20,8 +20,6 @@ from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
 from lstchain.io import EventSelector, DL3FixedCuts
 
-from pyirf.utils import calculate_source_fov_offset
-
 __all__ = ["DataReductionFITSWriter"]
 
 

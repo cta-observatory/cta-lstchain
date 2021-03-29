@@ -122,7 +122,7 @@ class IRFFITSWriter(Tool):
         ("theta", "fixed-theta-cut"): "DL3FixedCuts.fixed_theta_cut",
         ("t_irf", "irf_obs_time"): "DL3FixedCuts.irf_obs_time",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
-        "config": "EventSelector.config", # Check
+        "config": "EventSelector.config",
         "overwrite": "IRFFITSWriter.overwrite",
     }
 

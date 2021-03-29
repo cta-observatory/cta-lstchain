@@ -12,8 +12,9 @@ __all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
 
 class EventSelector(Component):
     """
-    Filter values used for event filters and list of finite parameters are taken as inputs and
-    filter_events() is used on a table of events called in with the Component.
+    Filter values used for event filters and list of finite parameters are
+    taken as inputs and filter_events() is used on a table of events
+    called in with the Component.
     """
 
     filters = Dict(
@@ -26,10 +27,9 @@ class EventSelector(Component):
     ).tag(config=True)
 
     finite_params = List(
-	help="List of parameters to ensure finite values",
-	default_value=["intensity", "length", "width"],
+        help="List of parameters to ensure finite values",
+        default_value=["intensity", "length", "width"],
     ).tag(config=True)
-
 
     def filter_cut(self, events):
         return filter_events(events, self.filters, self.finite_params)
