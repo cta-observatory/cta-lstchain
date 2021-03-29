@@ -598,10 +598,10 @@ def filter_events(
 
     for col, (lower_limit, upper_limit) in filters.items():
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
-        
+
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_null', True):
+        with pd.option_context("mode.use_inf_as_null", True):
             not_finite_mask = events_df[_finite_params].isnull()
 
         filter &= ~(not_finite_mask.any(axis=1))

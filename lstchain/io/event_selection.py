@@ -24,11 +24,9 @@ class EventSelector(Component):
     ).tag(config=True)
 
     finite_params = List(
-	help="List of parameters to ensure finite values",
-	default_value=["intensity", "length", "width"],
+        help="List of parameters to ensure finite values",
+        default_value=["intensity", "length", "width"],
     ).tag(config=True)
-
 
     def filter_cut(self, events):
         return filter_events(events, self.filters, self.finite_params)
-
