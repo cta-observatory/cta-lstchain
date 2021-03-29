@@ -3,10 +3,10 @@ Calibration functions
 """
 
 __all__ = [
-    'lst_calibration',
-    'load_calibrator_from_config',
-    'load_image_extractor_from_config',
-    'load_gain_selector_from_config'
+    "lst_calibration",
+    "load_calibrator_from_config",
+    "load_image_extractor_from_config",
+    "load_gain_selector_from_config",
 ]
 
 
@@ -36,8 +36,8 @@ def load_gain_selector_from_config(custom_config):
     """
 
     config = replace_config(get_standard_config(), custom_config)
-    conf = Config({config['gain_selector']: config['gain_selector_config']})
-    return GainSelector.from_name(config['gain_selector'], config=conf)
+    conf = Config({config["gain_selector"]: config["gain_selector_config"]})
+    return GainSelector.from_name(config["gain_selector"], config=conf)
 
 
 def load_image_extractor_from_config(custom_config, subarray):
@@ -56,7 +56,9 @@ def load_image_extractor_from_config(custom_config, subarray):
     """
     config = replace_config(get_standard_config(), custom_config)
     conf = Config(config)
-    return ImageExtractor.from_name(config['image_extractor'], subarray=subarray, config=conf)
+    return ImageExtractor.from_name(
+        config["image_extractor"], subarray=subarray, config=conf
+    )
 
 
 def load_calibrator_from_config(custom_config, subarray):
@@ -81,12 +83,14 @@ def load_calibrator_from_config(custom_config, subarray):
 
     image_extractor = load_image_extractor_from_config(config, subarray)
 
-    cal = CameraCalibrator(subarray=subarray,
-                           image_extractor=image_extractor,
-                           )
+    cal = CameraCalibrator(
+        subarray=subarray,
+        image_extractor=image_extractor,
+    )
     return cal
 
-@deprecated('08/07/2020', message='this function will be deleted in the next release')
+
+@deprecated("08/07/2020", message="this function will be deleted in the next release")
 def lst_calibration(event, telescope_id, high_gain_threshold):
     """
     Custom lst calibration.
@@ -105,7 +109,6 @@ def lst_calibration(event, telescope_id, high_gain_threshold):
     # average (for pedestal events) of the *sum* of all samples,
     # from sim_telarray
 
-
     nsamples = data.shape[2]  # total number of samples
 
     # Subtract pedestal baseline. atleast_3d converts 2D to 3D matrix
@@ -113,7 +116,9 @@ def lst_calibration(event, telescope_id, high_gain_threshold):
     pedcorrectedsamples = data - np.atleast_3d(ped) / nsamples
 
     integrator = extractor.LocalPeakWindowSum()
-    integration, peak_time = integrator(pedcorrectedsamples)  # these are 2D matrices num_gains * num_pixels
+    integration, peak_time = integrator(
+        pedcorrectedsamples
+    )  # these are 2D matrices num_gains * num_pixels
 
     signals = integration.astype(float)
 
@@ -127,7 +132,9 @@ def lst_calibration(event, telescope_id, high_gain_threshold):
     event.dl1.tel[telescope_id].peak_time = peak_time
 
 
-@deprecated('28/06/2019', message='gain selection is now performed at <= R1 calibration level')
+@deprecated(
+    "28/06/2019", message="gain selection is now performed at <= R1 calibration level"
+)
 def gain_selection(waveform, charges, peak_time, threshold):
 
     """
@@ -154,7 +161,10 @@ def gain_selection(waveform, charges, peak_time, threshold):
     return combined_image, combined_peak_time
 
 
-@deprecated('28/06/2019', message='channel selection is now performed at <= R1 calibration level')
+@deprecated(
+    "28/06/2019",
+    message="channel selection is now performed at <= R1 calibration level",
+)
 def combine_channels(event, tel_id, threshold):
     """
     Combine the channels for the image and peakpos arrays in the event.dl1 containers
@@ -173,6 +183,8 @@ def combine_channels(event, tel_id, threshold):
     charges = event.dl1.tel[tel_id].image
     peak_time = event.dl1.tel[tel_id].peak_time
 
-    combined_image, combined_peak_time = gain_selection(waveform, charges, peak_time, threshold)
+    combined_image, combined_peak_time = gain_selection(
+        waveform, charges, peak_time, threshold
+    )
     event.dl1.tel[tel_id].image = combined_image
     event.dl1.tel[tel_id].peak_time = combined_peak_time

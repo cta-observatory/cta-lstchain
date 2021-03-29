@@ -33,41 +33,61 @@ from lstchain.calib.camera.drs4 import DragonPedestal
 parser = argparse.ArgumentParser()
 
 # Required arguments
-parser.add_argument("--input-file", '-f', type=str, action='store',
-                    dest='input_file',
-                    help="Path to fitz.fz file to create pedestal file.",
-                    default=None, required=True)
+parser.add_argument(
+    "--input-file",
+    "-f",
+    type=str,
+    action="store",
+    dest="input_file",
+    help="Path to fitz.fz file to create pedestal file.",
+    default=None,
+    required=True,
+)
 
-parser.add_argument("--output-file", '-o', type=str, action='store',
-                    dest='output_file',
-                    help="Path where script create pedestal file",
-                    default=None, required=True)
+parser.add_argument(
+    "--output-file",
+    "-o",
+    type=str,
+    action="store",
+    dest="output_file",
+    help="Path where script create pedestal file",
+    default=None,
+    required=True,
+)
 
 
 # Optional arguments
-parser.add_argument("--max-events",
-                    help="Maximum numbers of events to read. Default = 20000",
-                    type=int,
-                    default=20000)
+parser.add_argument(
+    "--max-events",
+    help="Maximum numbers of events to read. Default = 20000",
+    type=int,
+    default=20000,
+)
 
-parser.add_argument("--start-r0-waveform",
-                    help="Start sample for waveform. Default = 11",
-                    type=int,
-                    default=11)
+parser.add_argument(
+    "--start-r0-waveform",
+    help="Start sample for waveform. Default = 11",
+    type=int,
+    default=11,
+)
 
-parser.add_argument('--deltaT', '-s',
-                    type=lambda x: bool(strtobool(x)),
-                    help='Boolean. True for use deltaT correction'
-                    'Default=True, use False otherwise',
-                    default=True)
+parser.add_argument(
+    "--deltaT",
+    "-s",
+    type=lambda x: bool(strtobool(x)),
+    help="Boolean. True for use deltaT correction" "Default=True, use False otherwise",
+    default=True,
+)
 
 args = parser.parse_args()
 
 source_config = {
     "LSTEventSource": {
-        "max_events":args.max_events,
+        "max_events": args.max_events,
     }
 }
+
+
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
@@ -78,32 +98,36 @@ def main():
     for i, event in enumerate(reader):
         for tel_id in event.trigger.tels_with_trigger:
 
-            if i==0:
+            if i == 0:
                 n_modules = event.lst.tel[tel_id].svc.num_modules
-                pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
+                pedestal = DragonPedestal(
+                    tel_id=tel_id,
+                    n_module=n_modules,
+                    r0_sample_start=args.start_r0_waveform,
+                )
 
             if args.deltaT:
                 reader.r0_r1_calibrator.update_first_capacitors(event)
                 reader.r0_r1_calibrator.time_lapse_corr(event, tel_id)
 
             pedestal.fill_pedestal_event(event)
-            if i%500 == 0:
+            if i % 500 == 0:
                 print("i = {}, ev id = {}".format(i, event.index.event_id))
 
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
     expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
-    pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped),
-                                   name="pedestal array")
-    failing_pixels_column = fits.Column(name='failing pixels',
-                                        array=pedestal.failing_pixels_array,
-                                        format='K')
-    failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_column],
-                                                    name="failing pixels")
+    pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped), name="pedestal array")
+    failing_pixels_column = fits.Column(
+        name="failing pixels", array=pedestal.failing_pixels_array, format="K"
+    )
+    failing_pixels = fits.BinTableHDU.from_columns(
+        [failing_pixels_column], name="failing pixels"
+    )
     hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
     hdulist.writeto(args.output_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

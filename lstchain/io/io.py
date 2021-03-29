@@ -16,9 +16,16 @@ from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
-#from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
+
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription,
+)
 from pyirf.simulations import SimulatedEventsInfo
 from astropy import table
 
@@ -28,44 +35,48 @@ log = logging.getLogger(__name__)
 
 
 __all__ = [
-    'read_simu_info_hdf5',
-    'read_simu_info_merged_hdf5',
-    'get_dataset_keys',
-    'write_simtel_energy_histogram',
-    'write_mcheader',
-    'check_thrown_events_histogram',
-    'check_mcheader',
-    'check_metadata',
-    'read_metadata',
-    'auto_merge_h5files',
-    'smart_merge_h5files',
-    'global_metadata',
-    'add_global_metadata',
-    'write_subarray_tables',
-    'write_metadata',
-    'write_dataframe',
-    'write_dl2_dataframe',
-    'write_calibration_data',
-    'read_dl2_to_pyirf',
-    'read_dl2_params',
-    'extract_observation_time',
-    'merge_dl2_runs'
+    "read_simu_info_hdf5",
+    "read_simu_info_merged_hdf5",
+    "get_dataset_keys",
+    "write_simtel_energy_histogram",
+    "write_mcheader",
+    "check_thrown_events_histogram",
+    "check_mcheader",
+    "check_metadata",
+    "read_metadata",
+    "auto_merge_h5files",
+    "smart_merge_h5files",
+    "global_metadata",
+    "add_global_metadata",
+    "write_subarray_tables",
+    "write_metadata",
+    "write_dataframe",
+    "write_dl2_dataframe",
+    "write_calibration_data",
+    "read_dl2_to_pyirf",
+    "read_dl2_params",
+    "extract_observation_time",
+    "merge_dl2_runs",
 ]
 
 
-dl1_params_tel_mon_ped_key = 'dl1/event/telescope/monitoring/pedestal'
-dl1_params_tel_mon_cal_key = '/dl1/event/telescope/monitoring/calibration'
-dl1_params_lstcam_key = 'dl1/event/telescope/parameters/LST_LSTCam'
-dl1_images_lstcam_key = 'dl1/event/telescope/image/LST_LSTCam'
-dl2_params_lstcam_key = 'dl2/event/telescope/parameters/LST_LSTCam'
-dl1_params_src_dep_lstcam_key = 'dl1/event/telescope/parameters_src_dependent/LST_LSTCam'
-dl2_params_src_dep_lstcam_key = 'dl2/event/telescope/parameters_src_dependent/LST_LSTCam'
+dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
+dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
+dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
+dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
+dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = (
+    "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+)
+dl2_params_src_dep_lstcam_key = (
+    "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+)
 
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
-    complib='blosc:zstd',   # compression using blosc/zstd
-    fletcher32=True,        # attach a checksum to each chunk for error correction
-    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
+    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complib="blosc:zstd",  # compression using blosc/zstd
+    fletcher32=True,  # attach a checksum to each chunk for error correction
+    bitshuffle=False,  # for BLOSC, shuffle bits for better compression
 )
 
 
@@ -79,7 +90,7 @@ def read_simu_info_hdf5(filename):
     """
 
     with HDF5TableReader(filename) as reader:
-        mc_reader = reader.read('/simulation/run_config', SimulationConfigContainer())
+        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer())
         mc = next(mc_reader)
 
     return mc
@@ -102,19 +113,24 @@ def read_simu_info_merged_hdf5(filename):
 
     """
     with open_file(filename) as file:
-        simu_info = file.root['simulation/run_config']
+        simu_info = file.root["simulation/run_config"]
         colnames = simu_info.colnames
-        skip = {'num_showers', 'shower_prog_start', 'detector_prog_start', 'obs_id'}
+        skip = {"num_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
         for k in filter(lambda k: k not in skip, colnames):
             assert np.all(simu_info[:][k] == simu_info[0][k])
-        num_showers = simu_info[:]['num_showers'].sum()
+        num_showers = simu_info[:]["num_showers"].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
-    combined_mcheader['num_showers'] = num_showers
+    combined_mcheader["num_showers"] = num_showers
 
     for k in combined_mcheader.keys():
-        if combined_mcheader[k] is not None and combined_mcheader.fields[k].unit is not None:
-            combined_mcheader[k] = u.Quantity(combined_mcheader[k], combined_mcheader.fields[k].unit)
+        if (
+            combined_mcheader[k] is not None
+            and combined_mcheader.fields[k].unit is not None
+        ):
+            combined_mcheader[k] = u.Quantity(
+                combined_mcheader[k], combined_mcheader.fields[k].unit
+            )
 
     return combined_mcheader
 
@@ -132,11 +148,12 @@ def get_dataset_keys(filename):
     list of keys
     """
     dataset_keys = []
+
     def walk(name, obj):
         if type(obj) == h5py._hl.dataset.Dataset:
             dataset_keys.append(name)
 
-    with h5py.File(filename, 'r') as file:
+    with h5py.File(filename, "r") as file:
         file.visititems(walk)
 
     return dataset_keys
@@ -166,7 +183,7 @@ def get_stacked_table(filenames_list, node):
     return vstack(table_list)
 
 
-def stack_tables_h5files(filenames_list, output_filename='merged.h5', keys=None):
+def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None):
     """
     In theory similar to auto_merge_h5files but slower. Keeping it for reference.
     Merge h5 files produced by lstchain using astropy.
@@ -187,7 +204,13 @@ def stack_tables_h5files(filenames_list, output_filename='merged.h5', keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def auto_merge_h5files(
+    file_list,
+    output_filename="merged.h5",
+    nodes_keys=None,
+    merge_arrays=False,
+    filters=HDF5_ZSTD_FILTERS,
+):
     """
     Automatic merge of HDF5 files.
     A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
@@ -207,30 +230,30 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
         keys = set(nodes_keys)
 
     bar = tqdm(total=len(file_list))
-    with open_file(output_filename, 'w', filters=filters) as merge_file:
+    with open_file(output_filename, "w", filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
                 if type(f1.root[k]) == tables.table.Table:
                     merge_file.create_table(
-                        os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                        os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                         os.path.basename(k),
                         createparents=True,
-                        obj=f1.root[k].read()
+                        obj=f1.root[k].read(),
                     )
                 if type(f1.root[k]) == tables.array.Array:
                     if merge_arrays:
                         merge_file.create_earray(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
-                            obj=f1.root[k].read()
+                            obj=f1.root[k].read(),
                         )
                     else:
                         merge_file.create_array(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
-                            obj=f1.root[k].read()
+                            obj=f1.root[k].read(),
                         )
         bar.update(1)
         for filename in file_list[1:]:
@@ -296,7 +319,9 @@ def merging_check(file_list):
     return mergeable_list
 
 
-def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, merge_arrays=False):
+def smart_merge_h5files(
+    file_list, output_filename="merged.h5", node_keys=None, merge_arrays=False
+):
     """
     Check that HDF5 files are compatible for merging and merge them
 
@@ -308,7 +333,9 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     merge_arrays: bool
     """
     smart_list = merging_check(file_list)
-    auto_merge_h5files(smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays)
+    auto_merge_h5files(
+        smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
+    )
 
     # Merge metadata
     metadata0 = read_metadata(smart_list[0])
@@ -319,7 +346,9 @@ def smart_merge_h5files(file_list, output_filename='merged.h5', node_keys=None, 
     write_metadata(metadata0, output_filename)
 
 
-def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
+def write_simtel_energy_histogram(
+    source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}
+):
     """
     Write the energy histogram from a simtel source to a HDF5 file
 
@@ -330,14 +359,16 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
     obs_id: float, int, str or None
     """
     # Writing histograms
-    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
+    with HDF5TableWriter(
+        filename=output_filename, group_name="simulation", mode="a", filters=filters
+    ) as writer:
         writer.meta = metadata
         for hist in yield_toplevel_of_type(source.file_, Histograms):
             pass
         # find histogram id 6 (thrown energy)
         thrown = None
         for hist in source.file_.histograms:
-            if hist['id'] == 6:
+            if hist["id"] == 6:
                 thrown = hist
 
         thrown_hist = ThrownEventsHistogram()
@@ -345,7 +376,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
         thrown_hist.obs_id = obs_id
         if metadata is not None:
             add_global_metadata(thrown_hist, metadata)
-        writer.write('thrown_event_distribution', [thrown_hist])
+        writer.write("thrown_event_distribution", [thrown_hist])
 
 
 def read_simtel_energy_histogram(filename):
@@ -361,12 +392,16 @@ def read_simtel_energy_histogram(filename):
     `lstchain.io.lstcontainers.ThrownEventsHistogram`
     """
     with HDF5TableReader(filename=filename) as reader:
-        histtab = reader.read('/simulation/thrown_event_distribution', ThrownEventsHistogram())
+        histtab = reader.read(
+            "/simulation/thrown_event_distribution", ThrownEventsHistogram()
+        )
         hist = next(histtab)
     return hist
 
 
-def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata=None):
+def write_mcheader(
+    mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata=None
+):
     """
     Write the mcheader from an event container to a HDF5 file
 
@@ -376,12 +411,14 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
     """
 
     extramc = ExtraMCInfo()
-    extramc.prefix = ''  # get rid of the prefix
+    extramc.prefix = ""  # get rid of the prefix
     if metadata is not None:
         add_global_metadata(mcheader, metadata)
         add_global_metadata(extramc, metadata)
 
-    with HDF5TableWriter(filename=output_filename, group_name="simulation", mode="a", filters=filters) as writer:
+    with HDF5TableWriter(
+        filename=output_filename, group_name="simulation", mode="a", filters=filters
+    ) as writer:
         extramc.obs_id = obs_id
         writer.write("run_config", [extramc, mcheader])
 
@@ -400,15 +437,19 @@ def read_single_optics(filename, telescope_name):
     `ctapipe.instrument.optics.OpticsDescription`
     """
     from astropy.units import Quantity
+
     telescope_optics_path = "/configuration/instrument/telescope/optics"
     telescope_optic_table = Table.read(filename, path=telescope_optics_path)
-    row = telescope_optic_table[np.where(telescope_name == telescope_optic_table['name'])[0][0]]
+    row = telescope_optic_table[
+        np.where(telescope_name == telescope_optic_table["name"])[0][0]
+    ]
     optics_description = OpticsDescription(
-        name=row['name'],
-        num_mirrors=row['num_mirrors'],
-        equivalent_focal_length=row['equivalent_focal_length'] * telescope_optic_table['equivalent_focal_length'].unit,
-        mirror_area=row['mirror_area'] * telescope_optic_table['mirror_area'].unit,
-        num_mirror_tiles=Quantity(row['num_mirror_tiles']),
+        name=row["name"],
+        num_mirrors=row["num_mirrors"],
+        equivalent_focal_length=row["equivalent_focal_length"]
+        * telescope_optic_table["equivalent_focal_length"].unit,
+        mirror_area=row["mirror_area"] * telescope_optic_table["mirror_area"].unit,
+        num_mirror_tiles=Quantity(row["num_mirror_tiles"]),
     )
     return optics_description
 
@@ -428,7 +469,7 @@ def read_optics(filename):
     telescope_optics_path = "/configuration/instrument/telescope/optics"
     telescope_optics_table = Table.read(filename, path=telescope_optics_path)
     optics_dict = {}
-    for telescope_name in telescope_optics_table['name']:
+    for telescope_name in telescope_optics_table["name"]:
         optics_dict[telescope_name] = read_single_optics(filename, telescope_name)
     return optics_dict
 
@@ -446,8 +487,12 @@ def read_single_camera_geometry(filename, camera_name):
     -------
     `ctapipe.instrument.camera.geometry.CameraGeometry`
     """
-    camera_geometry_path = f"/configuration/instrument/telescope/camera/geometry_{camera_name}"
-    camera_geometry = CameraGeometry.from_table(Table.read(filename, camera_geometry_path))
+    camera_geometry_path = (
+        f"/configuration/instrument/telescope/camera/geometry_{camera_name}"
+    )
+    camera_geometry = CameraGeometry.from_table(
+        Table.read(filename, camera_geometry_path)
+    )
     return camera_geometry
 
 
@@ -463,9 +508,11 @@ def read_camera_geometries(filename):
     -------
     dictionary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
     """
-    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    subarray_layout_path = "configuration/instrument/subarray/layout"
     camera_geoms = {}
-    for camera_name in set(Table.read(filename, path=subarray_layout_path)['camera_type']):
+    for camera_name in set(
+        Table.read(filename, path=subarray_layout_path)["camera_type"]
+    ):
         camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
     return camera_geoms
 
@@ -483,7 +530,9 @@ def read_single_camera_readout(filename, camera_name):
     -------
     `ctapipe.instrument.camera.readout.CameraReadout`
     """
-    camera_readout_path = f"/configuration/instrument/telescope/camera/readout_{camera_name}"
+    camera_readout_path = (
+        f"/configuration/instrument/telescope/camera/readout_{camera_name}"
+    )
     return CameraReadout.from_table(Table.read(filename, path=camera_readout_path))
 
 
@@ -499,11 +548,13 @@ def read_camera_readouts(filename):
     -------
     dict of `ctapipe.instrument.camera.description.CameraDescription` by tel_id
     """
-    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    subarray_layout_path = "configuration/instrument/subarray/layout"
     camera_readouts = {}
     for row in Table.read(filename, path=subarray_layout_path):
-        camera_name = row['camera_type']
-        camera_readouts[row['tel_id']] = read_single_camera_readout(filename, camera_name)
+        camera_name = row["camera_type"]
+        camera_readouts[row["tel_id"]] = read_single_camera_readout(
+            filename, camera_name
+        )
     return camera_readouts
 
 
@@ -525,7 +576,9 @@ def read_single_camera_description(filename, camera_name):
     return CameraDescription(camera_name, geometry=geom, readout=readout)
 
 
-def read_single_telescope_description(filename, telescope_name, telescope_type, camera_name):
+def read_single_telescope_description(
+    filename, telescope_name, telescope_type, camera_name
+):
     """
     Read a specific telescope description from a DL1 file
 
@@ -541,7 +594,9 @@ def read_single_telescope_description(filename, telescope_name, telescope_type, 
     """
     optics = read_single_optics(filename, telescope_name)
     camera_descr = read_single_camera_description(filename, camera_name)
-    return TelescopeDescription(telescope_name, telescope_type, optics=optics, camera=camera_descr)
+    return TelescopeDescription(
+        telescope_name, telescope_type, optics=optics, camera=camera_descr
+    )
 
 
 def read_subarray_table(filename):
@@ -556,7 +611,7 @@ def read_subarray_table(filename):
     -------
     `astropy.table.table.Table`
     """
-    subarray_layout_path = 'configuration/instrument/subarray/layout'
+    subarray_layout_path = "configuration/instrument/subarray/layout"
     return Table.read(filename, path=subarray_layout_path)
 
 
@@ -575,11 +630,13 @@ def read_telescopes_descriptions(filename):
     subarray_table = read_subarray_table(filename)
     descriptions = {}
     for row in subarray_table:
-        tel_name = row['name']
-        camera_type = row['camera_type']
+        tel_name = row["name"]
+        camera_type = row["camera_type"]
         optics = read_single_optics(filename, tel_name)
         camera = read_single_camera_description(filename, camera_type)
-        descriptions[row['tel_id']] = TelescopeDescription(row['name'], row['type'], optics=optics, camera=camera)
+        descriptions[row["tel_id"]] = TelescopeDescription(
+            row["name"], row["type"], optics=optics, camera=camera
+        )
     return descriptions
 
 
@@ -597,13 +654,15 @@ def read_telescopes_positions(filename):
     """
     subarray_table = read_subarray_table(filename)
     pos_dict = {}
-    pos_unit = subarray_table['pos_x'].unit
+    pos_unit = subarray_table["pos_x"].unit
     for row in subarray_table:
-        pos_dict[row['tel_id']] = np.array([row['pos_x'], row['pos_y'], row['pos_z']]) * pos_unit
+        pos_dict[row["tel_id"]] = (
+            np.array([row["pos_x"], row["pos_y"], row["pos_z"]]) * pos_unit
+        )
     return pos_dict
 
 
-def read_subarray_description(filename, subarray_name='LST-1'):
+def read_subarray_description(filename, subarray_name="LST-1"):
     """
     Read subarray description from an HDF5 DL1 file
 
@@ -618,7 +677,9 @@ def read_subarray_description(filename, subarray_name='LST-1'):
     """
     tel_pos = read_telescopes_positions(filename)
     tel_descrp = read_telescopes_descriptions(filename)
-    return SubarrayDescription(subarray_name, tel_positions=tel_pos, tel_descriptions=tel_descrp)
+    return SubarrayDescription(
+        subarray_name, tel_positions=tel_pos, tel_descriptions=tel_descrp
+    )
 
 
 def check_mcheader(mcheader1, mcheader2):
@@ -638,9 +699,14 @@ def check_mcheader(mcheader1, mcheader2):
     # It does not matter that the number of simulated showers is the same
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
-    for k in ['num_showers', 'shower_reuse', 'detector_prog_start', 'detector_prog_id', 'shower_prog_id',
-              'shower_prog_start',
-              ]:
+    for k in [
+        "num_showers",
+        "shower_reuse",
+        "detector_prog_start",
+        "detector_prog_id",
+        "shower_prog_id",
+        "shower_prog_start",
+    ]:
         if k in keys:
             keys.remove(k)
 
@@ -659,7 +725,7 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
     """
     assert thrown_events_hist1.keys() == thrown_events_hist2.keys()
     # It does not matter that the number of simulated showers is the same
-    keys = ['bins_energy', 'bins_core_dist']
+    keys = ["bins_energy", "bins_core_dist"]
     for k in keys:
         assert (thrown_events_hist1[k] == thrown_events_hist2[k]).all()
 
@@ -675,7 +741,7 @@ def write_metadata(metadata, output_filename):
     """
     # One cannot write strings with ctapipe HDF5Writer and Tables can write only fixed length string
     # So this metadata is written in the file attributes
-    with open_file(output_filename, mode='a') as file:
+    with open_file(output_filename, mode="a") as file:
         for k, item in metadata.as_dict().items():
             if k in file.root._v_attrs and type(file.root._v_attrs) is list:
                 attribute = file.root._v_attrs[k].extend(metadata[k])
@@ -713,7 +779,7 @@ def check_metadata(metadata1, metadata2):
     metadata2: `lstchain.io.MetaData`
     """
     assert metadata1.keys() == metadata2.keys()
-    keys = ['LSTCHAIN_VERSION']
+    keys = ["LSTCHAIN_VERSION"]
     for k in keys:
         assert metadata1[k] == metadata2[k]
 
@@ -729,7 +795,7 @@ def global_metadata(source):
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
-    metadata.CONTACT = 'LST Consortium'
+    metadata.CONTACT = "LST Consortium"
     metadata.SOURCE_FILENAMES.append(os.path.basename(source.input_url))
 
     return metadata
@@ -764,11 +830,13 @@ def write_subarray_tables(writer, event, metadata=None):
         add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
+    writer.write(
+        table_name="subarray/mc_shower", containers=[event.index, event.simulation]
+    )
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -779,11 +847,11 @@ def write_dataframe(dataframe, outfile, table_path, mode='a', index=False):
     table_path: str
         path to the table to write in the HDF5 file
     """
-    if not table_path.startswith('/'):
-        table_path = '/' + table_path
+    if not table_path.startswith("/"):
+        table_path = "/" + table_path
 
     with tables.open_file(outfile, mode=mode) as f:
-        path, table_name = table_path.rsplit('/', maxsplit=1)
+        path, table_name = table_path.rsplit("/", maxsplit=1)
 
         f.create_table(
             path,
@@ -825,7 +893,9 @@ def add_column_table(table, ColClass, col_label, values):
     d[col_label] = ColClass()  # add column
 
     # Step 2: Create new temporary table:
-    newtable = tables.Table(table._v_file.root, '_temp_table', d, filters=table.filters)  # new table
+    newtable = tables.Table(
+        table._v_file.root, "_temp_table", d, filters=table.filters
+    )  # new table
     table.attrs._f_copy(newtable)  # copy attributes
     # Copy table rows, also add new column values:
     for row, value in zip(table, values):
@@ -852,30 +922,35 @@ def recursive_copy_node(src_file, dir_file, path):
     path: path to the node in `src_file`
 
     """
-    path_split = path.split('/')
-    while '' in path_split:
-        path_split.remove('')
+    path_split = path.split("/")
+    while "" in path_split:
+        path_split.remove("")
     assert len(path_split) > 0
-    src_file.copy_node('/',
-                       name=path_split[0],
-                       newparent=dir_file.root,
-                       newname=path_split[0],
-                       recursive=False)
+    src_file.copy_node(
+        "/",
+        name=path_split[0],
+        newparent=dir_file.root,
+        newname=path_split[0],
+        recursive=False,
+    )
     if len(path_split) > 1:
-        recursive_path = os.path.join('/', path_split[0])
+        recursive_path = os.path.join("/", path_split[0])
         for p in path_split[1:]:
-            src_file.copy_node(recursive_path,
-                               name=p,
-                               newparent=dir_file.root[recursive_path],
-                               newname=p, recursive=False)
+            src_file.copy_node(
+                recursive_path,
+                name=p,
+                newparent=dir_file.root[recursive_path],
+                newname=p,
+                recursive=False,
+            )
             recursive_path = os.path.join(recursive_path, p)
 
 
 def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
-    mon_event.pedestal.prefix = ''
-    mon_event.flatfield.prefix = ''
-    mon_event.calibration.prefix = ''
-    mon_index.prefix = ''
+    mon_event.pedestal.prefix = ""
+    mon_event.flatfield.prefix = ""
+    mon_event.calibration.prefix = ""
+    mon_index.prefix = ""
 
     # update index
     if new_ped:
@@ -888,21 +963,21 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name=f'telescope/monitoring/pedestal',
-            containers=[mon_index, mon_event.pedestal]
+            table_name=f"telescope/monitoring/pedestal",
+            containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
             table_name="telescope/monitoring/flatfield",
-            containers=[mon_index, mon_event.flatfield]
+            containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
             table_name="telescope/monitoring/calibration",
-            containers=[mon_index, mon_event.calibration]
+            containers=[mon_index, mon_event.calibration],
         )
 
 
@@ -919,35 +994,38 @@ def read_dl2_to_pyirf(filename):
 
     ## mapping
     name_mapping = {
-        'mc_energy': 'true_energy',
-        'mc_alt': 'true_alt',
-        'mc_az': 'true_az',
-        'mc_alt_tel': 'pointing_alt',
-        'mc_az_tel': 'pointing_az',
-        'gammaness': 'gh_score',
+        "mc_energy": "true_energy",
+        "mc_alt": "true_alt",
+        "mc_az": "true_az",
+        "mc_alt_tel": "pointing_alt",
+        "mc_az_tel": "pointing_az",
+        "gammaness": "gh_score",
     }
 
     unit_mapping = {
-        'true_energy': u.TeV,
-        'reco_energy': u.TeV,
-        'pointing_alt': u.rad,
-        'pointing_az': u.rad,
-        'true_alt': u.rad,
-        'true_az': u.rad,
-        'reco_alt': u.rad,
-        'reco_az': u.rad,
+        "true_energy": u.TeV,
+        "reco_energy": u.TeV,
+        "pointing_alt": u.rad,
+        "pointing_az": u.rad,
+        "true_alt": u.rad,
+        "true_az": u.rad,
+        "reco_alt": u.rad,
+        "reco_az": u.rad,
     }
 
     simu_info = read_simu_info_merged_hdf5(filename)
-    pyirf_simu_info = SimulatedEventsInfo(n_showers=simu_info.num_showers * simu_info.shower_reuse,
-                                          energy_min=simu_info.energy_range_min,
-                                          energy_max=simu_info.energy_range_max,
-                                          max_impact=simu_info.max_scatter_range,
-                                          spectral_index=simu_info.spectral_index,
-                                          viewcone=simu_info.max_viewcone_radius,
-                                          )
+    pyirf_simu_info = SimulatedEventsInfo(
+        n_showers=simu_info.num_showers * simu_info.shower_reuse,
+        energy_min=simu_info.energy_range_min,
+        energy_max=simu_info.energy_range_max,
+        max_impact=simu_info.max_scatter_range,
+        spectral_index=simu_info.spectral_index,
+        viewcone=simu_info.max_viewcone_radius,
+    )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
+        columns=name_mapping
+    )
     events = table.QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
@@ -987,8 +1065,9 @@ def extract_observation_time(t_df):
     -------
     Observation duration in seconds
     """
-    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
-           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
+    return pd.to_datetime(
+        t_df.dragon_time.iat[len(t_df) - 1], unit="s"
+    ) - pd.to_datetime(t_df.dragon_time.iat[0], unit="s")
 
 
 def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
@@ -1008,16 +1087,21 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     """
     from functools import partial
     from glob import glob
-    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*')  # Current format of LST data path
+
+    filepath_glob = glob(
+        f"/fefs/aswg/data/real/DL2/*/{data_tag}/*"
+    )  # Current format of LST data path
 
     pool = Pool(n_process)
     filelist = []
     # Create a list of files with matching run numbers
     for filename in filepath_glob:
-        if any(f'Run{run:05}' in filename for run in runs):
+        if any(f"Run{run:05}" in filename for run in runs):
             filelist.append(filename)
 
-    df_list = pool.map(partial(read_dl2_params, columns_to_read=columns_to_read), filelist)
+    df_list = pool.map(
+        partial(read_dl2_params, columns_to_read=columns_to_read), filelist
+    )
 
     observation_times = pool.map(extract_observation_time, df_list)
 

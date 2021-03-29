@@ -24,7 +24,15 @@ __all__ = ["plot_pedestals"]
 channel = ["HG", "LG"]
 
 
-def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, offset_value=400, sample_size=1000):
+def plot_pedestals(
+    data_file,
+    pedestal_file,
+    run=0,
+    plot_file=None,
+    tel_id=1,
+    offset_value=400,
+    sample_size=1000,
+):
     """
     plot pedestal quantities quantities
 
@@ -216,7 +224,9 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
                         color="green",
                         label=label,
                     )
-                    plt.plot([0, 40], [offset_value, offset_value], "k--", label="offset")
+                    plt.plot(
+                        [0, 40], [offset_value, offset_value], "k--", label="offset"
+                    )
                     plt.xlabel("time sample [ns]")
                     plt.ylabel("counts [ADC]")
                     plt.legend()

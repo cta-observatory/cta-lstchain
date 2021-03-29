@@ -5,7 +5,7 @@ from ctapipe.core import Component
 from ctapipe.core.traits import Int
 
 
-__all__ = ['DragonPedestal']
+__all__ = ["DragonPedestal"]
 
 size4drs = 4096
 # `size4drs` is number of capacitors in each pixel which using DRS4.
@@ -23,22 +23,22 @@ n_channel = 7
 
 class DragonPedestal(Component):
     """
-        The DragonPedestal class to create pedestal
-        for LST readout system using chip DRS4.
+    The DragonPedestal class to create pedestal
+    for LST readout system using chip DRS4.
     """
 
-    r0_sample_start = Int(default_value=11,
-                          help='Start sample for waveform'
-                          ).tag(config=True)
+    r0_sample_start = Int(default_value=11, help="Start sample for waveform").tag(
+        config=True
+    )
 
     def __init__(self, tel_id, n_module, **kwargs):
         super().__init__(**kwargs)
         self.tel_id = tel_id
-        self.n_module = n_module # This is number of module read from data
+        self.n_module = n_module  # This is number of module read from data
 
         # Readout system of LST has 265 modules.
         # Each module has 7 channels (pixels)
-        self.n_pixels = n_module_in_camera*n_channel
+        self.n_pixels = n_module_in_camera * n_channel
         self.meanped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.numped = np.zeros((n_gain, self.n_pixels, size4drs))
         self.first_cap_array = np.zeros((self.n_module, n_gain, n_channel))
@@ -48,32 +48,51 @@ class DragonPedestal(Component):
         expected_pixel_id = event.lst.tel[self.tel_id].svc.pixel_ids
         waveform = event.r0.tel[self.tel_id].waveform
         for nr_module in prange(0, self.n_module):
-            self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(event, nr_module)
+            self.first_cap_array[nr_module, :, :] = self.get_first_capacitor(
+                event, nr_module
+            )
 
-        self._fill_pedestal_event_jit(waveform,
-                                      expected_pixel_id,
-                                      self.first_cap_array,
-                                      self.meanped,
-                                      self.numped,
-                                      self.n_module,
-                                      self.r0_sample_start)
+        self._fill_pedestal_event_jit(
+            waveform,
+            expected_pixel_id,
+            self.first_cap_array,
+            self.meanped,
+            self.numped,
+            self.n_module,
+            self.r0_sample_start,
+        )
 
     @staticmethod
     @jit(parallel=True)
-    def _fill_pedestal_event_jit(waveform, expected_pixel_id, first_cap_array,
-                                 meanped, numped, n_module, start_sample_r0):
+    def _fill_pedestal_event_jit(
+        waveform,
+        expected_pixel_id,
+        first_cap_array,
+        meanped,
+        numped,
+        n_module,
+        start_sample_r0,
+    ):
         for nr_module in prange(0, n_module):
             first_cap = first_cap_array[nr_module, :, :]
             for gain in prange(0, n_gain):
                 for pix in prange(0, n_channel):
                     fc = first_cap[gain, pix]
                     pixel = expected_pixel_id[nr_module * 7 + pix]
-                    posads0 = int((start_sample_r0+fc)%size4drs)
+                    posads0 = int((start_sample_r0 + fc) % size4drs)
                     if posads0 + roi_size < size4drs:
                         # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
                         # hence we skip them. Start sample might be set as script argument. Default = 11.
-                        meanped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += waveform[gain, pixel, start_sample_r0:roi_size-2]
-                        numped[gain, pixel, posads0:((posads0-start_sample_r0) + roi_size-2)] += 1
+                        meanped[
+                            gain,
+                            pixel,
+                            posads0 : ((posads0 - start_sample_r0) + roi_size - 2),
+                        ] += waveform[gain, pixel, start_sample_r0 : roi_size - 2]
+                        numped[
+                            gain,
+                            pixel,
+                            posads0 : ((posads0 - start_sample_r0) + roi_size - 2),
+                        ] += 1
                     else:
                         for k in prange(start_sample_r0, roi_size - 2):
                             # the first 9 samples have occasionally increased signal due to Tsutomu pattern,
@@ -95,7 +114,9 @@ class DragonPedestal(Component):
 
     def get_first_capacitor(self, event, nr):
         fc = np.zeros((2, 7))
-        first_cap = event.lst.tel[self.tel_id].evt.first_capacitor_id[nr * 8:(nr + 1) * 8]
+        first_cap = event.lst.tel[self.tel_id].evt.first_capacitor_id[
+            nr * 8 : (nr + 1) * 8
+        ]
         # First capacitor order according Dragon v5 board data format
         for i, j in zip([0, 1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 2, 2, 3]):
             fc[high_gain, i] = first_cap[j]

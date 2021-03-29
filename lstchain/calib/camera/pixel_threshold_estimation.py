@@ -27,6 +27,7 @@ def get_bias_and_std(dl1_file):
 
     return ped_charge_mean_pe, ped_charge_std_pe
 
+
 def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     """
     Function to get picture threshold from dl1 from interleaved pedestal events.
@@ -49,7 +50,7 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     picture_thresh: np.ndarray
         picture threshold calculated using interleaved pedestal events
     """
-    
+
     ped_mean_pe, ped_std_pe = get_bias_and_std(dl1_path)
 
     # If problem with interleaved pedestal std values occur, take pedestal
@@ -59,20 +60,24 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
         interleaved_events_id = 1
     else:
         interleaved_events_id = 0
-    threshold_clean_pe = ped_mean_pe + sigma_clean*ped_std_pe
+    threshold_clean_pe = ped_mean_pe + sigma_clean * ped_std_pe
     # find pixels with std = 0 and mean = 0 <=> dead pixels in interleaved
     # pedestal event likely due to stars
     unusable_pixels = get_unusable_pixels(dl1_path, interleaved_events_id)
     # for dead pixels set max value of threshold
-    threshold_clean_pe[interleaved_events_id, HIGH_GAIN, unusable_pixels] = \
-        max(threshold_clean_pe[interleaved_events_id, HIGH_GAIN, :])
+    threshold_clean_pe[interleaved_events_id, HIGH_GAIN, unusable_pixels] = max(
+        threshold_clean_pe[interleaved_events_id, HIGH_GAIN, :]
+    )
     # return pedestal interleaved threshold from data run for high gain
     return threshold_clean_pe[interleaved_events_id, HIGH_GAIN, :]
 
+
 def get_unusable_pixels(dl1_path, interleaved_events_id):
     with tables.open_file(dl1_path) as f:
-        unusable_pixels = np.where(f.root[dl1_params_tel_mon_cal_key].col(
-                                   'unusable_pixels')[interleaved_events_id,
-                                                      HIGH_GAIN,
-                                                      :] == True)
+        unusable_pixels = np.where(
+            f.root[dl1_params_tel_mon_cal_key].col("unusable_pixels")[
+                interleaved_events_id, HIGH_GAIN, :
+            ]
+            == True
+        )
     return unusable_pixels

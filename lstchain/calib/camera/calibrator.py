@@ -11,7 +11,7 @@ from ctapipe.calib.camera import gainselection
 from lstchain.calib.camera.pulse_time_correction import PulseTimeCorrection
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 
-__all__ = ['LSTCameraCalibrator']
+__all__ = ["LSTCameraCalibrator"]
 
 
 class LSTCameraCalibrator(CameraCalibrator):
@@ -19,49 +19,39 @@ class LSTCameraCalibrator(CameraCalibrator):
     Calibrator to handle the LST camera calibration chain, in order to fill
     the DL1 data level in the event container.
     """
+
     extractor_product = Unicode(
-        'LocalPeakWindowSum',
-        help='Name of the charge extractor to be used'
+        "LocalPeakWindowSum", help="Name of the charge extractor to be used"
     ).tag(config=True)
 
     reducer_product = Unicode(
-        'NullDataVolumeReducer',
-        help='Name of the DataVolumeReducer to use'
+        "NullDataVolumeReducer", help="Name of the DataVolumeReducer to use"
     ).tag(config=True)
 
     calibration_path = Path(
-        exists=True, directory_ok=False,
-        help='Path to LST calibration file'
+        exists=True, directory_ok=False, help="Path to LST calibration file"
     ).tag(config=True)
 
     time_calibration_path = Path(
-        exists=True, directory_ok=False,
-        help='Path to drs4 time calibration file'
+        exists=True, directory_ok=False, help="Path to drs4 time calibration file"
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
-        exists=True, directory_ok=False,
-        help='Path to time sampling correction file',
-        allow_none = True,
+        exists=True,
+        directory_ok=False,
+        help="Path to time sampling correction file",
+        allow_none=True,
     ).tag(config=True)
 
-    allowed_tels = List(
-        [1],
-        help='List of telescope to be calibrated'
-    ).tag(config=True)
+    allowed_tels = List([1], help="List of telescope to be calibrated").tag(config=True)
 
     gain_threshold = Int(
-        4094,
-        allow_none=True,
-        help='Threshold for the gain selection in ADC'
+        4094, allow_none=True, help="Threshold for the gain selection in ADC"
     ).tag(config=True)
 
     charge_scale = List(
-        [1,1],
-        help='Multiplicative correction factor for charge estimation [HG,LG]'
+        [1, 1], help="Multiplicative correction factor for charge estimation [HG,LG]"
     ).tag(config=True)
-
-
 
     def __init__(self, subarray, **kwargs):
         """
@@ -85,21 +75,16 @@ class LSTCameraCalibrator(CameraCalibrator):
 
         # load the waveform charge extractor
         self.image_extractor = ImageExtractor.from_name(
-            self.extractor_product,
-            subarray = self.subarray,
-            config = self.config
+            self.extractor_product, subarray=self.subarray, config=self.config
         )
         self.log.info(f"extractor {self.extractor_product}")
 
         print("EXTRACTOR", self.image_extractor)
 
         self.data_volume_reducer = DataVolumeReducer.from_name(
-            self.reducer_product,
-            subarray=self.subarray,
-            config = self.config
+            self.reducer_product, subarray=self.subarray, config=self.config
         )
         self.log.info(f" {self.reducer_product}")
-
 
         # declare gain selector if the threshold is defined
         if self.gain_threshold:
@@ -115,21 +100,26 @@ class LSTCameraCalibrator(CameraCalibrator):
                 calib_file_path=self.time_calibration_path
             )
         else:
-            raise IOError(f"Time calibration file {self.time_calibration_path} not found!")
+            raise IOError(
+                f"Time calibration file {self.time_calibration_path} not found!"
+            )
 
         # declare the charge sampling corrector
         if self.time_sampling_correction_path is not None:
             # search the file in resources if not found
             if not os.path.exists(self.time_sampling_correction_path):
-                self.time_sampling_correction_path = resource_filename('lstchain',
-                                                                       f"resources/{self.time_sampling_correction_path}")
+                self.time_sampling_correction_path = resource_filename(
+                    "lstchain", f"resources/{self.time_sampling_correction_path}"
+                )
 
             if os.path.exists(self.time_sampling_correction_path):
                 self.time_sampling_corrector = TimeSamplingCorrection(
                     time_sampling_correction_path=self.time_sampling_correction_path
                 )
             else:
-                raise IOError(f"Sampling correction file {self.time_sampling_correction_path} not found!")
+                raise IOError(
+                    f"Sampling correction file {self.time_sampling_correction_path} not found!"
+                )
         else:
             self.time_sampling_corrector = None
 
@@ -139,9 +129,7 @@ class LSTCameraCalibrator(CameraCalibrator):
         # initialize the MonitoringContainer() for the moment it reads it from a hdf5 file
         self._initialize_correction()
 
-
         self.log.info(f"Global charge scale {self.charge_scale}")
-
 
     def _initialize_correction(self):
         """
@@ -154,26 +142,25 @@ class LSTCameraCalibrator(CameraCalibrator):
             with HDF5TableReader(self.calibration_path) as h5_table:
                 for telid in self.allowed_tels:
                     # read the calibration data
-                    table = '/tel_' + str(telid) + '/calibration'
+                    table = "/tel_" + str(telid) + "/calibration"
                     next(h5_table.read(table, self.mon_data.tel[telid].calibration))
 
                     # read pedestal data
-                    table = '/tel_' + str(telid) + '/pedestal'
+                    table = "/tel_" + str(telid) + "/pedestal"
                     next(h5_table.read(table, self.mon_data.tel[telid].pedestal))
 
                     # read flat-field data
-                    table = '/tel_' + str(telid) + '/flatfield'
+                    table = "/tel_" + str(telid) + "/flatfield"
                     next(h5_table.read(table, self.mon_data.tel[telid].flatfield))
 
                     # read the pixel_status container
-                    table = '/tel_' + str(telid) + '/pixel_status'
+                    table = "/tel_" + str(telid) + "/pixel_status"
                     next(h5_table.read(table, self.mon_data.tel[telid].pixel_status))
         except Exception:
             self.log.exception(
                 f"Problem in reading calibration file {self.calibration_path}"
             )
             raise
-
 
     def _calibrate_dl0(self, event, telid):
         """
@@ -195,8 +182,14 @@ class LSTCameraCalibrator(CameraCalibrator):
         # subtract the pedestal per sample and multiply for the calibration coefficients
         #
         calibrated_waveform = (
-                (waveforms - self.mon_data.tel[telid].calibration.pedestal_per_sample[:, :, np.newaxis])
-                * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis]).astype(np.float32)
+            (
+                waveforms
+                - self.mon_data.tel[telid].calibration.pedestal_per_sample[
+                    :, :, np.newaxis
+                ]
+            )
+            * self.mon_data.tel[telid].calibration.dc_to_pe[:, :, np.newaxis]
+        ).astype(np.float32)
 
         # If requested, perform gain selection (this will be done by the EvB in future)
         # find the gain selection mask
@@ -207,11 +200,15 @@ class LSTCameraCalibrator(CameraCalibrator):
                 gain_mask = self.gain_selector(waveforms)
 
                 # select the samples
-                calibrated_waveform = calibrated_waveform[gain_mask, np.arange(waveforms.shape[1])]
+                calibrated_waveform = calibrated_waveform[
+                    gain_mask, np.arange(waveforms.shape[1])
+                ]
 
             else:
-            # keep both HG and LG
-                gain_mask = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
+                # keep both HG and LG
+                gain_mask = np.zeros(
+                    (waveforms.shape[0], waveforms.shape[1]), dtype=np.int64
+                )
                 gain_mask[1] = 1
         else:
             # gain selection already performed in EvB: (0=HG, 1=LG)
@@ -224,7 +221,6 @@ class LSTCameraCalibrator(CameraCalibrator):
         # remember which channel has been selected
         event.r1.tel[telid].selected_gain_channel = gain_mask
         event.dl0.tel[telid].selected_gain_channel = gain_mask
-
 
     def _calibrate_dl1(self, event, telid):
         """
@@ -241,33 +237,42 @@ class LSTCameraCalibrator(CameraCalibrator):
             return
 
         # In case of no gain selection the selected gain channels are  [0,0,..][1,1,..]
-        no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
+        no_gain_selection = np.zeros(
+            (waveforms.shape[0], waveforms.shape[1]), dtype=np.int64
+        )
         no_gain_selection[1] = 1
-
 
         # correct the dl0 waveform for the sampling time corrections
         if self.time_sampling_corrector:
-            waveforms*= self.time_sampling_corrector.get_corrections(event,telid)[gain_mask, np.arange(n_pixels)]
+            waveforms *= self.time_sampling_corrector.get_corrections(event, telid)[
+                gain_mask, np.arange(n_pixels)
+            ]
 
         # extract the charge
         charge, peak_time = self.image_extractor(waveforms, telid, gain_mask)
 
         # correct charge for global scale
-        corrected_charge = charge * np.array(self.charge_scale, dtype=np.float32)[gain_mask]
+        corrected_charge = (
+            charge * np.array(self.charge_scale, dtype=np.float32)[gain_mask]
+        )
 
         # correct time with drs4 correction if available
         if self.time_corrector:
-            peak_time_drs4_corrected = (peak_time -
-                                        self.time_corrector.get_pulse_time_corrections(event)
-                                        [gain_mask, np.arange(n_pixels)])
+            peak_time_drs4_corrected = (
+                peak_time
+                - self.time_corrector.get_pulse_time_corrections(event)[
+                    gain_mask, np.arange(n_pixels)
+                ]
+            )
 
         # add flat-fielding time correction
-        peak_time_ff_corrected = (peak_time_drs4_corrected +
-                                  self.mon_data.tel[telid].calibration.time_correction.value
-                                  [gain_mask, np.arange(n_pixels)])
+        peak_time_ff_corrected = (
+            peak_time_drs4_corrected
+            + self.mon_data.tel[telid].calibration.time_correction.value[
+                gain_mask, np.arange(n_pixels)
+            ]
+        )
 
         # fill dl1 container
         event.dl1.tel[telid].image = corrected_charge
         event.dl1.tel[telid].peak_time = peak_time_ff_corrected.astype(np.float32)
-
-

@@ -23,10 +23,10 @@ In the configuration file:
 from ctapipe.image.cleaning import tailcuts_clean, dilate
 
 __all__ = [
-    'get_volume_reduction_method',
-    'apply_volume_reduction',
-    'zero_suppression_tailcut_dilation'
-    ]
+    "get_volume_reduction_method",
+    "apply_volume_reduction",
+    "zero_suppression_tailcut_dilation",
+]
 
 
 def get_volume_reduction_method(config_file):
@@ -43,10 +43,10 @@ def get_volume_reduction_method(config_file):
     algorithm: str
         Volume reduction algorithm name
     """
-    if config_file['volume_reducer']['algorithm'] is None:
+    if config_file["volume_reducer"]["algorithm"] is None:
         algorithm = None
     else:
-        algorithm = config_file['volume_reducer']['algorithm']
+        algorithm = config_file["volume_reducer"]["algorithm"]
 
     return algorithm
 
@@ -78,17 +78,21 @@ def apply_volume_reduction(event, subarray, config):
     else:
 
         volume_reduction_algorithm = globals()[volume_reduction_algorithm]
-        parameters = config['volume_reducer']['parameters']
+        parameters = config["volume_reducer"]["parameters"]
 
         for tel_id in event.r0.tel.keys():
 
             camera_geometry = subarray.tel[tel_id].camera.geometry
 
-            image = event.dl1.tel[tel_id].image  # Volume reduction mask computed, to date, at dl1 level !
+            image = event.dl1.tel[
+                tel_id
+            ].image  # Volume reduction mask computed, to date, at dl1 level !
             peak_time = event.dl1.tel[tel_id].peak_time
             waveform = event.dl0.tel[tel_id].waveform
 
-            pixels_to_keep = volume_reduction_algorithm(camera_geometry, image, **parameters)
+            pixels_to_keep = volume_reduction_algorithm(
+                camera_geometry, image, **parameters
+            )
 
             image[~pixels_to_keep] = 0
             peak_time[~pixels_to_keep] = 0
@@ -127,18 +131,19 @@ def zero_suppression_tailcut_dilation(geom, image, number_of_dilation=3, **kwarg
         A boolean mask (array) that contains the zero suppressed pixels.
 
     """
-    kwargs.setdefault('picture_thresh', 8)
-    kwargs.setdefault('boundary_thresh', 4)
-    kwargs.setdefault('keep_isolated_pixels', True)
-    kwargs.setdefault('min_number_picture_neighbors', 0)
+    kwargs.setdefault("picture_thresh", 8)
+    kwargs.setdefault("boundary_thresh", 4)
+    kwargs.setdefault("keep_isolated_pixels", True)
+    kwargs.setdefault("min_number_picture_neighbors", 0)
 
-    mask_0_suppression = tailcuts_clean(geom,
-                                        image,
-                                        picture_thresh=kwargs['picture_thresh'],
-                                        boundary_thresh=kwargs['boundary_thresh'],
-                                        keep_isolated_pixels=kwargs['keep_isolated_pixels'],
-                                        min_number_picture_neighbors=kwargs['min_number_picture_neighbors']
-                                        )
+    mask_0_suppression = tailcuts_clean(
+        geom,
+        image,
+        picture_thresh=kwargs["picture_thresh"],
+        boundary_thresh=kwargs["boundary_thresh"],
+        keep_isolated_pixels=kwargs["keep_isolated_pixels"],
+        min_number_picture_neighbors=kwargs["min_number_picture_neighbors"],
+    )
 
     # Dilate pixel mask. 3 times by default
     for i in range(number_of_dilation):

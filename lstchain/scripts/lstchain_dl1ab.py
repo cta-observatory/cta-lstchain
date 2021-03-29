@@ -36,36 +36,59 @@ from lstchain.reco.disp import disp
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
-    description="Recompute DL1b parameters from a DL1a file")
+    description="Recompute DL1b parameters from a DL1a file"
+)
 
 # Required arguments
-parser.add_argument('--input-file', '-f', action='store', type=str,
-                    dest='input_file',
-                    help='path to the DL1a file ',
-                    default=None, required=True)
+parser.add_argument(
+    "--input-file",
+    "-f",
+    action="store",
+    type=str,
+    dest="input_file",
+    help="path to the DL1a file ",
+    default=None,
+    required=True,
+)
 
-parser.add_argument('--output-file', '-o', action='store', type=str,
-                    dest='output_file',
-                    help='key for the table of new parameters',
-                    default=None, required=True)
+parser.add_argument(
+    "--output-file",
+    "-o",
+    action="store",
+    type=str,
+    dest="output_file",
+    help="key for the table of new parameters",
+    default=None,
+    required=True,
+)
 # Optional arguments
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    "--config",
+    "-c",
+    action="store",
+    type=str,
+    dest="config_file",
+    help="Path to a configuration file. If none is given, a standard configuration is applied",
+    default=None,
+)
 
-parser.add_argument('--no-image', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='noimage',
-                    help='Boolean. True to remove the images in output file',
-                    default=False)
+parser.add_argument(
+    "--no-image",
+    action="store",
+    type=lambda x: bool(strtobool(x)),
+    dest="noimage",
+    help="Boolean. True to remove the images in output file",
+    default=False,
+)
 
-parser.add_argument('--pedestal-cleaning', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='pedestal_cleaning',
-                    help='Boolean. True to use pedestal cleaning',
-                    default=False)
+parser.add_argument(
+    "--pedestal-cleaning",
+    action="store",
+    type=lambda x: bool(strtobool(x)),
+    dest="pedestal_cleaning",
+    help="Boolean. True to use pedestal cleaning",
+    default=False,
+)
 
 args = parser.parse_args()
 
@@ -84,18 +107,22 @@ def main():
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
-        clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
-        sigma = config[clean_method_name]['sigma']
+        clean_method_name = "tailcuts_clean_with_pedestal_threshold"
+        sigma = config[clean_method_name]["sigma"]
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
+        log.info(
+            f"Fraction of pixel cleaning thresholds above picture thr.:"
+            f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}"
+        )
         picture_th = np.clip(pedestal_thresh, pic_th, None)
-        log.info(f"Tailcut clean with pedestal threshold config used:"
-                 f"{config['tailcuts_clean_with_pedestal_threshold']}")
+        log.info(
+            f"Tailcut clean with pedestal threshold config used:"
+            f"{config['tailcuts_clean_with_pedestal_threshold']}"
+        )
     else:
-        clean_method_name = 'tailcut'
+        clean_method_name = "tailcut"
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
@@ -115,29 +142,29 @@ def main():
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [
-        'intensity',
-        'x',
-        'y',
-        'r',
-        'phi',
-        'length',
-        'width',
-        'psi',
-        'skewness',
-        'kurtosis',
-        'concentration_cog',
-        'concentration_core',
-        'concentration_pixel',
-        'leakage_intensity_width_1',
-        'leakage_intensity_width_2',
-        'leakage_pixels_width_1',
-        'leakage_pixels_width_2',
-        'n_islands',
-        'intercept',
-        'time_gradient',
-        'n_pixels',
-        'wl',
-        'log_intensity'
+        "intensity",
+        "x",
+        "y",
+        "r",
+        "phi",
+        "length",
+        "width",
+        "psi",
+        "skewness",
+        "kurtosis",
+        "concentration_cog",
+        "concentration_core",
+        "concentration_pixel",
+        "leakage_intensity_width_1",
+        "leakage_intensity_width_2",
+        "leakage_pixels_width_1",
+        "leakage_pixels_width_2",
+        "n_islands",
+        "intercept",
+        "time_gradient",
+        "n_pixels",
+        "wl",
+        "log_intensity",
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -146,34 +173,40 @@ def main():
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
 
-    with tables.open_file(args.input_file, mode='r') as input:
+    with tables.open_file(args.input_file, mode="r") as input:
         image_table = input.root[dl1_images_lstcam_key]
         dl1_params_input = input.root[dl1_params_lstcam_key].colnames
-        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        disp_params = {"disp_dx", "disp_dy", "disp_norm", "disp_angle", "disp_sign"}
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
 
-        with tables.open_file(args.output_file, mode='a') as output:
+        with tables.open_file(args.output_file, mode="a") as output:
             params = output.root[dl1_params_lstcam_key].read()
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
 
-                image = row['image']
-                peak_time = row['peak_time']
+                image = row["image"]
+                peak_time = row["peak_time"]
 
-                signal_pixels = tailcuts_clean(camera_geom,
-                                               image,
-                                               picture_th,
-                                               boundary_th,
-                                               isolated_pixels,
-                                               min_n_neighbors)
+                signal_pixels = tailcuts_clean(
+                    camera_geom,
+                    image,
+                    picture_th,
+                    boundary_th,
+                    isolated_pixels,
+                    min_n_neighbors,
+                )
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
-                    num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    num_islands, island_labels = number_of_islands(
+                        camera_geom, signal_pixels
+                    )
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
-                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    n_pixels_on_island[
+                        0
+                    ] = 0  # first island is no-island and should not be considered
                     max_island_label = np.argmax(n_pixels_on_island)
                     if use_only_main_island:
                         signal_pixels[island_labels != max_island_label] = False
@@ -185,49 +218,59 @@ def main():
                         # makes sure only signal pixels are used in the time
                         # check:
                         cleaned_pixel_times[~signal_pixels] = np.nan
-                        new_mask = apply_time_delta_cleaning(camera_geom,
-                                                             signal_pixels,
-                                                             cleaned_pixel_times,
-                                                             1, delta_time)
+                        new_mask = apply_time_delta_cleaning(
+                            camera_geom,
+                            signal_pixels,
+                            cleaned_pixel_times,
+                            1,
+                            delta_time,
+                        )
                         signal_pixels = new_mask
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
 
                     if n_pixels > 0:
-                        hillas = hillas_parameters(camera_geom[signal_pixels],
-                                                   image[signal_pixels])
+                        hillas = hillas_parameters(
+                            camera_geom[signal_pixels], image[signal_pixels]
+                        )
 
                         dl1_container.fill_hillas(hillas)
-                        dl1_container.set_timing_features(camera_geom[signal_pixels],
-                                                          image[signal_pixels],
-                                                          peak_time[signal_pixels],
-                                                          hillas)
+                        dl1_container.set_timing_features(
+                            camera_geom[signal_pixels],
+                            image[signal_pixels],
+                            peak_time[signal_pixels],
+                            hillas,
+                        )
 
                         dl1_container.set_leakage(camera_geom, image, signal_pixels)
                         dl1_container.set_concentration(camera_geom, image, hillas)
                         dl1_container.n_islands = num_islands
                         dl1_container.wl = dl1_container.width / dl1_container.length
                         dl1_container.n_pixels = n_pixels
-                        width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
-                        length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
+                        width = np.rad2deg(
+                            np.arctan2(dl1_container.width, focal_length)
+                        )
+                        length = np.rad2deg(
+                            np.arctan2(dl1_container.length, focal_length)
+                        )
                         dl1_container.width = width
                         dl1_container.length = length
                         dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if set(dl1_params_input).intersection(disp_params):
                     disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
-                        dl1_container['x'].to_value(u.m),
-                        dl1_container['y'].to_value(u.m),
-                        params['src_x'][ii],
-                        params['src_y'][ii]
+                        dl1_container["x"].to_value(u.m),
+                        dl1_container["y"].to_value(u.m),
+                        params["src_x"][ii],
+                        params["src_y"][ii],
                     )
 
-                    dl1_container['disp_dx'] = disp_dx
-                    dl1_container['disp_dy'] = disp_dy
-                    dl1_container['disp_norm'] = disp_norm
-                    dl1_container['disp_angle'] = disp_angle
-                    dl1_container['disp_sign'] = disp_sign
+                    dl1_container["disp_dx"] = disp_dx
+                    dl1_container["disp_dy"] = disp_dy
+                    dl1_container["disp_norm"] = disp_norm
+                    dl1_container["disp_angle"] = disp_angle
+                    dl1_container["disp_sign"] = disp_sign
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
@@ -235,5 +278,5 @@ def main():
             output.root[dl1_params_lstcam_key][:] = params
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

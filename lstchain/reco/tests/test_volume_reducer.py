@@ -6,25 +6,27 @@ from ctapipe.calib import CameraCalibrator
 from ctapipe.image.cleaning import tailcuts_clean
 from lstchain.io import get_standard_config
 
-from lstchain.reco.volume_reducer import (get_volume_reduction_method,
-                                          apply_volume_reduction,
-                                          zero_suppression_tailcut_dilation)
+from lstchain.reco.volume_reducer import (
+    get_volume_reduction_method,
+    apply_volume_reduction,
+    zero_suppression_tailcut_dilation,
+)
 
 
 def test_get_volume_reduction_method():
     config = get_standard_config()
-    config['volume_reducer']['algorithm'] = 'zero_suppression_tailcut_dilation'
+    config["volume_reducer"]["algorithm"] = "zero_suppression_tailcut_dilation"
     algo = get_volume_reduction_method(config)
     algo = globals()[algo]
     assert algo is zero_suppression_tailcut_dilation
 
 
 def test_check_and_apply_volume_reduction():
-    source = EventSource(get_dataset_path('gamma_test.simtel.gz'))
+    source = EventSource(get_dataset_path("gamma_test.simtel.gz"))
     ev = next(iter(source))
     cal = CameraCalibrator(subarray=source.subarray)
     config = get_standard_config()
-    config['volume_reducer']['algorithm'] = 'zero_suppression_tailcut_dilation'
+    config["volume_reducer"]["algorithm"] = "zero_suppression_tailcut_dilation"
 
     cal(ev)
     apply_volume_reduction(ev, source.subarray, config)
@@ -36,7 +38,7 @@ def test_check_and_apply_volume_reduction():
 
 
 def test_zero_suppression_tailcut_dilation():
-    source = EventSource(get_dataset_path('gamma_test.simtel.gz'))
+    source = EventSource(get_dataset_path("gamma_test.simtel.gz"))
     for i, event in enumerate(source):
         for tel_id in event.r0.tel.keys():
             if tel_id <= 4:
@@ -51,12 +53,14 @@ def test_zero_suppression_tailcut_dilation():
     imag = event.dl1.tel[tel_id].image
 
     pixels_zero_supp = zero_suppression_tailcut_dilation(camera_geometry, imag)
-    pixels_tailcut = tailcuts_clean(camera_geometry, imag,
-                                    picture_thresh=8,
-                                    boundary_thresh=4,
-                                    keep_isolated_pixels=True,
-                                    min_number_picture_neighbors=0
-                                    )
+    pixels_tailcut = tailcuts_clean(
+        camera_geometry,
+        imag,
+        picture_thresh=8,
+        boundary_thresh=4,
+        keep_isolated_pixels=True,
+        min_number_picture_neighbors=0,
+    )
 
     reduced_imag = np.copy(imag)
     cleaned_imag = np.copy(imag)
@@ -64,12 +68,14 @@ def test_zero_suppression_tailcut_dilation():
     reduced_imag[~pixels_zero_supp] = 0
     cleaned_imag[~pixels_tailcut] = 0
 
-    pixels_cleaned_after_reduction = tailcuts_clean(camera_geometry, reduced_imag,
-                                                    picture_thresh=8,
-                                                    boundary_thresh=4,
-                                                    keep_isolated_pixels=True,
-                                                    min_number_picture_neighbors=0
-                                                    )
+    pixels_cleaned_after_reduction = tailcuts_clean(
+        camera_geometry,
+        reduced_imag,
+        picture_thresh=8,
+        boundary_thresh=4,
+        keep_isolated_pixels=True,
+        min_number_picture_neighbors=0,
+    )
 
     reduced_imag[~pixels_cleaned_after_reduction] = 0
 
