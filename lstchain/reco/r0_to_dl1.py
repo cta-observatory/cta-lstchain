@@ -1,14 +1,12 @@
-"""This is a module for extracting data from simtelarray files and
-calculate image parameters of the events: Hillas parameters, timing
-parameters. They can be stored in HDF5 file. The option of saving the
+"""This is a module for extracting data from simtelarray and observed
+files and calculate image parameters of the events: Hillas parameters,
+timing parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
 """
 import logging
-import math
 import os
 from functools import partial
-from itertools import chain
 from pathlib import Path
 
 import astropy.units as u
@@ -35,7 +33,6 @@ from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..datachecks.dl1_checker import check_dl1
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
@@ -47,7 +44,6 @@ from ..io import (
 from ..io import (
     add_global_metadata,
     global_metadata,
-    write_array_info,
     write_calibration_data,
     write_mcheader,
     write_metadata,
@@ -55,7 +51,6 @@ from ..io import (
     write_subarray_tables,
 )
 from ..io.io import add_column_table
-from ..io.io import write_array_info_08
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..io.io import dl1_params_lstcam_key
@@ -71,8 +66,6 @@ __all__ = [
 
 
 cleaning_method = tailcuts_clean
-
-
 
 
 def get_dl1(
@@ -95,7 +88,7 @@ def get_dl1(
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
-        superseeds the standard configuration
+        supersedes the standard configuration
 
     Returns
     -------
@@ -221,7 +214,6 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-
     source = EventSource(input_url=input_filename,
                          config=Config(config["source_config"]))
     subarray = source.subarray
@@ -246,7 +238,6 @@ def r0_to_dl1(
         subarray=subarray
     )
 
-
     if not is_simu:
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
@@ -263,7 +254,6 @@ def r0_to_dl1(
             subarray=source.subarray
         )
 
-
     calibration_index = DL1MonitoringEventIndexContainer()
 
     dl1_container = DL1ParametersContainer()
@@ -272,8 +262,7 @@ def r0_to_dl1(
     extra_im.prefix = ''  # get rid of the prefix
 
     # Write extra information to the DL1 file
-    write_array_info(subarray, output_filename)
-    write_array_info_08(subarray, output_filename)
+    subarray.to_hdf(output_filename)
 
     if is_simu:
         write_mcheader(
@@ -339,14 +328,14 @@ def r0_to_dl1(
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             else:
-                if i==0:
+                if i == 0:
                     # initialize the telescope
                     # FIXME? LST calibrator is only for one telescope
                     # it should be inside the telescope loop (?)
 
                     tel_id = calibration_calculator.tel_id
 
-                    #initialize the event monitoring data
+                    # initialize the event monitoring data
                     event.mon = source.r0_r1_calibrator.mon_data
 
                     # write the first calibration event (initialized from calibration h5 file)
@@ -438,7 +427,6 @@ def r0_to_dl1(
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
-
 
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type

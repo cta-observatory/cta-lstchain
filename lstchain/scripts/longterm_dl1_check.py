@@ -15,23 +15,25 @@ showing the evolution of many such values.
 
 """
 
-from astropy.table import Table
 import copy
 import glob
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import tables
-
+from astropy.table import Table
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show
 from bokeh.layouts import gridplot, column
 from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool, Range1d
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
-from ctapipe.instrument import CameraGeometry
 from ctapipe.coordinates import EngineeringCameraFrame
+from ctapipe.instrument import SubarrayDescription
+
 from lstchain.visualization.bokeh import show_camera
-from pathlib import Path
+
 
 def main():
 
@@ -121,7 +123,6 @@ def main():
                   'mu_lg_peak_sample_mean': [],
                   'mu_lg_peak_sample_stddev': [],
                   'mu_intensity_mean': []}
-
 
     # and another one for pixel-wise run averages:
     pixwise_runsummary = {'ff_pix_charge_mean': [],
@@ -487,22 +488,17 @@ def main():
 
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):
-    cam_description_table = \
-        Table.read(files[0], path='instrument/telescope/camera/LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(output_file_name,
-                          path=f'/instrument/telescope/camera/LSTCam',
-                          append=True, serialize_meta=True)
+    subarray_info = SubarrayDescription.from_hdf(files[0])
+    subarray_info.to_hdf(output_file_name)
 
     plot(output_file_name)
 
 
-def plot(filename='longterm_dl1_check.h5'):
+def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     # First read in the camera geometry:
-    cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
-    camgeom = CameraGeometry.from_table(cam_description_table)
+    subarray_info = SubarrayDescription.from_hdf(filename)
+    camgeom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
     file = tables.open_file('longterm_dl1_check.h5')
@@ -897,6 +893,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 point_policy='snap_to_data'))
 
     return fig
+
 
 if __name__ == '__main__':
     main()

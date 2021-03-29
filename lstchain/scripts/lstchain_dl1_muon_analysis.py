@@ -18,8 +18,11 @@ $> python lstchain_muon_analysis_dl1.py
 
 import argparse
 import glob
+
 import numpy as np
-from ctapipe.instrument import CameraGeometry
+import pandas as pd
+from astropy.table import Table
+from ctapipe.instrument import SubarrayDescription
 
 from lstchain.image.muon import (
     analyze_muon_event,
@@ -27,13 +30,9 @@ from lstchain.image.muon import (
     fill_muon_event,
     tag_pix_thr,
 )
-
-from lstchain.visualization import plot_calib
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import read_telescopes_descriptions, read_subarray_description
-
-from astropy.table import Table
-import pandas as pd
+from lstchain.visualization import plot_calib
 
 parser = argparse.ArgumentParser()
 
@@ -117,8 +116,8 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
-        cam_description_table = Table.read(filename, path="instrument/telescope/camera/LSTCam")
-        geom = CameraGeometry.from_table(cam_description_table)
+        subarray_info = SubarrayDescription.from_hdf(filename)
+        geom = subarray_info.tel[lst1_tel_id].camera.geometry
 
         subarray = read_subarray_description(filename, subarray_name='LST-1')
 
