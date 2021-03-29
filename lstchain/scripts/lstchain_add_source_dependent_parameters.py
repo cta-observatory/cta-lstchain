@@ -55,7 +55,7 @@ def main():
             pass
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
-    subarray_info = SubarrayDescription.from_hdf(args.input_file)
+    subarray_info = SubarrayDescription.from_hdf(dl1_filename)
     focal_length = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
  
     src_dep_df = pd.concat(get_source_dependent_parameters(dl1_params, config, focal_length=focal_length), axis=1)
