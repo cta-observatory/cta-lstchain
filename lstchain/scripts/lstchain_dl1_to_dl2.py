@@ -63,10 +63,6 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None, required=False)
 
-parser.add_argument('--tel-id', '-tid', action='store', type=str,
-                    dest='tel_id',
-                    help='Telescope id - used to read Telescope or Optics info such as the focal length',
-                    default=1)
 
 args = parser.parse_args()
 
@@ -106,7 +102,8 @@ def main():
     cls_gh = joblib.load(fileH)
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
-    focal_length = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
+    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
     # Apply the models to the data
 

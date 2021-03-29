@@ -41,11 +41,6 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-parser.add_argument('--tel-id', '-tid', action='store', type=str,
-                    dest='tel_id',
-                    help='Telescope id - used to read Telescope or Optics info such as the focal length',
-                    default=1)
-
 args = parser.parse_args()
 
 def main():
@@ -61,7 +56,8 @@ def main():
 
     dl1_params = pd.read_hdf(dl1_filename, key=dl1_params_lstcam_key)
     subarray_info = SubarrayDescription.from_hdf(dl1_filename)
-    focal_length = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
+    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
  
     src_dep_df = pd.concat(get_source_dependent_parameters(dl1_params, config, focal_length=focal_length), axis=1)
 

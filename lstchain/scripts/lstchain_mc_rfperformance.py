@@ -77,12 +77,6 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-
-parser.add_argument('--tel-id', '-tid', action='store', type=str,
-                    dest='tel_id',
-                    help='Telescope id - used to read Telescope or Optics info such as the focal length',
-                    default=1)
-
 args = parser.parse_args()
 
 
@@ -97,7 +91,8 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     subarray_info = SubarrayDescription.from_hdf(args.gammatest)
-    focal_length = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
+    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
