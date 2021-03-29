@@ -15,7 +15,7 @@ import numpy as np
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_mc_dl2_to_QTable
-from lstchain.io import DataSelection, DataBinning
+from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
 
 from astropy.io import fits
 import astropy.units as u
@@ -111,18 +111,18 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    classes = [DataSelection, DataBinning]
+    classes = [EventSelector, DL3FixedCuts, DataBinning]
 
     aliases = {
         ("g", "input-gamma-dl2"): "IRFFITSWriter.input_gamma_dl2",
         ("p", "input-proton-dl2"): "IRFFITSWriter.input_proton_dl2",
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
-        ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
-        ("theta", "fixed-theta-cut"): "DataSelection.fixed_theta_cut",
-        ("t_irf", "irf_obs_time"): "DataSelection.irf_obs_time",
-        "allowed-tels": "DataSelection.allowed_tels",
-        "config": "DataSelection.config",
+        ("gh", "fixed-gh-cut"): "DL3FixedCuts.fixed_gh_cut",
+        ("theta", "fixed-theta-cut"): "DL3FixedCuts.fixed_theta_cut",
+        ("t_irf", "irf_obs_time"): "DL3FixedCuts.irf_obs_time",
+        "allowed-tels": "DL3FixedCuts.allowed_tels",
+        "config": "EventSelector.config", # Check
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
@@ -163,7 +163,8 @@ class IRFFITSWriter(Tool):
         else:
             self.only_gamma_irf = True
 
-        self.data_sel = DataSelection(parent=self)
+        self.event_sel = EventSelector(parent=self)
+        self.fixed_cuts = DL3FixedCuts(parent=self)
         self.data_bin = DataBinning(parent=self)
 
         self.mc_particle = {
@@ -174,7 +175,7 @@ class IRFFITSWriter(Tool):
         }
         Provenance().add_input_file(self.input_gamma_dl2)
 
-        self.t_obs = self.data_sel.irf_obs_time * u.hour
+        self.t_obs = self.fixed_cuts.irf_obs_time * u.hour
 
         # Read and update MC information
         if not self.only_gamma_irf:
@@ -233,16 +234,16 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
 
-        self.log.info(f"Using fixed G/H cut of {self.data_sel.fixed_gh_cut}")
+        self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
-        gammas = self.data_sel.filter_cut(gammas)
-        gammas = self.data_sel.allowed_tels_filter(gammas)
-        gammas = self.data_sel.gh_cut(gammas)
+        gammas = self.event_sel.filter_cut(gammas)
+        gammas = self.fixed_cuts.allowed_tels_filter(gammas)
+        gammas = self.fixed_cuts.gh_cut(gammas)
 
         # With point_like flag for point like IRFs.
         # Without point_like flag for Full Enclosure IRFs
         if self.point_like:
-            gammas = self.data_sel.theta_cut(gammas)
+            gammas = self.fixed_cuts.theta_cut(gammas)
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -264,9 +265,9 @@ class IRFFITSWriter(Tool):
                 ]
             )
 
-            background = self.data_sel.filter_cut(background)
-            background = self.data_sel.allowed_tels_filter(background)
-            background = self.data_sel.gh_cut(background)
+            background = self.event_sel.filter_cut(background)
+            background = self.fixed_cuts.allowed_tels_filter(background)
+            background = self.fixed_cuts.gh_cut(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
@@ -275,13 +276,13 @@ class IRFFITSWriter(Tool):
         # GH_CUT and FOV_CUT are temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
-            "INSTRUME": "LST-" + " ".join(map(str, self.data_sel.allowed_tels)),
+            "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
-            "GH_CUT": self.data_sel.fixed_gh_cut,
+            "GH_CUT": self.fixed_cuts.fixed_gh_cut,
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(self.data_sel.fixed_theta_cut * u.deg)
+            extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 

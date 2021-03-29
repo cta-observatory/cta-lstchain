@@ -3,7 +3,7 @@ from .lstcontainers import (
     DL1ParametersContainer,
     DispContainer,
 )
-from.dataselection import DataSelection, DataBinning
+from .event_selection import EventSelector, DL3FixedCuts, DataBinning
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
@@ -29,6 +29,9 @@ __all__ = [
     'read_configuration_file',
     'DL1ParametersContainer',
     'DispContainer',
+    'EventSelector',
+    'DL3FixedCuts',
+    'DataBinning',
     'get_dataset_keys',
     'auto_merge_h5files',
     'smart_merge_h5files',

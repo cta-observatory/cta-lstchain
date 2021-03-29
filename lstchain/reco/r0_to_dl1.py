@@ -338,8 +338,8 @@ def r0_to_dl1(
                                            new_ped=True, new_ff=True)
 
                 # flat-field or pedestal:
-                if ( event.trigger.event_type == EventType.FLATFIELD or
-                     event.trigger.event_type == EventType.SKY_PEDESTAL ):
+                if (event.trigger.event_type == EventType.FLATFIELD or
+                        event.trigger.event_type == EventType.SKY_PEDESTAL):
 
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
@@ -366,6 +366,9 @@ def r0_to_dl1(
             # only after the ring analysis is complete.
 
             for ii, telescope_id in enumerate(event.dl1.tel.keys()):
+
+                focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
+                mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
                 dl1_container.reset()
 
@@ -424,9 +427,6 @@ def r0_to_dl1(
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type
 
-                # FIXME: no need to read telescope characteristics like foclen for every event!
-                foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                 dl1_container.prefix = tel.prefix
 
                 # extra info for the image table
@@ -487,7 +487,7 @@ def r0_to_dl1(
                             muonpars = \
                                 analyze_muon_event(subarray,
                                                    event.index.event_id,
-                                                   image, geom, foclen,
+                                                   image, geom, focal_length,
                                                    mirror_area, False, '')
                             #                      mirror_area, True, './')
                             #           (test) plot muon rings as png files
@@ -547,9 +547,7 @@ def r0_to_dl1(
 
     if is_simu:
         # Reconstruct source position from disp for all events and write the result in the output file
-        for tel_name in ['LST_LSTCam']:
-            focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal)
+        add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal_length)
 
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever

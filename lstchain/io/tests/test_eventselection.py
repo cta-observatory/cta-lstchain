@@ -1,33 +1,43 @@
 import pytest
-from lstchain.io import DataSelection, DataBinning
+from lstchain.io import EventSelector, DataBinning
 
 
-def test_data_selection(simulated_dl2_file):
-    from lstchain.io import read_mc_dl2_to_QTable
+def test_event_selection():
+    import pandas as pd
+    import numpy as np
+    from astropy.table import Table
+    import astropy.units as u
 
-    tempsel = DataSelection()
-    tempsel.event_filters = {
-        "intensity": [0, 1000],
-        "width": [0, 100],
-        "length": [0, 100],
-        "r": [0, 1],
-        "wl": [0.1, 1],
-        "leakage_intensity_width_2": [0, 1]
-    }
-    tempsel.fixed_gh_cut = 0.5
-    tempsel.fixed_theta_cut = 1
-    tempsel.irf_obs_time = 50
-    tempsel.allowed_tels = [1]
+    evt_fil = EventSelector()
 
-    data, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
+    data_t = Table(
+        {
+            "a": u.Quantity([1, 2, 3], unit=u.kg),
+            "b": u.Quantity([np.nan, 2.2, 3.2], unit=u.m),
+            "c": u.Quantity([1, 3, np.inf], unit=u.s),
+        }
+    )
 
-    data_filter = tempsel.filter_cut(data)
-    data_gh = tempsel.gh_cut(data)
-    data_tel = tempsel.allowed_tels_filter(data)
+    evt_fil.filters = dict(a=[0, 2.5], b=[0, 3], c=[0, 4])
+    evt_fil.finite_params = ["b"]
 
-    assert data_filter["intensity"].max() < 1000
-    assert data_gh["gh_score"].max() > 0.5
-    assert data_tel["tel_id"].mean() == 1
+    data_t = evt_fil.filter_cut(data_t)
+    data_t_df = evt_fil.filter_cut(data_t.to_pandas())
+
+    np.testing.assert_array_equal(
+        data_t_df, pd.DataFrame({"a": [2], "b": [2.2], "c": [3]})
+    )
+
+    np.testing.assert_array_equal(
+        data_t,
+        Table(
+            {
+                "a": u.Quantity([2], unit=u.kg),
+                "b": u.Quantity([2.2], unit=u.m),
+                "c": u.Quantity([3], unit=u.s),
+            }
+        ),
+    )
 
 
 def test_data_binning():

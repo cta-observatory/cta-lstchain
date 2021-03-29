@@ -18,7 +18,7 @@ from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
-from lstchain.io import DataSelection
+from lstchain.io import EventSelector, DL3FixedCuts
 
 from pyirf.utils import calculate_source_fov_offset
 
@@ -88,13 +88,13 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    classes = [DataSelection]
+    classes = [EventSelector, DL3FixedCuts]
 
     aliases = {
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         ("irf", "input-irf"): "DataReductionFITSWriter.input_irf",
-        ("gh", "fixed-gh-cut"): "DataSelection.fixed_gh_cut",
+        ("gh", "fixed-gh-cut"): "DL3FixedCuts.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -117,7 +117,8 @@ class DataReductionFITSWriter(Tool):
 
         Provenance().add_input_file(self.input_dl2)
 
-        self.data_sel = DataSelection(parent=self)
+        self.event_sel = EventSelector(parent=self)
+        self.fixed_cuts = DL3FixedCuts(parent=self)
 
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():
@@ -147,8 +148,8 @@ class DataReductionFITSWriter(Tool):
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
-        self.data = self.data_sel.filter_cut(self.data)
-        self.data = self.data_sel.gh_cut(self.data)
+        self.data = self.event_sel.filter_cut(self.data)
+        self.data = self.fixed_cuts.gh_cut(self.data)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(

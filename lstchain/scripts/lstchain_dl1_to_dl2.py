@@ -14,14 +14,13 @@ $> python lstchain_dl1_to_dl2.py
 
 """
 
-import joblib
 import argparse
-import astropy.units as u
 import numpy as np
 import os
 import pandas as pd
 from tables import open_file
 import joblib
+from ctapipe.instrument import SubarrayDescription
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 from lstchain.reco import dl1_to_dl2
 from lstchain.io import (
@@ -40,7 +39,6 @@ from lstchain.io.io import (
     write_dataframe,
 )
 
-
 parser = argparse.ArgumentParser(description="DL1 to DL2")
 
 # Required arguments
@@ -50,16 +48,15 @@ parser.add_argument('--input-file', '-f', type=str,
                     default=None, required=True)
 
 parser.add_argument('--path-models', '-p', action='store', type=str,
-                     dest='path_models',
-                     help='Path where to find the trained RF',
-                     default='./trained_models')
+                    dest='path_models',
+                    help='Path where to find the trained RF',
+                    default='./trained_models')
 
 # Optional arguments
 parser.add_argument('--output-dir', '-o', action='store', type=str,
-                     dest='output_dir',
-                     help='Path where to store the reco dl2 events',
-                     default='./dl2_data')
-
+                    dest='output_dir',
+                    help='Path where to store the reco dl2 events',
+                    default='./dl2_data')
 
 parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
@@ -67,11 +64,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None, required=False)
 
 
-
 args = parser.parse_args()
 
-def main():
 
+def main():
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -85,7 +81,7 @@ def main():
 
     # if real data, add deltat t to dataframe keys
     data = add_delta_t_key(data)
-        
+
     # Dealing with pointing missing values. This happened when `ucts_time` was invalid.
     if 'alt_tel' in data.columns and 'az_tel' in data.columns \
             and (np.isnan(data.alt_tel).any() or np.isnan(data.az_tel).any()):
@@ -93,52 +89,60 @@ def main():
         if np.isfinite(data.alt_tel).any() and np.isfinite(data.az_tel).any():
             data = impute_pointing(data)
         else:
-            data.alt_tel = - np.pi/2.
-            data.az_tel = - np.pi/2.
+            data.alt_tel = - np.pi / 2.
+            data.az_tel = - np.pi / 2.
 
-    #Load the trained RF for reconstruction:
+    # Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
     fileD = args.path_models + "/reg_disp_vector.sav"
     fileH = args.path_models + "/cls_gh.sav"
-    
+
     reg_energy = joblib.load(fileE)
     reg_disp_vector = joblib.load(fileD)
     cls_gh = joblib.load(fileH)
-    
-    #Apply the models to the data
 
-    #Source-independent analysis
+    subarray_info = SubarrayDescription.from_hdf(args.input_file)
+    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+
+    # Apply the models to the data
+
+    # Source-independent analysis
     if not config['source_dependent']:
         data = filter_events(data,
                              filters=config["events_filters"],
                              finite_params=config['regression_features'] + config['classification_features'],
-                         )
+                             )
 
-        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
+                                      custom_config=config)
 
-    #Source-dependent analysis
+    # Source-dependent analysis
     if config['source_dependent']:
         data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_srcdep.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in data_srcdep.columns])
+        data_srcdep.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
 
         dl2_srcdep_dict = {}
 
         for i, k in enumerate(data_srcdep.columns.levels[0]):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
-                                               filters=config["events_filters"],
-                                               finite_params=config['regression_features'] + config['classification_features'],
-                                           )
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+                                                   filters=config["events_filters"],
+                                                   finite_params=config['regression_features'] + config[
+                                                       'classification_features'],
+                                                   )
+            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
+                                             focal_length=focal_length, custom_config=config)
 
             dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
-            if i==0:
+            if i == 0:
                 dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1','dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
@@ -147,7 +151,7 @@ def main():
 
     if dl1_images_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_images_lstcam_key)
-    
+
     if dl1_params_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_lstcam_key)
 
@@ -167,7 +171,7 @@ def main():
                     grouppath, groupname = path.rsplit('/', 1)
                     g = h5out.create_group(
                         grouppath, groupname, createparents=True
-                        )
+                    )
                 else:
                     g = h5out.get_node(path)
 
@@ -179,6 +183,7 @@ def main():
     else:
         write_dl2_dataframe(dl2_srcindep, output_file)
         write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key)
+
 
 if __name__ == '__main__':
     main()

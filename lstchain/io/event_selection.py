@@ -1,34 +1,44 @@
 from ctapipe.core import Component
-from ctapipe.core.traits import Int, Float, List, Dict
+from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
 
 import numpy as np
 import astropy.units as u
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 
-__all__ = ["DataSelection", "DataBinning"]
+
+__all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
 
 
-class DataSelection(Component):
+class EventSelector(Component):
     """
-    Collect various selection cuts to be applied for IRF production and
-    DL3 data reduction
-
-    Parameters for event filters will be combined in a dict so that the
-    filter_events() can be used.
+    Filter values used for event filters and list of finite parameters are taken as inputs and
+    filter_events() is used on a table of events called in with the Component.
     """
 
-    event_filters = Dict(
+    filters = Dict(
         help="Dict of event filter parameters",
         default_value={
-            "intensity": [0, np.inf],
-            "length": [0, np.inf],
-            "width": [0, np.inf],
             "r": [0, 1],
             "wl": [0.01, 1],
             "leakage_intensity_width_2": [0, 1],
         },
     ).tag(config=True)
+
+    finite_params = List(
+	help="List of parameters to ensure finite values",
+	default_value=["intensity", "length", "width"],
+    ).tag(config=True)
+
+
+    def filter_cut(self, events):
+        return filter_events(events, self.filters, self.finite_params)
+
+
+class DL3FixedCuts(Component):
+    """
+    Temporary fixed selection cuts for DL2 to DL3 conversion
+    """
 
     fixed_gh_cut = Float(
         help="Fixed selection cut for gh_score (gammaness)",
@@ -50,9 +60,6 @@ class DataSelection(Component):
         trait=Int(),
         default_value=[1],
     ).tag(config=True)
-
-    def filter_cut(self, data):
-        return filter_events(data, self.event_filters)
 
     def gh_cut(self, data):
         return data[data["gh_score"] > self.fixed_gh_cut]

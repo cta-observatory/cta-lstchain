@@ -67,8 +67,6 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
-parser.add_argument('--tel-id', type=int, help='Telescope ID (default: 1)', default=1)
-
 args = parser.parse_args()
 
 
@@ -111,8 +109,9 @@ def main():
         delta_time = config[clean_method_name]["delta_time"]
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
-    foclen = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
-    camera_geom = subarray_info.tel[args.tel_id].camera.geometry
+    tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [
@@ -210,8 +209,8 @@ def main():
                         dl1_container.n_islands = num_islands
                         dl1_container.wl = dl1_container.width / dl1_container.length
                         dl1_container.n_pixels = n_pixels
-                        width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-                        length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+                        width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
+                        length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
                         dl1_container.width = width
                         dl1_container.length = length
                         dl1_container.log_intensity = np.log10(dl1_container.intensity)
