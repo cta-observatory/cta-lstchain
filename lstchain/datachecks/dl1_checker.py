@@ -29,7 +29,7 @@ from astropy import units as u
 from astropy.table import Table, vstack
 from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.instrument import CameraGeometry
+from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
@@ -151,14 +151,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
         # write also the histogram binnings:
         writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
-    # we assume that cam geom is the same in all files, & write the first one
-    # we convert units from m to deg
-    cam_description_table = \
-        Table.read(filenames[0], path='instrument/telescope/camera/LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(datacheck_filename,
-                          path=f'/instrument/telescope/camera/LSTCam',
-                          append=True, serialize_meta=True)
+    subarray_info = SubarrayDescription.from_hdf(filenames[0])
+    subarray_info.to_hdf(datacheck_filename)
 
     # write out also which trigger tag has been used for finding pedestals:
     file = h5py.File(datacheck_filename, mode='a')
@@ -170,19 +164,26 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # files in the same directory as the DL1 files (assuming all of them are
     # in the same directory as the first one!)
     if create_pdf:
-        plot_datacheck(datacheck_filename, output_path, batch,
-                       muons_dir=os.path.dirname(filenames[0]))
+        plot_datacheck(
+            datacheck_filename,
+            output_path,
+            batch,
+            muons_dir=os.path.dirname(filenames[0]),
+            tel_id=first_file.tel_id
+        )
 
     return
 
 
-def process_dl1_file(filename, bins):
+def process_dl1_file(filename, bins, tel_id=1):
     """
 
     Parameters
     ----------
     filename: string, or Path, input DL1 .h5 file to be checked
     bins: DL1DataCheckHistogramBins container indicating binning of histograms
+    tel_id: int
+        Telescope ID (default=1)
 
     Returns
     -------
@@ -203,13 +204,9 @@ def process_dl1_file(filename, bins):
     dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
 
-    cam_description_table = \
-        Table.read(filename, path='instrument/telescope/camera/LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
-    optics_description_table = \
-        Table.read(filename, path='instrument/telescope/optics')
-    equivalent_focal_length = \
-        optics_description_table['equivalent_focal_length']
+    subarray_info = SubarrayDescription.from_hdf(filename)
+    geom = subarray_info.tel[tel_id].camera.geometry
+    equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     with tables.open_file(filename) as file:
@@ -290,18 +287,20 @@ def process_dl1_file(filename, bins):
                dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None):
+def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None, tel_id=1):
     """
 
     Parameters
     ----------
-    batch: bool, run in batch mode
-    muons_dir
     datacheck_filename: list of strings, or pathlib.Path, name(s) of .h5
     files produced by the function check_dl1, starting from DL1 event files
     If it is a list of file names, we expect each of the files to correspond to
     one subrun of the same run.
     out_path: optional; if not given, it will be the same of file filename
+    batch: bool, run in batch mode
+    muons_dir
+    tel_id: int
+        Telescope ID (default=1)
 
     Returns
     -------
@@ -330,10 +329,8 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         pdf_filename = Path(out_path, pdf_filename.name)
 
     # Read camera geometry
-    cam_description_table = \
-        Table.read(datacheck_filename,
-                   path='instrument/telescope/camera/LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
+    subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
+    geom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
@@ -431,8 +428,8 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         fig.tight_layout(pad=3.0, h_pad=3.0, w_pad=3.0)
 
         axes[0, 0].plot(table_cosmics.col('sampled_event_ids').flatten(),
-        table_cosmics.col('dragon_time').flatten(),
-        label='dragon_time')
+                        table_cosmics.col('dragon_time').flatten(),
+                        label='dragon_time')
         axes[0, 0].set_xlabel('event id')
         axes[0, 0].set_ylabel('timestamp')
         axes[0, 0].legend(loc='best')
@@ -1151,7 +1148,7 @@ def merge_dl1datacheck_files(file_list):
     if str(merged_filename) in file_list:
         file_list.remove(str(merged_filename))
 
-    print(file_list)
+    logger.info(file_list)
 
     merged_file = tables.open_file(merged_filename, 'w')
     merged_file.create_group('/', 'dl1datacheck')
@@ -1206,11 +1203,7 @@ def merge_dl1datacheck_files(file_list):
 
     # For copying the camera geometry we use astropy tables to avoid a
     # NaturalNameWarning from tables/path.py
-    cam_description_table = \
-        Table.read(first_file_name, path='instrument/telescope/camera/LSTCam')
-    geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(merged_filename,
-                          path=f'/instrument/telescope/camera/LSTCam',
-                          append=True, serialize_meta=True)
+    subarray_info = SubarrayDescription.from_hdf(first_file_name)
+    subarray_info.to_hdf(merged_filename)
 
     return merged_filename
