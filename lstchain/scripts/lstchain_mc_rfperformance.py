@@ -20,7 +20,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from ctapipe.instrument import SubarrayDescription
 from lstchain.io import standard_config, replace_config, read_configuration_file
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco import dl1_to_dl2
@@ -90,6 +90,9 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
+    subarray_info = SubarrayDescription.from_hdf(args.gammatest)
+    focal_length = subarray_info.tel[args.tel_id].optics.equivalent_focal_length
+
     reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
@@ -107,14 +110,15 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
+                                  custom_config=config)
 
     ####PLOT SOME RESULTS#####
 
     selected_gammas = dl2.query('reco_type==0 & mc_type==0')
 
-    if(len(selected_gammas) == 0):
-        log.warning('No gammas selected, I will not plot any output') 
+    if (len(selected_gammas) == 0):
+        log.warning('No gammas selected, I will not plot any output')
         sys.exit()
 
     plot_dl2.plot_features(dl2)

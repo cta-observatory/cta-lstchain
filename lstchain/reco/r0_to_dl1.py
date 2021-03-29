@@ -548,8 +548,8 @@ def r0_to_dl1(
     if is_simu:
         # Reconstruct source position from disp for all events and write the result in the output file
         for tel_name in ['LST_LSTCam']:
-            focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal)
+            focal_length = subarray.tel[tel_id].optics.equivalent_focal_length
+            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal_length)
 
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
