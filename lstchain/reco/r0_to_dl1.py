@@ -1,15 +1,13 @@
-"""This is a module for extracting data from simtelarray files and
-calculate image parameters of the events: Hillas parameters, timing
-parameters. They can be stored in HDF5 file. The option of saving the
+"""This is a module for extracting data from simtelarray and observed
+files and calculate image parameters of the events: Hillas parameters,
+timing parameters. They can be stored in HDF5 file. The option of saving the
 full camera image is also available.
 
 """
 import logging
-import math
 import os
 from copy import deepcopy
 from functools import partial
-from itertools import chain
 from pathlib import Path
 
 import astropy.units as u
@@ -36,7 +34,6 @@ from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
 from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..datachecks.dl1_checker import check_dl1
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
@@ -48,7 +45,6 @@ from ..io import (
 from ..io import (
     add_global_metadata,
     global_metadata,
-    write_array_info,
     write_calibration_data,
     write_mcheader,
     write_metadata,
@@ -56,7 +52,6 @@ from ..io import (
     write_subarray_tables,
 )
 from ..io.io import add_column_table
-from ..io.io import write_array_info_08
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 from ..io.io import dl1_params_lstcam_key
@@ -72,8 +67,6 @@ __all__ = [
 
 
 cleaning_method = tailcuts_clean
-
-
 
 
 def get_dl1(
@@ -96,7 +89,7 @@ def get_dl1(
     dl1_container: DL1ParametersContainer
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
-        superseeds the standard configuration
+        supersedes the standard configuration
 
     Returns
     -------
@@ -104,22 +97,12 @@ def get_dl1(
     """
 
     config = replace_config(standard_config, custom_config)
-    cleaning_parameters = config["tailcut"]
-    cleaning_parameters_for_tailcuts = cleaning_parameters.copy()
-    use_main_island = True
-    if "use_only_main_island" in cleaning_parameters.keys():
-        use_main_island = cleaning_parameters["use_only_main_island"]
 
-    # time constraint for image cleaning: require at least one neighbor
-    # within delta_time:
-    delta_time = None
-    if "delta_time" in cleaning_parameters:
-        delta_time = cleaning_parameters["delta_time"]
+    # pop delta_time and use_main_island, so we can cleaning_parameters to tailcuts
+    cleaning_parameters = config["tailcut"].copy()
+    delta_time = cleaning_parameters.pop("delta_time", None)
+    use_main_island = cleaning_parameters.pop("use_only_main_island", True)
 
-    # we use pop because ctapipe won't recognize that keyword in tailcuts
-    cleaning_parameters_for_tailcuts.pop("delta_time")
-    cleaning_parameters_for_tailcuts.pop("use_only_main_island")
-    
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
@@ -129,7 +112,7 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters_for_tailcuts)
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
@@ -148,10 +131,13 @@ def get_dl1(
             # check:
             cleaned_pixel_times[~signal_pixels] = np.nan
 
-            new_mask = apply_time_delta_cleaning(camera_geometry,
-                                                 signal_pixels,
-                                                 cleaned_pixel_times, 1, delta_time)
-            signal_pixels = new_mask
+            signal_pixels = apply_time_delta_cleaning(
+                camera_geometry,
+                signal_pixels,
+                cleaned_pixel_times,
+                min_number_neighbors=1,
+                time_limit=delta_time
+            )
 
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
@@ -222,7 +208,6 @@ def r0_to_dl1(
 
     custom_calibration = config["custom_calibration"]
 
-
     source = EventSource(input_url=input_filename,
                          config=Config(config["source_config"]))
     subarray = source.subarray
@@ -247,7 +232,6 @@ def r0_to_dl1(
         subarray=subarray
     )
 
-
     if not is_simu:
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
@@ -264,7 +248,6 @@ def r0_to_dl1(
             subarray=source.subarray
         )
 
-
     calibration_index = DL1MonitoringEventIndexContainer()
 
     dl1_container = DL1ParametersContainer()
@@ -273,8 +256,7 @@ def r0_to_dl1(
     extra_im.prefix = ''  # get rid of the prefix
 
     # Write extra information to the DL1 file
-    write_array_info(subarray, output_filename)
-    write_array_info_08(subarray, output_filename)
+    subarray.to_hdf(output_filename)
 
     if is_simu:
         write_mcheader(
@@ -340,12 +322,13 @@ def r0_to_dl1(
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
             else:
-                if i==0:
+                if i == 0:
                     # initialize the telescope
                     # FIXME? LST calibrator is only for one telescope
                     # it should be inside the telescope loop (?)
 
                     tel_id = calibration_calculator.tel_id
+
 
                     #initialize the event monitoring data
                     event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
@@ -357,8 +340,8 @@ def r0_to_dl1(
                                            new_ped=True, new_ff=True)
 
                 # flat-field or pedestal:
-                if ( event.trigger.event_type == EventType.FLATFIELD or
-                     event.trigger.event_type == EventType.SKY_PEDESTAL ):
+                if (event.trigger.event_type == EventType.FLATFIELD or
+                        event.trigger.event_type == EventType.SKY_PEDESTAL):
 
                     # process interleaved events (pedestals, ff, calibration)
                     new_ped_event, new_ff_event = calibration_calculator.process_interleaved(event)
@@ -385,6 +368,9 @@ def r0_to_dl1(
             # only after the ring analysis is complete.
 
             for ii, telescope_id in enumerate(event.dl1.tel.keys()):
+
+                focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
+                mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
                 dl1_container.reset()
 
@@ -440,13 +426,9 @@ def r0_to_dl1(
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
 
-
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type
 
-                # FIXME: no need to read telescope characteristics like foclen for every event!
-                foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = u.Quantity(subarray.tel[telescope_id].optics.mirror_area, u.m ** 2)
                 dl1_container.prefix = tel.prefix
 
                 # extra info for the image table
@@ -507,7 +489,7 @@ def r0_to_dl1(
                             muonpars = \
                                 analyze_muon_event(subarray,
                                                    event.index.event_id,
-                                                   image, geom, foclen,
+                                                   image, geom, focal_length,
                                                    mirror_area, False, '')
                             #                      mirror_area, True, './')
                             #           (test) plot muon rings as png files
@@ -567,9 +549,7 @@ def r0_to_dl1(
 
     if is_simu:
         # Reconstruct source position from disp for all events and write the result in the output file
-        for tel_name in ['LST_LSTCam']:
-            focal = OpticsDescription.from_name(tel_name.split('_')[0]).equivalent_focal_length
-            add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal)
+        add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal_length)
 
         # Write energy histogram from simtel file and extra metadata
         # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
