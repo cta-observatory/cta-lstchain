@@ -134,7 +134,7 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import apply_models
     import joblib
 
-    events_filters = standard_config["ReconstructionHDF5Writer"]["events_filters"]
+    events_filters = standard_config["EventSelector"]["filters"]
     regression_features = standard_config["ReconstructionHDF5Writer"]["regression_features"]
     classification_features = standard_config["ReconstructionHDF5Writer"]["classification_features"]
 

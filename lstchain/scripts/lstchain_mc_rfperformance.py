@@ -102,7 +102,7 @@ def main():
         custom_config=config,
     )
 
-    events_filters = config["ReconstructionHDF5Writer"]["events_filters"]
+    events_filters = config["EventSelector"]["filters"]
     gammas = filter_events(pd.read_hdf(args.gammatest, key=dl1_params_lstcam_key),
                            events_filters,
                            )

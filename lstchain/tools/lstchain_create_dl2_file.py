@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from ctapipe.core import Provenance, Tool, ToolConfigurationError, traits
-from lstchain.io import get_dataset_keys, write_dl2_dataframe
+from lstchain.io import get_dataset_keys, write_dl2_dataframe, EventSelector
 from lstchain.io.io import (dl1_images_lstcam_key, dl1_params_lstcam_key,
                             dl1_params_src_dep_lstcam_key,
                             dl2_params_src_dep_lstcam_key, write_dataframe)
@@ -65,6 +65,8 @@ class ReconstructionHDF5Writer(Tool):
         "gh-model": "ReconstructionHDF5Writer.path_gh_model",
     }
 
+    classes = [EventSelector]
+
     flags = {
         'source-dependent': (
             {'ReconstructionHDF5Writer': {'source_dependent': True}},
@@ -78,6 +80,8 @@ class ReconstructionHDF5Writer(Tool):
             raise ToolConfigurationError("Information on classification features not found in config.")
         if not len(self.regression_features):
             raise ToolConfigurationError("Information on regression features not found in config.")
+        finite_params = self.regression_features + self.classification_features
+        self.selector = EventSelector(parent=self, finite_params=finite_params)
 
     def start(self):
 
@@ -108,11 +112,7 @@ class ReconstructionHDF5Writer(Tool):
         # source-independent analysis
         self.log.info("Applying models")
         if not self.source_dependent:
-            self.data_ind = filter_events(
-                self.data_ind,
-                filters=self.events_filters,
-                finite_params=self.regression_features + self.classification_features,
-            )
+            self.data_ind = self.selector.filter_cut(self.data_ind)
             self.dl2_ind = dl1_to_dl2.apply_models(
                 self.data_ind,
                 self.cls_gh,
@@ -128,11 +128,7 @@ class ReconstructionHDF5Writer(Tool):
 
             for i, k in enumerate(self.data_src_dep.columns.levels[0]):
                 self.data_src_dep.append(self.data_src_dep[k])
-                self.data_src_dep = filter_events(
-                    self.data_src_dep,
-                    filters=self.events_filters,
-                    finite_params=self.regression_features + self.classification_features,
-                )
+                self.data_src_dep = self.selector.filter_cut(self.data_src_dep)
                 dl2_level_df = dl1_to_dl2.apply_models(
                     self.data_src_dep,
                     self.cls_gh,

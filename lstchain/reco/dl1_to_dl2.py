@@ -300,7 +300,7 @@ def build_models(filegammas, fileprotons,
     """
 
     config = replace_config(standard_config, custom_config)
-    events_filters = config["ReconstructionHDF5Writer"]["events_filters"]
+    events_filters = config["EventSelector"]["filters"]
     regression_features = config["ReconstructionHDF5Writer"]["regression_features"]
     classification_features = config["ReconstructionHDF5Writer"]["classification_features"]
 
