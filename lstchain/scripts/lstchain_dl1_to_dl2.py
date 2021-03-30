@@ -111,7 +111,7 @@ def main():
     # Apply the models to the data
 
     # Source-independent analysis
-    if not config['source_dependent']:
+    if not config["ReconstructionHDF5Writer"]["source_dependent"]:
         data = filter_events(data,
                              filters=events_filters,
                              finite_params=regression_features + classification_features,
@@ -134,7 +134,7 @@ def main():
                                                filters=events_filters,
                                                finite_params=regression_features + classification_features,
                                            )
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, custom_config=config)
+            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length, custom_config=config)
 
             dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
