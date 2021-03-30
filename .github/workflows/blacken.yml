@@ -3,6 +3,7 @@
 # Othewrwise, Black is run and its changes are committed back to the incoming pull request.
 # From https://github.com/cclauss/autoblack
 
+
 name: autoblack
 on: [pull_request]
 jobs:
