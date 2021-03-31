@@ -764,10 +764,6 @@ def write_subarray_tables(writer, event, metadata=None):
         add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.exclude('subarray/mc_shower', 'mc_shower')
-    writer.exclude('subarray/mc_shower', 'mc_tel')
-
-    writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
