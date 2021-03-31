@@ -2,7 +2,7 @@ import pytest
 from astropy.table import Table
 
 
-#@pytest.mark.run(after="test_write_dl2_dataframe")
+@pytest.mark.run(after="test_write_dl2_dataframe")
 def test_create_event_list(observed_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
     from lstchain.io.io import read_data_dl2_to_QTable

@@ -1,83 +1,55 @@
 import pytest
-from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
-import numpy as np
-import pandas as pd
-from astropy.table import QTable
-import astropy.units as u
+from traitlets.config.loader import JSONFileConfigLoader
 
 
-def test_event_selection():
-    evt_fil = EventSelector()
+def test_event_selection(simulated_dl2_file):
+    from lstchain.io import EventSelector
+    from lstchain.io import read_mc_dl2_to_QTable
+    import numpy as np
 
-    data_t = QTable(
-        {
-            "a": u.Quantity([1, 2, 3], unit=u.kg),
-            "b": u.Quantity([np.nan, 2.2, 3.2], unit=u.m),
-            "c": u.Quantity([1, 3, np.inf], unit=u.s),
-        }
-    )
+    config = JSONFileConfigLoader(
+        'event_selection_config.json', 'docs/examples/'
+    ).load_config()
+    evt_fil = EventSelector(config=config)
 
-    evt_fil.filters = dict(a=[0, 2.5], b=[0, 3], c=[0, 4])
-    evt_fil.finite_params = ["b"]
+    data_t, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
+
+    evt_fil.finite_params = ["intensity", "width", "length"]
 
     data_t = evt_fil.filter_cut(data_t)
     data_t_df = evt_fil.filter_cut(data_t.to_pandas())
 
-    np.testing.assert_array_equal(
-        data_t_df, pd.DataFrame({"a": [2], "b": [2.2], "c": [3]})
-    )
-
-    np.testing.assert_array_equal(
-        data_t,
-        QTable(
-            {
-                "a": u.Quantity([2], unit=u.kg),
-                "b": u.Quantity([2.2], unit=u.m),
-                "c": u.Quantity([3], unit=u.s),
-            }
-        ),
-    )
+    assert data_t["intensity"].min() > evt_fil.filters["intensity"][0]
+    assert np.sum(~np.isfinite(data_t["intensity"])) == 0
+    assert data_t_df["intensity"].min() > evt_fil.filters["intensity"][0]
+    assert np.sum(~np.isfinite(data_t_df["intensity"])) == 0
 
 
-def test_dl3_fixed_cuts():
-    temp_cuts = DL3FixedCuts()
+def test_dl3_fixed_cuts(simulated_dl2_file):
+    from lstchain.io import DL3FixedCuts
+    from lstchain.io import read_mc_dl2_to_QTable
+    import numpy as np
 
-    temp_cuts.fixed_gh_cut = 0.7
-    temp_cuts.fixed_theta_cut = 0.2
-    temp_cuts.allowed_tels = [1, 2]
+    config = JSONFileConfigLoader(
+        'dl3_fixed_cuts_config.json', 'docs/examples/'
+    ).load_config()
+    temp_cuts = DL3FixedCuts(config=config)
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.arange(0.1, 1.1, 0.1)),
-        "theta": u.Quantity(np.arange(0., 1., 0.1), unit=u.deg),
-        "tel_id": u.Quantity([1, 1, 2, 2, 1, 2, 1, 3, 4, 5])
-        })
+    data_t, _ = read_mc_dl2_to_QTable(simulated_dl2_file)
 
-    assert len(temp_cuts.gh_cut(temp_data)) == 4
-    assert len(temp_cuts.theta_cut(temp_data)) == 2
-    assert len(temp_cuts.allowed_tels_filter(temp_data)) == 7
+    assert temp_cuts.gh_cut(data_t)["gh_score"].min() > temp_cuts.fixed_gh_cut
+    assert np.unique(
+        temp_cuts.allowed_tels_filter(data_t)["tel_id"]
+    ) == temp_cuts.allowed_tels
 
 
 def test_data_binning():
-    tempbin = DataBinning()
+    from lstchain.io import DataBinning
 
-    tempbin.true_energy_min = 0.01
-    tempbin.true_energy_max = 100
-    tempbin.true_energy_n_bins_per_decade = 5.5
-    tempbin.reco_energy_min = 0.01
-    tempbin.reco_energy_max = 100
-    tempbin.reco_energy_n_bins_per_decade = 5.5
-    tempbin.energy_migration_min = 0.2
-    tempbin.energy_migration_max = 5
-    tempbin.energy_migration_n_bins = 15
-    tempbin.fov_offset_min = 0.1
-    tempbin.fov_offset_max = 1.1
-    tempbin.fov_offset_n_edges = 9
-    tempbin.bkg_fov_offset_min = 0
-    tempbin.bkg_fov_offset_max = 10
-    tempbin.bkg_fov_offset_n_edges = 11
-    tempbin.source_offset_min = 0
-    tempbin.source_offset_max = 1.0001
-    tempbin.source_offset_n_edges = 1001
+    config = JSONFileConfigLoader(
+        'data_binning_config.json', 'docs/examples/'
+    ).load_config()
+    tempbin = DataBinning(config=config)
 
     e_true = tempbin.true_energy_bins()
     e_reco = tempbin.reco_energy_bins()
@@ -88,7 +60,7 @@ def test_data_binning():
 
     assert len(e_true) == 22
     assert len(e_reco) == 22
-    assert len(e_migra) == 15
+    assert len(e_migra) == 31
     assert len(fov_off) == 9
-    assert len(bkg_fov) == 11
-    assert len(src_off) == 1001
+    assert len(bkg_fov) == 21
+    assert len(src_off) == 1000

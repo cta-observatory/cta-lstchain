@@ -2,12 +2,12 @@
 Create DL3 FITS file from given data DL2 file,
 selection cuts and/or IRF FITS files.
 
-The selection cuts can be taken either from command-line arguments
-or a config file.
-
 Change the selection parameters as need be using the aliases.
-The default values are written in the DataSelection Component and
-in lstchain/data/data_selection_cuts.json
+The default values are written in the EventSelector and DL3FixedCuts Component
+and also given in some example configs in docs/examples/
+
+To use a separate config file for providing the selection parameters,
+copy and append the relevant example config files, into a custom config file.
 """
 
 from astropy.io import fits

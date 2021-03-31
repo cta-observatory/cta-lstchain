@@ -7,8 +7,11 @@ IRFs can be point_like or Full Enclosure.
 Background HDU maybe added if proton and electron MC are provided.
 
 Change the selection parameters as need be using the aliases.
-The default values are written in the DataSelection and DataBinning Component
-and in lstchain/data/data_selection_cuts.json
+The default values are written in the EventSelector, DL3FixedCuts and
+DataBinning Component and also given in some example configs in docs/examples/
+
+To use a separate config file for providing the selection parameters,
+copy and append the relevant example config files, into a custom config file.
 """
 
 import numpy as np
@@ -189,7 +192,7 @@ class IRFFITSWriter(Tool):
         }
         Provenance().add_input_file(self.input_gamma_dl2)
 
-        self.irf_obs_time *= u.hour
+        self.t_obs = self.irf_obs_time * u.hour
 
         # Read and update MC information
         if not self.only_gamma_irf:
@@ -226,7 +229,7 @@ class IRFFITSWriter(Tool):
             # Calculating event weights for Background IRF
             if particle_type != "gamma":
                 p["simulated_spectrum"] = PowerLaw.from_simulation(
-                    p["simulation_info"], self.irf_obs_time
+                    p["simulation_info"], self.t_obs
                 )
 
                 p["events"]["weight"] = calculate_event_weights(
@@ -364,7 +367,7 @@ class IRFFITSWriter(Tool):
                 background,
                 reco_energy_bins=reco_energy_bins,
                 fov_offset_bins=background_offset_bins,
-                t_obs=self.irf_obs_time,
+                t_obs=self.t_obs,
             )
             self.hdus.append(
                 create_background_2d_hdu(
