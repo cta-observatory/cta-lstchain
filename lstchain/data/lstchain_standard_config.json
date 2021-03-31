@@ -22,16 +22,89 @@
       }
     }
   },
-
-  "events_filters": {
-    "intensity": [0, Infinity],
-    "width": [0, Infinity],
-    "length": [0, Infinity],
-    "wl": [0, 1],
-    "r": [0, 1],
-    "leakage_intensity_width_2": [0, 1]
+  "EventSelector": {
+    "filters": {
+      "intensity": [0, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "r": [0, 1],
+      "wl": [0, 1],
+      "leakage_intensity_width_2": [0, 0.2]
+    }
   },
-
+  "ReconstructionHDF5Writer": {
+    "source_dependent": false,
+    "random_forest_regressor_args": {
+      "max_depth": 50,
+      "min_samples_leaf": 2,
+      "n_jobs": 4,
+      "n_estimators": 150,
+      "bootstrap": true,
+      "criterion": "mse",
+      "max_features": "auto",
+      "max_leaf_nodes": null,
+      "min_impurity_decrease": 0.0,
+      "min_impurity_split": null,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "random_forest_classifier_args": {
+      "max_depth": 100,
+      "min_samples_leaf": 2,
+      "n_jobs": 4,
+      "n_estimators": 100,
+      "criterion": "gini",
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "max_features": "auto",
+      "max_leaf_nodes": null,
+      "min_impurity_decrease": 0.0,
+      "min_impurity_split": null,
+      "bootstrap": true,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0.0,
+      "warm_start": false,
+      "class_weight": null
+    },
+    "regression_features": [
+      "log_intensity",
+      "width",
+      "length",
+      "x",
+      "y",
+      "psi",
+      "phi",
+      "wl",
+      "skewness",
+      "kurtosis",
+      "r",
+      "time_gradient",
+      "leakage_intensity_width_2"
+    ],
+    "classification_features": [
+      "log_intensity",
+      "width",
+      "length",
+      "x",
+      "y",
+      "psi",
+      "phi",
+      "wl",
+      "skewness",
+      "kurtosis",
+      "r",
+      "time_gradient",
+      "leakage_intensity_width_2",
+      "log_reco_energy",
+      "reco_disp_dx",
+      "reco_disp_dy"
+    ]
+  },
   "tailcut": {
     "picture_thresh":6,
     "boundary_thresh":3,
@@ -49,80 +122,6 @@
     "use_only_main_island":false,
     "delta_time": 2
   },
-    "random_forest_regressor_args": {
-    "max_depth": 50,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 150,
-    "bootstrap": true,
-    "criterion": "mse",
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0,
-    "warm_start": false
-  },
-
-  "random_forest_classifier_args": {
-    "max_depth": 100,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 100,
-    "criterion": "gini",
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
-    "bootstrap": true,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0.0,
-    "warm_start": false,
-    "class_weight": null
-  },
-
-  "regression_features": [
-    "log_intensity",
-    "width",
-    "length",
-    "x",
-    "y",
-    "psi",
-    "phi",
-    "wl",
-    "skewness",
-    "kurtosis",
-    "r",
-    "time_gradient",
-    "leakage_intensity_width_2"
-  ],
-
-  "classification_features": [
-    "log_intensity",
-    "width",
-    "length",
-    "x",
-    "y",
-    "psi",
-    "phi",
-    "wl",
-    "skewness",
-    "kurtosis",
-    "r",
-    "time_gradient",
-    "leakage_intensity_width_2",
-    "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
-  ],
-
   "allowed_tels": [1, 2, 3, 4],
   "custom_calibration": false,
   "write_pe_image": false,
@@ -146,7 +145,6 @@
 
   "timestamps_pointing":"ucts",
 
-  "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
 

@@ -76,6 +76,9 @@ def main():
             pass
 
     config = replace_config(standard_config, custom_config)
+    events_filters = config["EventSelector"]["filters"]
+    regression_features = config["ReconstructionHDF5Writer"]["regression_features"]
+    classification_features = config["ReconstructionHDF5Writer"]["classification_features"]
 
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
@@ -108,17 +111,17 @@ def main():
     # Apply the models to the data
 
     # Source-independent analysis
-    if not config['source_dependent']:
+    if not config["ReconstructionHDF5Writer"]["source_dependent"]:
         data = filter_events(data,
-                             filters=config["events_filters"],
-                             finite_params=config['regression_features'] + config['classification_features'],
-                             )
+                             filters=events_filters,
+                             finite_params=regression_features + classification_features,
+                         )
 
         dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
                                       custom_config=config)
 
-    # Source-dependent analysis
-    if config['source_dependent']:
+    #Source-dependent analysis
+    if config["ReconstructionHDF5Writer"]["source_dependent"]:
         data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
         data_srcdep.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
@@ -128,12 +131,10 @@ def main():
         for i, k in enumerate(data_srcdep.columns.levels[0]):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
-                                                   filters=config["events_filters"],
-                                                   finite_params=config['regression_features'] + config[
-                                                       'classification_features'],
-                                                   )
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
-                                             focal_length=focal_length, custom_config=config)
+                                               filters=events_filters,
+                                               finite_params=regression_features + classification_features,
+                                           )
+            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length, custom_config=config)
 
             dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
@@ -177,7 +178,7 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
-    if not config['source_dependent']:
+    if not config["ReconstructionHDF5Writer"]["source_dependent"]:
         write_dl2_dataframe(dl2, output_file)
 
     else:
