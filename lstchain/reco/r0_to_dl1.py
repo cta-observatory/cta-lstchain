@@ -6,6 +6,7 @@ full camera image is also available.
 """
 import logging
 import os
+from copy import deepcopy
 from functools import partial
 from pathlib import Path
 
@@ -328,8 +329,9 @@ def r0_to_dl1(
 
                     tel_id = calibration_calculator.tel_id
 
-                    # initialize the event monitoring data
-                    event.mon = source.r0_r1_calibrator.mon_data
+
+                    #initialize the event monitoring data
+                    event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
 
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,

@@ -19,6 +19,6 @@ dependencies:
   - pip:
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.9.0
+      - ctapipe_io_lst~=0.9.1
       - ctaplot
       - pyirf~=0.4.0
