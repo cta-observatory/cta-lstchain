@@ -520,31 +520,40 @@ def filter_events(events,
                   finite_params=None,
                   ):
     """
-    Apply data filtering to a pandas dataframe.
+    Apply data filtering to a pandas dataframe or astropy Table.
+    The Table object will be converted to pandas dataframe and used.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
+    Returning filter is converted to a numpy object so that it can be used by both dataframe
+    and table inputs
 
     Parameters
     ----------
-    events: `pandas.DataFrame`
+    events: `pandas.DataFrame` or 'astropy.table.Table'
     filters: dict containing events features names and their filtering range
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
 
     Returns
     -------
-    `pandas.DataFrame`
+    `pandas.DataFrame` or 'astropy.table.Table'
     """
+    from astropy.table import Table
 
-    filter = np.ones(len(events), dtype=bool)
+    if isinstance(events, Table):
+        events_df = events.to_pandas()
+    else:
+        events_df = events
 
-    for k in filters.keys():
-        filter &= (events[k] >= filters[k][0]) & (events[k] <= filters[k][1])
+    filter = np.ones(len(events_df), dtype=bool)
+
+    for col, (lower_limit, upper_limit) in filters.items():
+        filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
         
     if finite_params is not None:
-        _finite_params = list(set(finite_params).intersection(list(events.columns)))
+        _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
         with pd.option_context('mode.use_inf_as_null', True):
-            not_finite_mask = events[_finite_params].isnull()
+            not_finite_mask = events_df[_finite_params].isnull()
         filter &= ~(not_finite_mask.any(axis=1))
 
         not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
@@ -555,7 +564,7 @@ def filter_events(events,
                 if v > 0:
                     log.warning(f'{k} : {v}')
 
-    return events[filter]
+    return events[filter.to_numpy()]
 
 
 
