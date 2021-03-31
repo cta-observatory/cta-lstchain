@@ -4,10 +4,11 @@ import logging
 import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
-from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord, AltAz
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
+from lstchain.reco.utils import location
 
 __all__ = ["create_obs_index_hdu", "create_hdu_index_hdu", "create_event_list"]
 
@@ -20,11 +21,8 @@ DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 DEFAULT_HEADER["ORIGIN"] = "CTA"
 DEFAULT_HEADER["TELESCOP"] = "CTA-N"
-DEFAULT_HEADER["CREATED"] = Time.now().utc.iso
 
-location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
-
-wobble_offset = 0.4
+wobble_offset = 0.4 * u.deg
 
 
 def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
@@ -99,6 +97,7 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
     obs_index_table = QTable(obs_index_tables)
 
     obs_index_header = DEFAULT_HEADER.copy()
+    obs_index_header["CREATED"] = Time.now().utc.iso
     obs_index_header["HDUCLAS1"] = "INDEX"
     obs_index_header["HDUCLAS2"] = "OBS"
     obs_index_header["INSTRUME"] = t_obs["INSTRUME"]
@@ -117,7 +116,7 @@ def create_hdu_index_hdu(
     filename_list,
     fits_dir,
     hdu_index_filename,
-    add_fits_dir_meta=False,
+    base_dir=None,
 ):
     """
     Create the hdu index table
@@ -139,11 +138,12 @@ def create_hdu_index_hdu(
     filename_list : list
         list of filenames
     fits_dir : Path
-        directory containing the fits file
+        Absolute directory containing the fits file
     hdu_index_filename : str
         filename for HDU index file
-    add_fits_dir_meta : Bool
-        True for adding directory path of FITS file in HDU index table
+    base_dir : Path
+        Absolute directory path for the Base directory for DL3 and index files.
+        Only useful for running tests, when cwd() is not the same.
 
     Returns
     -------
@@ -152,6 +152,11 @@ def create_hdu_index_hdu(
     """
 
     hdu_index_tables = []
+
+    # Currently just for clearing test_create_obs_hdu_index in pytest
+    if not base_dir:
+        base_dir = fits_dir.cwd()
+    file_dir = fits_dir.relative_to(base_dir)
 
     # loop through the files
     for file in filename_list:
@@ -170,19 +175,17 @@ def create_hdu_index_hdu(
             continue
 
         # The column names for the table follows the scheme as shown in
-        # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/HDU_CLASS.html
+        # https://gamma-astro-data-formats.readthedocs.io/en/latest/general/hduclass.html
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
             "HDU_TYPE": "events",
             "HDU_CLASS": "events",
-            "FILE_DIR": "",
+            "BASE_DIR": str(base_dir),
+            "FILE_DIR": str(file_dir),
             "FILE_NAME": file,
             "HDU_NAME": "EVENTS",
         }
-        if add_fits_dir_meta:
-            t_events["FILE_DIR"] = str(fits_dir)
-
         hdu_index_tables.append(t_events)
 
         # GTI
@@ -263,6 +266,7 @@ def create_hdu_index_hdu(
     hdu_index_table = Table(hdu_index_tables)
 
     hdu_index_header = DEFAULT_HEADER.copy()
+    hdu_index_header["CREATED"] = Time.now().utc.iso
     hdu_index_header["HDUCLAS1"] = "INDEX"
     hdu_index_header["HDUCLAS2"] = "HDU"
     hdu_index_header["INSTRUME"] = evt_hdr["INSTRUME"]
@@ -307,11 +311,12 @@ def create_event_list(
     # Timing parameters
     t_start = data["dragon_time"].value[0]
     t_stop = data["dragon_time"].value[-1]
-    time = Time(data["dragon_time"], format="unix", scale="utc")
-    date_obs = time[0].to_value("iso", "date")
+    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
+    date_obs = time_utc[0].to_value("iso", "date")
     mean_time = Time(
         data["dragon_time"].value.mean()*u.s, format="unix", scale="utc"
     )
+    MJDREF = Time('1970-01-01T00:00', scale='utc')
 
     # Position parameters
     reco_alt = data["reco_alt"]
@@ -320,7 +325,7 @@ def create_event_list(
     pointing_az = data["pointing_az"]
 
     src_sky_pos = SkyCoord(
-        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time, location=location)
+        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     ).transform_to(frame="icrs")
     tel_pnt_sky_pos = SkyCoord(
         alt=pointing_alt.mean(),
@@ -329,13 +334,12 @@ def create_event_list(
     ).transform_to(frame="icrs")
 
     # Observation modes
-    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos).to_value()
-
-    if round(source_pointing_diff, 1) == wobble_offset:
+    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos)
+    if np.around(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
-    elif round(source_pointing_diff, 1) > 1:
+    elif np.around(source_pointing_diff, 1) > 1 * u.deg:
         mode = "OFF"
-    elif round(source_pointing_diff, 1) == 0.0:
+    elif np.around(source_pointing_diff, 1) == 0.0 * u.deg:
         mode = "ON"
     else:
         # Nomenclature is to be worked out or have a separate way to mark mispointings
@@ -343,7 +347,7 @@ def create_event_list(
 
     log.info(
         "Source pointing difference with camera pointing"
-        f" is {source_pointing_diff:.3f} deg"
+        f" is {source_pointing_diff:.3f}"
     )
 
     event_table = QTable(
@@ -353,16 +357,31 @@ def create_event_list(
             "RA": src_sky_pos.ra.to(u.deg),
             "DEC": src_sky_pos.dec.to(u.deg),
             "ENERGY": data["reco_energy"],
+            # Optional columns
+            "GAMMANESS": data["gh_score"],
         }
     )
     gti_table = QTable(
-        {"START": u.Quantity(t_start, ndmin=1), "STOP": u.Quantity(t_stop, ndmin=1)}
+        {
+            "START": u.Quantity(t_start, unit=u.s, ndmin=1),
+            "STOP": u.Quantity(t_stop, unit=u.s, ndmin=1)
+        }
     )
-    pnt_table = QTable()
+    pnt_table = QTable(
+        {
+            "TIME": u.Quantity(t_start, unit=u.s, ndmin=1),
+            "RA_PNT": u.Quantity(tel_pnt_sky_pos.ra.to(u.deg), ndmin=1),
+            "DEC_PNT": u.Quantity(tel_pnt_sky_pos.dec.to(u.deg), ndmin=1),
+            "ALT_PNT": u.Quantity(pointing_alt[0].to(u.deg), ndmin=1),
+            "AZ_PNT": u.Quantity(pointing_az[0].to(u.deg), ndmin=1),
+        }
+    )
 
     # Adding the meta data
+    # Comments can be added later for relevant metadata
     # Event table metadata
     ev_header = DEFAULT_HEADER.copy()
+    ev_header["CREATED"] = Time.now().utc.iso
     ev_header["HDUCLAS1"] = "EVENTS"
 
     ev_header["OBS_ID"] = run_number
@@ -370,10 +389,11 @@ def create_event_list(
     ev_header["DATE_OBS"] = date_obs
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
-    ev_header["MJDREFI"] = "40587"  # mjd format for date 01-01-1970
-    ev_header["MJDREFF"] = "0"
+    ev_header["MJDREFI"] = int(MJDREF.mjd)
+    ev_header["MJDREFF"] = MJDREF.mjd - int(MJDREF.mjd)
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
+    ev_header["TIMEREF"] = "TOPOCENTER"
     ev_header["ONTIME"] = elapsed_time
     ev_header["TELAPSE"] = t_stop - t_start
     ev_header["DEADC"] = effective_time / elapsed_time
@@ -397,6 +417,7 @@ def create_event_list(
 
     # GTI table metadata
     gti_header = DEFAULT_HEADER.copy()
+    gti_header["CREATED"] = Time.now().utc.iso
     gti_header["HDUCLAS1"] = "GTI"
 
     gti_header["OBS_ID"] = run_number
@@ -404,17 +425,23 @@ def create_event_list(
     gti_header["MJDREFF"] = ev_header["MJDREFF"]
     gti_header["TIMESYS"] = ev_header["TIMESYS"]
     gti_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
+    gti_header["TIMEREF"] = ev_header["TIMEREF"]
 
     # Pointing table metadata
     pnt_header = DEFAULT_HEADER.copy()
+    pnt_header["CREATED"] = Time.now().utc.iso
     pnt_header["HDUCLAS1"] = "POINTING"
 
     pnt_header["OBS_ID"] = run_number
-    pnt_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
-    pnt_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
-    pnt_header["ALT_PNT"] = ev_header["ALT_PNT"]
-    pnt_header["AZ_PNT"] = ev_header["AZ_PNT"]
-    pnt_header["TIME"] = t_start
+    pnt_header["MJDREFI"] = ev_header["MJDREFI"]
+    pnt_header["MJDREFF"] = ev_header["MJDREFF"]
+    pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
+    pnt_header["TIMESYS"] = ev_header["TIMESYS"]
+    pnt_header["OBSGEO-L"] = location.lon.to_value()
+    pnt_header["OBSGEO-B"] = location.lat.to_value()
+    pnt_header["OBSGEO-H"] = location.height.to_value()
+
+    pnt_header["TIMEREF"] = ev_header["TIMEREF"]
 
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")

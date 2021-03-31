@@ -2,7 +2,7 @@ import pytest
 from astropy.table import Table
 
 
-@pytest.mark.run(after="test_write_dl2_dataframe")
+#@pytest.mark.run(after="test_write_dl2_dataframe")
 def test_create_event_list(observed_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
     from lstchain.io.io import read_data_dl2_to_QTable
@@ -25,7 +25,7 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
 
     assert "TIME" in Table.read(evts).columns
     assert "START" in Table.read(gti).columns
-    assert "RA_PNT" in Table.read(pnt).meta
+    assert "RA_PNT" in Table.read(pnt).columns
 
     observed_dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
     observed_dl3_file = (
@@ -53,6 +53,7 @@ def test_create_obs_hdu_index(observed_dl2_file):
         [dl3_file],
         observed_dl2_file.parent,
         "hdu-index.fits.gz",
+        base_dir=observed_dl2_file.parent,
     )
     obs_list = create_obs_index_hdu(
         [dl3_file],

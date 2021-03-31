@@ -4,8 +4,8 @@ from a given path of DL3 files and a glob pattern to select DL3 files
 The index filenames are the standard as per
 http://gamma-astro-data-formats.readthedocs.io/en/latest/
 
-To add the FITS directory information in the HDU index table, enter
---add_fits_dir True
+The Index files can be stored in a different path, but by default
+they are stored at the same place as the DL3 files.
 """
 from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -24,22 +24,29 @@ class FITSIndexWriter(Tool):
     Or specify some more configurations:
     > lstchain_create_dl3_index_files
         -d /path/to/DL3/files/
+        -o /path/to/DL3/index/files
         -p dl3*[run_1-run_n]*.fits.gz
         --overwrite
-        --add-fits-dir
     """
 
     input_dl3_dir = traits.Path(
-        help="Input path of DL3 files", exists=True, directory_ok=True, file_ok=False
+        help="Input path of DL3 files",
+        exists=True,
+        directory_ok=True,
+        file_ok=False
     ).tag(config=True)
 
     file_pattern = traits.Unicode(
-        help="File pattern to search in the given Path", default_value="dl3*.fits*"
+        help="File pattern to search in the given Path",
+        default_value="dl3*.fits*"
     ).tag(config=True)
 
-    add_fits_dir = traits.Bool(
-        help="If True, adds the path of fits files in HDU index table",
-        default_value=False,
+    output_index_path = traits.Path(
+        help="Output path for the Index files",
+        exists=True,
+        directory_ok=True,
+        file_ok=False,
+        default_value=None
     ).tag(config=True)
 
     overwrite = traits.Bool(
@@ -49,6 +56,7 @@ class FITSIndexWriter(Tool):
 
     aliases = {
         ("d", "input-dl3-dir"): "FITSIndexWriter.input_dl3_dir",
+        ("o", "output-index-path"): "FITSIndexWriter.output_index_path",
         ("p", "file-pattern"): "FITSIndexWriter.file_pattern",
     }
 
@@ -56,11 +64,7 @@ class FITSIndexWriter(Tool):
         "overwrite": (
             {"FITSIndexWriter": {"overwrite": True}},
             "overwrite output files if True",
-        ),
-        "add-fits-dir": (
-            {"FITSIndexWriter": {"add_fits_dir": True}},
-            "Add directory of FITS file to HDU Index table",
-        ),
+        )
     }
 
     def __init__(self, **kwargs):
@@ -78,10 +82,13 @@ class FITSIndexWriter(Tool):
             self.file_list.append(f.name)
             Provenance().add_input_file(f)
 
-        self.hdu_index_file = self.input_dl3_dir.absolute() / self.hdu_index_filename
-        self.obs_index_file = self.input_dl3_dir.absolute() / self.obs_index_filename
+        if not self.output_index_path:
+            self.output_index_path = self.input_dl3_dir
 
-        self.provenance_log = self.input_dl3_dir / (self.name + ".provenance.log")
+        self.hdu_index_file = self.output_index_path.absolute() / self.hdu_index_filename
+        self.obs_index_file = self.output_index_path.absolute() / self.obs_index_filename
+
+        self.provenance_log = self.output_index_path / (self.name + ".provenance.log")
 
         if self.hdu_index_file.exists():
             if self.overwrite:
@@ -113,7 +120,6 @@ class FITSIndexWriter(Tool):
             self.file_list,
             self.input_dl3_dir,
             self.hdu_index_filename,
-            self.add_fits_dir,
         )
         self.obs_index_list = create_obs_index_hdu(
             self.file_list,

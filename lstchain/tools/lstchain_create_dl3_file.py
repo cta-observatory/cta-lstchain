@@ -31,7 +31,7 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        -irf /path/to/irf.fits.gz
+        --input-irf /path/to/irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -40,7 +40,7 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        -irf /path/to/irf.fits.gz
+        --input-irf /path/to/irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -51,7 +51,7 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        -irf /path/to/irf.fits.gz
+        --input-irf /path/to/irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -91,7 +91,7 @@ class DataReductionFITSWriter(Tool):
     aliases = {
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
-        ("irf", "input-irf"): "DataReductionFITSWriter.input_irf",
+        "input-irf": "DataReductionFITSWriter.input_irf",
         ("gh", "fixed-gh-cut"): "DL3FixedCuts.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
@@ -104,9 +104,6 @@ class DataReductionFITSWriter(Tool):
             "overwrite output file if True",
         ),
     }
-
-    def __init__(self, config=None, **kwargs):
-        super().__init__(config=config, **kwargs)
 
     def setup(self):
 

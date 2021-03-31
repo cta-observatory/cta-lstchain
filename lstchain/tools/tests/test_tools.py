@@ -83,7 +83,6 @@ def test_index_dl3_files(temp_dir_observed_files):
             FITSIndexWriter(),
             argv=[
                 f"--input-dl3-dir={temp_dir_observed_files}",
-                "--file-pattern=dl3*fits.gz",
                 "--overwrite",
             ],
             cwd=temp_dir_observed_files,
