@@ -91,7 +91,7 @@ def main():
                 print("i = {}, ev id = {}".format(i, event.index.event_id))
 
     # Finalize pedestal and write to fits file
-    pedestal.finalize_pedestal()
+    pedestal.complete_pedestal()
 
     expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
     pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped),
