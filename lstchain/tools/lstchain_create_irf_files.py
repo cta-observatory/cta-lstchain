@@ -77,21 +77,30 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --gh 0.9
-        --theta 0.2
-        --t_obs 50
+        --fixed-gh-cut 0.9
+        --fixed-theta-cut 0.2
+        --irf-obs-time 50
     """
 
     input_gamma_dl2 = traits.Path(
-        help="Input MC gamma DL2 file", exists=True, directory_ok=False, file_ok=True
+        help="Input MC gamma DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
     ).tag(config=True)
 
     input_proton_dl2 = traits.Path(
-        help="Input MC proton DL2 file", exists=True, directory_ok=False, file_ok=True
+        help="Input MC proton DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
     ).tag(config=True)
 
     input_electron_dl2 = traits.Path(
-        help="Input MC electron DL2 file", exists=True, directory_ok=False, file_ok=True
+        help="Input MC electron DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
     ).tag(config=True)
 
     output_irf_file = traits.Path(
@@ -99,6 +108,11 @@ class IRFFITSWriter(Tool):
         directory_ok=False,
         file_ok=True,
         default_value="./irf.fits.gz",
+    ).tag(config=True)
+
+    irf_obs_time = traits.Float(
+        help="Observation time for IRF in hours",
+        default_value=50,
     ).tag(config=True)
 
     point_like = traits.Bool(
@@ -118,9 +132,9 @@ class IRFFITSWriter(Tool):
         ("p", "input-proton-dl2"): "IRFFITSWriter.input_proton_dl2",
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
-        ("gh", "fixed-gh-cut"): "DL3FixedCuts.fixed_gh_cut",
-        ("theta", "fixed-theta-cut"): "DL3FixedCuts.fixed_theta_cut",
-        ("t_irf", "irf_obs_time"): "DL3FixedCuts.irf_obs_time",
+        "irf-obs-time": "IRFFITSWriter.irf_obs_time",
+        "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
+        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
         "config": "EventSelector.config",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -175,7 +189,7 @@ class IRFFITSWriter(Tool):
         }
         Provenance().add_input_file(self.input_gamma_dl2)
 
-        self.t_obs = self.fixed_cuts.irf_obs_time * u.hour
+        self.irf_obs_time *= u.hour
 
         # Read and update MC information
         if not self.only_gamma_irf:
@@ -212,7 +226,7 @@ class IRFFITSWriter(Tool):
             # Calculating event weights for Background IRF
             if particle_type != "gamma":
                 p["simulated_spectrum"] = PowerLaw.from_simulation(
-                    p["simulation_info"], self.t_obs
+                    p["simulation_info"], self.irf_obs_time
                 )
 
                 p["events"]["weight"] = calculate_event_weights(
@@ -350,7 +364,7 @@ class IRFFITSWriter(Tool):
                 background,
                 reco_energy_bins=reco_energy_bins,
                 fov_offset_bins=background_offset_bins,
-                t_obs=self.t_obs,
+                t_obs=self.irf_obs_time,
             )
             self.hdus.append(
                 create_background_2d_hdu(

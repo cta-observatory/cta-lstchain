@@ -50,11 +50,6 @@ class DL3FixedCuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
-    irf_obs_time = Float(
-        help="Observation time for IRF in hours",
-        default_value=50,
-    ).tag(config=True)
-
     allowed_tels = List(
         help="List of allowed LST telescope ids",
         trait=Int(),

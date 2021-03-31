@@ -10,9 +10,8 @@
     }
   },
   "DL3FixedCuts": {
-    "fixed_gh_cut": 0.6,
+    "fixed_gh_cut": 0.7,
     "fixed_theta_cut": 0.2,
-    "irf_obs_time": 50,
     "allowed_tels": [1]
   },
   "DataBinning": {

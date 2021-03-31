@@ -55,17 +55,21 @@ class DataReductionFITSWriter(Tool):
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
-        --gh 0.9
-        --theta 0.2
+        --fixed-gh-cut 0.9
         --overwrite
     """
 
     input_dl2 = traits.Path(
-        help="Input data DL2 file", exists=True, directory_ok=False, file_ok=True
+        help="Input data DL2 file",
+        exists=True,
+        directory_ok=False,
+        file_ok=True
     ).tag(config=True)
 
     output_dl3_path = traits.Path(
-        help="DL3 output filedir", directory_ok=True, file_ok=False
+        help="DL3 output filedir",
+        directory_ok=True,
+        file_ok=False
     ).tag(config=True)
 
     input_irf = traits.Path(
@@ -75,11 +79,17 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
-    source_name = traits.Unicode(help="Name of Source").tag(config=True)
+    source_name = traits.Unicode(
+        help="Name of Source"
+    ).tag(config=True)
 
-    source_ra = traits.Unicode(help="RA position of the source").tag(config=True)
+    source_ra = traits.Unicode(
+        help="RA position of the source"
+    ).tag(config=True)
 
-    source_dec = traits.Unicode(help="DEC position of the source").tag(config=True)
+    source_dec = traits.Unicode(
+        help="DEC position of the source"
+    ).tag(config=True)
 
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
@@ -92,7 +102,7 @@ class DataReductionFITSWriter(Tool):
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         "input-irf": "DataReductionFITSWriter.input_irf",
-        ("gh", "fixed-gh-cut"): "DL3FixedCuts.fixed_gh_cut",
+        "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
