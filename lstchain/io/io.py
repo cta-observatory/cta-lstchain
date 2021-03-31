@@ -764,6 +764,9 @@ def write_subarray_tables(writer, event, metadata=None):
         add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
+    writer.exclude('subarray/mc_shower', 'mc_shower')
+    writer.exclude('subarray/mc_shower', 'mc_tel')
+
     writer.write(table_name="subarray/mc_shower", containers=[event.index, event.simulation])
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
@@ -820,6 +823,7 @@ def add_column_table(table, ColClass, col_label, values):
     -------
     `tables.table.Table`
     """
+    log.debug('Adding %s column', col_label)
     # Step 1: Adjust table description
     d = table.description._v_colobjects.copy()  # original description
     d[col_label] = ColClass()  # add column
@@ -829,6 +833,7 @@ def add_column_table(table, ColClass, col_label, values):
     table.attrs._f_copy(newtable)  # copy attributes
     # Copy table rows, also add new column values:
     for row, value in zip(table, values):
+        log.debug('Row:\n%s\nValue:\n%s', list(row[:]), value)
         newtable.append([tuple(list(row[:]) + [value])])
     newtable.flush()
 
