@@ -69,11 +69,13 @@ class FITSIndexWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
         self.file_list = []
         self.hdu_index_filename = "hdu-index.fits.gz"
         self.obs_index_filename = "obs-index.fits.gz"
 
     def setup(self):
+
         list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
         if list_files == []:
             self.log.critical(f"No files found with pattern {self.file_pattern}")
@@ -85,8 +87,8 @@ class FITSIndexWriter(Tool):
         if not self.output_index_path:
             self.output_index_path = self.input_dl3_dir
 
-        self.hdu_index_file = self.output_index_path.absolute() / self.hdu_index_filename
-        self.obs_index_file = self.output_index_path.absolute() / self.obs_index_filename
+        self.hdu_index_file = self.output_index_path / self.hdu_index_filename
+        self.obs_index_file = self.output_index_path / self.obs_index_filename
 
         self.provenance_log = self.output_index_path / (self.name + ".provenance.log")
 
@@ -115,23 +117,21 @@ class FITSIndexWriter(Tool):
 
     def start(self):
 
-        # Retrieving HDULists for both index files
-        self.hdu_index_list = create_hdu_index_hdu(
+        create_hdu_index_hdu(
             self.file_list,
             self.input_dl3_dir,
-            self.hdu_index_filename,
+            self.hdu_index_file,
+            self.overwrite,
         )
-        self.obs_index_list = create_obs_index_hdu(
+        create_obs_index_hdu(
             self.file_list,
             self.input_dl3_dir,
-            self.obs_index_filename,
+            self.obs_index_file,
+            self.overwrite
         )
         self.log.debug("HDULists created for the index files")
 
     def finish(self):
-
-        self.hdu_index_list.writeto(self.hdu_index_file, overwrite=self.overwrite)
-        self.obs_index_list.writeto(self.obs_index_file, overwrite=self.overwrite)
 
         Provenance().add_output_file(self.hdu_index_file)
         Provenance().add_output_file(self.obs_index_file)

@@ -49,17 +49,21 @@ def test_create_obs_hdu_index(observed_dl2_file):
     dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
     dl3_file = dl3_file.replace(".h5", ".fits")
 
-    hdu_list = create_hdu_index_hdu(
+    hdu_index = observed_dl2_file.parent / "hdu-index.fits.gz"
+    obs_index = observed_dl2_file.parent / "obs-index.fits.gz"
+
+    create_hdu_index_hdu(
         [dl3_file],
         observed_dl2_file.parent,
-        "hdu-index.fits.gz",
-        base_dir=observed_dl2_file.parent,
+        hdu_index,
+        overwrite=True,
     )
-    obs_list = create_obs_index_hdu(
+    create_obs_index_hdu(
         [dl3_file],
         observed_dl2_file.parent,
-        "obs-index.fits.gz",
+        obs_index,
+        overwrite=True,
     )
 
-    assert "HDU_CLASS" in Table.read(hdu_list).columns
-    assert "OBJECT" in Table.read(obs_list).columns
+    assert "HDU_CLASS" in Table.read(hdu_index).columns
+    assert "OBJECT" in Table.read(obs_index).columns

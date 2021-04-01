@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import os
 
 import astropy.units as u
 from astropy.table import Table, QTable
@@ -25,33 +26,22 @@ DEFAULT_HEADER["TELESCOP"] = "CTA-N"
 wobble_offset = 0.4 * u.deg
 
 
-def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
+def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
     """
-    Create the obs index table
-
-    A two-level index file scheme is used in the IACT community to allow
-    an arbitrary folder structures. For each directory tree, two files should be present:
-    1. obs-index.fits.gz
-    (http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/obs_index/index.html)
-    2. hdu-index.fits.gz
-    (http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/hdu_index/index.html)
-
-    obs-index contains the single run informations e.g.
-    (OBS_ID, RA_PNT, DEC_PNT, ZEN_PNT, ALT_PNT)
+    Create the obs index table and write it to the given file.
+    The Index table is created as per,
+    http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/obs_index/index.html
 
     Parameters
     ----------
     filename_list : list
-        list of filenames
+        list of filenames of the fits files
     fits_dir : Path
-        directory containing the fits file
-    obs_index_filename : str
-        filename for OBS index file
-
-    Returns
-    -------
-    obs_index_list : 'astropy.io.fits.HDUList'
-        HDU list file for Obs index table
+        Path of the fits files
+    obs_index_file : Path
+        Path for the OBS index file
+    overwrite : Bool
+        Boolean to overwrite existing file
     """
     obs_index_tables = []
 
@@ -72,7 +62,10 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
         # Obs_table
         t_obs = {
             "OBS_ID": evt_hdr["OBS_ID"],
-            "DATE_OBS": evt_hdr["DATE_OBS"],
+            "DATE-OBS": evt_hdr["DATE-OBS"],
+            "TIME-OBS": evt_hdr["TIME-OBS"],
+            "DATE-END": evt_hdr["DATE-END"],
+            "TIME-END": evt_hdr["TIME-END"],
             "RA_PNT": evt_hdr["RA_PNT"] * u.deg,
             "DEC_PNT": evt_hdr["DEC_PNT"] * u.deg,
             "ZEN_PNT": (90 - float(evt_hdr["ALT_PNT"])) * u.deg,
@@ -108,56 +101,40 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_filename):
         obs_index_table, header=obs_index_header, name="OBS INDEX"
     )
     obs_index_list = fits.HDUList([fits.PrimaryHDU(), obs_index])
-
-    return obs_index_list
+    obs_index_list.writeto(obs_index_file, overwrite=overwrite)
 
 
 def create_hdu_index_hdu(
     filename_list,
     fits_dir,
-    hdu_index_filename,
-    base_dir=None,
+    hdu_index_file,
+    overwrite=False
 ):
     """
-    Create the hdu index table
-
-    A two-level index file scheme is used in the IACT community to allow
-    an arbitrary folder structures. For each directory tree, two files should be present:
-    1. obs-index.fits.gz
-    (http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/obs_index/index.html)
-    2. hdu-index.fits.gz
-    (http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/hdu_index/index.html)
-
-    hdu-index contains the informations about the locations of the other
-    HDU (header data units) necessary to the analysis.
-
-    File directory information is currently kept optional in the HDU index table
+    Create the hdu index table and write it to the given file.
+    The Index table is created as per,
+    http://gamma-astro-data-formats.readthedocs.io/en/latest/data_storage/hdu_index/index.html
 
     Parameters
     ----------
     filename_list : list
-        list of filenames
+        list of filenames of the fits files
     fits_dir : Path
-        Absolute directory containing the fits file
-    hdu_index_filename : str
-        filename for HDU index file
-    base_dir : Path
-        Absolute directory path for the Base directory for DL3 and index files.
-        Only useful for running tests, when cwd() is not the same.
-
-    Returns
-    -------
-    hdu_index_list : 'astropy.io.fits.HDUList'
-        HDU list file for HDU index tables
+        Path of the fits files
+    hdu_index_file : Path
+        Path for HDU index file
+    overwrite : Bool
+        Boolean to overwrite existing file
     """
 
     hdu_index_tables = []
 
-    # Currently just for clearing test_create_obs_hdu_index in pytest
-    if not base_dir:
-        base_dir = fits_dir.cwd()
-    file_dir = fits_dir.relative_to(base_dir)
-
+    base_dir = os.path.commonpath(
+        [
+            hdu_index_file.parent.absolute().resolve(),
+            fits_dir.absolute().resolve()
+        ]
+    )
     # loop through the files
     for file in filename_list:
         filepath = fits_dir / file
@@ -181,10 +158,10 @@ def create_hdu_index_hdu(
             "OBS_ID": evt_hdr["OBS_ID"],
             "HDU_TYPE": "events",
             "HDU_CLASS": "events",
-            "BASE_DIR": str(base_dir),
-            "FILE_DIR": str(file_dir),
+            "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
             "FILE_NAME": file,
             "HDU_NAME": "EVENTS",
+            "SIZE": filepath.stat().st_size,
         }
         hdu_index_tables.append(t_events)
 
@@ -270,13 +247,13 @@ def create_hdu_index_hdu(
     hdu_index_header["HDUCLAS1"] = "INDEX"
     hdu_index_header["HDUCLAS2"] = "HDU"
     hdu_index_header["INSTRUME"] = evt_hdr["INSTRUME"]
+    hdu_index_header["BASE_DIR"] = base_dir
 
     hdu_index = fits.BinTableHDU(
         hdu_index_table, header=hdu_index_header, name="HDU INDEX"
     )
     hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
-
-    return hdu_index_list
+    hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
 
 
 def create_event_list(
@@ -312,11 +289,17 @@ def create_event_list(
     t_start = data["dragon_time"].value[0]
     t_stop = data["dragon_time"].value[-1]
     time_utc = Time(data["dragon_time"], format="unix", scale="utc")
-    date_obs = time_utc[0].to_value("iso", "date")
+    t_start_iso = time_utc[0].to_value("iso", "date_hms")
+    t_stop_iso = time_utc[-1].to_value("iso", "date_hms")
+    date_obs = t_start_iso[:10]
+    time_obs = t_start_iso[11:]
+    date_end = t_stop_iso[:10]
+    time_end = t_stop_iso[11:]
+
     mean_time = Time(
-        data["dragon_time"].value.mean()*u.s, format="unix", scale="utc"
+        data["dragon_time"].value.mean() * u.s, format="unix", scale="utc"
     )
-    MJDREF = Time('1970-01-01T00:00', scale='utc')
+    MJDREF = Time("1970-01-01T00:00", scale="utc")
 
     # Position parameters
     reco_alt = data["reco_alt"]
@@ -364,7 +347,7 @@ def create_event_list(
     gti_table = QTable(
         {
             "START": u.Quantity(t_start, unit=u.s, ndmin=1),
-            "STOP": u.Quantity(t_stop, unit=u.s, ndmin=1)
+            "STOP": u.Quantity(t_stop, unit=u.s, ndmin=1),
         }
     )
     pnt_table = QTable(
@@ -386,7 +369,10 @@ def create_event_list(
 
     ev_header["OBS_ID"] = run_number
 
-    ev_header["DATE_OBS"] = date_obs
+    ev_header["DATE-OBS"] = date_obs
+    ev_header["TIME-OBS"] = time_obs
+    ev_header["DATE-END"] = date_end
+    ev_header["TIME-END"] = time_end
     ev_header["TSTART"] = t_start
     ev_header["TSTOP"] = t_stop
     ev_header["MJDREFI"] = int(MJDREF.mjd)
