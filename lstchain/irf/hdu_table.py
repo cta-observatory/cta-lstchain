@@ -342,6 +342,11 @@ def create_event_list(
             "ENERGY": data["reco_energy"],
             # Optional columns
             "GAMMANESS": data["gh_score"],
+            "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
+            "GLON":src_sky_pos.galactic.l.to(u.deg),
+            "GLAT":src_sky_pos.galactic.b.to(u.deg),
+            "ALT": reco_alt.to(u.deg),
+            "AZ": reco_az.to(u.deg),
         }
     )
     gti_table = QTable(
@@ -389,7 +394,6 @@ def create_event_list(
     ev_header["OBS_MODE"] = mode
 
     ev_header["N_TELS"] = len(tel_list)
-    ev_header["MULTIP"] = ev_header["N_TELS"]
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
@@ -423,9 +427,12 @@ def create_event_list(
     pnt_header["MJDREFF"] = ev_header["MJDREFF"]
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
-    pnt_header["OBSGEO-L"] = location.lon.to_value()
-    pnt_header["OBSGEO-B"] = location.lat.to_value()
-    pnt_header["OBSGEO-H"] = location.height.to_value()
+    pnt_header["OBSGEO-L"] = (location.lon.to_value(),
+        'Geographic longitude of telescope (deg)')
+    pnt_header["OBSGEO-B"] = (location.lat.to_value(),
+        'Geographic latitude of telescope (deg)')
+    pnt_header["OBSGEO-H"] = (location.height.to_value(), 
+        'Geographic latitude of telescope (m)')
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
 
