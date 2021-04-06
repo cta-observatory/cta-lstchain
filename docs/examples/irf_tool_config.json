@@ -1,0 +1,37 @@
+{
+  "EventSelector": {
+    "filters": {
+      "intensity": [100, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "r": [0, 1],
+      "wl": [0.1, 1],
+      "leakage_intensity_width_2": [0, 0.2]
+    }
+  },
+  "DL3FixedCuts": {
+    "fixed_gh_cut": 0.7,
+    "fixed_theta_cut": 0.2,
+    "allowed_tels": [1]
+  },
+  "DataBinning": {
+    "true_energy_min": 0.01,
+    "true_energy_max": 100,
+    "true_energy_n_bins_per_decade": 5.5,
+    "reco_energy_min": 0.01,
+    "reco_energy_max": 100,
+    "reco_energy_n_bins_per_decade": 5.5,
+    "energy_migration_min": 0.2,
+    "energy_migration_max": 5,
+    "energy_migration_n_bins": 31,
+    "fov_offset_min": 0.1,
+    "fov_offset_max": 1.1,
+    "fov_offset_n_edges": 9,
+    "bkg_fov_offset_min": 0,
+    "bkg_fov_offset_max": 10,
+    "bkg_fov_offset_n_edges": 21,
+    "source_offset_min": 0.0001,
+    "source_offset_max": 1.0001,
+    "source_offset_n_edges": 1000
+  }
+}

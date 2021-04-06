@@ -9,7 +9,7 @@ import sys
 # this is needed as lstchain/__init__.py imports dependencies
 # that might not be installed before setup runs, so we cannot import
 # lstchain.version
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lstchain'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lstchain"))
 from version import get_version, update_release_version  # noqa
 
 
@@ -19,10 +19,9 @@ version = get_version()
 
 def find_scripts(script_dir, prefix):
     script_list = [
-        os.path.splitext(f)[0]
-        for f in os.listdir(script_dir) if f.startswith(prefix)
+        os.path.splitext(f)[0] for f in os.listdir(script_dir) if f.startswith(prefix)
     ]
-    script_dir = script_dir.replace('/', '.')
+    script_dir = script_dir.replace("/", ".")
     point_list = []
 
     for f in script_list:
@@ -31,12 +30,12 @@ def find_scripts(script_dir, prefix):
     return point_list
 
 
-lstchain_list = find_scripts('lstchain/scripts', 'lstchain_')
-onsite_list = find_scripts('lstchain/scripts/onsite', 'onsite_')
-tools_list = find_scripts('lstchain/tools', 'lstchain_')
+lstchain_list = find_scripts("lstchain/scripts", "lstchain_")
+onsite_list = find_scripts("lstchain/scripts/onsite", "onsite_")
+tools_list = find_scripts("lstchain/tools", "lstchain_")
 
 entry_points = {}
-entry_points['console_scripts'] = lstchain_list + onsite_list + tools_list
+entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
 setup(
     version=version,
@@ -67,12 +66,13 @@ setup(
         'lstchain': [
             'data/lstchain_standard_config.json',
             'data/onsite_camera_calibration_param.json',
+            'data/data_selection_cuts.json',
             'resources/LST_pixid_to_cluster.txt',
         ],
     },
     tests_require=[
-        'pytest',
-        'pytest-ordering',
+        "pytest",
+        "pytest-ordering",
     ],
-    entry_points=entry_points
+    entry_points=entry_points,
 )
