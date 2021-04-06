@@ -139,7 +139,6 @@ class IRFFITSWriter(Tool):
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
-        "config": "EventSelector.config",
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
