@@ -25,24 +25,24 @@ def pytest_configure(config):
         "markers", "private_data: mark tests that needs the private test data"
     )
 
-    if 'private_data' not in config.option.markexpr:
+    if "private_data" not in config.option.markexpr:
         if config.option.markexpr:
-            config.option.markexpr += ' and '
+            config.option.markexpr += " and "
         else:
-            config.option.markexpr += 'not private_data'
+            config.option.markexpr += "not private_data"
 
 
 @pytest.fixture(scope="session")
 def temp_dir():
     """Shared temporal directory for the tests."""
-    with tempfile.TemporaryDirectory(prefix='test_lstchain') as d:
+    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
         yield Path(d)
 
 
 @pytest.fixture(scope="session")
 def temp_dir_simulated_files():
     """Temporal common directory for processing simulated data."""
-    with tempfile.TemporaryDirectory(prefix='test_lstchain') as d:
+    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
         yield Path(d)
 
 
@@ -50,14 +50,14 @@ def temp_dir_simulated_files():
 @pytest.fixture(scope="session")
 def temp_dir_observed_files():
     """Temporal common directory for processing observed data."""
-    with tempfile.TemporaryDirectory(prefix='test_lstchain') as d:
+    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
         yield Path(d)
 
 
 @pytest.fixture(scope="session")
 def mc_gamma_testfile():
     """Get a simulated test file."""
-    return get_dataset_path('gamma_test_large.simtel.gz')
+    return get_dataset_path("gamma_test_large.simtel.gz")
 
 
 @pytest.fixture(scope="session")
@@ -65,9 +65,7 @@ def simulated_dl1_file(temp_dir_simulated_files, mc_gamma_testfile):
     """Produce a dl1 file from simulated data."""
     output_dl1_path = temp_dir_simulated_files / "dl1_gamma_test_large.h5"
     run_program(
-        "lstchain_mc_r0_to_dl1",
-        "-f", mc_gamma_testfile,
-        "-o", temp_dir_simulated_files
+        "lstchain_mc_r0_to_dl1", "-f", mc_gamma_testfile, "-o", temp_dir_simulated_files
     )
     return output_dl1_path
 
@@ -194,7 +192,7 @@ def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
         "--path-models",
         rf_models["path"],
         "--output-dir",
-        temp_dir_simulated_files
+        temp_dir_simulated_files,
     )
     return dl2_file
 
@@ -205,7 +203,7 @@ def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     Produce a fake dl1 proton file by copying the dl2 gamma test file
     and changing mc_type.
     """
-    dl1_proton_file = temp_dir_simulated_files / 'dl1_fake_proton.simtel.h5'
+    dl1_proton_file = temp_dir_simulated_files / "dl1_fake_proton.simtel.h5"
     events = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     events.mc_type = 101
     events.to_hdf(dl1_proton_file, key=dl1_params_lstcam_key)
@@ -223,13 +221,19 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     file_model_gh_sep = models_path / "cls_gh.sav"
 
     run_program(
-        "lstchain_mc_trainpipe", "--fg", gamma_file, "--fp", proton_file, "-o", models_path
+        "lstchain_mc_trainpipe",
+        "--fg",
+        gamma_file,
+        "--fp",
+        proton_file,
+        "-o",
+        models_path,
     )
     return {
-        'energy': file_model_energy,
-        'disp': file_model_disp,
-        'gh_sep': file_model_gh_sep,
-        'path': models_path
+        "energy": file_model_energy,
+        "disp": file_model_disp,
+        "gh_sep": file_model_gh_sep,
+        "path": models_path,
     }
 
 
@@ -248,3 +252,25 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
         temp_dir_observed_files
     )
     return real_data_dl2_file
+
+
+@pytest.fixture(scope="session")
+def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
+    """
+    Produce test irf file from the simulated dl2 test file.
+    Using the same test file for gamma, proton and electron inputs
+    """
+
+    irf_file = simulated_dl2_file.parent / "irf.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--input-proton-dl2",
+        simulated_dl2_file,
+        "--input-electron-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file
+    )
+    return irf_file
