@@ -259,14 +259,16 @@ def auto_merge_h5files(
             common_keys = keys.intersection(get_dataset_keys(filename))
             with open_file(filename) as file:
                 for k in common_keys:
+                    in_node = file.root[k]
+                    out_node = merge_file.root[k]
                     try:
-                        if merge_arrays:
-                            merge_file.root[k].append(file.root[k].read())
-                        else:
-                            if type(file.root[k]) == tables.table.Table:
-                                merge_file.root[k].append(file.root[k].read())
+                        if isinstance(in_node, tables.table.Table) or merge_arrays:
+                            # doing `.astype(out_node.dtype)` fixes an issue
+                            # when dtypes do not exactly match but are convertible
+                            # https://github.com/cta-observatory/cta-lstchain/issues/671
+                            out_node.append(in_node.read().astype(out_node.dtype))
                     except:
-                        print("Can't append node {} from file {}".format(k, filename))
+                        log.exception("Can't append node {} from file {}".format(k, filename))
             bar.update(1)
 
 
