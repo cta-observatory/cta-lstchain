@@ -257,3 +257,25 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
         temp_dir_observed_files,
     )
     return real_data_dl2_file
+
+
+@pytest.fixture(scope="session")
+def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
+    """
+    Produce test irf file from the simulated dl2 test file.
+    Using the same test file for gamma, proton and electron inputs
+    """
+
+    irf_file = simulated_dl2_file.parent / "irf.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--input-proton-dl2",
+        simulated_dl2_file,
+        "--input-electron-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file
+    )
+    return irf_file

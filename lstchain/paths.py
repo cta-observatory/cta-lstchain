@@ -26,12 +26,13 @@ GENERAL_RE = re.compile(
     r"LST-(\d+)"  # tel_id
     r"(?:.(\d+))?"  # stream is optional
     r".Run(\d+)"  # run number
-    r".(\d+)"  # subrun number
+    r"(?:.(\d+))?"  # subrun number
 )
 
 EXTENSIONS_TO_REMOVE = {
     ".fits",
     ".fits.fz",
+    ".h5",
     ".simtel",
     ".simtel.gz",
     ".simtel.zst",
@@ -162,7 +163,7 @@ def run_to_filename(prefix, tel_id, run, subrun, stream=None, ext=".h5"):
 def run_to_dl1_filename(tel_id, run, subrun, stream=None):
     """
     Create the filename for a dl1 file from telescope / run info.
-    If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
+    If you have a `Run` tuple, use like this: ``dl1_run_to_filename(*run)``
     """
     return run_to_filename("dl1", tel_id, run, subrun, stream)
 
@@ -178,16 +179,25 @@ def run_to_datacheck_dl1_filename(tel_id, run, subrun, stream=None):
 
 def run_to_dl2_filename(tel_id, run, subrun, stream=None):
     """
-    Create the filename for a dl1 file from telescope / run info.
-    If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
+    Create the filename for a dl2 file from telescope / run info.
+    If you have a `Run` tuple, use like this: ``dl2_run_to_filename(*run)``
     """
     return run_to_filename("dl2", tel_id, run, subrun, stream)
+
+
+def run_to_dl3_filename(tel_id, run, subrun=None, stream=None, gzip=True):
+    """
+    Create the filename for a dl3 file from telescope / run info.
+    If you have a `Run` tuple, use like this: ``dl3_run_to_filename(*run)``
+    """
+    ext = ".fits.gz" if gzip else ".fits"
+    return run_to_filename("dl3", tel_id, run, subrun, stream, ext)
 
 
 def run_to_muon_filename(tel_id, run, subrun, stream=None, gzip=True):
     """
     Create the filename for a muon output file from telescope / run info.
-    If you have a `Run` tuple, use like this: ``r0_run_to_filename(*run)``
+    If you have a `Run` tuple, use like this: ``muon_run_to_filename(*run)``
     """
     ext = ".fits.gz" if gzip else ".fits"
     return run_to_filename("muons", tel_id, run, subrun, stream, ext=ext)
@@ -200,3 +210,12 @@ def r0_to_dl1_filename(r0_path):
 
     p = Path(r0_path)
     return p.with_name("dl1_" + p.name + ".h5")
+
+
+def dl2_to_dl3_filename(dl2_path):
+    """Create the filename for a dl3 file from a given dl2 file path"""
+
+    filename_dl2 = str(dl2_path).split("/")[-1]
+    filename_dl3 = filename_dl2.replace("dl2", "dl3")
+    filename_dl3 = filename_dl3.replace("h5", "fits.gz")
+    return filename_dl3

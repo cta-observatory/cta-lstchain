@@ -8,12 +8,15 @@ from . import calib
 from . import mc
 from . import spectra
 from . import image
+from . import irf
+
 from .io import standard_config
 from .version import get_version
 
 __all__ = [
     "reco",
     "io",
+    "irf",
     "visualization",
     "calib",
     "mc",

@@ -6,6 +6,7 @@ full camera image is also available.
 """
 import logging
 import os
+from copy import deepcopy
 from functools import partial
 from pathlib import Path
 
@@ -303,6 +304,7 @@ def r0_to_dl1(
                 col_name="tels_with_trigger",
                 transform=tel_list_transform,
             )
+            writer.exclude(f'subarray/trigger', 'tel')
 
         # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
         # This should be fixed in ctapipe and then corrected here
@@ -337,8 +339,9 @@ def r0_to_dl1(
 
                     tel_id = calibration_calculator.tel_id
 
-                    # initialize the event monitoring data
-                    event.mon = source.r0_r1_calibrator.mon_data
+
+                    #initialize the event monitoring data
+                    event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
 
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(
@@ -442,6 +445,10 @@ def r0_to_dl1(
                     ].evt.tib_masked_trigger
                 else:
                     dl1_container.trigger_type = event.trigger.event_type
+                    writer.exclude(f'telescope/parameters/{tel_name}', 'dragon_time')
+                    writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_time')
+                    writer.exclude(f'telescope/parameters/{tel_name}', 'tib_time')
+                    writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_trigger_type')
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
@@ -462,14 +469,37 @@ def r0_to_dl1(
 
                 event.r0.prefix = ""
 
-                writer.write(
-                    table_name=f"telescope/image/{tel_name}",
-                    containers=[event.index, tel, extra_im],
-                )
-                writer.write(
-                    table_name=f"telescope/parameters/{tel_name}",
-                    containers=[event.index, dl1_container],
-                )
+                # None values in telescope/image table
+                writer.exclude(f"telescope/image/{tel_name}", "image_mask")
+                writer.exclude(f"telescope/image/{tel_name}", "parameters")
+                # None values in telescope/parameters table
+                writer.exclude(f"telescope/parameters/{tel_name}", "hadroness")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_norm")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_dx")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_dy")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_angle")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_sign")
+                writer.exclude(f"telescope/parameters/{tel_name}", "disp_miss")
+                writer.exclude(f"telescope/parameters/{tel_name}", "src_x")
+                writer.exclude(f"telescope/parameters/{tel_name}", "src_y")
+
+                if not is_simu:
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_energy")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "log_mc_energy")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_alt")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_az")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_core_x")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_core_y")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_h_first_int")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_alt_tel")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_az_tel")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_x_max")
+                    writer.exclude(f"telescope/parameters/{tel_name}", "mc_core_distance")
+
+                writer.write(table_name=f"telescope/image/{tel_name}",
+                             containers=[event.index, tel, extra_im])
+                writer.write(table_name=f"telescope/parameters/{tel_name}",
+                             containers=[event.index, dl1_container])
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:

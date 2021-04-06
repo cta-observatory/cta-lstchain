@@ -2,7 +2,7 @@ import h5py
 from multiprocessing import Pool
 import numpy as np
 import pandas as pd
-from astropy.table import Table, vstack
+from astropy.table import Table, vstack, QTable
 import tables
 from tables import open_file
 import os
@@ -27,7 +27,6 @@ from ctapipe.instrument import (
     SubarrayDescription,
 )
 from pyirf.simulations import SimulatedEventsInfo
-from astropy import table
 
 import logging
 
@@ -53,12 +52,12 @@ __all__ = [
     "write_dataframe",
     "write_dl2_dataframe",
     "write_calibration_data",
-    "read_dl2_to_pyirf",
+    "read_mc_dl2_to_QTable",
+    "read_data_dl2_to_QTable",
     "read_dl2_params",
     "extract_observation_time",
     "merge_dl2_runs",
 ]
-
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
@@ -313,7 +312,7 @@ def merging_check(file_list):
             assert subarray_info == subarray_info0
 
         except AssertionError:
-            log.exception(f"{filename} cannot be smart merged ¯\_(ツ)_/¯")
+            log.exception(f"{filename} cannot be smart merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
@@ -830,9 +829,6 @@ def write_subarray_tables(writer, event, metadata=None):
         add_global_metadata(event.simulation, metadata)
         add_global_metadata(event.trigger, metadata)
 
-    writer.write(
-        table_name="subarray/mc_shower", containers=[event.index, event.simulation]
-    )
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
@@ -963,7 +959,7 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name=f"telescope/monitoring/pedestal",
+            table_name="telescope/monitoring/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
@@ -981,18 +977,21 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
         )
 
 
-def read_dl2_to_pyirf(filename):
+def read_mc_dl2_to_QTable(filename):
     """
-    Read DL2 files from lstchain and convert into pyirf internal format
+    Read MC DL2 files from lstchain and convert into pyirf internal format
+    - astropy.table.QTable
+
     Parameters
     ----------
     filename: path
+
     Returns
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
     """
 
-    ## mapping
+    # mapping
     name_mapping = {
         "mc_energy": "true_energy",
         "mc_alt": "true_alt",
@@ -1026,12 +1025,50 @@ def read_dl2_to_pyirf(filename):
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
         columns=name_mapping
     )
-    events = table.QTable.from_pandas(events)
+    events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
         events[k] *= v
 
     return events, pyirf_simu_info
+
+
+def read_data_dl2_to_QTable(filename):
+    """
+    Read data DL2 files from lstchain and return QTable format
+    Parameters
+    ----------
+    filename: path to the lstchain DL2 file
+
+    Returns
+    -------
+    `astropy.table.QTable`
+    """
+
+    # Mapping
+    name_mapping = {
+        "gammaness": "gh_score",
+        "alt_tel": "pointing_alt",
+        "az_tel": "pointing_az",
+    }
+    unit_mapping = {
+        "reco_energy": u.TeV,
+        "pointing_alt": u.rad,
+        "pointing_az": u.rad,
+        "reco_alt": u.rad,
+        "reco_az": u.rad,
+        "dragon_time": u.s,
+    }
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+
+    data = QTable.from_pandas(data)
+
+    # Make the columns as Quantity
+    for k, v in unit_mapping.items():
+        data[k] *= v
+
+    return data
 
 
 def read_dl2_params(t_filename, columns_to_read=None):

@@ -303,12 +303,24 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
     assert dl2_file.is_file()
 
 
-def test_read_dl2_to_pyirf(simulated_dl2_file):
-    from lstchain.io.io import read_dl2_to_pyirf
+def test_read_mc_dl2_to_QTable(simulated_dl2_file):
+    from lstchain.io.io import read_mc_dl2_to_QTable
+    import astropy.units as u
 
-    events, sim_info = read_dl2_to_pyirf(simulated_dl2_file)
+    events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+
+
+@pytest.mark.private_data
+def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
+    from lstchain.io.io import read_data_dl2_to_QTable
+
+    real_data_dl2_file = temp_dir_observed_files / (
+        observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
+    )
+    events = read_data_dl2_to_QTable(real_data_dl2_file)
+    assert "gh_score" in events.colnames
 
 
 @pytest.mark.private_data
