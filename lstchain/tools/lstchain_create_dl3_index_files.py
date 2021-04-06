@@ -30,15 +30,11 @@ class FITSIndexWriter(Tool):
     """
 
     input_dl3_dir = traits.Path(
-        help="Input path of DL3 files",
-        exists=True,
-        directory_ok=True,
-        file_ok=False
+        help="Input path of DL3 files", exists=True, directory_ok=True, file_ok=False
     ).tag(config=True)
 
     file_pattern = traits.Unicode(
-        help="File pattern to search in the given Path",
-        default_value="dl3*.fits*"
+        help="File pattern to search in the given Path", default_value="dl3*.fits*"
     ).tag(config=True)
 
     output_index_path = traits.Path(
@@ -46,7 +42,7 @@ class FITSIndexWriter(Tool):
         exists=True,
         directory_ok=True,
         file_ok=False,
-        default_value=None
+        default_value=None,
     ).tag(config=True)
 
     overwrite = traits.Bool(
@@ -124,10 +120,7 @@ class FITSIndexWriter(Tool):
             self.overwrite,
         )
         create_obs_index_hdu(
-            self.file_list,
-            self.input_dl3_dir,
-            self.obs_index_file,
-            self.overwrite
+            self.file_list, self.input_dl3_dir, self.obs_index_file, self.overwrite
         )
         self.log.debug("HDULists created for the index files")
 

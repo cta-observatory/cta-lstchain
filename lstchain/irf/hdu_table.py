@@ -17,7 +17,9 @@ log = logging.getLogger(__name__)
 
 DEFAULT_HEADER = fits.Header()
 DEFAULT_HEADER["CREATOR"] = f"lstchain v{__version__}"
-DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+DEFAULT_HEADER[
+    "HDUDOC"
+] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
 DEFAULT_HEADER["HDUVERS"] = "0.2"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 DEFAULT_HEADER["ORIGIN"] = "CTA"
@@ -104,12 +106,7 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
     obs_index_list.writeto(obs_index_file, overwrite=overwrite)
 
 
-def create_hdu_index_hdu(
-    filename_list,
-    fits_dir,
-    hdu_index_file,
-    overwrite=False
-):
+def create_hdu_index_hdu(filename_list, fits_dir, hdu_index_file, overwrite=False):
     """
     Create the hdu index table and write it to the given file.
     The Index table is created as per,
@@ -130,10 +127,7 @@ def create_hdu_index_hdu(
     hdu_index_tables = []
 
     base_dir = os.path.commonpath(
-        [
-            hdu_index_file.parent.absolute().resolve(),
-            fits_dir.absolute().resolve()
-        ]
+        [hdu_index_file.parent.absolute().resolve(), fits_dir.absolute().resolve()]
     )
     # loop through the files
     for file in filename_list:
@@ -208,9 +202,7 @@ def create_hdu_index_hdu(
 
             hdu_index_tables.append(t_aeff)
         except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'EFFECTIVE AREA'"
-            )
+            log.error(f"Run {t_events['OBS_ID']} does not contain HDU 'EFFECTIVE AREA'")
 
         # Background
         try:
@@ -222,9 +214,7 @@ def create_hdu_index_hdu(
 
             hdu_index_tables.append(t_bkg)
         except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'BACKGROUND'"
-            )
+            log.error(f"Run {t_events['OBS_ID']} does not contain HDU 'BACKGROUND'")
 
         # PSF
         try:
@@ -236,9 +226,7 @@ def create_hdu_index_hdu(
 
             hdu_index_tables.append(t_psf)
         except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'PSF'"
-            )
+            log.error(f"Run {t_events['OBS_ID']} does not contain HDU 'PSF'")
 
     hdu_index_table = Table(hdu_index_tables)
 
@@ -296,9 +284,7 @@ def create_event_list(
     date_end = t_stop_iso[:10]
     time_end = t_stop_iso[11:]
 
-    mean_time = Time(
-        data["dragon_time"].value.mean() * u.s, format="unix", scale="utc"
-    )
+    mean_time = Time(data["dragon_time"].value.mean() * u.s, format="unix", scale="utc")
     MJDREF = Time("1970-01-01T00:00", scale="utc")
 
     # Position parameters
@@ -343,8 +329,8 @@ def create_event_list(
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
-            "GLON":src_sky_pos.galactic.l.to(u.deg),
-            "GLAT":src_sky_pos.galactic.b.to(u.deg),
+            "GLON": src_sky_pos.galactic.l.to(u.deg),
+            "GLAT": src_sky_pos.galactic.b.to(u.deg),
             "ALT": reco_alt.to(u.deg),
             "AZ": reco_az.to(u.deg),
         }
@@ -427,12 +413,18 @@ def create_event_list(
     pnt_header["MJDREFF"] = ev_header["MJDREFF"]
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
-    pnt_header["OBSGEO-L"] = (location.lon.to_value(),
-        'Geographic longitude of telescope (deg)')
-    pnt_header["OBSGEO-B"] = (location.lat.to_value(),
-        'Geographic latitude of telescope (deg)')
-    pnt_header["OBSGEO-H"] = (location.height.to_value(), 
-        'Geographic latitude of telescope (m)')
+    pnt_header["OBSGEO-L"] = (
+        location.lon.to_value(),
+        "Geographic longitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-B"] = (
+        location.lat.to_value(),
+        "Geographic latitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-H"] = (
+        location.height.to_value(),
+        "Geographic latitude of telescope (m)",
+    )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
 

@@ -86,24 +86,15 @@ class IRFFITSWriter(Tool):
     """
 
     input_gamma_dl2 = traits.Path(
-        help="Input MC gamma DL2 file",
-        exists=True,
-        directory_ok=False,
-        file_ok=True
+        help="Input MC gamma DL2 file", exists=True, directory_ok=False, file_ok=True
     ).tag(config=True)
 
     input_proton_dl2 = traits.Path(
-        help="Input MC proton DL2 file",
-        exists=True,
-        directory_ok=False,
-        file_ok=True
+        help="Input MC proton DL2 file", exists=True, directory_ok=False, file_ok=True
     ).tag(config=True)
 
     input_electron_dl2 = traits.Path(
-        help="Input MC electron DL2 file",
-        exists=True,
-        directory_ok=False,
-        file_ok=True
+        help="Input MC electron DL2 file", exists=True, directory_ok=False, file_ok=True
     ).tag(config=True)
 
     output_irf_file = traits.Path(
@@ -150,7 +141,7 @@ class IRFFITSWriter(Tool):
         "overwrite": (
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
-        )
+        ),
     }
 
     def setup(self):
@@ -268,7 +259,9 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         if self.point_like:
-            mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
+            mean_fov_offset = round(
+                gammas["true_source_fov_offset"].mean().to_value(), 1
+            )
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
@@ -303,7 +296,9 @@ class IRFFITSWriter(Tool):
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
         # Write HDUs
-        self.hdus = [fits.PrimaryHDU(), ]
+        self.hdus = [
+            fits.PrimaryHDU(),
+        ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point_like":

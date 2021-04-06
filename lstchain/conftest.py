@@ -276,6 +276,6 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
         "--input-electron-dl2",
         simulated_dl2_file,
         "--output-irf-file",
-        irf_file
+        irf_file,
     )
     return irf_file
