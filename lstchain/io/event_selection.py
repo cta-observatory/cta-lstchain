@@ -241,7 +241,7 @@ class DataBinning(Component):
 
         source_offset = (
             np.linspace(
-                self.source_offset_max,
+                self.source_offset_min,
                 self.source_offset_max,
                 self.source_offset_n_edges,
             )
