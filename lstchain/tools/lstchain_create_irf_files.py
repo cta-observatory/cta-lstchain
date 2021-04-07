@@ -136,7 +136,7 @@ class IRFFITSWriter(Tool):
     flags = {
         "point-like": (
             {"IRFFITSWriter": {"point_like": True}},
-            "Full Enclosure IRFs will be produced",
+            "Point like IRFs will be produced, otherwise Full Enclosure",
         ),
         "overwrite": (
             {"IRFFITSWriter": {"overwrite": True}},
@@ -247,10 +247,9 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.allowed_tels_filter(gammas)
         gammas = self.fixed_cuts.gh_cut(gammas)
 
-        # With point_like flag for point like IRFs.
-        # Without point_like flag for Full Enclosure IRFs
         if self.point_like:
             gammas = self.fixed_cuts.theta_cut(gammas)
+            self.log.info('Theta cuts applied for point like IRF')
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -258,13 +257,15 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
 
-        if self.point_like:
+        if self.mc_particle["gamma"]["mc_type"] == "point_like":
             mean_fov_offset = round(
                 gammas["true_source_fov_offset"].mean().to_value(), 1
             )
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            self.log.info('Single offset for point like gamma MC')
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
+            self.log.info('Multiple offset for diffuse gamma MC')
 
         if not self.only_gamma_irf:
             background = table.vstack(
