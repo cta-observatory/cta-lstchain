@@ -249,7 +249,7 @@ class IRFFITSWriter(Tool):
 
         if self.point_like:
             gammas = self.fixed_cuts.theta_cut(gammas)
-            self.log.info('Theta cuts applied for point like IRF')
+            self.log.info("Theta cuts applied for point like IRF")
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -262,10 +262,10 @@ class IRFFITSWriter(Tool):
                 gammas["true_source_fov_offset"].mean().to_value(), 1
             )
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
-            self.log.info('Single offset for point like gamma MC')
+            self.log.info("Single offset for point like gamma MC")
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info('Multiple offset for diffuse gamma MC')
+            self.log.info("Multiple offset for diffuse gamma MC")
 
         if not self.only_gamma_irf:
             background = table.vstack(
