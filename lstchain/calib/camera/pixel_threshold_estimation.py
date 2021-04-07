@@ -58,24 +58,24 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     # std values from calibration run.
     # Correct interleaved pedestal std array should have shape (2,2,1855)
     if ped_std_pe.shape[0] == 2:
-        pedestal_events_id = INTERLEAVED_CALIBRATION_ID
+        pedestal_id = INTERLEAVED_CALIBRATION_ID
     else:
-        pedestal_events_id = ORIGINAL_CALIBRATION_ID
+        pedestal_id = ORIGINAL_CALIBRATION_ID
     threshold_clean_pe = ped_mean_pe + sigma_clean*ped_std_pe
     # find pixels with std = 0 and mean = 0 <=> dead pixels in interleaved
     # pedestal event likely due to stars
-    unusable_pixels = get_unusable_pixels(dl1_path, pedestal_events_id)
+    unusable_pixels = get_unusable_pixels(dl1_path, pedestal_id)
     # for dead pixels set max value of threshold
-    threshold_clean_pe[pedestal_events_id, HIGH_GAIN, unusable_pixels] = \
-        max(threshold_clean_pe[pedestal_events_id, HIGH_GAIN, :])
+    threshold_clean_pe[pedestal_id, HIGH_GAIN, unusable_pixels] = \
+        max(threshold_clean_pe[pedestal_id, HIGH_GAIN, :])
     # return pedestal interleaved threshold from data run for high gain
-    return threshold_clean_pe[pedestal_events_id, HIGH_GAIN, :]
+    return threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
 
-def get_unusable_pixels(dl1_path, pedestal_events_id):
+def get_unusable_pixels(dl1_path, pedestal_id):
     with tables.open_file(dl1_path) as f:
         calibration_id = f.root.dl1.event.telescope.monitoring.pedestal.col('calibration_id')
         unusable_pixels = np.where(f.root[dl1_params_tel_mon_cal_key].col(
-                                   'unusable_pixels')[calibration_id[pedestal_events_id],
+                                   'unusable_pixels')[calibration_id[pedestal_id],
                                                       HIGH_GAIN,
                                                       :] == True)
     return unusable_pixels
