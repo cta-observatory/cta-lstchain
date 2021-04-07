@@ -3,6 +3,7 @@ import numpy as np
 from ctapipe_io_lst.constants import HIGH_GAIN
 from lstchain.io.io import dl1_params_tel_mon_ped_key, dl1_params_tel_mon_cal_key
 
+INTERLEAVED_CALIBRATION_ID = 1
 
 def get_bias_and_std(dl1_file):
     """
@@ -56,7 +57,7 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     # std values from calibration run.
     # Correct interleaved pedestal std array should have shape (2,2,1855)
     if ped_std_pe.shape[0] == 2:
-        interleaved_events_id = 1
+        interleaved_events_id = INTERLEAVED_CALIBRATION_ID
     else:
         interleaved_events_id = 0
     threshold_clean_pe = ped_mean_pe + sigma_clean*ped_std_pe
@@ -73,7 +74,7 @@ def get_unusable_pixels(dl1_path):
     with tables.open_file(dl1_path) as f:
         calibration_id = f.root.dl1.event.telescope.monitoring.pedestal.col('calibration_id')
         unusable_pixels = np.where(f.root[dl1_params_tel_mon_cal_key].col(
-                                   'unusable_pixels')[calibration_id[1],
+                                   'unusable_pixels')[calibration_id[INTERLEAVED_CALIBRATION_ID],
                                                       HIGH_GAIN,
                                                       :] == True)
     return unusable_pixels
