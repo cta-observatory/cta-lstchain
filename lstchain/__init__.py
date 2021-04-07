@@ -28,6 +28,7 @@ __all__ = [
 
 __version__ = get_version(pep440=False)
 
+
 if (
     astropy.version.major == 4
     and astropy.version.minor <= 2

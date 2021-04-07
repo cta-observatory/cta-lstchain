@@ -4,13 +4,13 @@ from . import utils
 import astropy.units as u
 
 __all__ = [
-    'disp',
-    'miss',
-    'disp_parameters',
-    'disp_parameters_event',
-    'disp_vector',
-    'disp_to_pos'
-    ]
+    "disp",
+    "miss",
+    "disp_parameters",
+    "disp_parameters_event",
+    "disp_vector",
+    "disp_to_pos",
+]
 
 
 def disp(cog_x, cog_y, src_x, src_y):
@@ -35,15 +35,15 @@ def disp(cog_x, cog_y, src_x, src_y):
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
-    disp_norm = np.sqrt(disp_dx**2 + disp_dy**2)
-    if hasattr(disp_dx, '__len__'):
+    disp_norm = np.sqrt(disp_dx ** 2 + disp_dy ** 2)
+    if hasattr(disp_dx, "__len__"):
         disp_angle = np.arctan(disp_dy / disp_dx)
-        disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
+        disp_angle[disp_dx == 0] = np.pi / 2.0 * np.sign(disp_dy[disp_dx == 0])
     else:
         if disp_dx == 0:
-            disp_angle = np.pi/2. * np.sign(disp_dy)
+            disp_angle = np.pi / 2.0 * np.sign(disp_dy)
         else:
-            disp_angle = np.arctan(disp_dy/disp_dx)
+            disp_angle = np.arctan(disp_dy / disp_dx)
 
     disp_sign = np.sign(disp_dx)
 
@@ -64,7 +64,7 @@ def miss(disp_dx, disp_dy, hillas_psi):
     -------
 
     """
-    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi)*disp_dy)
+    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi) * disp_dy)
 
 
 def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
@@ -85,9 +85,10 @@ def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
     -------
     (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign) : `numpy.ndarray` or float
     """
-    source_pos_in_camera = utils.sky_to_camera(mc_alt, mc_az, focal, mc_alt_tel, mc_az_tel)
+    source_pos_in_camera = utils.sky_to_camera(
+        mc_alt, mc_az, focal, mc_alt_tel, mc_az_tel
+    )
     return disp(cog_x, cog_y, source_pos_in_camera.x, source_pos_in_camera.y)
-
 
 
 def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
@@ -109,22 +110,27 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     """
     disp_container = lstcontainers.DispContainer()
 
-    d = disp(hillas_parameters.x.to(u.m).value,
-             hillas_parameters.y.to(u.m).value,
-             source_pos_x.to(u.m).value,
-             source_pos_y.to(u.m).value,
-             )
+    d = disp(
+        hillas_parameters.x.to(u.m).value,
+        hillas_parameters.y.to(u.m).value,
+        source_pos_x.to(u.m).value,
+        source_pos_y.to(u.m).value,
+    )
 
     disp_container.dx = d[0] * u.m
     disp_container.dy = d[1] * u.m
     disp_container.norm = d[2] * u.m
     disp_container.angle = d[3] * u.rad
     disp_container.sign = d[4]
-    disp_container.miss = miss(disp_container.dx.value,
-                               disp_container.dy.value,
-                               hillas_parameters.psi.to(u.rad).value) * u.m
+    disp_container.miss = (
+        miss(
+            disp_container.dx.value,
+            disp_container.dy.value,
+            hillas_parameters.psi.to(u.rad).value,
+        )
+        * u.m
+    )
     return disp_container
-
 
 
 def disp_vector(disp_norm, disp_angle, disp_sign):

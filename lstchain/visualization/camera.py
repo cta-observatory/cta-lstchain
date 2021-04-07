@@ -6,11 +6,12 @@ from ctapipe.visualization import CameraDisplay
 from ctapipe.instrument import CameraGeometry
 
 __all__ = [
-    'overlay_disp_vector',
-    'overlay_hillas_major_axis',
-    'overlay_source',
-    'display_dl1_event',
+    "overlay_disp_vector",
+    "overlay_hillas_major_axis",
+    "overlay_source",
+    "display_dl1_event",
 ]
+
 
 def display_dl1_event(event, camera_geometry, tel_id=1, axes=None, **kwargs):
     """
@@ -35,7 +36,9 @@ def display_dl1_event(event, camera_geometry, tel_id=1, axes=None, **kwargs):
     peak_time = event.dl1.tel[tel_id].peak_time
 
     if image is None or peak_time is None:
-        raise Exception(f"There is no calibrated image or pulse time map for telescope {tel_id}")
+        raise Exception(
+            f"There is no calibrated image or pulse time map for telescope {tel_id}"
+        )
 
     d1 = CameraDisplay(camera_geometry, image, ax=axes[0], **kwargs)
     d1.add_colorbar(ax=axes[0])
@@ -60,8 +63,8 @@ def overlay_source(display, source_pos_x, source_pos_y, **kwargs):
     -------
     `matplotlib.pyplot.axes`
     """
-    kwargs['marker'] = 'x' if 'marker' not in kwargs else kwargs['marker']
-    kwargs['color'] = 'red' if 'color' not in kwargs else kwargs['color']
+    kwargs["marker"] = "x" if "marker" not in kwargs else kwargs["marker"]
+    kwargs["color"] = "red" if "color" not in kwargs else kwargs["color"]
     display.axes.scatter(source_pos_x, source_pos_y, **kwargs)
 
 
@@ -81,14 +84,25 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
     if not np.isfinite([disp.dx.value, disp.dy.value]).all():
         disp_vector(disp)
 
-    display.axes.quiver(hillas.x, hillas.y,
-                        disp.dx, disp.dy,
-                        units='xy', scale=1*u.m,
-                        angles='xy',
-                        **kwargs,
-                        )
+    display.axes.quiver(
+        hillas.x,
+        hillas.y,
+        disp.dx,
+        disp.dy,
+        units="xy",
+        scale=1 * u.m,
+        angles="xy",
+        **kwargs,
+    )
 
-    display.axes.quiver(hillas.x.value, hillas.y.value, disp.dx.value, disp.dy.value, units='xy', scale=1)
+    display.axes.quiver(
+        hillas.x.value,
+        hillas.y.value,
+        disp.dx.value,
+        disp.dy.value,
+        units="xy",
+        scale=1,
+    )
 
 
 def overlay_hillas_major_axis(display, hillas, **kwargs):
@@ -102,12 +116,12 @@ def overlay_hillas_major_axis(display, hillas, **kwargs):
     kwargs: args for `matplotlib.pyplot.plot`
 
     """
-    kwargs['color'] = 'black' if 'color' not in kwargs else kwargs['color']
+    kwargs["color"] = "black" if "color" not in kwargs else kwargs["color"]
 
     length = hillas.length * 2
     x = -length + 2 * length * np.arange(10) / 10
-    display.axes.plot(hillas.x + x * np.cos(hillas.psi.to(u.rad).value),
-                      hillas.y + x * np.sin(hillas.psi.to(u.rad).value),
-                      **kwargs,
-                      )
-
+    display.axes.plot(
+        hillas.x + x * np.cos(hillas.psi.to(u.rad).value),
+        hillas.y + x * np.sin(hillas.psi.to(u.rad).value),
+        **kwargs,
+    )

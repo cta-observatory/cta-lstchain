@@ -6,27 +6,24 @@ from ctapipe.core import Component
 from ctapipe.core.traits import Unicode
 
 __all__ = [
-    'TimeSamplingCorrection',
-    ]
-
+    "TimeSamplingCorrection",
+]
 
 
 class TimeSamplingCorrection(Component):
     """
-        The PulseTimeCorrection class to correct time pulse
-        using Fourier series expansion.
+    The PulseTimeCorrection class to correct time pulse
+    using Fourier series expansion.
     """
 
     time_sampling_correction_path = Unicode(
-        '',
-        help='Path to the waveform sampling correction file',
-        allow_none = True,
+        "",
+        help="Path to the waveform sampling correction file",
+        allow_none=True,
     ).tag(config=True)
-
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
 
         self.time_sampling_coefficients = None
 
@@ -34,15 +31,18 @@ class TimeSamplingCorrection(Component):
 
     def load_sampling_coefficient_file(self):
         """
-            Function to load sampling coefficient file.
+        Function to load sampling coefficient file.
         """
 
         try:
-            with h5py.File(self.time_sampling_correction_path, 'r') as hf:
-                self.time_sampling_coefficients = np.array(hf['sampling_interval_coefficient'])
+            with h5py.File(self.time_sampling_correction_path, "r") as hf:
+                self.time_sampling_coefficients = np.array(
+                    hf["sampling_interval_coefficient"]
+                )
         except:
-            self.log.error(f"Problem in reading sampling coefficient file {self.time_sampling_correction_path}")
-
+            self.log.error(
+                f"Problem in reading sampling coefficient file {self.time_sampling_correction_path}"
+            )
 
     def get_corrections(self, event, telid):
         """
@@ -101,18 +101,26 @@ class TimeSamplingCorrection(Component):
                 # if I am at the end of the 1024
                 if 0 < fc_to_last[gain, pix] < roi:
                     # I complete the buffer
-                    sampling_corrections[gain, pix, :fc_to_last[gain, pix]] = (
-                            sampling_corrections[gain, pix,:fc_to_last[gain, pix]] *
-                            self.time_sampling_coefficients[gain, pix, fc_drs4[gain, pix]:])
+                    sampling_corrections[gain, pix, : fc_to_last[gain, pix]] = (
+                        sampling_corrections[gain, pix, : fc_to_last[gain, pix]]
+                        * self.time_sampling_coefficients[
+                            gain, pix, fc_drs4[gain, pix] :
+                        ]
+                    )
 
                     # I start again from the beginning of the buffer
-                    sampling_corrections[gain, pix, fc_to_last[gain, pix]:] = (
-                            sampling_corrections[gain, pix,fc_to_last[gain, pix]:] *
-                            self.time_sampling_coefficients[gain, pix,:roi - fc_to_last[gain, pix]])
+                    sampling_corrections[gain, pix, fc_to_last[gain, pix] :] = (
+                        sampling_corrections[gain, pix, fc_to_last[gain, pix] :]
+                        * self.time_sampling_coefficients[
+                            gain, pix, : roi - fc_to_last[gain, pix]
+                        ]
+                    )
                 else:
                     sampling_corrections[gain, pix, :] = (
-                            sampling_corrections[gain, pix] *
-                            self.time_sampling_coefficients[gain, pix, fc_drs4[gain, pix]:fc_drs4[gain, pix] + roi])
+                        sampling_corrections[gain, pix]
+                        * self.time_sampling_coefficients[
+                            gain, pix, fc_drs4[gain, pix] : fc_drs4[gain, pix] + roi
+                        ]
+                    )
 
         return sampling_corrections
-

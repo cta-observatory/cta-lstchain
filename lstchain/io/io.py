@@ -16,9 +16,16 @@ from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 from tqdm import tqdm
+
 # from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription,
+)
 from pyirf.simulations import SimulatedEventsInfo
 
 import logging
@@ -27,29 +34,29 @@ log = logging.getLogger(__name__)
 
 
 __all__ = [
-    'read_simu_info_hdf5',
-    'read_simu_info_merged_hdf5',
-    'get_dataset_keys',
-    'write_simtel_energy_histogram',
-    'write_mcheader',
-    'check_thrown_events_histogram',
-    'check_mcheader',
-    'check_metadata',
-    'read_metadata',
-    'auto_merge_h5files',
-    'smart_merge_h5files',
-    'global_metadata',
-    'add_global_metadata',
-    'write_subarray_tables',
-    'write_metadata',
-    'write_dataframe',
-    'write_dl2_dataframe',
-    'write_calibration_data',
-    'read_mc_dl2_to_QTable',
-    'read_data_dl2_to_QTable',
-    'read_dl2_params',
-    'extract_observation_time',
-    'merge_dl2_runs'
+    "read_simu_info_hdf5",
+    "read_simu_info_merged_hdf5",
+    "get_dataset_keys",
+    "write_simtel_energy_histogram",
+    "write_mcheader",
+    "check_thrown_events_histogram",
+    "check_mcheader",
+    "check_metadata",
+    "read_metadata",
+    "auto_merge_h5files",
+    "smart_merge_h5files",
+    "global_metadata",
+    "add_global_metadata",
+    "write_subarray_tables",
+    "write_metadata",
+    "write_dataframe",
+    "write_dl2_dataframe",
+    "write_calibration_data",
+    "read_mc_dl2_to_QTable",
+    "read_data_dl2_to_QTable",
+    "read_dl2_params",
+    "extract_observation_time",
+    "merge_dl2_runs",
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -57,14 +64,18 @@ dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
 dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
 dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = (
+    "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+)
+dl2_params_src_dep_lstcam_key = (
+    "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+)
 
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
-    complib='blosc:zstd',   # compression using blosc/zstd
-    fletcher32=True,        # attach a checksum to each chunk for error correction
-    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
+    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complib="blosc:zstd",  # compression using blosc/zstd
+    fletcher32=True,  # attach a checksum to each chunk for error correction
+    bitshuffle=False,  # for BLOSC, shuffle bits for better compression
 )
 
 
@@ -192,7 +203,13 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def auto_merge_h5files(
+    file_list,
+    output_filename="merged.h5",
+    nodes_keys=None,
+    merge_arrays=False,
+    filters=HDF5_ZSTD_FILTERS,
+):
     """
     Automatic merge of HDF5 files.
     A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
@@ -212,30 +229,30 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
         keys = set(nodes_keys)
 
     bar = tqdm(total=len(file_list))
-    with open_file(output_filename, 'w', filters=filters) as merge_file:
+    with open_file(output_filename, "w", filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
                 if type(f1.root[k]) == tables.table.Table:
                     merge_file.create_table(
-                        os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                        os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                         os.path.basename(k),
                         createparents=True,
-                        obj=f1.root[k].read()
+                        obj=f1.root[k].read(),
                     )
                 if type(f1.root[k]) == tables.array.Array:
                     if merge_arrays:
                         merge_file.create_earray(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
-                            obj=f1.root[k].read()
+                            obj=f1.root[k].read(),
                         )
                     else:
                         merge_file.create_array(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
+                            os.path.join("/", k.rsplit("/", maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
-                            obj=f1.root[k].read()
+                            obj=f1.root[k].read(),
                         )
         bar.update(1)
         for filename in file_list[1:]:
@@ -251,7 +268,9 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                             # https://github.com/cta-observatory/cta-lstchain/issues/671
                             out_node.append(in_node.read().astype(out_node.dtype))
                     except:
-                        log.exception("Can't append node {} from file {}".format(k, filename))
+                        log.exception(
+                            "Can't append node {} from file {}".format(k, filename)
+                        )
             bar.update(1)
 
 
@@ -330,7 +349,9 @@ def smart_merge_h5files(
     write_metadata(metadata0, output_filename)
 
 
-def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
+def write_simtel_energy_histogram(
+    source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}
+):
     """
     Write the energy histogram from a simtel source to a HDF5 file
 
@@ -381,7 +402,9 @@ def read_simtel_energy_histogram(filename):
     return hist
 
 
-def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata=None):
+def write_mcheader(
+    mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata=None
+):
     """
     Write the mcheader from an event container to a HDF5 file
 
@@ -899,15 +922,17 @@ def recursive_copy_node(src_file, dir_file, path):
     path: path to the node in `src_file`
 
     """
-    path_split = path.split('/')
-    while '' in path_split:
-        path_split.remove('')
+    path_split = path.split("/")
+    while "" in path_split:
+        path_split.remove("")
     assert len(path_split) > 0
-    src_file.copy_node('/',
-                       name=path_split[0],
-                       newparent=dir_file.root,
-                       newname=path_split[0],
-                       recursive=False)
+    src_file.copy_node(
+        "/",
+        name=path_split[0],
+        newparent=dir_file.root,
+        newname=path_split[0],
+        recursive=False,
+    )
     if len(path_split) > 1:
         recursive_path = os.path.join("/", path_split[0])
         for p in path_split[1:]:
@@ -922,10 +947,10 @@ def recursive_copy_node(src_file, dir_file, path):
 
 
 def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=False):
-    mon_event.pedestal.prefix = ''
-    mon_event.flatfield.prefix = ''
-    mon_event.calibration.prefix = ''
-    mon_index.prefix = ''
+    mon_event.pedestal.prefix = ""
+    mon_event.flatfield.prefix = ""
+    mon_event.calibration.prefix = ""
+    mon_index.prefix = ""
 
     # update index
     if new_ped:
@@ -1081,8 +1106,9 @@ def extract_observation_time(t_df):
     -------
     Observation duration in seconds
     """
-    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
-           pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
+    return pd.to_datetime(
+        t_df.dragon_time.iat[len(t_df) - 1], unit="s"
+    ) - pd.to_datetime(t_df.dragon_time.iat[0], unit="s")
 
 
 def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
@@ -1102,7 +1128,10 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     """
     from functools import partial
     from glob import glob
-    filepath_glob = glob(f'/fefs/aswg/data/real/DL2/*/{data_tag}/*')  # Current format of LST data path
+
+    filepath_glob = glob(
+        f"/fefs/aswg/data/real/DL2/*/{data_tag}/*"
+    )  # Current format of LST data path
 
     pool = Pool(n_process)
     filelist = []

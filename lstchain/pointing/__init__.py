@@ -1,5 +1,3 @@
 from .pointings import PointingPosition
 
-__all__ = [
-    'PointingPosition'
-]
+__all__ = ["PointingPosition"]

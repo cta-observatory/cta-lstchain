@@ -15,8 +15,13 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
-                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
+from ctapipe_io_lst import (
+    CDTS_AFTER_37201_DTYPE,
+    CDTS_BEFORE_37201_DTYPE,
+    DRAGON_COUNTERS_DTYPE,
+    LSTEventSource,
+    MultiFiles,
+)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
@@ -154,9 +159,15 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     filename = list_of_files[0]
 
     config = Config()
-    config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
-    config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
-    config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
+    config.EventTimeCalculator.dragon_reference_time = int(
+        counters["dragon_reference_time"]
+    )
+    config.EventTimeCalculator.dragon_reference_counter = int(
+        counters["dragon_reference_counter"]
+    )
+    config.EventTimeCalculator.dragon_module_id = int(
+        counters["dragon_reference_module_id"]
+    )
 
     try:
         with LSTEventSource(filename, config=config, max_events=n_events) as source:
@@ -208,7 +219,9 @@ def read_counters(date_path, run_number):
             raise ValueError("Must be used on first file streams (subrun)")
 
         module_index = np.where(first_event.lstcam.module_status)[0][0]
-        module_id = np.where(f.camera_config.lstcam.expected_modules_id == module_index)[0][0]
+        module_id = np.where(
+            f.camera_config.lstcam.expected_modules_id == module_index
+        )[0][0]
         dragon_counters = first_event.lstcam.counters.view(DRAGON_COUNTERS_DTYPE)
         dragon_reference_counter = combine_counters(
             dragon_counters["pps_counter"][module_index],
@@ -216,7 +229,9 @@ def read_counters(date_path, run_number):
         )
 
         ucts_available = bool(first_event.lstcam.extdevices_presence & 2)
-        run_start = int(round(Time(f.camera_config.date, format="unix").unix_tai)) * int(1e9)
+        run_start = int(
+            round(Time(f.camera_config.date, format="unix").unix_tai)
+        ) * int(1e9)
 
         if ucts_available:
             if int(f.camera_config.lstcam.idaq_version) > 37201:
@@ -298,7 +313,9 @@ def main():
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
     run_summary.write(
-        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=","
+        args.output_dir / f"RunSummary_{args.date}.ecsv",
+        format="ascii.ecsv",
+        delimiter=",",
     )
 
 

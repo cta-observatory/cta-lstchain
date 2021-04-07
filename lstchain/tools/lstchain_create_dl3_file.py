@@ -60,16 +60,11 @@ class DataReductionFITSWriter(Tool):
     """
 
     input_dl2 = traits.Path(
-        help="Input data DL2 file",
-        exists=True,
-        directory_ok=False,
-        file_ok=True
+        help="Input data DL2 file", exists=True, directory_ok=False, file_ok=True
     ).tag(config=True)
 
     output_dl3_path = traits.Path(
-        help="DL3 output filedir",
-        directory_ok=True,
-        file_ok=False
+        help="DL3 output filedir", directory_ok=True, file_ok=False
     ).tag(config=True)
 
     input_irf = traits.Path(
@@ -79,17 +74,11 @@ class DataReductionFITSWriter(Tool):
         file_ok=True,
     ).tag(config=True)
 
-    source_name = traits.Unicode(
-        help="Name of Source"
-    ).tag(config=True)
+    source_name = traits.Unicode(help="Name of Source").tag(config=True)
 
-    source_ra = traits.Unicode(
-        help="RA position of the source"
-    ).tag(config=True)
+    source_ra = traits.Unicode(help="RA position of the source").tag(config=True)
 
-    source_dec = traits.Unicode(
-        help="DEC position of the source"
-    ).tag(config=True)
+    source_dec = traits.Unicode(help="DEC position of the source").tag(config=True)
 
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",

@@ -3,10 +3,10 @@ import os
 from copy import copy
 
 __all__ = [
-    'read_configuration_file',
-    'get_standard_config',
-    'replace_config',
-    'get_cleaning_parameters'
+    "read_configuration_file",
+    "get_standard_config",
+    "replace_config",
+    "get_cleaning_parameters",
 ]
 
 
@@ -38,7 +38,9 @@ def get_standard_config():
     -------
     dict
     """
-    standard_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_standard_config.json")
+    standard_config_file = os.path.join(
+        os.path.dirname(__file__), "../data/lstchain_standard_config.json"
+    )
     return read_configuration_file(standard_config_file)
 
 
@@ -62,6 +64,7 @@ def replace_config(base_config, new_config):
 
     return config
 
+
 def get_cleaning_parameters(config, clean_method_name):
     """
     Return cleaning parameters from configuration dict.
@@ -75,8 +78,8 @@ def get_cleaning_parameters(config, clean_method_name):
     -------
     tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
     """
-    picture_th = config[clean_method_name]['picture_thresh']
-    boundary_th = config[clean_method_name]['boundary_thresh']
-    isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
-    min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
+    picture_th = config[clean_method_name]["picture_thresh"]
+    boundary_th = config[clean_method_name]["boundary_thresh"]
+    isolated_pixels = config[clean_method_name]["keep_isolated_pixels"]
+    min_n_picture_neighbors = config[clean_method_name]["min_number_picture_neighbors"]
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors

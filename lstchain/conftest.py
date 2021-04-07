@@ -70,16 +70,19 @@ def simulated_dl1_file(temp_dir_simulated_files, mc_gamma_testfile):
     return output_dl1_path
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def run_summary_path(temp_dir_observed_files):
     date = "20200218"
     r0_path = test_data / "real/R0"
     run_summary_path = temp_dir_observed_files / f"RunSummary_{date}.ecsv"
     run_program(
         "lstchain_create_run_summary",
-        "--date", date,
-        "--r0-path", r0_path,
-        "--output-dir", temp_dir_observed_files
+        "--date",
+        date,
+        "--r0-path",
+        r0_path,
+        "--output-dir",
+        temp_dir_observed_files,
     )
 
     return run_summary_path
@@ -131,13 +134,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path1
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path1,
     )
 
     run_program(
@@ -154,27 +157,27 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         test_time_calib_path,
         "--pointing-file",
         test_drive_report,
-        '--run-summary-path',
+        "--run-summary-path",
         run_summary_path,
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path2
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path2,
     )
 
     return {
-        'dl1_file1': dl1_output_path1,
-        'muons1': muons_file1,
-        'datacheck1': datacheck_file1,
-        'dl1_file2': dl1_output_path2,
-        'muons2': muons_file2,
-        'datacheck2': datacheck_file2
+        "dl1_file1": dl1_output_path1,
+        "muons1": muons_file1,
+        "datacheck1": datacheck_file1,
+        "dl1_file2": dl1_output_path2,
+        "muons2": muons_file2,
+        "datacheck2": datacheck_file2,
     }
 
 
@@ -239,9 +242,11 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
 
 @pytest.fixture(scope="session")
 @pytest.mark.private_data
-def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
+def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
     """Produce a dl2 file from an observed dl1 file."""
-    real_data_dl2_file = temp_dir_observed_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
+    real_data_dl2_file = temp_dir_observed_files / (
+        observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
+    )
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
@@ -249,7 +254,7 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
         "--path-models",
         rf_models["path"],
         "--output-dir",
-        temp_dir_observed_files
+        temp_dir_observed_files,
     )
     return real_data_dl2_file
 
@@ -271,6 +276,6 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
         "--input-electron-dl2",
         simulated_dl2_file,
         "--output-irf-file",
-        irf_file
+        irf_file,
     )
     return irf_file

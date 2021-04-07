@@ -46,11 +46,13 @@ def test_dl3_fixed_cuts():
     temp_cuts.fixed_theta_cut = 0.2
     temp_cuts.allowed_tels = [1, 2]
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.arange(0.1, 1.1, 0.1)),
-        "theta": u.Quantity(np.arange(0., 1., 0.1), unit=u.deg),
-        "tel_id": u.Quantity([1, 1, 2, 2, 1, 2, 1, 3, 4, 5])
-        })
+    temp_data = QTable(
+        {
+            "gh_score": u.Quantity(np.arange(0.1, 1.1, 0.1)),
+            "theta": u.Quantity(np.arange(0.0, 1.0, 0.1), unit=u.deg),
+            "tel_id": u.Quantity([1, 1, 2, 2, 1, 2, 1, 3, 4, 5]),
+        }
+    )
 
     assert len(temp_cuts.gh_cut(temp_data)) == 4
     assert len(temp_cuts.theta_cut(temp_data)) == 2

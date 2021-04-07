@@ -28,8 +28,8 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
     assert "RA_PNT" in Table.read(pnt).columns
 
     observed_dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
-    observed_dl3_file = (
-        observed_dl2_file.parent / observed_dl3_file.replace(".h5", ".fits")
+    observed_dl3_file = observed_dl2_file.parent / observed_dl3_file.replace(
+        ".h5", ".fits"
     )
     # create a temp dl3 file to test indexing function
 

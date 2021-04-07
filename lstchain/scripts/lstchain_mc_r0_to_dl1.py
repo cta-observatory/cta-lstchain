@@ -26,22 +26,35 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', type=Path,
-                    dest='input_file',
-                    help='Path to the simtelarray file',
-                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+parser.add_argument(
+    "--input-file",
+    "-f",
+    type=Path,
+    dest="input_file",
+    help="Path to the simtelarray file",
+    default=get_dataset_path("gamma_test_large.simtel.gz"),
+)
 
 # Optional arguments
-parser.add_argument('--output-dir', '-o', action='store', type=Path,
-                    dest='output_dir',
-                    help='Path where to store the reco dl2 events',
-                    default='./dl1_data/')
+parser.add_argument(
+    "--output-dir",
+    "-o",
+    action="store",
+    type=Path,
+    dest="output_dir",
+    help="Path where to store the reco dl2 events",
+    default="./dl1_data/",
+)
 
-parser.add_argument('--config', '-c', action='store', type=Path,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    "--config",
+    "-c",
+    action="store",
+    type=Path,
+    dest="config_file",
+    help="Path to a configuration file. If none is given, a standard configuration is applied",
+    default=None,
+)
 
 
 args = parser.parse_args()
@@ -60,7 +73,7 @@ def main():
         try:
             config = read_configuration_file(args.config_file.absolute())
         except Exception as e:
-            log.error(f'Config file {args.config_file} could not be read: {e}')
+            log.error(f"Config file {args.config_file} could not be read: {e}")
             sys.exit(1)
 
     r0_to_dl1.r0_to_dl1(
@@ -70,5 +83,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

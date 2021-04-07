@@ -30,7 +30,7 @@ ALL_SCRIPTS = find_entry_points("lstchain")
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
 
     if result.returncode != 0:
         raise ValueError(
@@ -108,14 +108,14 @@ def test_observed_dl1_validity(observed_dl1_files):
 
     dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
 
-    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
-    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
-    assert 'configuration/instrument/subarray/layout' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/optics' in dl1_tables
+    assert "dl1/event/telescope/monitoring/calibration" in dl1_tables
+    assert "dl1/event/telescope/monitoring/flatfield" in dl1_tables
+    assert "dl1/event/telescope/monitoring/pedestal" in dl1_tables
+    assert "dl1/event/telescope/image/LST_LSTCam" in dl1_tables
+    assert "configuration/instrument/subarray/layout" in dl1_tables
+    assert "configuration/instrument/telescope/camera/geometry_LSTCam" in dl1_tables
+    assert "configuration/instrument/telescope/camera/readout_LSTCam" in dl1_tables
+    assert "configuration/instrument/telescope/optics" in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
@@ -334,7 +334,10 @@ def test_run_summary(run_summary_path):
 
     run_summary_table = Table.read(run_summary_path)
 
-    assert run_summary_table.meta["date"] == datetime.strptime(date, "%Y%m%d").date().isoformat()
+    assert (
+        run_summary_table.meta["date"]
+        == datetime.strptime(date, "%Y%m%d").date().isoformat()
+    )
     assert "lstchain_version" in run_summary_table.meta
     assert "run_id" in run_summary_table.columns
     assert "n_subruns" in run_summary_table.columns
