@@ -35,6 +35,21 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
                 f"--input-proton-dl2={simulated_dl2_file}",
                 f"--input-electron-dl2={simulated_dl2_file}",
                 f"--output-irf-file={irf_file}",
+                "--point-like",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+    assert (
+        run_tool(
+            IRFFITSWriter(),
+            argv=[
+                f"--input-gamma-dl2={simulated_dl2_file}",
+                f"--input-proton-dl2={simulated_dl2_file}",
+                f"--input-electron-dl2={simulated_dl2_file}",
+                f"--output-irf-file={irf_file}",
                 f"--config={config_file}",
                 "--overwrite",
             ],
