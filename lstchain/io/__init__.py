@@ -47,7 +47,5 @@ __all__ = [
     'HDF5_ZSTD_FILTERS',
     'read_mc_dl2_to_QTable',
     'read_data_dl2_to_QTable',
-    'DataSelection',
-    'DataBinning',
 
 ]
