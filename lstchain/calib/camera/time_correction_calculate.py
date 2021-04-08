@@ -169,9 +169,9 @@ class TimeCorrectionCalculate(Component):
 
         """
 
-        for nr_module in prange(0, n_modules):
-            for gain in prange(0, n_gain):
-                for pix in prange(0, n_channel):
+        for nr_module in prange(n_modules):
+            for gain in prange(n_gain):
+                for pix in prange(n_channel):
                     pixel = pixel_ids[nr_module * 7 + pix]
                     if charge[gain, pixel] > min_charge: # cut change
                         fc = first_cap_array[nr_module, :, :]
@@ -181,9 +181,14 @@ class TimeCorrectionCalculate(Component):
                         entries_per_bin[gain, pixel, bin] += 1
 
     def finalize(self):
-        if np.sum(self.entries_per_bin == 0) > 0:
-            raise RuntimeError("Not enough events to coverage all capacitor. "
-                               "Please use more events to time calibration file.")
+        n_total = self.entries_per_bin.size
+        n_available = np.count_nonzero(self.entries_per_bin)
+        if n_available < n_total:
+            raise RuntimeError(
+                "No data available for some capacitors. "
+                "It might help to use more events to create the calibration file. "
+                f"Available: {n_available / n_total:.3%}, Missing: {n_total - n_available}"
+            )
         else:
             self.mean_values_per_bin = self.mean_values_per_bin / self.entries_per_bin
             self.save_to_hdf5_file()
@@ -255,7 +260,8 @@ class TimeCorrectionCalculate(Component):
         """
         fan_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
         fbn_array = np.zeros((n_gain, n_pixels, self.n_harmonics))
-        for pix_id in range(0, n_pixels):
+
+        for pix_id in range(n_pixels):
             self.fit(pix_id, gain=high_gain)
             fan_array[high_gain, pix_id, :] = self.fan
             fbn_array[high_gain, pix_id, :] = self.fbn
@@ -270,6 +276,5 @@ class TimeCorrectionCalculate(Component):
                 hf.create_dataset('fbn', data=fbn_array)
                 hf.attrs['n_events'] = self.sum_events
                 hf.attrs['n_harm'] = self.n_harmonics
-
-        except Exception as err:
-            print(f"FAILED to create the file {self.calib_file_path}", err)
+        except Exception:
+            raise IOError(f"Failed to create the file {self.calib_file_path}")
