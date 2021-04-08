@@ -187,7 +187,7 @@ class TimeCorrectionCalculate(Component):
             raise RuntimeError(
                 "No data available for some capacitors. "
                 "It might help to use more events to create the calibration file. "
-                f"Available: {n_available / n_total:.3%}"
+                f"Available: {n_available / n_total:.3%}, Missing: {n_total - n_available}"
             )
         else:
             self.mean_values_per_bin = self.mean_values_per_bin / self.entries_per_bin
