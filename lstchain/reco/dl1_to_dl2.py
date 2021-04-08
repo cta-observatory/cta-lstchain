@@ -395,11 +395,14 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
     """
 
     config = replace_config(standard_config, custom_config)
-
-    dl2 = dl1.copy()
-
     regression_features = config["regression_features"]
     classification_features = config["classification_features"]
+    events_filters = config["events_filters"]
+
+    dl2 = utils.filter_events(dl1,
+                              filters=events_filters,
+                              finite_params=config['regression_features'] + config['classification_features'],
+                              )
       
     #Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
