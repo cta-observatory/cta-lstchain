@@ -166,12 +166,12 @@ class IRFFITSWriter(Tool):
                 )
 
         filename = self.output_irf_file.name
-        if filename.split(".")[1] != "fits":
+        if filename.split(".")[-2] != "fits" or filename.split(".")[-1] != "gz":
             self.log.warning(
                 f"{filename} is not a correct "
-                "compressed FITS file name. It will be corrected."
+                "compressed FITS file name (.fits.gz). It will be corrected."
             )
-            filename = filename.split(".")[0] + ".fits.gz"
+            filename += ".fits.gz"
             self.output_irf_file = self.output_irf_file.parent / filename
 
         if self.input_proton_dl2 and self.input_electron_dl2 is not None:
