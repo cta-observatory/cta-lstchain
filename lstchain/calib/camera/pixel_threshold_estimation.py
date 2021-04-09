@@ -23,7 +23,7 @@ def get_bias_and_std(dl1_file):
         ped_charge_mean = np.array(ped.cols.charge_mean)
         ped_charge_std = np.array(ped.cols.charge_std)
         calib = f.root[dl1_params_tel_mon_cal_key]
-        dc_to_pe = np.array(calib.cols.dc_to_pe)
+        dc_to_pe = np.array(calib.cols.dc_to_pe[ORIGINAL_CALIBRATION_ID])
         ped_charge_mean_pe = ped_charge_mean * dc_to_pe
         ped_charge_std_pe = ped_charge_std * dc_to_pe
 
@@ -57,7 +57,7 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     # If problem with interleaved pedestal std values occur, take pedestal
     # std values from calibration run.
     # Correct interleaved pedestal std array should have shape (2,2,1855)
-    if ped_std_pe.shape[0] == 2:
+    if ped_std_pe.shape[0] > 1:
         pedestal_id = INTERLEAVED_CALIBRATION_ID
     else:
         pedestal_id = ORIGINAL_CALIBRATION_ID
