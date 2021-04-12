@@ -571,6 +571,9 @@ def r0_to_dl1(
                         containers=[event.simulation.tel[telescope_id], extra_im]
                     )
 
+        if event is None:
+            logger.warning('No events in file')
+
         if not is_simu and event is not None:
             # at the end of event loop ask calculation of remaining interleaved statistics
             new_ped, new_ff = calibration_calculator.output_interleaved_results(event)
