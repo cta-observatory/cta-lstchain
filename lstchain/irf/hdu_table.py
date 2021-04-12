@@ -425,15 +425,15 @@ def create_event_list(
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
     pnt_header["OBSGEO-L"] = (
-        location.lon.to_value(),
+        location.lon.to_value(u.deg),
         "Geographic longitude of telescope (deg)",
     )
     pnt_header["OBSGEO-B"] = (
-        location.lat.to_value(),
+        location.lat.to_value(u.deg),
         "Geographic latitude of telescope (deg)",
     )
     pnt_header["OBSGEO-H"] = (
-        round(location.height.to_value(), 2),
+        round(location.height.to_value(u.m), 2),
         "Geographic latitude of telescope (m)",
     )
 
