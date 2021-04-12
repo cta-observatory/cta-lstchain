@@ -1,0 +1,17 @@
+{
+  "EventSelector": {
+    "filters": {
+      "intensity": [100, Infinity],
+      "width": [0, Infinity],
+      "length": [0, Infinity],
+      "r": [0, 1],
+      "wl": [0.1, 1],
+      "leakage_intensity_width_2": [0, 0.2]
+    }
+  },
+  "DL3FixedCuts": {
+    "fixed_gh_cut": 0.7,
+    "fixed_theta_cut": 0.2,
+    "allowed_tels": [1]
+  }
+}

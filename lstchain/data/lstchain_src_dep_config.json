@@ -7,6 +7,8 @@
     "LSTEventSource": {
       "default_trigger_type": "ucts",
       "allowed_tels": [1],
+      "min_flatfield_adc": 3000,
+      "min_flatfield_pixel_fraction": 0.8,
       "calibrate_flatfields_and_pedestals": false,
       "EventTimeCalculator": {
         "dragon_reference_counter": null,

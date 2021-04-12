@@ -76,7 +76,7 @@ def main():
 
     if args.noimage:
         keys = get_dataset_keys(file_list[0])
-        keys = [k for k in keys if 'image' not in k]
+        keys = {k for k in keys if 'image' not in k}
     else:
         keys = None
 
