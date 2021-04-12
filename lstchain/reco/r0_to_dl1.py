@@ -302,6 +302,7 @@ def r0_to_dl1(
         writer._h5file.filters = HDF5_ZSTD_FILTERS
         logger.info(f"USING FILTERS: {writer._h5file.filters}")
 
+        event = None
         for i, event in enumerate(source):
 
             if i % 100 == 0:
@@ -570,7 +571,7 @@ def r0_to_dl1(
                         containers=[event.simulation.tel[telescope_id], extra_im]
                     )
 
-        if not is_simu:
+        if not is_simu and event is not None:
             # at the end of event loop ask calculation of remaining interleaved statistics
             new_ped, new_ff = calibration_calculator.output_interleaved_results(event)
             # write monitoring events
@@ -579,7 +580,7 @@ def r0_to_dl1(
                                    event.mon.tel[tel_id],
                                    new_ped=new_ped, new_ff=new_ff)
 
-    if is_simu:
+    if is_simu and event is not None:
         # Reconstruct source position from disp for all events and write the result in the output file
         add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal_length)
 
@@ -588,7 +589,7 @@ def r0_to_dl1(
         if source.max_events is None:
             write_simtel_energy_histogram(source, output_filename, obs_id=event.index.obs_id,
                                           metadata=metadata)
-    else:
+    if not is_simu:
         dir, name = os.path.split(output_filename)
         name = name.replace('dl1', 'muons').replace('LST-1.1', 'LST-1')
         # Consider the possibilities of DL1 files with .fits.h5 & .h5 ending:
