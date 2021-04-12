@@ -311,9 +311,9 @@ def create_event_list(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     ).transform_to(frame="icrs")
     tel_pnt_sky_pos = SkyCoord(
-        alt=pointing_alt.mean(),
-        az=pointing_az.mean(),
-        frame=AltAz(obstime=mean_time, location=location),
+        alt=pointing_alt[0],
+        az=pointing_az[0],
+        frame=AltAz(obstime=time_utc[0], location=location),
     ).transform_to(frame="icrs")
 
     # Observation modes
@@ -328,7 +328,7 @@ def create_event_list(
         # Nomenclature is to be worked out or have a separate way to mark mispointings
         mode = "UNDETERMINED"
 
-    log.info(
+    log.error(
         "Source pointing difference with camera pointing"
         f" is {source_pointing_diff:.3f}"
     )
@@ -431,7 +431,7 @@ def create_event_list(
         'Geographic longitude of telescope (deg)')
     pnt_header["OBSGEO-B"] = (location.lat.to_value(),
         'Geographic latitude of telescope (deg)')
-    pnt_header["OBSGEO-H"] = (location.height.to_value(), 
+    pnt_header["OBSGEO-H"] = (location.height.to_value(),
         'Geographic latitude of telescope (m)')
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
