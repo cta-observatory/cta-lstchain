@@ -296,9 +296,6 @@ def create_event_list(
     date_end = t_stop_iso[:10]
     time_end = t_stop_iso[11:]
 
-    mean_time = Time(
-        data["dragon_time"].value.mean() * u.s, format="unix", scale="utc"
-    )
     MJDREF = Time("1970-01-01T00:00", scale="utc")
 
     # Position parameters
@@ -328,7 +325,7 @@ def create_event_list(
         # Nomenclature is to be worked out or have a separate way to mark mispointings
         mode = "UNDETERMINED"
 
-    log.error(
+    log.info(
         "Source pointing difference with camera pointing"
         f" is {source_pointing_diff:.3f}"
     )
@@ -343,8 +340,8 @@ def create_event_list(
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
-            "GLON":src_sky_pos.galactic.l.to(u.deg),
-            "GLAT":src_sky_pos.galactic.b.to(u.deg),
+            "GLON": src_sky_pos.galactic.l.to(u.deg),
+            "GLAT": src_sky_pos.galactic.b.to(u.deg),
             "ALT": reco_alt.to(u.deg),
             "AZ": reco_az.to(u.deg),
         }
@@ -427,12 +424,18 @@ def create_event_list(
     pnt_header["MJDREFF"] = ev_header["MJDREFF"]
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
-    pnt_header["OBSGEO-L"] = (location.lon.to_value(),
-        'Geographic longitude of telescope (deg)')
-    pnt_header["OBSGEO-B"] = (location.lat.to_value(),
-        'Geographic latitude of telescope (deg)')
-    pnt_header["OBSGEO-H"] = (location.height.to_value(),
-        'Geographic latitude of telescope (m)')
+    pnt_header["OBSGEO-L"] = (
+        location.lon.to_value(),
+        "Geographic longitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-B"] = (
+        location.lat.to_value(),
+        "Geographic latitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-H"] = (
+        round(location.height.to_value(), 2),
+        "Geographic latitude of telescope (m)",
+    )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
 
