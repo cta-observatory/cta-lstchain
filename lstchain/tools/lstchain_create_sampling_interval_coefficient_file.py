@@ -161,7 +161,7 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
 
         self.log.debug('convert peak counts into sampling interval coefficients') 
         self.sampling_interval_calculate.convert_to_samp_interval_coefficient(gain = self.gain)
-        self.sampling_interval_calculate.set_charge_array(gain = self.gain)
+        self.sampling_interval_calculate.set_charge_array(gain = self.gain, self.eventsource.max_events)
 
         for i, event in enumerate(self.eventsource):
             if event.index.event_id % 500 == 0:

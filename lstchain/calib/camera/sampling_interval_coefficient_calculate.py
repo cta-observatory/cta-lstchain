@@ -8,6 +8,10 @@ from ctapipe_io_lst.constants import (
     N_PIXELS, N_SAMPLES, N_CAPACITORS_CHANNEL
 )
 
+MAX_EVENTS_FOR_ARRAY = 55000
+THRESHOLD_PULSE_ADC = 100
+THRESHOLD_PULS_PIX_NUM = 1800
+
 __all__ = ['SamplingIntervalCalculate']
 
 
@@ -37,19 +41,21 @@ class SamplingIntervalCalculate(Component):
         first_capacitors = r0_r1_calibrator.first_cap
         r1_sample_start = r0_r1_calibrator.r1_sample_start.tel[tel_id]
 
-        # Check pulse
-        pulse_event_flag = np.sum(np.max(waveform[gain], axis=1) > 100) > 1800
-    
-        if pulse_event_flag:
+        # There are some eventw without test pulses for almost all modules.
+        # In those events, a few modules have pulse signals of which pulse shapes are not expected...
+        # For the moment, such events are just removed in the anlysis
+        pulse_event_flag = np.sum(np.max(waveform[gain], axis=1) > THRESHOLD_PULSE_ADC) > THRESHOLD_PULS_PIX_NUM
 
+        if pulse_event_flag :
             # find pulse peak position
+            pulse_flag = np.max(waveform[gain], axis=1) > THRESHOLD_PULSE_ADC
             pulse_peak = np.argmax(waveform[gain], axis=1)
             fc = first_capacitors[tel_id][gain]
             pulse_peak_abs_pos = (fc + r1_sample_start + pulse_peak) % N_CAPACITORS_CHANNEL
             
-            # increment peak count array
-            self.peak_count[np.arange(N_PIXELS), pulse_peak_abs_pos] += 1
-            self.fc_count[np.arange(N_PIXELS), fc % N_CAPACITORS_CHANNEL] += 1
+            # increment peak count array in case that test pulses exist in the readout window
+            self.peak_count[np.arange(N_PIXELS), pulse_peak_abs_pos] += pulse_flag
+            self.fc_count[np.arange(N_PIXELS), fc % N_CAPACITORS_CHANNEL] += pulse_flag
             
 
     def stack_single_sampling_interval(self, file_list, gain):
@@ -81,12 +87,16 @@ class SamplingIntervalCalculate(Component):
                     self.sampling_interval_coefficient[run_id][pixel, :N_SAMPLES]
 
                 
-    def set_charge_array(self, gain):
-        self.charge_array_before_corr = np.zeros([N_PIXELS, 60000])
+    def set_charge_array(self, gain, max_events):
+
+        if max_events == None:
+            max_events = MAX_EVENTS_FOR_ARRAY
+
+        self.charge_array_before_corr = np.zeros([N_PIXELS, max_events])
         self.charge_reso_array_before_corr = np.zeros(N_PIXELS)
 
         for run_id in self.peak_count_stack.keys():
-            self.charge_array_after_corr[run_id] = np.zeros([N_PIXELS, 60000])
+            self.charge_array_after_corr[run_id] = np.zeros([N_PIXELS, max_events])
             self.charge_reso_array_after_corr[run_id] = np.zeros(N_PIXELS)
             
 
@@ -98,8 +108,11 @@ class SamplingIntervalCalculate(Component):
         r1_sample_start = r0_r1_calibrator.r1_sample_start.tel[tel_id]
         r1_sample_end = r0_r1_calibrator.r1_sample_end.tel[tel_id]
 
-        # Check pulse
-        pulse_event_flag = np.sum(np.max(waveform[gain], axis=1) > 100) > 1800
+        # There are some eventw without test pulses for almost all modules.
+        # In those events, a few modules have pulse signals of which pulse shapes are not expected...
+        # For the moment, such events are just removed in the anlysis
+        pulse_event_flag = np.sum(np.max(waveform[gain], axis=1) > THRESHOLD_PULSE_ADC) > THRESHOLD_PULS_PIX_NUM
+
 
         if pulse_event_flag:
 
@@ -115,7 +128,8 @@ class SamplingIntervalCalculate(Component):
 
             for pixel in range(N_PIXELS):
 
-                if integ_start[pixel] < 0 or integ_last[pixel] > (r1_sample_end - r1_sample_start):
+                # If there are no pulses or signals are not in the expected position (center of the ROI), just skip
+                if integ_start[pixel] < 0 or integ_last[pixel] > (r1_sample_end - r1_sample_start) or np.max(waveform[gain, pixel]) < THRESHOLD_PULSE_ADC:
                     continue
 
                 self.charge_array_before_corr[pixel][count] = np.sum(waveform[gain, pixel,integ_start[pixel]:integ_last[pixel]])
