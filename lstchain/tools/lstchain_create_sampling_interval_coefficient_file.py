@@ -1,6 +1,7 @@
 import numpy as np
 from astropy.io import fits
 import h5py
+from tqdm import tqdm
 
 from ctapipe.core import Provenance, traits
 from ctapipe.core import Tool
