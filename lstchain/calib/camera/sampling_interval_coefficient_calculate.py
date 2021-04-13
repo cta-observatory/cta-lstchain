@@ -79,12 +79,15 @@ class SamplingIntervalCalculate(Component):
         for run_id in self.peak_count_stack.keys():
             self.sampling_interval_coefficient[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL + N_SAMPLES])
 
-            for pixel in range(N_PIXELS):
-                self.sampling_interval_coefficient[run_id][pixel, :N_CAPACITORS_CHANNEL] = \
-                    self.peak_count_stack[run_id][pixel] / np.sum(self.peak_count_stack[run_id][pixel]) * N_CAPACITORS_CHANNEL
+            stack_events_num = np.sum(self.peak_count_stack[run_id], axis=1)
+            stack_events_num = stack_events_num.reshape(1, N_PIXELS)
+
+            self.sampling_interval_coefficient[run_id][,:N_CAPACITORS_CHANNEL] = (
+                self.peak_count_stack[run_id][pixel] / stack_events_num * N_CAPACITORS_CHANNEL )
+
+            self.sampling_interval_coefficient[run_id][:, N_CAPACITORS_CHANNEL:] = (
+                self.sampling_interval_coefficient[run_id][:, :N_SAMPLES] )
                 
-                self.sampling_interval_coefficient[run_id][pixel, N_CAPACITORS_CHANNEL:] = \
-                    self.sampling_interval_coefficient[run_id][pixel, :N_SAMPLES]
 
                 
     def set_charge_array(self, gain, max_events):
@@ -137,9 +140,9 @@ class SamplingIntervalCalculate(Component):
                 for run_id in self.peak_count_stack.keys():
                     samp_interval_coefficient = self.sampling_interval_coefficient[run_id]
                     
-                    self.charge_array_after_corr[run_id][pixel][count] = \
-                        np.sum(waveform[gain,pixel,integ_start[pixel]:integ_last[pixel]] \
-                               * samp_interval_coefficient[pixel, integ_abs_start[pixel]:integ_abs_last[pixel]])
+                    self.charge_array_after_corr[run_id][pixel][count] = (
+                        np.sum(waveform[gain,pixel,integ_start[pixel]:integ_last[pixel]] 
+                               * samp_interval_coefficient[pixel, integ_abs_start[pixel]:integ_abs_last[pixel]]))
 
     def calc_charge_reso(self, gain):
         
