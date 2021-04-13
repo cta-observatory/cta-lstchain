@@ -4,12 +4,12 @@ from numba import jit, prange
 
 from ctapipe.core import Component
 
+from ctapipe_io_lst.constants import (
+    N_PIXELS, N_SAMPLES, N_CAPACITORS_CHANNEL
+)
 
 __all__ = ['SamplingIntervalCalculate']
 
-N_PIXELS = 1855
-N_CAPACITORS_CHANNEL = 1024
-N_SAMPLES = 40
 
 class SamplingIntervalCalculate(Component):
     """
@@ -143,7 +143,7 @@ class SamplingIntervalCalculate(Component):
     def verify(self):
         n_keys=len(self.charge_reso_array_after_corr.keys())
         run_id_array = np.zeros(n_keys, dtype=np.uint16)
-        charge_reso_array_after_corr_all = np.zeros([n_keys, 1855])
+        charge_reso_array_after_corr_all = np.zeros([n_keys, N_PIXELS])
         
         for i, ikey in enumerate(self.charge_reso_array_after_corr.keys()):
             run_id_array[i] = ikey
