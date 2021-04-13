@@ -19,8 +19,8 @@ class SamplingIntervalCalculate(Component):
         self.peak_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
         self.fc_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
 
-        self.peak_count_stuck ={}
-        self.fc_count_stuck = {}
+        self.peak_count_stack ={}
+        self.fc_count_stack = {}
 
         self.sampling_interval_coefficient = {}
         self.charge_array_after_corr ={}
@@ -52,30 +52,30 @@ class SamplingIntervalCalculate(Component):
             self.fc_count[np.arange(N_PIXELS), fc % N_CAPACITORS_CHANNEL] += 1
             
 
-    def stuck_single_sampling_interval(self, file_list, gain):
+    def stack_single_sampling_interval(self, file_list, gain):
 
         for single_file in file_list:
 
             run_id, gain_in_file, peak_count, fc_count = load_single_fits_sampling_interval(single_file)
             
             if gain_in_file == gain:
-                if not run_id in self.peak_count_stuck.keys():
-                    self.peak_count_stuck[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
-                    self.fc_count_stuck[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
+                if not run_id in self.peak_count_stack.keys():
+                    self.peak_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
+                    self.fc_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
                 
-                self.peak_count_stuck[run_id] += peak_count
-                self.fc_count_stuck[run_id] += fc_count
+                self.peak_count_stack[run_id] += peak_count
+                self.fc_count_stack[run_id] += fc_count
 
 
     def convert_to_samp_interval_coefficient(self, gain):
         # convert peak counts to sampling interval coefficient
 
-        for run_id in self.peak_count_stuck.keys():
+        for run_id in self.peak_count_stack.keys():
             self.sampling_interval_coefficient[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL + N_SAMPLES])
 
             for pixel in range(N_PIXELS):
                 self.sampling_interval_coefficient[run_id][pixel, :N_CAPACITORS_CHANNEL] = \
-                    self.peak_count_stuck[run_id][pixel] / np.sum(self.peak_count_stuck[run_id][pixel]) * N_CAPACITORS_CHANNEL
+                    self.peak_count_stack[run_id][pixel] / np.sum(self.peak_count_stack[run_id][pixel]) * N_CAPACITORS_CHANNEL
                 
                 self.sampling_interval_coefficient[run_id][pixel, N_CAPACITORS_CHANNEL:] = \
                     self.sampling_interval_coefficient[run_id][pixel, :N_SAMPLES]
@@ -85,7 +85,7 @@ class SamplingIntervalCalculate(Component):
         self.charge_array_before_corr = np.zeros([N_PIXELS, 60000])
         self.charge_reso_array_before_corr = np.zeros(N_PIXELS)
 
-        for run_id in self.peak_count_stuck.keys():
+        for run_id in self.peak_count_stack.keys():
             self.charge_array_after_corr[run_id] = np.zeros([N_PIXELS, 60000])
             self.charge_reso_array_after_corr[run_id] = np.zeros(N_PIXELS)
             
@@ -120,7 +120,7 @@ class SamplingIntervalCalculate(Component):
 
                 self.charge_array_before_corr[pixel][count] = np.sum(waveform[gain, pixel,integ_start[pixel]:integ_last[pixel]])
 
-                for run_id in self.peak_count_stuck.keys():
+                for run_id in self.peak_count_stack.keys():
                     samp_interval_coefficient = self.sampling_interval_coefficient[run_id]
                     
                     self.charge_array_after_corr[run_id][pixel][count] = \
@@ -135,7 +135,7 @@ class SamplingIntervalCalculate(Component):
             charge_array_before_corr_final = charge_array_before_corr_final[charge_array_before_corr_final!=0]
             self.charge_reso_array_before_corr[pixel] = np.std(charge_array_before_corr_final)/np.mean(charge_array_before_corr_final)
 
-            for run_id in self.peak_count_stuck.keys():
+            for run_id in self.peak_count_stack.keys():
                 charge_array_after_corr_final = self.charge_array_after_corr[run_id][pixel]   
                 charge_array_after_corr_final = charge_array_after_corr_final[charge_array_after_corr_final!=0] 
                 self.charge_reso_array_after_corr[run_id][pixel] = np.std(charge_array_after_corr_final)/np.mean(charge_array_after_corr_final)

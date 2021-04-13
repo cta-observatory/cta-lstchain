@@ -53,9 +53,9 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         help="First step: count peak on each capacitor"
     ).tag(config=True)
 
-    stuck_verify_flag = traits.Bool(
+    stack_verify_flag = traits.Bool(
         default_value=False,
-        help="Second step: merge peak count files and verify with charge resolution"
+        help="Second step: Stack peak count files and verify with charge resolution"
     ).tag(config=True)
 
     merge_flag = traits.Bool(
@@ -88,8 +88,8 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
             {'SamplingIntervalCoefficientHDFWriter': {'count_flag': True}},
             'First step: count peak on each capacitor',
         ),
-        'stuck_verify_flag': (
-            {'SamplingIntervalCoefficientHDFWriter': {'stuck_verify_flag': True}},
+        'stack_verify_flag': (
+            {'SamplingIntervalCoefficientHDFWriter': {'stack_verify_flag': True}},
             'Second step: merge peak count files and verify with charge resolution',
         ),
         'merge_flag': (
@@ -105,8 +105,8 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         if self.count_flag:
             self.setup_count()
     
-        if self.stuck_verify_flag:
-            self.setup_stuck_verify()
+        if self.stack_verify_flag:
+            self.setup_stack_verify()
 
         if self.merge_flag:
             self.setup_merge()
@@ -117,8 +117,8 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         self.eventsource = LSTEventSource(parent = self)
         self.run_id = self.eventsource.obs_ids[0]
 
-    def setup_stuck_verify(self):
-        self.log.debug('Second step: stuck and verify with charge resolution')
+    def setup_stack_verify(self):
+        self.log.debug('Second step: stack and verify with charge resolution')
         self.path_list = [str(self.input_fits)]
         if self.input_fits.is_dir():
             self.path_list = sorted(self.input_fits.glob(self.glob))
@@ -134,8 +134,8 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         if self.count_flag:
             self.start_count()
 
-        if self.stuck_verify_flag:
-            self.start_stuck_verify()
+        if self.stack_verify_flag:
+            self.start_stack_verify()
 
         if self.merge_flag:
             self.start_merge()
@@ -155,9 +155,9 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
             self.sampling_interval_calculate.increment_peak_count(event, tel_id = self.eventsource.tel_id, \
                                                                   gain = self.gain, r0_r1_calibrator = self.eventsource.r0_r1_calibrator)
 
-    def start_stuck_verify(self):
-        self.log.debug('stuck peak count tables')
-        self.sampling_interval_calculate.stuck_single_sampling_interval(self.path_list, self.gain)
+    def start_stack_verify(self):
+        self.log.debug('stack peak count tables')
+        self.sampling_interval_calculate.stack_single_sampling_interval(self.path_list, self.gain)
 
         self.log.debug('convert peak counts into sampling interval coefficients') 
         self.sampling_interval_calculate.convert_to_samp_interval_coefficient(gain = self.gain)
@@ -205,8 +205,8 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         if self.count_flag:
             self.finish_count()
         
-        if self.stuck_verify_flag:
-            self.finish_stuck_verify()
+        if self.stack_verify_flag:
+            self.finish_stack_verify()
 
         if self.merge_flag:
             self.finish_merge()
@@ -221,7 +221,7 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
         hdul = fits.HDUList([primary_hdu, hdu_peak, hdu_fc])
         hdul.writeto(self.output)
 
-    def finish_stuck_verify(self):
+    def finish_stack_verify(self):
         hdu_sampling_interval_coefficient = fits.ImageHDU(self.sampling_interval_calculate.sampling_interval_coefficient_final)
         hdu_used_run = fits.ImageHDU(self.sampling_interval_calculate.used_run)
         hdu_charge_reso_final = fits.ImageHDU(self.sampling_interval_calculate.charge_reso_final)
