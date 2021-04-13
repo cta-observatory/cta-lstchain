@@ -82,7 +82,7 @@ class SamplingIntervalCalculate(Component):
             stack_events_num = np.sum(self.peak_count_stack[run_id], axis=1)
             stack_events_num = stack_events_num.reshape(1, N_PIXELS)
 
-            self.sampling_interval_coefficient[run_id][,:N_CAPACITORS_CHANNEL] = (
+            self.sampling_interval_coefficient[run_id][:,:N_CAPACITORS_CHANNEL] = (
                 self.peak_count_stack[run_id][pixel] / stack_events_num * N_CAPACITORS_CHANNEL )
 
             self.sampling_interval_coefficient[run_id][:, N_CAPACITORS_CHANNEL:] = (

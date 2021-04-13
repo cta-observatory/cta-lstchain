@@ -143,7 +143,14 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
     def start_count(self):
         self.log.debug('start peak counting')
 
-        for i, event in enumerate(self.eventsource):
+        for i, event in enumerate(tqdm(
+                self.eventsource,
+                desc = self.eventsource.__class__.__name__,
+                total = self.eventsource.max_events,
+                unit = "event",
+                disable = not self.progress_bar,
+        )):
+
             if event.index.event_id % 500 == 0:
                 self.log.debug(f'event id = {event.index.event_id}')
 
@@ -161,9 +168,16 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
 
         self.log.debug('convert peak counts into sampling interval coefficients') 
         self.sampling_interval_calculate.convert_to_samp_interval_coefficient(gain = self.gain)
-        self.sampling_interval_calculate.set_charge_array(gain = self.gain, self.eventsource.max_events)
+        self.sampling_interval_calculate.set_charge_array(gain = self.gain, max_events = self.eventsource.max_events)
 
-        for i, event in enumerate(self.eventsource):
+        for i, event in enumerate(tqdm(
+                self.eventsource,
+                desc = self.eventsource.__class__.__name__,
+                total = self.eventsource.max_events,
+                unit = "event",
+                disable = not self.progress_bar,
+        )):
+
             if event.index.event_id % 500 == 0:
                 self.log.debug(f'event id = {event.index.event_id}')
 
