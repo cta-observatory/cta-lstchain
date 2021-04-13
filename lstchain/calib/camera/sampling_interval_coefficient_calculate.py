@@ -16,8 +16,8 @@ class SamplingIntervalCalculate(Component):
         The SamplingIntervalCalculate class to create a sampling interval coefficient table for LST readout system using chip DRS4.
     """
     def __init__(self):
-        self.peak_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
-        self.fc_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
+        self.peak_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL], dtype=np.uint16)
+        self.fc_count = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL], dtype=np.uint16)
 
         self.peak_count_stack ={}
         self.fc_count_stack = {}
@@ -27,7 +27,7 @@ class SamplingIntervalCalculate(Component):
         self.charge_reso_array_after_corr ={}
 
         self.charge_reso_final = np.zeros(N_PIXELS)
-        self.used_run = np.zeros(N_PIXELS)
+        self.used_run = np.zeros(N_PIXELS, dtype=np.uint16)
         self.sampling_interval_coefficient_final = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
 
     def increment_peak_count(self, event, tel_id, gain, r0_r1_calibrator):
@@ -60,8 +60,8 @@ class SamplingIntervalCalculate(Component):
             
             if gain_in_file == gain:
                 if not run_id in self.peak_count_stack.keys():
-                    self.peak_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
-                    self.fc_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL])
+                    self.peak_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL], dtype=np.uint16)
+                    self.fc_count_stack[run_id] = np.zeros([N_PIXELS, N_CAPACITORS_CHANNEL], dtype=np.uint16)
                 
                 self.peak_count_stack[run_id] += peak_count
                 self.fc_count_stack[run_id] += fc_count
@@ -142,7 +142,7 @@ class SamplingIntervalCalculate(Component):
 
     def verify(self):
         n_keys=len(self.charge_reso_array_after_corr.keys())
-        run_id_array = np.zeros(n_keys)
+        run_id_array = np.zeros(n_keys, dtype=np.uint16)
         charge_reso_array_after_corr_all = np.zeros([n_keys, 1855])
         
         for i, ikey in enumerate(self.charge_reso_array_after_corr.keys()):
@@ -152,7 +152,7 @@ class SamplingIntervalCalculate(Component):
         for ipix in range(N_PIXELS):
             min_charge_reso_arg = np.argmin(charge_reso_array_after_corr_all.T[ipix])
             self.charge_reso_final[ipix] = charge_reso_array_after_corr_all[min_charge_reso_arg, ipix]
-            self.used_run[ipix] = int(run_id_array[min_charge_reso_arg])
+            self.used_run[ipix] = run_id_array[min_charge_reso_arg]
             self.sampling_interval_coefficient_final[ipix] = self.sampling_interval_coefficient[self.used_run[ipix]][ipix, :N_CAPACITORS_CHANNEL]
 
 

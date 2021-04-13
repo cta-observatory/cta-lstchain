@@ -171,7 +171,6 @@ class SamplingIntervalCoefficientHDFWriter(Tool):
             if i < 1000:
                 continue
 
-            #first_capacitor = self.eventsource.r0_r1_calibrator.first_cap
             self.sampling_interval_calculate.calc_charge(i, event, tel_id = self.eventsource.tel_id, \
                                                          gain = self.gain, r0_r1_calibrator = self.eventsource.r0_r1_calibrator)
 
