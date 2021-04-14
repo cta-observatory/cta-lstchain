@@ -6,6 +6,7 @@ import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, AltAz
+from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
@@ -306,15 +307,19 @@ def create_event_list(
 
     src_sky_pos = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
-    ).transform_to(frame="icrs")
+    )
     tel_pnt_sky_pos = SkyCoord(
         alt=pointing_alt[0],
         az=pointing_az[0],
         frame=AltAz(obstime=time_utc[0], location=location),
-    ).transform_to(frame="icrs")
+    )
+
+    with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
+        src_sky_pos_icrs = src_sky_pos.transform_to(frame="icrs")
+        tel_pnt_sky_pos_icrs = tel_pnt_sky_pos.transform_to(frame="icrs")
 
     # Observation modes
-    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos)
+    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos_icrs)
     if np.around(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
     elif np.around(source_pointing_diff, 1) > 1 * u.deg:
@@ -334,14 +339,14 @@ def create_event_list(
         {
             "EVENT_ID": data["event_id"],
             "TIME": data["dragon_time"],
-            "RA": src_sky_pos.ra.to(u.deg),
-            "DEC": src_sky_pos.dec.to(u.deg),
+            "RA": src_sky_pos_icrs.ra.to(u.deg),
+            "DEC": src_sky_pos_icrs.dec.to(u.deg),
             "ENERGY": data["reco_energy"],
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
-            "GLON": src_sky_pos.galactic.l.to(u.deg),
-            "GLAT": src_sky_pos.galactic.b.to(u.deg),
+            "GLON": src_sky_pos_icrs.galactic.l.to(u.deg),
+            "GLAT": src_sky_pos_icrs.galactic.b.to(u.deg),
             "ALT": reco_alt.to(u.deg),
             "AZ": reco_az.to(u.deg),
         }
@@ -355,8 +360,8 @@ def create_event_list(
     pnt_table = QTable(
         {
             "TIME": u.Quantity(t_start, unit=u.s, ndmin=1),
-            "RA_PNT": u.Quantity(tel_pnt_sky_pos.ra.to(u.deg), ndmin=1),
-            "DEC_PNT": u.Quantity(tel_pnt_sky_pos.dec.to(u.deg), ndmin=1),
+            "RA_PNT": u.Quantity(tel_pnt_sky_pos_icrs.ra.to(u.deg), ndmin=1),
+            "DEC_PNT": u.Quantity(tel_pnt_sky_pos_icrs.dec.to(u.deg), ndmin=1),
             "ALT_PNT": u.Quantity(pointing_alt[0].to(u.deg), ndmin=1),
             "AZ_PNT": u.Quantity(pointing_az[0].to(u.deg), ndmin=1),
         }
@@ -394,8 +399,8 @@ def create_event_list(
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
-    ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
-    ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
+    ev_header["RA_PNT"] = tel_pnt_sky_pos_icrs.ra.to_value()
+    ev_header["DEC_PNT"] = tel_pnt_sky_pos_icrs.dec.to_value()
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
     ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
     ev_header["RA_OBJ"] = source_pos.ra.to_value()
