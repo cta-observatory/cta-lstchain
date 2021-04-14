@@ -312,14 +312,13 @@ def create_event_list(
         alt=pointing_alt[0],
         az=pointing_az[0],
         frame=AltAz(obstime=time_utc[0], location=location),
-    )
+    ).transform_to(frame="icrs")
 
     with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
         src_sky_pos_icrs = src_sky_pos.transform_to(frame="icrs")
-        tel_pnt_sky_pos_icrs = tel_pnt_sky_pos.transform_to(frame="icrs")
 
     # Observation modes
-    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos_icrs)
+    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos)
     if np.around(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
     elif np.around(source_pointing_diff, 1) > 1 * u.deg:
@@ -360,8 +359,8 @@ def create_event_list(
     pnt_table = QTable(
         {
             "TIME": u.Quantity(t_start, unit=u.s, ndmin=1),
-            "RA_PNT": u.Quantity(tel_pnt_sky_pos_icrs.ra.to(u.deg), ndmin=1),
-            "DEC_PNT": u.Quantity(tel_pnt_sky_pos_icrs.dec.to(u.deg), ndmin=1),
+            "RA_PNT": u.Quantity(tel_pnt_sky_pos.ra.to(u.deg), ndmin=1),
+            "DEC_PNT": u.Quantity(tel_pnt_sky_pos.dec.to(u.deg), ndmin=1),
             "ALT_PNT": u.Quantity(pointing_alt[0].to(u.deg), ndmin=1),
             "AZ_PNT": u.Quantity(pointing_az[0].to(u.deg), ndmin=1),
         }
@@ -399,8 +398,8 @@ def create_event_list(
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
-    ev_header["RA_PNT"] = tel_pnt_sky_pos_icrs.ra.to_value()
-    ev_header["DEC_PNT"] = tel_pnt_sky_pos_icrs.dec.to_value()
+    ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
+    ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
     ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
     ev_header["RA_OBJ"] = source_pos.ra.to_value()
