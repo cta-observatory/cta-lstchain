@@ -7,7 +7,6 @@ full camera image is also available.
 import logging
 import os
 from copy import deepcopy
-from functools import partial
 from pathlib import Path
 
 import astropy.units as u
@@ -22,14 +21,12 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
 )
 from ctapipe.image.morphology import number_of_islands
-from ctapipe.instrument import OpticsDescription
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.containers import EventType
 from . import disp
-from . import utils
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
 from ..calib.camera import lst_calibration, load_calibrator_from_config
@@ -67,6 +64,56 @@ __all__ = [
 
 
 cleaning_method = tailcuts_clean
+
+
+def setup_writer(writer, subarray, is_simulation):
+    '''Setup column transforms and exlusions for the hdf5 writer for dl1'''
+    writer.add_column_transform(
+        table_name="subarray/trigger",
+        col_name="tels_with_trigger",
+        transform=subarray.tel_ids_to_mask,
+    )
+    writer.exclude('subarray/trigger', 'tel')
+
+    # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
+    writer._h5file.filters = HDF5_ZSTD_FILTERS
+    logger.info(f"USING FILTERS: {writer._h5file.filters}")
+
+
+    tel_names = {str(tel)[4:] for tel in subarray.telescope_types}
+
+    for tel_name in tel_names:
+        # None values in telescope/image table
+        writer.exclude(f'telescope/image/{tel_name}', 'image_mask')
+        writer.exclude(f'telescope/image/{tel_name}', 'parameters')
+        # None values in telescope/parameters table
+        writer.exclude(f'telescope/parameters/{tel_name}', 'hadroness')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_norm')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_dx')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_dy')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_angle')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_sign')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'disp_miss')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'src_x')
+        writer.exclude(f'telescope/parameters/{tel_name}', 'src_y')
+
+        if is_simulation:
+            writer.exclude(f'telescope/parameters/{tel_name}', 'dragon_time')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_time')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'tib_time')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_trigger_type')
+        else:
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_energy')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'log_mc_energy')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_alt')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_az')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_x')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_y')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_h_first_int')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_alt_tel')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_az_tel')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_x_max')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_distance')
 
 
 def get_dl1(
@@ -126,9 +173,8 @@ def get_dl1(
             signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
-            cleaned_pixel_times = peak_time
-            # makes sure only signal pixels are used in the time
-            # check:
+            # makes sure only signal pixels are used in the time check:
+            cleaned_pixel_times = peak_time.copy()
             cleaned_pixel_times[~signal_pixels] = np.nan
 
             signal_pixels = apply_time_delta_cleaning(
@@ -276,31 +322,7 @@ def r0_to_dl1(
         # overwrite=True,
     ) as writer:
 
-        if is_simu:
-            subarray = subarray
-            # build a mapping of tel_id back to tel_index:
-            # (note this should be part of SubarrayDescription)
-            idx = np.zeros(max(subarray.tel_indices) + 1)
-            for key, val in subarray.tel_indices.items():
-                idx[key] = val
-
-            # the final transform then needs the mapping and the number of telescopes
-            tel_list_transform = partial(
-                utils.expand_tel_list,
-                max_tels=max(subarray.tel) + 1,
-            )
-
-            writer.add_column_transform(
-                table_name='subarray/trigger',
-                col_name='tels_with_trigger',
-                transform=tel_list_transform
-            )
-            writer.exclude(f'subarray/trigger', 'tel')
-
-        # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
-        # This should be fixed in ctapipe and then corrected here
-        writer._h5file.filters = HDF5_ZSTD_FILTERS
-        logger.info(f"USING FILTERS: {writer._h5file.filters}")
+        setup_writer(writer, source.subarray, is_simulation=is_simu)
 
         event = None
         for i, event in enumerate(source):
@@ -369,7 +391,19 @@ def r0_to_dl1(
             # a candidate muon ring. In that case the full image could be kept, or reduced
             # only after the ring analysis is complete.
 
-            for ii, telescope_id in enumerate(event.dl1.tel.keys()):
+            for telescope_id, dl1_tel in event.dl1.tel.items():
+                dl1_tel.prefix = ''  # don't really need one
+                tel_name = str(subarray.tel[telescope_id])[4:]
+
+                # extra info for the image table
+                extra_im.tel_id = telescope_id
+                extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
+
+                # write image first, so we are sure nothing here modifies it
+                writer.write(
+                    table_name=f'telescope/image/{tel_name}',
+                    containers=[event.index, dl1_tel, extra_im]
+                )
 
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
                 mirror_area = subarray.tel[telescope_id].optics.mirror_area
@@ -381,18 +415,12 @@ def r0_to_dl1(
 
                 dl1_container.fill_event_info(event)
 
-                tel = event.dl1.tel[telescope_id]
-                tel.prefix = ''  # don't really need one
-                # remove the first part of the tel_name which is the type 'LST', 'MST' or 'SST'
-                tel_name = str(subarray.tel[telescope_id])[4:]
 
                 if custom_calibration:
                     lst_calibration(event, telescope_id)
 
-                write_event = True
                 # Will determine whether this event has to be written to the
                 # DL1 output or not.
-
                 if is_simu:
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
@@ -424,10 +452,7 @@ def r0_to_dl1(
                     dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
                 else:
                     dl1_container.trigger_type = event.trigger.event_type
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'dragon_time')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_time')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'tib_time')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_trigger_type')
+
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
@@ -435,46 +460,11 @@ def r0_to_dl1(
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type
 
-                dl1_container.prefix = tel.prefix
+                dl1_container.prefix = dl1_tel.prefix
 
-                # extra info for the image table
-                extra_im.tel_id = telescope_id
-                extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
-
-                for container in [extra_im, dl1_container, event.r0, tel]:
+                for container in [extra_im, dl1_container, event.r0, dl1_tel]:
                     add_global_metadata(container, metadata)
 
-                event.r0.prefix = ''
-
-                # None values in telescope/image table
-                writer.exclude(f'telescope/image/{tel_name}', 'image_mask')
-                writer.exclude(f'telescope/image/{tel_name}', 'parameters')
-                # None values in telescope/parameters table
-                writer.exclude(f'telescope/parameters/{tel_name}', 'hadroness')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_norm')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_dx')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_dy')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_angle')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_sign')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'disp_miss')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'src_x')
-                writer.exclude(f'telescope/parameters/{tel_name}', 'src_y')
-
-                if not is_simu:
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_energy')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'log_mc_energy')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_alt')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_az')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_x')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_y')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_h_first_int')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_alt_tel')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_az_tel')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_x_max')
-                    writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_distance')
-
-                writer.write(table_name=f'telescope/image/{tel_name}',
-                             containers=[event.index, tel, extra_im])
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
 
@@ -482,7 +472,7 @@ def r0_to_dl1(
                 if not is_simu:
                     bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
                     # Set to 0 unreliable pixels:
-                    image = tel.image*(~bad_pixels)
+                    image = dl1_tel.image*(~bad_pixels)
 
                     # process only promising events, in terms of # of pixels with large signals:
                     if tag_pix_thr(image):
@@ -502,9 +492,7 @@ def r0_to_dl1(
 
                         event.r1.tel[telescope_id].waveform *= ~bad_waveform
                         r1_dl1_calibrator_for_muon_rings(event)
-
-                        tel = event.dl1.tel[telescope_id]
-                        image = tel.image*(~bad_pixels)
+                        image = dl1_tel.image*(~bad_pixels)
 
                         # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
                         # perhaps the event is no longer promising (e.g. if it has a large time evolution)
