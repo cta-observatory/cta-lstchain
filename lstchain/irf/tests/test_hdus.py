@@ -3,6 +3,7 @@ from astropy.table import Table
 
 
 @pytest.mark.run(after="test_write_dl2_dataframe")
+@pytest.mark.private_data
 def test_create_event_list(observed_dl2_file, simulated_irf_file):
     from lstchain.irf.hdu_table import create_event_list
     from lstchain.io.io import read_data_dl2_to_QTable
@@ -43,6 +44,7 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
 
 
 @pytest.mark.run(after="test_create_event_list")
+@pytest.mark.private_data
 def test_create_obs_hdu_index(observed_dl2_file):
     from lstchain.irf.hdu_table import create_hdu_index_hdu, create_obs_index_hdu
 
