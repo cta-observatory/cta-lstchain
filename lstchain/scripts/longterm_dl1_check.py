@@ -70,8 +70,6 @@ def main():
     cosmics['mu_intensity_mean'] = []
     cosmics['mu_hg_peak_sample'] = []
     cosmics['mu_hg_peak_sample_stddev'] = []
-    cosmics['mu_lg_peak_sample'] = []
-    cosmics['mu_lg_peak_sample_stddev'] = []
     cosmics['fraction_pulses_above10'] = [] # fraction of >10 pe pulses
     cosmics['fraction_pulses_above30'] = [] # fraction of >30 pe pulses
 
@@ -120,8 +118,6 @@ def main():
                   'mu_width_stddev': [],
                   'mu_hg_peak_sample_mean': [],
                   'mu_hg_peak_sample_stddev': [],
-                  'mu_lg_peak_sample_mean': [],
-                  'mu_lg_peak_sample_stddev': [],
                   'mu_intensity_mean': []}
 
     # and another one for pixel-wise run averages:
@@ -402,8 +398,6 @@ def main():
                 cosmics['mu_intensity_mean'].extend([np.nan])
                 cosmics['mu_hg_peak_sample'].extend([np.nan])
                 cosmics['mu_hg_peak_sample_stddev'].extend([np.nan])
-                cosmics['mu_lg_peak_sample'].extend([np.nan])
-                cosmics['mu_lg_peak_sample_stddev'].extend([np.nan])
                 continue
 
             df_muons = dat.to_pandas()
@@ -423,8 +417,6 @@ def main():
             cosmics['mu_intensity_mean'].extend([contained_mu['ring_size'].mean()])
             cosmics['mu_hg_peak_sample'].extend([contained_mu['hg_peak_sample'].mean()])
             cosmics['mu_hg_peak_sample_stddev'].extend([contained_mu['hg_peak_sample'].std()])
-            cosmics['mu_lg_peak_sample'].extend([contained_mu['lg_peak_sample'].mean()])
-            cosmics['mu_lg_peak_sample_stddev'].extend([contained_mu['lg_peak_sample'].std()])
 
             if contained_mu_wholerun is None:
                 contained_mu_wholerun = df_muons
@@ -450,10 +442,6 @@ def main():
                 extend([contained_mu_wholerun['hg_peak_sample'].mean()])
             runsummary['mu_hg_peak_sample_stddev'].\
                 extend([contained_mu_wholerun['hg_peak_sample'].std()])
-            runsummary['mu_lg_peak_sample_mean'].\
-                extend([contained_mu_wholerun['lg_peak_sample'].mean()])
-            runsummary['mu_lg_peak_sample_stddev'].\
-                extend([contained_mu_wholerun['lg_peak_sample'].std()])
         else:
             runsummary['num_contained_mu_rings'].extend([np.nan])
             runsummary['mu_effi_mean'].extend([np.nan])
@@ -463,8 +451,6 @@ def main():
             runsummary['mu_intensity_mean'].extend([np.nan])
             runsummary['mu_hg_peak_sample_mean'].extend([np.nan])
             runsummary['mu_hg_peak_sample_stddev'].extend([np.nan])
-            runsummary['mu_lg_peak_sample_mean'].extend([np.nan])
-            runsummary['mu_lg_peak_sample_stddev'].extend([np.nan])
 
     pd.DataFrame(runsummary).to_hdf(output_file_name, key='runsummary', mode='w')
 
@@ -666,7 +652,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     page5 = Panel()
     pad_width = 550
-    pad_height = 280
+    pad_height = 350
     fig_mu_effi = show_graph(x=pd.to_datetime(runsummary['time'], origin='unix',
                                               unit='s'),
                              y=runsummary['mu_effi_mean'],
@@ -704,18 +690,10 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
         ylabel='HG global peak sample id (mean&RMS)',
         xtype='datetime', ytype='linear', point_labels=run_titles)
     fig_mu_hg_peak.y_range = Range1d(0., 38.)
-    fig_mu_lg_peak = show_graph(
-        x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
-        y=runsummary['mu_lg_peak_sample_mean'], xlabel='date',
-        ey=runsummary['mu_lg_peak_sample_stddev'],
-        ylabel='LG global peak sample id (mean&RMS)',
-        xtype='datetime', ytype='linear', point_labels=run_titles)
-    fig_mu_lg_peak.y_range = Range1d(0., 38.)
     row1 = [fig_mu_effi, fig_mu_width]
-    row2 = [fig_mu_intensity]
-    row3 = [fig_mu_hg_peak, fig_mu_lg_peak]
+    row2 = [fig_mu_intensity, fig_mu_hg_peak]
 
-    grid5 = gridplot([row1, row2, row3], sizing_mode=None, plot_width=pad_width,
+    grid5 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page5.child = grid5
     page5.title = "Muons"
