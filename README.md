@@ -16,7 +16,7 @@ are unit tested and should be working as long as the build status is passing.
 ### As user
 
 ```
-LSTCHAIN_VER=0.7.0
+LSTCHAIN_VER=0.7.3
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
