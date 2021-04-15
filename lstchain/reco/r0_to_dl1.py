@@ -126,9 +126,8 @@ def get_dl1(
             signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
-            cleaned_pixel_times = peak_time
-            # makes sure only signal pixels are used in the time
-            # check:
+            # makes sure only signal pixels are used in the time check:
+            cleaned_pixel_times = peak_time.copy()
             cleaned_pixel_times[~signal_pixels] = np.nan
 
             signal_pixels = apply_time_delta_cleaning(
