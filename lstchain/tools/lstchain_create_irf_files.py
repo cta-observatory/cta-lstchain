@@ -166,13 +166,8 @@ class IRFFITSWriter(Tool):
                 )
 
         filename = self.output_irf_file.name
-        if filename.split(".")[-2] != "fits" or filename.split(".")[-1] != "gz":
-            self.log.warning(
-                f"{filename} is not a correct "
-                "compressed FITS file name (.fits.gz). It will be corrected."
-            )
-            filename += ".fits.gz"
-            self.output_irf_file = self.output_irf_file.parent / filename
+        if not (filename.endswith('.fits') or filename.endswith('.fits.gz')):
+            raise ValueError("f{filename} is not a correct compressed FITS file name (use .fits or .fits.gz).")
 
         if self.input_proton_dl2 and self.input_electron_dl2 is not None:
             self.only_gamma_irf = False
