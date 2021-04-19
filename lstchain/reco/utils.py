@@ -716,6 +716,9 @@ def get_effective_time(events):
     t_eff: astropy Quantity (in seconds, if input has no units)
     t_elapsed: astropy Quantity (ditto)
     """
+    # Sorting events by timestamps so the input list of events does not have 
+    # to be ordered, for example when dealing with runs from different days. 
+    events = events.sort_values(by="dragon_time")
     timestamp = np.array(events["dragon_time"])
     delta_t = np.array(events["delta_t"])
 
