@@ -568,7 +568,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
             expected_src_pos_y_m = np.zeros(len(data))
         
         # compute source position in camera coordinate event by event for wobble mode
-        if config.get('observation_mode') == 'wobble':
+        elif config.get('observation_mode') == 'wobble':
 
             if 'source_name' in config:
                 source_coord = SkyCoord.from_name(config.get('source_name'))
@@ -584,4 +584,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
    
+        else:
+            raise NameError("observation_mode is not defined in a config file. The observation mode should be on or wobble.")
+
     return expected_src_pos_x_m, expected_src_pos_y_m 
