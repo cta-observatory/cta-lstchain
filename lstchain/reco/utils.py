@@ -719,11 +719,7 @@ def get_effective_time(events):
     """
     # Sorting events by timestamps so the input list of events does not have 
     # to be ordered, for example when dealing with runs from different days. 
-    if isinstance(events, pd.DataFrame):
-        events = events.sort_values("dragon_time")
-    elif isinstance(events, QTable):
-        events.sort("dragon_time")
-    timestamp = np.array(events["dragon_time"])
+    timestamp = np.sort(np.array(events["dragon_time"]))
     delta_t = np.array(events["delta_t"])
 
     if not isinstance(timestamp, u.Quantity):
