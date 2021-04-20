@@ -20,6 +20,7 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from astropy.utils import deprecated
+from astropy.table import QTable
 from ctapipe.coordinates import CameraFrame
 
 from . import disp
@@ -718,7 +719,10 @@ def get_effective_time(events):
     """
     # Sorting events by timestamps so the input list of events does not have 
     # to be ordered, for example when dealing with runs from different days. 
-    events = events.sort_values(by="dragon_time")
+    if isinstance(events, pd.DataFrame):
+        events = events.sort_values("dragon_time")
+    elif isinstance(events, QTable):
+        events.sort("dragon_time")
     timestamp = np.array(events["dragon_time"])
     delta_t = np.array(events["delta_t"])
 
