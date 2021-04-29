@@ -54,7 +54,7 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
 
 
 def test_add_source_dependent_parameters(simulated_dl1_file):
-    run_program("lstchain_add_source_dependent_parameters", "-f", simulated_dl1_file, "--overwrite", True)
+    run_program("lstchain_add_source_dependent_parameters", "-f", simulated_dl1_file, "--overwrite", "True")
     dl1_params_src_dep = pd.read_hdf(
         simulated_dl1_file, key=dl1_params_src_dep_lstcam_key
     )
