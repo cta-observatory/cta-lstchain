@@ -6,10 +6,18 @@ Script to add the source dependent parameters to a DL1 file.
 Input: DL1 data file. Source dependent parameters will be added to this file. 
 
 Usage: 
-
+* Add source-dependent parameters and save them in a separate file. Other parameters are also saved as an external link.
+* Image data will be dropped
 $> lstchain_add_source_dependent_parameters
 --input-file dl1_LST-1.Run02033.0137.h5 
+--output-dir ./dl1_data_with_srcdep
 --config lstchain_src_dep_config.json
+
+* Add source-dependent parameters and save them in the same file
+$> lstchain_add_source_dependent_parameters
+--input-file dl1_LST-1.Run02033.0137.h5
+--overwrite
+
 
 """
 
