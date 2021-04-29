@@ -13,6 +13,7 @@ from lstchain.io.io import (
     dl2_params_lstcam_key,
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key,
+    set_srcdep_multi_index,
 )
 
 
