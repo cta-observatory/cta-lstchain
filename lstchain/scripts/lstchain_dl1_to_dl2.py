@@ -38,7 +38,8 @@ from lstchain.io.io import (
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
     check_external_link_node,
-    read_hdf_with_external_link_node
+    read_hdf_with_external_link_node,
+    set_srcdep_multi_index
 )
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -126,9 +127,8 @@ def main():
     # Source-dependent analysis
     if config['source_dependent']:
         data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_srcdep.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
-
+        set_srcdep_multi_index(data_srcdep)
+        
         dl2_srcdep_dict = {}
 
         srcindep_keys = data.keys()
@@ -137,8 +137,8 @@ def main():
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
-                                                   finite_params=config['regression_features'] + config[
-                                                       'classification_features'],
+                                                   finite_params=config['regression_features'] + 
+                                                                 config['classification_features'],
                                                    )
             dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
                                              focal_length=focal_length, custom_config=config)

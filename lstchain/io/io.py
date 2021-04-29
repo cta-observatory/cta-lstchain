@@ -51,7 +51,8 @@ __all__ = [
     'extract_observation_time',
     'merge_dl2_runs',
     'check_external_link_node',
-    'read_hdf_with_external_link_node'
+    'read_hdf_with_external_link_node',
+    'set_srcdep_multi_index'
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -1171,3 +1172,15 @@ def read_hdf_with_external_link_node(filename, key):
         data = pd.DataFrame.from_records(derefer_node.read())
 
     return data
+
+def set_srcdep_multi_index(data):
+    """
+    set multi index column for source-dependent parameters
+
+    Parameters
+    ----------
+    data: `pandas.DataFrame`
+
+    """
+
+    data.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in data.columns])
