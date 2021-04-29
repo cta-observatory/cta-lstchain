@@ -44,6 +44,11 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                     help='Path where to store the dl1 files with source-dependent parameters',
                     default='./dl1_data_with_srcdep')
 
+parser.add_argument('--ext-link', action='store', type=lambda x: bool(strtobool(x)),
+                    dest='extlink',
+                    help='Boolean. True to use external link',
+                    default=True)
+
 parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
                     dest='noimage',
                     help='Boolean. True to remove the images',
@@ -115,7 +120,11 @@ def main():
                     else:
                         g = h5out.get_node(path)
                         
-                    h5in.copy_node(k, g, overwrite=True)
+                    if args.extlink:
+                        h5out.create_external_link(path, name, dl1_filename+':'+k)
+
+                    else:
+                        h5in.copy_node(k, g, overwrite=True)
 
         write_dataframe(src_dep_df, output_file, dl1_params_src_dep_lstcam_key)
 
