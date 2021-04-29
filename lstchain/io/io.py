@@ -1136,6 +1136,8 @@ def check_external_link_node(filename, node_key):
     -------
     Bool
     """
+    if not node_key.startswith("/"):
+        node_key = "/" + node_key
     
     with open_file(filename, 'r') as h5in:
         node = h5in.get_node(node_key)
@@ -1146,7 +1148,7 @@ def check_external_link_node(filename, node_key):
 
         return is_external_link
 
-def read_hdf_with_external_link_node(filename, key={}):
+def read_hdf_with_external_link_node(filename, key):
     """
     read pandas data frame via external link
 
@@ -1159,6 +1161,9 @@ def read_hdf_with_external_link_node(filename, key={}):
     -------
     dataframe: `pandas.DataFrame`
     """
+    
+    if not key.startswith("/"):
+        key = "/" + key
 
     with open_file(filename, 'r') as h5in:
         node = h5in.get_node(key)

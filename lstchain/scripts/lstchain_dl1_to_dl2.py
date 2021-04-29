@@ -37,6 +37,8 @@ from lstchain.io.io import (
     dl2_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
+    check_external_link_node,
+    read_hdf_with_external_link_node
 )
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -77,7 +79,11 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
+    # if dl1 parameters node is external link, read data via pointer dereference
+    if check_external_link_node(args.input_file, dl1_params_lstcam_key):
+        data = read_hdf_with_external_link_node(args.input_file, dl1_params_lstcam_key)
+    else:
+        data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     # if real data, add deltat t to dataframe keys
     data = add_delta_t_key(data)
