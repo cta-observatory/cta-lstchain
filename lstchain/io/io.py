@@ -50,7 +50,8 @@ __all__ = [
     'read_dl2_params',
     'extract_observation_time',
     'merge_dl2_runs',
-    'check_external_link_node'
+    'check_external_link_node',
+    'read_hdf_with_external_link_node'
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -1144,3 +1145,24 @@ def check_external_link_node(filename, node_key):
             log.debug(f"external link target: {node.target}")
 
         return is_external_link
+
+def read_hdf_with_external_link_node(filename, key={}):
+    """
+    read pandas data frame via external link
+
+    Parameters
+    ----------
+    filename: hdf5 file path
+    key: str
+
+    Returns
+    -------
+    dataframe: `pandas.DataFrame`
+    """
+
+    with open_file(filename, 'r') as h5in:
+        node = h5in.get_node(key)
+        derefer_node = node()
+        data = pd.DataFrame.from_records(derefer_node.read())
+
+    return data
