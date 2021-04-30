@@ -31,10 +31,13 @@ optional.add_argument('-s', '--statistics', help="Number of events for the flat-
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--default_time_run', help="If 0 time calibration is calculated otherwise create a link to the give run time calibration",type=int, default='1625')
 optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
-optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
-optional.add_argument('--sub_run', help="sub-run to be processed. Default = 0", type=int, default=0)
-optional.add_argument('--min_ff', help="Min FF intensity cut in ADC. Default = 4000", type=float, default=4000)
-optional.add_argument('--max_ff', help="Max FF intensity cut in ADC. Default = 12000", type=float, default=12000)
+optional.add_argument('--tel_id', help="telescope id.", type=int, default=1)
+optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
+optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
+optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
+default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+optional.add_argument('--config', help="Config file", default=default_config)
+
 
 args = parser.parse_args()
 run = args.run_number
@@ -48,6 +51,9 @@ tel_id = args.tel_id
 min_ff = args.min_ff
 max_ff = args.max_ff
 sub_run = args.sub_run
+config_file = args.config
+if config_file is None:
+    config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 
 max_events = 1000000
 
@@ -56,6 +62,12 @@ def main():
     print(f"\n--> Start calculating calibration from run {run}")
 
     try:
+        # verify config file
+        if not os.path.exists(config_file):
+            raise IOError(f"Config file {config_file} does not exists. \n")
+
+        print(f"\n--> Config file {config_file}")
+
         # verify input file
         file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
@@ -82,13 +94,6 @@ def main():
         run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
         if not os.path.exists(run_summary_path):
             raise IOError(f"Night summary file {run_summary_path} does not exist\n")
-
-        # define config file
-        config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-        if not os.path.exists(config_file):
-            raise IOError(f"Config file {config_file} does not exists. \n")
-
-        print(f"\n--> Config file {config_file}")
 
         #
         # produce drs4 time calibration file
