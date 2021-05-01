@@ -162,6 +162,18 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
+                # Add noise in pixels, to adjust MC to data noise levels.
+                # TO BE DONE: in case DL1a is saved, we have to save the modified image!
+                # TO BE DONE: in case of "pedestal cleaning" (not used now in MC) we should
+                # recalculate picture_th above!
+                qcopy = image.copy()
+                qlimit = 8
+                bias = -0.9
+                mu = 1.5
+                mu_2 = 1.44
+                image[qcopy < qlimit] += (np.random.poisson(mu, (qcopy < qlimit).sum()) + bias)
+                image[qcopy > qlimit] += (np.random.poisson(mu_2, (qcopy > qlimit).sum()) - mu_2)
+
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
                                                picture_th,
