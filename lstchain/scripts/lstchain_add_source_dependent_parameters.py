@@ -6,8 +6,7 @@ Script to add the source dependent parameters to a DL1 file.
 Input: DL1 data file. Source dependent parameters will be added to this file. 
 
 Usage: 
-* Add source-dependent parameters and save them in a separate file. Other parameters are also saved as an external link.
-* Image data will be dropped
+* Add source-dependent parameters and save them in a separate file, and image data will be dropped
 $> lstchain_add_source_dependent_parameters
 --input-file dl1_LST-1.Run02033.0137.h5 
 --output-dir ./dl1_data_with_srcdep
@@ -51,11 +50,6 @@ parser.add_argument('--output-dir', '-o', action='store', type=str,
                     dest='output_dir',
                     help='Path where to store the dl1 files with source-dependent parameters',
                     default='./dl1_data_with_srcdep')
-
-parser.add_argument('--ext-link', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='extlink',
-                    help='Boolean. True to use external link',
-                    default=True)
 
 parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
                     dest='noimage',
@@ -128,11 +122,7 @@ def main():
                     else:
                         g = h5out.get_node(path)
                         
-                    if args.extlink:
-                        h5out.create_external_link(path, name, dl1_filename+':'+k)
-
-                    else:
-                        h5in.copy_node(k, g, overwrite=True)
+                    h5in.copy_node(k, g, overwrite=True)
 
         write_dataframe(src_dep_df, output_file, dl1_params_src_dep_lstcam_key)
 

@@ -50,9 +50,8 @@ __all__ = [
     'read_dl2_params',
     'extract_observation_time',
     'merge_dl2_runs',
-    'check_external_link_node',
-    'read_hdf_with_external_link_node',
-    'set_srcdep_multi_index'
+    'set_srcdep_multi_index',
+    'get_srcdep_index_name'
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -1124,55 +1123,6 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     df = pd.concat(df_list)
     return observation_time, df
 
-def check_external_link_node(filename, node_key):
-    """
-    check if a given node is external link or not.
-
-    Parameters
-    ----------
-    filename: hdf5 file path
-    node_key: str
-
-    Returns
-    -------
-    Bool
-    """
-    if not node_key.startswith("/"):
-        node_key = "/" + node_key
-    
-    with open_file(filename, 'r') as h5in:
-        node = h5in.get_node(node_key)
-        is_external_link = isinstance(node, tables.link.ExternalLink)        
-
-        if is_external_link:
-            log.debug(f"external link target: {node.target}")
-
-        return is_external_link
-
-def read_hdf_with_external_link_node(filename, key):
-    """
-    read pandas data frame via external link
-
-    Parameters
-    ----------
-    filename: hdf5 file path
-    key: str
-
-    Returns
-    -------
-    dataframe: `pandas.DataFrame`
-    """
-    
-    if not key.startswith("/"):
-        key = "/" + key
-
-    with open_file(filename, 'r') as h5in:
-        node = h5in.get_node(key)
-        derefer_node = node()
-        data = pd.DataFrame.from_records(derefer_node.read())
-
-    return data
-
 def set_srcdep_multi_index(data):
     """
     set multi index column for source-dependent parameters
@@ -1184,3 +1134,17 @@ def set_srcdep_multi_index(data):
     """
 
     data.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in data.columns])
+
+def get_srcdep_index_name(data):
+    """
+    get each index column name of source-dependent multi index columns
+
+    Parameters
+    ----------
+    data: `pandas.DataFrame`
+
+    Returns
+    -------
+    source-dependent index names
+    """
+    return data.columns.levels[0]

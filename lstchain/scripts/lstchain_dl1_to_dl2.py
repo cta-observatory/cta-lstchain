@@ -37,9 +37,8 @@ from lstchain.io.io import (
     dl2_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
-    check_external_link_node,
-    read_hdf_with_external_link_node,
-    set_srcdep_multi_index
+    set_srcdep_multi_index,
+    get_srcdep_index_name
 )
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
@@ -80,11 +79,7 @@ def main():
 
     config = replace_config(standard_config, custom_config)
 
-    # if dl1 parameters node is external link, read data via pointer dereference
-    if check_external_link_node(args.input_file, dl1_params_lstcam_key):
-        data = read_hdf_with_external_link_node(args.input_file, dl1_params_lstcam_key)
-    else:
-        data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
+    data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
 
     # if real data, add deltat t to dataframe keys
     data = add_delta_t_key(data)
@@ -126,14 +121,20 @@ def main():
 
     # Source-dependent analysis
     if config['source_dependent']:
-        data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        set_srcdep_multi_index(data_srcdep)
-        
-        dl2_srcdep_dict = {}
 
+        # if source-dependent parameters are already in dl1 data, just read those data.
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(args.input_file):
+            data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
+            set_srcdep_multi_index(data_srcdep)
+        
+        # if not, source-dependent parameters are added here 
+        else:
+            data_srcdep = pd.concat(dl1_to_dl2.get_source_dependent_parameters(data, config, focal_length=focal_length), axis=1)
+
+        dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
 
-        for i, k in enumerate(data_srcdep.columns.levels[0]):
+        for i, k in enumerate(get_srcdep_index_name(data_srcdep)):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
@@ -143,7 +144,7 @@ def main():
             dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
                                              focal_length=focal_length, custom_config=config)
 
-            dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
+            dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
