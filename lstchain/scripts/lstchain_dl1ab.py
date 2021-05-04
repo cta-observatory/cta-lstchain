@@ -174,6 +174,12 @@ def main():
                 image[qcopy < qlimit] += (np.random.poisson(mu, (qcopy < qlimit).sum()) + bias)
                 image[qcopy > qlimit] += (np.random.poisson(mu_2, (qcopy > qlimit).sum()) - mu_2)
 
+                # Move part of the light in each pixel (fraction) into its neighbors, to simulate a worse PSF:
+                fraction=0.25
+                q_spread = image * camera_geom.neighbor_matrix * fraction / 6
+                q_remaining = image * (1 - fraction)
+                image = q_remaining + np.sum(q_spread, axis=1)
+
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
                                                picture_th,
