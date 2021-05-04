@@ -112,7 +112,7 @@ def main():
             # otherwise perform a link to the default time calibration file
             print(f"\n--> PRODUCING LINK TO DEFAULT TIME CALIBRATION (run {default_time_run})")
             file_list = sorted(
-                Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run{default_time_run}*'))
+                Path(f"{base_dir}/calibration/").rglob(f'*/{prod_id}/time_calibration.Run*{default_time_run}*'))
 
             if len(file_list) == 0:
                 raise IOError(f"Time calibration file for run {default_time_run} not found\n")
