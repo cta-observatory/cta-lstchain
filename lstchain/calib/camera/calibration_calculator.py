@@ -3,9 +3,10 @@ Component for the estimation of the calibration coefficients  events
 """
 
 import numpy as np
+import h5py
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List
+from ctapipe.core.traits import  Float, List, Path
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
@@ -35,6 +36,12 @@ class CalibrationCalculator(Component):
     kwargs
 
     """
+
+    systematic_correction_path = Path(
+        exists=True, directory_ok=False,
+        help='Path to systematic correction file ',
+    ).tag(config=True)
+
     squared_excess_noise_factor = Float(
         1.222,
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
@@ -103,6 +110,15 @@ class CalibrationCalculator(Component):
 
         self.tel_id = self.flatfield.tel_id
 
+        # load systematic correction term B
+        if self.systematic_correction_path is not None:
+            try:
+                with h5py.File(self.systematic_correction_path, 'r') as hf:
+                    self.quadratic_term = np.array(hf['B_term'])
+
+            except:
+                raise IOError(f"Problem in reading quadratic term file {self.systematic_correction_path}")
+
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
 
@@ -141,6 +157,40 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # Extract calibration coefficients with F-factor method
         # Assume fixed excess noise factor must be known from elsewhere
 
+        numerator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
+        denominator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median)
+        gain = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
+
+        # correct for the quadratic term if possible
+        if self.quadratic_term is not  None:
+            numerator = self.quadratic_term**2  * (ff_data.charge_median - ped_data.charge_median)
+            denominator = self.squared_excess_noise_factor
+            systematic_correction = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
+            gain -= systematic_correction
+
+        # calculate photon-electrons
+        numerator = (ff_data.charge_median - ped_data.charge_median)
+        denominator = gain
+
+        n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
+        # fill WaveformCalibrationContainer
+        calib_data.time = ff_data.sample_time
+        calib_data.time_min = ff_data.sample_time_min
+        calib_data.time_max = ff_data.sample_time_max
+        calib_data.n_pe = n_pe
+
+        # find signal median of good pixels (FF factor=<npe>/npe)
+        masked_npe = np.ma.array(n_pe, mask=calib_data.unusable_pixels)
+        npe_signal_median = np.ma.median(masked_npe, axis=1)
+
+        # calibration coefficients
+        numerator = npe_signal_median[:,np.newaxis]
+
+        # signal
+        denominator = (ff_data.charge_median - ped_data.charge_median)
+        calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
+
+        """
         # calculate photon-electrons
         numerator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2
         denominator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
@@ -167,7 +217,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # correct the signal for the integration window
         denominator = (ff_data.charge_median - ped_data.charge_median) 
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
-
+        """
         # flat-field time corrections
         calib_data.time_correction = -ff_data.relative_time_median
 
