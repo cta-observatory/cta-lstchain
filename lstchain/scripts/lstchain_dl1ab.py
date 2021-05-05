@@ -82,6 +82,19 @@ def main():
     else:
         config = std_config
 
+    modify_image = False
+    if "image_modifier" in config:
+        imconfig = config["image_modifier"]
+        modify_image = imconfig["modify_image"]
+        extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
+        extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
+        transition_charge = imconfig["transition_charge"]
+        extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
+        smeared_light_fraction = imconfig["smeared_light_fraction"]
+        if modify_image and args.noimage is False:
+            log.info("NOTE: Using the modify_image option means images will not be saved.")
+            args.noimage = True
+
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
         clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
@@ -162,23 +175,23 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                # Add noise in pixels, to adjust MC to data noise levels.
-                # TO BE DONE: in case DL1a is saved, we have to save the modified image!
-                # TO BE DONE: in case of "pedestal cleaning" (not used now in MC) we should
-                # recalculate picture_th above!
-                qcopy = image.copy()
-                qlimit = 8
-                bias = -0.9
-                mu = 1.5
-                mu_2 = 1.44
-                image[qcopy < qlimit] += (np.random.poisson(mu, (qcopy < qlimit).sum()) + bias)
-                image[qcopy > qlimit] += (np.random.poisson(mu_2, (qcopy > qlimit).sum()) - mu_2)
+                if modify_image:
+                    # Add noise in pixels, to adjust MC to data noise levels.
+                    # TO BE DONE: in case of "pedestal cleaning" (not used now in MC) we should
+                    # recalculate picture_th above!
+                    qcopy = image.copy()
 
-                # Move part of the light in each pixel (fraction) into its neighbors, to simulate a worse PSF:
-                fraction=0.25
-                q_spread = image * camera_geom.neighbor_matrix * fraction / 6
-                q_remaining = image * (1 - fraction)
-                image = q_remaining + np.sum(q_spread, axis=1)
+                    image[qcopy < transition_charge] += (np.random.poisson(extra_noise_in_dim_pixels,
+                                                                           (qcopy < transition_charge).sum()) -
+                                                         extra_noise_in_dim_pixels + extra_bias_in_dim_pixels)
+                    image[qcopy > transition_charge] += (np.random.poisson(extra_noise_in_bright_pixels,
+                                                                           (qcopy > transition_charge).sum()) -
+                                                         extra_noise_in_bright_pixels)
+
+                    # Move part of the light in each pixel (fraction) into its neighbors, to simulate a worse PSF:
+                    q_spread = image * camera_geom.neighbor_matrix * smeared_light_fraction / 6
+                    q_remaining = image * (1 - smeared_light_fraction)
+                    image = q_remaining + np.sum(q_spread, axis=1)
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
