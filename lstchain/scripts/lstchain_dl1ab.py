@@ -86,6 +86,8 @@ def main():
     if "image_modifier" in config:
         imconfig = config["image_modifier"]
         modify_image = imconfig["modify_image"]
+        if modify_image:
+            log.info('image_modifier configuration:', imconfig)
         extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
         extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
         transition_charge = imconfig["transition_charge"]
