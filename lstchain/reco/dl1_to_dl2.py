@@ -153,7 +153,7 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
     config = replace_config(standard_config, custom_config)
     regression_args = config['random_forest_regressor_args']
     features = config['regression_features']
-    model = RandomForestRegressor
+    model = RandomForestClassifier
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
