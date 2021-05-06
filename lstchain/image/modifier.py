@@ -5,13 +5,15 @@ __all__ = [
 
 import numpy as np
 
-def add_noise_in_pixels(image, extra_noise_in_dim_pixels,
+def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
                         extra_bias_in_dim_pixels, transition_charge,
                         extra_noise_in_bright_pixels):
     """
 
     Parameters
     ----------
+    rng: numpy.random.default_rng  random number generator
+
     image: charges (p.e.) in the camera
 
     To be tuned by comparing the starting MC and data:
@@ -39,11 +41,11 @@ def add_noise_in_pixels(image, extra_noise_in_dim_pixels,
     """
 
     qcopy = image.copy()
-    image[qcopy < transition_charge] += (np.random.poisson(
+    image[qcopy < transition_charge] += (rng.poisson(
             extra_noise_in_dim_pixels, (qcopy < transition_charge).sum()) -
                                          extra_noise_in_dim_pixels +
                                          extra_bias_in_dim_pixels)
-    image[qcopy > transition_charge] += (np.random.poisson(
+    image[qcopy > transition_charge] += (rng.poisson(
             extra_noise_in_bright_pixels, (qcopy > transition_charge).sum())
                                          - extra_noise_in_bright_pixels)
     return image

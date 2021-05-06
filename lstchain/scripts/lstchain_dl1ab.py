@@ -172,8 +172,13 @@ def main():
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
 
+        if increase_nsb or increase_psf:
+            rng = np.random.default_rng(
+                    input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
+
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
@@ -186,7 +191,7 @@ def main():
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
                     # in MC) we should recalculate picture_th above!
                     if (increase_nsb):
-                        image = add_noise_in_pixels(image,
+                        image = add_noise_in_pixels(rng, image,
                                                     extra_noise_in_dim_pixels,
                                                     extra_bias_in_dim_pixels,
                                                     transition_charge,
