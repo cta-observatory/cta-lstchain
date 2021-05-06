@@ -115,7 +115,13 @@ def test_build_models(simulated_dl1_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
 
-    reg_energy, reg_disp, cls_gh = build_models(
+    # reg_energy, reg_disp, cls_gh = build_models(
+    #     infile,
+    #     infile,
+    #     custom_config=standard_config,
+    #     save_models=False
+    # )
+    reg_energy, reg_disp_norm, reg_disp_sign, cls_gh = build_models(
         infile,
         infile,
         custom_config=standard_config,
@@ -125,8 +131,10 @@ def test_build_models(simulated_dl1_file, rf_models):
     import joblib
 
     joblib.dump(reg_energy, rf_models["energy"])
-    joblib.dump(reg_disp, rf_models["disp"])
+    # joblib.dump(reg_disp, rf_models["disp"])
     joblib.dump(cls_gh, rf_models["gh_sep"])
+    joblib.dump(reg_disp_norm, rf_models["disp_norm"])
+    joblib.dump(reg_disp_sign, rf_models["disp_sign"])
 
 
 @pytest.mark.run(order=3)
@@ -142,10 +150,13 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     )
 
     reg_energy = joblib.load(rf_models["energy"])
-    reg_disp = joblib.load(rf_models["disp"])
+    # reg_disp = joblib.load(rf_models["disp"])
     reg_cls_gh = joblib.load(rf_models["gh_sep"])
+    reg_disp_norm = joblib.load(rf_models["disp_norm"])
+    reg_disp_sign = joblib.load(rf_models["disp_sign"])
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=standard_config)
+    # dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp, custom_config=standard_config)
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm, reg_disp_sign, custom_config=standard_config)
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
 
