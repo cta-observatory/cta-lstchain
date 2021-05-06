@@ -81,3 +81,5 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
     # Light remaining in pixel:
     q_remaining = image * (1 - smeared_light_fraction)
     image = q_remaining + np.sum(q_smeared, axis=1)
+
+    return image
