@@ -180,8 +180,8 @@ def test_disp_vector():
     disp_norm = np.ones(3)
     disp_sign = np.ones(3)
     disp_vec = disp_vector(disp_norm, disp_angle, disp_sign)
-    disp_dx = disp_vec[0]
-    disp_dy = disp_vec[1]
+    disp_dx = disp_vec[:, 0]
+    disp_dy = disp_vec[:, 1]
     np.testing.assert_array_equal([dx, dy], [disp_dx, disp_dy])
 
 
