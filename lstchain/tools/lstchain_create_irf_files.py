@@ -83,6 +83,14 @@ class IRFFITSWriter(Tool):
         --fixed-gh-cut 0.9
         --fixed-theta-cut 0.2
         --irf-obs-time 50
+
+    Or use optimized cuts based on a fixed gamma efficiency:
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like (Only for point_like IRFs)
+        --optimize-cuts
+        --fixed-gh-max-efficiency 0.95
     """
 
     input_gamma_dl2 = traits.Path(
@@ -123,6 +131,11 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    optimize_cuts = traits.Bool(
+        help="If true, use a fixed gamma efficiency for optimizing the cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=False,
@@ -137,6 +150,7 @@ class IRFFITSWriter(Tool):
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
+        "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
         "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -150,7 +164,11 @@ class IRFFITSWriter(Tool):
         "overwrite": (
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
-        )
+        ),
+        "optimize-cuts": (
+            {"IRFFITSWriter": {"optimize_cuts": True}},
+            "Uses cuts optimization",
+        ),
     }
 
     def setup(self):
@@ -245,21 +263,27 @@ class IRFFITSWriter(Tool):
 
         gammas = self.mc_particle["gamma"]["events"]
 
-        self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
-
-        gammas = self.event_sel.filter_cut(gammas)
-        gammas = self.fixed_cuts.allowed_tels_filter(gammas)
-        gammas = self.fixed_cuts.gh_cut(gammas)
-
-        if self.point_like:
-            gammas = self.fixed_cuts.theta_cut(gammas)
-            self.log.info('Theta cuts applied for point like IRF')
-
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
+
+        gammas = self.event_sel.filter_cut(gammas)
+        gammas = self.fixed_cuts.allowed_tels_filter(gammas)
+
+        if self.optimize_cuts:
+            gammas = self.fixed_cuts.opt_gh_cuts(gammas, reco_energy_bins)
+            self.log.info(f"Using fixed gamma efficiency of {self.fixed_cuts.fixed_gh_max_efficiency}")
+            ## Include the gh_cuts as an HDU in IRFs
+        else:
+            gammas = self.fixed_cuts.gh_cut(gammas)
+            self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
+
+        if self.point_like:
+            gammas = self.fixed_cuts.theta_cut(gammas)
+            self.log.info('Theta cuts applied for point like IRF')
+
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
             mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
@@ -290,7 +314,7 @@ class IRFFITSWriter(Tool):
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
-            "GH_CUT": self.fixed_cuts.fixed_gh_cut,
+            # "GH_CUT": self.fixed_cuts.fixed_gh_cut,
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")

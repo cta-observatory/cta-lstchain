@@ -42,6 +42,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
         )
         == 0
     )
+
     assert (
         run_tool(
             IRFFITSWriter(),
@@ -58,6 +59,21 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
         == 0
     )
 
+    assert (
+        run_tool(
+            IRFFITSWriter(),
+            argv=[
+                f"--input-gamma-dl2={simulated_dl2_file}",
+                f"--input-proton-dl2={simulated_dl2_file}",
+                f"--input-electron-dl2={simulated_dl2_file}",
+                f"--output-irf-file={irf_file}",
+                "--overwrite",
+                "--optimize-cuts"
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
@@ -81,6 +97,24 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
                 "--overwrite",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_files}",
+                f"--input-irf={irf_file}",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                "--overwrite",
+                "--optimize-cuts",
             ],
             cwd=temp_dir_observed_files,
         )

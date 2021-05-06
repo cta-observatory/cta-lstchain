@@ -3,8 +3,10 @@ from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
 
 import numpy as np
+import operator
 import astropy.units as u
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
+from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 
 __all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
@@ -45,6 +47,11 @@ class DL3FixedCuts(Component):
         default_value=0.6,
     ).tag(config=True)
 
+    fixed_gh_max_efficiency = Float(
+        help="Fixed max gamma efficiency for optimized g/h cuts",
+        default_value=0.95,
+    ).tag(config=True)
+
     fixed_theta_cut = Float(
         help="Fixed selection cut for theta",
         default_value=0.2,
@@ -58,6 +65,23 @@ class DL3FixedCuts(Component):
 
     def gh_cut(self, data):
         return data[data["gh_score"] > self.fixed_gh_cut]
+
+    def opt_gh_cuts(self, data, energy_bins):
+        gh_cuts = calculate_percentile_cut(
+            data["gh_score"],
+            data["reco_energy"],
+            bins=energy_bins,
+            min_value=0.1,
+            fill_value=0.99,
+            percentile = self.fixed_gh_max_efficiency,
+        )
+        data["selected_gh"] = evaluate_binned_cut(
+            data["gh_score"],
+            data["reco_energy"],
+            gh_cuts,
+            operator.ge,
+        )
+        return data[data["selected_gh"]]
 
     def theta_cut(self, data):
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]

@@ -18,7 +18,7 @@ from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list
-from lstchain.io import EventSelector, DL3FixedCuts
+from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -91,6 +91,11 @@ class DataReductionFITSWriter(Tool):
         help="DEC position of the source"
     ).tag(config=True)
 
+    optimize_cuts = traits.Bool(
+        help="If true, use a fixed gamma efficiency for optimizing the cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=False,
@@ -103,6 +108,7 @@ class DataReductionFITSWriter(Tool):
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         "input-irf": "DataReductionFITSWriter.input_irf",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
+        "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -112,6 +118,10 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
+        ),
+        "optimize-cuts": (
+            {"DataReductionFITSWriter": {"optimize_cuts": True}},
+            "Uses cuts optimization",
         ),
     }
 
@@ -124,6 +134,7 @@ class DataReductionFITSWriter(Tool):
 
         self.event_sel = EventSelector(parent=self)
         self.fixed_cuts = DL3FixedCuts(parent=self)
+        self.data_bin = DataBinning(parent=self)
 
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():
@@ -154,7 +165,14 @@ class DataReductionFITSWriter(Tool):
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         self.data = self.event_sel.filter_cut(self.data)
-        self.data = self.fixed_cuts.gh_cut(self.data)
+
+        if self.optimize_cuts:
+            reco_energy_bins = self.data_bin.reco_energy_bins()
+            self.data = self.fixed_cuts.opt_gh_cuts(self.data, reco_energy_bins)
+            self.log.info(f"Using fixed gamma efficiency of {self.fixed_cuts.fixed_gh_max_efficiency}")
+        else:
+            self.data = self.fixed_cuts.gh_cut(self.data)
+            self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(

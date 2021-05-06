@@ -11,6 +11,7 @@
   },
   "DL3FixedCuts": {
     "fixed_gh_cut": 0.7,
+    "fixed_gh_max_efficiency": 0.9,
     "fixed_theta_cut": 0.2,
     "allowed_tels": [1]
   },

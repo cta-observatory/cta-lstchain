@@ -45,6 +45,7 @@ def test_dl3_fixed_cuts():
     temp_cuts.fixed_gh_cut = 0.7
     temp_cuts.fixed_theta_cut = 0.2
     temp_cuts.allowed_tels = [1, 2]
+    temp_cuts.fixed_gh_max_efficiency = 0.8
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.arange(0.1, 1.1, 0.1)),
