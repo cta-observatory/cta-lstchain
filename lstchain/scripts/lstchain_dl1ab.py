@@ -32,6 +32,7 @@ from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
+from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
 
 log = logging.getLogger(__name__)
 
@@ -82,19 +83,22 @@ def main():
     else:
         config = std_config
 
-    modify_image = False
+    increase_nsb = False
+    increase_psf = False
     if "image_modifier" in config:
         imconfig = config["image_modifier"]
-        modify_image = imconfig["modify_image"]
-        if modify_image:
+        increase_nsb = imconfig["increase_nsb"]
+        increase_psf = imconfig["increase_psf"]
+        if increase_nsb or increase_psf:
             log.info(f"image_modifier configuration: {imconfig}")
         extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
         extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
         transition_charge = imconfig["transition_charge"]
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-        if modify_image and args.noimage is False:
-            log.info("NOTE: Using the modify_image option means images will not be saved.")
+        if (increase_nsb or increase_psf) and args.noimage is False:
+            log.info("NOTE: Using the image_modifier options means images will "
+                     "not be saved.")
             args.noimage = True
 
     if args.pedestal_cleaning:
@@ -177,23 +181,21 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                if modify_image:
+                if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
-                    # TO BE DONE: in case of "pedestal cleaning" (not used now in MC) we should
-                    # recalculate picture_th above!
-                    qcopy = image.copy()
-
-                    image[qcopy < transition_charge] += (np.random.poisson(extra_noise_in_dim_pixels,
-                                                                           (qcopy < transition_charge).sum()) -
-                                                         extra_noise_in_dim_pixels + extra_bias_in_dim_pixels)
-                    image[qcopy > transition_charge] += (np.random.poisson(extra_noise_in_bright_pixels,
-                                                                           (qcopy > transition_charge).sum()) -
-                                                         extra_noise_in_bright_pixels)
-
-                    # Move part of the light in each pixel (fraction) into its neighbors, to simulate a worse PSF:
-                    q_spread = image * camera_geom.neighbor_matrix * smeared_light_fraction / 6
-                    q_remaining = image * (1 - smeared_light_fraction)
-                    image = q_remaining + np.sum(q_spread, axis=1)
+                    # TO BE DONE: in case of "pedestal cleaning" (not used now
+                    # in MC) we should recalculate picture_th above!
+                    if (increase_nsb):
+                        image = add_noise_in_pixels(image,
+                                                    extra_noise_in_dim_pixels,
+                                                    extra_bias_in_dim_pixels,
+                                                    transition_charge,
+                                                    extra_noise_in_bright_pixels
+                                                    )
+                    if (increase_psf):
+                        image = smear_light_in_pixels(image,
+                                                      camera_geom,
+                                                      smeared_light_fraction)
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,

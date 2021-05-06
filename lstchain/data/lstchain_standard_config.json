@@ -35,12 +35,13 @@
   },
 
   "image_modifier": {
-    "modify_image": false,
+    "increase_nsb": false,
     "extra_noise_in_dim_pixels": 1.5,
     "extra_bias_in_dim_pixels": 0.6,
     "transition_charge": 8,
     "extra_noise_in_bright_pixels": 1.44,
-    "smeared_light_fraction": 0.15
+    "increase_psf": false,
+    "smeared_light_fraction": 0.175
   },
 
   "tailcut": {
