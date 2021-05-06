@@ -5,6 +5,9 @@ __all__ = [
 
 import numpy as np
 
+# number of neighbors of completely surrounded pixels of hexagonal cameras:
+N_PIXEL_NEIGHBORS = 6
+
 def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
                         extra_bias_in_dim_pixels, transition_charge,
                         extra_noise_in_bright_pixels):
@@ -71,13 +74,10 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
 
     """
 
-    # number of neighbors of completely surrounded pixels:
-    max_neighbors = np.max([len(pixnbs) for pixnbs in camera_geom.neighbors])
-
     # Move a fraction of the light in each pixel (fraction) into its neighbors,
     # to simulate a worse PSF:
     q_smeared = (image * camera_geom.neighbor_matrix *
-                 smeared_light_fraction / max_neighbors)
+                 smeared_light_fraction / N_PIXEL_NEIGHBORS)
     # Light remaining in pixel:
     q_remaining = image * (1 - smeared_light_fraction)
     image = q_remaining + np.sum(q_smeared, axis=1)
