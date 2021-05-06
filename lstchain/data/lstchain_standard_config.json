@@ -121,8 +121,8 @@
     "time_gradient",
     "leakage_intensity_width_2",
     "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
+    "reco_disp_norm",
+    "reco_disp_sign"
   ],
 
   "allowed_tels": [1, 2, 3, 4],
