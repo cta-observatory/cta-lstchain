@@ -67,7 +67,7 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
 
     Returns
     -------
-    Modified (diffuminated) image
+    Modified (smeared) image
 
     """
 

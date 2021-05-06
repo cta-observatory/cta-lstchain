@@ -190,13 +190,12 @@ def main():
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
                     # in MC) we should recalculate picture_th above!
-                        image = add_noise_in_pixels(rng, image,
-                                                    extra_noise_in_dim_pixels,
-                                                    extra_bias_in_dim_pixels,
-                                                    transition_charge,
-                                                    extra_noise_in_bright_pixels
-                                                    )
-                if (increase_psf):
+                    image = add_noise_in_pixels(rng, image,
+                                                extra_noise_in_dim_pixels,
+                                                extra_bias_in_dim_pixels,
+                                                transition_charge,
+                                                extra_noise_in_bright_pixels)
+                if increase_psf:
                     image = smear_light_in_pixels(image,
                                                   camera_geom,
                                                   smeared_light_fraction)
