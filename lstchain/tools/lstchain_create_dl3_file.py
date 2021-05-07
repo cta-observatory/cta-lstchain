@@ -17,7 +17,7 @@ from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
-from lstchain.irf import create_event_list
+from lstchain.irf import create_event_list, interpolate_irf
 from lstchain.io import EventSelector, DL3FixedCuts
 
 __all__ = ["DataReductionFITSWriter"]
@@ -72,11 +72,16 @@ class DataReductionFITSWriter(Tool):
         file_ok=False
     ).tag(config=True)
 
-    input_irf = traits.Path(
+    input_irf_path = traits.Path(
         help="Compressed FITS file of IRFs",
         exists=True,
-        directory_ok=False,
-        file_ok=True,
+        directory_ok=True,
+        file_ok=False,
+    ).tag(config=True) ## Take multiple files or file location?
+
+    irf_file_pattern = traits.Unicode(
+        help="IRF file pattern to search in the given IRF files path",
+        default_value="*irf*.fits.gz"
     ).tag(config=True)
 
     source_name = traits.Unicode(
@@ -101,7 +106,8 @@ class DataReductionFITSWriter(Tool):
     aliases = {
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
-        "input-irf": "DataReductionFITSWriter.input_irf",
+        "input-irf-path": "DataReductionFITSWriter.input_irf_path",
+        "irf-file-pattern": "DataReductionFITSWriter.irf_file_pattern",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
@@ -135,6 +141,14 @@ class DataReductionFITSWriter(Tool):
                     f"Output file {self.output_file} already exists,"
                     " use --overwrite to overwrite"
                 )
+        if self.input_irf_path:
+            self.irf_list = sorted(
+                self.input_irf_path.glob(self.irf_file_pattern)
+            )
+            if self.irf_list == []:
+                self.log.critical(
+                    f"No IRF files found with pattern {self.irf_file_pattern}"
+                )
 
         if not (self.source_ra or self.source_dec):
             self.source_pos = SkyCoord.from_name(self.source_name)
@@ -157,7 +171,7 @@ class DataReductionFITSWriter(Tool):
         self.data = self.fixed_cuts.gh_cut(self.data)
 
         self.log.info("Generating event list")
-        self.events, self.gti, self.pointing = create_event_list(
+        self.events, self.gti, self.pointing, self.zen_range = create_event_list(
             data=self.data,
             run_number=self.run_number,
             source_name=self.source_name,
@@ -165,13 +179,27 @@ class DataReductionFITSWriter(Tool):
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
         )
+        self.log.info(self.zen_range)
 
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
-        if self.input_irf:
-            irf = fits.open(self.input_irf)
+        if self.input_irf_path:
+            if len(self.irf_list) > 1:
+                self.log.info(self.irf_list)
+            # irf_final = interpolate_irf(self.irf_list, self.zen_range)
+            irf = fits.open(self.irf_list[0])
             self.log.info("Adding IRF HDUs")
+            mc_zen = float(irf[1].header["ZEN_PNT"][:-4])
+            mc_gamma_offset = float(irf[1].header["G_OFFSET"][:-4])
+
+            self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
+            self.log.info(f"Zen pointing of MC at {mc_zen}")
+
+            if abs(mc_zen - self.zen_range).any() < 10:
+                self.log.info("Data is within 10 deg of zenith of MC used")
+            else:
+                self.log.info("Data is beyond 10 deg of zenith of MC used")
 
             for irf_hdu in irf[1:]:
                 self.hdulist.append(irf_hdu)

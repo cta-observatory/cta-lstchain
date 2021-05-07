@@ -76,7 +76,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
             argv=[
                 f"--input-dl2={observed_dl2_file}",
                 f"--output-dl3-path={temp_dir_observed_files}",
-                f"--input-irf={irf_file}",
+                f"--input-irf-path={temp_dir_observed_files}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
@@ -93,7 +93,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
             argv=[
                 f"--input-dl2={observed_dl2_file}",
                 f"--output-dl3-path={temp_dir_observed_files}",
-                f"--input-irf={irf_file}",
+                f"--input-irf-path={temp_dir_observed_files}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",

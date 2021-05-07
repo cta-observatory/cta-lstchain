@@ -12,7 +12,25 @@ from astropy.time import Time
 from lstchain.__init__ import __version__
 from lstchain.reco.utils import location
 
-__all__ = ["create_obs_index_hdu", "create_hdu_index_hdu", "create_event_list"]
+"""
+ from pyirf.io.gadf import (
+    read_aeff2d_hdu,
+    read_irf_grid,
+    read_energy_dispersion_hdu,
+)
+from pyirf.interpolation import (
+    interpolate_effective_area_per_energy_and_fov,
+    interpolate_energy_dispersion
+)
+"""
+
+
+__all__ = [
+    "create_obs_index_hdu",
+    "create_hdu_index_hdu",
+    "create_event_list",
+    "interpolate_irf"
+]
 
 log = logging.getLogger(__name__)
 
@@ -304,6 +322,12 @@ def create_event_list(
     reco_az = data["reco_az"]
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
+    zen_range = np.array(
+        [
+            90 - round(pointing_alt[0].to_value(u.deg), 1),
+            90 - round(pointing_alt[-1].to_value(u.deg), 1)
+        ]
+    )
 
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
@@ -448,4 +472,102 @@ def create_event_list(
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
     pointing = fits.BinTableHDU(pnt_table, header=pnt_header, name="POINTING")
 
-    return event, gti, pointing
+    return event, gti, pointing, zen_range
+
+
+def interpolate_irf(irfs, data_zen):
+    """
+    Using pyirf functions with a list of IRFs and parameters to compare with
+    data, to interpolate over, to get the closest match
+
+    For now only Effective Area and Energy Dispersion is interpolated over.
+    For the rest of IRFs, we can include the ones from IRF closest to data,
+    over the given parameters.
+
+    For now only binning in zenith is done.
+
+    Parameters
+    ------------
+    irfs: List of IRFs to use to interpolate
+        List
+    data_zen: Array of range of zenith of the observed data in the event list
+        'numpy.array'
+
+    Returns
+    ------------
+    irf_interp: Final interpolated IRF
+        'astropy.io.fits'
+
+    ## Check for cuts, extra header values
+    if compare_irf_cuts_in_files(irfs, extname="THETA_CUTS"):
+        log.info("Same cuts have been applied")
+    else:
+        log.info("Different cuts have been applied")
+
+    ## Gather the parameters to use for interpolation
+    params = ["ZEN_PNT"] # "AZ_PNT"
+    mc_pars = np.empty((len(irfs) * len(params), len(params)))
+
+    for i, par in enumerate(params):
+        for j, irf in enumerate(irfs):
+            # Assuming that the header values have ' deg' after the float value
+            mc_pars[i, j] = float(fits.open(irf)[1].header[par][:-4]))
+
+    req_keys = ["TELESCOP", "INSTRUME", "FOVALIGN", "G_OFFSET"]
+    header_0 = irfs[0].header
+
+    if irfs[0].header["HDUCLAS3"] == "POINT-LIKE":
+        point_like = True
+    else:
+        point_like = False
+    extra_headers = dict((k, header_0[k]) for k in req_keys if k in header_0)
+
+    effarea_list, e_true, fov_off = read_aeff2d_hdu(
+        irfs, extname="EFFECTIVE AREA"
+    )
+    edisp_list, e_true, e_migra, e_fov_off = read_energy_dispersion_hdu(
+        irfs, extname="ENERGY DISPERSION"
+    )
+
+    if "ZEN_PNT" in params:
+        for i in np.arange(len(irfs)):
+            mc_pars[i, :] = np.array(np.cos(mc_zen[i] * np.pi/180.))
+    ## Final desired interpolated value
+    ## Zenith of data - start or mean?
+    par0 = (
+        np.array(np.cos(data_zen[0]) * np.pi/180.),
+        )
+    extra_headers["ZEN_PNT"] = str(data_zen[0] * u.deg)
+
+    aeff_interp = interpolate_effective_area_per_energy_and_fov(
+        effarea_list, pars, par0
+    )
+    aeff_hdu_interp = create_aeff2d_hdu(
+        aeff_interp,
+        e_true,
+        fov_off,
+        point_like=point_like,
+        extname="EFFECTIVE AREA",
+        **extra_headers,
+    )
+
+    edisp_interp = interpolate_energy_dispersion(edisp_list, pars, par0)
+
+    edisp_hdu_interp = create_energy_dispersion_hdu(
+        edisp_interp,
+        e_true,
+        e_migra,
+        fov_off,
+        point_like=point_like,
+        extname="ENERGY DISPERSION",
+        **extra_headers,
+    )
+
+    irf_interp = [fits.PrimaryHDU(), ]
+    ## Fill the final IRF HDUs
+    irf_interp.append(aeff_hdu_interp)
+    irf_interp.append(edisp_hdu_interp)
+
+    ## For Background, PSF?
+
+    """

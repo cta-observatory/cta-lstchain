@@ -260,9 +260,9 @@ class IRFFITSWriter(Tool):
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
+        mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
-            mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
             self.log.info('Single offset for point like gamma MC')
         else:
@@ -291,6 +291,12 @@ class IRFFITSWriter(Tool):
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
             "GH_CUT": self.fixed_cuts.fixed_gh_cut,
+            "ZEN_PNT": str(
+                round(90 - gammas["pointing_alt"][0].to_value(u.deg), 2)
+                * u.deg
+                ),
+            "AZ_PNT": str(round(gammas["pointing_az"][0].to_value(u.deg), 2)),
+            "G_OFFSET": str(mean_fov_offset * u.deg),
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
