@@ -66,13 +66,13 @@ class DL3FixedCuts(Component):
     def gh_cut(self, data):
         return data[data["gh_score"] > self.fixed_gh_cut]
 
-    def opt_gh_cuts(self, data, energy_bins):
+    def opt_gh_cuts(self, data, energy_bins, fill_value=0.99):
         gh_cuts = calculate_percentile_cut(
             data["gh_score"],
             data["reco_energy"],
             bins=energy_bins,
             min_value=0.1,
-            fill_value=0.99,
+            fill_value=fill_value,
             percentile = self.fixed_gh_max_efficiency,
         )
         data["selected_gh"] = evaluate_binned_cut(

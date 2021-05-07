@@ -18,6 +18,6 @@
   "DataBinning": {
     "reco_energy_min": 0.01,
     "reco_energy_max": 100,
-    "reco_energy_n_bins_per_decade": 5.5,
+    "reco_energy_n_bins_per_decade": 5.5
   }
 }
