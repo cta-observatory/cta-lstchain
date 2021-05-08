@@ -32,6 +32,7 @@ from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
+from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,24 @@ def main():
         config = replace_config(std_config, read_configuration_file(args.config_file))
     else:
         config = std_config
+
+    increase_nsb = False
+    increase_psf = False
+    if "image_modifier" in config:
+        imconfig = config["image_modifier"]
+        increase_nsb = imconfig["increase_nsb"]
+        increase_psf = imconfig["increase_psf"]
+        if increase_nsb or increase_psf:
+            log.info(f"image_modifier configuration: {imconfig}")
+        extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
+        extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
+        transition_charge = imconfig["transition_charge"]
+        extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
+        smeared_light_fraction = imconfig["smeared_light_fraction"]
+        if (increase_nsb or increase_psf) and args.noimage is False:
+            log.info("NOTE: Using the image_modifier options means images will "
+                     "not be saved.")
+            args.noimage = True
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
@@ -153,14 +172,33 @@ def main():
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
 
+        if increase_nsb:
+            rng = np.random.default_rng(
+                    input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
+
             for ii, row in enumerate(image_table):
 
                 dl1_container.reset()
 
                 image = row['image']
                 peak_time = row['peak_time']
+
+                if increase_nsb:
+                    # Add noise in pixels, to adjust MC to data noise levels.
+                    # TO BE DONE: in case of "pedestal cleaning" (not used now
+                    # in MC) we should recalculate picture_th above!
+                    image = add_noise_in_pixels(rng, image,
+                                                extra_noise_in_dim_pixels,
+                                                extra_bias_in_dim_pixels,
+                                                transition_charge,
+                                                extra_noise_in_bright_pixels)
+                if increase_psf:
+                    image = smear_light_in_pixels(image,
+                                                  camera_geom,
+                                                  smeared_light_fraction)
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
