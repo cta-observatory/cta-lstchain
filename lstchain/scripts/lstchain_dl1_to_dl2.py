@@ -125,6 +125,8 @@ def main():
 
         dl2_srcdep_dict = {}
 
+        srcindep_keys = data.keys()
+
         for i, k in enumerate(data_srcdep.columns.levels[0]):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
@@ -139,7 +141,7 @@ def main():
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
-                dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
+                dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
