@@ -94,12 +94,16 @@ def main():
 
     # Load the trained RF for reconstruction:
     fileE = args.path_models + "/reg_energy.sav"
-    fileD = args.path_models + "/reg_disp_vector.sav"
+    # fileD = args.path_models + "/reg_disp_vector.sav"
     fileH = args.path_models + "/cls_gh.sav"
+    file_disp_norm = os.path.join(args.path_models, 'reg_disp_norm.sav')
+    file_disp_sign = os.path.join(args.path_models, 'reg_disp_sign.sav')
 
     reg_energy = joblib.load(fileE)
-    reg_disp_vector = joblib.load(fileD)
+    # reg_disp_vector = joblib.load(fileD)
     cls_gh = joblib.load(fileH)
+    reg_disp_norm = joblib.load(file_disp_norm)
+    reg_disp_sign = joblib.load(file_disp_sign)
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -114,7 +118,9 @@ def main():
                              finite_params=config['regression_features'] + config['classification_features'],
                              )
 
-        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
+        # dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
+        #                               custom_config=config)
+        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm, reg_disp_sign, focal_length=focal_length,
                                       custom_config=config)
 
     # Source-dependent analysis
@@ -132,7 +138,9 @@ def main():
                                                    finite_params=config['regression_features'] + config[
                                                        'classification_features'],
                                                    )
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
+            # dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
+            #                                  focal_length=focal_length, custom_config=config)
+            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm, reg_disp_sign,
                                              focal_length=focal_length, custom_config=config)
 
             dl2_srcdep = dl2_df.drop(data.keys(), axis=1)

@@ -492,9 +492,9 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
         config = read_configuration_file(config_file)
 
     if axes is None:
-        fig, axes = plt.subplots(1, 3, figsize=(20, 5))
+        fig, axes = plt.subplots(2, 2, figsize=(20, 20))
     else:
-        fig = axes[0].get_figure()
+        fig = axes.ravel()[0].get_figure()
 
     fig.suptitle('Features importances')
 
@@ -502,20 +502,28 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     reg_features_names = config['regression_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
-    disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
+    # disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
+    disp_norm = joblib.load(os.path.join(path_models, "reg_disp_norm.sav"))
+    disp_sign = joblib.load(os.path.join(path_models, "reg_disp_sign.sav"))
 
-    plot_importances(disp, reg_features_names, ax=axes[0], **kwargs)
-    axes[0].set_title("disp")
+    ax = axes[0, 0]
+    plot_importances(disp_norm, reg_features_names, ax=ax, **kwargs)
+    ax.set_title("disp norm")
+    ax = axes[0, 1]
+    plot_importances(disp_sign, reg_features_names, ax=ax, **kwargs)
+    ax.set_title("disp sign")
 
-    plot_importances(energy, reg_features_names, ax=axes[1], **kwargs)
-    axes[1].set_title("energy")
+    ax = axes[1, 0]
+    plot_importances(energy, reg_features_names, ax=ax, **kwargs)
+    ax.set_title("energy")
 
     ### Classification model ###
     clf_features_names = config['classification_features']
     clf = joblib.load(os.path.join(path_models, "cls_gh.sav"))
 
-    plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)
-    axes[2].set_title("classification")
+    ax = axes[1, 1]
+    plot_importances(clf, clf_features_names, ax=ax, **kwargs)
+    ax.set_title("classification")
 
     fig.tight_layout()
 
