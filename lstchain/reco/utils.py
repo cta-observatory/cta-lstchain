@@ -20,6 +20,7 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from astropy.utils import deprecated
+from astropy.table import QTable
 from ctapipe.coordinates import CameraFrame
 
 from . import disp
@@ -716,7 +717,9 @@ def get_effective_time(events):
     t_eff: astropy Quantity (in seconds, if input has no units)
     t_elapsed: astropy Quantity (ditto)
     """
-    timestamp = np.array(events["dragon_time"])
+    # Sorting events by timestamps so the input list of events does not have 
+    # to be ordered, for example when dealing with runs from different days. 
+    timestamp = np.sort(np.array(events["dragon_time"]))
     delta_t = np.array(events["delta_t"])
 
     if not isinstance(timestamp, u.Quantity):
