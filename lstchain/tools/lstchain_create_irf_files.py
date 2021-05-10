@@ -286,16 +286,19 @@ class IRFFITSWriter(Tool):
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU should be created
         # GH_CUT and FOV_CUT are temporary non-standard header data
+        ## mean_fov_offset of 0.4 is included in the pointing alt of telescope.
+        ## Understand and Generalize it
+        
         extra_headers = {
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
             "GH_CUT": self.fixed_cuts.fixed_gh_cut,
             "ZEN_PNT": str(
-                round(90 - gammas["pointing_alt"][0].to_value(u.deg), 2)
+                round(90 - gammas["pointing_alt"][0].to_value(u.deg) - mean_fov_offset, 2)
                 * u.deg
                 ),
-            "AZ_PNT": str(round(gammas["pointing_az"][0].to_value(u.deg), 2)),
+            "AZ_PNT": str(round(gammas["pointing_az"][0].to_value(u.deg), 2) * u.deg),
             "G_OFFSET": str(mean_fov_offset * u.deg),
         }
         if self.point_like:

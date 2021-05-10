@@ -77,11 +77,18 @@ class DataReductionFITSWriter(Tool):
         exists=True,
         directory_ok=True,
         file_ok=False,
-    ).tag(config=True) ## Take multiple files or file location?
+    ).tag(config=True)
 
     irf_file_pattern = traits.Unicode(
         help="IRF file pattern to search in the given IRF files path",
         default_value="*irf*.fits.gz"
+    ).tag(config=True)
+
+    final_irf_file = traits.Path(
+        help="Final IRF file included with DL3 file",
+        directory_ok=False,
+        file_ok=True,
+        default_value="./final_irf.fits.gz",
     ).tag(config=True)
 
     source_name = traits.Unicode(
@@ -106,8 +113,9 @@ class DataReductionFITSWriter(Tool):
     aliases = {
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
-        "input-irf-path": "DataReductionFITSWriter.input_irf_path",
-        "irf-file-pattern": "DataReductionFITSWriter.irf_file_pattern",
+        ("i", "input-irf-path"): "DataReductionFITSWriter.input_irf_path",
+        ("p", "irf-file-pattern"): "DataReductionFITSWriter.irf_file_pattern",
+        ("f", "final-irf-file"): "DataReductionFITSWriter.final_irf_file",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
@@ -141,6 +149,20 @@ class DataReductionFITSWriter(Tool):
                     f"Output file {self.output_file} already exists,"
                     " use --overwrite to overwrite"
                 )
+        self.final_irf_output = self.input_irf_path.absolute() / str(self.final_irf_file.name)
+
+        self.log.info(self.final_irf_output)
+
+        if self.final_irf_output.exists():
+            if self.overwrite:
+                self.log.warning(f"Overwriting {self.final_irf_output}")
+                self.final_irf_output.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Final IRF file {self.final_irf_output} already exists,"
+                    " use --overwrite to overwrite"
+                )
+
         if self.input_irf_path:
             self.irf_list = sorted(
                 self.input_irf_path.glob(self.irf_file_pattern)
@@ -187,27 +209,32 @@ class DataReductionFITSWriter(Tool):
         if self.input_irf_path:
             if len(self.irf_list) > 1:
                 self.log.info(self.irf_list)
-            # irf_final = interpolate_irf(self.irf_list, self.zen_range)
-            irf = fits.open(self.irf_list[0])
+
+            self.irf_final_hdu = interpolate_irf(self.irf_list, self.zen_range)
+            # Also write the irf_final into a file
+            #irf = fits.open(self.irf_list[0])
             self.log.info("Adding IRF HDUs")
-            mc_zen = float(irf[1].header["ZEN_PNT"][:-4])
-            mc_gamma_offset = float(irf[1].header["G_OFFSET"][:-4])
+            mc_zen = float(self.irf_final_hdu[1].header["ZEN_PNT"][:-4])
+            mc_gamma_offset = float(self.irf_final_hdu[1].header["G_OFFSET"][:-4])
 
             self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
-            self.log.info(f"Zen pointing of MC at {mc_zen}")
+            self.log.info(f"Zen pointing of MC at {mc_zen:.3f}")
 
             if abs(mc_zen - self.zen_range).any() < 10:
                 self.log.info("Data is within 10 deg of zenith of MC used")
             else:
                 self.log.info("Data is beyond 10 deg of zenith of MC used")
 
-            for irf_hdu in irf[1:]:
+            for irf_hdu in self.irf_final_hdu[1:]:
                 self.hdulist.append(irf_hdu)
 
     def finish(self):
+
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)
+        fits.HDUList(self.irf_final_hdu).writeto(self.final_irf_output, overwrite=self.overwrite)
 
         Provenance().add_output_file(self.output_file)
+        Provenance().add_output_file(self.final_irf_output)
 
 
 def main():

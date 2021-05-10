@@ -12,17 +12,18 @@ from astropy.time import Time
 from lstchain.__init__ import __version__
 from lstchain.reco.utils import location
 
-"""
- from pyirf.io.gadf import (
+from pyirf.io.gadf import (
     read_aeff2d_hdu,
     read_irf_grid,
     read_energy_dispersion_hdu,
+    compare_irf_cuts_in_files,
+    create_aeff2d_hdu,
+    create_energy_dispersion_hdu,
 )
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion
 )
-"""
 
 
 __all__ = [
@@ -497,12 +498,13 @@ def interpolate_irf(irfs, data_zen):
     ------------
     irf_interp: Final interpolated IRF
         'astropy.io.fits'
+    """
 
     ## Check for cuts, extra header values
-    if compare_irf_cuts_in_files(irfs, extname="THETA_CUTS"):
+    """if compare_irf_cuts_in_files(irfs, extname="THETA_CUTS"):
         log.info("Same cuts have been applied")
     else:
-        log.info("Different cuts have been applied")
+        log.info("Different cuts have been applied")"""
 
     ## Gather the parameters to use for interpolation
     params = ["ZEN_PNT"] # "AZ_PNT"
@@ -511,12 +513,12 @@ def interpolate_irf(irfs, data_zen):
     for i, par in enumerate(params):
         for j, irf in enumerate(irfs):
             # Assuming that the header values have ' deg' after the float value
-            mc_pars[i, j] = float(fits.open(irf)[1].header[par][:-4]))
+            mc_pars[j, i] = float(fits.open(irf)[1].header[par][:-4])
 
     req_keys = ["TELESCOP", "INSTRUME", "FOVALIGN", "G_OFFSET"]
-    header_0 = irfs[0].header
+    header_0 = fits.open(irfs[0])[1].header
 
-    if irfs[0].header["HDUCLAS3"] == "POINT-LIKE":
+    if header_0["HDUCLAS3"] == "POINT-LIKE":
         point_like = True
     else:
         point_like = False
@@ -530,20 +532,21 @@ def interpolate_irf(irfs, data_zen):
     )
 
     if "ZEN_PNT" in params:
-        for i in np.arange(len(irfs)):
-            mc_pars[i, :] = np.array(np.cos(mc_zen[i] * np.pi/180.))
+        for i in np.arange(len(irfs)): #Assuming the first column of params is ZEN_PNT
+            mc_pars[i, :] = np.array(np.cos(mc_pars[i] * np.pi/180.))
+    par0 = (
+        np.array(np.cos(data_zen[0] * np.pi/180.)),
+        )
+
     ## Final desired interpolated value
     ## Zenith of data - start or mean?
-    par0 = (
-        np.array(np.cos(data_zen[0]) * np.pi/180.),
-        )
     extra_headers["ZEN_PNT"] = str(data_zen[0] * u.deg)
 
     aeff_interp = interpolate_effective_area_per_energy_and_fov(
-        effarea_list, pars, par0
+        effarea_list, mc_pars, par0
     )
     aeff_hdu_interp = create_aeff2d_hdu(
-        aeff_interp,
+        aeff_interp.T,
         e_true,
         fov_off,
         point_like=point_like,
@@ -551,7 +554,7 @@ def interpolate_irf(irfs, data_zen):
         **extra_headers,
     )
 
-    edisp_interp = interpolate_energy_dispersion(edisp_list, pars, par0)
+    edisp_interp = interpolate_energy_dispersion(edisp_list, mc_pars, par0)
 
     edisp_hdu_interp = create_energy_dispersion_hdu(
         edisp_interp,
@@ -569,5 +572,4 @@ def interpolate_irf(irfs, data_zen):
     irf_interp.append(edisp_hdu_interp)
 
     ## For Background, PSF?
-
-    """
+    return irf_interp
