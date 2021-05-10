@@ -17,10 +17,15 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from . import utils
 from . import disp
-from ..io import standard_config, replace_config
+from ..io import standard_config, replace_config, get_dataset_keys
 import astropy.units as u
-from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+from ..io.io import (
+    dl1_params_lstcam_key,
+    dl1_params_src_dep_lstcam_key,
+    set_srcdep_multi_index
+)
 from ctapipe.image.hillas import camera_to_shower_coordinates
+from ctapipe.instrument import SubarrayDescription
 
 
 __all__ = [
@@ -309,12 +314,29 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_gamma.columns])
+
+        # if source-dependent parameters are already in dl1 data, just read those data
+        # if not, source-dependent parameters are added here
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(filegammas):
+            src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
+            set_srcdep_multi_index(src_dep_df_gamma)
+        else:
+            subarray_info = SubarrayDescription.from_hdf(filegammas)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_gamma =pd.concat(get_source_dependent_parameters(df_gamma, config, focal_length=focal_length), axis=1)
+
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
-        src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_proton.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_proton.columns])
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(fileprotons):
+            src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
+            set_srcdep_multi_index(src_dep_df_proton)
+        else:
+            subarray_info = SubarrayDescription.from_hdf(fileprotons)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_proton =pd.concat(get_source_dependent_parameters(df_proton, config, focal_length=focal_length), axis=1)
+            
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
@@ -568,7 +590,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
             expected_src_pos_y_m = np.zeros(len(data))
         
         # compute source position in camera coordinate event by event for wobble mode
-        if config.get('observation_mode') == 'wobble':
+        elif config.get('observation_mode') == 'wobble':
 
             if 'source_name' in config:
                 source_coord = SkyCoord.from_name(config.get('source_name'))
@@ -584,4 +606,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
    
+        else:
+            raise NameError("observation_mode is not defined in a config file. The observation mode should be on or wobble.")
+
     return expected_src_pos_x_m, expected_src_pos_y_m 

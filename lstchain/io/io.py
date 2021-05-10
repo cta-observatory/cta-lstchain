@@ -49,7 +49,9 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'extract_observation_time',
-    'merge_dl2_runs'
+    'merge_dl2_runs',
+    'set_srcdep_multi_index',
+    'get_srcdep_index_name'
 ]
 
 dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
@@ -1120,3 +1122,29 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
+
+def set_srcdep_multi_index(data):
+    """
+    set multi index column for source-dependent parameters
+
+    Parameters
+    ----------
+    data: `pandas.DataFrame`
+
+    """
+
+    data.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in data.columns])
+
+def get_srcdep_index_name(data):
+    """
+    get each index column name of source-dependent multi index columns
+
+    Parameters
+    ----------
+    data: `pandas.DataFrame`
+
+    Returns
+    -------
+    source-dependent index names
+    """
+    return data.columns.levels[0]
