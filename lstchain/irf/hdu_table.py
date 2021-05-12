@@ -12,25 +12,11 @@ from astropy.time import Time
 from lstchain.__init__ import __version__
 from lstchain.reco.utils import location
 
-from pyirf.io.gadf import (
-    read_aeff2d_hdu,
-    read_irf_grid,
-    read_energy_dispersion_hdu,
-    compare_irf_cuts_in_files,
-    create_aeff2d_hdu,
-    create_energy_dispersion_hdu,
-)
-from pyirf.interpolation import (
-    interpolate_effective_area_per_energy_and_fov,
-    interpolate_energy_dispersion
-)
-
 
 __all__ = [
     "create_obs_index_hdu",
     "create_hdu_index_hdu",
     "create_event_list",
-    "interpolate_irf"
 ]
 
 log = logging.getLogger(__name__)
@@ -176,11 +162,11 @@ def create_hdu_index_hdu(
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
-            "HDU_TYPE": "events",
-            "HDU_CLASS": "events",
+            "HDU_TYPE": evt_hdr["HDUCLAS1"].lower(),
+            "HDU_CLASS": evt_hdr["HDUCLAS1"].lower(),
             "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
             "FILE_NAME": file,
-            "HDU_NAME": "EVENTS",
+            "HDU_NAME": evt_hdr["HDUCLAS1"],
             "SIZE": filepath.stat().st_size,
         }
         hdu_index_tables.append(t_events)
@@ -188,29 +174,29 @@ def create_hdu_index_hdu(
         # GTI
         t_gti = t_events.copy()
 
-        t_gti["HDU_TYPE"] = "gti"
-        t_gti["HDU_CLASS"] = "gti"
-        t_gti["HDU_NAME"] = "GTI"
+        t_gti["HDU_TYPE"] = gti_hdr["HDUCLAS1"].lower()
+        t_gti["HDU_CLASS"] = gti_hdr["HDUCLAS1"].lower()
+        t_gti["HDU_NAME"] = gti_hdr["HDUCLAS1"]
 
         hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
 
-        t_pnt["HDU_TYPE"] = "pointing"
-        t_pnt["HDU_CLASS"] = "pointing"
-        t_pnt["HDU_NAME"] = "POINTING"
+        t_pnt["HDU_TYPE"] = pnt_hdr["HDUCLAS1"].lower()
+        t_pnt["HDU_CLASS"] = pnt_hdr["HDUCLAS1"].lower()
+        t_pnt["HDU_NAME"] = pnt_hdr["HDUCLAS1"]
 
         hdu_index_tables.append(t_pnt)
 
         # Energy Dispersion
         try:
-            edisp = hdu_list["ENERGY DISPERSION"]
+            edisp_hdr = hdu_list["ENERGY DISPERSION"].header
             t_edisp = t_events.copy()
 
-            t_edisp["HDU_TYPE"] = "edisp"
-            t_edisp["HDU_CLASS"] = "edisp_2d"
-            t_edisp["HDU_NAME"] = "ENERGY DISPERSION"
+            t_edisp["HDU_TYPE"] = edisp_hdr["HDUCLAS2"].lower()
+            t_edisp["HDU_CLASS"] = edisp_hdr["HDUCLAS4"].lower()
+            t_edisp["HDU_NAME"] = edisp_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_edisp)
         except KeyError:
@@ -220,11 +206,11 @@ def create_hdu_index_hdu(
 
         # Effective Area
         try:
-            aeff = hdu_list["EFFECTIVE AREA"]
+            aeff_hdr = hdu_list["EFFECTIVE AREA"].header
             t_aeff = t_events.copy()
-            t_aeff["HDU_TYPE"] = "aeff"
-            t_aeff["HDU_CLASS"] = "aeff_2d"
-            t_aeff["HDU_NAME"] = "EFFECTIVE AREA"
+            t_aeff["HDU_TYPE"] = aeff_hdr["HDUCLAS2"].lower()
+            t_aeff["HDU_CLASS"] = aeff_hdr["HDUCLAS4"].lower()
+            t_aeff["HDU_NAME"] = aeff_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_aeff)
         except KeyError:
@@ -234,11 +220,11 @@ def create_hdu_index_hdu(
 
         # Background
         try:
-            bkg = hdu_list["BACKGROUND"]
+            bkg_hdr = hdu_list["BACKGROUND"].header
             t_bkg = t_events.copy()
-            t_bkg["HDU_TYPE"] = "bkg"
-            t_bkg["HDU_CLASS"] = "bkg_2d"
-            t_bkg["HDU_NAME"] = "BACKGROUND"
+            t_bkg["HDU_TYPE"] = bkg_hdr["HDUCLAS2"].lower()
+            t_bkg["HDU_CLASS"] = bkg_hdr["HDUCLAS4"].lower()
+            t_bkg["HDU_NAME"] = bkg_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_bkg)
         except KeyError:
@@ -248,11 +234,11 @@ def create_hdu_index_hdu(
 
         # PSF
         try:
-            psf = hdu_list["PSF"]
+            psf_hdr = hdu_list["PSF"].header
             t_psf = t_events.copy()
-            t_psf["HDU_TYPE"] = "psf"
-            t_psf["HDU_CLASS"] = "psf_table"
-            t_psf["HDU_NAME"] = "PSF"
+            t_psf["HDU_TYPE"] = psf_hdr["HDUCLAS2"].lower()
+            t_psf["HDU_CLASS"] = psf_hdr["HDUCLAS4"].lower()
+            t_psf["HDU_NAME"] = psf_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_psf)
         except KeyError:
@@ -329,6 +315,14 @@ def create_event_list(
             90 - round(pointing_alt[-1].to_value(u.deg), 1)
         ]
     )
+    az_range = np.array(
+        [
+            round(pointing_az[0].to_value(u.deg), 1),
+            round(pointing_az[-1].to_value(u.deg), 1)
+        ]
+    )
+    ## Hard coded
+    data_pars = {"ZEN_PNT": zen_range, "AZ_PNT": az_range}
 
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
@@ -473,103 +467,4 @@ def create_event_list(
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
     pointing = fits.BinTableHDU(pnt_table, header=pnt_header, name="POINTING")
 
-    return event, gti, pointing, zen_range
-
-
-def interpolate_irf(irfs, data_zen):
-    """
-    Using pyirf functions with a list of IRFs and parameters to compare with
-    data, to interpolate over, to get the closest match
-
-    For now only Effective Area and Energy Dispersion is interpolated over.
-    For the rest of IRFs, we can include the ones from IRF closest to data,
-    over the given parameters.
-
-    For now only binning in zenith is done.
-
-    Parameters
-    ------------
-    irfs: List of IRFs to use to interpolate
-        List
-    data_zen: Array of range of zenith of the observed data in the event list
-        'numpy.array'
-
-    Returns
-    ------------
-    irf_interp: Final interpolated IRF
-        'astropy.io.fits'
-    """
-
-    ## Check for cuts, extra header values
-    """if compare_irf_cuts_in_files(irfs, extname="THETA_CUTS"):
-        log.info("Same cuts have been applied")
-    else:
-        log.info("Different cuts have been applied")"""
-
-    ## Gather the parameters to use for interpolation
-    params = ["ZEN_PNT"] # "AZ_PNT"
-    mc_pars = np.empty((len(irfs) * len(params), len(params)))
-
-    for i, par in enumerate(params):
-        for j, irf in enumerate(irfs):
-            # Assuming that the header values have ' deg' after the float value
-            mc_pars[j, i] = float(fits.open(irf)[1].header[par][:-4])
-
-    req_keys = ["TELESCOP", "INSTRUME", "FOVALIGN", "G_OFFSET"]
-    header_0 = fits.open(irfs[0])[1].header
-
-    if header_0["HDUCLAS3"] == "POINT-LIKE":
-        point_like = True
-    else:
-        point_like = False
-    extra_headers = dict((k, header_0[k]) for k in req_keys if k in header_0)
-
-    effarea_list, e_true, fov_off = read_aeff2d_hdu(
-        irfs, extname="EFFECTIVE AREA"
-    )
-    edisp_list, e_true, e_migra, e_fov_off = read_energy_dispersion_hdu(
-        irfs, extname="ENERGY DISPERSION"
-    )
-
-    if "ZEN_PNT" in params:
-        for i in np.arange(len(irfs)): #Assuming the first column of params is ZEN_PNT
-            mc_pars[i, :] = np.array(np.cos(mc_pars[i] * np.pi/180.))
-    par0 = (
-        np.array(np.cos(data_zen[0] * np.pi/180.)),
-        )
-
-    ## Final desired interpolated value
-    ## Zenith of data - start or mean?
-    extra_headers["ZEN_PNT"] = str(data_zen[0] * u.deg)
-
-    aeff_interp = interpolate_effective_area_per_energy_and_fov(
-        effarea_list, mc_pars, par0
-    )
-    aeff_hdu_interp = create_aeff2d_hdu(
-        aeff_interp.T,
-        e_true,
-        fov_off,
-        point_like=point_like,
-        extname="EFFECTIVE AREA",
-        **extra_headers,
-    )
-
-    edisp_interp = interpolate_energy_dispersion(edisp_list, mc_pars, par0)
-
-    edisp_hdu_interp = create_energy_dispersion_hdu(
-        edisp_interp,
-        e_true,
-        e_migra,
-        fov_off,
-        point_like=point_like,
-        extname="ENERGY DISPERSION",
-        **extra_headers,
-    )
-
-    irf_interp = [fits.PrimaryHDU(), ]
-    ## Fill the final IRF HDUs
-    irf_interp.append(aeff_hdu_interp)
-    irf_interp.append(edisp_hdu_interp)
-
-    ## For Background, PSF?
-    return irf_interp
+    return event, gti, pointing, data_pars

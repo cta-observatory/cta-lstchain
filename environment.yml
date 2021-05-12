@@ -21,4 +21,4 @@ dependencies:
       - pytest-ordering
       - ctapipe_io_lst~=0.9.2
       - ctaplot
-      - pyirf>=0.4.1
+      - pyirf>=0.5
