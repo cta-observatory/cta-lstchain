@@ -111,6 +111,7 @@ class CalibrationCalculator(Component):
         self.tel_id = self.flatfield.tel_id
 
         # load systematic correction term B
+        self.quadratic_term = None
         if self.systematic_correction_path is not None:
             try:
                 with h5py.File(self.systematic_correction_path, 'r') as hf:
@@ -173,6 +174,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         denominator = gain
 
         n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
+
         # fill WaveformCalibrationContainer
         calib_data.time = ff_data.sample_time
         calib_data.time_min = ff_data.sample_time_min
@@ -183,10 +185,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         masked_npe = np.ma.array(n_pe, mask=calib_data.unusable_pixels)
         npe_signal_median = np.ma.median(masked_npe, axis=1)
 
-        # calibration coefficients
+        # flat-fielded calibration coefficients
         numerator = npe_signal_median[:,np.newaxis]
-
-        # signal
         denominator = (ff_data.charge_median - ped_data.charge_median)
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
