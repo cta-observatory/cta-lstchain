@@ -2,6 +2,10 @@
 Create DL3 FITS file from given data DL2 file,
 selection cuts and/or IRF FITS files.
 
+For an interpolated IRF, based on the data provided by the event list,
+provide multiple IRFs. For that provide the common path to the IRFs,
+glob search pattern for the IRFs and a final interpolated IRF file name.
+
 Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector and DL3FixedCuts Component
 and also given in some example configs in docs/examples/
@@ -32,7 +36,7 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        --input-irf /path/to/irf.fits.gz
+        -i /path/to/irf/
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -41,7 +45,9 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        --input-irf /path/to/irf.fits.gz
+        -i /path/to/irf/
+        -p irf*.fits.gz
+        -f final_interp_irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -52,7 +58,9 @@ class DataReductionFITSWriter(Tool):
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
-        --input-irf /path/to/irf.fits.gz
+        --input-irf-path /path/to/irf/
+        --irf-file-pattern irf*.fits.gz
+        --final-irf-file final_interp_irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -89,7 +97,7 @@ class DataReductionFITSWriter(Tool):
         help="Final IRF file included with DL3 file",
         directory_ok=False,
         file_ok=True,
-        default_value="./final_irf.fits.gz",
+        default_value="final_irf.fits.gz",
     ).tag(config=True)
 
     source_name = traits.Unicode(
@@ -140,6 +148,7 @@ class DataReductionFITSWriter(Tool):
         self.event_sel = EventSelector(parent=self)
         self.fixed_cuts = DL3FixedCuts(parent=self)
 
+
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():
             if self.overwrite:
@@ -152,14 +161,29 @@ class DataReductionFITSWriter(Tool):
                 )
 
         if self.input_irf_path:
+            self.irf_list = sorted(
+                self.input_irf_path.glob(self.irf_file_pattern)
+            )
+            if self.irf_list == []:
+                self.log.critical(
+                    f"No IRF files found with pattern {self.irf_file_pattern}"
+                )
+
+        if self.input_irf_path:
             if len(self.irf_list) > 1:
                 self.log.info(self.irf_list)
-
-            if not compare_irfs(self.irf_list):
+                if not compare_irfs(self.irf_list):
+                    raise ToolConfigurationError(
+                        f"IRF files in {self.input_irf_path} with pattern, "
+                        f"{self.irf_file_pattern} are not similar and "
+                        "cannot be used to interpolate. Use different list of IRFs"
+                    )
+            elif len(self.irf_list) == 1:
+                self.log.info(f"Only single IRF {self.irf_list[0]} provided, no interpolation possible")
+            else:
                 raise ToolConfigurationError(
-                    f"IRF files in {self.input_irf_path} with pattern, "
-                    f"{self.irf_file_pattern} are not similar and "
-                    "cannot be used to interpolate. Use different list of IRFs"
+                    f"No IRF files in {self.input_irf_path} with pattern, "
+                    f"{self.irf_file_pattern} found. Use different parameters"
                 )
 
         self.final_irf_output = self.input_irf_path.absolute() / str(self.final_irf_file.name)
@@ -174,15 +198,6 @@ class DataReductionFITSWriter(Tool):
                 raise ToolConfigurationError(
                     f"Final IRF file {self.final_irf_output} already exists,"
                     " use --overwrite to overwrite"
-                )
-
-        if self.input_irf_path:
-            self.irf_list = sorted(
-                self.input_irf_path.glob(self.irf_file_pattern)
-            )
-            if self.irf_list == []:
-                self.log.critical(
-                    f"No IRF files found with pattern {self.irf_file_pattern}"
                 )
 
         if not (self.source_ra or self.source_dec):
@@ -221,34 +236,39 @@ class DataReductionFITSWriter(Tool):
         )
 
         if self.input_irf_path:
-            self.irf_final_hdu = interpolate_irf(self.irf_list, self.data_params)
-            self.log.info("Adding IRF HDUs")
+            if len(self.irf_list) > 1:
+                self.irf_final_hdu = interpolate_irf(self.irf_list, self.data_params)
 
-            self.mc_params = dict()
-            for p in self.data_params.keys():
-                # Assuming all the header values have units with 4 spaces. Check
-                self.mc_params[p] = float(self.irf_final_hdu[1].header[p][:-4])
-            mc_gamma_offset = float(self.irf_final_hdu[1].header["G_OFFSET"][:-4])
+                self.log.info("Adding IRF HDUs")
 
-            self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
-            self.log.info(f"Zen pointing of MC at {self.mc_params['ZEN_PNT']:.3f}")
-            self.log.info(f"Zen pointing of MC at {self.mc_params['AZ_PNT']:.3f}")
+                self.mc_params = dict()
+                for p in self.data_params.keys():
+                    # Assuming all the header values have units with 4 spaces
+                    self.mc_params[p] = float(self.irf_final_hdu[1].header[p][:-4])
+                mc_gamma_offset = float(self.irf_final_hdu[1].header["G_OFFSET"][:-4])
 
-            if abs(self.mc_params["ZEN_PNT"] - self.data_params["ZEN_PNT"]).any() < 10:
-                self.log.info("Data is within 10 deg of zenith of MC used")
+                self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
+                self.log.info(f"Zen pointing of MC at {self.mc_params['ZEN_PNT']}")
+                self.log.info(f"Zen pointing of MC at {self.mc_params['AZ_PNT']}")
+
+                for irf_hdu in self.irf_final_hdu[1:]:
+                    self.hdulist.append(irf_hdu)
             else:
-                self.log.info("Data is beyond 10 deg of zenith of MC used")
-
-            for irf_hdu in self.irf_final_hdu[1:]:
-                self.hdulist.append(irf_hdu)
+                self.log.info("Adding IRF HDUs without interpolation")
+                self.irf_final_hdu = fits.open(self.irf_list[0])
+                self.log.info(type(self.irf_final_hdu))
+                self.log.info(self.irf_final_hdu.info())
+                for irf_hdu in self.irf_final_hdu[1:]:
+                    self.hdulist.append(irf_hdu)
 
     def finish(self):
 
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)
-        fits.HDUList(self.irf_final_hdu).writeto(self.final_irf_output, overwrite=self.overwrite)
+        if len(self.irf_list) > 1:
+            fits.HDUList(self.irf_final_hdu).writeto(self.final_irf_output, overwrite=self.overwrite)
+            Provenance().add_output_file(self.final_irf_output)
 
         Provenance().add_output_file(self.output_file)
-        Provenance().add_output_file(self.final_irf_output)
 
 
 def main():

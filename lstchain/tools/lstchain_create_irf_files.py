@@ -277,7 +277,7 @@ class IRFFITSWriter(Tool):
             self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
 
             self.log.info('Single offset for point like gamma MC')
-            self.mc_particle["gamma"]["ZEN_PNT"] - self.mc_particle["gamma"]["G_OFFSET"]
+            self.mc_particle["gamma"]["ZEN_PNT"] -= self.mc_particle["gamma"]["G_OFFSET"]
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")

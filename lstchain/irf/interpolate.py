@@ -25,22 +25,33 @@ def compare_irfs(irfs):
     params = []
     meta = []
     select_meta = ["HDUCLAS3", "INSTRUME", "GH_CUT", "RAD_MAX", "G_OFFSET"]
+    cols = Table.read(irfs[0], hdu="ENERGY DISPERSION").columns[:-1]
 
     for i, irf in enumerate(irfs):
         e_table = Table.read(irf, hdu="ENERGY DISPERSION")
-        for j, col in enumerate(e_table.columns[:-1]):
+        for j, col in enumerate(cols):
             params.append(e_table[col].quantity[0])
         for m in select_meta:
             if m in e_table.meta:
                 meta.append(e_table.meta[m])
 
-    meta_sim = (np.unique(meta) == meta[:int(len(meta)/len(irfs))]).all()
+    #Comparing metadata
+    meta_2, meta_ind = np.unique(meta, return_index=True)
 
-    for i in np.arange(6):
-        a = [params[6*j + i] for j in np.arange(len(irfs))]
-        bim_sim = (np.unique(a) == params[i]).all()
+    if len(meta_2) == int(len(meta)/len(irfs)):
+        if (meta_2[np.argsort(meta_ind)] == meta[:int(len(meta)/len(irfs))]).all():
+            meta_sim = True
+
+    #Comparing other paramater axes in IRFs
+    for i in np.arange(len(cols)):
+        a = [params[len(cols)*j + i] for j in np.arange(len(irfs))]
+        a2, a_ind = np.unique(a, return_index=True)
+        if len(a2) == len(params[i]):
+            if (a2[np.argsort(a_ind)] == params[i].value).all():
+                bin_sim = True
 
     return bin_sim * meta_sim
+
 
 def load_irf_grid(irfs, extname, interp_col):
     """
@@ -63,13 +74,15 @@ def load_irf_grid(irfs, extname, interp_col):
     interp_params: List of columns of the IRF from each file
         'numpy.stack'
     """
+    ## Check for theta offset axes
     interp_params = []
     for irf in irfs:
         interp_params.append(
-            QTable.read(irf, hdu=extname)[interp_col][0].T
+            QTable.read(irf, hdu=extname)[interp_col][0]
         )
 
     return np.stack(interp_params)
+
 
 def interpolate_irf(irfs, data_pars):
     """
@@ -98,16 +111,20 @@ def interpolate_irf(irfs, data_pars):
 
     # Gather the parameters to use for interpolation
     params = list(data_pars.keys())
-    n_grid = len(irfs) * len(params)
+    n_grid = len(irfs)
     irf_pars = np.empty((n_grid, len(params)))
     mc_params = np.empty((len(params), len(irfs)))
+    interp_pars = []
 
     for i, par in enumerate(params):
         # Assuming that the header values have ' deg' after the float value
         mc_params[i, :] = np.array(
             [float(fits.open(irf)[1].header[par][:-4]) for irf in irfs]
         )
-    print(mc_params)
+        if par == "ZEN_PNT":
+            interp_pars.append(np.cos(data_pars[par] * np.pi/180.))
+        else:
+            interp_pars.append(data_pars[par])
 
     extra_keys = ["TELESCOP", "INSTRUME", "FOVALIGN", "GH_CUT", "G_OFFSET", "RAD_MAX"]
     main_headers = fits.open(irfs[0])[1].header
@@ -118,48 +135,36 @@ def interpolate_irf(irfs, data_pars):
         point_like = False
 
     extra_headers = dict((k, main_headers[k]) for k in extra_keys if k in main_headers)
-
     # Read the IRFs into lists and extract the necessary columns
     effarea_list = load_irf_grid(irfs, extname="EFFECTIVE AREA", interp_col="EFFAREA")
     edisp_list = load_irf_grid(irfs, extname="ENERGY DISPERSION", interp_col="MATRIX")
-    temp_e = QTable.read(irfs[0], extname="ENERGY DISPERSION")
-    e_true = temp_e["ENERG_LO"].quantity[0].insert(
-        len(temp_e["ENERG_LO"][0]), temp_e["ENERG_HI"].quantity[0][-1]
-    )
-    e_migra = temp_e["MIGRA_LO"].quantity[0].insert(
-        len(temp_e["MIGRA_LO"][0]), temp_e["MIGRA_HI"].quantity[0][-1]
-    )
-    fov_off = temp_e["THETA_LO"].quantity[0].insert(
-        len(temp_e["THETA_LO"][0]), temp_e["THETA_HI"].quantity[0][-1]
-    )
+    temp_e = QTable.read(irfs[0], hdu="ENERGY DISPERSION")
 
-    interp_pars = []
+    # Check the units as well
+    e_true = np.append(temp_e["ENERG_LO"][0], temp_e["ENERG_HI"][0][-1])
+    e_migra = np.append(temp_e["MIGRA_LO"][0], temp_e["MIGRA_HI"][0][-1])
+    fov_off = np.append(temp_e["THETA_LO"][0], temp_e["THETA_HI"][0][-1])
 
-    #for k in data_pars.keys():
     i_grid = 0
-    for i in np.arange(len(params)):
-        for j in np.arange(len(irfs)):
-            if params[i] == "ZEN_PNT":
-                #Assuming the first column of params is ZEN_PNT
-                irf_pars[i_grid, ] = np.array(np.cos(j * np.pi/180.))
-                interp_pars.append(np.array(np.cos(data_pars[i][0] * np.pi/180.)))
+    for i in np.arange(n_grid):
+        for j, par in enumerate(params):
+            if par == "ZEN_PNT":
+                irf_pars[i_grid, j] = np.cos(mc_params[j][i] * np.pi/180.)
             else:
-                irf_pars[i_grid, i+j] = [mc_params[i][j]]
-                interp_pars.append(data_pars[i])
-            i_grid += 1
+                irf_pars[i_grid, j] = mc_params[j][i]
+        i_grid += 1
 
-    print(irf_pars)
-    ## Final desired interpolated value
-    ## Zenith of data - start or mean?
-    extra_headers["ZEN_PNT"] = str(data_pars["ZEN_PNT"][0] * u.deg)
+    for par in params:
+        extra_headers[par] = str(data_pars[par] * u.deg)
 
     ## Check and compare cuts applied in each IRF using pyirf.cuts.compare_irf_cuts
-
     aeff_interp = interpolate_effective_area_per_energy_and_fov(
         effarea_list, irf_pars, interp_pars
     )
+    print(aeff_interp.shape)
+
     aeff_hdu_interp = create_aeff2d_hdu(
-        aeff_interp.T,
+        aeff_interp[0],
         e_true,
         fov_off,
         point_like=point_like,
@@ -170,7 +175,7 @@ def interpolate_irf(irfs, data_pars):
     edisp_interp = interpolate_energy_dispersion(edisp_list, irf_pars, interp_pars)
 
     edisp_hdu_interp = create_energy_dispersion_hdu(
-        edisp_interp,
+        edisp_interp[0],
         e_true,
         e_migra,
         fov_off,
@@ -183,5 +188,4 @@ def interpolate_irf(irfs, data_pars):
     irf_interp.append(aeff_hdu_interp)
     irf_interp.append(edisp_hdu_interp)
 
-    ## For Background, PSF?
     return irf_interp

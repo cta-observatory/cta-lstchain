@@ -309,20 +309,10 @@ def create_event_list(
     reco_az = data["reco_az"]
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
-    zen_range = np.array(
-        [
-            90 - round(pointing_alt[0].to_value(u.deg), 1),
-            90 - round(pointing_alt[-1].to_value(u.deg), 1)
-        ]
-    )
-    az_range = np.array(
-        [
-            round(pointing_az[0].to_value(u.deg), 1),
-            round(pointing_az[-1].to_value(u.deg), 1)
-        ]
-    )
+    zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
+    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
     ## Hard coded
-    data_pars = {"ZEN_PNT": zen_range, "AZ_PNT": az_range}
+    data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
 
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
