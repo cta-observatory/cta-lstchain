@@ -427,27 +427,28 @@ def r0_to_dl1(
                 if not is_simu:
                     selected_gain = event.r1.tel[telescope_id].selected_gain_channel
                     bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[selected_gain] 
+                    bad_pixels_selected_gain = ((selected_gain == 0) & (bad_pixels[0] == 1)) | ((selected_gain == 1) & (bad_pixels[1] == 1))
 
                     if np.sum(bad_pixels) > 0:
                         telescope = subarray.tel[telescope_id]
                         camera_geometry = telescope.camera.geometry
 
                         # find pixels neighboring bad pixels and label these clusters
-                        bad_pixels_neighbors = dilate(camera_geometry, bad_pixels)
-                        num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geometry, failing_pixels_neighbors)
+                        bad_pixels_neighbors = dilate(camera_geometry, bad_pixels_selected_gain)
+                        num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geometry, bad_pixels_neighbors)
                         
-                        image = calibrated_event.dl1.tel[telescope_id].image
-                        peak_time = calibrated_event.dl1.tel[telescope_id].peak_time
+                        image = event.dl1.tel[telescope_id].image
+                        peak_time = event.dl1.tel[telescope_id].peak_time
 
                         # compute the average value using neighboring pixels and set it to bad pixels' data
-                        for i_island in range(num_islands):
+                        for i_island in range(num_bad_pixel_islands):
 
                             # island labeled as zeros is other than clusters including bad pixels 
-                            island_flag = (island_labels == (i_island + 1))
-                            image_neighbor_average = np.average(image[island_flag & ~bad_pixels])
-                            image[island_flag & bad_pixels] = image_neighbor_average
-                            peak_time_neighbor_average = np.average(image[island_flag & ~bad_pixels])
-                            peak_time[island_flag & bad_pixels] = peak_time_neighbor_average
+                            island_flag = (bad_pixel_island_labels == (i_island + 1))
+                            image_neighbor_average = np.average(image[island_flag & ~bad_pixels_selected_gain])
+                            image[island_flag & bad_pixels_selected_gain] = image_neighbor_average
+                            peak_time_neighbor_average = np.average(image[island_flag & ~bad_pixels_selected_gain])
+                            peak_time[island_flag & bad_pixels_selected_gain] = peak_time_neighbor_average
 
 
                 try:
