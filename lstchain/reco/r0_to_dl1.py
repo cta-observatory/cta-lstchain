@@ -19,6 +19,7 @@ from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
 )
+from ctapipe.image.cleaning import dilate
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
@@ -395,6 +396,10 @@ def r0_to_dl1(
                 extra_im.tel_id = telescope_id
                 extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
 
+                # interpolate charge and peak time of bad pixels using neighboring pixels
+                if not is_simu:
+                    interpolate_dl1a_of_bad_pixels(event, subarray, telescope_id)
+
                 # write image first, so we are sure nothing here modifies it
                 writer.write(
                     table_name=f'telescope/image/{tel_name}',
@@ -421,6 +426,7 @@ def r0_to_dl1(
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                 assert event.dl1.tel[telescope_id].image is not None
+
 
                 try:
                     get_dl1(
@@ -644,3 +650,41 @@ def rescale_dl1_charge(event, scaling_factor):
 
     for tel_id, tel in event.dl1.tel.items():
         tel.image *= scaling_factor
+
+def interpolate_dl1a_of_bad_pixels(event, subarray, telescope_id):
+
+    """
+    interpolate dl1a parameters (charge and pulse peak time) of bad pixels using neighboring pixels
+
+    Parameters
+    ----------
+    
+    event: `ctapipe.containers.ArrayEventContainer`
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    telescope_id: `int`
+    """
+    selected_gain = event.r1.tel[telescope_id].selected_gain_channel
+    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels 
+    bad_pixels_selected_gain = ((selected_gain == 0) & (bad_pixels[0] == 1)) | ((selected_gain == 1) & (bad_pixels[1] == 1))
+
+    if np.sum(bad_pixels) > 0:
+        telescope = subarray.tel[telescope_id]
+        camera_geometry = telescope.camera.geometry
+
+        # find pixels neighboring bad pixels and label these clusters
+        bad_pixels_neighbors = dilate(camera_geometry, bad_pixels_selected_gain)
+        num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geometry, bad_pixels_neighbors)
+                        
+        image = event.dl1.tel[telescope_id].image
+        peak_time = event.dl1.tel[telescope_id].peak_time
+
+        # compute the average value using neighboring pixels and set it to bad pixels' data
+        for i_island in range(num_bad_pixel_islands):
+
+            # island labeled as zeros is other than clusters including bad pixels 
+            island_flag = (bad_pixel_island_labels == (i_island + 1))
+            image_neighbor_average = np.average(image[island_flag & ~bad_pixels_selected_gain])
+            image[island_flag & bad_pixels_selected_gain] = image_neighbor_average
+            peak_time_neighbor_average = np.average(peak_time[island_flag & ~bad_pixels_selected_gain])
+            peak_time[island_flag & bad_pixels_selected_gain] = peak_time_neighbor_average
+            
