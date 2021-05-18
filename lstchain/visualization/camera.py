@@ -1,12 +1,49 @@
 import numpy as np
 from ..reco.disp import disp_vector
 import astropy.units as u
+import matplotlib.pyplot as plt
+from ctapipe.visualization import CameraDisplay
+from ctapipe.instrument import CameraGeometry
 
 __all__ = [
     'overlay_disp_vector',
     'overlay_hillas_major_axis',
     'overlay_source',
+    'display_dl1_event',
 ]
+
+def display_dl1_event(event, camera_geometry, tel_id=1, axes=None, **kwargs):
+    """
+    Display a DL1 event (image and pulse time map) side by side
+
+    Parameters
+    ----------
+    event: ctapipe event
+    tel_id: int
+    axes: list of `matplotlib.pyplot.axes` of shape (2,) or None
+    kwargs: kwargs for `ctapipe.visualization.CameraDisplay`
+
+    Returns
+    -------
+    axes: `matplotlib.pyplot.axes`
+    """
+
+    if axes is None:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    image = event.dl1.tel[tel_id].image
+    peak_time = event.dl1.tel[tel_id].peak_time
+
+    if image is None or peak_time is None:
+        raise Exception(f"There is no calibrated image or pulse time map for telescope {tel_id}")
+
+    d1 = CameraDisplay(camera_geometry, image, ax=axes[0], **kwargs)
+    d1.add_colorbar(ax=axes[0])
+    d2 = CameraDisplay(camera_geometry, peak_time, ax=axes[1], **kwargs)
+    d2.add_colorbar(ax=axes[1])
+
+    return axes
+
 
 def overlay_source(display, source_pos_x, source_pos_y, **kwargs):
     """
@@ -36,7 +73,7 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
     ----------
     display: `ctapipe.visualization.CameraDisplay`
     disp: `DispContainer`
-    hillas: `ctapipe.io.containers.HillasParametersContainer`
+    hillas: `ctapipe.containers.HillasParametersContainer`
     kwargs: args for `matplotlib.pyplot.quiver`
 
     """
@@ -61,7 +98,7 @@ def overlay_hillas_major_axis(display, hillas, **kwargs):
     Parameters
     ----------
     display: `ctapipe.visualization.CameraDisplay`
-    hillas: `ctapipe.io.containers.HillaParametersContainer`
+    hillas: `ctapipe.containers.HillaParametersContainer`
     kwargs: args for `matplotlib.pyplot.plot`
 
     """

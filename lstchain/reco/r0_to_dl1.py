@@ -200,6 +200,10 @@ def get_dl1(
             dl1_container.width_uncertainty = width_uncertainty
             dl1_container.length = length
             dl1_container.length_uncertainty = length_uncertainty
+            length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+            dl1_container.width = width
+            dl1_container.length = length
+
             dl1_container.wl = dl1_container.width / dl1_container.length
 
             dl1_container.set_timing_features(camera_geometry[signal_pixels],

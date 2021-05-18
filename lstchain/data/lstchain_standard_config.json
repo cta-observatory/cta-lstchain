@@ -1,20 +1,56 @@
 {
+  "source_config" : {
+    "EventSource": {
+      "allowed_tels": [1, 2, 3, 4],
+      "max_events": null
+    },
+    "LSTEventSource": {
+      "default_trigger_type": "ucts",
+      "allowed_tels": [1],
+      "min_flatfield_adc": 3000,
+      "min_flatfield_pixel_fraction": 0.8,
+      "calibrate_flatfields_and_pedestals": false,
+      "EventTimeCalculator": {
+        "dragon_reference_counter": null,
+        "dragon_reference_time": null
+      },
+      "PointingSource":{
+        "drive_report_path": null
+      },
+      "LSTR0Corrections":{
+        "drs4_pedestal_path": null,
+        "calibration_path": null,
+        "drs4_time_calibration_path": null
+      }
+    }
+  },
+
   "events_filters": {
     "intensity": [0, Infinity],
     "width": [0, Infinity],
     "length": [0, Infinity],
     "wl": [0, 1],
     "r": [0, 1],
-    "leakage": [0, 1]
+    "leakage_intensity_width_2": [0, 1]
   },
 
   "tailcut": {
     "picture_thresh":6,
     "boundary_thresh":3,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
   },
-
+  "tailcuts_clean_with_pedestal_threshold": {
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "sigma":2.5,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  },
     "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
@@ -55,7 +91,7 @@
   },
 
   "regression_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -67,13 +103,11 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
-    "n_islands"
+    "leakage_intensity_width_2"
   ],
 
   "classification_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -85,22 +119,79 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
-    "n_islands",
-    "reco_energy",
+    "leakage_intensity_width_2",
+    "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
   ],
 
   "allowed_tels": [1, 2, 3, 4],
-  "max_events": null,
   "custom_calibration": false,
+  "write_pe_image": false,
+  "mc_image_scaling_factor": 1,
+  "image_extractor": "LocalPeakWindowSum",
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
+  "CameraCalibrator": {
+    "apply_waveform_time_shift": false
+  },
+  "time_sampling_correction_path": "default",
+  "LocalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width": 8,
+     "apply_integration_correction": false
+    },
+  "GlobalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width": 8,
+     "apply_integration_correction": false
+    },
 
-  "image_extractor": "NeighborPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  4094
+  "timestamps_pointing":"ucts",
+
+  "source_dependent": false,
+  "mc_nominal_source_x_deg": 0.4,
+  "mc_nominal_source_y_deg": 0.0,
+
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  },
+ "calibration_product": "LSTCalibrationCalculator",
+
+  "LSTCalibrationCalculator":{
+    "squared_excess_noise_factor": 1.222,
+     "flatfield_product": "FlasherFlatFieldCalculator",
+     "pedestal_product": "PedestalIntegrator",
+     "PedestalIntegrator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "time_sampling_correction_path": null,
+       "charge_median_cut_outliers": [-10,10],
+       "charge_std_cut_outliers": [-10,10],
+       "charge_product":"FixedWindowSum"
+     },
+     "FlasherFlatFieldCalculator":{
+       "sample_size": 10000,
+       "sample_duration":100000,
+       "tel_id":1,
+       "time_sampling_correction_path": null,
+       "charge_product":"LocalPeakWindowSum",
+       "charge_median_cut_outliers": [-0.5,0.5],
+       "charge_std_cut_outliers": [-10,10],
+       "time_cut_outliers": [2,38]
+     },
+    "LocalPeakWindowSum":{
+      "window_shift": 5,
+      "window_width":12,
+      "apply_integration_correction": false
+     },
+    "FixedWindowSum":{
+       "window_shift": 6,
+       "window_width":12,
+       "peak_index": 18,
+       "apply_integration_correction": false
+    }
   }
 }

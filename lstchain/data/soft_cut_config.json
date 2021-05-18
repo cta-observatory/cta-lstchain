@@ -1,6 +1,6 @@
 {
   "events_filters": {
-    "intensity": [
+    "log_intensity": [
       2,
       Infinity
     ],
@@ -20,7 +20,7 @@
       0,
       1
     ],
-    "leakage": [
+    "leakage_intensity_width_2": [
       0,
       0.4
     ]
@@ -69,7 +69,7 @@
     "class_weight": null
   },
   "regression_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -81,12 +81,10 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
-    "n_islands"
+    "leakage_intensity_width_2"
   ],
   "classification_features": [
-    "intensity",
+    "log_intensity",
     "width",
     "length",
     "x",
@@ -98,27 +96,70 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "intercept",
-    "leakage",
-    "n_islands",
-    "reco_energy",
+    "leakage_intensity_width_2",
+    "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
   ],
 
-  "allowed_tels": [
-    1,
-    2,
-    3,
-    4
-  ],
+  "allowed_tels": [1, 2, 3, 4],
   "max_events": null,
   "custom_calibration": false,
-
-  "image_extractor": "NeighborPeakWindowSum",
+  "write_pe_image": false,
+  "mc_image_scaling_factor": 1,
+  "image_extractor": "LocalPeakWindowSum",
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
   "image_extractor_config": {},
   "gain_selector": "ThresholdGainSelector",
   "gain_selector_config": {
-    "threshold":  4094
+    "threshold":  3500
+  },
+  "LocalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "GlobalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "timestamps_pointing":"ucts",
+
+  "source_dependent": false,
+  "mc_nominal_source_x_deg": 0.4,
+  "mc_nominal_source_y_deg": 0.0,
+
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
+  },"allowed_tels": [1, 2, 3, 4],
+  "max_events": null,
+  "custom_calibration": false,
+  "write_pe_image": false,
+  "image_extractor": "LocalPeakWindowSum",
+  "image_extractor_for_muons": "GlobalPeakWindowSum",
+  "image_extractor_config": {},
+  "gain_selector": "ThresholdGainSelector",
+  "gain_selector_config": {
+    "threshold":  3500
+  },
+  "LocalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "GlobalPeakWindowSum":{
+     "window_shift": 4,
+     "window_width":8
+    },
+  "timestamps_pointing":"ucts",
+
+  "source_dependent": false,
+  "mc_nominal_source_x_deg": 0.4,
+  "mc_nominal_source_y_deg": 0.0,
+
+  "volume_reducer":{
+    "algorithm": null,
+    "parameters": {
+    }
   }
 }

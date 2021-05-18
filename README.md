@@ -1,60 +1,78 @@
-# cta-lstchain
+# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=master)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amaster)
 
-Repository for the high level analysis of the LST.    
+Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
 
-master branch status: [![Build Status](https://travis-ci.org/cta-observatory/cta-lstchain.svg?branch=master)](https://travis-ci.org/cta-observatory/cta-lstchain)
 
-
-### Important message to lstchain users (May 4th 2019):
-*ctapipe* and *lstchain* are currently undergoing heavy and rapid changes.    
-The core developer team is trying to stay up-to-date with the master version of *ctapipe* before reaching *ctapipe v0.7* release.
-You might experience some issues if changes have been merged in *ctapipe* master before we could integrate these changes in *lstchain*. We are sorry for that. Do not hesitate to submit an issue or propose a patch through a pull request.
-
-- The basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) are unit tested and should be working as long as the build status is passing.    
-- However, the notebooks are not and might not be up-to-date before stable release. Do not rely on them for now.
-
-
+Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
+In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
+are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-> Old install procedure:
-> If you are a user and don't already have ctapipe installed:
-> ```
-> conda env create -f environment.yml
-> source activate cta
-> ```
-> This will create a conda environment called `cta` and install ctapipe with all dependencies.
+- You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
 
-> Then you can install the `lstchain` in this environment with:
-> ```
-> python setup.py install
-> ```
 
-Current `lstchain` build uses `ctapipe` master version.   
-Here is how you should install:
+### As user
+
+```
+LSTCHAIN_VER=0.7.3
+wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
+conda env create -n lst -f environment.yml
+conda activate lst
+pip install lstchain==$LSTCHAIN_VER
+rm environment.yml
+```
+
+### As developer
+
+- Create and activate the conda environment:
 ```
 git clone https://github.com/cta-observatory/cta-lstchain.git
 cd cta-lstchain
-conda env create --name cta --file environment.yml
-conda activate cta
-pip install https://github.com/cta-observatory/ctapipe/archive/master.tar.gz
-pip install https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
-pip install https://github.com/cta-observatory/ctapipe_io_lst/archive/master.tar.gz
+conda env create -f environment.yml
+conda activate lst-dev
+```
+
+To update the environment (e.g. when depenencies got updated), use:
+```
+conda env update -n lst-dev -f environment.yml
+```
+
+- Install lstchain in developer mode:
+
+```
 pip install -e .
 ```
 
+To run some of the tests, some non-public test data files are needed.
+These tests will not be run locally if the test data is not available,
+but are always run in the CI.
+
+To download the test files locally, run `./download_test_data.sh`.
+It will ask for username and password and requires `wget` to be installed.
+Ask one of the project maintainers for the credentials.
+
+To run the tests that need those private data file, add `-m private_data`
+to the pytest call, e.g.:
+
+```
+pytest -m private_data -v lstchain
+```
+
+To run all tests, run
+```
+pytest -m 'private_data or not private_data' -v lstchain
+```
 
 ## Contributing
 
 All contribution are welcomed.
 
-Guidelines are the same as [ctapipe's ones](https://cta-observatory.github.io/ctapipe/development/index.html)
-See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.html) how to make a pull request to contribute.
+Guidelines are the same as [ctapipe's ones](https://cta-observatory.github.io/ctapipe/development/index.html)    
+See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.html) for the general guidelines on how to make a pull request to contribute to the repository. Since the addition of the private data, the CI tests for Pull Requests from forks are not working, therefore we would like to ask to push your modified branches directly to the main cta-lstchain repo. If you do not have writing permissions in the repo, please contact one of the main developers. 
 
 
 ## Report issue / Ask a question
 
-Use GitHub Issues.
-
-
+Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).

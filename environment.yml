@@ -1,13 +1,24 @@
-name: cta
+name: lst-dev
 channels:
   - default
   - cta-observatory
   - conda-forge
 dependencies:
-  - python>3.5
-  - ctapipe
-  - gammapy
+  - python=3.7
+  - astropy~=4.2
+  - pip
+  - ctapipe~=0.10.5
+  - gammapy>=0.18
+  - h5py
+  - ipython
+  - jupyter
+  - notebook
+  - joblib
+  - toml
+  - protozfits=2.0
   - pip:
       - pytest_runner
       - pytest-ordering
-      - https://github.com/cta-sst-1m/protozfitsreader/archive/v1.4.2.tar.gz
+      - ctapipe_io_lst~=0.9.2
+      - ctaplot
+      - pyirf~=0.4.0

@@ -1,15 +1,16 @@
 import numpy as np
-from ..io.lstcontainers import DispContainer
+from ..io import lstcontainers
 from . import utils
 import astropy.units as u
 
-__all__ = ['disp',
-           'miss',
-           'disp_parameters',
-           'disp_parameters_event',
-           'disp_vector',
-           'disp_to_pos'
-           ]
+__all__ = [
+    'disp',
+    'miss',
+    'disp_parameters',
+    'disp_parameters_event',
+    'disp_vector',
+    'disp_to_pos'
+    ]
 
 
 def disp(cog_x, cog_y, src_x, src_y):
@@ -25,19 +26,24 @@ def disp(cog_x, cog_y, src_x, src_y):
 
     Returns
     -------
-    (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign) : `numpy.ndarray` or float
+    (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign):
+        disp_dx: 'astropy.units.m`
+        disp_dy: 'astropy.units.m`
+        disp_norm: 'astropy.units.m`
+        disp_angle: 'astropy.units.rad`
+        disp_sign: `numpy.ndarray`
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
     disp_norm = np.sqrt(disp_dx**2 + disp_dy**2)
-    if type(disp_dx) == float:
+    if hasattr(disp_dx, '__len__'):
+        disp_angle = np.arctan(disp_dy / disp_dx)
+        disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
+    else:
         if disp_dx == 0:
             disp_angle = np.pi/2. * np.sign(disp_dy)
         else:
             disp_angle = np.arctan(disp_dy/disp_dx)
-    else:
-        disp_angle = np.arctan(disp_dy / disp_dx)
-        disp_angle[disp_dx==0] = np.pi/2. * disp_angle.unit * np.sign(disp_dy[disp_dx==0])
 
     disp_sign = np.sign(disp_dx)
 
@@ -91,7 +97,7 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
 
     Parameters
     ----------
-    hillas_parameters: `ctapipe.io.containers.HillasParametersContainer`
+    hillas_parameters: `ctapipe.containers.HillasParametersContainer`
     source_pos_x: `astropy.units.quantity.Quantity`
         X coordinate of the source (event) position in the camera frame
     source_pos_y: `astropy.units.quantity.Quantity`
@@ -101,7 +107,7 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     -------
     `lstchain.io.containers.DispContainer`
     """
-    disp_container = DispContainer()
+    disp_container = lstcontainers.DispContainer()
 
     d = disp(hillas_parameters.x.to(u.m).value,
              hillas_parameters.y.to(u.m).value,

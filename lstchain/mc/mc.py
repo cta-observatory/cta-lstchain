@@ -1,5 +1,7 @@
 import numpy as np
 import astropy.units as u
+import sys
+from gammapy.modeling.models import LogParabolaSpectralModel
 
 __all__ = [
     'power_law_integrated_distribution',
@@ -12,6 +14,7 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
     """
     For each bin, return the expected number of events for a power-law distribution.
     bins: `numpy.ndarray`, e.g. `np.logspace(np.log10(emin), np.logspace(emax))`
+
     Parameters
     ----------
     emin:   `float` minimum energy
@@ -27,6 +30,7 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
 
     TODO: Introduce any spectral form
     """
+
     bins = np.logspace(np.log10(emin), np.log10(emax), bin_number)
 
     if spectral_index == -1:
@@ -42,6 +46,17 @@ def power_law_integrated_distribution(emin, emax, tot_num_events, spectral_index
 def int_diff_sp(emin, emax, sp_idx, e0):
     """
 
+    Parameters
+    --------
+    emin:  `float`  minimum energy
+    emax:  `float`  maximum energy
+    sp_idx:`float`  spectral index of the power-law distribution
+    e0:    `float`  normalization energy
+
+    Returns
+    --------
+    integral_e: `float` energy integral
+
     TODO: Introduce any spectral form
     """
 
@@ -53,26 +68,32 @@ def int_diff_sp(emin, emax, sp_idx, e0):
 
     return integral_e
 
-def rate(emin, emax, sp_idx, cone, area, norm, e0):
+def rate(shape, emin, emax, param, cone, area):
     """
     Calculates the rate of events for a power-law distribution,
     in a given energy range, collection area and solid angle
 
     Parameters
     ----------
+    shape: `string` weighted spectrum shape
     emin:  `float`  minimum energy
     emax:  `float`  maximum energy
-    sp_idx:`float`  spectral index of the power-law distribution
+    param: `dict` with weighted spectral parameters
     cone:  `float`  angle [deg] for the solid angle cone
     area:  `float`  collection area [cm**2]
-    norm:  `float`  normalization of the differential energy spectrum at e0
-    e0:    `float`  normalization energy
+
+    if shape is 'PowerLaw':
+    param should include 'f0','e0','alpha'
+    dFdE  = f0 * np.power(E / e0, alpha)
+
+    if shape is 'LogParabola':
+    param should include 'f0','e0','alpha','beta'
+    dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
     ----------
     rate: `float` rate of events
 
-    TODO: Introduce any spectral form
     """
 
     if(cone == 0):
@@ -80,14 +101,41 @@ def rate(emin, emax, sp_idx, cone, area, norm, e0):
     else:
         omega = 2 * np.pi * (1-np.cos(cone)) * u.sr
 
-    integral = int_diff_sp(emin, emax, sp_idx, e0)
+    if(shape == "PowerLaw"):
+        if(len(param) != 3):
+            print("param included {} parameters, not 3".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha'")
+            sys.exit(1)
 
-    rate = norm * area * omega * integral
+        for key in ['f0','e0','alpha']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha'")
+                sys.exit(1)
+            
+        integral = param['f0'] * int_diff_sp(emin, emax, param['alpha'], param['e0'])
+    
+    elif(shape == "LogParabola"):
+        if(len(param) != 4):
+            print("param included {} parameters, not 4".format(len(param)))
+            print("param should include 'f0', 'e0', 'alpha', 'beta'")
+            sys.exit(1)
+
+        for key in ['f0','e0','alpha', 'beta']:
+            if(key not in param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha', 'beta'")
+                sys.exit(1)
+
+        log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=param['f0'], reference=param['e0'], alpha=-1*param['alpha'], beta=-1*param['beta'])
+        integral = log_parabola.integral(emin, emax)
+
+    rate = area * omega * integral
 
     return rate
 
 
-def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
+def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
     """
     Calculates the weight of events to transform a power-law distribution
     with spectral index sim_sp_idx to a power-law distribution with 
@@ -95,20 +143,58 @@ def weight(emin, emax, sim_sp_idx, w_sp_idx, rate, nev, e0):
 
     Parameters
     ----------
+    shape:      `string` estimated spectrum shape
     emin:       `float` minimum energy
     emax:       `float` maximum energy
     sim_sp_idx: `float` simulated spectral index of the power-law distribution
-    w_sp_idx:   `float` weighted spectral index of the power-law distribution
     rate:       `float` rate of simulated events
     nev:        `int`   number of simulated events 
-    e0:         `float` normalization energy
+    w_param:    `dict` with weighted spectral parameters
+
+    if shape is 'PowerLaw':
+    w_param should include 'f0','e0','alpha'
+    dFdE  = f0 * np.power(E / e0, alpha)
+
+    if shape is 'LogParabola':
+    w_param should include 'f0','e0','alpha','beta'
+    dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
     ----------
     weight: `float` rate of events
     """
-    sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, e0)
-    norm_sim = sim_integral * int_diff_sp(emin, emax, w_sp_idx, e0)
+
+    sim_integral = nev / int_diff_sp(emin, emax, sim_sp_idx, w_param['e0'])
+
+    if(shape == "PowerLaw"):
+        if(len(w_param) != 3):
+            print("param included {} parameters, not 3".format(len(w_param)))
+            print("param should include 'f0', 'e0', 'alpha'")
+            sys.exit(1)
+        
+        for key in ['f0','e0','alpha']:
+            if(key not in w_param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha'")
+                sys.exit(1)
+
+        norm_sim = sim_integral * int_diff_sp(emin, emax, w_param['alpha'], w_param['e0'])
+    
+    elif(shape == "LogParabola"):
+        if(len(w_param) != 4):
+            print("param included {} parameters, not 4".format(len(w_param)))
+            print("param should include 'f0', 'e0', 'alpha', 'beta'")
+            sys.exit(1)
+
+        for key in ['f0','e0','alpha', 'beta']:
+            if(key not in w_param.keys()):
+                print("{} is missing in param".format(key))
+                print("param should include 'f0', 'e0', 'alpha', 'beta'")
+                sys.exit(1)
+
+        log_parabola =  LogParabolaSpectralModel.from_log10(amplitude=sim_integral/(u.s * u.cm * u.cm), reference=w_param['e0'], alpha=-1*w_param['alpha'], beta=-1*w_param['beta'])
+
+        norm_sim = log_parabola.integral(emin, emax) * (u.s * u.cm * u.cm)
 
     weight = rate / norm_sim
 
