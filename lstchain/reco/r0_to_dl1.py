@@ -19,6 +19,7 @@ from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
 )
+from ctapipe.image.cleaning import dilate
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
@@ -421,6 +422,33 @@ def r0_to_dl1(
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                 assert event.dl1.tel[telescope_id].image is not None
+
+                # interpolate charge and peak time of bad pixels using neighboring pixels
+                if not is_simu:
+                    selected_gain = event.r1.tel[telescope_id].selected_gain_channel
+                    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[selected_gain] 
+
+                    if np.sum(bad_pixels) > 0:
+                        telescope = subarray.tel[telescope_id]
+                        camera_geometry = telescope.camera.geometry
+
+                        # find pixels neighboring bad pixels and label these clusters
+                        bad_pixels_neighbors = dilate(camera_geometry, bad_pixels)
+                        num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geometry, failing_pixels_neighbors)
+                        
+                        image = calibrated_event.dl1.tel[telescope_id].image
+                        peak_time = calibrated_event.dl1.tel[telescope_id].peak_time
+
+                        # compute the average value using neighboring pixels and set it to bad pixels' data
+                        for i_island in range(num_islands):
+
+                            # island labeled as zeros is other than clusters including bad pixels 
+                            island_flag = (island_labels == (i_island + 1))
+                            image_neighbor_average = np.average(image[island_flag & ~bad_pixels])
+                            image[island_flag & bad_pixels] = image_neighbor_average
+                            peak_time_neighbor_average = np.average(image[island_flag & ~bad_pixels])
+                            peak_time[island_flag & bad_pixels] = peak_time_neighbor_average
+
 
                 try:
                     get_dl1(
