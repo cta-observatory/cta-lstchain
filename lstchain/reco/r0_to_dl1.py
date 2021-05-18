@@ -664,7 +664,7 @@ def interpolate_dl1a_of_bad_pixels(event, subarray, telescope_id):
     telescope_id: `int`
     """
     selected_gain = event.r1.tel[telescope_id].selected_gain_channel
-    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[selected_gain] 
+    bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels 
     bad_pixels_selected_gain = ((selected_gain == 0) & (bad_pixels[0] == 1)) | ((selected_gain == 1) & (bad_pixels[1] == 1))
 
     if np.sum(bad_pixels) > 0:
