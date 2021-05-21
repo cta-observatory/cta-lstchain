@@ -140,7 +140,9 @@ def main():
         'r',
         'phi',
         'length',
+        'length_uncertainty',
         'width',
+        'width_uncertainty',
         'psi',
         'skewness',
         'kurtosis',
@@ -248,9 +250,13 @@ def main():
                         dl1_container.wl = dl1_container.width / dl1_container.length
                         dl1_container.n_pixels = n_pixels
                         width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
+                        width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, foclen))
                         length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
+                        length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, foclen))
                         dl1_container.width = width
+                        dl1_container.width_uncertainty = width_uncertainty
                         dl1_container.length = length
+                        dl1_container.length_uncertainty = length_uncertainty
                         dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if set(dl1_params_input).intersection(disp_params):
