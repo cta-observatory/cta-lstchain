@@ -43,8 +43,12 @@ class DL1ParametersContainer(Container):
                 unit=u.rad)
     length = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the major-axis',
                    unit=u.deg)
+    length_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of length',
+                   unit=u.deg)
     width = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the minor-axis',
                              unit=u.deg)
+    width_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of width',
+                   unit=u.deg)
     psi = Field(Angle(np.nan, u.rad), 'rotation angle of ellipse', unit=u.rad)
 
     skewness = Field(np.nan, 'measure of the asymmetry')
