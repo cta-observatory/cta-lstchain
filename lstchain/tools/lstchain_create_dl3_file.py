@@ -230,6 +230,7 @@ class DataReductionFITSWriter(Tool):
             elapsed_time=self.elapsed_time.value,
         )
         self.log.info(self.data_params)
+        ## Add a user defined option to select the parameters to interpolate IRFs if present
 
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
@@ -237,6 +238,8 @@ class DataReductionFITSWriter(Tool):
 
         if self.input_irf_path:
             if len(self.irf_list) > 1:
+                ## Add another check to have at least 2 files for each
+                ## parameter to perform the interpolation
                 self.irf_final_hdu = interpolate_irf(self.irf_list, self.data_params)
 
                 self.log.info("Adding IRF HDUs")
@@ -248,8 +251,8 @@ class DataReductionFITSWriter(Tool):
                 mc_gamma_offset = float(self.irf_final_hdu[1].header["G_OFFSET"][:-4])
 
                 self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
-                self.log.info(f"Zen pointing of MC at {self.mc_params['ZEN_PNT']}")
-                self.log.info(f"Zen pointing of MC at {self.mc_params['AZ_PNT']}")
+                self.log.info(f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']}")
+                self.log.info(f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']}")
 
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)

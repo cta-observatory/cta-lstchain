@@ -1,5 +1,4 @@
 import numpy as np
-import logging
 
 import astropy.units as u
 from astropy.table import Table, QTable
@@ -78,7 +77,7 @@ def load_irf_grid(irfs, extname, interp_col):
     interp_params = []
     for irf in irfs:
         interp_params.append(
-            QTable.read(irf, hdu=extname)[interp_col][0]
+            QTable.read(irf, hdu=extname)[interp_col][0].T
         )
 
     return np.stack(interp_params)
@@ -121,6 +120,7 @@ def interpolate_irf(irfs, data_pars):
         mc_params[i, :] = np.array(
             [float(fits.open(irf)[1].header[par][:-4]) for irf in irfs]
         )
+        # Modifying parameter values to right ones, for interpolation
         if par == "ZEN_PNT":
             interp_pars.append(np.cos(data_pars[par] * np.pi/180.))
         else:
@@ -161,7 +161,6 @@ def interpolate_irf(irfs, data_pars):
     aeff_interp = interpolate_effective_area_per_energy_and_fov(
         effarea_list, irf_pars, interp_pars
     )
-    print(aeff_interp.shape)
 
     aeff_hdu_interp = create_aeff2d_hdu(
         aeff_interp[0],
