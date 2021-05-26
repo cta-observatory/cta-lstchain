@@ -18,7 +18,6 @@ from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
     tailcuts_clean,
-    apply_time_delta_cleaning,
 )
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.io import EventSource, HDF5TableWriter
@@ -33,6 +32,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
+from ..image.cleaning import apply_time_delta_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -173,14 +173,10 @@ def get_dl1(
             signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
-            # makes sure only signal pixels are used in the time check:
-            cleaned_pixel_times = peak_time.copy()
-            cleaned_pixel_times[~signal_pixels] = np.nan
-
             signal_pixels = apply_time_delta_cleaning(
                 camera_geometry,
                 signal_pixels,
-                cleaned_pixel_times,
+                peak_time,
                 min_number_neighbors=1,
                 time_limit=delta_time
             )
