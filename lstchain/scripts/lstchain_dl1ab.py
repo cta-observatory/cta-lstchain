@@ -32,7 +32,7 @@ from lstchain.io.config import read_configuration_file, replace_config
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
-from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
+from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 
 log = logging.getLogger(__name__)
 
@@ -172,9 +172,12 @@ def main():
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
 
-        if increase_nsb or increase_psf:
+        if increase_nsb:
             rng = np.random.default_rng(
                     input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+
+        if increase_psf:
+            set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
@@ -196,9 +199,9 @@ def main():
                                                 transition_charge,
                                                 extra_noise_in_bright_pixels)
                 if increase_psf:
-                    image = smear_light_in_pixels(rng, image,
-                                                  camera_geom,
-                                                  smeared_light_fraction)
+                    image = random_psf_smearer(image, smeared_light_fraction,
+                                               camera_geom.neighbor_matrix_sparse.indices,
+                                               camera_geom.neighbor_matrix_sparse.indptr)
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
