@@ -54,19 +54,22 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
     return image
 
 
-def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
+def smear_light_in_pixels(rng, image, camera_geom, smeared_light_fraction):
     """
 
     Parameters
     ----------
+    rng: numpy.random.default_rng  random number generator
+
     image: charges (p.e.) in the camera
 
     camera_geom: camera geometry
 
     smeared_light_fraction: fraction of the light in a pixel that will be
-    distributed equally among its immediate surroundings, i.e. immediate
-    neighboring pixels. Some light is lost for pixels which are at the
-    camera edge and hence don't have all possible neighbors
+    distributed among its immediate surroundings, i.e. immediate
+    neighboring pixels, according to Poisson statistics. Some light is
+    lost for pixels which are at the camera edge and hence don't have all
+    possible neighbors
 
     Returns
     -------
@@ -74,12 +77,28 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
 
     """
 
-    # Move a fraction of the light in each pixel (fraction) into its neighbors,
-    # to simulate a worse PSF:
-    q_smeared = (image * camera_geom.neighbor_matrix *
-                 smeared_light_fraction / N_PIXEL_NEIGHBORS)
+    # How many p.e. to smear?  Poisson of the smeared light fraction (clipped to a minimum of 0):
+    pe_to_smear = rng.poisson(np.clip(image * smeared_light_fraction, 0, np.inf))
+
+    # How to distribute the smeared charge among neighboring pixels (multinomial):
+    smeared_charges = np.zeros(shape=(len(image), N_PIXEL_NEIGHBORS))
+    for q in np.unique(pe_to_smear):
+        # generate the p.e. smearing patterns for all pixels with q  p.e.'s to be smeared:
+        num_pixels = np.sum(pe_to_smear == q)
+        # in this way we speed things up a lot through vectorization (vs. doing it pixel-wise):
+        smeared_charges[pe_to_smear == q, :] = rng.multinomial(q, N_PIXEL_NEIGHBORS * [1 / N_PIXEL_NEIGHBORS],
+                                                               size=num_pixels)
+
+    q_smeared = np.zeros([len(image), len(image)])
+
+    # The bulk of the execution time is spent here:
+    for pixid, charges in enumerate(smeared_charges):
+        q_smeared[pixid][camera_geom.neighbor_matrix[pixid]] = charges[:camera_geom.neighbor_matrix[pixid].sum()]
+    # Any idea on how to speed this up? (note the number of neighbors is not the same for all pixels!)
+
     # Light remaining in pixel:
-    q_remaining = image * (1 - smeared_light_fraction)
-    image = q_remaining + np.sum(q_smeared, axis=1)
+    q_remaining = image - pe_to_smear
+
+    image = q_remaining + np.sum(q_smeared, axis=0)
 
     return image

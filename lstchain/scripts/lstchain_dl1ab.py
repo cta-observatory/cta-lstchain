@@ -172,7 +172,7 @@ def main():
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
 
-        if increase_nsb:
+        if increase_nsb or increase_psf:
             rng = np.random.default_rng(
                     input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
@@ -196,7 +196,7 @@ def main():
                                                 transition_charge,
                                                 extra_noise_in_bright_pixels)
                 if increase_psf:
-                    image = smear_light_in_pixels(image,
+                    image = smear_light_in_pixels(rng, image,
                                                   camera_geom,
                                                   smeared_light_fraction)
 
