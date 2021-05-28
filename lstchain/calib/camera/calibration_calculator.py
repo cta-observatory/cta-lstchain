@@ -163,7 +163,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         gain = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # correct for the quadratic term if possible
-        if self.quadratic_term is not  None:
+        if self.quadratic_term is not None:
             numerator = self.quadratic_term**2  * (ff_data.charge_median - ped_data.charge_median)
             denominator = self.squared_excess_noise_factor
             systematic_correction = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
