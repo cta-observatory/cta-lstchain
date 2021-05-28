@@ -14,7 +14,7 @@ def test_psf_smearer(fraction):
 
     # really large number so we can make tight checks on the distributed photon counts
     # 0 is the central, then clockwise
-    image[0] = 10000
+    image[0] = 1e4
 
     neighbor_matrix = csr_matrix(np.array([
        #0  1  2  3  4  5  6
@@ -41,6 +41,12 @@ def test_psf_smearer(fraction):
     assert np.any(smeared[1:] != smeared[1])
 
     # if we put charge in the edges, we should loose some
-    image[1:] = 0.1 * image[0]
+    image = np.full(7, 1e4)
     smeared = random_psf_smearer(image, fraction, neighbor_matrix.indices, neighbor_matrix.indptr)
     assert smeared.sum() < image.sum()
+
+    # central pixel should roughly stay the same
+    assert np.isclose(image[0], smeared[0], rtol=0.01)
+
+    # neighbors should loose 3/6 fractions of the charge
+    assert np.allclose((1 - 0.5 * fraction) * image[1:], smeared[1:], rtol=0.05)
