@@ -56,7 +56,7 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
 
     return image
 
-@njit()
+@njit(cache=True)
 def set_numba_seed(seed):
     np.random.seed(seed)
 
