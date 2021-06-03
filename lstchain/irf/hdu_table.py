@@ -263,7 +263,8 @@ def create_hdu_index_hdu(
 
 
 def create_event_list(
-    data, run_number, source_name, source_pos, effective_time, elapsed_time
+    data, run_number, source_name, source_pos,
+    effective_time, elapsed_time, only_zd_param=False
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -282,11 +283,14 @@ def create_event_list(
                 Float
         Elapsed_time: Total elapsed time of triggered events of the run
                 Float
+        Only_zd_param: Return only zenith pointing for IRF interpolation
+                Bool
     Returns
     -------
         Events HDU:  `astropy.io.fits.BinTableHDU`
         GTI HDU:  `astropy.io.fits.BinTableHDU`
         Pointing HDU:  `astropy.io.fits.BinTableHDU`
+        Parameters for IRF interpolation: 'Dict'
     """
 
     tel_list = np.unique(data["tel_id"])
@@ -311,8 +315,11 @@ def create_event_list(
     pointing_az = data["pointing_az"]
     zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
     az_mean = round(pointing_az.mean().to_value(u.deg), 1)
-    ## Hard coded
-    data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
+
+    if only_zd_param:
+        data_pars = {"ZEN_PNT": zen_mean}
+    else:
+        data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
 
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)

@@ -338,14 +338,14 @@ class IRFFITSWriter(Tool):
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
-                    true_energy_bins,
+                    true_energy_bins=true_energy_bins,
                 )
                 self.hdus.append(
                     create_aeff2d_hdu(
                         # add one dimension for single FOV offset
-                        self.effective_area[..., np.newaxis],
-                        true_energy_bins,
-                        fov_offset_bins,
+                        effective_area=self.effective_area[..., np.newaxis],
+                        true_energy_bins=true_energy_bins,
+                        fov_offset_bins=fov_offset_bins,
                         point_like=self.point_like,
                         extname="EFFECTIVE AREA",
                         **extra_headers,
@@ -355,14 +355,14 @@ class IRFFITSWriter(Tool):
                 self.effective_area = effective_area_per_energy_and_fov(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
-                    true_energy_bins,
-                    fov_offset_bins,
+                    true_energy_bins=true_energy_bins,
+                    fov_offset_bins=fov_offset_bins,
                 )
                 self.hdus.append(
                     create_aeff2d_hdu(
-                        self.effective_area,
-                        true_energy_bins,
-                        fov_offset_bins,
+                        effective_area=self.effective_area,
+                        true_energy_bins=true_energy_bins,
+                        fov_offset_bins=fov_offset_bins,
                         point_like=self.point_like,
                         extname="EFFECTIVE AREA",
                         **extra_headers,
@@ -372,16 +372,16 @@ class IRFFITSWriter(Tool):
         self.log.info("Effective Area HDU created")
         self.edisp = energy_dispersion(
             gammas,
-            true_energy_bins,
-            fov_offset_bins,
-            migration_bins,
+            true_energy_bins=true_energy_bins,
+            fov_offset_bins=fov_offset_bins,
+            migration_bins=migration_bins,
         )
         self.hdus.append(
             create_energy_dispersion_hdu(
                 self.edisp,
-                true_energy_bins,
-                migration_bins,
-                fov_offset_bins,
+                true_energy_bins=true_energy_bins,
+                migration_bins=migration_bins,
+                fov_offset_bins=fov_offset_bins,
                 point_like=self.point_like,
                 extname="ENERGY DISPERSION",
                 **extra_headers,
@@ -399,8 +399,8 @@ class IRFFITSWriter(Tool):
             self.hdus.append(
                 create_background_2d_hdu(
                     self.background.T,
-                    reco_energy_bins,
-                    background_offset_bins,
+                    reco_energy_bins=reco_energy_bins,
+                    fov_offset_bins=background_offset_bins,
                     extname="BACKGROUND",
                     **extra_headers,
                 )
@@ -417,9 +417,9 @@ class IRFFITSWriter(Tool):
             self.hdus.append(
                 create_psf_table_hdu(
                     self.psf,
-                    true_energy_bins,
-                    source_offset_bins,
-                    fov_offset_bins,
+                    true_energy_bins=true_energy_bins,
+                    source_offset_bins=source_offset_bins,
+                    fov_offset_bins=fov_offset_bins,
                     extname="PSF",
                     **extra_headers,
                 )

@@ -23,6 +23,8 @@ def compare_irfs(irfs):
 
     params = []
     meta = []
+
+    # For fixed gammaness/theta cuts
     select_meta = ["HDUCLAS3", "INSTRUME", "GH_CUT", "RAD_MAX", "G_OFFSET"]
     cols = Table.read(irfs[0], hdu="ENERGY DISPERSION").columns[:-1]
 
@@ -34,14 +36,14 @@ def compare_irfs(irfs):
             if m in e_table.meta:
                 meta.append(e_table.meta[m])
 
-    #Comparing metadata
+    # Comparing metadata
     meta_2, meta_ind = np.unique(meta, return_index=True)
 
     if len(meta_2) == int(len(meta)/len(irfs)):
         if (meta_2[np.argsort(meta_ind)] == meta[:int(len(meta)/len(irfs))]).all():
             meta_sim = True
 
-    #Comparing other paramater axes in IRFs
+    # Comparing other paramater axes in IRFs
     for i in np.arange(len(cols)):
         a = [params[len(cols)*j + i] for j in np.arange(len(irfs))]
         a2, a_ind = np.unique(a, return_index=True)
@@ -55,9 +57,7 @@ def compare_irfs(irfs):
 def load_irf_grid(irfs, extname, interp_col):
     """
     From a given list of IRFs, load the list of IRF data values that can be
-    interpolated (Effective Area and Energy Dispersion for now) and
-    check the other parameters to be in the same bins and the selection cuts
-    used while creating the IRFs
+    interpolated (Effective Area and Energy Dispersion for now)
 
     Parameters
     ------------
@@ -70,17 +70,15 @@ def load_irf_grid(irfs, extname, interp_col):
 
     Returns
     ----------
-    interp_params: List of columns of the IRF from each file
+    irf_list: List of columns of the IRF from each file
         'numpy.stack'
     """
-    ## Check for theta offset axes
-    interp_params = []
+    irf_list = []
     for irf in irfs:
-        interp_params.append(
+        irf_list.append(
             QTable.read(irf, hdu=extname)[interp_col][0].T
         )
-
-    return np.stack(interp_params)
+    return np.stack(irf_list)
 
 
 def interpolate_irf(irfs, data_pars):
@@ -89,10 +87,6 @@ def interpolate_irf(irfs, data_pars):
     data, to interpolate over, to get the closest match
 
     For now only Effective Area and Energy Dispersion is interpolated over.
-    For the rest of IRFs, we can include the ones from IRF closest to data,
-    over the given parameters.
-
-    For now only binning in zenith is done.
 
     Parameters
     ------------
@@ -113,7 +107,7 @@ def interpolate_irf(irfs, data_pars):
     n_grid = len(irfs)
     irf_pars = np.empty((n_grid, len(params)))
     mc_params = np.empty((len(params), len(irfs)))
-    interp_pars = []
+    interp_pars = list()
 
     for i, par in enumerate(params):
         # Assuming that the header values have ' deg' after the float value
@@ -125,6 +119,8 @@ def interpolate_irf(irfs, data_pars):
             interp_pars.append(np.cos(data_pars[par] * np.pi/180.))
         else:
             interp_pars.append(data_pars[par])
+    # Keep interp_pars as a tuple to keep the right dimensions in interpolation
+    interp_pars = tuple(interp_pars)
 
     extra_keys = ["TELESCOP", "INSTRUME", "FOVALIGN", "GH_CUT", "G_OFFSET", "RAD_MAX"]
     main_headers = fits.open(irfs[0])[1].header
@@ -163,21 +159,21 @@ def interpolate_irf(irfs, data_pars):
     )
 
     aeff_hdu_interp = create_aeff2d_hdu(
-        aeff_interp[0],
-        e_true,
-        fov_off,
+        aeff_interp.T,
+        true_energy_bins=e_true,
+        fov_offset_bins=fov_off,
         point_like=point_like,
         extname="EFFECTIVE AREA",
         **extra_headers,
     )
 
     edisp_interp = interpolate_energy_dispersion(edisp_list, irf_pars, interp_pars)
-
+    
     edisp_hdu_interp = create_energy_dispersion_hdu(
-        edisp_interp[0],
-        e_true,
-        e_migra,
-        fov_off,
+        edisp_interp,
+        true_energy_bins=e_true,
+        migration_bins=e_migra,
+        fov_offset_bins=fov_off,
         point_like=point_like,
         extname="ENERGY DISPERSION",
         **extra_headers,

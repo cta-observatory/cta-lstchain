@@ -46,8 +46,6 @@ class DataReductionFITSWriter(Tool):
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
         -i /path/to/irf/
-        -p irf*.fits.gz
-        -f final_interp_irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
@@ -66,19 +64,32 @@ class DataReductionFITSWriter(Tool):
         --source-dec 22.01deg
         --fixed-gh-cut 0.9
         --overwrite
+    Or use a list of IRFs for including interpolated IRF:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        -i /path/to/irf/
+        -p irf*.fits.gz
+        -f final_interp_irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --overwrite
+        --interp-only-zd
+        --config /path/to/config.json
     """
 
     input_dl2 = traits.Path(
         help="Input data DL2 file",
         exists=True,
         directory_ok=False,
-        file_ok=True
+        file_ok=True,
     ).tag(config=True)
 
     output_dl3_path = traits.Path(
         help="DL3 output filedir",
         directory_ok=True,
-        file_ok=False
+        file_ok=False,
     ).tag(config=True)
 
     input_irf_path = traits.Path(
@@ -90,7 +101,7 @@ class DataReductionFITSWriter(Tool):
 
     irf_file_pattern = traits.Unicode(
         help="IRF file pattern to search in the given IRF files path",
-        default_value="*irf*.fits.gz"
+        default_value="*irf*.fits.gz",
     ).tag(config=True)
 
     final_irf_file = traits.Path(
@@ -101,15 +112,20 @@ class DataReductionFITSWriter(Tool):
     ).tag(config=True)
 
     source_name = traits.Unicode(
-        help="Name of Source"
+        help="Name of Source",
     ).tag(config=True)
 
     source_ra = traits.Unicode(
-        help="RA position of the source"
+        help="RA position of the source",
     ).tag(config=True)
 
     source_dec = traits.Unicode(
-        help="DEC position of the source"
+        help="DEC position of the source",
+    ).tag(config=True)
+
+    interp_only_zd  =traits.Bool(
+        help="If true, use only Zenith pointing for interpolation of IRFs",
+        default_value=False,
     ).tag(config=True)
 
     overwrite = traits.Bool(
@@ -135,6 +151,10 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
+        ),
+        "interp-only-zd": (
+            {"DataReductionFITSWriter": {"interp_only_zd": True}},
+            "Use only zenith pointing for IRF interpolation, if True"
         ),
     }
 
@@ -172,12 +192,24 @@ class DataReductionFITSWriter(Tool):
         if self.input_irf_path:
             if len(self.irf_list) > 1:
                 self.log.info(self.irf_list)
+                # Compare the IRFs for its metadata and cuts
                 if not compare_irfs(self.irf_list):
                     raise ToolConfigurationError(
                         f"IRF files in {self.input_irf_path} with pattern, "
-                        f"{self.irf_file_pattern} are not similar and "
-                        "cannot be used to interpolate. Use different list of IRFs"
+                        f"{self.irf_file_pattern} are not similar and cannot"
+                        " be used to interpolate. Use different list of IRFs."
                     )
+                # Check if the number of IRFs are enough for interpolation
+                # Should be at least 2 * number of interpolation parameters
+                # Assuming only Zenith and Azimuth for interpolation for now
+                if not self.interp_only_zd:
+                    if len(self.irf_list) < 4:
+                        raise ToolConfigurationError(
+                            f"IRF files in {self.input_irf_path} with pattern,"
+                            f"{self.irf_file_pattern} are not enough for "
+                            "interpolation. Use different list of IRFs."
+                        )
+
             elif len(self.irf_list) == 1:
                 self.log.info(f"Only single IRF {self.irf_list[0]} provided, no interpolation possible")
             else:
@@ -228,9 +260,9 @@ class DataReductionFITSWriter(Tool):
             source_pos=self.source_pos,
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
+            only_zd_param=self.interp_only_zd,
         )
         self.log.info(self.data_params)
-        ## Add a user defined option to select the parameters to interpolate IRFs if present
 
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
@@ -238,13 +270,11 @@ class DataReductionFITSWriter(Tool):
 
         if self.input_irf_path:
             if len(self.irf_list) > 1:
-                ## Add another check to have at least 2 files for each
-                ## parameter to perform the interpolation
                 self.irf_final_hdu = interpolate_irf(self.irf_list, self.data_params)
 
                 self.log.info("Adding IRF HDUs")
-
                 self.mc_params = dict()
+
                 for p in self.data_params.keys():
                     # Assuming all the header values have units with 4 spaces
                     self.mc_params[p] = float(self.irf_final_hdu[1].header[p][:-4])
@@ -252,7 +282,8 @@ class DataReductionFITSWriter(Tool):
 
                 self.log.info(f"Gamma offset for MC is {mc_gamma_offset}")
                 self.log.info(f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']}")
-                self.log.info(f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']}")
+                if not self.interp_only_zd:
+                    self.log.info(f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']}")
 
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)
