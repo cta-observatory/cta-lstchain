@@ -50,7 +50,7 @@ log = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="DL2 to DL3")
 
 # Required arguments
-parser.add_argument('--input-file', '-d', type=Path,
+parser.add_argument('--input-file', '-f', type=Path,
                     dest='input_data',
                     help='path to merged DL2 data HDF5 file',
                     default=None, required=True
@@ -71,7 +71,7 @@ parser.add_argument('--config', '-conf', type=Path,
 parser.add_argument('--add-irf', '-add-irf', action='store',
 		            type=lambda x: bool(strtobool(x)), dest='add_irf',
                     help='Boolean: True to add IRF to DL3',
-                    default=False, required=True
+                    default=False, required=False
                     )
 
 parser.add_argument('--input-irf-file', '-irf', type=Path, dest='irf',
@@ -82,7 +82,7 @@ parser.add_argument('--input-irf-file', '-irf', type=Path, dest='irf',
 parser.add_argument('--source-name', '-s', type=str,
                     dest='source_name',
                     help='Name of the source',
-                    required=True
+                    default="None",required=False
                     )
 
 
@@ -173,27 +173,27 @@ def create_event_list(data, run_number, source_name):
     tel_pnt_sky_pos = SkyCoord(alt=pointing_alt[0], az=pointing_az[0], frame=AltAz(
                 obstime=time[0], location=location)).transform_to(frame='icrs')
 
-    try:
-        object_radec=SkyCoord.from_name(source_name)
-    except:
-        log.error('Timeout Error in finding Object in Sesame')
-        object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
+    # ~ try:
+        # ~ object_radec=SkyCoord.from_name(source_name)
+    # ~ except:
+        # ~ log.error('Timeout Error in finding Object in Sesame')
+    object_radec = SkyCoord(tel_pnt_sky_pos.icrs)
 
     # Observation modes
-    source_pointing_diff = object_radec.separation(
-                SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
-                ).deg
+    # ~ source_pointing_diff = object_radec.separation(
+                # ~ SkyCoord(tel_pnt_sky_pos.ra, tel_pnt_sky_pos.dec)
+                # ~ ).deg
     # Assuming wobble offset is fixed to 0.4
-    if round(source_pointing_diff, 1) == 0.4:
-        mode = 'WOBBLE'
-    elif round(source_pointing_diff, 1) > 1:
-        mode = 'OFF'
-    elif round(source_pointing_diff, 1) == 0.:
-        mode = 'ON'
-    else:
-        mode = 'ON-MISPOINTING' # Either this or modify the method of getting ON mode
+    # ~ if round(source_pointing_diff, 1) == 0.4:
+    mode = 'WOBBLE'
+    # ~ elif round(source_pointing_diff, 1) > 1:
+        # ~ mode = 'OFF'
+    # ~ elif round(source_pointing_diff, 1) == 0.:
+        # ~ mode = 'ON'
+    # ~ else:
+        # ~ mode = 'ON-MISPOINTING' # Either this or modify the method of getting ON mode
 
-    log.error(f'Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg' )
+    # ~ log.error(f'Source pointing difference with camera pointing is {source_pointing_diff:.3f} deg' )
 
     # Event table
     event_table = QTable(
