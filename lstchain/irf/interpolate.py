@@ -168,7 +168,7 @@ def interpolate_irf(irfs, data_pars):
     )
 
     edisp_interp = interpolate_energy_dispersion(edisp_list, irf_pars, interp_pars)
-    
+
     edisp_hdu_interp = create_energy_dispersion_hdu(
         edisp_interp,
         true_energy_bins=e_true,
@@ -179,7 +179,7 @@ def interpolate_irf(irfs, data_pars):
         **extra_headers,
     )
 
-    irf_interp = [fits.PrimaryHDU(), ]
+    irf_interp = fits.HDUList([fits.PrimaryHDU(), ])
     irf_interp.append(aeff_hdu_interp)
     irf_interp.append(edisp_hdu_interp)
 

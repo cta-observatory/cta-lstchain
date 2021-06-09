@@ -218,7 +218,7 @@ class DataReductionFITSWriter(Tool):
                     f"{self.irf_file_pattern} found. Use different parameters"
                 )
 
-        self.final_irf_output = self.input_irf_path.absolute() / str(self.final_irf_file.name)
+        self.final_irf_output = self.output_dl3_path.absolute() / str(self.final_irf_file.name)
 
         self.log.info(self.final_irf_output)
 
@@ -271,6 +271,8 @@ class DataReductionFITSWriter(Tool):
         if self.input_irf_path:
             if len(self.irf_list) > 1:
                 self.irf_final_hdu = interpolate_irf(self.irf_list, self.data_params)
+                self.irf_final_hdu.writeto(self.final_irf_output, overwrite=self.overwrite)
+                self.irf_final_hdu = fits.open(self.final_irf_output)
 
                 self.log.info("Adding IRF HDUs")
                 self.mc_params = dict()
@@ -299,7 +301,7 @@ class DataReductionFITSWriter(Tool):
 
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)
         if len(self.irf_list) > 1:
-            fits.HDUList(self.irf_final_hdu).writeto(self.final_irf_output, overwrite=self.overwrite)
+            #self.irf_final_hdu.writeto(self.final_irf_output, overwrite=self.overwrite)
             Provenance().add_output_file(self.final_irf_output)
 
         Provenance().add_output_file(self.output_file)
