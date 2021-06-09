@@ -119,7 +119,7 @@ def read_data_dl2_to_QTable(filename):
         'pointing_az': u.rad,
         'reco_alt': u.rad,
         'reco_az': u.rad,
-        'dragon_time': u.s,
+        'trigger_time': u.s,
         'reco_src_x': u.m,
         'reco_src_y': u.m
     }
@@ -155,9 +155,9 @@ def create_event_list(data, run_number, source_name):
     
     # Timing parameters
     lam = 2800 # Average rate of triggered events, taken by hand for now
-    t_start = data['dragon_time'].value[0]
-    t_stop = data['dragon_time'].value[-1]
-    time = Time(data['dragon_time'], format='unix', scale="utc")
+    t_start = data['trigger_time'].value[0]
+    t_stop = data['trigger_time'].value[-1]
+    time = Time(data['trigger_time'], format='unix', scale="utc")
     date_obs = time[0].to_value('iso', 'date')
     obs_time = t_stop-t_start # All corrections excluded
 
@@ -199,7 +199,7 @@ def create_event_list(data, run_number, source_name):
     event_table = QTable(
             {
                 "EVENT_ID" : u.Quantity(data['event_id']),
-                "TIME" : u.Quantity(data['dragon_time']),
+                "TIME" : u.Quantity(data['trigger_time']),
                 "RA" : u.Quantity(src_sky_pos.ra.to(u.deg)),
                 "DEC" : u.Quantity(src_sky_pos.dec.to(u.deg)),
                 "ENERGY" : u.Quantity(data['reco_energy'])
