@@ -29,6 +29,7 @@ from pyirf.io.gadf import (
     create_energy_dispersion_hdu,
     create_background_2d_hdu,
     create_psf_table_hdu,
+    create_rad_max_hdu,
 )
 from pyirf.irf import (
     effective_area_per_energy,
@@ -90,7 +91,8 @@ class IRFFITSWriter(Tool):
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
         --optimize-cuts
-        --fixed-gh-max-efficiency 0.95
+        --fixed-gh-max-efficiency 95
+        --fixed-theta-containment 68
     """
 
     input_gamma_dl2 = traits.Path(
@@ -151,6 +153,7 @@ class IRFFITSWriter(Tool):
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
+        "fixed-theta-containment": "DL3FixedCuts.fixed_theta_containment",
         "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
@@ -185,7 +188,10 @@ class IRFFITSWriter(Tool):
 
         filename = self.output_irf_file.name
         if not (filename.endswith('.fits') or filename.endswith('.fits.gz')):
-            raise ValueError("f{filename} is not a correct compressed FITS file name (use .fits or .fits.gz).")
+            raise ValueError(
+                f"{filename} is not a correct compressed FITS file name"
+                "(use .fits or .fits.gz)."
+                )
 
         if self.input_proton_dl2 and self.input_electron_dl2 is not None:
             self.only_gamma_irf = False
@@ -273,57 +279,136 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.allowed_tels_filter(gammas)
 
         if self.optimize_cuts:
-            gammas = self.fixed_cuts.opt_gh_cuts(gammas, reco_energy_bins)
-            self.log.info(f"Using fixed gamma efficiency of {self.fixed_cuts.fixed_gh_max_efficiency}")
-            ## Include the gh_cuts as an HDU in IRFs
+            gammas, self.gh_cuts_gamma = self.fixed_cuts.opt_gh_cuts(
+                gammas, reco_energy_bins, min_value=0.1, max_value=0.95
+            )
+            self.log.info(
+                "Using fixed gamma efficiency of "
+                f"{self.fixed_cuts.fixed_gh_max_efficiency}"
+            )
         else:
             gammas = self.fixed_cuts.gh_cut(gammas)
             self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
         if self.point_like:
-            gammas = self.fixed_cuts.theta_cut(gammas)
-            self.log.info('Theta cuts applied for point like IRF')
-
+            if self.optimize_cuts:
+                gammas, self.theta_cuts = self.fixed_cuts.opt_theta_cuts(
+                    gammas, reco_energy_bins,
+                    min_value = 0.05 * u.deg, max_value = 0.32 * u.deg
+                )
+                self.log.info(
+                    "Using fixed containment region for theta of "
+                    f"{self.fixed_cuts.fixed_theta_containment}"
+                )
+            else:
+                gammas = self.fixed_cuts.theta_cut(gammas)
+                self.log.info('Theta cuts applied for point like IRF')
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
-            mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
-            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            mean_fov_offset = round(
+                gammas["true_source_fov_offset"].mean().to_value(), 1
+            )
+            fov_offset_bins = [
+                mean_fov_offset - 0.1, mean_fov_offset + 0.1
+            ] * u.deg
             self.log.info('Single offset for point like gamma MC')
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info('Multiple offset for diffuse gamma MC')
 
         if not self.only_gamma_irf:
-            background = table.vstack(
-                [
-                    self.mc_particle["proton"]["events"],
-                    self.mc_particle["electron"]["events"],
-                ]
-            )
+            protons = self.mc_particle["proton"]["events"]
+            electrons = self.mc_particle["electron"]["events"]
+
+            if self.optimize_cuts:
+                # Applying the optimized G/H cut based on particle type
+                protons, self.gh_cuts_proton = self.fixed_cuts.opt_gh_cuts(
+                    protons, reco_energy_bins, min_value=0.1, max_value=0.95
+                )
+                electrons, self.gh_cuts_electron = self.fixed_cuts.opt_gh_cuts(
+                    electrons, reco_energy_bins, min_value=0.1, max_value=0.95
+                )
+            else:
+                protons = self.fixed_cuts.gh_cut(protons)
+                electrons = self.fixed_cuts.gh_cut(electrons)
+
+            background = table.vstack([protons, electrons])
 
             background = self.event_sel.filter_cut(background)
             background = self.fixed_cuts.allowed_tels_filter(background)
-            background = self.fixed_cuts.gh_cut(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
         # For a fixed gh/theta cut, only a header value is added.
-        # For energy dependent cuts, a new HDU should be created
+        # For energy dependent cuts, a new HDU are created
         # GH_CUT and FOV_CUT are temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
-            # "GH_CUT": self.fixed_cuts.fixed_gh_cut,
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
+        if not self.optimize_cuts:
+            extra_headers["GH_CUT"] = self.fixed_cuts.fixed_gh_cut
+
+            if self.point_like:
+                extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
+
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
+        if self.optimize_cuts:
+            DEFAULT_HEADER = fits.Header()
+            ## Check what header values can or should be added to such HDUs
+
+            g_gh_header = DEFAULT_HEADER.copy()
+            g_gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
+            g_gh_header["DATA"] = "Gammas"
+
+            self.hdus.append(
+                fits.BinTableHDU(
+                    self.gh_cuts_gamma, header=g_gh_header, name="GAMMA GH CUT"
+                )
+            )
+            if not self.only_gamma_irf:
+                p_gh_header = g_gh_header.copy()
+                p_gh_header["DATA"] = "Protons"
+                self.hdus.append(
+                    fits.BinTableHDU(
+                        self.gh_cuts_proton, header=p_gh_header, name="PROTON GH CUT"
+                    )
+                )
+                e_gh_header = g_gh_header.copy()
+                e_gh_header["DATA"] = "Electrons"
+                self.hdus.append(
+                    fits.BinTableHDU(
+                        self.gh_cuts_electron, header=e_gh_header, name="ELECTRON GH CUT"
+                    )
+                )
+            if self.point_like:
+                theta_header = DEFAULT_HEADER.copy()
+                theta_header["TH_CONT"] = self.fixed_cuts.fixed_theta_containment
+                theta_header["DATA"] = "Gammas"
+
+                self.hdus.append(
+                    fits.BinTableHDU(
+                        self.theta_cuts, header=theta_header, name="GAMMA THETA CUTS"
+                    )
+                )
+                # Check for Rad Max HDU, which uses interpolated theta cuts
+                #for 50 bins per decade in pyirf example
+                self.hdus.append(
+                    create_rad_max_hdu(
+                        self.theta_cuts["cut"][:, np.newaxis],
+                        reco_energy_bins = reco_energy_bins,
+                        fov_offset_bins = fov_offset_bins,
+                        point_like = self.point_like,
+                        **extra_headers,
+                    )
+                )
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point_like":

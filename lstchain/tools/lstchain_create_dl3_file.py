@@ -168,7 +168,9 @@ class DataReductionFITSWriter(Tool):
 
         if self.optimize_cuts:
             reco_energy_bins = self.data_bin.reco_energy_bins()
-            self.data = self.fixed_cuts.opt_gh_cuts(self.data, reco_energy_bins)
+            self.data, self.gh_cuts = self.fixed_cuts.opt_gh_cuts(
+                self.data, reco_energy_bins, min_value=0.1, max_value=0.95
+            )
             self.log.info(f"Using fixed gamma efficiency of {self.fixed_cuts.fixed_gh_max_efficiency}")
         else:
             self.data = self.fixed_cuts.gh_cut(self.data)
@@ -187,6 +189,18 @@ class DataReductionFITSWriter(Tool):
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
+        if self.optimize_cuts:
+            DEFAULT_HEADER = fits.Header()
+            ## Check what header values can or should be added to such HDUs
+            gh_header = DEFAULT_HEADER.copy()
+            gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
+            gh_header["DATA"] = "Observed"
+
+            self.hdulist.append(
+                fits.BinTableHDU(
+                    self.gh_cuts, header=gh_header, name="OBSERVED GH CUT"
+                )
+            )
         if self.input_irf:
             irf = fits.open(self.input_irf)
             self.log.info("Adding IRF HDUs")
