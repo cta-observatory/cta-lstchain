@@ -1,0 +1,20 @@
+{
+  "image_modifier": {
+    "increase_nsb": true,
+    "extra_noise_in_dim_pixels": 1.5,
+    "extra_bias_in_dim_pixels": 0.6,
+    "transition_charge": 8,
+    "extra_noise_in_bright_pixels": 1.44,
+    "increase_psf": true,
+    "smeared_light_fraction": 0.175
+  },
+
+  "tailcut": {
+    "picture_thresh":8,
+    "boundary_thresh":4,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  }
+}
