@@ -71,12 +71,12 @@ parser.add_argument('--config', '-conf', type=Path,
 parser.add_argument('--add-irf', '-add-irf', action='store',
 		            type=lambda x: bool(strtobool(x)), dest='add_irf',
                     help='Boolean: True to add IRF to DL3',
-                    default=False, required=False
+                    default=True, required=False
                     )
 
 parser.add_argument('--input-irf-file', '-irf', type=Path, dest='irf',
                     help='Path to the fits.gz file of IRFs',
-                    default=None, required=False
+                    default="/fefs/aswg/data/mc/IRF/20200629_prod5_trans_80/zenith_20deg/south_pointing/20210416_v0.7.3_prod5_trans_80_local_taicut_8_4/diffuse/irf_20210416_v073_prod5_trans_80_local_taicut_8_4_gamma_diffuse.fits.gz", required=False
                     )
 
 parser.add_argument('--source-name', '-s', type=str,
@@ -126,11 +126,9 @@ def read_data_dl2_to_QTable(filename):
 
     data = pd.read_hdf(filename, key = dl2_params_lstcam_key).rename(columns=name_mapping)
     data = table.QTable.from_pandas(data)
-
 	# Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
-
     return data
     
     
@@ -155,9 +153,9 @@ def create_event_list(data, run_number, source_name):
     
     # Timing parameters
     lam = 2800 # Average rate of triggered events, taken by hand for now
-    t_start = data['trigger_time'].value[0]
-    t_stop = data['trigger_time'].value[-1]
-    time = Time(data['trigger_time'], format='unix', scale="utc")
+    t_start = data["trigger_time"].value[0]
+    t_stop = data["trigger_time"].value[-1]
+    time = Time(data["trigger_time"], format='unix', scale="utc")
     date_obs = time[0].to_value('iso', 'date')
     obs_time = t_stop-t_start # All corrections excluded
 
@@ -287,10 +285,10 @@ def main():
     #data['reco_source_fov_offset'] = calculate_source_fov_offset(data, prefix='reco')
 
     # Get the run_id from the filename if it is -1 in the obs_id column
-    if data['obs_id'][0] <= 0:
-        run_number=run_info_from_filename(args.input_data)[1]
-    else:
-        run_number= data['obs_id'][0]
+    #if data['obs_id'][0] <= 0:
+    #    run_number=run_info_from_filename(args.input_data)[1]
+    #else:
+    run_number= data['obs_id'][0]
 
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
@@ -300,9 +298,7 @@ def main():
         cuts = read_configuration_file(os.path.join(os.path.dirname(__file__), './data_selection_cuts.json'))
     else:
         cuts = read_configuration_file(args.config)
-    print(len(data)) 
     data = filter_events(data, cuts["events_filters"])
-
     # Separate cuts for angular separations, for now. Will be included later in filter_events
     data = data[data["gh_score"] > cuts["fixed_cuts"]["gh_score"][0]]
 
@@ -310,8 +306,7 @@ def main():
 
     # Create primary HDU
     events, gti, pointing = create_event_list(data=data, run_number=run_number,source_name=args.source_name)
-    
-    print(events)
+
 
     name_dl3_file = file.replace('dl2', 'dl3')
     name_dl3_file = name_dl3_file.replace('h5', 'fits')
