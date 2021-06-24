@@ -9,6 +9,7 @@
 
 import argparse
 from pathlib import Path
+import lstchain
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_drs4 as drs4
 import os
@@ -21,8 +22,9 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals",
                       type=int, required=True)
+version,subversion=lstchain.__version__.rsplit('.',1)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
-                      type=int, default=0)
+                      default=0)
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
@@ -33,7 +35,7 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1",
 
 args = parser.parse_args()
 run = args.run_number
-prod_id = 'v%02d'%args.prod_version
+prod_id = args.prod_version
 max_events = args.max_events
 base_dir = args.base_dir
 tel_id = args.tel_id
@@ -57,7 +59,7 @@ def main():
 
 
         # verify and make output dir
-        output_dir = f"{base_dir}/calibration/{date}/{prod_id}"
+        output_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
