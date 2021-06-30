@@ -11,6 +11,7 @@ copy and append the relevant example config files, into a custom config file.
 """
 
 from astropy.io import fits
+from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -166,12 +167,19 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.optimize_cuts:
-            reco_energy_bins = self.data_bin.reco_energy_bins()
-            self.data, self.gh_cuts = self.fixed_cuts.opt_gh_cuts(
-                self.data, reco_energy_bins, min_value=0.1, max_value=0.95
+        if self.optimize_cuts and self.input_irf:
+
+            irf = fits.open(self.input_irf)
+            self.gh_cuts = QTable.read(irf, hdu="GH CUTS")
+
+
+            self.data = self.fixed_cuts.apply_opt_gh_cuts(
+                self.data, self.gh_cuts
             )
-            self.log.info(f"Using fixed gamma efficiency of {self.fixed_cuts.fixed_gh_max_efficiency}")
+            self.log.info(
+                "Using fixed gamma efficiency of " +
+                f'{self.gh_cuts.meta["GH_EFF"]/100:.2f}'
+            )
         else:
             self.data = self.fixed_cuts.gh_cut(self.data)
             self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
@@ -189,18 +197,7 @@ class DataReductionFITSWriter(Tool):
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
-        if self.optimize_cuts:
-            DEFAULT_HEADER = fits.Header()
-            ## Check what header values can or should be added to such HDUs
-            gh_header = DEFAULT_HEADER.copy()
-            gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
-            gh_header["DATA"] = "Observed"
 
-            self.hdulist.append(
-                fits.BinTableHDU(
-                    self.gh_cuts, header=gh_header, name="OBSERVED GH CUT"
-                )
-            )
         if self.input_irf:
             irf = fits.open(self.input_irf)
             self.log.info("Adding IRF HDUs")

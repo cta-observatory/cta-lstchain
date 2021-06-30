@@ -279,9 +279,10 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.allowed_tels_filter(gammas)
 
         if self.optimize_cuts:
-            gammas, self.gh_cuts_gamma = self.fixed_cuts.opt_gh_cuts(
+            self.gh_cuts_gamma = self.fixed_cuts.opt_gh_cuts(
                 gammas, reco_energy_bins, min_value=0.1, max_value=0.95
             )
+            gammas = self.fixed_cuts.apply_opt_gh_cuts(gammas, self.gh_cuts_gamma)
             self.log.info(
                 "Using fixed gamma efficiency of "
                 f"{self.fixed_cuts.fixed_gh_max_efficiency}"
@@ -317,22 +318,19 @@ class IRFFITSWriter(Tool):
             self.log.info('Multiple offset for diffuse gamma MC')
 
         if not self.only_gamma_irf:
-            protons = self.mc_particle["proton"]["events"]
-            electrons = self.mc_particle["electron"]["events"]
+            background = table.vstack(
+                [
+                    self.mc_particle["proton"]["events"],
+                    self.mc_particle["electron"]["events"]
+                ]
+            )
 
             if self.optimize_cuts:
-                # Applying the optimized G/H cut based on particle type
-                protons, self.gh_cuts_proton = self.fixed_cuts.opt_gh_cuts(
-                    protons, reco_energy_bins, min_value=0.1, max_value=0.95
-                )
-                electrons, self.gh_cuts_electron = self.fixed_cuts.opt_gh_cuts(
-                    electrons, reco_energy_bins, min_value=0.1, max_value=0.95
+                background = self.fixed_cuts.apply_opt_gh_cuts(
+                    background, self.gh_cuts_gamma
                 )
             else:
-                protons = self.fixed_cuts.gh_cut(protons)
-                electrons = self.fixed_cuts.gh_cut(electrons)
-
-            background = table.vstack([protons, electrons])
+                background = self.fixed_cuts.gh_cut(background)
 
             background = self.event_sel.filter_cut(background)
             background = self.fixed_cuts.allowed_tels_filter(background)
@@ -357,6 +355,16 @@ class IRFFITSWriter(Tool):
 
             if self.point_like:
                 extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
+        else:
+            extra_headers["GH_EFF"] = (
+                self.fixed_cuts.fixed_gh_max_efficiency,
+                "Fixed gamma/hadron efficiency"
+            )
+            if self.point_like:
+                extra_headers["TH_CONT"] = (
+                    self.fixed_cuts.fixed_theta_containment,
+                    "Theta containment region in percentage"
+                )
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
@@ -364,38 +372,23 @@ class IRFFITSWriter(Tool):
             DEFAULT_HEADER = fits.Header()
             ## Check what header values can or should be added to such HDUs
 
-            g_gh_header = DEFAULT_HEADER.copy()
-            g_gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
-            g_gh_header["DATA"] = "Gammas"
+            gh_header = DEFAULT_HEADER.copy()
+            gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
 
             self.hdus.append(
                 fits.BinTableHDU(
-                    self.gh_cuts_gamma, header=g_gh_header, name="GAMMA GH CUT"
+                    self.gh_cuts_gamma, header=gh_header, name="GH CUTS"
                 )
             )
-            if not self.only_gamma_irf:
-                p_gh_header = g_gh_header.copy()
-                p_gh_header["DATA"] = "Protons"
-                self.hdus.append(
-                    fits.BinTableHDU(
-                        self.gh_cuts_proton, header=p_gh_header, name="PROTON GH CUT"
-                    )
-                )
-                e_gh_header = g_gh_header.copy()
-                e_gh_header["DATA"] = "Electrons"
-                self.hdus.append(
-                    fits.BinTableHDU(
-                        self.gh_cuts_electron, header=e_gh_header, name="ELECTRON GH CUT"
-                    )
-                )
+
             if self.point_like:
+                ## Extra HDU, RAD_MAX does this already.
                 theta_header = DEFAULT_HEADER.copy()
                 theta_header["TH_CONT"] = self.fixed_cuts.fixed_theta_containment
-                theta_header["DATA"] = "Gammas"
 
                 self.hdus.append(
                     fits.BinTableHDU(
-                        self.theta_cuts, header=theta_header, name="GAMMA THETA CUTS"
+                        self.theta_cuts, header=theta_header, name="THETA CUTS"
                     )
                 )
                 # Check for Rad Max HDU, which uses interpolated theta cuts

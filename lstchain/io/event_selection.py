@@ -79,12 +79,6 @@ class DL3FixedCuts(Component):
         if self.fixed_gh_max_efficiency < 1:
             self.fixed_gh_max_efficiency *= 100
 
-        # Changing the operator for leptons/gammas and hadrons/real data
-        if abs(np.unique(data["mc_type"])[0]) >= 100:
-            op = operator.ge
-        else:
-            op = operator.le
-
         gh_cuts = calculate_percentile_cut(
             data["gh_score"],
             data["reco_energy"],
@@ -92,18 +86,24 @@ class DL3FixedCuts(Component):
             min_value = min_value,
             max_value = max_value,
             fill_value = data["gh_score"].max(),
-            percentile = self.fixed_gh_max_efficiency,
+            percentile = 100 - self.fixed_gh_max_efficiency,
             smoothing = smoothing,
             min_events = min_events,
         )
+        return gh_cuts
+
+    def apply_opt_gh_cuts(self, data, gh_cuts):
+        """
+        Apply a given energy dependent gh cuts to a data file
+        """
 
         data["selected_gh"] = evaluate_binned_cut(
             data["gh_score"],
             data["reco_energy"],
             gh_cuts,
-            op,
+            operator.ge,
         )
-        return data[data["selected_gh"]], gh_cuts
+        return data[data["selected_gh"]]
 
     def theta_cut(self, data):
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
