@@ -68,6 +68,12 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
+parser.add_argument('--dynamic-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='dynamic_cleaning',
+                    help='Boolean. True to use dyanmic cleaning',
+                    default=False)
+
 args = parser.parse_args()
 
 
@@ -118,6 +124,10 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
+
+    if args.dynamic_cleaning:
+        THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
+        log.info(f"Using dynamic cleaning with threshold = {config['dynamic_cleaning']['threshold']}")
 
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
@@ -199,13 +209,22 @@ def main():
                     image = smear_light_in_pixels(image,
                                                   camera_geom,
                                                   smeared_light_fraction)
+                CLEANING_FACTOR = 1
+                if args.dynamic_cleaning:
+                    max_3_value_index = np.argsort(image)[-3:]
+                    mean_3_max_signal = np.mean(image[max_3_value_index])
+                    if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
+                        CLEANING_FACTOR = mean_3_max_signal/THRESHOLD_DYNAMIC_CLEANING
+                    else:
+                        CLEANING_FACTOR = 1
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
-                                               picture_th,
-                                               boundary_th,
+                                               picture_th*CLEANING_FACTOR,
+                                               boundary_th*CLEANING_FACTOR,
                                                isolated_pixels,
                                                min_n_neighbors)
+    
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
