@@ -208,7 +208,7 @@ def create_hdu_index_hdu(
         try:
             aeff_hdr = hdu_list["EFFECTIVE AREA"].header
             t_aeff = t_events.copy()
-            t_aeff["HDU_TYPE"] = aeff_hdr["HDUCLAS2"].lower()
+            t_aeff["HDU_TYPE"] = aeff_hdr["HDUCLAS4"].lower().split('_')[0]
             t_aeff["HDU_CLASS"] = aeff_hdr["HDUCLAS4"].lower()
             t_aeff["HDU_NAME"] = aeff_hdr["EXTNAME"]
 
@@ -236,7 +236,7 @@ def create_hdu_index_hdu(
         try:
             psf_hdr = hdu_list["PSF"].header
             t_psf = t_events.copy()
-            t_psf["HDU_TYPE"] = psf_hdr["HDUCLAS2"].lower()
+            t_psf["HDU_TYPE"] = psf_hdr["HDUCLAS2"].lower().split('_')[0]
             t_psf["HDU_CLASS"] = psf_hdr["HDUCLAS4"].lower()
             t_psf["HDU_NAME"] = psf_hdr["EXTNAME"]
 
@@ -320,7 +320,7 @@ def create_event_list(
         data_pars = {"ZEN_PNT": zen_mean}
     else:
         data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
-
+    ## Add the mean values as metadata in PNT HDU maybe
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     )

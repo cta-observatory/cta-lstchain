@@ -249,7 +249,7 @@ class IRFFITSWriter(Tool):
             )
 
             p["ZEN_PNT"] = round(90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2)
-            p["AZ_PNT"] = p["events"]["pointing_az"][0].to_value(u.deg)
+            p["AZ_PNT"] = round(p["events"]["pointing_az"][0].to_value(u.deg), 2)
 
             self.log.debug(p["simulation_info"])
 

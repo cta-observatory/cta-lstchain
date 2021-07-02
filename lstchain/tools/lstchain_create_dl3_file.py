@@ -292,8 +292,10 @@ class DataReductionFITSWriter(Tool):
             else:
                 self.log.info("Adding IRF HDUs without interpolation")
                 self.irf_final_hdu = fits.open(self.irf_list[0])
-                self.log.info(type(self.irf_final_hdu))
-                self.log.info(self.irf_final_hdu.info())
+                zen_pnt = self.irf_final_hdu[1].header["ZEN_PNT"]
+                az_pnt = self.irf_final_hdu[1].header["AZ_PNT"]
+                self.log.info(f"Zenith pointing of MC at {zen_pnt}")
+                self.log.info(f"Azimuth pointing of MC at {az_pnt}")
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)
 
