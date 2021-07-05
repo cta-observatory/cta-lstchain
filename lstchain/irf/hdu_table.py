@@ -458,7 +458,8 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-
+    pnt_header["MEAN_ZEN"] = zen_mean
+    pnt_header["MEAN_AZ"] = az_mean
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
