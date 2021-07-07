@@ -370,8 +370,6 @@ class IRFFITSWriter(Tool):
         self.hdus = [fits.PrimaryHDU(), ]
         if self.optimize_cuts:
             DEFAULT_HEADER = fits.Header()
-            ## Check what header values can or should be added to such HDUs
-
             gh_header = DEFAULT_HEADER.copy()
             gh_header["GH_EFF"] = self.fixed_cuts.fixed_gh_max_efficiency
 
@@ -380,28 +378,6 @@ class IRFFITSWriter(Tool):
                     self.gh_cuts_gamma, header=gh_header, name="GH CUTS"
                 )
             )
-
-            if self.point_like:
-                ## Extra HDU, RAD_MAX does this already.
-                theta_header = DEFAULT_HEADER.copy()
-                theta_header["TH_CONT"] = self.fixed_cuts.fixed_theta_containment
-
-                self.hdus.append(
-                    fits.BinTableHDU(
-                        self.theta_cuts, header=theta_header, name="THETA CUTS"
-                    )
-                )
-                # Check for Rad Max HDU, which uses interpolated theta cuts
-                #for 50 bins per decade in pyirf example
-                self.hdus.append(
-                    create_rad_max_hdu(
-                        self.theta_cuts["cut"][:, np.newaxis],
-                        reco_energy_bins = reco_energy_bins,
-                        fov_offset_bins = fov_offset_bins,
-                        point_like = self.point_like,
-                        **extra_headers,
-                    )
-                )
 
         with np.errstate(invalid="ignore", divide="ignore"):
             if self.mc_particle["gamma"]["mc_type"] == "point_like":

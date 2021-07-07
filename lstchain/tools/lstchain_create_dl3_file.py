@@ -172,7 +172,6 @@ class DataReductionFITSWriter(Tool):
             irf = fits.open(self.input_irf)
             self.gh_cuts = QTable.read(irf, hdu="GH CUTS")
 
-
             self.data = self.fixed_cuts.apply_opt_gh_cuts(
                 self.data, self.gh_cuts
             )
