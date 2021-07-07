@@ -60,7 +60,7 @@ def test_dl3_fixed_cuts():
     assert len(temp_cuts.gh_cut(temp_data)) == 18
     assert len(temp_cuts.theta_cut(temp_data)) == 6
     assert len(temp_cuts.allowed_tels_filter(temp_data)) == 20
-    assert len(temp_cuts.opt_gh_cuts(temp_data, en_range)[0]) == 24
+    assert len(temp_cuts.opt_gh_cuts(temp_data, en_range)[0]) == 4
     assert len(temp_cuts.opt_theta_cuts(temp_data, en_range)[0]) == 18
 
 
