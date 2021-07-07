@@ -23,6 +23,7 @@ class EventSelector(Component):
             "r": [0, 1],
             "wl": [0.01, 1],
             "leakage_intensity_width_2": [0, 1],
+            "event_type": [32, 33],
         },
     ).tag(config=True)
 

@@ -12,7 +12,12 @@ from astropy.time import Time
 from lstchain.__init__ import __version__
 from lstchain.reco.utils import location
 
-__all__ = ["create_obs_index_hdu", "create_hdu_index_hdu", "create_event_list"]
+
+__all__ = [
+    "create_obs_index_hdu",
+    "create_hdu_index_hdu",
+    "create_event_list",
+]
 
 log = logging.getLogger(__name__)
 
@@ -157,11 +162,11 @@ def create_hdu_index_hdu(
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
-            "HDU_TYPE": "events",
-            "HDU_CLASS": "events",
+            "HDU_TYPE": evt_hdr["HDUCLAS1"].lower(),
+            "HDU_CLASS": evt_hdr["HDUCLAS1"].lower(),
             "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
             "FILE_NAME": file,
-            "HDU_NAME": "EVENTS",
+            "HDU_NAME": evt_hdr["HDUCLAS1"],
             "SIZE": filepath.stat().st_size,
         }
         hdu_index_tables.append(t_events)
@@ -169,29 +174,29 @@ def create_hdu_index_hdu(
         # GTI
         t_gti = t_events.copy()
 
-        t_gti["HDU_TYPE"] = "gti"
-        t_gti["HDU_CLASS"] = "gti"
-        t_gti["HDU_NAME"] = "GTI"
+        t_gti["HDU_TYPE"] = gti_hdr["HDUCLAS1"].lower()
+        t_gti["HDU_CLASS"] = gti_hdr["HDUCLAS1"].lower()
+        t_gti["HDU_NAME"] = gti_hdr["HDUCLAS1"]
 
         hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
 
-        t_pnt["HDU_TYPE"] = "pointing"
-        t_pnt["HDU_CLASS"] = "pointing"
-        t_pnt["HDU_NAME"] = "POINTING"
+        t_pnt["HDU_TYPE"] = pnt_hdr["HDUCLAS1"].lower()
+        t_pnt["HDU_CLASS"] = pnt_hdr["HDUCLAS1"].lower()
+        t_pnt["HDU_NAME"] = pnt_hdr["HDUCLAS1"]
 
         hdu_index_tables.append(t_pnt)
 
         # Energy Dispersion
         try:
-            edisp = hdu_list["ENERGY DISPERSION"]
+            edisp_hdr = hdu_list["ENERGY DISPERSION"].header
             t_edisp = t_events.copy()
 
-            t_edisp["HDU_TYPE"] = "edisp"
-            t_edisp["HDU_CLASS"] = "edisp_2d"
-            t_edisp["HDU_NAME"] = "ENERGY DISPERSION"
+            t_edisp["HDU_TYPE"] = edisp_hdr["HDUCLAS2"].lower()
+            t_edisp["HDU_CLASS"] = edisp_hdr["HDUCLAS4"].lower()
+            t_edisp["HDU_NAME"] = edisp_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_edisp)
         except KeyError:
@@ -201,11 +206,11 @@ def create_hdu_index_hdu(
 
         # Effective Area
         try:
-            aeff = hdu_list["EFFECTIVE AREA"]
+            aeff_hdr = hdu_list["EFFECTIVE AREA"].header
             t_aeff = t_events.copy()
-            t_aeff["HDU_TYPE"] = "aeff"
-            t_aeff["HDU_CLASS"] = "aeff_2d"
-            t_aeff["HDU_NAME"] = "EFFECTIVE AREA"
+            t_aeff["HDU_TYPE"] = aeff_hdr["HDUCLAS4"].lower().split('_')[0]
+            t_aeff["HDU_CLASS"] = aeff_hdr["HDUCLAS4"].lower()
+            t_aeff["HDU_NAME"] = aeff_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_aeff)
         except KeyError:
@@ -215,11 +220,11 @@ def create_hdu_index_hdu(
 
         # Background
         try:
-            bkg = hdu_list["BACKGROUND"]
+            bkg_hdr = hdu_list["BACKGROUND"].header
             t_bkg = t_events.copy()
-            t_bkg["HDU_TYPE"] = "bkg"
-            t_bkg["HDU_CLASS"] = "bkg_2d"
-            t_bkg["HDU_NAME"] = "BACKGROUND"
+            t_bkg["HDU_TYPE"] = bkg_hdr["HDUCLAS2"].lower()
+            t_bkg["HDU_CLASS"] = bkg_hdr["HDUCLAS4"].lower()
+            t_bkg["HDU_NAME"] = bkg_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_bkg)
         except KeyError:
@@ -229,11 +234,11 @@ def create_hdu_index_hdu(
 
         # PSF
         try:
-            psf = hdu_list["PSF"]
+            psf_hdr = hdu_list["PSF"].header
             t_psf = t_events.copy()
-            t_psf["HDU_TYPE"] = "psf"
-            t_psf["HDU_CLASS"] = "psf_table"
-            t_psf["HDU_NAME"] = "PSF"
+            t_psf["HDU_TYPE"] = psf_hdr["HDUCLAS2"].lower().split('_')[0]
+            t_psf["HDU_CLASS"] = psf_hdr["HDUCLAS4"].lower()
+            t_psf["HDU_NAME"] = psf_hdr["EXTNAME"]
 
             hdu_index_tables.append(t_psf)
         except KeyError:
@@ -258,7 +263,8 @@ def create_hdu_index_hdu(
 
 
 def create_event_list(
-    data, run_number, source_name, source_pos, effective_time, elapsed_time
+    data, run_number, source_name, source_pos,
+    effective_time, elapsed_time, only_zd_param=False
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -277,11 +283,14 @@ def create_event_list(
                 Float
         Elapsed_time: Total elapsed time of triggered events of the run
                 Float
+        Only_zd_param: Return only zenith pointing for IRF interpolation
+                Bool
     Returns
     -------
         Events HDU:  `astropy.io.fits.BinTableHDU`
         GTI HDU:  `astropy.io.fits.BinTableHDU`
         Pointing HDU:  `astropy.io.fits.BinTableHDU`
+        Parameters for IRF interpolation: 'Dict'
     """
 
     tel_list = np.unique(data["tel_id"])
@@ -304,7 +313,14 @@ def create_event_list(
     reco_az = data["reco_az"]
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
+    zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
+    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
 
+    if only_zd_param:
+        data_pars = {"ZEN_PNT": zen_mean}
+    else:
+        data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
+    ## Add the mean values as metadata in PNT HDU maybe
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     )
@@ -442,10 +458,11 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-
+    pnt_header["MEAN_ZEN"] = zen_mean
+    pnt_header["MEAN_AZ"] = az_mean
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
     pointing = fits.BinTableHDU(pnt_table, header=pnt_header, name="POINTING")
 
-    return event, gti, pointing
+    return event, gti, pointing, data_pars

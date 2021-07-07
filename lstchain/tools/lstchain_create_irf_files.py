@@ -150,7 +150,7 @@ class IRFFITSWriter(Tool):
         "overwrite": (
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
-        )
+        ),
     }
 
     def setup(self):
@@ -167,7 +167,10 @@ class IRFFITSWriter(Tool):
 
         filename = self.output_irf_file.name
         if not (filename.endswith('.fits') or filename.endswith('.fits.gz')):
-            raise ValueError("f{filename} is not a correct compressed FITS file name (use .fits or .fits.gz).")
+            raise ValueError(
+                f"{filename} is not a correct compressed FITS file name "
+                "Use .fits or .fits.gz."
+            )
 
         if self.input_proton_dl2 and self.input_electron_dl2 is not None:
             self.only_gamma_irf = False
@@ -234,13 +237,20 @@ class IRFFITSWriter(Tool):
 
             for prefix in ("true", "reco"):
                 k = f"{prefix}_source_fov_offset"
-                p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)
-            # calculate theta / distance between reco and assumed source position
+                p["events"][k] = calculate_source_fov_offset(
+                    p["events"], prefix=prefix
+                )
+
+            # calculate distance between reco and assumed source position
             p["events"]["theta"] = calculate_theta(
                 p["events"],
                 assumed_source_az=p["events"]["true_az"],
                 assumed_source_alt=p["events"]["true_alt"],
             )
+
+            p["ZEN_PNT"] = round(90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2)
+            p["AZ_PNT"] = round(p["events"]["pointing_az"][0].to_value(u.deg), 2)
+
             self.log.debug(p["simulation_info"])
 
         gammas = self.mc_particle["gamma"]["events"]
@@ -253,21 +263,24 @@ class IRFFITSWriter(Tool):
 
         if self.point_like:
             gammas = self.fixed_cuts.theta_cut(gammas)
-            self.log.info('Theta cuts applied for point like IRF')
+            self.log.info("Theta cuts applied for point like IRF")
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
+        mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
-            mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
+
             self.log.info('Single offset for point like gamma MC')
+            self.mc_particle["gamma"]["ZEN_PNT"] -= self.mc_particle["gamma"]["G_OFFSET"]
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info('Multiple offset for diffuse gamma MC')
+            self.log.info("Multiple offset for diffuse gamma MC")
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -276,6 +289,19 @@ class IRFFITSWriter(Tool):
                     self.mc_particle["electron"]["events"],
                 ]
             )
+
+            # Check common parameters of the MCs used
+            for par in ["ZEN_PNT", "AZ_PNT"]:
+                k = [
+                    self.mc_particle["gamma"][par],
+                    self.mc_particle["proton"][par],
+                    self.mc_particle["electron"][par],
+                ]
+                if len(set(k)) != 1:
+                    raise ToolConfigurationError(
+                        "MCs of different " + par + " used."
+                        "Use MCs with same zenith pointing."
+                    )
 
             background = self.event_sel.filter_cut(background)
             background = self.fixed_cuts.allowed_tels_filter(background)
@@ -286,12 +312,18 @@ class IRFFITSWriter(Tool):
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU should be created
         # GH_CUT and FOV_CUT are temporary non-standard header data
+
         extra_headers = {
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
             "GH_CUT": self.fixed_cuts.fixed_gh_cut,
         }
+
+        extra_headers["ZEN_PNT"] = str(self.mc_particle["gamma"]["ZEN_PNT"] * u.deg)
+        extra_headers["AZ_PNT"] = str(self.mc_particle["gamma"]["AZ_PNT"] * u.deg)
+        extra_headers["G_OFFSET"] = str(mean_fov_offset * u.deg)
+
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
             extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
@@ -306,14 +338,14 @@ class IRFFITSWriter(Tool):
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
-                    true_energy_bins,
+                    true_energy_bins=true_energy_bins,
                 )
                 self.hdus.append(
                     create_aeff2d_hdu(
                         # add one dimension for single FOV offset
-                        self.effective_area[..., np.newaxis],
-                        true_energy_bins,
-                        fov_offset_bins,
+                        effective_area=self.effective_area[..., np.newaxis],
+                        true_energy_bins=true_energy_bins,
+                        fov_offset_bins=fov_offset_bins,
                         point_like=self.point_like,
                         extname="EFFECTIVE AREA",
                         **extra_headers,
@@ -323,14 +355,14 @@ class IRFFITSWriter(Tool):
                 self.effective_area = effective_area_per_energy_and_fov(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
-                    true_energy_bins,
-                    fov_offset_bins,
+                    true_energy_bins=true_energy_bins,
+                    fov_offset_bins=fov_offset_bins,
                 )
                 self.hdus.append(
                     create_aeff2d_hdu(
-                        self.effective_area,
-                        true_energy_bins,
-                        fov_offset_bins,
+                        effective_area=self.effective_area,
+                        true_energy_bins=true_energy_bins,
+                        fov_offset_bins=fov_offset_bins,
                         point_like=self.point_like,
                         extname="EFFECTIVE AREA",
                         **extra_headers,
@@ -340,16 +372,16 @@ class IRFFITSWriter(Tool):
         self.log.info("Effective Area HDU created")
         self.edisp = energy_dispersion(
             gammas,
-            true_energy_bins,
-            fov_offset_bins,
-            migration_bins,
+            true_energy_bins=true_energy_bins,
+            fov_offset_bins=fov_offset_bins,
+            migration_bins=migration_bins,
         )
         self.hdus.append(
             create_energy_dispersion_hdu(
                 self.edisp,
-                true_energy_bins,
-                migration_bins,
-                fov_offset_bins,
+                true_energy_bins=true_energy_bins,
+                migration_bins=migration_bins,
+                fov_offset_bins=fov_offset_bins,
                 point_like=self.point_like,
                 extname="ENERGY DISPERSION",
                 **extra_headers,
@@ -367,8 +399,8 @@ class IRFFITSWriter(Tool):
             self.hdus.append(
                 create_background_2d_hdu(
                     self.background.T,
-                    reco_energy_bins,
-                    background_offset_bins,
+                    reco_energy_bins=reco_energy_bins,
+                    fov_offset_bins=background_offset_bins,
                     extname="BACKGROUND",
                     **extra_headers,
                 )
@@ -385,9 +417,9 @@ class IRFFITSWriter(Tool):
             self.hdus.append(
                 create_psf_table_hdu(
                     self.psf,
-                    true_energy_bins,
-                    source_offset_bins,
-                    fov_offset_bins,
+                    true_energy_bins=true_energy_bins,
+                    source_offset_bins=source_offset_bins,
+                    fov_offset_bins=fov_offset_bins,
                     extname="PSF",
                     **extra_headers,
                 )

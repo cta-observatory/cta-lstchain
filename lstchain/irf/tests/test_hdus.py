@@ -15,7 +15,7 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
     t_eff, t_tot = get_effective_time(events)
     events = events[events["intensity"] > 200]
 
-    evts, gti, pnt = create_event_list(
+    evts, gti, pnt, pars = create_event_list(
         events,
         run_number=2008,
         source_name="Crab",
