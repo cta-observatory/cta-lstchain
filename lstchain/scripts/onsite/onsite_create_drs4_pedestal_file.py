@@ -22,9 +22,9 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals",
                       type=int, required=True)
-version,subversion=lstchain.__version__.rsplit('.',1)
-optional.add_argument('-v', '--prod_version', help="Version of the production",
-                      default=0)
+version,subversion=lstchain.__version__.rsplit('.post',1)
+optional.add_argument('-v', '--version', help="Version of the production",
+                      default=f"v{version}")
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
@@ -35,7 +35,7 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1",
 
 args = parser.parse_args()
 run = args.run_number
-prod_id = args.prod_version
+prod_id = args.version
 max_events = args.max_events
 base_dir = args.base_dir
 tel_id = args.tel_id
