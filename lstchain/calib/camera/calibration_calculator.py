@@ -190,34 +190,6 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         denominator = (ff_data.charge_median - ped_data.charge_median)
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
-        """
-        # calculate photon-electrons
-        numerator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median) ** 2
-        denominator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
-        n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
-
-        # fill WaveformCalibrationContainer
-        calib_data.time = ff_data.sample_time
-        calib_data.time_min = ff_data.sample_time_min
-        calib_data.time_max = ff_data.sample_time_max
-        calib_data.n_pe = n_pe
-
-        # find signal median of good pixels
-        masked_npe = np.ma.array(n_pe, mask=calib_data.unusable_pixels)
-        npe_signal_median = np.ma.median(masked_npe, axis=1)
-
-        # Flat field factor
-        numerator = npe_signal_median[:, np.newaxis]
-        denominator = n_pe
-        ff = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
-
-        # calibration coefficients
-        numerator = n_pe * ff
-
-        # correct the signal for the integration window
-        denominator = (ff_data.charge_median - ped_data.charge_median) 
-        calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
-        """
         # flat-field time corrections
         calib_data.time_correction = -ff_data.relative_time_median
 
