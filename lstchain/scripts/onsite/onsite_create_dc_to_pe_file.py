@@ -28,7 +28,7 @@ optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If 
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
-                      default="v{version}")
+                      default=f"v{version}")
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
