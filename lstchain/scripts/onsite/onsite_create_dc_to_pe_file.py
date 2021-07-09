@@ -32,7 +32,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--time_run', help="run time calibration. If None, search the last time run before the FF run", type=int)
+optional.add_argument('--time_run', help="run time calibration. If None, search the last time run before or equal the FF run", type=int)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
@@ -121,9 +121,10 @@ def main():
         print(f"\n--> Pedestal file: {pedestal_file}")
 
         # search for time calibration file
+        time_file = None
         time_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_time_sampling_from_FF"
 
-        # search the last time run before the calibration run
+        # search the last time run before or equal to the calibration run
         if time_run is None:
             file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run*.0000.h5'))
             if len(file_list) == 0:
