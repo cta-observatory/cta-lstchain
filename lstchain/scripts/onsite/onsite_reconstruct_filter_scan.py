@@ -12,6 +12,7 @@ import argparse
 import os
 from pathlib import Path
 import lstchain
+
 # parse arguments
 parser = argparse.ArgumentParser(description='Reconstruct filter scan, this must be run after the night calibration scripts',
                                  formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -22,7 +23,7 @@ required.add_argument('-r', '--run_list', help="Run number if the flat-field dat
                       type=int, nargs="+")
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
-optional.add_argument('-v', '--version',
+optional.add_argument('-v', '--prod_version',
                       help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-s', '--statistics',
@@ -30,10 +31,10 @@ optional.add_argument('-s', '--statistics',
                       type=int,
                       default=10000)
 optional.add_argument('-p', '--pedestal_run',
-                      help="Run number of the drs4 pedestal run",
+                      help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
                       type=int)
 optional.add_argument('--time_run',
-                      help="run time calibration",
+                      help="Run for the time calibration. If None, search the last time run before or equal the first filter scan run",
                       type=int)
 
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
@@ -42,28 +43,24 @@ optional.add_argument('--sub_run_list',
                       type=int,
                       nargs="+",default=[0])
 
-#optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
-#optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
-optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 
 
 args = parser.parse_args()
 run_list = args.run_list
 ped_run = args.pedestal_run
-prod_id = args.version
+prod_id = args.prod_version
 stat_events = args.statistics
 base_dir = args.base_dir
 time_run = args.time_run
-tel_id = args.tel_id
-#min_ff = args.min_ff
-#max_ff = args.max_ff
+
 sub_run_list = args.sub_run_list
 config_file = args.config
 
 calib_dir=f"{base_dir}/monitoring/CameraCalibration"
 max_events = 1000000
+
 
 def main():
 
@@ -139,7 +136,7 @@ def main():
 
                 # search for time calibration file
                 time_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_time_sampling_from_FF"
-
+                time_file = None
                 # search the last time run before the calibration run
                 if time_run is None:
                     file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run*.0000.h5'))
