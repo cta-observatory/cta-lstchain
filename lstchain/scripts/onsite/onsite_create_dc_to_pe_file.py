@@ -14,6 +14,8 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 import lstchain
+import pymongo
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -32,7 +34,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--time_run', help="run time calibration. If None, search the last time run before or equal the FF run", type=int)
+optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
@@ -59,6 +61,10 @@ max_events = 1000000
 def main():
 
     print(f"\n--> Start calculating calibration from run {run}")
+
+    # looks for the filter if possible
+    filters=search_filter(run)
+
 
     try:
         # verify config file
@@ -151,8 +157,14 @@ def main():
 
         # define charge file names
         print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
-        output_file = f"{output_dir}/calibration.Run{run:05d}.{sub_run:04d}.h5"
-        log_file = f"{output_dir}/log/calibration.Run{run:05d}.{sub_run:04d}.log"
+
+        if filters is not None:
+            filter_info=f"_filters_{filters}"
+        else:
+            filter_info = ""
+        output_file = f"{output_dir}/dc_to_pe{filter_info}.Run{run:05d}.{sub_run:04d}.h5"
+        log_file = f"{output_dir}/log/dc_to_pe{filter_info}.Run{run:05d}.{sub_run:04d}.log"
+
         print(f"\n--> Output file {output_file}")
         #"""
         if os.path.exists(output_file):
@@ -185,7 +197,7 @@ def main():
         os.system(cmd)
 
         # plot and save some results
-        plot_file=f"{output_dir}/log/dc_to_pe_calibration.Run{run:05d}.{sub_run:04d}.pdf"
+        plot_file=f"{output_dir}/log/dc_to_pe{filter_info}.Run{run:05d}.{sub_run:04d}.pdf"
 
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
         calib.read_file(output_file,tel_id)
@@ -195,6 +207,27 @@ def main():
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
+
+def search_filter(run):
+    """read the employed filters form mongodb"""
+    filters=None
+    try:
+        myclient = pymongo.MongoClient("mongodb://10.200.10.101:27017/")
+
+        mydb = myclient["CACO"]
+        mycol = mydb["RUN_INFORMATION"]
+        mydoc = mycol.find({"run_number": {"$eq": run}})
+        for x in mydoc:
+            w1 = int(x["cbox"]["wheel1 position"])
+            w2 = int(x["cbox"]["wheel2 position"])
+            filters=f"{w1:1d}{w2:1d}"
+
+    except Exception as e:
+        print(f"\n >>> Exception: {e}")
+        print(f"--> No filter information")
+
+    return filters
+
 
 
 if __name__ == '__main__':

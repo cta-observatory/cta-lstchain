@@ -61,6 +61,7 @@ setup(
         'toml',
         'traitlets',
         'iminuit~=1.5',
+        'pymongo'
     ],
     package_data={
         'lstchain': [
