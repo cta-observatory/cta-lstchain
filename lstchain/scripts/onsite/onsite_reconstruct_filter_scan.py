@@ -66,9 +66,6 @@ def main():
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
-    # reference run = first run in list
-    runs=sorted(run_list)
-    first_run=runs[0]
 
     try:
         # verify config file
@@ -78,7 +75,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # loops over runs and sub_runs and send jobs
-        for run in run_list:
+        for run in sorted(run_list):
             for sub_run in sub_run_list:
                 # verify input file
                 file_list = sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
@@ -184,7 +181,7 @@ def main():
                         f"-b {base_dir} --config {config_file} --time_run "
                         f"{time_run}\n")
 
-                #os.system("sbatch %s" % job_file)
+                os.system("sbatch %s" % job_file)
 
 
         print("\n--> END")
