@@ -4,7 +4,7 @@
 
  Onsite script for creating a flat-field calibration file file to be run as a command line:
 
- --> onsite_create_calibration_file
+ --> onsite_create_dc_to_pe_file
 
 """
 
@@ -133,15 +133,17 @@ def main():
         # search the last time run before or equal to the calibration run
         if time_run is None:
             file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run*.0000.h5'))
+
             if len(file_list) == 0:
                 raise IOError(f"No time calibration file found in the data tree for prod {prod_id}\n")
-            if len(file_list) >1:
+            else:
                 for file in file_list:
                     run_in_list = file.stem.rsplit("Run")[1].rsplit('.')[0]
-                    if int(run_in_list) > run:
-                        break
-                    else:
+                    if int(run_in_list) <= run:
                         time_file = file
+                    else:
+                        break
+
             if time_file is None:
                 raise IOError(f"No time calibration file found before run {run} for prod {prod_id}\n")
 
