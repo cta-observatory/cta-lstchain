@@ -313,14 +313,7 @@ def create_event_list(
     reco_az = data["reco_az"]
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
-    zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
-    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
 
-    if only_zd_param:
-        data_pars = {"ZEN_PNT": zen_mean}
-    else:
-        data_pars = {"ZEN_PNT": zen_mean, "AZ_PNT": az_mean}
-    ## Add the mean values as metadata in PNT HDU maybe
     reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
     )
@@ -332,6 +325,15 @@ def create_event_list(
 
     with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
         reco_icrs = reco_altaz.transform_to(frame="icrs")
+
+    # Interpolation target values
+    zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
+    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
+
+    if only_zd_param:
+        data_pars = {"ZEN_PNT": zen_mean * u.deg}
+    else:
+        data_pars = {"ZEN_PNT": zen_mean * u.deg, "AZ_PNT": az_mean * u.deg}
 
     # Observation modes
     source_pointing_diff = source_pos.separation(pnt_icrs)
@@ -458,8 +460,8 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-    pnt_header["MEAN_ZEN"] = zen_mean
-    pnt_header["MEAN_AZ"] = az_mean
+    pnt_header["MEAN_ZEN"] = str(zen_mean * u.deg) ## Check
+    pnt_header["MEAN_AZ"] = str(az_mean * u.deg)
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")

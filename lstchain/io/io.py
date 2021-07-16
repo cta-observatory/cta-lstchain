@@ -956,6 +956,24 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
         )
 
 
+def get_geomagnetic_delta(B_total, B_inc, zen, az):
+    """
+    From a given geomagnetic total intensity, inclination angle along with
+    shouwer zenith and azimuth pointing to get the angle between the
+    geomagnetic field and the shower axis, for a single telescope.
+    """
+    B_x = B_total * np.cos(B_inc)
+    B_z = B_total * np.sin(B_inc)
+    term = (
+        (B_z * np.cos(zen)) +
+        (B_x * np.sin(zen) * np.cos(az))
+    ) / B_total
+
+    delta = np.arcsin(np.sqrt(1 - term**2))
+
+    return delta
+
+
 def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
@@ -992,13 +1010,28 @@ def read_mc_dl2_to_QTable(filename):
     }
 
     simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Temporary addition here, but can be included in the pyirf.simulations
+    # class of SimulatedEventsInfo
+    dict = {}
+    dict["GEOMAG_TOTAL"] = simu_info.prod_site_B_total
+    dict["GEOMAG_DEC"] = simu_info.prod_site_B_declination
+    dict["GEOMAG_INC"] = simu_info.prod_site_B_inclination
+
+    dict["GEOMAG_DELTA"] = get_geomagnetic_delta(
+        simu_info.prod_site_B_total.to_value(),
+        simu_info.prod_site_B_inclination.to_value(),
+        np.pi/2 - simu_info.min_alt.to_value(),
+        simu_info.min_az.to_value(),
+    ) * u.rad
+
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius,
+        viewcone=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
@@ -1009,7 +1042,7 @@ def read_mc_dl2_to_QTable(filename):
     for k, v in unit_mapping.items():
         events[k] *= v
 
-    return events, pyirf_simu_info
+    return events, pyirf_simu_info, dict
 
 
 def read_data_dl2_to_QTable(filename):

@@ -214,7 +214,7 @@ class IRFFITSWriter(Tool):
 
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
-            p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
+            p["events"], p["simulation_info"], p["geomag_params"] = read_mc_dl2_to_QTable(p["file"])
 
             if p["simulation_info"].viewcone.value == 0.0:
                 p["mc_type"] = "point_like"
@@ -254,6 +254,7 @@ class IRFFITSWriter(Tool):
             self.log.debug(p["simulation_info"])
 
         gammas = self.mc_particle["gamma"]["events"]
+        self.log.info(self.mc_particle["gamma"]["geomag_params"])
 
         self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
@@ -323,6 +324,15 @@ class IRFFITSWriter(Tool):
         extra_headers["ZEN_PNT"] = str(self.mc_particle["gamma"]["ZEN_PNT"] * u.deg)
         extra_headers["AZ_PNT"] = str(self.mc_particle["gamma"]["AZ_PNT"] * u.deg)
         extra_headers["G_OFFSET"] = str(mean_fov_offset * u.deg)
+        extra_headers["B_TOTAL"] = str(
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].to(u.uT)
+        )
+        extra_headers["B_INC"] = str(
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].to(u.rad)
+        )
+        extra_headers["B_DELTA"] = str(
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].to(u.deg)
+        )
 
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
