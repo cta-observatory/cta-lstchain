@@ -16,6 +16,10 @@ import lstchain.visualization.plot_calib as calib
 import lstchain
 import pymongo
 
+def none_or_str(value):
+    if value == "None":
+        return None
+    return value
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -26,7 +30,7 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
-                      type=int)
+                      type=none_or_str)
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
@@ -34,14 +38,13 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
+optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
-
 
 args = parser.parse_args()
 run = args.run_number
@@ -102,6 +105,7 @@ def main():
         if not os.path.exists(run_summary_path):
             raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
+        print(f"--> Use run summary {run_summary_path}")
         # pedestal base dir
         ped_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/"
 

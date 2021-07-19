@@ -4,7 +4,7 @@
 
  Onsite script for recontruct a run list from a filter scan
 
- --> onsite_reconstruct_filter_scan -r xxx,yyy
+ --> onsite_reconstruct_filter_scan -r xxx yyy zzz
 
 """
 
@@ -66,24 +66,24 @@ def main():
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
+    # verify config file
+    if not os.path.exists(config_file):
+        raise IOError(f"Config file {config_file} does not exists. \n")
 
-    try:
-        # verify config file
-        if not os.path.exists(config_file):
-            raise IOError(f"Config file {config_file} does not exists. \n")
+    print(f"\n--> Config file {config_file}")
 
-        print(f"\n--> Config file {config_file}")
-
-        # loops over runs and sub_runs and send jobs
-        for run in sorted(run_list):
-            for sub_run in sub_run_list:
+    # loops over runs and sub_runs and send jobs
+    for run in sorted(run_list):
+        for sub_run in sub_run_list:
+            print(f"\n--> Runs {run} and sub-run {sub_run}")
+            try:
                 # verify input file
                 file_list = sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
                 if len(file_list) == 0:
                     raise IOError(f"Run {run} not found\n")
                 else:
                     input_file = file_list[0]
-                print(f"\n--------------")
+
                 print(f"--> Input file: {input_file}")
 
                 # find date
@@ -99,66 +99,8 @@ def main():
                 # verify log dir
                 log_dir = f"{calib_dir}/filter_scan/{date}/{prod_id}/log"
                 if not os.path.exists(log_dir):
-                    print(f"--> Create directory {log_dir}")
+                    print(f"--> Create directory {log_dir}\n")
                     os.makedirs(log_dir, exist_ok=True)
-
-                # search the summary file info
-                run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
-                if not os.path.exists(run_summary_path):
-                    raise IOError(f"Night summary file {run_summary_path} does not exist\n")
-
-                # pedestal base dir
-                ped_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/"
-
-                # search the pedestal file of the same date
-                if ped_run is None:
-                    # else search the pedestal file of the same date
-                    file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
-                    if len(file_list) == 0:
-                        raise IOError(f"No pedestal file found for date {date}\n")
-                    if len(file_list) > 1:
-                        raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
-                    else:
-                        pedestal_file = file_list[0]
-
-                # else, if given, search a specific pedestal run
-                else:
-                    file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
-                    if len(file_list) == 0:
-                        raise IOError(f"Pedestal file from run {ped_run} not found\n")
-                    else:
-                        pedestal_file = file_list[0]
-
-                print(f"\n--> Pedestal file: {pedestal_file}")
-
-                # search for time calibration file
-                time_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_time_sampling_from_FF"
-                time_file = None
-                # search the last time run before the calibration run
-                if time_run is None:
-                    file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run*.0000.h5'))
-                    if len(file_list) == 0:
-                        raise IOError(f"No time calibration file found in the data tree for prod {prod_id}\n")
-                    else:
-                        for file in file_list:
-                            run_in_list = file.stem.rsplit("Run")[1].rsplit('.')[0]
-                            if int(run_in_list) <= run:
-                                time_file = file
-                            else:
-                                break
-
-                    if time_file is None:
-                        raise IOError(f"No time calibration file found before run {run} for prod {prod_id}\n")
-
-                # if given, search a specific time file
-                else:
-                    file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run{time_run:05d}.0000.h5'))
-                    if len(file_list) == 0:
-                        raise IOError(f"Time calibration file from run {time_run} not found\n")
-                    else:
-                        time_file = file_list[0]
-
-                print(f"\n--> Time calibration file: {time_file}")
 
                 # job file
                 job_file = f"{log_dir}/{run}_{sub_run}.job"
@@ -166,8 +108,8 @@ def main():
                 with open(job_file, "w") as fh:
                     fh.writelines("#!/bin/bash\n")
                     fh.writelines("#SBATCH --job-name=%s.job\n" % run)
-                    fh.writelines("#SBATCH --output=log/%s.out\n" % run)
-                    fh.writelines("#SBATCH --error=log/%s.err\n" % run)
+                    fh.writelines("#SBATCH --output=log/%s_%d.out\n" % (run,sub_run))
+                    fh.writelines("#SBATCH --error=log/%s_%s.err\n" % (run,sub_run))
                     fh.writelines("#SBATCH -A dpps\n")
                     fh.writelines("#SBATCH -p long\n")
                     fh.writelines("#SBATCH --array=0-0\n")
@@ -183,11 +125,11 @@ def main():
 
                 os.system("sbatch %s" % job_file)
 
+                print("\n--> END")
 
-        print("\n--> END")
-
-    except Exception as e:
-        print(f"\n >>> Exception: {e}")
+            except Exception as e:
+                print(f"\n >>> Exception: {e}. Skipped")
+                continue
 
 
 if __name__ == '__main__':
