@@ -40,8 +40,9 @@ optional.add_argument('-s', '--statistics', help="Number of events for the flat-
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
-optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float, default=4000)
-optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float, default=12000)
+optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
+optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
+optional.add_argument('-f','--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
@@ -53,8 +54,6 @@ prod_id = args.prod_version
 stat_events = args.statistics
 base_dir = args.base_dir
 time_run = args.time_run
-min_ff = args.min_ff
-max_ff = args.max_ff
 sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
@@ -63,11 +62,17 @@ max_events = 1000000
 
 def main():
 
-    print(f"\n--> Start calculating calibration from run {run}")
+    # looks for the filter values in the database if not given
+    if args.filters is None:
+        filters = search_filter(run)
+    else:
+        filters = args.filters
 
-    # looks for the filter if possible
-    filters=search_filter(run)
+    # define the FF selection cuts
+    if args.min_ff is None or args.max_ff is None:
+        min_ff, max_ff = define_FF_selection_range(filters)
 
+    print(f"\n--> Start calculating calibration from run {run}, filters {filters}")
 
     try:
         # verify config file
@@ -105,7 +110,7 @@ def main():
         if not os.path.exists(run_summary_path):
             raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
-        print(f"--> Use run summary {run_summary_path}")
+        print(f"\n--> Use run summary {run_summary_path}")
         # pedestal base dir
         ped_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/"
 
@@ -129,7 +134,6 @@ def main():
                 pedestal_file = file_list[0]
 
         print(f"\n--> Pedestal file: {pedestal_file}")
-
         # search for time calibration file
         time_file = None
         time_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_time_sampling_from_FF"
@@ -172,14 +176,14 @@ def main():
         log_file = f"{output_dir}/log/dc_to_pe{filter_info}.Run{run:05d}.{sub_run:04d}.log"
 
         print(f"\n--> Output file {output_file}")
-        #"""
+
         if os.path.exists(output_file):
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
             else:
                 print(f"\n--> Stop")
                 exit(1)
-        #"""
+
         print(f"\n--> Log file {log_file}")
 
         #
@@ -216,7 +220,7 @@ def main():
 
 def search_filter(run):
     """read the employed filters form mongodb"""
-    filters=None
+    filters = None
     try:
         myclient = pymongo.MongoClient("mongodb://10.200.10.101:27017/")
 
@@ -230,11 +234,47 @@ def search_filter(run):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        print(f"--> No filter information")
+        raise IOError(f"--> No filter information")
 
     return filters
 
+def define_FF_selection_range(filters):
+    """ return the range of charges to select the FF events """
 
+    try:
+        # give standard values if standard filters
+        if filters == 52:
+            min_ff = 3000
+            max_ff = 12000
+
+        else:
+
+            # ... recuperate transmission value of all the filters
+            transm_file = os.path.join(os.path.dirname(__file__), "../../data/filters_trasmission.dat")
+
+            f = open(transm_file, 'r')
+            header = f.readline()
+            trasm = {}
+            for line in f:
+                columns = line.split()
+                trasm[columns[0]] = float(columns[1])
+
+            if trasm[filters] > 0.001:
+                min_ff = 4000
+                max_ff = 1000000
+
+            elif trasm[filters] <= 0.001 and trasm[filters] > 0.0005:
+                min_ff = 1200
+                max_ff = 6000
+            else:
+                min_ff = 200
+                max_ff = 4000
+
+    except Exception as e:
+        print(f"\n >>> Exception: {e}")
+        raise IOError(f"--> No FF selection range information")
+
+    return min_ff, max_ff
 
 if __name__ == '__main__':
     main()

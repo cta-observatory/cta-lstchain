@@ -125,8 +125,6 @@ def main():
 
                 os.system("sbatch %s" % job_file)
 
-                print("\n--> END")
-
             except Exception as e:
                 print(f"\n >>> Exception: {e}. Skipped")
                 continue
