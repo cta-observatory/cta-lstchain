@@ -35,6 +35,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
+optional.add_argument('--gains', help="List of gains to consider (format: --gains 0 1)", type=int, nargs="+", default=[0,1])
 
 args = parser.parse_args()
 date = args.date
@@ -42,7 +43,7 @@ prod_id = args.prod_version
 base_dir = args.base_dir
 sub_run = args.sub_run
 config_file = args.config
-
+gains = args.gains
 
 
 def main():
@@ -75,7 +76,7 @@ def main():
             print(f"--> Create directory {log_dir}")
             os.makedirs(log_dir, exist_ok=True)
 
-        for gain in [0,1]:
+        for gain in gains:
 
             print(f"\n-->>>>> Process {channel[gain]} gain <<<<<")
             # define charge file names
