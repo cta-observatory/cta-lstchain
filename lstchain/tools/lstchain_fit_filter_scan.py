@@ -3,7 +3,8 @@ import os
 import numpy as np
 import h5py
 from scipy.optimize import curve_fit
-from traitlets import List,Int
+from traitlets import List, Int, Dict
+from pathlib import Path
 from ctapipe.core import Tool, traits
 
 from ctapipe.containers import (
@@ -13,7 +14,6 @@ from ctapipe.containers import (
 )
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe_io_lst import constants
-#from lstchain.visualization import plot_calib as calib
 
 __all__ = [
     'FitFilterScan'
@@ -23,8 +23,12 @@ __all__ = [
 class FitFilterScan(Tool):
     """
      Tool that generates a HDF5 file with the results of the fit
-     of the signal of filter scan, this is useful to estimate the
+     of the signal of an intensity filter scan, this is useful to estimate the
      quadratic noise term to include in the standard F-factor formula
+
+     To be run with
+     lstchain_fit_filter_scan --config config.json
+
      """
 
     name = "FitFilterScan"
@@ -32,7 +36,7 @@ class FitFilterScan(Tool):
 
     signal_range = List(
         [400,12000],
-        help='Signal charge range  (camera median in [ADC])'
+        help='Signal range to include in the fit (camera median in [ADC])'
     ).tag(config=True)
 
     gain_channel = Int(
@@ -49,10 +53,6 @@ class FitFilterScan(Tool):
         help='List of runs',
     ).tag(config=True)
 
-    filter_list = List(
-        help='List of filters',
-    ).tag(config=True)
-
     input_dir = traits.Path(
         directory_ok=True,
         help='directory with the input files',
@@ -62,6 +62,14 @@ class FitFilterScan(Tool):
         directory_ok=False, default="filter_scan_fit.h5",
         help='Path to file with list of runs',
     ).tag(config=True)
+
+    aliases = Dict(dict(
+        input_dir='FitFilterScan.input_dir',
+        output_path='FitFilterScan.output_path',
+        sub_run='FitFilterScan.sub_run',
+        gain_channel='FitFilterScan.gain_channel',
+        run_list='FitFilterScan.run_list',
+    ))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -88,14 +96,18 @@ class FitFilterScan(Tool):
 
         # loop on runs and memorize data
         try:
-            for i in np.arange(len(self.run_list)):
-                run = self.run_list[i]
+            for i, run in enumerate(self.run_list):
 
-                inp_file = f"{self.input_dir}/calibration.Run{run:05d}.{self.sub_run:04d}.h5"
+                file_list = sorted(Path(f"{self.input_dir}").rglob(f'*.Run{run:05d}.{self.sub_run:04d}.h5'))
+                self.log.info(self.input_dir)
 
-                if not os.path.exists(inp_file):
-                    raise IOError(f"Input file for run {run} does not exists. \n")
+                if len(file_list) == 0 :
+                    raise IOError(f"Input file for run {run} do not found. \n")
 
+                if len(file_list)>1 :
+                    raise IOError(f"Input file for run {run} is more than one: {file_list} \n")
+
+                inp_file = file_list[0]
                 if os.path.getsize(inp_file) < 100:
                     raise IOError(f"file size run {run} is too short \n")
 
@@ -151,7 +163,7 @@ class FitFilterScan(Tool):
 
             # skip the pixel if not enough data
             if sig.shape[0] < 5:
-                self.log.debug(f"Not enough data in pixel {pix} for the fit ({sig.shape(0)} runs)\n")
+                self.log.debug(f"Not enough data in pixel {pix} for the fit ({sig.shape[0]} runs)\n")
                 self.fit_error[pix] = 1
                 continue
 
@@ -190,17 +202,17 @@ class FitFilterScan(Tool):
             hf.create_dataset('bad_fit_mask', data=self.fit_error)
             hf.create_dataset('median_signal', data=np.median(self.signal,axis=1))
             hf.create_dataset('median_variance', data=np.median(self.variance,axis=1))
-
-            hf.create_dataset('used_runs', data=self.run_list)
-            hf.create_dataset('used_filter', data=self.filter_list)
-
-
+            hf.create_dataset('runs', data=self.run_list)
+            hf.create_dataset('sub_run', data=self.sub_run)
 
 def quadratic_fit(t, b=1, c=1):
     F2 = 1.222
     return b * F2 * t + c ** 2 * t ** 2
 
 def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
+    """ read camera calibration file"""
+
+    status = True
     with HDF5TableReader(file_name) as h5_table:
 
         try:
@@ -217,11 +229,10 @@ def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
 
         except Exception:
             print(f"----> no correct tables {table} in {file_name}")
-            h5_table.close()
-            return False
+            status = False
 
     h5_table.close()
-    return True
+    return status
 
 def main():
     exe = FitFilterScan()
