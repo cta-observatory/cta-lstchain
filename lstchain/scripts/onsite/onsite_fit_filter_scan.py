@@ -57,7 +57,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # verify input dir
-        input_dir=f"{base_dir}/monitoring/PixelCalibration/charge_time/{date}/{prod_id}"
+        input_dir=f"{base_dir}/monitoring/PixelCalibration/calibration/{date}/{prod_id}"
         if not os.path.exists(input_dir):
             raise IOError(f"Input directory {input_dir} not found\n")
 

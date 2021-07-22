@@ -91,13 +91,13 @@ def main():
                 path, date = input_dir.rsplit('/', 1)
 
                 # verify output dir
-                output_dir = f"{calib_dir}/charge_time/{date}/{prod_id}"
+                output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
                 if not os.path.exists(output_dir):
                     print(f"--> Create directory {output_dir}")
                     os.makedirs(output_dir, exist_ok=True)
 
                 # verify log dir
-                log_dir = f"{calib_dir}/charge_time/{date}/{prod_id}/log"
+                log_dir = f"{calib_dir}/calibration/{date}/{prod_id}/log"
                 if not os.path.exists(log_dir):
                     print(f"--> Create directory {log_dir}\n")
                     os.makedirs(log_dir, exist_ok=True)
