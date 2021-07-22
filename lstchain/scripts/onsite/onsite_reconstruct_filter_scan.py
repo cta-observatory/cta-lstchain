@@ -58,7 +58,7 @@ time_run = args.time_run
 sub_run_list = args.sub_run_list
 config_file = args.config
 
-calib_dir=f"{base_dir}/monitoring/CameraCalibration"
+calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 max_events = 1000000
 
 
@@ -91,13 +91,13 @@ def main():
                 path, date = input_dir.rsplit('/', 1)
 
                 # verify output dir
-                output_dir = f"{calib_dir}/filter_scan/{date}/{prod_id}"
+                output_dir = f"{calib_dir}/charge_time/{date}/{prod_id}"
                 if not os.path.exists(output_dir):
                     print(f"--> Create directory {output_dir}")
                     os.makedirs(output_dir, exist_ok=True)
 
                 # verify log dir
-                log_dir = f"{calib_dir}/filter_scan/{date}/{prod_id}/log"
+                log_dir = f"{calib_dir}/charge_time/{date}/{prod_id}/log"
                 if not os.path.exists(log_dir):
                     print(f"--> Create directory {log_dir}\n")
                     os.makedirs(log_dir, exist_ok=True)
@@ -118,7 +118,7 @@ def main():
                     fh.writelines("#SBATCH -D %s \n" % output_dir)
 
                     fh.writelines(
-                        f"srun onsite_create_dc_to_pe_file -r {run} "
+                        f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
                         f"-b {base_dir} --config {config_file} --time_run "
                         f"{time_run}\n")

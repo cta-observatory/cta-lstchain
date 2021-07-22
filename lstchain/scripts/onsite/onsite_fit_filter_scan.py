@@ -4,7 +4,6 @@
 
  Onsite script to fit a filter scan production
 
- --> onsite_create_dc_to_pe_file
 
 """
 
@@ -25,10 +24,10 @@ parser = argparse.ArgumentParser(description='Create flat-field calibration file
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
-required.add_argument('-d', '--date', help="Date of the filter scan", required=True)
+required.add_argument('-d', '--date', help="Date of the filter scan (YYYYMMDD)", required=True)
 
 # config file is mandatory because it contains the list of input runs
-required.add_argument('--config', help="Config file with run list", required=True)
+required.add_argument('-c','--config', help="Config file (json format) with the list of runs", required=True)
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
@@ -58,14 +57,14 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # verify input dir
-        input_dir=f"{base_dir}/monitoring/CameraCalibration/dc_to_pe/{date}/{prod_id}"
+        input_dir=f"{base_dir}/monitoring/PixelCalibration/charge_time/{date}/{prod_id}"
         if not os.path.exists(input_dir):
             raise IOError(f"Input directory {input_dir} not found\n")
 
         print(f"\n--> Input directory {input_dir}")
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/CameraCalibration/filter_scan/{date}/{prod_id}"
+        output_dir = f"{base_dir}/monitoring/PixelCalibration/filter_scan/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
@@ -80,8 +79,8 @@ def main():
 
             print(f"\n-->>>>> Process {channel[gain]} gain <<<<<")
             # define charge file names
-            output_file = f"{output_dir}/filter_scan_{channel[gain]}_{date}.{sub_run:04d}.h5"
-            log_file = f"{output_dir}/log/filter_scan_{channel[gain]}_{date}.{sub_run:04d}.log"
+            output_file = f"{output_dir}/filter_scan_fit_{channel[gain]}_{date}.{sub_run:04d}.h5"
+            log_file = f"{output_dir}/log/filter_scan_fit_{channel[gain]}_{date}.{sub_run:04d}.log"
 
             print(f"\n--> Output file {output_file}")
 

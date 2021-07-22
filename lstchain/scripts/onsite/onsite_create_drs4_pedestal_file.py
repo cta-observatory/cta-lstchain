@@ -59,7 +59,7 @@ def main():
 
 
         # verify and make output dir
-        output_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/{date}/{prod_id}"
+        output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)

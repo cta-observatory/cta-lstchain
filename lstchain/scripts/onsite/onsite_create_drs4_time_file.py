@@ -71,7 +71,7 @@ def main():
         path, date = input_dir.rsplit('/', 1)
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
+        output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             if not os.path.exists(output_dir):
                 print(f"--> Create directory {output_dir}")
@@ -83,7 +83,7 @@ def main():
             raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
         # pedestal base dir
-        ped_dir = f"{base_dir}/monitoring/CameraCalibration/drs4_baseline/"
+        ped_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/"
 
         # search the pedestal file of the same date
         if ped_run is None:
