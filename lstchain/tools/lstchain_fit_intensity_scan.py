@@ -58,6 +58,12 @@ class FitIntensityScan(Tool):
         help='directory with the input files',
     ).tag(config=True)
 
+    output_path = traits.Path(
+        directory_ok=False, default_value="filter_scan_fit.h5",
+        help='Path to file with list of runs',
+    ).tag(config=True)
+
+
     fit_initialization = List(
         [[100.0, 0.001], [6.0, 0.001]],
         help='Fit parameters initalization [gain (ADC/pe), B term] for HG and LG'
@@ -264,7 +270,7 @@ def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
     return status
 
 def main():
-    exe = FitFilterScan()
+    exe = FitIntensityScan()
 
     exe.run()
 
