@@ -37,7 +37,7 @@ class FitIntensityScan(Tool):
     description = "Tool to fit an intensity scan"
 
     signal_range = List(
-        [[1500, 14000],[400, 14000]],
+        [[1500, 14000],[200, 14000]],
         help='Signal range to include in the fit for [HG,LG] (camera median in [ADC])'
     ).tag(config=True)
 
@@ -264,7 +264,6 @@ class FitIntensityScan(Tool):
                     for pix,i in enumerate([0,600,1200,1800]):
                         pad+=1
                         plt.subplot(4, 2, pad)
-                        plt.tight_layout()
                         plt.grid(which='minor')
 
                         mask = self.unusable_pixels[chan][pix]
@@ -293,7 +292,6 @@ class FitIntensityScan(Tool):
                         pad += 1
                         plt.subplot(4,2,pad)
                         plt.grid(which='both',axis='both')
-                        plt.tight_layout()
 
                         popt = self.fit_parameters[chan, pix]
                         plt.plot(sig, (quadratic_fit(sig, *popt) - var) / var * 100, 'o', color="C0")
@@ -303,6 +301,7 @@ class FitIntensityScan(Tool):
                         plt.xlabel(f'Q-ped [ADC]')
                         plt.hlines(0, 0, np.max(sig), linestyle='dashed', color="black")
 
+                    plt.tight_layout()
                     pdf.savefig()
 
 
