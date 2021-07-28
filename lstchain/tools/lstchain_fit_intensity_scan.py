@@ -5,8 +5,10 @@ import h5py
 from scipy.optimize import curve_fit
 from traitlets import List, Int, Dict,Float
 from pathlib import Path
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib import pyplot as plt
 from ctapipe.core import Tool, traits
-
+from matplotlib.ticker import MaxNLocator
 from ctapipe.containers import (
     FlatFieldContainer,
     WaveformCalibrationContainer,
@@ -35,7 +37,7 @@ class FitIntensityScan(Tool):
     description = "Tool to fit an intensity scan"
 
     signal_range = List(
-        [[2000, 11000],[400, 12000]],
+        [[1500, 14000],[400, 14000]],
         help='Signal range to include in the fit for [HG,LG] (camera median in [ADC])'
     ).tag(config=True)
 
@@ -60,9 +62,13 @@ class FitIntensityScan(Tool):
 
     output_path = traits.Path(
         directory_ok=False, default_value="filter_scan_fit.h5",
-        help='Path to file with list of runs',
+        help='Path the output hdf5 file',
     ).tag(config=True)
 
+    plot_path = traits.Path(
+        directory_ok=False, default_value="filter_scan_fit.pdf",
+        help='Path to pdf file with check plots',
+    ).tag(config=True)
 
     fit_initialization = List(
         [[100.0, 0.001], [6.0, 0.001]],
@@ -78,6 +84,7 @@ class FitIntensityScan(Tool):
         signal_range='FitIntensityScan.signal_range',
         input_dir='FitIntensityScan.input_dir',
         output_path='FitIntensityScan.output_path',
+        plot_path='FitIntensityScan.plot_path',
         sub_run='FitIntensityScan.sub_run',
         gain_channels='FitIntensityScan.gain_channels',
         run_list='FitIntensityScan.run_list',
@@ -165,7 +172,6 @@ class FitIntensityScan(Tool):
 
         for pix in np.arange(constants.N_PIXELS):
 
-
             if pix % 100 == 0 :
                 self.log.debug(f"Pixel {pix}")
 
@@ -173,12 +179,6 @@ class FitIntensityScan(Tool):
             for chan in self.gain_channels:
 
                 # fit parameters initialization
-                """
-                if chan == 1:
-                    p0 = np.array([6.0, 0.001])
-                else:
-                    p0 = np.array([100.0, 0.001])
-                """
                 p0 = np.array(self.fit_initialization[chan])
 
                 mask = self.unusable_pixels[chan][pix]
@@ -210,7 +210,7 @@ class FitIntensityScan(Tool):
 
     def finish(self):
         """
-        write fit results to h5 file
+        write fit results in h5 file and the check-plots in pdf file
         """
 
         gain = np.ma.array(self.fit_parameters.T[0], mask=self.fit_error)
@@ -239,6 +239,73 @@ class FitIntensityScan(Tool):
 
             hf.create_dataset('runs', data=self.run_list)
             hf.create_dataset('sub_run', data=self.sub_run)
+
+            # plot open pdf
+            with PdfPages(self.plot_path) as pdf:
+                plt.rc("font", size=15)
+
+                for chan in self.gain_channels:
+                    # plot the used runs and their median camera charge
+                    fig = plt.figure((chan+1), figsize=(10, 10))
+                    fig.suptitle(f"{channel[chan]} channel", fontsize=25)
+                    ax=plt.subplot(1, 1, 1)
+                    plt.grid()
+                    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    plt.plot(self.selected_runs[chan],np.median(self.signal[chan],axis=0),"o")
+                    plt.ylabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
+                    plt.xlabel(r'Runs used in the fit')
+                    pdf.savefig()
+
+                    # plot the fit results and residuals for four arbitrary  pixels
+                    fig = plt.figure((chan+1)*10, figsize=(11, 22))
+                    fig.suptitle(f"{channel[chan]} channel", fontsize=25)
+
+                    pad = 0
+                    for pix,i in enumerate([0,600,1200,1800]):
+                        pad+=1
+                        plt.subplot(4, 2, pad)
+                        plt.tight_layout()
+                        plt.grid(which='minor')
+
+                        mask = self.unusable_pixels[chan][pix]
+                        sig = np.ma.array(self.signal[chan][pix], mask=mask).compressed()
+                        var = np.ma.array(self.variance[chan][pix], mask=mask).compressed()
+                        popt = self.fit_parameters[chan, pix]
+
+                        # plot points
+                        plt.plot(sig, var, 'o', color="C0")
+
+                        # plot fit
+                        min_x=min(1000,np.min(sig)*0.9)
+                        max_x=max(10000,np.max(sig)*1.1)
+                        x = np.arange(np.min(sig),np.max(sig))
+
+                        plt.plot(x, quadratic_fit(x, *popt), '--', color="C1",
+                                 label=f'Pixel {pix}:\ng={popt[0]:5.2f} [ADC/pe] , B={popt[1]:5.3f}')
+                        plt.xlim(min_x, max_x)
+                        plt.xlabel(f'Q-ped [ADC]')
+                        plt.ylabel(r'$\mathrm{\sigma_Q^2-\sigma_{ped}^2}$ [$ADC^2$]')
+                        plt.xscale('log')
+                        plt.yscale('log')
+                        plt.legend()
+
+                        # plot residuals
+                        pad += 1
+                        plt.subplot(4,2,pad)
+                        plt.grid(which='both',axis='both')
+                        plt.tight_layout()
+
+                        popt = self.fit_parameters[chan, pix]
+                        plt.plot(sig, (quadratic_fit(sig, *popt) - var) / var * 100, 'o', color="C0")
+                        plt.xlim(min_x,max_x)
+                        plt.xscale('log')
+                        plt.ylabel(f'fit residuals %')
+                        plt.xlabel(f'Q-ped [ADC]')
+                        plt.hlines(0, 0, np.max(sig), linestyle='dashed', color="black")
+
+                    pdf.savefig()
+
+
 
 def quadratic_fit(t, b=1, c=1):
     f2 = 1.222

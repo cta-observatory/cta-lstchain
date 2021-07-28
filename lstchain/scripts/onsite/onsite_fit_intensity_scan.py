@@ -72,12 +72,12 @@ def main():
             print(f"--> Create directory {log_dir}")
             os.makedirs(log_dir, exist_ok=True)
 
-        # define charge file names
+        # define output file names
         output_file = f"{output_dir}/intensity_scan_fit_{date}.{sub_run:04d}.h5"
         log_file = f"{output_dir}/log/intensity_scan_fit_{date}.{sub_run:04d}.log"
+        plot_file = f"{output_dir}/log/intensity_scan_fit_{date}.{sub_run:04d}.pdf"
 
         print(f"\n--> Output file {output_file}")
-
         if os.path.exists(output_file):
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
@@ -85,6 +85,7 @@ def main():
                 print(f"\n--> Stop")
                 exit(1)
 
+        print(f"\n--> Plot file {plot_file}")
         print(f"\n--> Log file {log_file}")
 
         #
@@ -93,7 +94,7 @@ def main():
 
         cmd = f"lstchain_fit_intensity_scan " \
               f"--config={config_file} --input_dir={input_dir} --output_path={output_file} "\
-              f"--sub_run={sub_run} "\
+              f"--plot_path={plot_file} --sub_run={sub_run} "\
               f" >  {log_file} 2>&1"
 
         print("\n--> RUNNING...")
