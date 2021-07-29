@@ -140,9 +140,9 @@ def plot(      array_ids,                     #array with the ID's of the events
     def basic_plot(N,represent='charge'):
 
         #titles, we print the value of gammaness and energy if exist dl2
-        try:
+        if (df.index == N).any()==True:
             titles='$\\gamma=$'+ str(round((df.at[N,'gammaness']),2))+',   $E=$'+str(round((df.at[N,'reco_energy']),2))+'TeV'
-        except:
+        else:
             titles='Event ID = '+str(N)
 
         if represent=='time':
@@ -324,11 +324,9 @@ def plot(      array_ids,                     #array with the ID's of the events
                 #for each event first we see if exist data from dl2
                 only_dl1=True
                 if plot_direction==True:
-                    try:
+                    if (df.index == jj).any()==True:
                         if df.at[jj,'gammaness']>gamma_lim:
                             only_dl1=False
-                    except:
-                        pass
 
                 #depending the representation choosen we use a method of plotting
                 if representation=='both':
@@ -540,11 +538,9 @@ def animate(   array_ids,                     #array with the ID's of the events
                 #we see if we have data in dl2 of the corresponding event
                 only_dl1=True
                 if plot_direction==True:
-                    try:
+                    if (df.index == index).any()
                         if df.at[index,'gammaness']>gamma_lim:
                             only_dl1=False
-                    except:
-                        pass
 
                 #find maximum value
                 max_=[]
