@@ -8,13 +8,7 @@ import os
 import glob
 import tables
 
-
-#sometimes gives an error first time that runs, this solve the problem
-try:
-    from lstchain.reco.utils import get_effective_time, add_delta_t_key
-except:
-    from lstchain.reco.utils import get_effective_time, add_delta_t_key
-
+from lstchain.reco.utils import get_effective_time, add_delta_t_key
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.visualization import CameraDisplay
 from ctapipe.coordinates import EngineeringCameraFrame
