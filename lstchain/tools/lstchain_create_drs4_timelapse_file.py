@@ -13,9 +13,10 @@ from ctapipe.core.traits import Path, Integer
 from ..statistics import OnlineStats
 
 
-N_BINS_DT = 25
-LOG_DT_MIN_MS = -3.0
-LOG_DT_MAX_MS = 2.0
+N_BINS = 25
+N_BINS_TOTAL = N_BINS + 2
+LOG_DT_MIN_MS = -1
+LOG_DT_MAX_MS = 2
 
 
 @numba.njit(cache=True, inline='always')
@@ -33,11 +34,11 @@ def bin_index(x, low, high, n_bins):
 def flat_index(gain, pixel, cap, dt):
     '''Flattened index of (gain, pixel, cap, dt) in the flat stats array'''
     log_dt = np.log10(dt)
-    dt_bin = bin_index(log_dt, LOG_DT_MIN_MS, LOG_DT_MAX_MS, N_BINS_DT)
+    dt_bin = bin_index(log_dt, LOG_DT_MIN_MS, LOG_DT_MAX_MS, N_BINS_TOTAL)
     return (
-        N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_DT * gain
-        + N_CAPACITORS_PIXEL * N_BINS_DT * pixel
-        + N_BINS_DT * cap
+        N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_TOTAL * gain
+        + N_CAPACITORS_PIXEL * N_BINS_TOTAL * pixel
+        + N_BINS_TOTAL * cap
         + dt_bin
     )
 
@@ -93,7 +94,7 @@ class DRS4Timelapse(Tool):
 
     aliases = {
         ('i', 'input'): 'LSTEventSource.input_url',
-        ('o', 'output'): 'DRS4PedestalAndSpikeHeight.output_path',
+        ('o', 'output'): 'DRS4Timelapse.output_path',
         ('m', 'max-events'): 'LSTEventSource.max_events',
     }
 
@@ -113,10 +114,11 @@ class DRS4Timelapse(Tool):
 
         self.source.r0_r1_calibrator.offset = 0
         self.source.r0_r1_calibrator.apply_spike_correction = False
-        self.source.r0_r1_calibrator.apply_timelapse_correction = True
+        self.source.r0_r1_calibrator.apply_timelapse_correction = False
         self.source.r0_r1_calibrator.apply_drs4_pedestal_correction = False
 
-        n_stats = N_GAINS * N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_DT
+        # for under and overflow, add two bins
+        n_stats = N_GAINS * N_PIXELS * N_CAPACITORS_PIXEL * N_BINS_TOTAL
         self.dt_stats = OnlineStats(n_stats)
 
     def start(self):
@@ -139,18 +141,20 @@ class DRS4Timelapse(Tool):
                 skip_samples_front=self.skip_samples_front,
                 skip_samples_end=self.skip_samples_end,
             )
+            self.source.r0_r1_calibrator.update_last_readout_time(event, tel_id)
 
     def finish(self):
         self.log.info('Writing output to %s', self.output_path)
+        shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_BINS_TOTAL)
         with tables.open_file(self.output_path, 'w') as f:
 
             g = f.create_group('/', 'dt')
-            f.root.attrs['dt_n_bins'] = N_BINS_DT
-            f.root.attrs['dt_min_log10'] = LOG_DT_MIN_MS
-            f.root.attrs['dt_max_log10'] = LOG_DT_MAX_MS
+            f.root._v_attrs['dt_n_bins'] = N_BINS
+            f.root._v_attrs['log10_dt_min'] = LOG_DT_MIN_MS
+            f.root._v_attrs['log10_dt_max'] = LOG_DT_MAX_MS
 
             for attr in ('counts', 'mean', 'std'):
-                array = getattr(self.dt_stats, attr).reshape((N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL))
+                array = getattr(self.dt_stats, attr).reshape(shape)
 
                 # store mean / std as int32 scaled by 100
                 # aka fixed precision with two decimal digits
@@ -158,7 +162,7 @@ class DRS4Timelapse(Tool):
                     array *= 100
                 array = array.astype(np.int32)
 
-                f.create_carray(g, attr, obj=array, filters=DEFAULT_FILTERS)
+                f.create_carray(g, attr, obj=array, chunkshape=array.shape, filters=DEFAULT_FILTERS)
 
 
 def main():
