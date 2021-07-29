@@ -540,7 +540,7 @@ def animate(   array_ids,                     #array with the ID's of the events
                 #we see if we have data in dl2 of the corresponding event
                 only_dl1=True
                 if plot_direction==True:
-                    if (df.index == index).any()
+                    if (df.index == index).any()==True:
                         if df.at[index,'gammaness']>gamma_lim:
                             only_dl1=False
 
