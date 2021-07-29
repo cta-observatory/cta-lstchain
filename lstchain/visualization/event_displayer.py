@@ -8,6 +8,7 @@ import os
 import glob
 import tables
 
+
 from lstchain.reco.utils import get_effective_time, add_delta_t_key
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.visualization import CameraDisplay
@@ -78,7 +79,7 @@ def plot(      array_ids,                     #array with the ID's of the events
 
                plot_direction=True,           #to represent the reconstructed direction, ellipse, and source
 
-               gamma_lim=0.5,                 #gammanness limit to represent the reconstructed parameters (for not plotting them in not gammalike events)
+               gamma_lim=0.5,                 #gammanness limit to represent the reconstructed parameters 
 
                colormap_scale=0.7,            #change the maximum limit of the colormap [0-1]
 
@@ -175,6 +176,7 @@ def plot(      array_ids,                     #array with the ID's of the events
                 #Source reconstruction
                 plt.plot(-df.at[N,'reco_src_y'],-df.at[N,'reco_src_x'],'*',color='darkgrey',
                          label='Reconstructed source',markersize=17,alpha=0.9)
+
                 plt.autoscale(False)
                 #ellipse and mass center
                 plt.plot(-df.at[N,'y'],-df.at[N,'x'],'.',color='w')
