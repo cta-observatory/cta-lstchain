@@ -250,7 +250,7 @@ def define_FF_selection_range(filters):
         else:
 
             # ... recuperate transmission value of all the filters
-            transm_file = os.path.join(os.path.dirname(__file__), "../../data/filters_trasmission.dat")
+            transm_file = os.path.join(os.path.dirname(__file__), "../../data/filters_transmission.dat")
 
             f = open(transm_file, 'r')
             header = f.readline()
