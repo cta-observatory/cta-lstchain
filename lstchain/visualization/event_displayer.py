@@ -8,64 +8,12 @@ import os
 import glob
 import tables
 
-
 from lstchain.reco.utils import get_effective_time, add_delta_t_key
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.visualization import CameraDisplay
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
-from traitlets.config import Config
 from ctapipe.io import EventSource
-
-
-
-#################################################
-#################################################
-# change depending where we are running the code
-#################################################
-#################################################
-
-
-#number of subruns we have
-number_subruns=122
-#number assigned to the concrete run (only for the name of the files saved)
-run_number=2969
-#number of events in each subrun, normally they are saved in groups of 53000 events
-subrun_events=53000
-
-
-#directories
-
-#DEPENDING ON THE RUN WE ARE STUDYING
-#direction of the dl2 data file (if we want to implement the direction and source)
-dl2_directory="/data/cta/users-ifae/moralejo/CTA/LST/RealData/DL2/lstchain_v0.7/20201120/dl2_LST-1.Run02969.h5"
-#parameters to read dl1 and dl2
-dl2_parameters="dl2/event/telescope/parameters/LST_LSTCam"
-dl1_parameters="/dl1/event/telescope/parameters/LST_LSTCam"
-#direction of the dl1 data files for each subrun, the format we use is "directory.****.fits.fz" or "h5"
-#where **** is the subrun index
-dl1_directory="/data/cta/users-ifae/moralejo/CTA/LST/RealData/DL1/lstchain_V0.7/20201120/dl1_LST-1.Run02969."
-#R0 directory
-R0_directory="/data/cta/users-ifae/moralejo/CTA/LST/RealData/R0/20201120/LST-1.1.Run02969."
-
-#DEPENDING ON WHERE ARE WE RUNNING THE CODE
-#R1 calibration
-calibration_directory = "/data/cta/users-ifae/moralejo/CTA/LST/RealData/R0/20201120/calib_files/"
-
-drs4_pedestal_path = calibration_directory + "drs4_pedestal.Run02963.0000.fits"
-calib_path = calibration_directory + "calibration.Run02964.0000.hdf5"
-time_calib_path = calibration_directory + "time_calibration.Run02964.0000.hdf5"
-drive_report = calibration_directory + "drive_log_20201120.txt"
-run_summary = calibration_directory + "RunSummary_20201120.ecsv"
-
-
-#################################################
-#################################################
-#################################################
-#################################################
-
-
-
 
 
 #################################################################################
@@ -74,6 +22,8 @@ run_summary = calibration_directory + "RunSummary_20201120.ecsv"
 
 
 def plot(      array_ids,                     #array with the ID's of the events that we want to represent
+         
+               config,                        #configuration data
 
                representation='charge',       #type of graphic representation 'charge', 'time' or 'both'
 
@@ -90,9 +40,20 @@ def plot(      array_ids,                     #array with the ID's of the events
                plot_image=True,               #for plotting or not the image at the console
 
                folder_name='event_plots'      #name of the folder for saving the plots
+        
+        ):
 
-               ):
-
+    #################################################
+    
+    #definition of the directories 
+    number_subruns=config[0]
+    run_number=config[1]
+    subrun_events=config[2]
+    dl2_directory=config[3]
+    dl1_parameters=config[4]
+    dl2_parameters=config[5]
+    dl1_directory=config[6]
+    
     #################################################
 
     #reordering events and identifying the corresponding subrun in order to optimize the plotting
@@ -126,11 +87,10 @@ def plot(      array_ids,                     #array with the ID's of the events
 
     #################################################
 
-    #importing dl2 data if needed
-
-    if plot_direction==True:
-        df=pd.read_hdf(dl2_directory, dl2_parameters)  
-        df=df.set_index('event_id')
+    #importing dl2 data
+    
+    df=pd.read_hdf(dl2_directory, dl2_parameters)  
+    df=df.set_index('event_id')
 
     #################################################
 
@@ -350,6 +310,8 @@ def plot(      array_ids,                     #array with the ID's of the events
 
 
 def animate(   array_ids,                     #array with the ID's of the events that we want to represent
+            
+               config,                        #configuration data
 
                plot_direction=True,           #to represent the reconstructed direction, ellipse, and source
 
@@ -365,6 +327,23 @@ def animate(   array_ids,                     #array with the ID's of the events
 
                ):
 
+    #################################################
+    
+    #definition of the directories 
+    number_subruns=config[0]
+    run_number=config[1]
+    subrun_events=config[2]
+    dl2_directory=config[3]
+    dl1_parameters=config[4]
+    dl2_parameters=config[5]
+    dl1_directory=config[6]
+    R0_directory=config[7]
+    calibration_directory = config[8]
+    drs4_pedestal_path = config[9]
+    calib_path = config[10]
+    time_calib_path = config[11]
+    configuration=config[12]
+    
     #################################################
 
     #reordering events and identifying the corresponding subrun in order to optimize the plotting
@@ -472,53 +451,9 @@ def animate(   array_ids,                     #array with the ID's of the events
             #importing the DL1 data of corresponding subrun
             R0_file = R0_directory+str(SubrunIndex_[ii]).zfill(4)+".fits.fz"
 
-            # The files above are of course specific of (at least) each observation night!
-
-            # config = Config(
-            #     {
-            #         'LSTEventSource': {
-            #             'default_trigger_type': 'ucts',
-            #             'allowed_tels': [1],
-            #             'min_flatfield_adc': 3000,
-            #             'min_flatfield_pixel_fraction': 0.8,
-            #             'calibrate_flatfields_and_pedestals': False,
-            #             'LSTR0Corrections': {
-            #                 'drs4_pedestal_path': drs4_pedestal_path,
-            #                 'calibration_path': calib_path,
-            #                 'drs4_time_calibration_path': time_calib_path,
-            #             },
-            #             'PointingSource': {
-            #                 'drive_report_path': drive_report,
-            #             },
-            #             'EventTimeCalculator': {
-            #                 'run_summary_path': run_summary,
-            #             }
-            #         },
-            #     }
-            # )
-
-
-            # Simplified version, in case we are missing the drive_report and run_summary:
-            config = Config(
-                {
-                    'LSTEventSource': {
-                        'default_trigger_type': 'ucts',
-                        'allowed_tels': [1],
-                        'min_flatfield_adc': 3000,
-                        'min_flatfield_pixel_fraction': 0.8,
-                        'calibrate_flatfields_and_pedestals': True,
-                        'LSTR0Corrections': {
-                            'drs4_pedestal_path': drs4_pedestal_path,
-                            'calibration_path': calib_path,
-                            'drs4_time_calibration_path': time_calib_path,
-                        },
-                    },
-                }
-            )
-
 
             #"Event source", to read in the R0 (=raw) events and calibrate them into R1 (=calibrated waveforms)
-            source = EventSource(input_url=R0_file, config=config, max_events=5000)
+            source = EventSource(input_url=R0_file, config=configuration, max_events=5000)
 
             #################################################
 
@@ -595,7 +530,9 @@ def animate(   array_ids,                     #array with the ID's of the events
 #################################################################################
 
 
-def search( sort=False,                     #if we want to sort the list in terms of some variable for example ='gammaness'
+def search( config,                         #configuration data
+    
+            sort=False,                     #if we want to sort the list in terms of some variable for example ='gammaness'
 
             inflim_index=False,             #index of the event ID
             suplim_index=False,
@@ -628,7 +565,16 @@ def search( sort=False,                     #if we want to sort the list in term
             muon_like=False,
           ):
 
+    #################################################
+    
+    #definition of the directories 
 
+    dl2_directory=config[3]
+    dl2_parameters=config[5]
+    
+    #################################################
+    
+    
     df = pd.read_hdf(dl2_directory,dl2_parameters)
 
     #calculus the proportion of width/lenght
@@ -669,6 +615,7 @@ def search( sort=False,                     #if we want to sort the list in term
     df=df[df['event_type']==32]
 
     #number of event
+    df=df[df.index > [1]] 
     if inflim_index!=False:
         df=df[df.index >= [inflim_index]] 
     if suplim_index!=False:
