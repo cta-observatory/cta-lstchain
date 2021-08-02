@@ -201,7 +201,8 @@ def main():
               f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
               f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
               f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
-              f"--config={config_file}  >  {log_file} 2>&1"
+              f"--config={config_file} --log-file={log_file} --log-file-level=DEBUG"
+
 
         print("\n--> RUNNING...")
         os.system(cmd)

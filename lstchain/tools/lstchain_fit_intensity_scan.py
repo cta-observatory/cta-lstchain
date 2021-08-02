@@ -261,7 +261,7 @@ class FitIntensityScan(Tool):
                     fig.suptitle(f"{channel[chan]} channel", fontsize=25)
 
                     pad = 0
-                    for pix,i in enumerate([0,600,1200,1800]):
+                    for pix in [0,600,1200,1800]:
                         pad+=1
                         plt.subplot(4, 2, pad)
                         plt.grid(which='minor')

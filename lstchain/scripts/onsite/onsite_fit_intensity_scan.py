@@ -94,8 +94,7 @@ def main():
 
         cmd = f"lstchain_fit_intensity_scan " \
               f"--config={config_file} --input_dir={input_dir} --output_path={output_file} "\
-              f"--plot_path={plot_file} --sub_run={sub_run} "\
-              f" >  {log_file} 2>&1"
+              f"--plot_path={plot_file} --sub_run={sub_run} --log-file={log_file} --log-file-level=DEBUG "
 
         print("\n--> RUNNING...")
         if os.system(cmd):
