@@ -60,6 +60,11 @@ class FitIntensityScan(Tool):
         help='directory with the input files',
     ).tag(config=True)
 
+    input_prefix = traits.Unicode(
+        "no_sys_corrected_calibration",
+        help='Prefix to select calibration files to fit ',
+    ).tag(config=True)
+
     output_path = traits.Path(
         directory_ok=False, default_value="filter_scan_fit.h5",
         help='Path the output hdf5 file',
@@ -88,6 +93,7 @@ class FitIntensityScan(Tool):
         sub_run='FitIntensityScan.sub_run',
         gain_channels='FitIntensityScan.gain_channels',
         run_list='FitIntensityScan.run_list',
+        input_prefix='FitIntensityScan.input_prefix',
     ))
 
     def __init__(self, **kwargs):
@@ -121,7 +127,7 @@ class FitIntensityScan(Tool):
         try:
             for i, run in enumerate(self.run_list):
 
-                file_list = sorted(Path(f"{self.input_dir}").rglob(f'*.Run{run:05d}.{self.sub_run:04d}.h5'))
+                file_list = sorted(Path(f"{self.input_dir}").rglob(f'{input_prefix}*.Run{run:05d}.{self.sub_run:04d}.h5'))
 
                 if len(file_list) == 0 :
                     raise IOError(f"Input file for run {run} do not found. \n")

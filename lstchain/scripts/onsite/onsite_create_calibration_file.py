@@ -14,6 +14,7 @@ from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
 import lstchain
+import subprocess
 import pymongo
 
 def none_or_str(value):
@@ -38,7 +39,11 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
+
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
+optional.add_argument('--sys_date',
+                      help="Date of systematics correction file (format YYYYMMDD). \n"
+                           "If '0', no corrections are applied. Default: automatically search the best date \n")
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
@@ -54,9 +59,11 @@ prod_id = args.prod_version
 stat_events = args.statistics
 base_dir = args.base_dir
 time_run = args.time_run
+sys_date = args.sys_date
 sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
+
 
 max_events = 1000000
 
@@ -134,6 +141,7 @@ def main():
                 pedestal_file = file_list[0]
 
         print(f"\n--> Pedestal file: {pedestal_file}")
+
         # search for time calibration file
         time_file = None
         time_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF"
@@ -165,15 +173,47 @@ def main():
 
         print(f"\n--> Time calibration file: {time_file}")
 
-        # define charge file names
+        sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
+
+        # no systematic corrections if 0 date (this is necessary for filter scan fit)
+        if sys_date == '0':
+            systematics_file = None
+
+        else:
+            # use specific sys corrections
+            if sys_date is not None:
+                systematics_file = f"{sys_dir}/{sys_date}/{prod_id}/ffactor_systematics_{sys_date}.0000.h5"
+
+            # search the first sys correction before the run,
+            # if nothing before, use the first found
+            else:
+                dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}"))
+                if len(dir_list) == 0:
+                    raise IOError(f"No systematics correction found for production {prod_id} in {sys_dir}\n")
+                else:
+                    sys_date_list = sorted([file.parts[-2] for file in dir_list],reverse=True)
+                    selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
+                    systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
+
+
+        print(f"\n--> F-factor systematics correction file: {systematics_file}")
+
+    # define charge file names
         print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
 
         if filters is not None:
             filter_info=f"_filters_{filters}"
         else:
             filter_info = ""
-        output_file = f"{output_dir}/calibration{filter_info}.Run{run:05d}.{sub_run:04d}.h5"
-        log_file = f"{output_dir}/log/calibration{filter_info}.Run{run:05d}.{sub_run:04d}.log"
+
+        # remember there are no systematic corrections
+        prefix=""
+        if sys_date == '0':
+            prefix=f"no_sys_corrected_"
+
+        output_name = f"{prefix}calibration{filter_info}.Run{run:05d}.{sub_run:04d}"
+
+        output_file = f"{output_dir}/{output_name}.h5"
 
         print(f"\n--> Output file {output_file}")
 
@@ -183,32 +223,31 @@ def main():
             else:
                 print(f"\n--> Stop")
                 exit(1)
-
+        log_file = f"{output_dir}/log/{output_name}.log"
         print(f"\n--> Log file {log_file}")
 
         #
         # produce ff calibration file
         #
 
-            # run lstchain script
         cmd = f"lstchain_create_calibration_file " \
               f"--input_file={input_file} --output_file={output_file} "\
               f"--EventSource.max_events={max_events} " \
               f"--EventSource.default_trigger_type=tib " \
               f"--EventSource.min_flatfield_adc={min_ff} " \
               f"--EventSource.max_flatfield_adc={max_ff} " \
+              f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file} " \
               f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
               f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
               f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
               f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
               f"--config={config_file} --log-file={log_file} --log-file-level=DEBUG"
 
-
         print("\n--> RUNNING...")
-        os.system(cmd)
+        subprocess.run(cmd.split())
 
         # plot and save some results
-        plot_file=f"{output_dir}/log/calibration{filter_info}.Run{run:05d}.{sub_run:04d}.pdf"
+        plot_file=f"{output_dir}/log/{output_name}.pdf"
 
         print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
         calib.read_file(output_file,tel_id)
@@ -223,6 +262,7 @@ def search_filter(run):
     """read the employed filters form mongodb"""
     filters = None
     try:
+
         myclient = pymongo.MongoClient("mongodb://10.200.10.101:27017/")
 
         mydb = myclient["CACO"]
@@ -235,7 +275,8 @@ def search_filter(run):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No filter information")
+        raise IOError(f"--> No connection to DB for filter information."
+                      f" You must pass the filters by trailets")
 
     return filters
 
@@ -243,6 +284,8 @@ def define_FF_selection_range(filters):
     """ return the range of charges to select the FF events """
 
     try:
+        if filters is None:
+            raise ValueError("Filters are not defined")
         # give standard values if standard filters
         if filters == 52:
             min_ff = 3000

@@ -12,6 +12,8 @@ import argparse
 import os
 from pathlib import Path
 import lstchain
+import subprocess
+import shutil
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Reconstruct filter scan, this must be run after the night calibration scripts',
@@ -36,12 +38,15 @@ optional.add_argument('-p', '--pedestal_run',
 optional.add_argument('--time_run',
                       help="Run for the time calibration. If None, search the last time run before or equal the first filter scan run",
                       type=int)
-
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run_list',
                       help="sub-run list to be processed.",
                       type=int,
                       nargs="+",default=[0])
+optional.add_argument('--sys_date',
+                      help="Date of systematics corrections (format YYYYMMDD). \n"
+                           "If '0', no corrections are applied. Default: automatically search the best date \n")
+
 
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
@@ -57,12 +62,14 @@ time_run = args.time_run
 
 sub_run_list = args.sub_run_list
 config_file = args.config
-
+sys_date = args.sys_date
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 max_events = 1000000
 
-
 def main():
+
+    if shutil.which('srun') is None:
+        raise ValueError(">>> This script needs a slurm batch system")
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
@@ -120,10 +127,11 @@ def main():
                     fh.writelines(
                         f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
-                        f"-b {base_dir} --config {config_file} --time_run "
+                        f"-b {base_dir} --sys_date={sys_date} --config {config_file} --time_run "
                         f"{time_run}\n")
 
-                os.system("sbatch %s" % job_file)
+                #os.system("sbatch %s" % job_file)
+                subprocess.run("sbatch",f"{job_file}")
 
             except Exception as e:
                 print(f"\n >>> Exception: {e}. Skipped")

@@ -2,7 +2,7 @@
 
 """
 
- Onsite script to fit a intensity scan production
+ Onsite script to create a F-factor systematic correction file by fitting an intensity scan
 
 
 """
@@ -28,7 +28,6 @@ required.add_argument('-d', '--date', help="Date of the scan (YYYYMMDD)", requir
 
 # config file is mandatory because it contains the list of input runs
 required.add_argument('-c','--config', help="Config file (json format) with the list of runs", required=True)
-
 version,subversion=lstchain.__version__.rsplit('.post',1)
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
@@ -43,8 +42,6 @@ sub_run = args.sub_run
 config_file = args.config
 
 def main():
-
-    channel = ["HG", "LG"]
 
     try:
         # verify config file
