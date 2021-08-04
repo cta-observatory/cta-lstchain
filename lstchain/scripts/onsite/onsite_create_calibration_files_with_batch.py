@@ -131,10 +131,10 @@ def main():
                         f"-b {base_dir} --sys_date={sys_date} --config {config_file} --time_run "
                         f"{time_run}\n")
 
-                subprocess.run("sbatch",f"{job_file}")
+                subprocess.run(["sbatch",job_file])
 
             except Exception as e:
-                print(f"\n >>> Exception: {e}. Skipped")
+                print(f"\n >>> Exception: {e}. Run skipped")
                 continue
 
 
