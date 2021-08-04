@@ -69,7 +69,8 @@ max_events = 1000000
 def main():
 
     if shutil.which('srun') is None:
-        raise ValueError(">>> This script needs a slurm batch system")
+        print(">>> This script needs a slurm batch system. Stop")
+        return
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
@@ -130,7 +131,6 @@ def main():
                         f"-b {base_dir} --sys_date={sys_date} --config {config_file} --time_run "
                         f"{time_run}\n")
 
-                #os.system("sbatch %s" % job_file)
                 subprocess.run("sbatch",f"{job_file}")
 
             except Exception as e:

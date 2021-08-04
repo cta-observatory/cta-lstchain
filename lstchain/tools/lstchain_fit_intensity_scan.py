@@ -62,7 +62,7 @@ class FitIntensityScan(Tool):
 
     input_prefix = traits.Unicode(
         "no_sys_corrected_calibration",
-        help='Prefix to select calibration files to fit ',
+        help='Prefix to select calibration files to fit',
     ).tag(config=True)
 
     output_path = traits.Path(
