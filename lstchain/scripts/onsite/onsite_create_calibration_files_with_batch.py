@@ -54,7 +54,6 @@ optional.add_argument('--sys_date',
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 
-
 args = parser.parse_args()
 run_list = args.run_list
 filters_list = args.filters_list
@@ -86,7 +85,7 @@ def main():
 
     # for old runs or if the data-base is not available
     # it is possible to give the filter list
-    if len(filter_list) > 0 and len(filter_list) != len(run_list):
+    if len(filters_list) > 0 and len(filters_list) != len(run_list):
             raise ValueError("Filter list length must be equal to run list length. Verify \n")
 
     # loops over runs and sub_runs and send jobs
