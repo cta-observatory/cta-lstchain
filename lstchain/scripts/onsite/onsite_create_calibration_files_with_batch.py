@@ -25,7 +25,7 @@ required.add_argument('-r', '--run_list', help="Run number if the flat-field dat
                       type=int, nargs="+")
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
-optional.add_argument('-f', '--filters_list', help="Filter list (same order than run list)",
+optional.add_argument('-f', '--filters_list', help="Filter list (in the same order of the run list)",
                       type=int, nargs="+")
 
 optional.add_argument('-v', '--prod_version',
@@ -85,10 +85,11 @@ def main():
 
     # for old runs or if the data-base is not available
     # it is possible to give the filter list
-    if len(filters_list) > 0 and len(filters_list) != len(run_list):
+    if filters_list is not None and len(filters_list) != len(run_list):
             raise ValueError("Filter list length must be equal to run list length. Verify \n")
 
     # loops over runs and sub_runs and send jobs
+    filters = None
     for i, run in enumerate(run_list):
         if filters_list is not None:
             filters = filters_list[i]

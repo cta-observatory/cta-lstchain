@@ -48,7 +48,7 @@ optional.add_argument('--sys_date',
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
-optional.add_argument('-f','--filters', help="Calibox filters")
+optional.add_argument('-f','--filters', help="Calibox filters", type=none_or_str)
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
