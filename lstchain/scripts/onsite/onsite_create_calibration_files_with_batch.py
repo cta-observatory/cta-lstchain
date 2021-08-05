@@ -25,6 +25,9 @@ required.add_argument('-r', '--run_list', help="Run number if the flat-field dat
                       type=int, nargs="+")
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
+optional.add_argument('-f', '--filters_list', help="Filter list (same order than run list)",
+                      type=int, nargs="+")
+
 optional.add_argument('-v', '--prod_version',
                       help="Version of the production",
                       default=f"v{version}")
@@ -54,6 +57,7 @@ optional.add_argument('--config', help="Config file", default=default_config)
 
 args = parser.parse_args()
 run_list = args.run_list
+filters_list = args.filters_list
 ped_run = args.pedestal_run
 prod_id = args.prod_version
 stat_events = args.statistics
@@ -80,8 +84,16 @@ def main():
 
     print(f"\n--> Config file {config_file}")
 
+    # for old runs or if the data-base is not available
+    # it is possible to give the filter list
+    if len(filter_list) > 0 and len(filter_list) != len(run_list):
+            raise ValueError("Filter list length must be equal to run list length. Verify \n")
+
     # loops over runs and sub_runs and send jobs
-    for run in sorted(run_list):
+    for i, run in enumerate(run_list):
+        if filters_list is not None:
+            filters = filters_list[i]
+
         for sub_run in sub_run_list:
             print(f"\n--> Runs {run} and sub-run {sub_run}")
             try:
@@ -128,7 +140,7 @@ def main():
                     fh.writelines(
                         f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
-                        f"-b {base_dir} --sys_date={sys_date} --config {config_file} --time_run "
+                        f"-b {base_dir} --filters={filters} --sys_date={sys_date} --config {config_file} --time_run "
                         f"{time_run}\n")
 
                 subprocess.run(["sbatch",job_file])
