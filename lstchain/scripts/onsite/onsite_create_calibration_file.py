@@ -75,6 +75,9 @@ def main():
     else:
         filters = args.filters
 
+    if filters is None:
+        raise ValueError(f"Missing filter value for run {run}. \n")
+
     # define the FF selection cuts
     if args.min_ff is None or args.max_ff is None:
         min_ff, max_ff = define_FF_selection_range(filters)
@@ -195,7 +198,6 @@ def main():
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
                     systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/intensity_scan_fit_{selected_date}.h5"
 
-
         print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
     # define charge file names
@@ -214,17 +216,20 @@ def main():
         output_name = f"{prefix}calibration{filter_info}.Run{run:05d}.{sub_run:04d}"
 
         output_file = f"{output_dir}/{output_name}.h5"
-
         print(f"\n--> Output file {output_file}")
+
+        log_file = f"{output_dir}/log/{output_name}.log"
+        print(f"\n--> Log file {log_file}")
 
         if os.path.exists(output_file):
             if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
                 os.remove(output_file)
+                os.remove(log_file)
             else:
                 print(f"\n--> Stop")
                 exit(1)
-        log_file = f"{output_dir}/log/{output_name}.log"
-        print(f"\n--> Log file {log_file}")
+
+
 
         #
         # produce ff calibration file
@@ -275,7 +280,7 @@ def search_filter(run):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No connection to DB for filter information."
+        raise IOError(f"--> No mongo DB filter information."
                       f" You must pass the filters by trailets")
 
     return filters
@@ -287,7 +292,7 @@ def define_FF_selection_range(filters):
         if filters is None:
             raise ValueError("Filters are not defined")
         # give standard values if standard filters
-        if filters == 52:
+        if filters == '52':
             min_ff = 3000
             max_ff = 12000
 
@@ -309,10 +314,10 @@ def define_FF_selection_range(filters):
 
             elif trasm[filters] <= 0.001 and trasm[filters] > 0.0005:
                 min_ff = 1200
-                max_ff = 6000
+                max_ff = 12000
             else:
                 min_ff = 200
-                max_ff = 4000
+                max_ff = 5000
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")

@@ -61,7 +61,7 @@ class FitIntensityScan(Tool):
     ).tag(config=True)
 
     input_prefix = traits.Unicode(
-        "no_sys_corrected_calibration",
+        default_value="no_sys_corrected_calibration",
         help='Prefix to select calibration files to fit',
     ).tag(config=True)
 
@@ -127,7 +127,7 @@ class FitIntensityScan(Tool):
         try:
             for i, run in enumerate(self.run_list):
 
-                file_list = sorted(Path(f"{self.input_dir}").rglob(f'{input_prefix}*.Run{run:05d}.{self.sub_run:04d}.h5'))
+                file_list = sorted(Path(f"{self.input_dir}").rglob(f'{self.input_prefix}*.Run{run:05d}.{self.sub_run:04d}.h5'))
 
                 if len(file_list) == 0 :
                     raise IOError(f"Input file for run {run} do not found. \n")
