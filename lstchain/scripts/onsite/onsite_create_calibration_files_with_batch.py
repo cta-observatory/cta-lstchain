@@ -67,7 +67,7 @@ sub_run_list = args.sub_run_list
 config_file = args.config
 sys_date = args.sys_date
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
-max_events = 1000000
+
 
 def main():
 
@@ -139,8 +139,9 @@ def main():
                     fh.writelines(
                         f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
-                        f"-b {base_dir} --filters={filters} --sys_date={sys_date} --config {config_file} --time_run "
-                        f"{time_run}\n")
+                        f"-b {base_dir} -s {stat_events}"
+                        f"--filters={filters} --sys_date={sys_date} "
+                        f"--config {config_file} --time_run {time_run}\n")
 
                 subprocess.run(["sbatch",job_file])
 
