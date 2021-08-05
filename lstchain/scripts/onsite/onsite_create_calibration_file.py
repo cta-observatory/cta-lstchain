@@ -193,7 +193,7 @@ def main():
                 else:
                     sys_date_list = sorted([file.parts[-2] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
-                    systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
+                    systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/intensity_scan_fit_{selected_date}.h5"
 
 
         print(f"\n--> F-factor systematics correction file: {systematics_file}")

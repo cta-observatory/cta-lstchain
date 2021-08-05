@@ -58,7 +58,7 @@ def main():
         print(f"\n--> Input directory {input_dir}")
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/PixelCalibration/intensity_scan/{date}/{prod_id}"
+        output_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
