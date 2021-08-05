@@ -43,7 +43,8 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
 optional.add_argument('--sys_date',
                       help="Date of systematics correction file (format YYYYMMDD). \n"
-                           "If '0', no corrections are applied. Default: automatically search the best date \n")
+                           "If '0', no corrections are applied. Default: automatically search the best date \n",
+                      type=none_or_str)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
