@@ -34,7 +34,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
-optional.add_argument('--prefix', help="input cal-ped name prefix", default="no_sys_corrected_")
+optional.add_argument('--input_prefix', help="Prefix of the input file names", default="no_sys_corrected_")
 
 args = parser.parse_args()
 date = args.date
@@ -42,7 +42,7 @@ prod_id = args.prod_version
 base_dir = args.base_dir
 sub_run = args.sub_run
 config_file = args.config
-prefix = args.prefix
+prefix = args.input_prefix
 
 def main():
 
@@ -95,7 +95,7 @@ def main():
         cmd = f"lstchain_fit_intensity_scan " \
               f"--config={config_file} --input_dir={input_dir} --output_path={output_file} "\
               f"--plot_path={plot_file} --sub_run={sub_run} " \
-              f"--prefix={prefix} --log-file={log_file} --log-file-level=DEBUG "
+              f"--input-prefix={prefix} --log-file={log_file} --log-file-level=DEBUG "
 
         print("\n--> RUNNING...")
         if os.system(cmd):
