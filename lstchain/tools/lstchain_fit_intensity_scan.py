@@ -61,7 +61,7 @@ class FitIntensityScan(Tool):
     ).tag(config=True)
 
     input_prefix = traits.Unicode(
-        default_value="no_sys_corrected_",
+        default_value="calibration",
         help='Prefix to select calibration files to fit',
     ).tag(config=True)
 
@@ -140,7 +140,7 @@ class FitIntensityScan(Tool):
                     raise IOError(f"file size run {run} is too short \n")
 
                 if read_calibration_file(inp_file,ff_data,calib_data, ped_data):
-
+                    self.log.debug(f"Read file {inp_file}")
                     for chan in self.gain_channels:
                         # verify that the median signal is inside the asked range
                         median_charge = np.median(ff_data.charge_median[chan])
