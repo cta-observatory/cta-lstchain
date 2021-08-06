@@ -25,7 +25,7 @@ required.add_argument('-r', '--run_list', help="Run number if the flat-field dat
                       type=int, nargs="+")
 
 version,subversion=lstchain.__version__.rsplit('.post',1)
-optional.add_argument('-f', '--filters_list', help="Filter list (in the same order of the run list)",
+optional.add_argument('-f', '--filters_list', help="Filter list (same order as run list)",
                       type=int, nargs="+")
 
 optional.add_argument('-v', '--prod_version',
