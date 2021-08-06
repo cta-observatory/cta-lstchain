@@ -61,7 +61,7 @@ class FitIntensityScan(Tool):
     ).tag(config=True)
 
     input_prefix = traits.Unicode(
-        default_value="no_sys_corrected_calibration",
+        default_value="no_sys_corrected_",
         help='Prefix to select calibration files to fit',
     ).tag(config=True)
 

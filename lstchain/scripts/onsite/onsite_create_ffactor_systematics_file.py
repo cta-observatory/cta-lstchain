@@ -34,7 +34,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
-optional.add_argument('--prefix', help="input cal-ped name prefix", default="no_sys_corrected_calibration")
+optional.add_argument('--prefix', help="input cal-ped name prefix", default="no_sys_corrected_")
 
 args = parser.parse_args()
 date = args.date
@@ -73,9 +73,9 @@ def main():
             os.makedirs(log_dir, exist_ok=True)
 
         # define output file names
-        output_file = f"{output_dir}/intensity_scan_fit_{date}.{sub_run:04d}.h5"
-        log_file = f"{output_dir}/log/intensity_scan_fit_{date}.{sub_run:04d}.log"
-        plot_file = f"{output_dir}/log/intensity_scan_fit_{date}.{sub_run:04d}.pdf"
+        output_file = f"{output_dir}/{prefix}intensity_scan_fit_{date}.{sub_run:04d}.h5"
+        log_file = f"{output_dir}/log/{prefix}intensity_scan_fit_{date}.{sub_run:04d}.log"
+        plot_file = f"{output_dir}/log/{prefix}intensity_scan_fit_{date}.{sub_run:04d}.pdf"
 
         print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file):
