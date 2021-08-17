@@ -43,8 +43,8 @@
     "delta_time": 2
   },
   "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
+    "picture_thresh":8,
+    "boundary_thresh":4,
     "sigma":2.5,
     "keep_isolated_pixels":false,
     "min_number_picture_neighbors":2,
@@ -52,7 +52,8 @@
     "delta_time": 2
   },
   "dynamic_cleaning": {
-    "threshold": 400
+    "threshold": 400,
+    "percent_cleaning_intensity": 0.02
   },
     "random_forest_regressor_args": {
     "max_depth": 50,
