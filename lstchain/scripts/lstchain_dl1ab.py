@@ -127,7 +127,9 @@ def main():
 
     if args.dynamic_cleaning:
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
+        percent = config['dynamic_cleaning']['percent_cleaning_intensity']
         log.info(f"Using dynamic cleaning with threshold = {config['dynamic_cleaning']['threshold']}")
+        log.info(f"Percent cleaning intensity = {config['dynamic_cleaning']['percent_cleaning_intensity']}")\
 
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
@@ -209,19 +211,13 @@ def main():
                     image = smear_light_in_pixels(image,
                                                   camera_geom,
                                                   smeared_light_fraction)
-                CLEANING_FACTOR = 1
-                if args.dynamic_cleaning:
-                    max_3_value_index = np.argsort(image)[-3:]
-                    mean_3_max_signal = np.mean(image[max_3_value_index])
-                    if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
-                        CLEANING_FACTOR = mean_3_max_signal/THRESHOLD_DYNAMIC_CLEANING
-                    else:
-                        CLEANING_FACTOR = 1
+            
+                
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
-                                               picture_th*CLEANING_FACTOR,
-                                               boundary_th*CLEANING_FACTOR,
+                                               picture_th,
+                                               boundary_th,
                                                isolated_pixels,
                                                min_n_neighbors)
     
@@ -247,6 +243,17 @@ def main():
                                                              cleaned_pixel_times,
                                                              1, delta_time)
                         signal_pixels = new_mask
+
+                    if args.dynamic_cleaning:
+                        max_3_value_index = np.argsort(image)[-3:]
+                        mean_3_max_signal = np.mean(image[max_3_value_index])
+                        if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
+                            cleaned_img = image.copy()
+                            cleaned_img[~signal_pixels] = 0
+                            dynamic_threshold = percent*mean_3_max_signal
+                            mask_dynamic_cleaning = (cleaned_img > 0) & (cleaned_img < dynamic_threshold)
+                            new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels, mask_dynamic_cleaning)
+                            signal_pixels = new_mask_after_dynamic_cleaning
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
