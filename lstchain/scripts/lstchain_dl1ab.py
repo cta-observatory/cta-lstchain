@@ -128,9 +128,11 @@ def main():
     if args.dynamic_cleaning:
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
         FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
-        log.info(f"Using dynamic cleaning with threshold = {config['dynamic_cleaning']['threshold']}")
-        log.info(f"Fraction cleaning intensity = {config['dynamic_cleaning']['fraction_cleaning_intensity']}")
-
+        log.info("Using dynamic cleaning for events with average size of the "
+            f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
+        log.info("Remove from image pixels which have charge below "
+                 f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
+    
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
