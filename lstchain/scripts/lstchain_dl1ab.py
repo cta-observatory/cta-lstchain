@@ -71,7 +71,7 @@ parser.add_argument('--pedestal-cleaning', action='store',
 parser.add_argument('--dynamic-cleaning', action='store',
                     type=lambda x: bool(strtobool(x)),
                     dest='dynamic_cleaning',
-                    help='Boolean. True to use dyanmic cleaning',
+                    help='Boolean. True to use dynamic cleaning',
                     default=False)
 
 args = parser.parse_args()
