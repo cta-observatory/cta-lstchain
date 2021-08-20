@@ -53,7 +53,7 @@
   },
   "dynamic_cleaning": {
     "threshold": 400,
-    "percent_cleaning_intensity": 0.02
+    "fraction_cleaning_intensity": 0.02
   },
     "random_forest_regressor_args": {
     "max_depth": 50,

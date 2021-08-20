@@ -127,9 +127,9 @@ def main():
 
     if args.dynamic_cleaning:
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
-        percent = config['dynamic_cleaning']['percent_cleaning_intensity']
+        FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
         log.info(f"Using dynamic cleaning with threshold = {config['dynamic_cleaning']['threshold']}")
-        log.info(f"Percent cleaning intensity = {config['dynamic_cleaning']['percent_cleaning_intensity']}")\
+        log.info(f"Fraction cleaning intensity = {config['dynamic_cleaning']['fraction_cleaning_intensity']}")
 
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
@@ -250,7 +250,7 @@ def main():
                         if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
                             cleaned_img = image.copy()
                             cleaned_img[~signal_pixels] = 0
-                            dynamic_threshold = percent*mean_3_max_signal
+                            dynamic_threshold = FRACTION_CLEANING_SIZE*mean_3_max_signal
                             mask_dynamic_cleaning = (cleaned_img > 0) & (cleaned_img < dynamic_threshold)
                             new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels, mask_dynamic_cleaning)
                             signal_pixels = new_mask_after_dynamic_cleaning
