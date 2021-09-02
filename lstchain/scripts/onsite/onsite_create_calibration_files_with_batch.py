@@ -14,6 +14,7 @@ from pathlib import Path
 import lstchain
 import subprocess
 import shutil
+import sys
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Reconstruct filter scan, this must be run after the night calibration scripts',
@@ -68,25 +69,23 @@ config_file = args.config
 sys_date = args.sys_date
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 
-
 def main():
 
     if shutil.which('srun') is None:
-        print(">>> This script needs a slurm batch system. Stop")
-        return
+        sys.exit(">>> This script needs a slurm batch system. Stop")
 
     print(f"\n--> Start reconstruct runs {run_list} and sub-runs {sub_run_list}")
 
     # verify config file
     if not os.path.exists(config_file):
-        raise IOError(f"Config file {config_file} does not exists. \n")
+        sys.exit(f"Config file {config_file} does not exists. \n")
 
     print(f"\n--> Config file {config_file}")
 
     # for old runs or if the data-base is not available
     # it is possible to give the filter list
     if filters_list is not None and len(filters_list) != len(run_list):
-            raise ValueError("Filter list length must be equal to run list length. Verify \n")
+        sys.exit("Filter list length must be equal to run list length. Verify \n")
 
     # loops over runs and sub_runs and send jobs
     filters = None
