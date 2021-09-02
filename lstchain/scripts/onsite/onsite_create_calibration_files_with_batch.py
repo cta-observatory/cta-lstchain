@@ -48,10 +48,12 @@ optional.add_argument('--sub_run_list',
                       type=int,
                       nargs="+",default=[0])
 optional.add_argument('--sys_date',
-                      help="Date of systematics corrections (format YYYYMMDD). \n"
-                           "If '0', no corrections are applied. Default: automatically search the best date \n")
-
-
+                      help="Date of systematic corrections (format YYYYMMDD). \n"
+                           "Default: automatically search the best date \n")
+optional.add_argument('--no_sys_correction',
+                      help="If true, systematic corrections are not applied. \n",
+                      type=bool,
+                      default=False)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 
@@ -67,6 +69,8 @@ time_run = args.time_run
 sub_run_list = args.sub_run_list
 config_file = args.config
 sys_date = args.sys_date
+no_sys_correction = args.no_sys_correction
+
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 
 def main():

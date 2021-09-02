@@ -10,6 +10,7 @@
 
 import argparse
 import os
+import sys
 from pathlib import Path
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_calib as calib
@@ -42,9 +43,12 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
 optional.add_argument('--sys_date',
-                      help="Date of systematics correction file (format YYYYMMDD). \n"
-                           "If '0', no corrections are applied. Default: automatically search the best date \n",
-                      type=none_or_str)
+                      help="Date of systematic correction file (format YYYYMMDD). \n"
+                           "Default: automatically search the best date \n")
+optional.add_argument('--no_sys_correction',
+                      help="If true, systematic corrections are not applied. \n",
+                      type=bool,
+                      default=False)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
@@ -61,6 +65,7 @@ stat_events = args.statistics
 base_dir = args.base_dir
 time_run = args.time_run
 sys_date = args.sys_date
+no_sys_correction = args.no_sys_correction
 sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
@@ -77,7 +82,7 @@ def main():
         filters = args.filters
 
     if filters is None:
-        raise ValueError(f"Missing filter value for run {run}. \n")
+        sys.exit(f"Missing filter value for run {run}. \n")
 
     # define the FF selection cuts
     if args.min_ff is None or args.max_ff is None:
@@ -179,8 +184,8 @@ def main():
 
         sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
 
-        # no systematic corrections if 0 date (this is necessary for filter scan fit)
-        if sys_date == '0':
+        # define systematic correction file
+        if no_sys_correction:
             systematics_file = None
 
         else:
@@ -193,7 +198,7 @@ def main():
             else:
                 dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}"))
                 if len(dir_list) == 0:
-                    raise IOError(f"No systematics correction found for production {prod_id} in {sys_dir}\n")
+                    raise IOError(f"No systematic correction file found for production {prod_id} in {sys_dir}\n")
                 else:
                     sys_date_list = sorted([file.parts[-2] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
@@ -211,7 +216,7 @@ def main():
 
         # remember there are no systematic corrections
         prefix=""
-        if sys_date == '0':
+        if no_sys_correction:
             prefix=f"no_sys_corrected_"
 
         output_name = f"{prefix}calibration{filter_info}.Run{run:05d}.{sub_run:04d}"
@@ -282,7 +287,7 @@ def search_filter(run):
     except Exception as e:
         print(f"\n >>> Exception: {e}")
         raise IOError(f"--> No mongo DB filter information."
-                      f" You must pass the filters by trailets")
+                      f" You must pass the filters by argument: -f [filters]")
 
     return filters
 
