@@ -129,18 +129,18 @@ def main():
                 job_file = f"{log_dir}/{run}_{sub_run}.job"
 
                 with open(job_file, "w") as fh:
-                    fh.writelines("#!/bin/bash\n")
-                    fh.writelines("#SBATCH --job-name=%s.job\n" % run)
-                    fh.writelines("#SBATCH --output=log/%s_%d.out\n" % (run,sub_run))
-                    fh.writelines("#SBATCH --error=log/%s_%s.err\n" % (run,sub_run))
-                    fh.writelines("#SBATCH -A dpps\n")
-                    fh.writelines("#SBATCH -p long\n")
-                    fh.writelines("#SBATCH --array=0-0\n")
-                    fh.writelines("#SBATCH --cpus-per-task=1\n")
-                    fh.writelines("#SBATCH --mem-per-cpu=10G\n")
-                    fh.writelines("#SBATCH -D %s \n" % output_dir)
+                    fh.write("#!/bin/bash\n")
+                    fh.write("#SBATCH --job-name=%s.job\n" % run)
+                    fh.write("#SBATCH --output=log/%s_%d.out\n" % (run,sub_run))
+                    fh.write("#SBATCH --error=log/%s_%s.err\n" % (run,sub_run))
+                    fh.write("#SBATCH -A dpps\n")
+                    fh.write("#SBATCH -p long\n")
+                    fh.write("#SBATCH --array=0-0\n")
+                    fh.write("#SBATCH --cpus-per-task=1\n")
+                    fh.write("#SBATCH --mem-per-cpu=10G\n")
+                    fh.write("#SBATCH -D %s \n" % output_dir)
 
-                    fh.writelines(
+                    fh.write(
                         f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
                         f"-b {base_dir} -s {stat_events} "
