@@ -10,13 +10,14 @@ from ctapipe.visualization import CameraDisplay
 from ctapipe.instrument import CameraGeometry
 from ctapipe.calib import CameraCalibrator
 from ctapipe.containers import EventType
+from ctapipe.calib.camera.gainselection import ThresholdGainSelector
+from ctapipe.core.traits import Float
 
 from ctapipe_io_lst import LSTEventSource
 from traitlets.config import Config
 
 from optparse import OptionParser
 import pandas as pd
-
 
 def find_flash_event(event, telescope=None, n_pixels=None):
 
@@ -81,6 +82,9 @@ if __name__ == "__main__":
     geom = subarray.tel[tel_id].camera.geometry
     n_pixels = subarray.tels[tel_id].camera.geometry.n_pixels
 
+    #gain_selection_threshold = 3500.
+    #gain_selector = ThresholdGainSelector(threshold=gain_selection_threshold)
+
     n_ped_events = 0
     n_flat_events = 0
     mat_all = []
@@ -108,6 +112,9 @@ if __name__ == "__main__":
                     gain = event.r1.tel[tel_id].selected_gain_channel
                     altitude = event.pointing.tel[tel_id].altitude.value
                     azimuth = event.pointing.tel[tel_id].azimuth.value
+                    #if gain is None:
+                    #    selected_gain_channel = gain_selector(data)
+                    #print(sum(selected_gain_channel == 1))
 
                     if config["LSTEventSource"]["LSTR0Corrections"]["select_gain"]:
                         px_variance = np.var(data, axis=1)

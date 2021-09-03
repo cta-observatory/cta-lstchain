@@ -18,6 +18,7 @@ from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
     tailcuts_clean,
+    apply_time_delta_cleaning,
 )
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.io import EventSource, HDF5TableWriter
@@ -32,7 +33,6 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..image.cleaning import apply_time_delta_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -60,6 +60,7 @@ __all__ = [
     'add_disp_to_parameters_table',
     'get_dl1',
     'r0_to_dl1',
+    'r0_to_dl1_pedestals'
 ]
 
 
@@ -173,10 +174,14 @@ def get_dl1(
             signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
+            # makes sure only signal pixels are used in the time check:
+            cleaned_pixel_times = peak_time.copy()
+            cleaned_pixel_times[~signal_pixels] = np.nan
+
             signal_pixels = apply_time_delta_cleaning(
                 camera_geometry,
                 signal_pixels,
-                peak_time,
+                cleaned_pixel_times,
                 min_number_neighbors=1,
                 time_limit=delta_time
             )
@@ -584,6 +589,323 @@ def r0_to_dl1(
         muon_output_filename = Path(dir, name)
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
+
+
+def r0_to_dl1_pedestals(
+    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    output_filename=None,
+    custom_config={},
+    r1_pedestals=None,                ####
+    on_pixel_masks=None,               ####
+    times=None,                       ####
+    window=60,                         ####
+    correction_factor=1,             #####
+    random_pedestals=False,           #####
+):
+    """
+    Chain r0 to dl1
+    Merge MC simulated with no noise with pedestal events
+    from the real data and save the extracted dl1 parameters
+    in output_filename
+
+    # TODO
+    # works for a single telescope so far
+
+    Parameters
+    ----------
+    input_filename: str
+        path to input file, default: `gamma_test_large.simtel.gz`
+    output_filename: str or None
+        path to output file, defaults to writing dl1 into the current directory
+    custom_config: path to a configuration file
+    r1_pedestals: array
+        pedestal waveforms
+        shape (N_events, N_pixels, N_samples)
+    on_pixel_masks: array
+        mask of the ON pixels for each pedestal event
+        shape (N_events, N_pixels)
+
+    Returns
+    -------
+
+    """
+
+    if output_filename is None:
+        try:
+            run = parse_r0_filename(input_filename)
+            output_filename = run_to_dl1_filename(run.tel_id, run.run, run.subrun)
+        except ValueError:
+            output_filename = r0_to_dl1_filename(Path(input_filename).name)
+
+    if os.path.exists(output_filename):
+        raise IOError(str(output_filename) + ' exists, exiting.')
+
+    config = replace_config(standard_config, custom_config)
+
+    custom_calibration = config["custom_calibration"]
+
+    source = EventSource(input_url=input_filename,
+                         config=Config(config["source_config"]))
+    subarray = source.subarray
+    is_simu = source.is_simulation
+
+    if not is_simu:
+        raise RuntimeError('Input is not MC, the result wouldn\'t make any sense.')
+
+    metadata = global_metadata(source)
+    write_metadata(metadata, output_filename)
+
+    cal_mc = load_calibrator_from_config(config, subarray)
+
+    # all this will be cleaned up in a next PR related to the configuration files
+    r1_dl1_calibrator = CameraCalibrator(
+        image_extractor_type=config['image_extractor'],
+        config=Config(config),
+        subarray=subarray
+    )
+
+    calibration_index = DL1MonitoringEventIndexContainer()
+
+    dl1_container = DL1ParametersContainer()
+
+    extra_im = ExtraImageInfo()
+    extra_im.prefix = ''  # get rid of the prefix
+
+    # Write extra information to the DL1 file
+    subarray.to_hdf(output_filename)
+
+    write_mcheader(
+        source.simulation_config,
+        output_filename,
+        obs_id=source.obs_ids[0],
+        filters=HDF5_ZSTD_FILTERS,
+        metadata=metadata,
+    )
+
+    with HDF5TableWriter(
+        filename=output_filename,
+        group_name='dl1/event',
+        mode='a',
+        filters=HDF5_ZSTD_FILTERS,
+        add_prefix=True,
+        # overwrite=True,
+    ) as writer:
+
+        setup_writer(writer, source.subarray, is_simulation=is_simu)
+
+        event = None
+        for i, event in enumerate(source):
+
+            if i % 100 == 0:
+                logger.info(i)
+
+            event.dl0.prefix = ''
+            event.trigger.prefix = ''
+            if event.simulation is not None:
+                event.simulation.prefix = 'mc'
+
+            dl1_container.reset()
+
+            # write sub tables
+            write_subarray_tables(writer, event, metadata)
+
+            if not custom_calibration:
+                cal_mc(event)
+
+            ######
+            # Merging with real pedestal events
+            try:
+                if r1_pedestals is not None:
+
+                    if not random_pedestals:
+                        r1_pedestal = r1_pedestals[i]
+                    else:
+                        # random pedestal event constructed from real waveforms
+                        # pedestal in each pixel is taken from a subset of pedestal events
+                        # in given time window
+
+                        # correction on window size
+                        mask = (times > min(times) + window) & (times < max(times) - window)
+                        times_corr = times[mask]
+                        time0 = np.random.choice(times_corr)
+                        mask_events = abs(times - time0) < window
+                        r1_ped_subsample = r1_pedestals[mask_events]
+                        n_pixels = r1_ped_subsample.shape[-2]
+                        indexes = np.random.randint(r1_ped_subsample.shape[0], size=n_pixels)
+                        ped = []
+                        on = []
+
+                        ###
+                        #n_pixels=10
+                        #indexes = np.random.randint(r1_ped_subsample.shape[0], size=n_pixels)
+                        #r1_ped_subsample = r1_ped_subsample[:, :, :10, :5]
+                        #print(r1_ped_subsample.shape)
+                        #for k in range(r1_ped_subsample.shape[0]):
+                        #    print(r1_ped_subsample[k])
+                        ###
+
+                        if on_pixel_masks is not None:
+                            on_px_subsample = on_pixel_masks[mask_events]
+                            for j in range(0, n_pixels):
+
+                                ###
+                                #print(indexes[j])
+                                #print(r1_ped_subsample[indexes[j], :, j, :])
+                                #print(r1_ped_subsample[indexes[j], :, j, :].shape)
+                                ###
+
+                                if r1_ped_subsample.ndim == 4:
+                                    ped.append(r1_ped_subsample[indexes[j], :, j, :])
+                                elif r1_ped_subsample.ndim == 3:
+                                    ped.append(r1_ped_subsample[indexes[j], j, :])
+                                on.append(on_px_subsample[indexes[j], j])
+                            on_pixel_mask = np.array(on, dtype=bool)
+                        else:
+                            for j in range(0, n_pixels):
+                                ped.append(r1_ped_subsample[indexes[j], :, j, :])
+                        if np.array(ped).shape[1] == 2:
+                            r1_pedestal = np.swapaxes(np.array(ped), 0, 1)
+                        else:
+                            r1_pedestal = np.array(ped)
+
+                    # gain selection for pedestals according to the MC r1 gain
+                    if r1_pedestal.shape[0] == 2:
+                        selected_gains = event.r1.tel[1].selected_gain_channel
+
+                        #print(sum(event.simulation.tel[1].true_image > 0))
+                        #print(sum(selected_gains == 0), sum(selected_gains == 1))
+
+                        r1_pedestal_gain =[]
+                        for j in range(selected_gains.shape[0]):
+                            r1_pedestal_gain.append(r1_pedestal[selected_gains[j], j, :])
+                        r1_pedestal = np.array(r1_pedestal_gain)
+
+                    if event.r1.tel[1].waveform.shape[1] > 36:
+                        event.r1.tel[1].waveform = event.r1.tel[1].waveform[:, 2:-2]
+                    if r1_pedestal.shape[1] > 36:
+                        r1_pedestal_cut = r1_pedestal[:, 2:-2]
+                    else: r1_pedestal_cut = r1_pedestal
+
+                    event.r1.tel[1].waveform = event.r1.tel[1].waveform + r1_pedestal_cut
+                    #event.r1.tel[1].waveform = r1_pedestal_cut
+                    pedestals_used = i+1
+
+                else: pedestals_used = 0
+
+                if on_pixel_masks is not None:
+                    if not random_pedestals:
+                        on_pixel_mask = np.array(on_pixel_masks[i], dtype=bool)
+                    event.r1.tel[1].waveform[~on_pixel_mask] = np.zeros(r1_pedestal_cut.shape[1])
+
+            except IndexError:
+                print('Not enough pedestal events to merge! The rest of the file is skipped.')
+                break
+            #######
+
+            if config['mc_image_scaling_factor'] != 1:
+                rescale_dl1_charge(event, config['mc_image_scaling_factor'])
+
+            # create image for all events
+            r1_dl1_calibrator(event)
+
+            # Temporal volume reducer for lstchain - dl1 level must be filled and dl0 will be overwritten.
+            # When the last version of the method is implemented, vol. reduction will be done at dl0
+            apply_volume_reduction(event, subarray, config)
+
+            # FIXME? This should be eventually done after we evaluate whether the image is
+            # a candidate muon ring. In that case the full image could be kept, or reduced
+            # only after the ring analysis is complete.
+
+            for telescope_id, dl1_tel in event.dl1.tel.items():
+                dl1_tel.prefix = ''  # don't really need one
+                tel_name = str(subarray.tel[telescope_id])[4:]
+
+                # extra info for the image table
+                extra_im.tel_id = telescope_id
+                extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
+
+                # write image first, so we are sure nothing here modifies it
+                writer.write(
+                    table_name=f'telescope/image/{tel_name}',
+                    containers=[event.index, dl1_tel, extra_im]
+                )
+
+                focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
+                mirror_area = subarray.tel[telescope_id].optics.mirror_area
+
+                dl1_container.reset()
+
+                # update the calibration index in the dl1 event container
+                dl1_container.calibration_id = calibration_index.calibration_id
+
+                dl1_container.fill_event_info(event)
+
+
+                if custom_calibration:
+                    lst_calibration(event, telescope_id)
+
+                # Will determine whether this event has to be written to the
+                # DL1 output or not.
+                dl1_container.fill_mc(event, subarray.positions[telescope_id])
+
+                assert event.dl1.tel[telescope_id].image is not None
+
+                try:
+                    get_dl1(
+                        event,
+                        subarray,
+                        telescope_id,
+                        dl1_container=dl1_container,
+                        custom_config=config,
+                    )
+
+                except HillasParameterizationError:
+                    logging.exception(
+                        'HillasParameterizationError in get_dl1()'
+                    )
+
+                dl1_container.trigger_type = event.trigger.event_type
+
+                dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
+                dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
+
+                dl1_container.trigger_time = event.trigger.time.unix
+                dl1_container.event_type = event.trigger.event_type
+
+                dl1_container.prefix = dl1_tel.prefix
+
+                for container in [extra_im, dl1_container, event.r0, dl1_tel]:
+                    add_global_metadata(container, metadata)
+
+                writer.write(table_name=f'telescope/parameters/{tel_name}',
+                             containers=[event.index, dl1_container])
+
+                # writes mc information per telescope, including photo electron image
+                if (
+                    is_simu
+                    and config['write_pe_image']
+                    and event.simulation.tel[telescope_id].true_image is not None
+                    and event.simulation.tel[telescope_id].true_image.any()
+                ):
+                    event.simulation.tel[telescope_id].prefix = ''
+                    writer.write(
+                        table_name=f'simulation/{tel_name}',
+                        containers=[event.simulation.tel[telescope_id], extra_im]
+                    )
+
+        if event is None:
+            logger.warning('No events in file')
+
+    # Reconstruct source position from disp for all events and write the result in the output file
+    add_disp_to_parameters_table(output_filename, dl1_params_lstcam_key, focal_length)
+
+    # Write energy histogram from simtel file and extra metadata
+    # ONLY of the simtel file has been read until the end, otherwise it seems to hang here forever
+    if source.max_events is None:
+        write_simtel_energy_histogram(source, output_filename, obs_id=event.index.obs_id,
+                                      metadata=metadata)
+
+    return pedestals_used
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):
