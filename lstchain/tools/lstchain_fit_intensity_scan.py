@@ -255,11 +255,15 @@ class FitIntensityScan(Tool):
                     fig = plt.figure((chan+1), figsize=(10, 10))
                     fig.suptitle(f"{channel[chan]} channel", fontsize=25)
                     ax=plt.subplot(1, 1, 1)
-                    plt.grid()
+                    ax.grid(True)
+                    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-                    plt.plot(self.selected_runs[chan],np.median(self.signal[chan],axis=0),"o")
-                    plt.ylabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
-                    plt.xlabel(r'Runs used in the fit')
+                    ax.yaxis.set_major_locator(plt.MultipleLocator(1))
+
+                    plt.plot(np.median(self.signal[chan],axis=0),self.selected_runs[chan],"o")
+                    plt.xlabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
+                    plt.ylabel(r'Runs used in the fit')
+
                     pdf.savefig()
 
                     # plot the fit results and residuals for four arbitrary  pixels
