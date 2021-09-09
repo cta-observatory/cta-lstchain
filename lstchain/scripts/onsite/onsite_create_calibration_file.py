@@ -44,7 +44,8 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
 optional.add_argument('--sys_date',
                       help="Date of systematic correction file (format YYYYMMDD). \n"
-                           "Default: automatically search the best date \n")
+                           "Default: automatically search the best date \n",
+                      type = none_or_str)
 optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
