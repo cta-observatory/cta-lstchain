@@ -144,7 +144,7 @@ def main():
                         f"srun onsite_create_calibration_file -r {run} "
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
                         f"-b {base_dir} -s {stat_events} "
-                        f"--filters={filters} --no_sys_correction {no_sys_correction} --sys_date={sys_date} "
+                        f"--filters {filters} --no_sys_correction {no_sys_correction} --sys_date {sys_date} "
                         f"--config {config_file} --time_run {time_run}\n")
 
                 subprocess.run(["sbatch",job_file])
