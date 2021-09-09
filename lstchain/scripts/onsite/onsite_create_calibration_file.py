@@ -46,8 +46,8 @@ optional.add_argument('--sys_date',
                       help="Date of systematic correction file (format YYYYMMDD). \n"
                            "Default: automatically search the best date \n")
 optional.add_argument('--no_sys_correction',
-                      help="If true, systematic corrections are not applied. \n",
-                      type=bool,
+                      help="Systematic corrections are not applied. \n",
+                      action='store_true',
                       default=False)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)

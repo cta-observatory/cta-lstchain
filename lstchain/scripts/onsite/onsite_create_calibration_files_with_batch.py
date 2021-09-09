@@ -51,8 +51,8 @@ optional.add_argument('--sys_date',
                       help="Date of systematic corrections (format YYYYMMDD). \n"
                            "Default: automatically search the best date \n")
 optional.add_argument('--no_sys_correction',
-                      help="If true, systematic corrections are not applied. \n",
-                      type=bool,
+                      help="Systematic corrections are not applied. \n",
+                      action='store_true',
                       default=False)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
@@ -140,12 +140,16 @@ def main():
                     fh.write("#SBATCH --mem-per-cpu=10G\n")
                     fh.write("#SBATCH -D %s \n" % output_dir)
 
-                    fh.write(
-                        f"srun onsite_create_calibration_file -r {run} "
-                        f"-p {ped_run} -v {prod_id} --sub_run {sub_run} "
-                        f"-b {base_dir} -s {stat_events} "
-                        f"--filters {filters} --no_sys_correction {no_sys_correction} --sys_date {sys_date} "
-                        f"--config {config_file} --time_run {time_run}\n")
+                    cmd = f"srun onsite_create_calibration_file -r {run} " \
+                        f"-p {ped_run} -v {prod_id} --sub_run {sub_run} " \
+                        f"-b {base_dir} -s {stat_events} " \
+                        f"--filters {filters} --sys_date {sys_date} " \
+                        f"--config {config_file} --time_run {time_run}"
+
+                    if no_sys_correction:
+                        cmd += " --no_sys_correction"
+
+                    fh.write(cmd)
 
                 subprocess.run(["sbatch",job_file])
 
