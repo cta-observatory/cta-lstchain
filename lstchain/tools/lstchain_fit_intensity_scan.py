@@ -219,8 +219,8 @@ class FitIntensityScan(Tool):
         write fit results in h5 file and the check-plots in pdf file
         """
 
-        gain = np.ma.array(self.fit_parameters.T[0], mask=self.fit_error)
-        quadratic_term = np.ma.array(self.fit_parameters.T[1], mask=self.fit_error)
+        gain = np.ma.array(self.fit_parameters.T[0], mask=self.fit_error.T)
+        quadratic_term = np.ma.array(self.fit_parameters.T[1], mask=self.fit_error.T)
 
         # give to the badly fitted pixel a median value for the B term
         median_quadratic_term = np.ma.median(quadratic_term,axis=0)
