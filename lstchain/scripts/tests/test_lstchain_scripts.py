@@ -231,7 +231,6 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
         merged_dl1_observed_file,
         "--no-image",
         "False",
-        "--smart",
         "False",
         "--run-number",
         "2008",
