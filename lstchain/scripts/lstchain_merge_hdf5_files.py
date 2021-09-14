@@ -21,7 +21,7 @@ import os
 from distutils.util import strtobool
 # import tables
 from lstchain.io import get_dataset_keys
-from lstchain.io import smart_merge_h5files, auto_merge_h5files
+from lstchain.io import auto_merge_h5files
 from glob import glob
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
@@ -37,11 +37,6 @@ parser.add_argument('--output-file', '-o', action='store', type=str,
                     dest='outfile',
                     help='Path of the resulting merged file',
                     default='merge.h5')
-
-parser.add_argument('--smart', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='smart',
-                    help='Boolean. True for smart merge, False for auto merge',
-                    default=True)
 
 parser.add_argument('--no-image', action='store', type=lambda x: bool(strtobool(x)),
                     dest='noimage',
@@ -85,15 +80,7 @@ def main():
     else:
         keys = None
 
-    if args.smart:
-        smart_merge_h5files(file_list, args.outfile, node_keys=keys)
-    else:
-        auto_merge_h5files(
-            file_list,
-            args.outfile,
-            nodes_keys=keys,
-            progress_bar=args.progress
-        )
+    auto_merge_h5files(file_list, args.outfile, nodes_keys=keys)
 
 
 if __name__ == '__main__':

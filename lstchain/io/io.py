@@ -46,7 +46,6 @@ __all__ = [
     'check_metadata',
     'read_metadata',
     'auto_merge_h5files',
-    'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
     'add_config_metadata',
@@ -334,44 +333,10 @@ def merging_check(file_list):
             assert subarray_info == subarray_info0
 
         except AssertionError:
-            log.exception(f"{filename} cannot be smart merged '¯\_(ツ)_/¯'")
+            log.exception(f"{filename} cannot be merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
-
-
-def smart_merge_h5files(
-    file_list, output_filename="merged.h5", node_keys=None, merge_arrays=False
-):
-    """
-    Check that HDF5 files are compatible for merging and merge them
-
-    Parameters
-    ----------
-    file_list: list of paths to hdf5 files
-    output_filename: path to the merged file
-    node_keys
-    merge_arrays: bool
-    """
-    smart_list = merging_check(file_list)
-    auto_merge_h5files(
-        smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
-    )
-
-    # Merge metadata and store source file names
-    metadata0 = read_metadata(smart_list[0])
-    source_filenames = [str(smart_list[0])]
-
-    for file in smart_list[1:]:
-        metadata = read_metadata(file)
-        check_metadata(metadata0, metadata)
-        source_filenames.append(str(file))
-
-    with open_file(output_filename, mode="a") as file:
-        sources = file.create_group("/", "source_filenames", "List of files merged")
-        file.create_array(sources, "filenames", source_filenames, "List of files merged")
-
-    write_metadata(metadata0, output_filename)
 
 
 def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
