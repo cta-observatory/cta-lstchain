@@ -209,17 +209,16 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
 
 
 def auto_merge_h5files(
-        file_list,
-        output_filename='merged.h5',
-        nodes_keys=None,
-        merge_arrays=False,
-        filters=HDF5_ZSTD_FILTERS,
-        progress_bar=False,
+    file_list=None,
+    output_filename="merged.h5",
+    nodes_keys=None,
+    merge_arrays=False,
+    filters=HDF5_ZSTD_FILTERS,
 ):
     """
     Automatic merge of HDF5 files.
-    A list of nodes keys can be provided to merge only these nodes.
-    If None, all nodes are merged.
+    A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    It may be also used to create a new file output_filename from content stored in another file.
 
     Parameters
     ----------
@@ -229,6 +228,12 @@ def auto_merge_h5files(
     merge_arrays: bool
     filters
     """
+
+    if file_list is None:
+        file_list = []
+    if len(file_list) > 1:
+        file_list = merging_check(file_list)
+    assert len(file_list) > 0, "The list of files is too short"
 
     if nodes_keys is None:
         keys = set(get_dataset_keys(file_list[0]))
