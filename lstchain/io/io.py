@@ -284,6 +284,13 @@ def auto_merge_h5files(
                         raise
             bar.update(1)
 
+    # merge metadata
+    metadata0 = read_metadata(file_list[0])
+    for file in file_list[1:]:
+        metadata = read_metadata(file)
+        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+    write_metadata(metadata0, output_filename)
+
 
 def merging_check(file_list):
     """
