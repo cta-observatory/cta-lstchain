@@ -127,7 +127,7 @@ def main():
                     os.makedirs(log_dir, exist_ok=True)
 
                 # job file              
-                now = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
+                now = datetime.now().replace(microsecond=0).isoformat(sep='T')
                 job_file = f"{log_dir}/run_{run}_subrun_{sub_run}_date_{now}.job"
 
                 with open(job_file, "w") as fh:
