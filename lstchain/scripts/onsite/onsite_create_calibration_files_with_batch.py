@@ -15,6 +15,7 @@ import lstchain
 import subprocess
 import shutil
 import sys
+from datetime import datetime
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Reconstruct filter scan, this must be run after the night calibration scripts',
@@ -125,14 +126,15 @@ def main():
                     print(f"--> Create directory {log_dir}\n")
                     os.makedirs(log_dir, exist_ok=True)
 
-                # job file
-                job_file = f"{log_dir}/{run}_{sub_run}.job"
+                # job file              
+                now = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
+                job_file = f"{log_dir}/run_{run}_subrun_{sub_run}_date_{now}.job"
 
                 with open(job_file, "w") as fh:
                     fh.write("#!/bin/bash\n")
                     fh.write("#SBATCH --job-name=%s.job\n" % run)
-                    fh.write("#SBATCH --output=log/%s_%d.out\n" % (run,sub_run))
-                    fh.write("#SBATCH --error=log/%s_%s.err\n" % (run,sub_run))
+                    fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run,sub_run,now))
+                    fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run,sub_run,now))
                     fh.write("#SBATCH -A dpps\n")
                     fh.write("#SBATCH -p long\n")
                     fh.write("#SBATCH --array=0-0\n")
