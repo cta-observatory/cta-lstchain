@@ -180,7 +180,10 @@ def main():
                 raise IOError(f"Time calibration file from run {time_run} not found\n")
             else:
                 time_file = file_list[0]
-
+                
+        if not os.path.exists(time_file):
+            raise IOError(f"Time calibration file {time_file} does not exist\n")
+      
         print(f"\n--> Time calibration file: {time_file}")
 
         sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
@@ -194,16 +197,19 @@ def main():
             if sys_date is not None:
                 systematics_file = f"{sys_dir}/{sys_date}/{prod_id}/ffactor_systematics_{sys_date}.h5"
 
-            # search the first sys correction before the run,
+            # search the first sys correction file before the run,
             # if nothing before, use the first found
             else:
-                dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}"))
+                dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}/ffactor_systematics*"))
                 if len(dir_list) == 0:
                     raise IOError(f"No systematic correction file found for production {prod_id} in {sys_dir}\n")
                 else:
-                    sys_date_list = sorted([file.parts[-2] for file in dir_list],reverse=True)
+                    sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
                     systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
+            
+            if not os.path.exists(systematics_file):
+                raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
 
         print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
