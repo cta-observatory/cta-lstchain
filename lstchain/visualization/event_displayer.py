@@ -512,7 +512,9 @@ def animate(   array_ids,                     #array with the ID's of the events
                     plt.plot([(3-y0+slope*x0)/slope,(-3-y0+slope*x0)/slope],[3,-3],'--',color='w',alpha=0.8)
 
                     plt.legend(loc='best')
-
+                  
+                fig.subplots_adjust(left=0.09, bottom=0.09, right=1.05, top=0.95, wspace=None, hspace=None)
+                
                 #saving the animations in a folder
                 if not os.path.exists(folder_name+'_Run'+str(run_number)):
                     os.makedirs(folder_name+'_Run'+str(run_number))
