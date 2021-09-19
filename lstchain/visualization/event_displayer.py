@@ -161,7 +161,7 @@ def plot(      array_ids,                     #array with the ID's of the events
                 os.makedirs(folder_name+'_Run'+str(run_number))
 
             fig.savefig(folder_name+'_Run'+str(run_number)+'/event_'+str(N).zfill(7)+
-                        '_'+representation+file_type, dpi=300)
+                        '_'+representation+file_type, dpi=300, bbox_inches='tight')
 
         #if we only want to download the image we dont show it (is faster)
         if plot_image==False:
@@ -216,7 +216,7 @@ def plot(      array_ids,                     #array with the ID's of the events
                 os.makedirs(folder_name+'_Run'+str(run_number))
 
             fig.savefig(folder_name+'_Run'+str(run_number)+'/event_'+str(N).zfill(7)+
-                        '_'+representation+file_type, dpi=300)
+                        '_'+representation+file_type, dpi=300, bbox_inches='tight')
 
         #if we only want to download the image we dont show 
         if plot_image==False:
