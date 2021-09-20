@@ -68,6 +68,12 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
+parser.add_argument('--dynamic-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='dynamic_cleaning',
+                    help='Boolean. True to use dynamic cleaning',
+                    default=False)
+
 args = parser.parse_args()
 
 
@@ -119,6 +125,14 @@ def main():
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
 
+    if args.dynamic_cleaning:
+        THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
+        FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
+        log.info("Using dynamic cleaning for events with average size of the "
+            f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
+        log.info("Remove from image pixels which have charge below "
+                 f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
+    
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
@@ -209,6 +223,7 @@ def main():
                                                boundary_th,
                                                isolated_pixels,
                                                min_n_neighbors)
+    
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
@@ -231,6 +246,17 @@ def main():
                                                              cleaned_pixel_times,
                                                              1, delta_time)
                         signal_pixels = new_mask
+
+                    if args.dynamic_cleaning:
+                        max_3_value_index = np.argsort(image)[-3:]
+                        mean_3_max_signal = np.mean(image[max_3_value_index])
+                        if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
+                            cleaned_img = image.copy()
+                            cleaned_img[~signal_pixels] = 0
+                            dynamic_threshold = FRACTION_CLEANING_SIZE*mean_3_max_signal
+                            mask_dynamic_cleaning = (cleaned_img > 0) & (cleaned_img < dynamic_threshold)
+                            new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels, mask_dynamic_cleaning)
+                            signal_pixels = new_mask_after_dynamic_cleaning
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
