@@ -121,7 +121,7 @@ def process_mc(dl2_file, mc_type):
     az1=events.reco_az
 
     angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad) ** 2
-    events['theta2'] = angdist2.to(u.deg**2)
+    events['theta2'] = angdist2.to_value(u.deg**2)
 
     return gammaness, angdist2.to(u.deg**2), e_reco, e_true, sim_par, events
 
@@ -147,7 +147,7 @@ def process_real(dl2_file):
     az1=events.reco_az
 
     angdist2 = (angular_separation(az1, alt1, az2, alt2).to_numpy() * u.rad) ** 2
-    events['theta2'] = angdist2.to(u.deg**2)
+    events['theta2'] = angdist2.to_value(u.deg**2)
 
     return gammaness, angdist2.to(u.deg**2),e_reco, events, obstime_real
 
