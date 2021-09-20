@@ -29,7 +29,7 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata, write_metadata
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
@@ -180,6 +180,7 @@ def main():
         nodes_keys.remove(dl1_images_lstcam_key)
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
+    metadata = read_metadata(args.input_file)
 
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
@@ -305,6 +306,8 @@ def main():
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
+
+    write_metadata(metadata, args.output_file)
 
 
 if __name__ == '__main__':
