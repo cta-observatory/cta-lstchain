@@ -193,9 +193,13 @@ def get_dl1(
             # convert ctapipe's width and length (in m) to deg:
             foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
             width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+            width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, foclen))
             length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+            length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, foclen))
             dl1_container.width = width
+            dl1_container.width_uncertainty = width_uncertainty
             dl1_container.length = length
+            dl1_container.length_uncertainty = length_uncertainty
             dl1_container.wl = dl1_container.width / dl1_container.length
 
             dl1_container.set_timing_features(camera_geometry[signal_pixels],
