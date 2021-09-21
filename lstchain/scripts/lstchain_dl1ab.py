@@ -29,7 +29,7 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata, write_metadata
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
@@ -66,6 +66,12 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     type=lambda x: bool(strtobool(x)),
                     dest='pedestal_cleaning',
                     help='Boolean. True to use pedestal cleaning',
+                    default=False)
+
+parser.add_argument('--dynamic-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='dynamic_cleaning',
+                    help='Boolean. True to use dynamic cleaning',
                     default=False)
 
 args = parser.parse_args()
@@ -119,6 +125,14 @@ def main():
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
 
+    if args.dynamic_cleaning:
+        THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
+        FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
+        log.info("Using dynamic cleaning for events with average size of the "
+            f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
+        log.info("Remove from image pixels which have charge below "
+                 f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
+    
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
@@ -140,7 +154,9 @@ def main():
         'r',
         'phi',
         'length',
+        'length_uncertainty',
         'width',
+        'width_uncertainty',
         'psi',
         'skewness',
         'kurtosis',
@@ -164,6 +180,7 @@ def main():
         nodes_keys.remove(dl1_images_lstcam_key)
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
+    metadata = read_metadata(args.input_file)
 
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
@@ -199,6 +216,8 @@ def main():
                     image = smear_light_in_pixels(image,
                                                   camera_geom,
                                                   smeared_light_fraction)
+            
+                
 
                 signal_pixels = tailcuts_clean(camera_geom,
                                                image,
@@ -206,6 +225,7 @@ def main():
                                                boundary_th,
                                                isolated_pixels,
                                                min_n_neighbors)
+    
 
                 n_pixels = np.count_nonzero(signal_pixels)
                 if n_pixels > 0:
@@ -229,6 +249,17 @@ def main():
                                                              1, delta_time)
                         signal_pixels = new_mask
 
+                    if args.dynamic_cleaning:
+                        max_3_value_index = np.argsort(image)[-3:]
+                        mean_3_max_signal = np.mean(image[max_3_value_index])
+                        if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
+                            cleaned_img = image.copy()
+                            cleaned_img[~signal_pixels] = 0
+                            dynamic_threshold = FRACTION_CLEANING_SIZE*mean_3_max_signal
+                            mask_dynamic_cleaning = (cleaned_img > 0) & (cleaned_img < dynamic_threshold)
+                            new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels, mask_dynamic_cleaning)
+                            signal_pixels = new_mask_after_dynamic_cleaning
+
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
 
@@ -248,9 +279,13 @@ def main():
                         dl1_container.wl = dl1_container.width / dl1_container.length
                         dl1_container.n_pixels = n_pixels
                         width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
+                        width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, focal_length))
                         length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
+                        length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, focal_length))
                         dl1_container.width = width
+                        dl1_container.width_uncertainty = width_uncertainty
                         dl1_container.length = length
+                        dl1_container.length_uncertainty = length_uncertainty
                         dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if set(dl1_params_input).intersection(disp_params):
@@ -271,6 +306,8 @@ def main():
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
+
+    write_metadata(metadata, args.output_file)
 
 
 if __name__ == '__main__':
