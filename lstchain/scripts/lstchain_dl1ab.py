@@ -153,9 +153,7 @@ def main():
         'r',
         'phi',
         'length',
-        'length_uncertainty',
         'width',
-        'width_uncertainty',
         'psi',
         'skewness',
         'kurtosis',
@@ -187,6 +185,9 @@ def main():
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
+        uncertainty_params = {'width_uncertainty', 'length_uncertainty'}
+        if set(dl1_params_input).intersection(uncertainty_params):
+            parameters_to_update.extend(uncertainty_params)
 
         if increase_nsb:
             rng = np.random.default_rng(
@@ -299,6 +300,7 @@ def main():
                     dl1_container['disp_sign'] = disp_sign
 
                 for p in parameters_to_update:
+
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
