@@ -20,6 +20,7 @@ from lstchain.paths import r0_to_dl1_filename
 from pathlib import Path
 import logging
 import sys
+from distutils.util import strtobool
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,11 @@ parser.add_argument('--config', '-c', action='store', type=Path,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
-
+parser.add_argument('--dynamic-cleaning', action='store',
+                    type=lambda x: bool(strtobool(x)),
+                    dest='dynamic_cleaning',
+                    help='Boolean. True to use dynamic cleaning',
+                    default=False)
 
 args = parser.parse_args()
 
