@@ -45,13 +45,15 @@ def apply_dynamic_cleaning(geom, image, signal_pixels, threshold, fraction):
 
     Parameters
     ----------
-    geom
-    image
-    mask
-    threshold
-    fraction
+    geom       Camera geometry
+    image      pixel charges
+    mask       pixels selected by previous cleaning
+    threshold  minimum average charge in the 3 brightest pixels to apply
+               the dynamic cleaning (else nothing is done)
+    fraction   pixels below fraction * (average charge in the 3 brightest
+               pixels) will be removed from the cleaned image
 
-    Returns
+    Returns    a mask with the selected pixels after the dynamic cleaning
     -------
 
     """
