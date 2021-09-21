@@ -43,10 +43,8 @@ parser.add_argument('--config', '-c', action='store', type=Path,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
-parser.add_argument('--dynamic-cleaning', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='dynamic_cleaning',
-                    help='Boolean. True to use dynamic cleaning',
+parser.add_argument('--dynamic-cleaning', action='store_true',
+                    help='If passed, dynamic cleaning is used',
                     default=False)
 
 args = parser.parse_args()
