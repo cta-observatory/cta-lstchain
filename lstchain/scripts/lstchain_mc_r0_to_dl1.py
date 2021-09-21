@@ -20,7 +20,6 @@ from lstchain.paths import r0_to_dl1_filename
 from pathlib import Path
 import logging
 import sys
-from distutils.util import strtobool
 
 log = logging.getLogger(__name__)
 
