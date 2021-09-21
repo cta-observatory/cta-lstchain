@@ -19,33 +19,8 @@ $> python lstchain_dl2_to_dl3.py
 --source-name Crab
 --config ../../data/data_selection_cuts.json
 """
-
-import os
-import json
-from distutils.util import strtobool
-import numpy as np
 import argparse
 from pathlib import Path
-import logging
-import sys
-import pandas as pd
-from astropy import table
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation, AltAz
-from astropy.table import Table, Column, vstack, QTable
-
-
-# ~ from lstchain.irf import create_event_list
-from lstchain.io import read_configuration_file, get_standard_config
-from lstchain.reco.utils import filter_events
-from lstchain.paths import run_info_from_filename
-
-from astropy.io import fits
-import astropy.units as u
-from astropy.coordinates.angle_utilities import angular_separation
-
-from pyirf.utils import calculate_source_fov_offset
-log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="DL2 to DL3")
 
@@ -84,9 +59,46 @@ parser.add_argument('--source-name', '-s', type=str,
                     help='Name of the source',
                     default="None",required=False
                     )
+                    
+parser.add_argument('--cache-astropy', '-astro', type=str,
+                    dest='cache_astropy',
+                    help='activate or not the cache usage for astropy',
+                    default=False,required=False
+                    )
 
 
 args = parser.parse_args()
+
+
+from astropy.utils import iers
+iers.conf.auto_download = args.cache_astropy
+
+import os
+import json
+from distutils.util import strtobool
+import numpy as np
+import logging
+import sys
+import pandas as pd
+from astropy import table
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.table import Table, Column, vstack, QTable
+
+
+# ~ from lstchain.irf import create_event_list
+from lstchain.io import read_configuration_file, get_standard_config
+from lstchain.reco.utils import filter_events
+from lstchain.paths import run_info_from_filename
+
+from astropy.io import fits
+import astropy.units as u
+from astropy.coordinates.angle_utilities import angular_separation
+
+from pyirf.utils import calculate_source_fov_offset
+log = logging.getLogger(__name__)
+
+
 
 DEFAULT_HEADER = fits.Header()
 DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
