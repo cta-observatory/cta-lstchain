@@ -29,7 +29,7 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata, write_metadata
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
@@ -154,7 +154,9 @@ def main():
         'r',
         'phi',
         'length',
+        'length_uncertainty',
         'width',
+        'width_uncertainty',
         'psi',
         'skewness',
         'kurtosis',
@@ -178,6 +180,7 @@ def main():
         nodes_keys.remove(dl1_images_lstcam_key)
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
+    metadata = read_metadata(args.input_file)
 
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
@@ -276,9 +279,13 @@ def main():
                         dl1_container.wl = dl1_container.width / dl1_container.length
                         dl1_container.n_pixels = n_pixels
                         width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
+                        width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, focal_length))
                         length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
+                        length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, focal_length))
                         dl1_container.width = width
+                        dl1_container.width_uncertainty = width_uncertainty
                         dl1_container.length = length
+                        dl1_container.length_uncertainty = length_uncertainty
                         dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
                 if set(dl1_params_input).intersection(disp_params):
@@ -299,6 +306,8 @@ def main():
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
             output.root[dl1_params_lstcam_key][:] = params
+
+    write_metadata(metadata, args.output_file)
 
 
 if __name__ == '__main__':
