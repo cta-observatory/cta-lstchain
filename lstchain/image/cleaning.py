@@ -40,12 +40,11 @@ def apply_time_delta_cleaning(
     return pixels_to_keep
 
 
-def apply_dynamic_cleaning(geom, image, signal_pixels, threshold, fraction):
+def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     """
 
     Parameters
     ----------
-    geom       Camera geometry
     image      pixel charges
     mask       pixels selected by previous cleaning
     threshold  minimum average charge in the 3 brightest pixels to apply
@@ -66,8 +65,7 @@ def apply_dynamic_cleaning(geom, image, signal_pixels, threshold, fraction):
     cleaned_img = image.copy()
     cleaned_img[~signal_pixels] = 0
     dynamic_threshold = fraction * mean_3_max_signal
-    mask_dynamic_cleaning = ((cleaned_img > 0) &
-                             (cleaned_img < dynamic_threshold))
-    new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels,
+    mask_dynamic_cleaning = (cleaned_img >= dynamic_threshold)
+    new_mask_after_dynamic_cleaning = np.logical_and(signal_pixels,
                                                      mask_dynamic_cleaning)
     return new_mask_after_dynamic_cleaning

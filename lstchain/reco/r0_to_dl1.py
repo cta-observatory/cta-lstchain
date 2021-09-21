@@ -190,8 +190,7 @@ def get_dl1(
             threshold_dynamic = config['dynamic_cleaning']['threshold']
             fraction_dynamic = config['dynamic_cleaning'][
                 'fraction_cleaning_intensity']
-            signal_pixels = apply_dynamic_cleaning(camera_geometry,
-                                                   image,
+            signal_pixels = apply_dynamic_cleaning(image,
                                                    signal_pixels,
                                                    threshold_dynamic,
                                                    fraction_dynamic)

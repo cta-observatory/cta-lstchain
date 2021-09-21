@@ -250,8 +250,7 @@ def main():
                         signal_pixels = new_mask
 
                     if use_dynamic_cleaning:
-                        new_mask = apply_dynamic_cleaning(camera_geom,
-                                                          image,
+                        new_mask = apply_dynamic_cleaning(image,
                                                           signal_pixels,
                                                           THRESHOLD_DYNAMIC_CLEANING,
                                                           FRACTION_CLEANING_SIZE)
