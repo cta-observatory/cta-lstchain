@@ -32,7 +32,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..image.cleaning import apply_time_delta_cleaning
+from ..image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -145,10 +145,15 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    # pop delta_time and use_main_island, so we can cleaning_parameters to tailcuts
+    # pop delta_time and use_main_island, so we can pass cleaning_parameters to
+    # tailcuts
     cleaning_parameters = config["tailcut"].copy()
     delta_time = cleaning_parameters.pop("delta_time", None)
     use_main_island = cleaning_parameters.pop("use_only_main_island", True)
+
+    use_dynamic_cleaning = False
+    if "apply" in config["dynamic_cleaning"]:
+        use_dynamic_cleaning = config["dynamic_cleaning"]["apply"]
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -180,6 +185,16 @@ def get_dl1(
                 min_number_neighbors=1,
                 time_limit=delta_time
             )
+
+        if use_dynamic_cleaning:
+            threshold_dynamic = config['dynamic_cleaning']['threshold']
+            fraction_dynamic = config['dynamic_cleaning'][
+                'fraction_cleaning_intensity']
+            signal_pixels = apply_dynamic_cleaning(camera_geometry,
+                                                   image,
+                                                   signal_pixels,
+                                                   threshold_dynamic,
+                                                   fraction_dynamic)
 
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)

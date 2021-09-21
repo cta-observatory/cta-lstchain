@@ -20,7 +20,7 @@ import astropy.units as u
 import numpy as np
 import tables
 from ctapipe.image import hillas_parameters
-from ctapipe.image.cleaning import tailcuts_clean, apply_time_delta_cleaning
+from ctapipe.image.cleaning import tailcuts_clean
 from ctapipe.image.morphology import number_of_islands
 from ctapipe.instrument import SubarrayDescription
 
@@ -33,6 +33,7 @@ from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_me
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.image.modifier import smear_light_in_pixels, add_noise_in_pixels
+from lstchain.image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
 
 log = logging.getLogger(__name__)
 
@@ -66,12 +67,6 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     type=lambda x: bool(strtobool(x)),
                     dest='pedestal_cleaning',
                     help='Boolean. True to use pedestal cleaning',
-                    default=False)
-
-parser.add_argument('--dynamic-cleaning', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='dynamic_cleaning',
-                    help='Boolean. True to use dynamic cleaning',
                     default=False)
 
 args = parser.parse_args()
@@ -125,7 +120,11 @@ def main():
         picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Tailcut config used: {config['tailcut']}")
 
-    if args.dynamic_cleaning:
+    use_dynamic_cleaning = False
+    if 'apply' in config['dynamic_cleaning']:
+        use_dynamic_cleaning = config['dynamic_cleaning']['apply']
+
+    if use_dynamic_cleaning:
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
         FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
         log.info("Using dynamic cleaning for events with average size of the "
@@ -249,16 +248,13 @@ def main():
                                                              1, delta_time)
                         signal_pixels = new_mask
 
-                    if args.dynamic_cleaning:
-                        max_3_value_index = np.argsort(image)[-3:]
-                        mean_3_max_signal = np.mean(image[max_3_value_index])
-                        if mean_3_max_signal > THRESHOLD_DYNAMIC_CLEANING:
-                            cleaned_img = image.copy()
-                            cleaned_img[~signal_pixels] = 0
-                            dynamic_threshold = FRACTION_CLEANING_SIZE*mean_3_max_signal
-                            mask_dynamic_cleaning = (cleaned_img > 0) & (cleaned_img < dynamic_threshold)
-                            new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels, mask_dynamic_cleaning)
-                            signal_pixels = new_mask_after_dynamic_cleaning
+                    if use_dynamic_cleaning:
+                        new_mask = apply_dynamic_cleaning(camera_geom,
+                                                          image,
+                                                          signal_pixels,
+                                                          THRESHOLD_DYNAMIC_CLEANING,
+                                                          FRACTION_CLEANING_SIZE)
+                        signal_pixels = new_mask
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)

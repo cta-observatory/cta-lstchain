@@ -1,9 +1,3 @@
-'''
-COPIED FROM CTAPIPE master before release of 0.11 to avoid the
-bad performance of the version in ctapipe 0.10.5.
-
-TODO: Remove when switching to ctapipe > 0.10.5
-'''
 import numpy as np
 
 
@@ -11,6 +5,10 @@ def apply_time_delta_cleaning(
     geom, mask, arrival_times, min_number_neighbors, time_limit
 ):
     """
+    COPIED FROM CTAPIPE master before release of 0.11 to avoid the
+    bad performance of the version in ctapipe 0.10.5.
+    TODO: Remove when switching to ctapipe > 0.10.5
+
     Identify all pixels from selection that have less than N
     neighbors that arrived within a given timeframe.
 
@@ -40,3 +38,34 @@ def apply_time_delta_cleaning(
     enough_neighbors = np.count_nonzero(valid_neighbors, axis=1) >= min_number_neighbors
     pixels_to_keep[pixels_to_keep] &= enough_neighbors
     return pixels_to_keep
+
+
+def apply_dynamic_cleaning(geom, image, signal_pixels, threshold, fraction):
+    """
+
+    Parameters
+    ----------
+    geom
+    image
+    mask
+    threshold
+    fraction
+
+    Returns
+    -------
+
+    """
+    max_3_value_index = np.argsort(image)[-3:]
+    mean_3_max_signal = np.mean(image[max_3_value_index])
+
+    if mean_3_max_signal < threshold:
+        return signal_pixels
+
+    cleaned_img = image.copy()
+    cleaned_img[~signal_pixels] = 0
+    dynamic_threshold = fraction * mean_3_max_signal
+    mask_dynamic_cleaning = ((cleaned_img > 0) &
+                             (cleaned_img < dynamic_threshold))
+    new_mask_after_dynamic_cleaning = ~np.logical_or(~signal_pixels,
+                                                     mask_dynamic_cleaning)
+    return new_mask_after_dynamic_cleaning
