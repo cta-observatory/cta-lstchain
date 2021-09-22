@@ -232,7 +232,7 @@ def auto_merge_h5files(
         file_list = []
     if len(file_list) > 1:
         file_list = merging_check(file_list)
-    assert len(file_list) > 0, "The list of files is too short"
+    assert len(file_list) > 0, "Please, provide a non empty file_list parameter"
 
     if nodes_keys is None:
         keys = set(get_dataset_keys(file_list[0]))
