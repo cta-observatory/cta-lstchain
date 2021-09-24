@@ -55,6 +55,8 @@ optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
                       default=False)
+optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)", default="calibration")
+
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 
@@ -71,7 +73,7 @@ sub_run_list = args.sub_run_list
 config_file = args.config
 sys_date = args.sys_date
 no_sys_correction = args.no_sys_correction
-
+output_base_name = args.output_base_name
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 
 def main():
@@ -144,7 +146,7 @@ def main():
 
                     cmd = f"srun onsite_create_calibration_file -r {run} " \
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} " \
-                        f"-b {base_dir} -s {stat_events} " \
+                        f"-b {base_dir} -s {stat_events} --output_base_name {output_base_name}" \
                         f"--filters {filters} --sys_date {sys_date} " \
                         f"--config {config_file} --time_run {time_run}"
 

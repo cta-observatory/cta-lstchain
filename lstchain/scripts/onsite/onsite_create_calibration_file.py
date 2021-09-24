@@ -50,6 +50,8 @@ optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
                       default=False)
+optional.add_argument('--output_base_name', help="Base of output file name (change only for debugging)", default="calibration")
+
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
@@ -67,6 +69,7 @@ base_dir = args.base_dir
 time_run = args.time_run
 sys_date = args.sys_date
 no_sys_correction = args.no_sys_correction
+output_base_name = args.output_base_name
 sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
@@ -226,7 +229,7 @@ def main():
         if no_sys_correction:
             prefix=f"no_sys_corrected_"
 
-        output_name = f"{prefix}calibration{filter_info}.Run{run:05d}.{sub_run:04d}"
+        output_name = f"{prefix}{output_base_name}{filter_info}.Run{run:05d}.{sub_run:04d}"
 
         output_file = f"{output_dir}/{output_name}.h5"
         print(f"\n--> Output file {output_file}")
