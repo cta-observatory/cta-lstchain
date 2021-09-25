@@ -34,7 +34,7 @@ parser.add_argument('--input-file', '-f', type=Path,
 # Optional arguments
 parser.add_argument('--output-dir', '-o', action='store', type=Path,
                     dest='output_dir',
-                    help='Path where to store the reco dl2 events',
+                    help='Path where to store the reco dl1 events',
                     default='./dl1_data/')
 
 parser.add_argument('--config', '-c', action='store', type=Path,
@@ -42,7 +42,6 @@ parser.add_argument('--config', '-c', action='store', type=Path,
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
-
 
 args = parser.parse_args()
 

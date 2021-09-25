@@ -52,6 +52,7 @@
     "delta_time": 2
   },
   "dynamic_cleaning": {
+    "apply": true,
     "threshold": 267,
     "fraction_cleaning_intensity": 0.03
   },
