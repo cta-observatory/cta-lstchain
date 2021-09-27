@@ -4,7 +4,7 @@
 
  Onsite script for recontruct a run list from a filter scan
 
- --> onsite_reconstruct_filter_scan -r xxx yyy zzz
+ --> onsite_create_calibration_files_with_batch -r xxx yyy zzz
 
 """
 
@@ -146,7 +146,7 @@ def main():
 
                     cmd = f"srun onsite_create_calibration_file -r {run} " \
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} " \
-                        f"-b {base_dir} -s {stat_events} --output_base_name {output_base_name}" \
+                        f"-b {base_dir} -s {stat_events} --output_base_name {output_base_name} " \
                         f"--filters {filters} --sys_date {sys_date} " \
                         f"--config {config_file} --time_run {time_run}"
 
