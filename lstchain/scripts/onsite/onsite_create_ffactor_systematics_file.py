@@ -29,7 +29,7 @@ required.add_argument('-d', '--date', help="Date of the scan (YYYYMMDD)", requir
 # config file is mandatory because it contains the list of input runs
 required.add_argument('-c','--config', help="Config file (json format) with the list of runs", required=True)
 
-version,subversion=lstchain.__version__.rsplit('.post',1)
+version=lstchain.__version__.rsplit('.post',1)[0]
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')

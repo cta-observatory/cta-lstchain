@@ -34,7 +34,8 @@ required.add_argument('-r', '--run_number', help="Run number if the flat-field d
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
                       type=none_or_str)
 
-version,subversion=lstchain.__version__.rsplit('.post',1)
+version=lstchain.__version__.rsplit('.post',1)[0]
+
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
