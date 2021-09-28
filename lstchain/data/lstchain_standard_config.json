@@ -51,6 +51,11 @@
     "use_only_main_island":false,
     "delta_time": 2
   },
+  "dynamic_cleaning": {
+    "apply": true,
+    "threshold": 267,
+    "fraction_cleaning_intensity": 0.03
+  },
     "random_forest_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
@@ -61,7 +66,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "min_samples_split": 2,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
@@ -81,7 +85,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
