@@ -75,9 +75,6 @@ sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
 
-
-max_events = 1000000
-
 def main():
 
     # looks for the filter values in the database if not given
@@ -254,7 +251,6 @@ def main():
 
         cmd = f"lstchain_create_calibration_file " \
               f"--input_file={input_file} --output_file={output_file} "\
-              f"--EventSource.max_events={max_events} " \
               f"--EventSource.default_trigger_type=tib " \
               f"--EventSource.min_flatfield_adc={min_ff} " \
               f"--EventSource.max_flatfield_adc={max_ff} " \
