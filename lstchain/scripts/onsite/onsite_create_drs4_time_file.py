@@ -12,6 +12,7 @@ import argparse
 import os
 from pathlib import Path
 import lstchain
+import subprocess
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create time calibration files',
@@ -117,7 +118,7 @@ def main():
               f"--run-summary-path={run_summary_path} " \
               f"--pedestal-file {pedestal_file} --max-events {stat_events} 2>&1"
         print("\n--> RUNNING...")
-        os.system(cmd)
+        subprocess.run(cmd.split())
 
         print("\n--> END")
 

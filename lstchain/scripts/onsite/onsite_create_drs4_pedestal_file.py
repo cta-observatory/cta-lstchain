@@ -8,11 +8,13 @@
 """
 
 import argparse
+import subprocess
 from pathlib import Path
 import lstchain
 from lstchain.io.data_management import query_yes_no
 import lstchain.visualization.plot_drs4 as drs4
 import os
+
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -86,7 +88,7 @@ def main():
               f"--output-file {output_file} " \
               f"--max-events {max_events}"
 
-        os.system(cmd)
+        subprocess.run(cmd.split())
 
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run:05d}.0000.pdf"

@@ -9,6 +9,7 @@
 
 import argparse
 import os
+import subprocess
 from lstchain.io.data_management import query_yes_no
 import lstchain
 
@@ -98,8 +99,8 @@ def main():
               f"--input_prefix={prefix} --log-file={log_file} --log-file-level=DEBUG "
 
         print("\n--> RUNNING...")
-        if os.system(cmd):
-            raise Exception(f"Error in command execution: {cmd}")
+        subprocess.run(cmd.split())
+
 
         print("\n--> END")
 
