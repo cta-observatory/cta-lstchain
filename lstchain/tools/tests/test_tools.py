@@ -61,13 +61,12 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf")
-def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
+def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
 
     assert (
@@ -80,6 +79,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
+                f"--config={config_file}",
                 "--overwrite",
             ],
             cwd=temp_dir_observed_files,
@@ -94,6 +94,25 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
                 f"--input-dl2={observed_dl2_file}",
                 f"--output-dl3-path={temp_dir_observed_files}",
                 f"--input-irf-path={temp_dir_observed_files}",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                f"--config={config_file}",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_files}",
+                f"--input-irf-path={simulated_irf_file.parent}",
+                "--irf-file-pattern=irf*gz",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",

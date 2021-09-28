@@ -19,12 +19,12 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io.io import read_data_dl2_to_QTable, get_geomagnetic_delta
+from lstchain.io.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf.hdu_table import create_event_list
 from lstchain.irf.interpolate import (
-    duplicate_irfs, check_in_delaunay_triangle, compare_irfs, interpolate_irf
+    check_in_delaunay_triangle, compare_irfs, interpolate_irf
 )
 from lstchain.io import EventSelector, DL3FixedCuts
 
@@ -131,11 +131,6 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    interp_b_delta = traits.Bool(
-        help="If true, use angular distance of shower with geomagnetic axis for interpolation of IRFs",
-        default_value=False,
-    ).tag(config=True)
-
     interp_method = traits.Unicode(
         help="Interpolation method to be used, when required",
         default_value="linear",
@@ -168,11 +163,7 @@ class DataReductionFITSWriter(Tool):
         ),
         "interp-only-zd": (
             {"DataReductionFITSWriter": {"interp_only_zd": True}},
-            "Use only zenith pointing for IRF interpolation, if True"
-        ),
-        "interp-b-delta": (
-            {"DataReductionFITSWriter": {"interp_b_delta": True}},
-            "Use angle between geomagnetic field and shower axis for IRF interpolation, if True"
+            "Use only zenith pointing for IRF interpolation, if True",
         ),
     }
 
@@ -278,8 +269,6 @@ class DataReductionFITSWriter(Tool):
 
         if self.input_irf_path:
             if len(self.irf_list) > 1:
-                # Check if the IRF list needs to be updated by duplicating IRFs
-                # with Azimuth 0 to have value as 360
                 """if not self.interp_only_zd and u.Quantity(
                     self.data_params["AZ_PNT"]
                 ).to_value(u.deg) > 180:
@@ -287,29 +276,16 @@ class DataReductionFITSWriter(Tool):
                 self.log.info(self.irf_list)"""
 
                 # Get the optimal number of IRFs necessary for interpolation
-                # Temporary usage of whether the azimuth param has to be replaced
-                # by the angle between geomagnetic field and shower axis
-                # for single telescope only
-                if self.interp_b_delta:
-                    f = fits.open(self.irf_list[0])[1].header
-                    self.data_params["B_DELTA"] = get_geomagnetic_delta(
-                        u.Quantity(f["B_TOTAL"]).to_value(u.uT),
-                        u.Quantity(f["B_INC"]).to_value(u.rad),
-                        u.Quantity(self.data_params["ZEN_PNT"]).to_value(u.rad),
-                        u.Quantity(self.data_params["AZ_PNT"]).to_value(u.rad)
-                    ) * u.rad
-                    self.log.info(f"The new target parameters for interpolations are: {self.data_params}")
 
                 self.irf_list = check_in_delaunay_triangle(
-                    self.irf_list, self.data_params, self.interp_b_delta
+                    self.irf_list, self.data_params
                 )
 
-                self.log.info(self.irf_list)
+                self.log.info(f"Paths of Irfs used for interpolation {self.irf_list}")
 
             if len(self.irf_list) > 1:
                 self.irf_final_hdu = interpolate_irf(
-                    self.irf_list, self.data_params, self.interp_method,
-                    self.interp_b_delta
+                    self.irf_list, self.data_params, self.interp_method
                 )
                 self.irf_final_hdu.writeto(
                     self.final_irf_output, overwrite=self.overwrite
@@ -332,9 +308,9 @@ class DataReductionFITSWriter(Tool):
                     self.log.info(
                         f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']:.2f}"
                     )
-                    if self.interp_b_delta:
-                        b_delta = u.Quantity(h['B_DELTA']).to(u.deg)
-                        self.log.info(f"Magnetic delta of MC at {b_delta:.2f}")
+                    self.log.info(
+                        f"Geomagnetic delta for the MC is {self.mc_params['B_DELTA']:.2f}"
+                    )
 
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)
@@ -346,10 +322,12 @@ class DataReductionFITSWriter(Tool):
                 mc_gamma_offset = u.Quantity(h["G_OFFSET"]).to(u.deg)
                 zen_pnt = u.Quantity(h["ZEN_PNT"]).to(u.deg)
                 az_pnt = u.Quantity(h["AZ_PNT"]).to(u.deg)
+                b_delta = u.Quantity(h["B_DELTA"]).to(u.deg)
 
                 self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.2f}")
                 self.log.info(f"Zenith pointing of MC at {zen_pnt:.2f}")
                 self.log.info(f"Azimuth pointing of MC at {az_pnt:.2f}")
+                self.log.info(f"Geomagnetic delta for the MC is {b_delta:.2f}")
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)
 

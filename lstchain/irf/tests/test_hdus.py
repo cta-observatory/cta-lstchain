@@ -22,6 +22,7 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
         source_pos=SkyCoord(ra=83.633, dec=22.01, unit="deg"),
         effective_time=t_eff.value,
         elapsed_time=t_tot.value,
+        only_zd_param=False,
     )
 
     assert "TIME" in Table.read(evts).columns

@@ -307,9 +307,10 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
     from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
 
-    events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
+    events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+    assert "GEOMAG_DELTA" in simu_geomag
 
 
 @pytest.mark.private_data

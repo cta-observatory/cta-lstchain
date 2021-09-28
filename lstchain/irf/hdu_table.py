@@ -10,7 +10,7 @@ from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location
+from ..reco.utils import location, get_geomagnetic_delta
 
 
 __all__ = [
@@ -264,7 +264,7 @@ def create_hdu_index_hdu(
 
 def create_event_list(
     data, run_number, source_name, source_pos,
-    effective_time, elapsed_time, only_zd_param=False
+    effective_time, elapsed_time, only_zd_param
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -283,7 +283,7 @@ def create_event_list(
                 Float
         Elapsed_time: Total elapsed time of triggered events of the run
                 Float
-        Only_zd_param: Return only zenith pointing for IRF interpolation
+        Only_zd_param: Boolean to interpolate only over cosine of zenith angle
                 Bool
     Returns
     -------
@@ -328,12 +328,21 @@ def create_event_list(
 
     # Interpolation target values
     zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
-    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
-
-    if only_zd_param:
-        data_pars = {"ZEN_PNT": zen_mean * u.deg}
+    if not only_zd_param:
+        az_mean = round(pointing_az.mean().to_value(u.deg), 1)
+        b_delta = round(
+            get_geomagnetic_delta(
+                zen = np.pi / 2 - pointing_alt.mean().to_value(u.rad),
+                az = pointing_az.mean().to_value(u.rad),
+            ) * 180 / np.pi, 1
+        )
+        data_pars = {
+            "ZEN_PNT": zen_mean * u.deg,
+            "AZ_PNT": az_mean * u.deg,
+            "B_DELTA": b_delta * u.deg
+        }
     else:
-        data_pars = {"ZEN_PNT": zen_mean * u.deg, "AZ_PNT": az_mean * u.deg}
+        data_pars = {"ZEN_PNT": zen_mean * u.deg}
 
     # Observation modes
     source_pointing_diff = source_pos.separation(pnt_icrs)
@@ -460,8 +469,10 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-    pnt_header["MEAN_ZEN"] = str(zen_mean * u.deg) ## Check
+    pnt_header["MEAN_ZEN"] = str(zen_mean * u.deg)
     pnt_header["MEAN_AZ"] = str(az_mean * u.deg)
+    pnt_header["B_DELTA"] = str(b_delta * u.deg)
+
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")

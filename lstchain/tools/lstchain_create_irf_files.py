@@ -166,7 +166,7 @@ class IRFFITSWriter(Tool):
                 )
 
         filename = self.output_irf_file.name
-        if not (filename.endswith('.fits') or filename.endswith('.fits.gz')):
+        if not (filename.endswith(".fits") or filename.endswith(".fits.gz")):
             raise ValueError(
                 f"{filename} is not a correct compressed FITS file name "
                 "Use .fits or .fits.gz."
@@ -214,14 +214,20 @@ class IRFFITSWriter(Tool):
 
         for particle_type, p in self.mc_particle.items():
             self.log.info(f"Simulated {particle_type.title()} Events:")
-            p["events"], p["simulation_info"], p["geomag_params"] = read_mc_dl2_to_QTable(p["file"])
+            (
+                p["events"],
+                p["simulation_info"],
+                p["geomag_params"],
+            ) = read_mc_dl2_to_QTable(p["file"])
 
             if p["simulation_info"].viewcone.value == 0.0:
                 p["mc_type"] = "point_like"
             else:
                 p["mc_type"] = "diffuse"
 
-            self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
+            self.log.debug(
+                f"Simulated {p['mc_type']} {particle_type.title()} Events:"
+            )
 
             # Calculating event weights for Background IRF
             if particle_type != "gamma":
@@ -248,8 +254,12 @@ class IRFFITSWriter(Tool):
                 assumed_source_alt=p["events"]["true_alt"],
             )
 
-            p["ZEN_PNT"] = round(90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2)
-            p["AZ_PNT"] = round(p["events"]["pointing_az"][0].to_value(u.deg), 2)
+            p["ZEN_PNT"] = round(
+                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2
+            )
+            p["AZ_PNT"] = round(
+                p["events"]["pointing_az"][0].to_value(u.deg), 2
+            )
 
             self.log.debug(p["simulation_info"])
 
@@ -271,13 +281,17 @@ class IRFFITSWriter(Tool):
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
-        mean_fov_offset = round(gammas["true_source_fov_offset"].mean().to_value(), 1)
+        mean_fov_offset = round(
+            gammas["true_source_fov_offset"].mean().to_value(), 1
+        )
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
-            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
+            fov_offset_bins = [
+                mean_fov_offset - 0.1, mean_fov_offset + 0.1
+            ] * u.deg
             self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
 
-            self.log.info('Single offset for point like gamma MC')
+            self.log.info("Single offset for point like gamma MC")
             self.mc_particle["gamma"]["ZEN_PNT"] -= self.mc_particle["gamma"]["G_OFFSET"]
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
@@ -329,6 +343,9 @@ class IRFFITSWriter(Tool):
         )
         extra_headers["B_INC"] = str(
             self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].to(u.rad)
+        )
+        extra_headers["B_DEC"] = str(
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].to(u.rad)
         )
         extra_headers["B_DELTA"] = str(
             self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].to(u.deg)
