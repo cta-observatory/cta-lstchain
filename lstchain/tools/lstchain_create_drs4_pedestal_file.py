@@ -1,14 +1,16 @@
 import numpy as np
 from tqdm import tqdm
-from ctapipe_io_lst import LSTEventSource
-from ctapipe_io_lst.calibration import get_spike_A_positions
-from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES
 import numba
 import tables
+from traitlets.config import Config
 
 from ctapipe.io.hdf5tableio import DEFAULT_FILTERS
 from ctapipe.core import Tool
 from ctapipe.core.traits import Path, Integer
+
+from ctapipe_io_lst import LSTEventSource
+from ctapipe_io_lst.calibration import get_spike_A_positions
+from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES
 
 from ..statistics import OnlineStats
 
