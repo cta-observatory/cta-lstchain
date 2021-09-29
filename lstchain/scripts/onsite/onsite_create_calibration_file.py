@@ -60,6 +60,7 @@ optional.add_argument('-f','--filters', help="Calibox filters", type=none_or_str
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
+optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
 
 args = parser.parse_args()
 run = args.run_number
@@ -74,6 +75,7 @@ output_base_name = args.output_base_name
 sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
+mongodb = args.mongodb
 
 def main():
 
@@ -285,7 +287,7 @@ def search_filter(run):
     filters = None
     try:
 
-        myclient = pymongo.MongoClient("mongodb://10.200.10.101:27017/")
+        myclient = pymongo.MongoClient(mongodb)
 
         mydb = myclient["CACO"]
         mycol = mydb["RUN_INFORMATION"]
