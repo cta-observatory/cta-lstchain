@@ -21,6 +21,7 @@ __all__ = [
     'FitIntensityScan'
 ]
 
+MIN_N_RUNS = 5
 
 class FitIntensityScan(Tool):
     """
@@ -166,6 +167,14 @@ class FitIntensityScan(Tool):
                 else:
                     raise IOError(f"--> Problem in reading {run}\n")
 
+            # check to have enough selected runs
+            for chan in self.gain_channels:
+                if self.signal[chan] is None:
+                    raise IOError(f"--> Zero runs selected for channel {channel[chan]} \n")
+
+                if self.signal[chan].size < MIN_N_RUNS*constants.N_PIXELS:
+                    raise IOError(f"--> Not enough runs selected for channel {channel[chan]}: {int(self.signal[chan].size/constants.N_PIXELS)} runs \n")
+
         except ValueError as e:
             self.log.error(e)
 
@@ -192,7 +201,7 @@ class FitIntensityScan(Tool):
                 var = np.ma.array(self.variance[chan][pix],mask=mask).compressed()
 
                 # skip the pixel if not enough data
-                if sig.shape[0] < 5:
+                if sig.shape[0] < MIN_N_RUNS:
                     self.log.debug(f"Not enough data in pixel {pix} and channel {chan} for the fit ({sig.shape[0]} runs)\n")
                     self.fit_error[chan,pix] = 1
                     continue
