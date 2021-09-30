@@ -65,8 +65,7 @@ args = parser.parse_args()
 
 source_config = {
     "LSTEventSource": {
-        "max_events":args.max_events,
-        "apply_drs4_corrections": False
+        "max_events":args.max_events
     }
 }
 
