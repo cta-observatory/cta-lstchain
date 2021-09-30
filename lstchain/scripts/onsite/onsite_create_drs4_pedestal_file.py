@@ -75,11 +75,12 @@ def main():
         # define output file
         output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.fits"
         if os.path.exists(output_file):
-            print(f">>> Output file {output_file} exists already. ")
-            if query_yes_no("Do you want to remove it?"):
+            if os.getenv('SLURM_JOB_ID') is None:
+                yes = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+            if yes:
                 os.remove(output_file)
             else:
-                print(f">>> Exit")
+                print(f"\n--> Output file exists already. Stop")
                 exit(1)
 
         # run lstchain script

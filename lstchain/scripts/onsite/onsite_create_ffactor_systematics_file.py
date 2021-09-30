@@ -78,12 +78,13 @@ def main():
         log_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.log"
         plot_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
 
-        print(f"\n--> Output file {output_file}")
         if os.path.exists(output_file):
-            if query_yes_no(">>> Output file exists already. Do you want to remove it?"):
+            if os.getenv('SLURM_JOB_ID') is None:
+                yes = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+            if yes:
                 os.remove(output_file)
             else:
-                print(f"\n--> Stop")
+                print(f"\n--> Output file exists already. Stop")
                 exit(1)
 
         print(f"\n--> Plot file {plot_file}")
