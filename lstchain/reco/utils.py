@@ -58,9 +58,15 @@ obstime = Time("2018-11-01T02:00")
 horizon_frame = AltAz(location=location, obstime=obstime)
 
 # Geomagnetic parameters for the LST1
-geomag_dec = -0.09284278750419617 * u.rad
+t_mc = Time("2020-06-29", format="iso").decimalyear
+geomag_dec = -0.09284278750419617 * u.rad # As measured in 2020
 geomag_inc = 0.6567426919937134 * u.rad
 geomag_total = 38.60678482055664 * u.uT
+
+# Predicted approximate average change per year
+d_dec_per_year = 0.002617993877991494 * u.rad/u.yr
+d_inc_per_year = -0.0008726646259971648 * u.rad/u.yr
+d_total_per_year = 0.01 * u.T/u.yr
 
 log = logging.getLogger(__name__)
 
@@ -794,9 +800,11 @@ def get_geomagnetic_delta(zen, az, B_dec=None, B_inc=None):
     """
 
     if B_dec is None:
-        B_dec = geomag_dec.to_value(u.rad)
+        t_change = (Time.now().decimalyear - t_mc) * u.yr
+        B_dec = (geomag_dec + d_dec_per_year * t_change).to_value(u.rad)
     if B_inc is None:
-        B_inc = geomag_inc.to_value(u.rad)
+        t_change = (Time.now().decimalyear - t_mc) * u.yr
+        B_inc = (geomag_inc + d_inc_per_year * t_change).to_value(u.rad)
 
     term = (
         (np.sin(B_inc) * np.cos(zen)) +
