@@ -36,6 +36,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--input_prefix', help="Prefix of the input file names", default="calibration")
+optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 
 args = parser.parse_args()
 date = args.date
@@ -44,6 +45,7 @@ base_dir = args.base_dir
 sub_run = args.sub_run
 config_file = args.config
 prefix = args.input_prefix
+yes = args.yes
 
 def main():
 
@@ -79,10 +81,14 @@ def main():
         plot_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
 
         if os.path.exists(output_file):
-            if os.getenv('SLURM_JOB_ID') is None:
-                yes = query_yes_no(">>> Output file exists already. Do you want to remove it?")
-            if yes:
+            remove = False
+
+            if not yes and os.getenv('SLURM_JOB_ID') is None:
+                remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+
+            if yes or remove:
                 os.remove(output_file)
+                os.remove(log_file)
             else:
                 print(f"\n--> Output file exists already. Stop")
                 exit(1)

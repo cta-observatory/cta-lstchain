@@ -33,6 +33,7 @@ optional.add_argument('-b','--base_dir', help="Base dir for the output directory
                       type=str, default='/fefs/aswg/data/real')
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
+optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 
 
 args = parser.parse_args()
@@ -41,7 +42,7 @@ prod_id = args.prod_version
 max_events = args.max_events
 base_dir = args.base_dir
 tel_id = args.tel_id
-
+yes = args.yes
 
 def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
@@ -59,7 +60,6 @@ def main():
         input_dir, name = os.path.split(os.path.abspath(input_file))
         path, date = input_dir.rsplit('/', 1)
 
-
         # verify and make output dir
         output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/{date}/{prod_id}"
         if not os.path.exists(output_dir):
@@ -74,10 +74,14 @@ def main():
 
         # define output file
         output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.fits"
+
         if os.path.exists(output_file):
-            if os.getenv('SLURM_JOB_ID') is None:
-                yes = query_yes_no(">>> Output file exists already. Do you want to remove it?")
-            if yes:
+            remove = False
+
+            if not yes and os.getenv('SLURM_JOB_ID') is None:
+                remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+
+            if yes or remove:
                 os.remove(output_file)
             else:
                 print(f"\n--> Output file exists already. Stop")

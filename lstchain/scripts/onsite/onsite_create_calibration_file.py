@@ -61,6 +61,7 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, de
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
+optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 
 args = parser.parse_args()
 run = args.run_number
@@ -76,6 +77,7 @@ sub_run = args.sub_run
 tel_id = args.tel_id
 config_file = args.config
 mongodb = args.mongodb
+yes = args.yes
 
 def main():
 
@@ -237,19 +239,18 @@ def main():
         log_file = f"{output_dir}/log/{output_name}.log"
         print(f"\n--> Log file {log_file}")
 
-        yes = False
         if os.path.exists(output_file):
-            if os.getenv('SLURM_JOB_ID') is None:
-                yes = query_yes_no(">>> Output file exists already. Do you want to remove it?")
-            if yes:
+            remove = False
+
+            if not yes and os.getenv('SLURM_JOB_ID') is None:
+                remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+
+            if yes or remove:
                 os.remove(output_file)
                 os.remove(log_file)
             else:
                 print(f"\n--> Output file exists already. Stop")
                 exit(1)
-
-
-
 
         #
         # produce ff calibration file

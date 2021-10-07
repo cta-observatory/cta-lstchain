@@ -56,6 +56,8 @@ optional.add_argument('--no_sys_correction',
                       action='store_true',
                       default=False)
 optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)", default="calibration")
+optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
+
 
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
@@ -73,6 +75,8 @@ sub_run_list = args.sub_run_list
 config_file = args.config
 sys_date = args.sys_date
 no_sys_correction = args.no_sys_correction
+yes = args.yes
+
 output_base_name = args.output_base_name
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
 
@@ -146,10 +150,13 @@ def main():
                         f"-p {ped_run} -v {prod_id} --sub_run {sub_run} " \
                         f"-b {base_dir} -s {stat_events} --output_base_name {output_base_name} " \
                         f"--filters {filters} --sys_date {sys_date} " \
-                        f"--config {config_file} --time_run {time_run}"
+                        f"--config {config_file} --time_run {time_run} "
+
+                    if yes:
+                        cmd += f"--yes "
 
                     if no_sys_correction:
-                        cmd += " --no_sys_correction"
+                        cmd += "--no_sys_correction "
 
                     fh.write(cmd)
 
