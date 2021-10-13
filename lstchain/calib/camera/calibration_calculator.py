@@ -93,6 +93,10 @@ class CalibrationCalculator(Component):
 
         super().__init__(parent=parent, config=config,**kwargs)
 
+        if self.squared_excess_noise_factor<=0:
+            msg="Argument squared_excess_noise_factor must have a positive value"
+            raise ValueError(msg)
+
         self.flatfield = FlatFieldCalculator.from_name(
             self.flatfield_product,
             parent=self,
@@ -157,7 +161,6 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # Extract calibration coefficients with F-factor method
         # Assume fixed excess noise factor must be known from elsewhere
-
         numerator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
         denominator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median)
         gain = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
@@ -166,7 +169,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         if self.quadratic_term is not None:
             numerator = self.quadratic_term**2  * (ff_data.charge_median - ped_data.charge_median)
             denominator = self.squared_excess_noise_factor
-            systematic_correction = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
+            systematic_correction = numerator/denominator
             gain -= systematic_correction
 
         # calculate photon-electrons

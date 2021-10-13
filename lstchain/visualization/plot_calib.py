@@ -279,7 +279,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
 
                 # select good pixels
                 select = np.logical_not(mask[chan])
-                fig = plt.figure(chan + 10, figsize=(15, 24))
+                fig = plt.figure(chan + 10, figsize=(12, 24))
                 fig.tight_layout(rect=[0, 0.0, 1, 0.95])
 
                 fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)
