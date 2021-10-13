@@ -183,7 +183,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.time_max = ff_data.sample_time_max
         calib_data.n_pe = n_pe
 
-        # find signal median of good pixels (FF factor=<npe>/npe)
+        # find signal median of good pixels over the camera (FF factor=<npe>/npe)
         masked_npe = np.ma.array(n_pe, mask=calib_data.unusable_pixels)
         npe_signal_median = np.ma.median(masked_npe, axis=1)
 

@@ -16,6 +16,9 @@ from ctapipe.containers import (
 )
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe_io_lst import constants
+from ctapipe_io_lst import load_camera_geometry
+from ctapipe.coordinates import EngineeringCameraFrame
+from ctapipe.visualization import CameraDisplay
 
 __all__ = [
     'FitIntensityScan'
@@ -261,9 +264,9 @@ class FitIntensityScan(Tool):
 
                 for chan in self.gain_channels:
                     # plot the used runs and their median camera charge
-                    fig = plt.figure((chan+1), figsize=(10, 10))
+                    fig = plt.figure((chan+1), figsize=(8, 20))
                     fig.suptitle(f"{channel[chan]} channel", fontsize=25)
-                    ax=plt.subplot(1, 1, 1)
+                    ax=plt.subplot(2, 1, 1)
                     ax.grid(True)
                     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -273,6 +276,21 @@ class FitIntensityScan(Tool):
                     plt.xlabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
                     plt.ylabel(r'Runs used in the fit')
 
+                    plt.subplot(2, 1, 2)
+                    camera = load_camera_geometry()
+                    camera = camera.transform_to(EngineeringCameraFrame())
+                    disp = CameraDisplay(camera)
+                    image = self.fit_parameters.T[1].T*100
+                    mymin = np.median(image[chan]) - 3 * np.std(image[chan])
+                    mymax = np.median(image[chan]) + 3 * np.std(image[chan])
+                    disp.set_limits_minmax(mymin, mymax)
+                    mask = np.where(self.fit_error[chan]==1)[0]
+                    disp.highlight_pixels(mask, linewidth=2.5, color="green")
+                    disp.image = image[chan]
+                    disp.cmap = plt.cm.coolwarm
+                    plt.title(f"{channel[chan]} Fitted B values [%]")
+                    disp.add_colorbar()
+                    plt.tight_layout()
                     pdf.savefig()
 
                     # plot the fit results and residuals for four arbitrary  pixels

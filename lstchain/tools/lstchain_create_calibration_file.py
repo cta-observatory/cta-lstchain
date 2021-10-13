@@ -50,7 +50,7 @@ class CalibrationHDF5Writer(Tool):
 
     events_to_skip = Int(
         1000,
-        help='Number of events to skip because badly drs4 corrected'
+        help='Number of first events to skip due to bad DRS4 pedestal correction'
     ).tag(config=True)
 
     aliases = Dict(dict(
