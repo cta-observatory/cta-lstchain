@@ -159,21 +159,23 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
                                                    status_data.hardware_failing_pixels)
 
+        signal = ff_data.charge_median - ped_data.charge_median
+
         # Extract calibration coefficients with F-factor method
         # Assume fixed excess noise factor must be known from elsewhere
         numerator = ff_data.charge_std ** 2 - ped_data.charge_std ** 2
-        denominator = self.squared_excess_noise_factor  * (ff_data.charge_median - ped_data.charge_median)
+        denominator = self.squared_excess_noise_factor  * signal
         gain = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
         # correct for the quadratic term if possible
         if self.quadratic_term is not None:
-            numerator = self.quadratic_term**2  * (ff_data.charge_median - ped_data.charge_median)
+            numerator = self.quadratic_term**2  * signal
             denominator = self.squared_excess_noise_factor
             systematic_correction = numerator/denominator
             gain -= systematic_correction
 
         # calculate photon-electrons
-        numerator = (ff_data.charge_median - ped_data.charge_median)
+        numerator = signal
         denominator = gain
 
         n_pe = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
@@ -190,7 +192,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # flat-fielded calibration coefficients
         numerator = npe_signal_median[:,np.newaxis]
-        denominator = (ff_data.charge_median - ped_data.charge_median)
+        denominator = signal
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
         # flat-field time corrections
