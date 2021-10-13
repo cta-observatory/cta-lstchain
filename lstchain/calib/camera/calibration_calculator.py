@@ -115,7 +115,7 @@ class CalibrationCalculator(Component):
         self.tel_id = self.flatfield.tel_id
 
         # load systematic correction term B
-        self.quadratic_term = None
+        self.quadratic_term = 0
         if self.systematic_correction_path is not None:
             try:
                 with h5py.File(self.systematic_correction_path, 'r') as hf:
@@ -167,12 +167,9 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         denominator = self.squared_excess_noise_factor  * signal
         gain = np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator != 0)
 
-        # correct for the quadratic term if possible
-        if self.quadratic_term is not None:
-            numerator = self.quadratic_term**2  * signal
-            denominator = self.squared_excess_noise_factor
-            systematic_correction = numerator/denominator
-            gain -= systematic_correction
+        # correct for the quadratic term (which is zero if not given)
+        systematic_correction = self.quadratic_term**2 * signal / self.squared_excess_noise_factor
+        gain -= systematic_correction
 
         # calculate photon-electrons
         numerator = signal
