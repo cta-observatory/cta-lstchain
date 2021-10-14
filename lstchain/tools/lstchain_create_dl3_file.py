@@ -58,6 +58,18 @@ class DataReductionFITSWriter(Tool):
         --source-dec 22.01deg
         --fixed-gh-cut 0.9
         --overwrite
+
+    Or pass the selection cuts based on fixed gamma efficiency:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        --input-irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --optimize-gh
+        --fixed_gh_max_efficiency 95
+        --overwrite
     """
 
     input_dl2 = traits.Path(
@@ -92,7 +104,7 @@ class DataReductionFITSWriter(Tool):
         help="DEC position of the source"
     ).tag(config=True)
 
-    optimize_cuts = traits.Bool(
+    optimize_gh = traits.Bool(
         help="If true, use a fixed gamma efficiency for optimizing the cuts",
         default_value=False,
     ).tag(config=True)
@@ -120,8 +132,8 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
         ),
-        "optimize-cuts": (
-            {"DataReductionFITSWriter": {"optimize_cuts": True}},
+        "optimize-gh": (
+            {"DataReductionFITSWriter": {"optimize_gh": True}},
             "Uses cuts optimization",
         ),
     }
@@ -167,7 +179,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.optimize_cuts and self.input_irf:
+        if self.optimize_gh and self.input_irf:
 
             irf = fits.open(self.input_irf)
             self.gh_cuts = QTable.read(irf, hdu="GH CUTS")
@@ -177,7 +189,7 @@ class DataReductionFITSWriter(Tool):
             )
             self.log.info(
                 "Using fixed gamma efficiency of " +
-                f'{self.gh_cuts.meta["GH_EFF"]/100:.2f}'
+                f'{self.gh_cuts.meta["GH_EFF"]}'
             )
         else:
             self.data = self.fixed_cuts.gh_cut(self.data)

@@ -68,7 +68,8 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
                 f"--input-electron-dl2={simulated_dl2_file}",
                 f"--output-irf-file={irf_file}",
                 "--overwrite",
-                "--optimize-cuts"
+                "--optimize-gh",
+                "--optimize-th"
             ],
             cwd=temp_dir_observed_files,
         )
@@ -114,7 +115,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
                 "--overwrite",
-                "--optimize-cuts",
+                "--optimize-gh",
             ],
             cwd=temp_dir_observed_files,
         )
