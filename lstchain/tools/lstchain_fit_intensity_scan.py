@@ -87,7 +87,7 @@ class FitIntensityScan(Tool):
 
     fractional_variance_error = Float(
         0.02,
-        help='Costant fractional error assumed for the y fit coordinate (variance)'
+        help='Constant fractional error assumed for the y fit coordinate (variance)'
     ).tag(config=True)
 
     squared_excess_noise_factor = Float(

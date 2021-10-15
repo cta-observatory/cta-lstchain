@@ -18,6 +18,8 @@
         "drive_report_path": null
       },
       "LSTR0Corrections":{
+        "calib_scale_high_gain":1.088,
+        "calib_scale_low_gain":1.004,
         "drs4_pedestal_path": null,
         "calibration_path": null,
         "drs4_time_calibration_path": null
@@ -148,9 +150,7 @@
      "window_width": 8,
      "apply_integration_correction": false
     },
-
   "timestamps_pointing":"ucts",
-
   "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
