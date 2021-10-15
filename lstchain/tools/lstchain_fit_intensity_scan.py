@@ -3,6 +3,7 @@ import os
 import numpy as np
 import h5py
 from scipy.optimize import curve_fit
+from functools import partial
 from traitlets import List, Int, Dict,Float
 from pathlib import Path
 from matplotlib.backends.backend_pdf import PdfPages
@@ -87,6 +88,11 @@ class FitIntensityScan(Tool):
     fractional_variance_error = Float(
         0.02,
         help='Costant fractional error assumed for the y fit coordinate (variance)'
+    ).tag(config=True)
+
+    squared_excess_noise_factor = Float(
+        1.222,
+        help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
 
     aliases = Dict(dict(
@@ -188,6 +194,8 @@ class FitIntensityScan(Tool):
         # only positive parameters
         bounds = [0, 200]
 
+        funfit = partial(quadratic_fit, f2=self.squared_excess_noise_factor)
+
         for pix in np.arange(constants.N_PIXELS):
 
             if pix % 100 == 0 :
@@ -213,7 +221,7 @@ class FitIntensityScan(Tool):
                 sigma = self.fractional_variance_error * var
 
                 try:
-                    par, par_cov = curve_fit(quadratic_fit, sig, var, bounds=bounds, sigma=sigma, p0=p0)
+                    par, par_cov = curve_fit(funfit, sig, var, bounds=bounds, sigma=sigma, p0=p0)
                     self.fit_parameters[chan, pix] = par
                     self.fit_cov_matrix[chan, pix] = par_cov.reshape(4)
 
@@ -343,8 +351,8 @@ class FitIntensityScan(Tool):
 
 
 
-def quadratic_fit(t, b=1, c=1):
-    f2 = 1.222
+def quadratic_fit(t, b=1, c=1, f2=1.222):
+
     return b * f2 * t + c ** 2 * t ** 2
 
 def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
