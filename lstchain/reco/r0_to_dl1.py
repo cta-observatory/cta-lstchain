@@ -371,6 +371,9 @@ def r0_to_dl1(
 
                     #initialize the event monitoring data
                     event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
+                    for container in [event.mon.tel[tel_id].pedestal, event.mon.tel[tel_id].flatfield, event.mon.tel[tel_id].calibration]:
+                        add_global_metadata(container, metadata)
+                        add_config_metadata(container, config)
 
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,
