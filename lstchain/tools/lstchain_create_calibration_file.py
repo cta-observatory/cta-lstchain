@@ -149,16 +149,20 @@ class CalibrationHDF5Writer(Tool):
                         initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
 
                     ped_data = event.mon.tel[tel_id].pedestal
-                    ped_data.meta['config'] = self.config
+                    add_config_metadata(ped_data, self.config)
+                    add_global_metadata(ped_data, metadata)
 
                     ff_data = event.mon.tel[tel_id].flatfield
-                    ff_data.meta['config'] = self.config
+                    add_config_metadata(ff_data, self.config)
+                    add_global_metadata(ff_data, metadata)
 
                     status_data = event.mon.tel[tel_id].pixel_status
-                    status_data.meta['config'] = self.config
+                    add_config_metadata(status_data, self.config)
+                    add_global_metadata(status_data, metadata)
 
                     calib_data = event.mon.tel[tel_id].calibration
-                    calib_data.meta['config'] = self.config
+                    add_config_metadata(calib_data, self.config)
+                    add_global_metadata(calib_data, metadata)
 
 
                 # skip first events which are badly drs4 corrected
