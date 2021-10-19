@@ -11,6 +11,7 @@ from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
+from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 from ctapipe.containers import EventType
 
 __all__ = [
@@ -117,6 +118,9 @@ class CalibrationHDF5Writer(Tool):
 
     def start(self):
         '''Calibration coefficient calculator'''
+
+        metadata = global_metadata(self.eventsource)
+        write_metadata(metadata, self.output_file)
 
         tel_id = self.eventsource.lst_service.telescope_id
         new_ped = False
