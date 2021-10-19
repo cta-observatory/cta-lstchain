@@ -6,6 +6,7 @@ from astropy.table import Table, vstack, QTable
 import tables
 from tables import open_file
 import os
+import re
 import astropy.units as u
 import ctapipe
 import lstchain
@@ -40,6 +41,7 @@ __all__ = [
     'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
+    'add_config_metadata',
     'write_subarray_tables',
     'write_metadata',
     'write_dataframe',
@@ -793,6 +795,29 @@ def add_global_metadata(container, metadata):
     meta_dict = metadata.as_dict()
     for k, item in meta_dict.items():
         container.meta[k] = item
+
+
+def add_config_metadata(container, configuration):
+    """
+    Add configuration parameters to a container in container.meta.config
+
+    Parameters
+    ----------
+    container: `ctapipe.containers.Container`
+    configuration: config dict
+    """
+    linted_config = str(configuration)
+    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
+    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
+    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
+    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
+    linted_config = linted_config.replace("\'", "\"")
+    linted_config = linted_config.replace("None", "\"None\"")
+    linted_config = linted_config.replace("inf",  "\"inf\"")
+    linted_config = linted_config.replace("True", "true")
+    linted_config = linted_config.replace("False", "false")
+
+    container.meta["config"] = linted_config
 
 
 def write_subarray_tables(writer, event, metadata=None):
