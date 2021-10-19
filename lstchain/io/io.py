@@ -244,27 +244,32 @@ def auto_merge_h5files(
         with open_file(file_list[0]) as f1:
             for k in keys:
                 if type(f1.root[k]) == tables.table.Table:
-                    merge_file.create_table(
+                    t = merge_file.create_table(
                         os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                         os.path.basename(k),
                         createparents=True,
                         obj=f1.root[k].read()
                     )
+                    for att in f1.root[k].attrs._f_list():
+                        t.attrs[att] = f1.root[k].attrs[att]
                 if type(f1.root[k]) == tables.array.Array:
                     if merge_arrays:
-                        merge_file.create_earray(
+                        a = merge_file.create_earray(
                             os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
                             obj=f1.root[k].read()
                         )
                     else:
-                        merge_file.create_array(
+                        a = merge_file.create_array(
                             os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
                             obj=f1.root[k].read()
                         )
+                    for att in f1.root[k].attrs._f_list():
+                        a.attrs[att] = f1.root[k].attrs[att]
+
         bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
@@ -283,7 +288,7 @@ def auto_merge_h5files(
                         raise
             bar.update(1)
 
-    # merge metadata
+    # merge global metadata
     metadata0 = read_metadata(file_list[0])
     for file in file_list[1:]:
         metadata = read_metadata(file)
