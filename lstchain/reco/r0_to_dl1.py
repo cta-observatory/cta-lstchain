@@ -413,6 +413,8 @@ def r0_to_dl1(
                 # extra info for the image table
                 extra_im.tel_id = telescope_id
                 extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
+                add_global_metadata(extra_im, metadata)
+                add_config_metadata(extra_im, config)
 
                 # write image first, so we are sure nothing here modifies it
                 writer.write(
