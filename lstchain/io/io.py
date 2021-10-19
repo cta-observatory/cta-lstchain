@@ -766,7 +766,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source):
+def global_metadata(source, input_url=""):
     """
     Get global metadata container
 
@@ -774,11 +774,14 @@ def global_metadata(source):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
+    if source:
+        input_url = source.input_url
+
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(source.input_url))
+    metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
     return metadata
 
