@@ -41,6 +41,7 @@ from ..io import (
 )
 from ..io import (
     add_global_metadata,
+    add_config_metadata,
     global_metadata,
     write_calibration_data,
     write_mcheader,
@@ -478,6 +479,7 @@ def r0_to_dl1(
 
                 for container in [extra_im, dl1_container, event.r0, dl1_tel]:
                     add_global_metadata(container, metadata)
+                    add_config_metadata(container, config)
 
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
