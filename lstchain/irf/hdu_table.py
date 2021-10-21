@@ -6,6 +6,7 @@ import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, AltAz
+from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
@@ -296,9 +297,6 @@ def create_event_list(
     date_end = t_stop_iso[:10]
     time_end = t_stop_iso[11:]
 
-    mean_time = Time(
-        data["dragon_time"].value.mean() * u.s, format="unix", scale="utc"
-    )
     MJDREF = Time("1970-01-01T00:00", scale="utc")
 
     # Position parameters
@@ -307,17 +305,20 @@ def create_event_list(
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
 
-    src_sky_pos = SkyCoord(
+    reco_altaz = SkyCoord(
         alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
-    ).transform_to(frame="icrs")
-    tel_pnt_sky_pos = SkyCoord(
-        alt=pointing_alt.mean(),
-        az=pointing_az.mean(),
-        frame=AltAz(obstime=mean_time, location=location),
+    )
+    pnt_icrs = SkyCoord(
+        alt=pointing_alt[0],
+        az=pointing_az[0],
+        frame=AltAz(obstime=time_utc[0], location=location),
     ).transform_to(frame="icrs")
 
+    with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
+        reco_icrs = reco_altaz.transform_to(frame="icrs")
+
     # Observation modes
-    source_pointing_diff = source_pos.separation(tel_pnt_sky_pos)
+    source_pointing_diff = source_pos.separation(pnt_icrs)
     if np.around(source_pointing_diff, 1) == wobble_offset:
         mode = "WOBBLE"
     elif np.around(source_pointing_diff, 1) > 1 * u.deg:
@@ -337,14 +338,14 @@ def create_event_list(
         {
             "EVENT_ID": data["event_id"],
             "TIME": data["dragon_time"],
-            "RA": src_sky_pos.ra.to(u.deg),
-            "DEC": src_sky_pos.dec.to(u.deg),
+            "RA": reco_icrs.ra.to(u.deg),
+            "DEC": reco_icrs.dec.to(u.deg),
             "ENERGY": data["reco_energy"],
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
-            "GLON":src_sky_pos.galactic.l.to(u.deg),
-            "GLAT":src_sky_pos.galactic.b.to(u.deg),
+            "GLON": reco_icrs.galactic.l.to(u.deg),
+            "GLAT": reco_icrs.galactic.b.to(u.deg),
             "ALT": reco_alt.to(u.deg),
             "AZ": reco_az.to(u.deg),
         }
@@ -358,8 +359,8 @@ def create_event_list(
     pnt_table = QTable(
         {
             "TIME": u.Quantity(t_start, unit=u.s, ndmin=1),
-            "RA_PNT": u.Quantity(tel_pnt_sky_pos.ra.to(u.deg), ndmin=1),
-            "DEC_PNT": u.Quantity(tel_pnt_sky_pos.dec.to(u.deg), ndmin=1),
+            "RA_PNT": u.Quantity(pnt_icrs.ra.to(u.deg), ndmin=1),
+            "DEC_PNT": u.Quantity(pnt_icrs.dec.to(u.deg), ndmin=1),
             "ALT_PNT": u.Quantity(pointing_alt[0].to(u.deg), ndmin=1),
             "AZ_PNT": u.Quantity(pointing_az[0].to(u.deg), ndmin=1),
         }
@@ -397,8 +398,8 @@ def create_event_list(
     ev_header["TELLIST"] = "LST-" + " ".join(map(str, tel_list))
     ev_header["INSTRUME"] = f"{ev_header['TELLIST']}"
 
-    ev_header["RA_PNT"] = tel_pnt_sky_pos.ra.to_value()
-    ev_header["DEC_PNT"] = tel_pnt_sky_pos.dec.to_value()
+    ev_header["RA_PNT"] = pnt_icrs.ra.to_value()
+    ev_header["DEC_PNT"] = pnt_icrs.dec.to_value()
     ev_header["ALT_PNT"] = data["pointing_alt"].mean().to_value(u.deg)
     ev_header["AZ_PNT"] = data["pointing_az"].mean().to_value(u.deg)
     ev_header["RA_OBJ"] = source_pos.ra.to_value()
@@ -427,12 +428,18 @@ def create_event_list(
     pnt_header["MJDREFF"] = ev_header["MJDREFF"]
     pnt_header["TIMEUNIT"] = ev_header["TIMEUNIT"]
     pnt_header["TIMESYS"] = ev_header["TIMESYS"]
-    pnt_header["OBSGEO-L"] = (location.lon.to_value(),
-        'Geographic longitude of telescope (deg)')
-    pnt_header["OBSGEO-B"] = (location.lat.to_value(),
-        'Geographic latitude of telescope (deg)')
-    pnt_header["OBSGEO-H"] = (location.height.to_value(), 
-        'Geographic latitude of telescope (m)')
+    pnt_header["OBSGEO-L"] = (
+        location.lon.to_value(u.deg),
+        "Geographic longitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-B"] = (
+        location.lat.to_value(u.deg),
+        "Geographic latitude of telescope (deg)",
+    )
+    pnt_header["OBSGEO-H"] = (
+        round(location.height.to_value(u.m), 2),
+        "Geographic latitude of telescope (m)",
+    )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
 
