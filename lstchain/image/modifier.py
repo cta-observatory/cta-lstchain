@@ -1,6 +1,6 @@
 __all__ = [
     'add_noise_in_pixels',
-    'calculate_noise_parameters'
+    'calculate_noise_parameters',
     'smear_light_in_pixels',
 ]
 
