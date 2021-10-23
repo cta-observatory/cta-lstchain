@@ -107,9 +107,10 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     will be used to indentify pixels which only contain noise).
 
     data_dl1_filename: a real data DL1 file (processed with calibration
-    settings corresponding to those with which the MC is to be processed). This
-    file has the "target" noise which we want to have in the MC files,
-    for better agreement of data and simulations.
+    settings corresponding to those with which the MC is to be processed).
+    It must contain calibrated images, i.e. "DL1a" data. This file has the
+    "target" noise which we want to have in the MC files, for better
+    agreement of data and simulations.
 
     config_filename: configuration file containing the calibration
     settings used for processing both the data and the MC files above
