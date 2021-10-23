@@ -7,13 +7,10 @@ __all__ = [
 import numpy as np
 from lstchain.io import  standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.calib.camera.pedestals import PedestalIntegrator
 from ctapipe.io import EventSource
 from ctapipe.calib.camera import CameraCalibrator
 from traitlets.config import Config
-import astropy.units as u
 import logging
-import os
 import tables
 
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
@@ -96,8 +93,8 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
     return image
 
 
-def calculate_noise_parameters(simtel_filename, mc_dl1_filename,
-                               data_dl1_filename, config_filename=None):
+def calculate_noise_parameters(simtel_filename, data_dl1_filename,
+                               config_filename=None):
     """
     Calculates the parameters needed to increase the noise in an MC DL1 file
     to match the noise in a real data DL1 file, using add_noise_in_pixels
@@ -109,12 +106,8 @@ def calculate_noise_parameters(simtel_filename, mc_dl1_filename,
     must contain pixel-wise info on true number of p.e.'s from C-photons (
     will be used to indentify pixels which only contain noise).
 
-    mc_dl1_filename: DL1 MC file (containing DL1a, calibrated images) on
-    which we want to increase the noise. Can be *any* file from a given
-    production, the resulting parameters will be the same within fluctuations.
-
     data_dl1_filename: a real data DL1 file (processed with calibration
-    settings corresponding to those with which the MC was processed). This
+    settings corresponding to those with which the MC is to be processed). This
     file has the "target" noise which we want to have in the MC files,
     for better agreement of data and simulations.
 
