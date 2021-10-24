@@ -1,0 +1,63 @@
+"""
+Usage:
+
+$> python lstchain_tune_nsb.py
+--config  config_file.json     (must be the one used in the DL1 production)
+--input-mc  simtel_file.simtel.gz    simulation simtel file
+--input-data_dl1 dl1_data.h5         real data DL1 file
+
+Calculates the parameters needed to tune the NSB in MC DL1 files (in the
+DL1ab stage) to the level of NSB in a given data file
+
+"""
+
+import argparse
+import logging
+import sys
+from pathlib import Path
+
+from lstchain.image.modifier import calculate_noise_parameters
+
+log = logging.getLogger(__name__)
+
+parser = argparse.ArgumentParser(description="Tune NSB")
+
+# Required arguments
+parser.add_argument(
+    '--config', type=Path,
+        help='Path to the configuration file for the production (must be the '
+             'one used for calibration and DL1 creation)',
+        required=True,
+)
+parser.add_argument(
+    '--input-mc', type=Path,
+        help='Path to a simtel file of the production (must include the true '
+             'p.e. images)',
+        required=True,
+)
+parser.add_argument(
+    '--input-data', type=Path,
+        help='Path to a data DL1 file of the production (must include DL1a)',
+        required=True,
+)
+
+args = parser.parse_args()
+
+
+def main():
+
+    if not args.config.is_file():
+        log.error('Config file does not exist or is not a file')
+        sys.exit(1)
+    if not args.input_mc.is_file():
+        log.error('MC simtel file does not exist or is not a file')
+        sys.exit(1)
+    if not args.input_data.is_file():
+        log.error('DL1 data file does not exist or is not a file')
+        sys.exit(1)
+
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logging.getLogger().addHandler(handler)
+
+    calculate_noise_parameters(args.input_mc, args.input_data, args.config)
