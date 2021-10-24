@@ -29,6 +29,8 @@ from lstchain.io import (
     replace_config,
     write_dl2_dataframe,
     get_dataset_keys,
+    global_metadata,
+    write_metadata
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
@@ -160,6 +162,9 @@ def main():
 
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
+
+    metadata = global_metadata(None, input_url=output_file)
+    write_metadata(metadata, output_file)
 
     with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
