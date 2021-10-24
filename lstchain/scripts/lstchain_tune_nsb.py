@@ -60,4 +60,5 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    calculate_noise_parameters(args.input_mc, args.input_data, args.config)
+    return calculate_noise_parameters(args.input_mc, args.input_data,
+                                      args.config)
