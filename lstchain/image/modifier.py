@@ -7,7 +7,7 @@ __all__ = [
 import numpy as np
 from lstchain.io import  standard_config
 from lstchain.io.config import read_configuration_file
-from ctapipe.io import EventSource
+from ctapipe.io import EventSource, read_table
 from ctapipe.calib.camera import CameraCalibrator
 from traitlets.config import Config
 import logging
@@ -135,10 +135,16 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
         config = read_configuration_file(config_filename)
 
     # Real data DL1 tables:
-    data_dl1_table = tables.open_file(data_dl1_filename)
+    data_dl1_calibration = read_table(data_dl1_filename,
+                    '/dl1/event/telescope/monitoring/calibration/LST_LSTCam')
+    data_dl1_pedestal =  read_table(data_dl1_filename,
+                    '/dl1/event/telescope/monitoring/pedestal/LST_LSTCam')
+    data_dl1_parameters =  read_table(data_dl1_filename,
+                    '/dl1/event/telescope/parameters/LST_LSTCam')
+    data_dl1_image = read_table(data_dl1_filename,
+                    '/dl1/event/telescope/image/LST_LSTCam')
 
-    unusable = data_dl1_table.root.dl1.event.telescope.monitoring.calibration\
-        .col('unusable_pixels')
+    unusable = data_dl1_calibration['unusable_pixels']
     # Locate pixels with HG declared unusable either in original calibration or
     # in interleaved events:
     bad_pixels = unusable[0][0]  # original calibration
@@ -152,15 +158,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # Third index: pixels
 
     # HG adc to pe conversion factors from interleaved calibrations:
-    data_HG_dc_to_pe = data_dl1_table.root.dl1.event.telescope.monitoring\
-                           .calibration.col('dc_to_pe')[1:, 0, :]
+    data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][1:, 0, :]
     # Pixel-wise pedestal standard deviation (for an unbiased extractor),
     # in adc counts:
-    data_HG_ped_std = data_dl1_table.root.dl1.event.telescope.monitoring\
-                         .pedestal.col('charge_std')[1:, 0, :]
+    data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
     # indices which connect each pedestal calculation to a given calibration:
-    calibration_id = data_dl1_table.root.dl1.event.telescope.monitoring\
-        .pedestal.col('calibration_id')
+    calibration_id = data_dl1_pedestal['calibration_id']
     # convert pedestal st deviations to p.e.
     dummy = []
     for i, x in enumerate(data_HG_ped_std[:,]):
@@ -180,12 +183,10 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     log.info(f'Number of pixels beyond 3 std dev of median: '
              f'{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
 
-    ped_mask = data_dl1_table.root.dl1.event.telescope.parameters.LST_LSTCam\
-                   .col('event_type') == 2
+    ped_mask = data_dl1_parameters['event_type'] == 2
     # The charges in the images below are obtained with the extractor for
     # showers, usually a biased one, like e.g. LocalPeakWindowSum
-    data_ped_charges = data_dl1_table.root.dl1.event.telescope.image\
-        .LST_LSTCam.col('image')[ped_mask]
+    data_ped_charges = data_dl1_image['image'][ped_mask]
 
     # Exclude too bright pixels, besides those with unusable calibration:
     good_pixels &= ~too_bright_pixels
