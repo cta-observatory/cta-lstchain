@@ -13,6 +13,8 @@ from traitlets.config import Config
 import logging
 import tables
 
+log = logging.getLogger(__name__)
+
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
 N_PIXEL_NEIGHBORS = 6
 
@@ -125,7 +127,6 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     """
 
-    log = logging.getLogger(__name__)
     log.setLevel(logging.INFO)
 
     if config_filename is None:
