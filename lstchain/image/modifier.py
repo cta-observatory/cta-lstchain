@@ -174,11 +174,11 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     data_median_std_ped_pe = np.median(data_HG_ped_std_pe)
     data_std_std_ped_pe = np.std(data_HG_ped_std_pe)
     log.info(f'Real data: median across camera of good pixels\' pedestal std '
-             '{data_median_std_ped_pe:.3f} p.e.')
+             f'{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
     too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
     log.info(f'Number of pixels beyond 3 std dev of median: '
-             '{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
+             f'{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
 
     ped_mask = data_dl1_table.root.dl1.event.telescope.parameters.LST_LSTCam\
                    .col('event_type') == 2
