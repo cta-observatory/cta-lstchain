@@ -126,6 +126,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     """
 
     log = logging.getLogger(__name__)
+    log.setLevel(logging.INFO)
 
     if config_filename is None:
         config = standard_config
