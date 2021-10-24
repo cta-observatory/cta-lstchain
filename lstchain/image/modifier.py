@@ -136,9 +136,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     # Real data DL1 tables:
     data_dl1_calibration = read_table(data_dl1_filename,
-                    '/dl1/event/telescope/monitoring/calibration/LST_LSTCam')
+                    '/dl1/event/telescope/monitoring/calibration')
     data_dl1_pedestal =  read_table(data_dl1_filename,
-                    '/dl1/event/telescope/monitoring/pedestal/LST_LSTCam')
+                    '/dl1/event/telescope/monitoring/pedestal')
     data_dl1_parameters =  read_table(data_dl1_filename,
                     '/dl1/event/telescope/parameters/LST_LSTCam')
     data_dl1_image = read_table(data_dl1_filename,
