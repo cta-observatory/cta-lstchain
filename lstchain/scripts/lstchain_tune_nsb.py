@@ -12,6 +12,7 @@ DL1ab stage) to the level of NSB in a given data file
 """
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -61,9 +62,17 @@ def main():
     logging.getLogger().addHandler(handler)
 
 
-    return calculate_noise_parameters(args.input_mc, args.input_data,
-                                      args.config)
+    a, b, c =  calculate_noise_parameters(args.input_mc, args.input_data,
+                                          args.config)
 
+    dict_nsb = {"increase_nsb": True,
+                "extra_noise_in_dim_pixels": a,
+                "extra_bias_in_dim_pixels": b,
+                "transition_charge": 8,
+                "extra_noise_in_bright_pixels": c
+                }
+
+    return json.dumps(dict_nsb, indent=2)
 
 if __name__ == '__main__':
     main()
