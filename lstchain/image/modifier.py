@@ -173,13 +173,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # the average diffuse NSB across the camera
     data_median_std_ped_pe = np.median(data_HG_ped_std_pe)
     data_std_std_ped_pe = np.std(data_HG_ped_std_pe)
-    log.info('Real data: median across camera of good pixels\' pedestal std '
-             'dev: {:.3f} p.e.'.format(data_median_std_ped_pe))
+    log.info(f'Real data: median across camera of good pixels\' pedestal std '
+             '{data_median_std_ped_pe:.3f} p.e.')
     brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
     too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
-    log.info('Number of pixels beyond 3 std dev of median: ',
-             too_bright_pixels.sum(), '(above {:.2f} p.e.)'.format(
-                brightness_limit))
+    log.info('Number of pixels beyond 3 std dev of median: '
+             '{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
 
     ped_mask = data_dl1_table.root.dl1.event.telescope.parameters.LST_LSTCam\
                    .col('event_type') == 2
@@ -193,7 +192,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # recalculate the median of the pixels' std dev, with good_pixels:
     data_median_std_ped_pe = np.median(data_HG_ped_std_pe[good_pixels])
 
-    log.info('Good and not too bright pixels: ', good_pixels.sum())
+    log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
 
     # all_good is an events*pixels boolean array of valid signals:
     all_good = np.reshape(np.tile(good_pixels, data_ped_charges.shape[0]),
