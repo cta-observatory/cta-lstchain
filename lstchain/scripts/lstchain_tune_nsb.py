@@ -60,5 +60,10 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
+
     return calculate_noise_parameters(args.input_mc, args.input_data,
                                       args.config)
+
+
+if __name__ == '__main__':
+    main()
