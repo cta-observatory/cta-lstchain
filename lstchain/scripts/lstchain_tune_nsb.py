@@ -66,10 +66,10 @@ def main():
                                           args.config)
 
     dict_nsb = {"increase_nsb": True,
-                "extra_noise_in_dim_pixels": a,
-                "extra_bias_in_dim_pixels": b,
+                "extra_noise_in_dim_pixels": round(a, 3),
+                "extra_bias_in_dim_pixels": round(b, 3),
                 "transition_charge": 8,
-                "extra_noise_in_bright_pixels": c
+                "extra_noise_in_bright_pixels": round(c, 3)
                 }
 
     log.info('\n')
