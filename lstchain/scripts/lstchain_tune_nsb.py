@@ -72,7 +72,11 @@ def main():
                 "extra_noise_in_bright_pixels": c
                 }
 
-    return json.dumps(dict_nsb, indent=2)
+    log.info('\n')
+    log.info(json.dumps(dict_nsb, indent=2))
+    log.info('\n')
+
+    return
 
 if __name__ == '__main__':
     main()
