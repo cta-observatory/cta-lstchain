@@ -841,7 +841,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -852,6 +852,7 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
     table_path: str
         path to the table to write in the HDF5 file
     config: config metadata
+    meta: global metadata
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -867,9 +868,12 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, confi
         )
         if config:
             t.attrs["config"] = config
+        if meta:
+            for k, item in meta.as_dict().items():
+                t.attrs[k] = item
 
 
-def write_dl2_dataframe(dataframe, outfile, config=None):
+def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
     """
     Write DL2 dataframe to a HDF5 file
 
@@ -878,8 +882,9 @@ def write_dl2_dataframe(dataframe, outfile, config=None):
     dataframe: `pandas.DataFrame`
     outfile: path
     config: config metadata
+    meta: global metadata
     """
-    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config)
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
 
 def add_column_table(table, ColClass, col_label, values):

@@ -184,15 +184,14 @@ def main():
                     g = h5out.get_node(path)
 
                 h5in.copy_node(k, g, overwrite=True)
-                for att in h5in.root[k].attrs._f_list():
-                    g.attrs[att] = h5in.root[k].attrs[att]
 
+    # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
     if not config['source_dependent']:
-        write_dl2_dataframe(dl2, output_file, config=config)
+        write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
 
     else:
         write_dl2_dataframe(dl2_srcindep, output_file, config=config)
-        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config, meta=metadata)
 
 
 if __name__ == '__main__':
