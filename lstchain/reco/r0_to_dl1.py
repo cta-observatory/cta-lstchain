@@ -168,14 +168,6 @@ def get_dl1(
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
-        # check the number of islands
-        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
-
-        if use_main_island:
-            n_pixels_on_island = np.bincount(island_labels)
-            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-            max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels != max_island_label] = False
 
         if delta_time is not None:
             signal_pixels = apply_time_delta_cleaning(
@@ -188,12 +180,20 @@ def get_dl1(
 
         if use_dynamic_cleaning:
             threshold_dynamic = config['dynamic_cleaning']['threshold']
-            fraction_dynamic = config['dynamic_cleaning'][
-                'fraction_cleaning_intensity']
+            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
             signal_pixels = apply_dynamic_cleaning(image,
                                                    signal_pixels,
                                                    threshold_dynamic,
                                                    fraction_dynamic)
+
+        # check the number of islands
+        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
+
+        if use_main_island:
+            n_pixels_on_island = np.bincount(island_labels)
+            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+            max_island_label = np.argmax(n_pixels_on_island)
+            signal_pixels[island_labels != max_island_label] = False
 
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
