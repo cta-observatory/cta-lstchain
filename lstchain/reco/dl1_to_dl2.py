@@ -327,6 +327,10 @@ def build_models(filegammas, fileprotons,
                                     finite_params=config['regression_features'] + config['classification_features'],
                                     )
 
+    #Training MC gammas in reduced viewcone (conversion factor is assumed to be 2 (deg/m))
+    src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
+    src_r_deg = src_r_m * 2
+    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 

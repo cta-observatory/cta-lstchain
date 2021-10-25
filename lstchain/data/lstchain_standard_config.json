@@ -151,6 +151,8 @@
 
   "timestamps_pointing":"ucts",
 
+  "train_gamma_src_r_deg": [0, Infinity],
+  
   "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
