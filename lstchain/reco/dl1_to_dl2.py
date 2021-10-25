@@ -328,7 +328,7 @@ def build_models(filegammas, fileprotons,
                                     finite_params=config['regression_features'] + config['classification_features'],
                                     )
 
-    #Training MC gammas in reduced viewcone (conversion factor is assumed to be 2 (deg/m))
+    #Training MC gammas in reduced viewcone 
     src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
