@@ -1,12 +1,12 @@
 {
   "image_modifier": {
     "increase_nsb": true,
-    "extra_noise_in_dim_pixels": 1.5,
-    "extra_bias_in_dim_pixels": 0.6,
+    "extra_noise_in_dim_pixels": 1.25,
+    "extra_bias_in_dim_pixels": 0.55,
     "transition_charge": 8,
-    "extra_noise_in_bright_pixels": 1.44,
+    "extra_noise_in_bright_pixels": 2.05,
     "increase_psf": true,
-    "smeared_light_fraction": 0.175
+    "smeared_light_fraction": 0.125
   },
 
   "tailcut": {
