@@ -1,12 +1,15 @@
 __all__ = [
     'add_noise_in_pixels',
-    'smear_light_in_pixels',
+    'random_psf_smearer',
 ]
 
 import numpy as np
+from numba import njit
 
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
 N_PIXEL_NEIGHBORS = 6
+SMEAR_PROBALITITES = np.full(N_PIXEL_NEIGHBORS, 1 / N_PIXEL_NEIGHBORS)
+
 
 def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
                         extra_bias_in_dim_pixels, transition_charge,
@@ -53,20 +56,26 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
 
     return image
 
+@njit(cache=True)
+def set_numba_seed(seed):
+    np.random.seed(seed)
 
-def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
+@njit(cache=True)
+def random_psf_smearer(image, fraction, indices, indptr):
     """
-
     Parameters
     ----------
     image: charges (p.e.) in the camera
 
-    camera_geom: camera geometry
+    indices: camera_geometry.neighbor_matrix_sparse.indices
 
-    smeared_light_fraction: fraction of the light in a pixel that will be
-    distributed equally among its immediate surroundings, i.e. immediate
-    neighboring pixels. Some light is lost for pixels which are at the
-    camera edge and hence don't have all possible neighbors
+    indptr: camera_geometry.neighbor_matrix_sparse.indptr
+
+    fraction: fraction of the light in a pixel that will be
+    distributed among its immediate surroundings, i.e. immediate
+    neighboring pixels, according to Poisson statistics. Some light is
+    lost for pixels which are at the camera edge and hence don't have all
+    possible neighbors
 
     Returns
     -------
@@ -74,12 +83,32 @@ def smear_light_in_pixels(image, camera_geom, smeared_light_fraction):
 
     """
 
-    # Move a fraction of the light in each pixel (fraction) into its neighbors,
-    # to simulate a worse PSF:
-    q_smeared = (image * camera_geom.neighbor_matrix *
-                 smeared_light_fraction / N_PIXEL_NEIGHBORS)
-    # Light remaining in pixel:
-    q_remaining = image * (1 - smeared_light_fraction)
-    image = q_remaining + np.sum(q_smeared, axis=1)
+    new_image = image.copy()
 
-    return image
+    for pixel in range(len(image)):
+
+        if image[pixel] <= 0:
+            continue
+
+        to_smear = np.random.poisson(image[pixel] * fraction)
+
+        if to_smear == 0:
+            continue
+
+        # remove light from current pixel
+        new_image[pixel] -= to_smear
+
+        # add light to neighbor pixels
+        neighbors = indices[indptr[pixel] : indptr[pixel + 1]]
+        n_neighbors = len(neighbors)
+
+        # all neighbors are equally likely to receive the charge
+        # we always distribute the charge into 6 neighbors, so that charge
+        # on the edges of the camera is lost
+        neighbor_charges = np.random.multinomial(to_smear, SMEAR_PROBALITITES)
+
+        for n in range(n_neighbors):
+            neighbor = neighbors[n]
+            new_image[neighbor] += neighbor_charges[n]
+
+    return new_image
