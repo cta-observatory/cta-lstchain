@@ -312,7 +312,7 @@ def plot_disp(data, true_hadroness=False):
 
     plt.plot(bins, y, 'r--', linewidth=2)
 
-    plt.xlabel(r'$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
+    plt.xlabel(r'$\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
 
     plt.figtext(0.15, 0.7, 'Mean: ' + str(round(mu, 4)), fontsize=12)
     plt.figtext(0.15, 0.65, 'Std: ' + str(round(sigma, 4)), fontsize=12)
