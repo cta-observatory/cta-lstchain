@@ -29,9 +29,9 @@
     "intensity": [0, Infinity],
     "width": [0, Infinity],
     "length": [0, Infinity],
-    "wl": [0, 1],
-    "r": [0, 1],
-    "leakage_intensity_width_2": [0, 1]
+    "wl": [0, Infinity],
+    "r": [0, Infinity],
+    "leakage_intensity_width_2": [0, Infinity]
   },
 
   "tailcut": {
@@ -52,6 +52,7 @@
     "delta_time": 2
   },
   "dynamic_cleaning": {
+    "apply": true,
     "threshold": 267,
     "fraction_cleaning_intensity": 0.03
   },
@@ -65,7 +66,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "min_samples_split": 2,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
@@ -85,7 +85,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
