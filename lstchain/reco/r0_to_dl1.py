@@ -32,7 +32,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..image.cleaning import apply_time_delta_cleaning
+from ..image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -145,10 +145,15 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    # pop delta_time and use_main_island, so we can cleaning_parameters to tailcuts
+    # pop delta_time and use_main_island, so we can pass cleaning_parameters to
+    # tailcuts
     cleaning_parameters = config["tailcut"].copy()
     delta_time = cleaning_parameters.pop("delta_time", None)
     use_main_island = cleaning_parameters.pop("use_only_main_island", True)
+
+    use_dynamic_cleaning = False
+    if "apply" in config["dynamic_cleaning"]:
+        use_dynamic_cleaning = config["dynamic_cleaning"]["apply"]
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -173,6 +178,14 @@ def get_dl1(
                 time_limit=delta_time
             )
 
+        if use_dynamic_cleaning:
+            threshold_dynamic = config['dynamic_cleaning']['threshold']
+            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
+            signal_pixels = apply_dynamic_cleaning(image,
+                                                   signal_pixels,
+                                                   threshold_dynamic,
+                                                   fraction_dynamic)
+
         # check the number of islands
         num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
@@ -194,9 +207,13 @@ def get_dl1(
             # convert ctapipe's width and length (in m) to deg:
             foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
             width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+            width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, foclen))
             length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+            length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, foclen))
             dl1_container.width = width
+            dl1_container.width_uncertainty = width_uncertainty
             dl1_container.length = length
+            dl1_container.length_uncertainty = length_uncertainty
             dl1_container.wl = dl1_container.width / dl1_container.length
 
             dl1_container.set_timing_features(camera_geometry[signal_pixels],
