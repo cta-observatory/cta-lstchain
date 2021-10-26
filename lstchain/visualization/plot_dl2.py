@@ -499,15 +499,16 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     fig.suptitle('Features importances')
 
     ### Regression models ###
-    reg_features_names = config['regression_features']
+    energy_reg_features_names = config['energy_regression_features']
+    disp_reg_features_names = config['disp_regression_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
     disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
 
-    plot_importances(disp, reg_features_names, ax=axes[0], **kwargs)
+    plot_importances(disp, disp_reg_features_names, ax=axes[0], **kwargs)
     axes[0].set_title("disp")
 
-    plot_importances(energy, reg_features_names, ax=axes[1], **kwargs)
+    plot_importances(energy, energy_reg_features_names, ax=axes[1], **kwargs)
     axes[1].set_title("energy")
 
     ### Classification model ###
