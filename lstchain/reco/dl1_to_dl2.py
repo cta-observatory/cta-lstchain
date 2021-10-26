@@ -360,8 +360,8 @@ def build_models(filegammas, fileprotons,
 
     #Apply the regressors to the test set
 
-    test['log_reco_energy'] = temp_reg_energy.predict(test[config['regression_features']])
-    disp_vector = temp_reg_disp_vector.predict(test[config['regression_features']])
+    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
+    disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
 
