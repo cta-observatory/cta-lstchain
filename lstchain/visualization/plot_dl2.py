@@ -512,7 +512,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     axes[1].set_title("energy")
 
     ### Classification model ###
-    clf_features_names = config['classification_features']
+    clf_features_names = config['particle_classification_features']
     clf = joblib.load(os.path.join(path_models, "cls_gh.sav"))
 
     plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)
