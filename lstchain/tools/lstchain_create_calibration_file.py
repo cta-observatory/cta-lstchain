@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Float, Bool
+from traitlets import Dict, List, Unicode, Int, Bool
 
 
 from ctapipe.core import Provenance, traits
@@ -48,12 +48,17 @@ class CalibrationHDF5Writer(Tool):
         default_value='LSTCalibrationCalculator'
     )
 
+    events_to_skip = Int(
+        1000,
+        help='Number of first events to skip due to bad DRS4 pedestal correction'
+    ).tag(config=True)
+
     aliases = Dict(dict(
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
         output_file='CalibrationHDF5Writer.output_file',
         calibration_product='CalibrationHDF5Writer.calibration_product',
-
+        events_to_skip='CalibrationHDF5Writer.events_to_skip'
     ))
 
     classes = List([EventSource,
@@ -118,15 +123,12 @@ class CalibrationHDF5Writer(Tool):
         new_ff = False
         end_of_file = False
 
-        # skip the first events which are badly drs4 corrected
-        events_to_skip = 1000
-
         try:
             self.log.debug(f"Start loop")
-            self.log.debug(f"If not simulation, skip first {events_to_skip} events")
+            self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
             for count, event in enumerate(self.eventsource):
 
-                if count % 100 == 0 and count> events_to_skip:
+                if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
@@ -156,7 +158,7 @@ class CalibrationHDF5Writer(Tool):
 
 
                 # skip first events which are badly drs4 corrected
-                if not self.simulation and count < events_to_skip:
+                if not self.simulation and count < self.events_to_skip:
                     continue
 
                 # if pedestal event
