@@ -10,6 +10,7 @@ import re
 import astropy.units as u
 import ctapipe
 import lstchain
+import ctapipe_io_lst
 from ctapipe.io import HDF5TableReader
 from ctapipe.containers import SimulationConfigContainer
 from ctapipe.io import HDF5TableWriter
@@ -780,6 +781,7 @@ def global_metadata(source, input_url=""):
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
+    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
     metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
