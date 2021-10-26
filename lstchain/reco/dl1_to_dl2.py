@@ -331,7 +331,7 @@ def build_models(filegammas, fileprotons,
 
     df_proton = utils.filter_events(df_proton,
                                     filters=events_filters,
-                                    finite_params=config['regression_features']
+                                    finite_params=config['energy_regression_features']
                                     + config['disp_regression_features']
                                     + config['particle_classification_features']
                                     + config['disp_classification_features'],
