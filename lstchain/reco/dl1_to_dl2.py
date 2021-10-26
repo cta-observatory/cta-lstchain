@@ -21,6 +21,7 @@ from ..io import standard_config, replace_config
 import astropy.units as u
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.image.hillas import camera_to_shower_coordinates
+from ctapipe.instrument import OpticsDescription
 
 
 __all__ = [
@@ -327,6 +328,11 @@ def build_models(filegammas, fileprotons,
                                     finite_params=config['regression_features'] + config['classification_features'],
                                     )
 
+    #Training MC gammas in reduced viewcone 
+    src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
+    foclen = OpticsDescription.from_name('LST').equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
