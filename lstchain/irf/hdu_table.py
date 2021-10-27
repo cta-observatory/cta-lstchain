@@ -10,9 +10,17 @@ from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location
+from lstchain.reco.utils import location, get_geomagnetic_delta
 
-__all__ = ["create_obs_index_hdu", "create_hdu_index_hdu", "create_event_list"]
+__all__ = [
+    "create_obs_index_hdu",
+    "create_hdu_index_hdu",
+    "create_event_list",
+    "get_timing_params",
+    "get_target_interp_params",
+    "get_pointing_params",
+    "add_icrs_position_params",
+]
 
 log = logging.getLogger(__name__)
 
@@ -183,63 +191,26 @@ def create_hdu_index_hdu(
         t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
+        hdu_names = [
+            "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
+            "PSF", "GH CUTS", "RAD_MAX"
+        ]
 
-        # Energy Dispersion
-        try:
-            edisp = hdu_list["ENERGY DISPERSION"]
-            t_edisp = t_events.copy()
+        for irf in hdu_names:
+            try:
+                t_irf = t_events.copy()
+                irf_hdu = hdu_list[irf].header["HDUCLAS4"]
 
-            t_edisp["HDU_TYPE"] = "edisp"
-            t_edisp["HDU_CLASS"] = "edisp_2d"
-            t_edisp["HDU_NAME"] = "ENERGY DISPERSION"
-
-            hdu_index_tables.append(t_edisp)
-        except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'ENERGY DISPERSION'"
-            )
-
-        # Effective Area
-        try:
-            aeff = hdu_list["EFFECTIVE AREA"]
-            t_aeff = t_events.copy()
-            t_aeff["HDU_TYPE"] = "aeff"
-            t_aeff["HDU_CLASS"] = "aeff_2d"
-            t_aeff["HDU_NAME"] = "EFFECTIVE AREA"
-
-            hdu_index_tables.append(t_aeff)
-        except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'EFFECTIVE AREA'"
-            )
-
-        # Background
-        try:
-            bkg = hdu_list["BACKGROUND"]
-            t_bkg = t_events.copy()
-            t_bkg["HDU_TYPE"] = "bkg"
-            t_bkg["HDU_CLASS"] = "bkg_2d"
-            t_bkg["HDU_NAME"] = "BACKGROUND"
-
-            hdu_index_tables.append(t_bkg)
-        except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'BACKGROUND'"
-            )
-
-        # PSF
-        try:
-            psf = hdu_list["PSF"]
-            t_psf = t_events.copy()
-            t_psf["HDU_TYPE"] = "psf"
-            t_psf["HDU_CLASS"] = "psf_table"
-            t_psf["HDU_NAME"] = "PSF"
-
-            hdu_index_tables.append(t_psf)
-        except KeyError:
-            log.error(
-                f"Run {t_events['OBS_ID']} does not contain HDU 'PSF'"
-            )
+                t_irf["HDU_CLASS"] = irf_hdu.lower()
+                t_irf["HDU_TYPE"] = irf_hdu.lower().strip(
+                    '_' + irf_hdu.lower().split("_")[-1]
+                )
+                t_irf["HDU_NAME"] = irf
+                hdu_index_tables.append(t_irf)
+            except KeyError:
+                log.error(
+                    f"Run {t_events['OBS_ID']} does not contain HDU {irf}"
+                )
 
     hdu_index_table = Table(hdu_index_tables)
 
@@ -255,6 +226,101 @@ def create_hdu_index_hdu(
     )
     hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
     hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
+
+
+def get_timing_params(data):
+    """
+    Get event lists and retrieve some timing parameters for the DL3 event list
+    as a dict
+
+    """
+    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
+    t_start_iso = time_utc[0].to_value("iso", "date_hms")
+    t_stop_iso = time_utc[-1].to_value("iso", "date_hms")
+
+    time_pars = {
+        "t_start": data["dragon_time"].value[0],
+        "t_stop": data["dragon_time"].value[-1],
+        "t_start_iso": t_start_iso,
+        "t_stop_iso": t_stop_iso,
+        "date_obs": t_start_iso[:10],
+        "time_obs": t_start_iso[11:],
+        "date_end": t_stop_iso[:10],
+        "time_end": t_stop_iso[11:],
+        "MJDREF": Time("1970-01-01T00:00", scale="utc")
+    }
+    return time_pars
+
+
+def get_pointing_params(data, source_pos, wobble_offset_std):
+    """
+    Convert the telescope pointing and reconstructed pointing position for
+    each event into AltAz and ICRS Frame of reference.
+    Also get the observational mode and wobble offset of the data as per
+    the given source position and standard wobble offset to compare.
+
+    """
+    pointing_alt = data["pointing_alt"]
+    pointing_az = data["pointing_az"]
+
+    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
+
+    pnt_icrs = SkyCoord(
+        alt=pointing_alt[0],
+        az=pointing_az[0],
+        frame=AltAz(obstime=time_utc[0], location=location),
+    ).transform_to(frame="icrs")
+
+    # Observation modes
+    source_pointing_diff = source_pos.separation(pnt_icrs)
+    if np.around(source_pointing_diff, 1) == wobble_offset_std:
+        mode = "WOBBLE"
+    elif np.around(source_pointing_diff, 1) > 1 * u.deg:
+        mode = "OFF"
+    elif np.around(source_pointing_diff, 1) == 0.0 * u.deg:
+        mode = "ON"
+    else:
+        # Nomenclature is to be worked out or have a separate way to mark mispointings
+        mode = "UNDETERMINED"
+
+    log.info(
+        "Source pointing difference with camera pointing"
+        f" is {source_pointing_diff:.3f}"
+    )
+
+    return reco_altaz, pnt_icrs, mode, source_pointing_diff
+
+
+def add_icrs_position_params(data, source_pos):
+    """
+    Updating data with ICRS position values of reconstructed positions in
+    RA DEC coordinates and add column on separation form true source position.
+    """
+    reco_alt = data["reco_alt"]
+    reco_az = data["reco_az"]
+
+    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
+
+    reco_altaz = SkyCoord(
+        alt=reco_alt, az=reco_az, frame=AltAz(
+            obstime=time_utc, location=location
+        )
+    )
+
+    with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
+        reco_icrs = reco_altaz.transform_to(frame="icrs")
+
+    data["RA"] = reco_icrs.ra
+    data["Dec"] = reco_icrs.dec
+    data["theta"] = reco_icrs.separation(source_pos)
+
+    return data
+
+
+def select_off_region(data, source_pos, off_region_type):
+
+    ## Add a boolean marker for off region?
+    return
 
 
 def create_event_list(
@@ -286,83 +352,42 @@ def create_event_list(
 
     tel_list = np.unique(data["tel_id"])
 
-    # Timing parameters
-    t_start = data["dragon_time"].value[0]
-    t_stop = data["dragon_time"].value[-1]
-    time_utc = Time(data["dragon_time"], format="unix", scale="utc")
-    t_start_iso = time_utc[0].to_value("iso", "date_hms")
-    t_stop_iso = time_utc[-1].to_value("iso", "date_hms")
-    date_obs = t_start_iso[:10]
-    time_obs = t_start_iso[11:]
-    date_end = t_stop_iso[:10]
-    time_end = t_stop_iso[11:]
-
-    MJDREF = Time("1970-01-01T00:00", scale="utc")
-
-    # Position parameters
-    reco_alt = data["reco_alt"]
-    reco_az = data["reco_az"]
-    pointing_alt = data["pointing_alt"]
-    pointing_az = data["pointing_az"]
-
-    reco_altaz = SkyCoord(
-        alt=reco_alt, az=reco_az, frame=AltAz(obstime=time_utc, location=location)
-    )
-    pnt_icrs = SkyCoord(
-        alt=pointing_alt[0],
-        az=pointing_az[0],
-        frame=AltAz(obstime=time_utc[0], location=location),
-    ).transform_to(frame="icrs")
-
-    with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
-        reco_icrs = reco_altaz.transform_to(frame="icrs")
-
-    # Observation modes
-    source_pointing_diff = source_pos.separation(pnt_icrs)
-    if np.around(source_pointing_diff, 1) == wobble_offset:
-        mode = "WOBBLE"
-    elif np.around(source_pointing_diff, 1) > 1 * u.deg:
-        mode = "OFF"
-    elif np.around(source_pointing_diff, 1) == 0.0 * u.deg:
-        mode = "ON"
-    else:
-        # Nomenclature is to be worked out or have a separate way to mark mispointings
-        mode = "UNDETERMINED"
-
-    log.info(
-        "Source pointing difference with camera pointing"
-        f" is {source_pointing_diff:.3f}"
+    time_params = get_timing_params(data)
+    reco_altaz, pnt_icrs, reco_icrs, mode = get_pointing_params(
+        data, source_pos, wobble_offset
     )
 
     event_table = QTable(
         {
             "EVENT_ID": data["event_id"],
             "TIME": data["dragon_time"],
-            "RA": reco_icrs.ra.to(u.deg),
-            "DEC": reco_icrs.dec.to(u.deg),
+            "RA": data["RA"].to(u.deg),
+            "DEC": data["Dec"].to(u.deg),
             "ENERGY": data["reco_energy"],
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
+
+            ## Combine earlier and then use same, or do it differently
             "GLON": reco_icrs.galactic.l.to(u.deg),
             "GLAT": reco_icrs.galactic.b.to(u.deg),
-            "ALT": reco_alt.to(u.deg),
-            "AZ": reco_az.to(u.deg),
+            "ALT": reco_altaz.alt.to(u.deg),
+            "AZ": reco_altaz.az.to(u.deg),
         }
     )
     gti_table = QTable(
         {
-            "START": u.Quantity(t_start, unit=u.s, ndmin=1),
-            "STOP": u.Quantity(t_stop, unit=u.s, ndmin=1),
+            "START": u.Quantity(time_params["t_start"], unit=u.s, ndmin=1),
+            "STOP": u.Quantity(time_params["t_stop"], unit=u.s, ndmin=1),
         }
     )
     pnt_table = QTable(
         {
-            "TIME": u.Quantity(t_start, unit=u.s, ndmin=1),
+            "TIME": u.Quantity(time_params["t_start"], unit=u.s, ndmin=1),
             "RA_PNT": u.Quantity(pnt_icrs.ra.to(u.deg), ndmin=1),
             "DEC_PNT": u.Quantity(pnt_icrs.dec.to(u.deg), ndmin=1),
-            "ALT_PNT": u.Quantity(pointing_alt[0].to(u.deg), ndmin=1),
-            "AZ_PNT": u.Quantity(pointing_az[0].to(u.deg), ndmin=1),
+            "ALT_PNT": u.Quantity(data["pointing_alt"][0].to(u.deg), ndmin=1),
+            "AZ_PNT": u.Quantity(data["pointing_az"][0].to(u.deg), ndmin=1),
         }
     )
 
@@ -375,19 +400,19 @@ def create_event_list(
 
     ev_header["OBS_ID"] = run_number
 
-    ev_header["DATE-OBS"] = date_obs
-    ev_header["TIME-OBS"] = time_obs
-    ev_header["DATE-END"] = date_end
-    ev_header["TIME-END"] = time_end
-    ev_header["TSTART"] = t_start
-    ev_header["TSTOP"] = t_stop
-    ev_header["MJDREFI"] = int(MJDREF.mjd)
-    ev_header["MJDREFF"] = MJDREF.mjd - int(MJDREF.mjd)
+    ev_header["DATE-OBS"] = time_params["date_obs"]
+    ev_header["TIME-OBS"] = time_params["time_obs"]
+    ev_header["DATE-END"] = time_params["date_end"]
+    ev_header["TIME-END"] = time_params["time_end"]
+    ev_header["TSTART"] = time_params["t_start"]
+    ev_header["TSTOP"] = time_params["t_stop"]
+    ev_header["MJDREFI"] = int(time_params["MJDREF"].mjd)
+    ev_header["MJDREFF"] = time_params["MJDREF"].mjd - int(time_params["MJDREF"].mjd)
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
     ev_header["TIMEREF"] = "TOPOCENTER"
     ev_header["ONTIME"] = elapsed_time
-    ev_header["TELAPSE"] = t_stop - t_start
+    ev_header["TELAPSE"] = time_params["t_stop"] - time_params["t_start"]
     ev_header["DEADC"] = effective_time / elapsed_time
     ev_header["LIVETIME"] = effective_time
 

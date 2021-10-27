@@ -53,7 +53,7 @@ setup(
         'numba',
         'numpy',
         'pandas',
-        'pyirf~=0.4.0',
+        'pyirf~=0.5.0',
         'scipy',
         'seaborn',
         'scikit-learn',
