@@ -29,9 +29,9 @@
     "intensity": [0, Infinity],
     "width": [0, Infinity],
     "length": [0, Infinity],
-    "wl": [0, 1],
-    "r": [0, 1],
-    "leakage_intensity_width_2": [0, 1]
+    "wl": [0, Infinity],
+    "r": [0, Infinity],
+    "leakage_intensity_width_2": [0, Infinity]
   },
 
   "tailcuts_clean_with_pedestal_threshold": {
@@ -130,6 +130,8 @@
      "window_width":8
     },
   "timestamps_pointing":"ucts",
+
+  "train_gamma_src_r_deg": [0, Infinity],
 
   "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
