@@ -321,7 +321,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     bias = mode_data - mode_mc
     extra_bias_in_dim_pixels = max(bias, 0)
 
-    # differences to peak charge:
+    # differences of values to peak charge:
     dq = data_ped_charges[all_good].flatten() - mode_data
     dqmc = mc_ped_charges_biased - mode_mc
     # maximum distance (in pe) from peak, to avoid strong impact of outliers:
