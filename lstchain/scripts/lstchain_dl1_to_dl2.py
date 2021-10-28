@@ -111,7 +111,10 @@ def main():
     if not config['source_dependent']:
         data = filter_events(data,
                              filters=config["events_filters"],
-                             finite_params=config['regression_features'] + config['classification_features'],
+                             finite_params=config['energy_regression_features']
+                             + config['disp_regression_features']
+                             + config['particle_classification_features']
+                             + config['disp_classification_features'],
                              )
 
         dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,

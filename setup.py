@@ -61,6 +61,8 @@ setup(
         'toml',
         'traitlets',
         'iminuit~=1.5',
+        'pymongo',
+        'pyparsing~=2.4'
     ],
     package_data={
         'lstchain': [
