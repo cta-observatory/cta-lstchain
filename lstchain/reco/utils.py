@@ -18,7 +18,6 @@ import astropy.units as u
 import numpy as np
 import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
-from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 from astropy.utils import deprecated
 from ctapipe.coordinates import CameraFrame
@@ -806,11 +805,11 @@ def get_geomagnetic_delta(zen, az, B_dec=None, B_inc=None):
     t_diff = (Time.now().decimalyear - time_mc) * u.yr
 
     if B_dec is None:
-        geomag_dec = geomag_dec + delta_dec * t_diff
-        B_dec = geomag_dec.to_value(u.rad)
+        geomag_dec_now = geomag_dec + delta_dec * t_diff
+        B_dec = geomag_dec_now.to_value(u.rad)
     if B_inc is None:
-        geomag_inc = geomag_inc + delta_inc * t_diff
-        B_inc = geomag_inc.to_value(u.rad)
+        geomag_inc_now = geomag_inc + delta_inc * t_diff
+        B_inc = geomag_inc_now.to_value(u.rad)
 
     term = (
         (np.sin(B_inc) * np.cos(zen)) +

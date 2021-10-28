@@ -181,3 +181,34 @@ def test_get_obstime_real():
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
+
+
+def test_get_geomagnetic_delta():
+
+    time_mc = Time("2020-06-29", format="iso").decimalyear
+    geomag_dec = -5.0674 * np.pi / 180 * u.rad
+    geomag_inc = 37.4531 * np.pi / 180 * u.rad
+
+    delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr
+
+    t_diff = (Time.now().decimalyear - time_mc) * u.yr
+    geomag_inc_now = (geomag_inc + delta_inc * t_diff).to_value(u.rad)
+
+    # Values at (azimuth+geomag_dec) = 0, np.pi, delta has min, max
+    zen_0 = np.arccos(np.sin(geomag_inc_now))
+    term_0 = (
+        (np.sin(geomag_inc_now) * np.cos(zen_0)) +
+        (np.cos(geomag_inc_now) * np.sin(zen_0) * np.cos(0))
+    )
+
+    delta_min = np.arccos(term_0)
+
+    zen_1 = - np.arctan(np.tan(geomag_inc_now)/np.cos(np.pi))
+    term_1 = (
+        (np.sin(geomag_inc_now) * np.cos(zen_1)) +
+        (np.cos(geomag_inc_now) * np.sin(zen_1) * np.cos(np.pi))
+    )
+    delta_max = np.arccos(term_1)
+
+    assert delta_min == 0
+    assert delta_max == np.pi/2
