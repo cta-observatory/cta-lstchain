@@ -138,7 +138,10 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     dl1 = filter_events(
         dl1,
         filters=standard_config["events_filters"],
-        finite_params=standard_config['regression_features'] + standard_config['classification_features']
+        finite_params=standard_config['energy_regression_features']
+        + standard_config['disp_regression_features']
+        + standard_config['particle_classification_features']
+        + standard_config['disp_classification_features']
     )
 
     reg_energy = joblib.load(rf_models["energy"])
