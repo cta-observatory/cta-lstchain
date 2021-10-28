@@ -188,12 +188,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # Third index: pixels
 
     # HG adc to pe conversion factors from interleaved calibrations:
-    data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][1:, 0, :]
+    data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
     # Pixel-wise pedestal standard deviation (for an unbiased extractor),
     # in adc counts:
     data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
     # indices which connect each pedestal calculation to a given calibration:
-    calibration_id = data_dl1_pedestal['calibration_id']
+    calibration_id = data_dl1_pedestal['calibration_id'][1:]
     # convert pedestal st deviations to p.e.
     dummy = []
     for i, x in enumerate(data_HG_ped_std[:, ]):
