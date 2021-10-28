@@ -195,7 +195,11 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # indices which connect each pedestal calculation to a given calibration:
     calibration_id = data_dl1_pedestal['calibration_id']
     # convert pedestal st deviations to p.e.
-    dummy = data_HG_ped_std * data_HG_dc_to_pe[calibration_id,]
+    dummy = []
+    for i, x in enumerate(data_HG_ped_std[:, ]):
+        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
+    dummy = np.array(dummy)
+
     # Average for all interleaved calibrations (in case there are more than one)
     data_HG_ped_std_pe = np.mean(dummy, axis=0) # one value per pixel
 
