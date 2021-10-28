@@ -9,17 +9,16 @@ from astropy.coordinates import SkyCoord, AltAz
 from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
+from lstchain.reco.utils import location
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location, get_geomagnetic_delta
 
 __all__ = [
     "create_obs_index_hdu",
     "create_hdu_index_hdu",
     "create_event_list",
     "get_timing_params",
-    "get_target_interp_params",
     "get_pointing_params",
-    "add_icrs_position_params",
+    "add_icrs_position_params"
 ]
 
 log = logging.getLogger(__name__)
@@ -288,7 +287,7 @@ def get_pointing_params(data, source_pos, wobble_offset_std):
         f" is {source_pointing_diff:.3f}"
     )
 
-    return reco_altaz, pnt_icrs, mode, source_pointing_diff
+    return pnt_icrs, mode, source_pointing_diff
 
 
 def add_icrs_position_params(data, source_pos):
@@ -307,20 +306,14 @@ def add_icrs_position_params(data, source_pos):
         )
     )
 
-    with erfa_astrom.set(ErfaAstromInterpolator(30 * u.s)):
+    with erfa_astrom.set(ErfaAstromInterpolator(300 * u.s)):
         reco_icrs = reco_altaz.transform_to(frame="icrs")
 
-    data["RA"] = reco_icrs.ra
-    data["Dec"] = reco_icrs.dec
-    data["theta"] = reco_icrs.separation(source_pos)
+    data["RA"] = reco_icrs.ra.to(u.deg)
+    data["Dec"] = reco_icrs.dec.to(u.deg)
+    data["theta"] = reco_icrs.separation(source_pos).to(u.deg)
 
     return data
-
-
-def select_off_region(data, source_pos, off_region_type):
-
-    ## Add a boolean marker for off region?
-    return
 
 
 def create_event_list(
@@ -353,7 +346,9 @@ def create_event_list(
     tel_list = np.unique(data["tel_id"])
 
     time_params = get_timing_params(data)
-    reco_altaz, pnt_icrs, reco_icrs, mode = get_pointing_params(
+    reco_icrs = SkyCoord(ra=data["RA"], dec=data["Dec"], unit="deg")
+
+    pnt_icrs, mode, wobble_pos = get_pointing_params(
         data, source_pos, wobble_offset
     )
 
@@ -371,8 +366,8 @@ def create_event_list(
             ## Combine earlier and then use same, or do it differently
             "GLON": reco_icrs.galactic.l.to(u.deg),
             "GLAT": reco_icrs.galactic.b.to(u.deg),
-            "ALT": reco_altaz.alt.to(u.deg),
-            "AZ": reco_altaz.az.to(u.deg),
+            "ALT": data["reco_alt"].to(u.deg),
+            "AZ": data["reco_az"].to(u.deg),
         }
     )
     gti_table = QTable(

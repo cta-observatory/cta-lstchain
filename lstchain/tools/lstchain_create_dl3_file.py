@@ -20,7 +20,6 @@ from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list, add_icrs_position_params
 from lstchain.io import EventSelector, DL3FixedCuts
 
-from lstchain.reco.utils import calculate_theta
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -99,11 +98,6 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    apply_theta_cut = traits.Bool(
-        help="If True, apply theta cuts",
-        default=False,
-    ).tag(config=True)
-
     classes = [EventSelector, DL3FixedCuts]
 
     aliases = {
@@ -121,10 +115,6 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
-        ),
-        "apply-theta-cut": (
-            {"DataReductionFITSWriter": {"apply_theta_cut": True}},
-            "Apply theta cut if true",
         ),
     }
 
@@ -148,25 +138,6 @@ class DataReductionFITSWriter(Tool):
                     f"Output file {self.output_file} already exists,"
                     " use --overwrite to overwrite"
                 )
-
-        # Check if the IRF to be used is POINT-LIKE or FULL ENCLOSURE
-        if self.input_irf.exists():
-            self.irf_type = fits.open(self.input_irf)[1].header["HDUCLAS3"]
-            if self.irf_type == "POINT-LIKE":
-                if self.apply_theta_cut:
-                    self.point_like = True
-                else:
-                    raise ToolConfigurationError(
-                        "Given IRF is point-like, use --apply-theta-cut"
-                    )
-            elif self.apply_theta_cut:
-                raise ToolConfigurationError(
-                    "Provided IRF is not point-like, select appropriate IRF "
-                    "when theta cuts are to be applied to real data"
-                )
-            else:
-                self.point_like = False
-
         if not (self.source_ra or self.source_dec):
             self.source_pos = SkyCoord.from_name(self.source_name)
         elif bool(self.source_ra) != bool(self.source_dec):
@@ -188,21 +159,6 @@ class DataReductionFITSWriter(Tool):
         self.data = self.event_sel.filter_cut(self.data)
         self.data = self.fixed_cuts.gh_cut(self.data)
         self.data = add_icrs_position_params(self.data, self.source_pos)
-
-        if self.point_like:
-            ## Add another function to get OFF region.
-            ## before applying the cuts
-            self.data = self.fixed_cuts.theta_cut(self.data)
-
-            self.log.info(
-                f"Theta cut applied as {self.irf_type} "
-                "IRF is being included"
-            )
-        else:
-            self.log.info(
-                f"Theta cut is not applied as {self.irf_type} "
-                "IRF is being included"
-            )
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
