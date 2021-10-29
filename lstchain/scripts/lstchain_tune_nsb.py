@@ -61,9 +61,8 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-
-    a, b, c =  calculate_noise_parameters(args.input_mc, args.input_data,
-                                          args.config)
+    a, b, c = calculate_noise_parameters(args.input_mc, args.input_data,
+                                         args.config)
 
     dict_nsb = {"increase_nsb": True,
                 "extra_noise_in_dim_pixels": round(a, 3),
@@ -77,6 +76,7 @@ def main():
     log.info('\n')
 
     return
+
 
 if __name__ == '__main__':
     main()

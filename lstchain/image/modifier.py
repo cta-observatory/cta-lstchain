@@ -4,24 +4,26 @@ __all__ = [
     'random_psf_smearer',
 ]
 
-import numpy as np
-from lstchain.io import  standard_config
-from lstchain.io.config import read_configuration_file
-from ctapipe.io import EventSource, read_table
-from ctapipe.calib.camera import CameraCalibrator
-from traitlets.config import Config
 import logging
-import tables
 
-log = logging.getLogger(__name__)
+import numpy as np
+from ctapipe.calib.camera import CameraCalibrator
+from ctapipe.io import EventSource, read_table
+from numba import njit
+from traitlets.config import Config
+
+from lstchain.io import standard_config
+from lstchain.io.config import read_configuration_file
 
 from scipy.interpolate import interp1d
 import numpy as np
 from numba import njit
 
+log = logging.getLogger(__name__)
+
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
 N_PIXEL_NEIGHBORS = 6
-SMEAR_PROBALITITES = np.full(N_PIXEL_NEIGHBORS, 1 / N_PIXEL_NEIGHBORS)
+SMEAR_PROBABILITIES = np.full(N_PIXEL_NEIGHBORS, 1 / N_PIXEL_NEIGHBORS)
 
 
 def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
@@ -69,9 +71,11 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
 
     return image
 
+
 @njit(cache=True)
 def set_numba_seed(seed):
     np.random.seed(seed)
+
 
 @njit(cache=True)
 def random_psf_smearer(image, fraction, indices, indptr):
@@ -117,7 +121,7 @@ def random_psf_smearer(image, fraction, indices, indptr):
         # all neighbors are equally likely to receive the charge
         # we always distribute the charge into 6 neighbors, so that charge
         # on the edges of the camera is lost
-        neighbor_charges = np.random.multinomial(to_smear, SMEAR_PROBALITITES)
+        neighbor_charges = np.random.multinomial(to_smear, SMEAR_PROBABILITIES)
 
         for n in range(n_neighbors):
             neighbor = neighbors[n]
@@ -137,7 +141,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     simtel_filename: a simtel file containing showers, from the same
     production (same NSB and telescope settings) as the MC DL1 file below. It
     must contain pixel-wise info on true number of p.e.'s from C-photons (
-    will be used to indentify pixels which only contain noise).
+    will be used to identify pixels which only contain noise).
 
     data_dl1_filename: a real data DL1 file (processed with calibration
     settings corresponding to those with which the MC is to be processed).
@@ -150,7 +154,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     Returns
     -------
-    extra_noise_in_dim_pixels, extra_bias_in_dim_pixels,
+    extra_noise_in_dim_pixels
+    extra_bias_in_dim_pixels
     extra_noise_in_bright_pixels
 
     These are the parameters needed by the function add_noise_in_pixels (see
@@ -237,6 +242,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     qrange = (-10, 15)
     dataq = np.histogram(data_ped_charges[all_good].flatten(), bins=qbins,
                          range=qrange, density=True)
+
     # Find the peak of the pedestal biased charge distribution of real data.
     # Use an interpolated version of the histogram, for robustness:
     func = interp1d(0.5*(dataq[1][1:]+dataq[1][:-1]), dataq[0],
