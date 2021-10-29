@@ -6,7 +6,7 @@ import subprocess as sp
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 
 
-def test_lstchain_create_drs4_pedestal_file(tmp_path):
+def test_lstchain_create_timecalibration_file(tmp_path):
     '''Test that the timen calibration file creation script runs at least
     until the finalize step.
 
