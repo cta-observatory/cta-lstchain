@@ -59,8 +59,10 @@ setup(
         'scikit-learn',
         'tables',
         'toml',
-        'traitlets',
+        'traitlets~=5.0.5',
         'iminuit~=1.5',
+        'pymongo',
+        'pyparsing~=2.4'
     ],
     package_data={
         'lstchain': [

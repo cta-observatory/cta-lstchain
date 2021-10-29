@@ -312,7 +312,7 @@ def plot_disp(data, true_hadroness=False):
 
     plt.plot(bins, y, 'r--', linewidth=2)
 
-    plt.xlabel(r'$\\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
+    plt.xlabel(r'$\frac{disp\_norm_{gammas}-disp_{rec}}{disp\_norm_{gammas}}$', fontsize=15)
 
     plt.figtext(0.15, 0.7, 'Mean: ' + str(round(mu, 4)), fontsize=12)
     plt.figtext(0.15, 0.65, 'Std: ' + str(round(sigma, 4)), fontsize=12)
@@ -499,19 +499,20 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     fig.suptitle('Features importances')
 
     ### Regression models ###
-    reg_features_names = config['regression_features']
+    energy_reg_features_names = config['energy_regression_features']
+    disp_reg_features_names = config['disp_regression_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
     disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
 
-    plot_importances(disp, reg_features_names, ax=axes[0], **kwargs)
+    plot_importances(disp, disp_reg_features_names, ax=axes[0], **kwargs)
     axes[0].set_title("disp")
 
-    plot_importances(energy, reg_features_names, ax=axes[1], **kwargs)
+    plot_importances(energy, energy_reg_features_names, ax=axes[1], **kwargs)
     axes[1].set_title("energy")
 
     ### Classification model ###
-    clf_features_names = config['classification_features']
+    clf_features_names = config['particle_classification_features']
     clf = joblib.load(os.path.join(path_models, "cls_gh.sav"))
 
     plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)

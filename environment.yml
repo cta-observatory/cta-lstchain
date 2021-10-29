@@ -16,6 +16,8 @@ dependencies:
   - joblib
   - toml
   - protozfits=2.0
+  - pyparsing~=2.4
+  - traitlets=5.0
   - pip:
       - pytest_runner
       - pytest-ordering
