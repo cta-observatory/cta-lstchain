@@ -28,3 +28,4 @@ def test_lstchain_create_drs4_pedestal_file(tmp_path):
         assert "failing pixels" in f
         assert f["pedestal array"].data.shape == (2, 1855, 4096)
         assert f["failing pixels"].data.shape == (1855, )
+
