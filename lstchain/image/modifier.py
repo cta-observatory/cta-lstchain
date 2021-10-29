@@ -15,6 +15,7 @@ import tables
 
 log = logging.getLogger(__name__)
 
+from scipy.interpolate import interp1d
 import numpy as np
 from numba import njit
 
@@ -236,10 +237,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     qrange = (-10, 15)
     dataq = np.histogram(data_ped_charges[all_good].flatten(), bins=qbins,
                          range=qrange, density=True)
-    # Find the peak of the pedestal biased charge distribution of real data:
-    peakbin = np.argmax(dataq[0])
-    mode_data = 0.5 * (dataq[1][peakbin] + dataq[1][peakbin + 1])
-
+    # Find the peak of the pedestal biased charge distribution of real data.
+    # Use an interpolated version of the histogram, for robustness:
+    func = interp1d(0.5*(dataq[1][1:]+dataq[1][:-1]), dataq[0],
+                    kind='quadratic', fill_value='extrapolate')
+    xx = np.linspace(qrange[0], qrange[1], 100*qbins)
+    mode_data = xx[np.argmax(func(xx))]
 
     # Event reader for simtel file:
     mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
@@ -303,9 +306,12 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     mcq = np.histogram(mc_ped_charges_biased, bins=qbins, range=qrange,
                        density=True)
-    peakbin = np.argmax(mcq[0])
-    # Find the peak of the pedestal biased charge distribution of MC:
-    mode_mc = 0.5 * (mcq[1][peakbin] + mcq[1][peakbin + 1])
+    # Find the peak of the pedestal biased charge distribution of MC. Use
+    # an interpolated version of the histogram, for robustness:
+    func = interp1d(0.5*(mcq[1][1:]+mcq[1][:-1]), mcq[0],
+                    kind='quadratic', fill_value='extrapolate')
+    xx = np.linspace(qrange[0], qrange[1], 100*qbins)
+    mode_mc = xx[np.argmax(func(xx))]
 
     mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
 
