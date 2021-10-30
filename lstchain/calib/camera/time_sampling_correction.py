@@ -3,7 +3,7 @@ import numpy as np
 
 
 from ctapipe.core import Component
-from ctapipe.core.traits import Unicode
+from ctapipe.core.traits import Path
 
 __all__ = [
     'TimeSamplingCorrection',
@@ -17,12 +17,10 @@ class TimeSamplingCorrection(Component):
         using Fourier series expansion.
     """
 
-    time_sampling_correction_path = Unicode(
-        '',
-        help='Path to the waveform sampling correction file',
-        allow_none = True,
+    time_sampling_correction_path = Path(
+        exists=True, directory_ok=False,
+        help='Path to time sampling correction file'
     ).tag(config=True)
-
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -65,9 +65,10 @@ args = parser.parse_args()
 
 source_config = {
     "LSTEventSource": {
-        "max_events":args.max_events,
+        "max_events":args.max_events
     }
 }
+
 def main():
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))

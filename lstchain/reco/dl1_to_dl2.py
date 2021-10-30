@@ -21,6 +21,7 @@ from ..io import standard_config, replace_config
 import astropy.units as u
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.image.hillas import camera_to_shower_coordinates
+from ctapipe.instrument import OpticsDescription
 
 __all__ = [
     'train_energy',
@@ -52,15 +53,15 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
-    model = RandomForestRegressor
+    energy_regression_args = config['random_forest_energy_regressor_args'] 
+    features = config['energy_regression_features']
+    model = RandomForestRegressor    
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
     print("Training Random Forest Regressor for Energy Reconstruction...")
 
-    reg = model(**regression_args)
+    reg = model(**energy_regression_args)
     reg.fit(train[features],
             train['log_mc_energy'])
 
@@ -85,15 +86,15 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
+    disp_regression_args = config['random_forest_disp_regressor_args']
+    features = config['disp_regression_features']
     model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
     print("Training model {} for disp vector regression".format(model))
 
-    reg = model(**regression_args)
+    reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose([train[f] for f in predict_features])
     reg.fit(x, y)
@@ -118,15 +119,15 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_regressor_args']
-    features = config['regression_features']
+    disp_regression_args = config['random_forest_disp_regressor_args']
+    features = config['disp_regression_features']
     model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
     print("Training model {} for disp norm regression".format(model))
 
-    reg = model(**regression_args)
+    reg = model(**disp_regression_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
     reg.fit(x, y)
@@ -151,64 +152,66 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_args = config['random_forest_classifier_args']
-    features = config['regression_features']
+    classification_args = config['random_forest_disp_classifier_args']
+    features = config["disp_classification_features"]
     model = RandomForestClassifier
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp sign regression".format(model))
+    print("Training model {} for disp sign classification".format(model))
 
-    reg = model(**regression_args)
+    clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    reg.fit(x, y)
+    clf.fit(x, y)
 
     print("Model {} trained!".format(model))
 
-    return reg
+    return clf
 
 
-## DEPRECATED ?
-# def train_reco(train, custom_config={}):
-#     """
-#     Trains two Random Forest regressors for Energy and disp_vector
-#     reconstruction respectively. Returns the trained RF.
-#
-#     Parameters:
-#     -----------
-#     train: `pandas.DataFrame`
-#     config: dictionnary containing configuration
-#
-#     Returns:
-#     --------
-#     RandomForestRegressor: reg_energy
-#     RandomForestRegressor: reg_disp
-#     """
-#
-#     config = replace_config(standard_config, custom_config)
-#     regression_args = config['random_forest_regressor_args']
-#     features = config['regression_features']
-#     model = RandomForestRegressor
-#
-#     print("Given features: ", features)
-#     print("Number of events for training: ", train.shape[0])
-#     print("Training Random Forest Regressor for Energy Reconstruction...")
-#
-#     reg_energy = model(**regression_args)
-#     reg_energy.fit(train[features],
-#                    train['log_mc_energy'])
-#
-#     print("Random Forest trained!")
-#     print("Training Random Forest Regressor for disp_norm Reconstruction...")
-#
-#     reg_disp = RandomForestRegressor(**regression_args)
-#     reg_disp.fit(train[features],
-#                  train['disp_norm'])
-#
-#     print("Random Forest trained!")
-#     print("Done!")
-#     return reg_energy, reg_disp
+def train_reco(train, custom_config={}):
+    """
+    Trains two Random Forest regressors for Energy and disp_norm
+    reconstruction respectively. Returns the trained RF.
+
+    Parameters:
+    -----------
+    train: `pandas.DataFrame`
+    config: dictionnary containing configuration
+
+    Returns:
+    --------
+    RandomForestRegressor: reg_energy
+    RandomForestRegressor: reg_disp
+    """
+
+    config = replace_config(standard_config, custom_config)
+    energy_regression_args = config['random_forest_energy_regressor_args']
+    disp_regression_args = config['random_forest_disp_regressor_args']
+    energy_features = config['energy_regression_features']
+    disp_features = config['disp_regression_features']
+    model = RandomForestRegressor
+
+    print("Given energy_features: ", energy_features)
+    print("Number of events for training: ", train.shape[0])
+    print("Training Random Forest Regressor for Energy Reconstruction...")
+
+    reg_energy = model(**energy_regression_args)
+    reg_energy.fit(train[energy_features],
+                  train['log_mc_energy'])
+
+    print("Random Forest trained!")
+    print("Given disp_features: ", disp_features)
+    print("Training Random Forest Regressor for disp_norm Reconstruction...")
+
+    reg_disp = RandomForestRegressor(**disp_regression_args)
+    reg_disp.fit(train[disp_features],
+                     train['disp_norm'])
+
+    print("Random Forest trained!")
+    print("Done!")
+    return reg_energy, reg_disp
 
 
 def train_sep(train, custom_config={}):
@@ -230,8 +233,8 @@ def train_sep(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    classification_args = config['random_forest_classifier_args']
-    features = config["classification_features"]
+    classification_args = config['random_forest_particle_classifier_args']
+    features = config["particle_classification_features"]
     model = RandomForestClassifier
 
     print("Given features: ", features)
@@ -317,15 +320,27 @@ def build_models(filegammas, fileprotons,
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
-                                   finite_params=config['regression_features'] + config['classification_features'],
+                                   finite_params=config['energy_regression_features']
+                                   + config['disp_regression_features']
+                                   + config['particle_classification_features']
+                                   + config['disp_classification_features'],
                                    )
 
     df_proton = utils.filter_events(df_proton,
                                     filters=events_filters,
-                                    finite_params=config['regression_features'] + config['classification_features'],
+                                    finite_params=config['energy_regression_features']
+                                    + config['disp_regression_features']
+                                    + config['particle_classification_features']
+                                    + config['disp_classification_features'],
                                     )
 
-    # Train regressors for energy and disp_norm reconstruction, only with gammas
+    #Training MC gammas in reduced viewcone 
+    src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
+    foclen = OpticsDescription.from_name('LST').equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (src_r_deg <= config['train_gamma_src_r_deg'][1])]
+
+    #Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
 
@@ -346,11 +361,11 @@ def build_models(filegammas, fileprotons,
 
     # Apply the regressors to the test set
 
-    test['log_reco_energy'] = temp_reg_energy.predict(test[config['regression_features']])
+    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
     # disp_vector = temp_reg_disp_vector.predict(test[config['regression_features']])
 
-    disp_norm = tmp_reg_disp_norm.predict(test[config['regression_features']])
-    disp_sign = tmp_reg_disp_sign.predict(test[config['regression_features']])
+    disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
+    disp_sign = tmp_reg_disp_sign.predict(test[config['disp_regression_features']])
     disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
     disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -413,26 +428,31 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_norm, reg_disp_sign, foca
     """
 
     config = replace_config(standard_config, custom_config)
-    regression_features = config["regression_features"]
-    classification_features = config["classification_features"]
+    energy_regression_features = config["energy_regression_features"]
+    disp_regression_features = config["disp_regression_features"]
+    classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
 
     dl2 = utils.filter_events(dl1,
                               filters=events_filters,
-                              finite_params=config['regression_features'] + config['classification_features'],
+                              finite_params=config['disp_regression_features']
+                              + config['energy_regression_features']
+                              + config['particle_classification_features']
+                              + config['disp_classification_features'],
                               )
 
     # Reconstruction of Energy and disp_norm distance
-    dl2['log_reco_energy'] = reg_energy.predict(dl2[regression_features])
+    dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
     # disp_vector = reg_disp_vector.predict(dl2[regression_features])
-    disp_norm = reg_disp_norm.predict(dl2[config['regression_features']])
-    disp_sign = reg_disp_sign.predict(dl2[config['regression_features']])
+    disp_norm = reg_disp_norm.predict(dl2[config['disp_regression_features']])
+    disp_sign = reg_disp_sign.predict(dl2[config['disp_classification_features']])
     disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
     disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
     dl2['reco_disp_norm'] = disp_norm
     dl2['reco_disp_sign'] = disp_sign
+
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
 
