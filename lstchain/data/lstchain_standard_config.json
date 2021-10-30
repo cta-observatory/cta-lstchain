@@ -148,38 +148,26 @@
     "log_intensity",
     "width",
     "length",
-    "x",
-    "y",
-    "psi",
     "phi",
     "wl",
     "skewness",
     "kurtosis",
-    "r",
+    "time_gradient",
+    "leakage_intensity_width_2"
+  ],
+
+  "disp_classification_features": [
+    "log_intensity",
+    "width",
+    "length",
+    "wl",
+    "skewness",
+    "kurtosis",
     "time_gradient",
     "leakage_intensity_width_2"
   ],
 
   "particle_classification_features": [
-    "log_intensity",
-    "width",
-    "length",
-    "x",
-    "y",
-    "psi",
-    "phi",
-    "wl",
-    "skewness",
-    "kurtosis",
-    "r",
-    "time_gradient",
-    "leakage_intensity_width_2",
-    "log_reco_energy",
-    "reco_disp_dx",
-    "reco_disp_dy"
-  ],
-
-  "disp_classification_features": [
     "log_intensity",
     "width",
     "length",
