@@ -504,16 +504,23 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     disp_clf_features_names = config['disp_classification_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
-    # disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
-    disp_norm = joblib.load(os.path.join(path_models, "reg_disp_norm.sav"))
-    disp_sign = joblib.load(os.path.join(path_models, "reg_disp_sign.sav"))
 
-    ax = axes[0, 0]
-    plot_importances(disp_norm, disp_reg_features_names, ax=ax, **kwargs)
-    ax.set_title("disp norm")
-    ax = axes[0, 1]
-    plot_importances(disp_sign, disp_clf_features_names, ax=ax, **kwargs)
-    ax.set_title("disp sign")
+    if config['disp_method'] == 'disp_vector':
+        ax = axes[0, 0]
+        disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
+        plot_importances(disp, disp_reg_features_names, ax=ax, **kwargs)
+        ax.set_title("disp")
+        
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = joblib.load(os.path.join(path_models, "reg_disp_norm.sav"))
+        disp_sign = joblib.load(os.path.join(path_models, "cls_disp_sign.sav"))
+
+        ax = axes[0, 0]
+        plot_importances(disp_norm, disp_reg_features_names, ax=ax, **kwargs)
+        ax.set_title("disp norm")
+        ax = axes[0, 1]
+        plot_importances(disp_sign, disp_clf_features_names, ax=ax, **kwargs)
+        ax.set_title("disp sign")
 
     ax = axes[1, 0]
     plot_importances(energy, energy_reg_features_names, ax=ax, **kwargs)

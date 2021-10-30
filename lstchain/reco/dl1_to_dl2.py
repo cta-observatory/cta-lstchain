@@ -338,15 +338,18 @@ def build_models(filegammas, fileprotons,
     src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (src_r_deg <= config['train_gamma_src_r_deg'][1])]
+    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
+        src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
 
-    # reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
-    reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
-    reg_disp_sign = train_disp_sign(df_gamma, custom_config=config)
+    if config['disp_method'] == 'disp_vector':
+        reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+    elif config['disp_method'] == 'disp_norm_sign':
+        reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
+        cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
 
     # Train classifier for gamma/hadron separation.
 
@@ -355,19 +358,23 @@ def build_models(filegammas, fileprotons,
 
     temp_reg_energy = train_energy(train, custom_config=config)
 
-    # temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
-    tmp_reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
-    tmp_reg_disp_sign = train_disp_sign(df_gamma, custom_config=config)
+    if config['disp_method'] == 'disp_vector':
+        temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+    elif config['disp_method'] == 'disp_norm_sign':
+        tmp_reg_disp_norm = train_disp_norm(train, custom_config=config)
+        tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
 
     # Apply the regressors to the test set
 
     test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
-    # disp_vector = temp_reg_disp_vector.predict(test[config['regression_features']])
 
-    disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
-    disp_sign = tmp_reg_disp_sign.predict(test[config['disp_regression_features']])
-    disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
-    disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
+    if config['disp_method'] == 'disp_vector':
+        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
+        disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
+        disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
@@ -380,8 +387,11 @@ def build_models(filegammas, fileprotons,
     train = test[test['log_reco_energy'] > energy_min]
 
     del temp_reg_energy
-    # del temp_reg_disp_vector
-    del tmp_reg_disp_norm, tmp_reg_disp_sign
+
+    if config['disp_method'] == 'disp_vector':
+        del temp_reg_disp_vector
+    elif config['disp_method'] == 'disp_norm_sign':
+        del tmp_reg_disp_norm, tmp_cls_disp_sign
 
     # Train the Classifier
 
@@ -389,24 +399,29 @@ def build_models(filegammas, fileprotons,
 
     if save_models:
         os.makedirs(path_models, exist_ok=True)
+
         file_reg_energy = path_models + "/reg_energy.sav"
-        file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-        file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(reg_energy, file_reg_energy)
+
+        if config['disp_method'] == 'disp_vector':
+            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
+            joblib.dump(reg_disp_vector, file_reg_disp_vector)            
+        elif config['disp_method'] == 'disp_norm_sign':
+            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
+            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
+            joblib.dump(reg_disp_norm, file_reg_disp_norm)
+            joblib.dump(cls_disp_sign, file_cls_disp_sign)            
+
+        file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(cls_gh, file_cls_gh)
-        # joblib.dump(reg_disp_vector, file_reg_disp_vector)
 
-        file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
-        file_reg_disp_sign = os.path.join(path_models, 'reg_disp_sign.sav')
-        joblib.dump(reg_disp_norm, file_reg_disp_norm)
-        joblib.dump(reg_disp_sign, file_reg_disp_sign)
-
-    # return reg_energy, reg_disp_vector, cls_gh
-    return reg_energy, reg_disp_norm, reg_disp_sign, cls_gh
+    if config['disp_method'] == 'disp_vector':
+        return reg_energy, reg_disp_vector, cls_gh
+    elif config['disp_method'] == 'disp_norm_sign':
+        return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
-# def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28 * u.m, custom_config={}):
-def apply_models(dl1, classifier, reg_energy, reg_disp_norm, reg_disp_sign, focal_length=28 * u.m, custom_config={}):
+def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm={}, cls_disp_sign={}, focal_length=28 * u.m, custom_config={}):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -430,6 +445,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_norm, reg_disp_sign, foca
     config = replace_config(standard_config, custom_config)
     energy_regression_features = config["energy_regression_features"]
     disp_regression_features = config["disp_regression_features"]
+    disp_classification_features = config["disp_classification_features"]
     classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
 
@@ -444,11 +460,14 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_norm, reg_disp_sign, foca
     # Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
-    # disp_vector = reg_disp_vector.predict(dl2[regression_features])
-    disp_norm = reg_disp_norm.predict(dl2[config['disp_regression_features']])
-    disp_sign = reg_disp_sign.predict(dl2[config['disp_classification_features']])
-    disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
-    disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
+
+    if config['disp_method'] == 'disp_vector':
+        disp_vector = reg_disp_vector.predict(dl2[regression_features])
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = reg_disp_norm.predict(dl2[config['disp_regression_features']])
+        disp_sign = cls_disp_sign.predict(dl2[config['disp_classification_features']])
+        disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
+        disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
     dl2['reco_disp_norm'] = disp_norm
     dl2['reco_disp_sign'] = disp_sign

@@ -136,6 +136,8 @@
     "dist"
   ],
 
+  "disp_method": "disp_norm_sign",
+
   "disp_regression_features": [
     "log_intensity",
     "width",

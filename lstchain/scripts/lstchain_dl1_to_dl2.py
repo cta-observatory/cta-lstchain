@@ -93,17 +93,20 @@ def main():
             data.az_tel = - np.pi / 2.
 
     # Load the trained RF for reconstruction:
-    fileE = args.path_models + "/reg_energy.sav"
-    # fileD = args.path_models + "/reg_disp_vector.sav"
-    fileH = args.path_models + "/cls_gh.sav"
-    file_disp_norm = os.path.join(args.path_models, 'reg_disp_norm.sav')
-    file_disp_sign = os.path.join(args.path_models, 'reg_disp_sign.sav')
-
+    fileE = os.path.join(args.path_models, 'reg_energy.sav')
     reg_energy = joblib.load(fileE)
-    # reg_disp_vector = joblib.load(fileD)
+
+    fileH = os.path.join(args.path_models, 'cls_gh.sav')
     cls_gh = joblib.load(fileH)
-    reg_disp_norm = joblib.load(file_disp_norm)
-    reg_disp_sign = joblib.load(file_disp_sign)
+
+    if config['disp_method'] == 'disp_vector':
+        file_disp_vector = os.path.join(args.path_models, 'reg_disp_vector.sav')
+        reg_disp_vector = joblib.load(fileD)
+    elif config['disp_method'] == 'disp_norm_sign':
+        file_disp_norm = os.path.join(args.path_models, 'reg_disp_norm.sav')
+        file_disp_sign = os.path.join(args.path_models, 'cls_disp_sign.sav')
+        reg_disp_norm = joblib.load(file_disp_norm)
+        cls_disp_sign = joblib.load(file_disp_sign)
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -121,10 +124,12 @@ def main():
                              + config['disp_classification_features'],
                              )
 
-        # dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
-        #                               custom_config=config)
-        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm, reg_disp_sign, focal_length=focal_length,
-                                      custom_config=config)
+        if config['disp_method'] == 'disp_vector':
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector = reg_disp_vector, focal_length=focal_length,
+                                          custom_config=config)
+        elif config['disp_method'] == 'disp_norm_sign':
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, cls_disp_sign = cls_disp_sign, 
+                                          focal_length=focal_length, custom_config=config)
 
     # Source-dependent analysis
     if config['source_dependent']:
@@ -141,10 +146,13 @@ def main():
                                                    finite_params=config['regression_features'] + config[
                                                        'classification_features'],
                                                    )
-            # dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
-            #                                  focal_length=focal_length, custom_config=config)
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm, reg_disp_sign,
-                                             focal_length=focal_length, custom_config=config)
+
+            if config['disp_method'] == 'disp_vector':
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector = reg_disp_vector,
+                                                 focal_length = focal_length, custom_config = config)
+            elif config['disp_method'] == 'disp_norm_sign':
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
+                                                 cls_disp_sign = cls_disp_sign, focal_length = focal_length, custom_config = config)
 
             dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep

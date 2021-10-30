@@ -94,7 +94,7 @@ def main():
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
-    reg_energy, reg_disp_norm, reg_disp_sign, cls_gh = dl1_to_dl2.build_models(
+    reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
         save_models=args.storerf,
@@ -111,8 +111,8 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm, reg_disp_sign, focal_length=focal_length,
-                                  custom_config=config)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, cls_disp_sign = cls_disp_sign, 
+                                  focal_length=focal_length, custom_config=config)
 
     ####PLOT SOME RESULTS#####
 
