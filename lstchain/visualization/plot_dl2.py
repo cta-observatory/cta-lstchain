@@ -501,6 +501,7 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     ### Regression models ###
     energy_reg_features_names = config['energy_regression_features']
     disp_reg_features_names = config['disp_regression_features']
+    disp_clf_features_names = config['disp_classification_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
     # disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
@@ -508,14 +509,14 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
     disp_sign = joblib.load(os.path.join(path_models, "reg_disp_sign.sav"))
 
     ax = axes[0, 0]
-    plot_importances(disp_norm, reg_features_names, ax=ax, **kwargs)
+    plot_importances(disp_norm, disp_reg_features_names, ax=ax, **kwargs)
     ax.set_title("disp norm")
     ax = axes[0, 1]
-    plot_importances(disp_sign, reg_features_names, ax=ax, **kwargs)
+    plot_importances(disp_sign, disp_clf_features_names, ax=ax, **kwargs)
     ax.set_title("disp sign")
 
     ax = axes[1, 0]
-    plot_importances(energy, reg_features_names, ax=ax, **kwargs)
+    plot_importances(energy, energy_reg_features_names, ax=ax, **kwargs)
     ax.set_title("energy")
 
     ### Classification model ###
