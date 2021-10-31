@@ -509,8 +509,10 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
         ax = axes[0, 0]
         disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
         plot_importances(disp, disp_reg_features_names, ax=ax, **kwargs)
-        ax.set_title("disp")
-        
+        ax.set_title("disp vector")
+        ax = axes[0, 1]
+        ax.axis("off")
+
     elif config['disp_method'] == 'disp_norm_sign':
         disp_norm = joblib.load(os.path.join(path_models, "reg_disp_norm.sav"))
         disp_sign = joblib.load(os.path.join(path_models, "cls_disp_sign.sav"))
