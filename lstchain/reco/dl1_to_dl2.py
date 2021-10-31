@@ -373,13 +373,14 @@ def build_models(filegammas, fileprotons,
     elif config['disp_method'] == 'disp_norm_sign':
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
         disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        test['reco_disp_norm'] = disp_norm
+        test['reco_disp_sign'] = disp_sign
+
         disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
-    test['reco_disp_norm'] = disp_norm
-    test['reco_disp_sign'] = disp_sign
 
     # Apply cut in reconstructed energy. New train set is the previous
     # test with energy and disp_norm reconstructed.
@@ -466,11 +467,11 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
     elif config['disp_method'] == 'disp_norm_sign':
         disp_norm = reg_disp_norm.predict(dl2[config['disp_regression_features']])
         disp_sign = cls_disp_sign.predict(dl2[config['disp_classification_features']])
+        dl2['reco_disp_norm'] = disp_norm
+        dl2['reco_disp_sign'] = disp_sign
+
         disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
-
-    dl2['reco_disp_norm'] = disp_norm
-    dl2['reco_disp_sign'] = disp_sign
 
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
