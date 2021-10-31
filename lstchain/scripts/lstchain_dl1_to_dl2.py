@@ -93,15 +93,15 @@ def main():
             data.az_tel = - np.pi / 2.
 
     # Load the trained RF for reconstruction:
-    fileE = os.path.join(args.path_models, 'reg_energy.sav')
-    reg_energy = joblib.load(fileE)
+    file_reg_energy = os.path.join(args.path_models, 'reg_energy.sav')
+    reg_energy = joblib.load(file_reg_energy)
 
-    fileH = os.path.join(args.path_models, 'cls_gh.sav')
-    cls_gh = joblib.load(fileH)
+    file_cls_gh = os.path.join(args.path_models, 'cls_gh.sav')
+    cls_gh = joblib.load(file_cls_gh)
 
     if config['disp_method'] == 'disp_vector':
         file_disp_vector = os.path.join(args.path_models, 'reg_disp_vector.sav')
-        reg_disp_vector = joblib.load(fileD)
+        reg_disp_vector = joblib.load(file_disp_vector)
     elif config['disp_method'] == 'disp_norm_sign':
         file_disp_norm = os.path.join(args.path_models, 'reg_disp_norm.sav')
         file_disp_sign = os.path.join(args.path_models, 'cls_disp_sign.sav')
