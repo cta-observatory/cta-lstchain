@@ -463,10 +463,10 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
 
     if config['disp_method'] == 'disp_vector':
-        disp_vector = reg_disp_vector.predict(dl2[regression_features])
+        disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
     elif config['disp_method'] == 'disp_norm_sign':
-        disp_norm = reg_disp_norm.predict(dl2[config['disp_regression_features']])
-        disp_sign = cls_disp_sign.predict(dl2[config['disp_classification_features']])
+        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
 
