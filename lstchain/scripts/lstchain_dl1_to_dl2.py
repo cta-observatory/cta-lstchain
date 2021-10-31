@@ -143,8 +143,10 @@ def main():
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
-                                                   finite_params=config['regression_features'] + config[
-                                                       'classification_features'],
+                                                   finite_params=config['energy_regression_features']
+                                                   + config['disp_regression_features']
+                                                   + config['particle_classification_features']
+                                                   + config['disp_classification_features'],
                                                    )
 
             if config['disp_method'] == 'disp_vector':
