@@ -208,7 +208,7 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
 
 
 def auto_merge_h5files(
-    file_list=None,
+    file_list,
     output_filename="merged.h5",
     nodes_keys=None,
     merge_arrays=False,
@@ -228,11 +228,10 @@ def auto_merge_h5files(
     filters
     """
 
-    if file_list is None:
-        file_list = []
+    if type(file_list) != list:
+        raise ValueError("Please, provide a non empty file list type parameter")
     if len(file_list) > 1:
         file_list = merging_check(file_list)
-    assert len(file_list) > 0, "Please, provide a non empty file_list parameter"
 
     if nodes_keys is None:
         keys = set(get_dataset_keys(file_list[0]))
