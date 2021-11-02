@@ -217,31 +217,23 @@ def test_get_geomagnetic_delta():
 def test_get_az_from_interp_params():
     from lstchain.reco.utils import get_az_from_interp_params
 
-    time_mc = Time("2020-06-29", format="iso").decimalyear
-    geomag_dec = -5.0674 * np.pi / 180 * u.rad
-    geomag_inc = 37.4531 * np.pi / 180 * u.rad
-
-    delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr
-    delta_dec = 0.1656 * np.pi / 180 * u.rad / u.yr
-
-    t_diff = (Time.now().decimalyear - time_mc) * u.yr
-    geomag_inc_now = (geomag_inc + delta_inc * t_diff).to_value(u.rad)
-    geomag_dec_now = (geomag_dec + delta_dec * t_diff).to_value(u.rad)
+    geomag_dec = -5.0674 * np.pi / 180
+    geomag_inc = 37.4531 * np.pi / 180
 
     del_1 = 0.
-    zen_1 = np.pi/2 - geomag_inc_now
+    zen_1 = np.pi/2 - geomag_inc
     del_2 = np.pi/2.
-    zen_2 = - np.arctan(np.tan(geomag_inc_now))
+    zen_2 = - np.arctan(np.tan(geomag_inc))
 
     phi_1 = get_az_from_interp_params(
-        zen_1, del_1, geomag_dec_now, geomag_inc_now
+        zen_1, del_1, geomag_dec, geomag_inc
     )
     phi_2 = get_az_from_interp_params(
-        zen_2, del_2, geomag_dec_now, geomag_inc_now
+        zen_2, del_2, geomag_dec, geomag_inc
     )
 
-    assert np.isclose(phi_1, -geomag_dec_now)
-    assert np.isclose(phi_2, -geomag_dec_now)
+    assert np.isclose(phi_1, -geomag_dec)
+    assert np.isclose(phi_2, -geomag_dec)
 
 
 def test_min_distance():
