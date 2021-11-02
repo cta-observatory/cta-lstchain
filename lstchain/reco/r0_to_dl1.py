@@ -41,6 +41,7 @@ from ..io import (
 )
 from ..io import (
     add_global_metadata,
+    add_config_metadata,
     global_metadata,
     write_calibration_data,
     write_mcheader,
@@ -370,6 +371,9 @@ def r0_to_dl1(
 
                     #initialize the event monitoring data
                     event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
+                    for container in [event.mon.tel[tel_id].pedestal, event.mon.tel[tel_id].flatfield, event.mon.tel[tel_id].calibration]:
+                        add_global_metadata(container, metadata)
+                        add_config_metadata(container, config)
 
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,
@@ -412,6 +416,8 @@ def r0_to_dl1(
                 # extra info for the image table
                 extra_im.tel_id = telescope_id
                 extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
+                add_global_metadata(extra_im, metadata)
+                add_config_metadata(extra_im, config)
 
                 # write image first, so we are sure nothing here modifies it
                 writer.write(
@@ -478,6 +484,7 @@ def r0_to_dl1(
 
                 for container in [extra_im, dl1_container, event.r0, dl1_tel]:
                     add_global_metadata(container, metadata)
+                    add_config_metadata(container, config)
 
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
