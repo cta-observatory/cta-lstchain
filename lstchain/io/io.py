@@ -6,9 +6,11 @@ from astropy.table import Table, vstack, QTable
 import tables
 from tables import open_file
 import os
+import re
 import astropy.units as u
 import ctapipe
 import lstchain
+import ctapipe_io_lst
 from ctapipe.io import HDF5TableReader
 from ctapipe.containers import SimulationConfigContainer
 from ctapipe.io import HDF5TableWriter
@@ -40,6 +42,7 @@ __all__ = [
     'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
+    'add_config_metadata',
     'write_subarray_tables',
     'write_metadata',
     'write_dataframe',
@@ -764,7 +767,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source):
+def global_metadata(source, input_url=""):
     """
     Get global metadata container
 
@@ -772,11 +775,15 @@ def global_metadata(source):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
+    if source:
+        input_url = source.input_url
+
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
+    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(source.input_url))
+    metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
     return metadata
 
@@ -793,6 +800,29 @@ def add_global_metadata(container, metadata):
     meta_dict = metadata.as_dict()
     for k, item in meta_dict.items():
         container.meta[k] = item
+
+
+def add_config_metadata(container, configuration):
+    """
+    Add configuration parameters to a container in container.meta.config
+
+    Parameters
+    ----------
+    container: `ctapipe.containers.Container`
+    configuration: config dict
+    """
+    linted_config = str(configuration)
+    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
+    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
+    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
+    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
+    linted_config = linted_config.replace("\'", "\"")
+    linted_config = linted_config.replace("None", "\"None\"")
+    linted_config = linted_config.replace("inf",  "\"inf\"")
+    linted_config = linted_config.replace("True", "true")
+    linted_config = linted_config.replace("False", "false")
+
+    container.meta["config"] = linted_config
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -813,7 +843,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -823,6 +853,8 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
     outfile: path
     table_path: str
         path to the table to write in the HDF5 file
+    config: config metadata
+    meta: global metadata
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -830,15 +862,20 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
     with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit("/", maxsplit=1)
 
-        f.create_table(
+        t = f.create_table(
             path,
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
         )
+        if config:
+            t.attrs["config"] = config
+        if meta:
+            for k, item in meta.as_dict().items():
+                t.attrs[k] = item
 
 
-def write_dl2_dataframe(dataframe, outfile):
+def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
     """
     Write DL2 dataframe to a HDF5 file
 
@@ -846,8 +883,10 @@ def write_dl2_dataframe(dataframe, outfile):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
+    config: config metadata
+    meta: global metadata
     """
-    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key)
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
 
 def add_column_table(table, ColClass, col_label, values):
