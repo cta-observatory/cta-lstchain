@@ -119,7 +119,7 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
-        metadata = global_metadata(self.eventsource)
+        metadata = global_metadata()
         write_metadata(metadata, self.output_file)
 
         tel_id = self.eventsource.lst_service.telescope_id

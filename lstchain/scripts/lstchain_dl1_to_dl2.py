@@ -163,7 +163,7 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    metadata = global_metadata(None, input_url=output_file)
+    metadata = global_metadata()
     write_metadata(metadata, output_file)
 
     with open_file(args.input_file, 'r') as h5in:

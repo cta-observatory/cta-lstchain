@@ -32,7 +32,7 @@ def test_write_dataframe():
     config = config.get_standard_config()
 
     with tempfile.NamedTemporaryFile() as f:
-        meta = global_metadata(None, input_url=f.name)
+        meta = global_metadata()
         write_dataframe(df, f.name, "data/awesome_table", config=config, meta=meta)
 
         with tables.open_file(f.name) as h5_file:
