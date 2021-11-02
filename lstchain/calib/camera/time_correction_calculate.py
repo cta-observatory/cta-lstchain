@@ -8,6 +8,8 @@ from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.containers import EventType
 
+from lstchain.io import global_metadata, write_metadata
+
 __all__ = ['TimeCorrectionCalculate']
 
 high_gain = 0
@@ -276,5 +278,12 @@ class TimeCorrectionCalculate(Component):
                 hf.create_dataset('fbn', data=fbn_array)
                 hf.attrs['n_events'] = self.sum_events
                 hf.attrs['n_harm'] = self.n_harmonics
+                # need pytables and time calib container
+                # to use lstchain.io.add_config_metadata
+                hf.attrs['config'] = str(self.config)
+
+            metadata = global_metadata(None, input_url=self.calib_file_path)
+            write_metadata(metadata, self.calib_file_path)
+
         except Exception:
             raise IOError(f"Failed to create the file {self.calib_file_path}")

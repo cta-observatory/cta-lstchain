@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Float, Bool
+from traitlets import Dict, List, Unicode, Int, Bool
 
 
 from ctapipe.core import Provenance, traits
@@ -11,6 +11,7 @@ from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
+from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 from ctapipe.containers import EventType
 
 __all__ = [
@@ -48,12 +49,17 @@ class CalibrationHDF5Writer(Tool):
         default_value='LSTCalibrationCalculator'
     )
 
+    events_to_skip = Int(
+        1000,
+        help='Number of first events to skip due to bad DRS4 pedestal correction'
+    ).tag(config=True)
+
     aliases = Dict(dict(
         input_file='EventSource.input_url',
         max_events='EventSource.max_events',
         output_file='CalibrationHDF5Writer.output_file',
         calibration_product='CalibrationHDF5Writer.calibration_product',
-
+        events_to_skip='CalibrationHDF5Writer.events_to_skip'
     ))
 
     classes = List([EventSource,
@@ -113,20 +119,20 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
+        metadata = global_metadata(self.eventsource)
+        write_metadata(metadata, self.output_file)
+
         tel_id = self.eventsource.lst_service.telescope_id
         new_ped = False
         new_ff = False
         end_of_file = False
 
-        # skip the first events which are badly drs4 corrected
-        events_to_skip = 1000
-
         try:
             self.log.debug(f"Start loop")
-            self.log.debug(f"If not simulation, skip first {events_to_skip} events")
+            self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
             for count, event in enumerate(self.eventsource):
 
-                if count % 100 == 0 and count> events_to_skip:
+                if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
@@ -143,20 +149,24 @@ class CalibrationHDF5Writer(Tool):
                         initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
 
                     ped_data = event.mon.tel[tel_id].pedestal
-                    ped_data.meta['config'] = self.config
+                    add_config_metadata(ped_data, self.config)
+                    add_global_metadata(ped_data, metadata)
 
                     ff_data = event.mon.tel[tel_id].flatfield
-                    ff_data.meta['config'] = self.config
+                    add_config_metadata(ff_data, self.config)
+                    add_global_metadata(ff_data, metadata)
 
                     status_data = event.mon.tel[tel_id].pixel_status
-                    status_data.meta['config'] = self.config
+                    add_config_metadata(status_data, self.config)
+                    add_global_metadata(status_data, metadata)
 
                     calib_data = event.mon.tel[tel_id].calibration
-                    calib_data.meta['config'] = self.config
+                    add_config_metadata(calib_data, self.config)
+                    add_global_metadata(calib_data, metadata)
 
 
                 # skip first events which are badly drs4 corrected
-                if not self.simulation and count < events_to_skip:
+                if not self.simulation and count < self.events_to_skip:
                     continue
 
                 # if pedestal event
