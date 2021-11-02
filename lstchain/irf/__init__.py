@@ -1,6 +1,7 @@
 from .hdu_table import (
     create_hdu_index_hdu,
     create_obs_index_hdu,
+    get_target_params,
     create_event_list,
 )
 from .interpolate import (
@@ -14,8 +15,9 @@ from .interpolate import (
 __all__ = [
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
+    "get_interp_params",
     "create_event_list",
-    "interp_params",
+    "get_target_params",
     "check_in_delaunay_triangle",
     "compare_irfs",
     "load_irf_grid",

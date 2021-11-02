@@ -104,7 +104,7 @@ def test_interp_irf(simulated_irf_file):
     ).writeto(irf_file_4, overwrite=True)
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
-    data_pars = {"ZEN_PNT": 30 * u.deg, "B_DELTA": 70 * u.deg}
+    data_pars = {"ZEN_PNT": 30 * u.deg, "AZ_PNT": 60 * u.deg, "B_DELTA": 70 * u.deg}
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
 
@@ -125,11 +125,20 @@ def test_check_delaunay_triangles(simulated_irf_file):
     irfs = [simulated_irf_file, irf_file_3, irf_file_4, irf_file_5]
 
     # Check on target being inside or outside Delaunay simplex
-    data_pars = {"ZEN_PNT": 35 * u.deg, "B_DELTA": 80 * u.deg}
-    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 90 * u.deg}
+    data_pars = {
+        "ZEN_PNT": 35 * u.deg,
+        "AZ_PNT": 60 * u.deg,
+        "B_DELTA": 80 * u.deg
+    }
+    data_pars2 = {
+        "ZEN_PNT": 58 * u.deg,
+        "AZ_PNT": 120 * u.deg,
+        "B_DELTA": 90 * u.deg
+    }
 
-    new_irfs = check_in_delaunay_triangle(irfs, data_pars)
-    new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
+    d_new_1, new_irfs = check_in_delaunay_triangle(irfs, data_pars)
+    d_new_2, new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
+    print(d_new_1, d_new_2)
 
     assert len(new_irfs) == 3
-    assert len(new_irfs2) == 1
+    assert d_new_2["ZEN_PNT"] == 40 * u.deg

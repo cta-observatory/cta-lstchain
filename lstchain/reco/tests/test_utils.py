@@ -181,3 +181,76 @@ def test_get_obstime_real():
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
+
+
+def test_get_geomagnetic_delta():
+
+    time_mc = Time("2020-06-29", format="iso").decimalyear
+    geomag_dec = -5.0674 * np.pi / 180 * u.rad
+    geomag_inc = 37.4531 * np.pi / 180 * u.rad
+
+    delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr
+
+    t_diff = (Time.now().decimalyear - time_mc) * u.yr
+    geomag_inc_now = (geomag_inc + delta_inc * t_diff).to_value(u.rad)
+
+    # Values at (azimuth+geomag_dec) = 0, np.pi, delta has min, max
+    zen_0 = np.arccos(np.sin(geomag_inc_now))
+    term_0 = (
+        (np.sin(geomag_inc_now) * np.cos(zen_0)) +
+        (np.cos(geomag_inc_now) * np.sin(zen_0) * np.cos(0))
+    )
+
+    delta_min = np.arccos(term_0)
+
+    zen_1 = - np.arctan(np.tan(geomag_inc_now)/np.cos(np.pi))
+    term_1 = (
+        (np.sin(geomag_inc_now) * np.cos(zen_1)) +
+        (np.cos(geomag_inc_now) * np.sin(zen_1) * np.cos(np.pi))
+    )
+    delta_max = np.arccos(term_1)
+
+    assert delta_min == 0
+    assert delta_max == np.pi/2
+
+
+def test_get_az_from_interp_params():
+    from lstchain.reco.utils import get_az_from_interp_params
+
+    time_mc = Time("2020-06-29", format="iso").decimalyear
+    geomag_dec = -5.0674 * np.pi / 180 * u.rad
+    geomag_inc = 37.4531 * np.pi / 180 * u.rad
+
+    delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr
+    delta_dec = 0.1656 * np.pi / 180 * u.rad / u.yr
+
+    t_diff = (Time.now().decimalyear - time_mc) * u.yr
+    geomag_inc_now = (geomag_inc + delta_inc * t_diff).to_value(u.rad)
+    geomag_dec_now = (geomag_dec + delta_dec * t_diff).to_value(u.rad)
+
+    del_1 = 0.
+    zen_1 = np.pi/2 - geomag_inc_now
+    del_2 = np.pi/2.
+    zen_2 = - np.arctan(np.tan(geomag_inc_now))
+
+    phi_1 = get_az_from_interp_params(
+        zen_1, del_1, geomag_dec_now, geomag_inc_now
+    )
+    phi_2 = get_az_from_interp_params(
+        zen_2, del_2, geomag_dec_now, geomag_inc_now
+    )
+
+    assert np.isclose(phi_1, -geomag_dec_now)
+    assert np.isclose(phi_2, -geomag_dec_now)
+
+
+def test_min_distance():
+    from lstchain.reco.utils import min_distance
+    pt_1 = np.array([2,2])
+    pt_2 = np.array([1,1])
+    target_pt = np.array([1, 2])
+
+    proj, dist = min_distance(pt_1, pt_2, target_pt)
+
+    assert np.isclose(dist, 0.7071)
+    assert np.allclose(proj, [1.5, 1.5])

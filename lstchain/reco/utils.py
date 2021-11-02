@@ -50,6 +50,8 @@ __all__ = [
     "source_dx_dy",
     "source_side",
     "get_geomagnetic_delta",
+    "get_az_from_interp_params",
+    "min_distance"
 ]
 
 # position of the LST1
@@ -795,10 +797,9 @@ def get_geomagnetic_delta(zen, az, B_dec=None, B_inc=None):
         'radian'
     Returns
     -------
-    delta: Angle between geomagnetic field and the shower axis.
+    delta: Orthogonal angle between geomagnetic field and the shower axis.
         'radian'
     """
-
     if B_dec is None:
         t_change = (Time.now().decimalyear - t_mc) * u.yr
         B_dec = (geomag_dec + d_dec_per_year * t_change).to_value(u.rad)
@@ -814,3 +815,78 @@ def get_geomagnetic_delta(zen, az, B_dec=None, B_inc=None):
     delta = np.arccos(term)
 
     return delta
+
+
+def get_az_from_interp_params(zen, b_delta, B_dec=None, B_inc=None):
+    """
+    From a given zenith and orthogonal geomagnetic angle with the shower axis,
+    with them provided in radians
+
+    Parameters
+    ----------
+    zen: Zenith pointing angle. Better to use 'astropy.units.Quantities'
+        'radian'
+    delta: Orthogonal angle between geomagnetic field and the shower axis.
+        'radian'
+    B_dec: Geomagnetic declination measures the difference between the
+        measurement of true magnetic north and the geographical north,
+        eastwards. Hence we add to the azimuth measurement as it is measured
+        westwards.
+        'radian'
+    B_inc: Geomagnetic inclination, 'dip angle' is the angle between the
+        geomagnetic field and the horizontal plane.
+        'radian'
+    Returns
+    -------
+    az: Azimuth pointing angle.
+        'radian'
+    """
+    if B_dec is None:
+        t_change = (Time.now().decimalyear - t_mc) * u.yr
+        B_dec = (geomag_dec + d_dec_per_year * t_change).to_value(u.rad)
+    if B_inc is None:
+        t_change = (Time.now().decimalyear - t_mc) * u.yr
+        B_inc = (geomag_inc + d_inc_per_year * t_change).to_value(u.rad)
+    num = np.cos(b_delta) - np.sin(B_inc) * np.cos(zen)
+    dem = np.cos(B_inc) * np.sin(zen)
+
+    if dem != 0:
+        return np.arccos(num/dem) - B_dec
+    else:
+        return np.inf
+
+
+def min_distance(line_pt_1, line_pt_2, target_point):
+    """
+    Return the projection of target point on the closest edge formed
+    by the 2 line points and the minimum distance between it and
+    the target point
+
+    Assuming line_1_2 = pt_1 + t*(pt_2 - pt_1)
+    For projection of target point on the line_1_2, it falls when,
+    t = [(target-pt_1).(pt_2-pt_1)] /  |pt_2-pt_1|**2
+    we also clamp t between 0, 1 to keep the projection inside line_1_2
+    """
+    # compute the squared distance between the 2 vertices
+    line_sq_dist = np.sum((line_pt_2 - line_pt_1)**2)
+
+    t = np.max([
+        0., np.min(
+            [
+                1., np.dot(
+                    target_point - line_pt_1,
+                    line_pt_2 - line_pt_1
+                )/line_sq_dist
+            ]
+        )
+    ])
+    # Coordinates of projected point
+    proj_pt = line_pt_1 + t * (line_pt_2 - line_pt_1)
+    # Distance between the target and projected point
+    min_dist = np.sqrt(
+        np.sum(
+            (proj_pt - target_point)**2
+        )
+    )
+
+    return proj_pt, min_dist

@@ -10,12 +10,13 @@ from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from ..reco.utils import location, get_geomagnetic_delta
+from ..reco.utils import location, get_geomagnetic_delta, get_az_from_interp_params
 
 
 __all__ = [
     "create_obs_index_hdu",
     "create_hdu_index_hdu",
+    "get_target_params",
     "create_event_list",
 ]
 
@@ -262,9 +263,48 @@ def create_hdu_index_hdu(
     hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
 
 
+def get_target_params(zen, az=None, b_delta=None):
+    """
+    Get the target parameters as a dict, by either providing all parameters,
+    or, get the B_delta or azimuth, by using the other values.
+
+    Parameters:
+    -----------
+        zen: Zenith pointing value in radians
+            Float
+        az: Azimuth pointing value in radians
+            Float
+        b_delta: Orthogonal angle of the geomagnetic field with shower
+            axis in radians
+            Float
+    Returns:
+    --------
+        data_params: Dict with pointing values in degrees
+            Dict
+    """
+    data_params = {}
+
+    if b_delta is None:
+        if az is not None:
+            b_delta = get_geomagnetic_delta(zen, az) * 180/np.pi
+            az *= (180/np.pi)
+        else:
+            print("Not enough parameters to include in the dict")
+            return data_params
+    if az is None:
+        az = get_az_from_interp_params(zen, b_delta) * 180/np.pi
+        b_delta *= (180/np.pi)
+
+    data_params["ZEN_PNT"] = round((zen * 180/np.pi), 1) * u.deg
+    data_params["AZ_PNT"] = round(az, 1) * u.deg
+    data_params["B_DELTA"] = round(b_delta, 1) * u.deg
+
+    return data_params
+
+
 def create_event_list(
     data, run_number, source_name, source_pos,
-    effective_time, elapsed_time, only_zd_param
+    effective_time, elapsed_time
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -283,8 +323,6 @@ def create_event_list(
                 Float
         Elapsed_time: Total elapsed time of triggered events of the run
                 Float
-        Only_zd_param: Boolean to interpolate only over cosine of zenith angle
-                Bool
     Returns
     -------
         Events HDU:  `astropy.io.fits.BinTableHDU`
@@ -327,22 +365,24 @@ def create_event_list(
         reco_icrs = reco_altaz.transform_to(frame="icrs")
 
     # Interpolation target values
-    zen_mean = round(90 - pointing_alt.mean().to_value(u.deg), 1)
-    if not only_zd_param:
-        az_mean = round(pointing_az.mean().to_value(u.deg), 1)
-        b_delta = round(
-            get_geomagnetic_delta(
-                zen = np.pi / 2 - pointing_alt.mean().to_value(u.rad),
-                az = pointing_az.mean().to_value(u.rad),
-            ) * 180 / np.pi, 1
-        )
-        data_pars = {
-            "ZEN_PNT": zen_mean * u.deg,
-            "AZ_PNT": az_mean * u.deg,
-            "B_DELTA": b_delta * u.deg
-        }
-    else:
-        data_pars = {"ZEN_PNT": zen_mean * u.deg}
+    """
+    az_mean = round(pointing_az.mean().to_value(u.deg), 1)
+    b_delta = round(
+        get_geomagnetic_delta(
+            zen = np.pi / 2 - pointing_alt.mean().to_value(u.rad),
+            az = pointing_az.mean().to_value(u.rad),
+        ) * 180 / np.pi, 1
+    )
+    data_pars = {
+        "ZEN_PNT": zen_mean * u.deg,
+        "AZ_PNT": az_mean * u.deg,
+        "B_DELTA": b_delta * u.deg
+    }
+    """
+    data_pars = get_target_params(
+        np.pi/2 - pointing_alt.mean().to_value(u.rad),
+        pointing_az.mean().to_value(u.rad)
+    )
 
     # Observation modes
     source_pointing_diff = source_pos.separation(pnt_icrs)
@@ -469,9 +509,9 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-    pnt_header["MEAN_ZEN"] = str(zen_mean * u.deg)
-    pnt_header["MEAN_AZ"] = str(az_mean * u.deg)
-    pnt_header["B_DELTA"] = str(b_delta * u.deg)
+    pnt_header["MEAN_ZEN"] = str(data_pars["ZEN_PNT"])
+    pnt_header["MEAN_AZ"] = str(data_pars["AZ_PNT"])
+    pnt_header["B_DELTA"] = str(data_pars["B_DELTA"])
 
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")

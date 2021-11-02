@@ -78,7 +78,6 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --overwrite
-        --interp-only-zd
         --config /path/to/config.json
     """
 
@@ -126,11 +125,6 @@ class DataReductionFITSWriter(Tool):
         help="DEC position of the source",
     ).tag(config=True)
 
-    interp_only_zd = traits.Bool(
-        help="If true, use only Zenith pointing for interpolation of IRFs",
-        default_value=False,
-    ).tag(config=True)
-
     interp_method = traits.Unicode(
         help="Interpolation method to be used, when required",
         default_value="linear",
@@ -160,10 +154,6 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
-        ),
-        "interp-only-zd": (
-            {"DataReductionFITSWriter": {"interp_only_zd": True}},
-            "Use only zenith pointing for IRF interpolation, if True",
         ),
     }
 
@@ -259,7 +249,6 @@ class DataReductionFITSWriter(Tool):
             source_pos=self.source_pos,
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
-            only_zd_param=self.interp_only_zd,
         )
         self.log.info(f"Target parameters for interpolation: {self.data_params}")
 
@@ -269,23 +258,26 @@ class DataReductionFITSWriter(Tool):
 
         if self.input_irf_path:
             if len(self.irf_list) > 1:
-                """if not self.interp_only_zd and u.Quantity(
-                    self.data_params["AZ_PNT"]
-                ).to_value(u.deg) > 180:
-                    self.irf_list = duplicate_irfs(self.irf_list)
-                self.log.info(self.irf_list)"""
-
                 # Get the optimal number of IRFs necessary for interpolation
 
-                self.irf_list = check_in_delaunay_triangle(
+                # IF the target parameter is not inside a simplex formed by
+                # the given list of IRFs, use a point closest to the nearest
+                # simplex, ie, perpendicular distance from the target to a
+                # point on the closest simplex side.
+                self.data_params_new, self.irf_list = check_in_delaunay_triangle(
                     self.irf_list, self.data_params
                 )
 
                 self.log.info(f"Paths of Irfs used for interpolation {self.irf_list}")
+                if self.data_params_new != self.data_params:
+                    self.log.info(
+                        "Updated target parameters for interpolation:"
+                        f" {self.data_params_new}"
+                    )
 
             if len(self.irf_list) > 1:
                 self.irf_final_hdu = interpolate_irf(
-                    self.irf_list, self.data_params, self.interp_method
+                    self.irf_list, self.data_params_new, self.interp_method
                 )
                 self.irf_final_hdu.writeto(
                     self.final_irf_output, overwrite=self.overwrite
@@ -296,7 +288,7 @@ class DataReductionFITSWriter(Tool):
                 self.mc_params = dict()
 
                 h = self.irf_final_hdu[1].header
-                for p in self.data_params.keys():
+                for p in self.data_params_new.keys():
                     self.mc_params[p] = u.Quantity(h[p]).to(u.deg)
                 mc_gamma_offset = u.Quantity(h["G_OFFSET"]).to(u.deg)
 
@@ -304,13 +296,12 @@ class DataReductionFITSWriter(Tool):
                 self.log.info(
                     f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']:.2f}"
                 )
-                if not self.interp_only_zd:
-                    self.log.info(
-                        f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']:.2f}"
-                    )
-                    self.log.info(
-                        f"Geomagnetic delta for the MC is {self.mc_params['B_DELTA']:.2f}"
-                    )
+                self.log.info(
+                    f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']:.2f}"
+                )
+                self.log.info(
+                    f"Geomagnetic delta for the MC is {self.mc_params['B_DELTA']:.2f}"
+                )
 
                 for irf_hdu in self.irf_final_hdu[1:]:
                     self.hdulist.append(irf_hdu)
