@@ -29,6 +29,8 @@ from lstchain.io import (
     replace_config,
     write_dl2_dataframe,
     get_dataset_keys,
+    global_metadata,
+    write_metadata
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
@@ -161,6 +163,9 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
+    metadata = global_metadata(None, input_url=output_file)
+    write_metadata(metadata, output_file)
+
     with open_file(args.input_file, 'r') as h5in:
         with open_file(output_file, 'a') as h5out:
 
@@ -180,12 +185,13 @@ def main():
 
                 h5in.copy_node(k, g, overwrite=True)
 
+    # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
     if not config['source_dependent']:
-        write_dl2_dataframe(dl2, output_file)
+        write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
 
     else:
-        write_dl2_dataframe(dl2_srcindep, output_file)
-        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key)
+        write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config, meta=metadata)
 
 
 if __name__ == '__main__':
