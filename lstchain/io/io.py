@@ -324,12 +324,19 @@ def smart_merge_h5files(
         smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
     )
 
-    # Merge metadata
+    # Merge metadata and store source file names
     metadata0 = read_metadata(smart_list[0])
+    source_filenames = [str(smart_list[0])]
+
     for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+
     write_metadata(metadata0, output_filename)
 
 
