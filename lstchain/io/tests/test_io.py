@@ -105,6 +105,10 @@ def test_merging_check(simulated_dl1_file):
 def test_smart_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
 
+    # check source filenames is properly written
+    with tables.open_file(merged_h5file) as file:
+        assert len(file.root.source_filenames.filenames) == 2
+
 
 @pytest.mark.run(after="test_r0_to_dl1")
 def test_read_simu_info_hdf5(simulated_dl1_file):
