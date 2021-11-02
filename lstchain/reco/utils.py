@@ -775,9 +775,6 @@ def get_geomagnetic_delta(zen, az, B_dec=None, B_inc=None):
     telescope zenith and azimuth pointing to get the angle between the
     geomagnetic field and the shower axis, for a single telescope.
 
-    For stereo observation, this function would be incomplete and would need
-    to be updated.
-
     If no geomagnetic parameters are provided, use default for LST-1 by
     estimating the predicted values as per
     https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm
