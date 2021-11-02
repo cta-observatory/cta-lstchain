@@ -229,7 +229,7 @@ def auto_merge_h5files(
     """
 
     if type(file_list) != list:
-        raise ValueError("Please, provide a non empty file list type parameter")
+        raise ValueError("Please, provide a list of filenames")
     if len(file_list) > 1:
         file_list = merging_check(file_list)
 
