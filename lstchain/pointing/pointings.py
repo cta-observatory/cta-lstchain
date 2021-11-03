@@ -1,7 +1,6 @@
-import os
 import numpy as np
 from ctapipe.core import Component
-from ctapipe_io_lst.containers import LSTMonitoringContainer, LSTDriveContainer
+from ctapipe_io_lst.containers import LSTDriveContainer
 from ctapipe.core.traits import Unicode, Int
 from astropy.io import ascii
 from astropy import units as u
