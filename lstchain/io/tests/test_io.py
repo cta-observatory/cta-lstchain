@@ -139,7 +139,7 @@ def test_read_subarray_description(mc_gamma_testfile, simulated_dl1_file):
     from lstchain.io.io import read_subarray_description
     from ctapipe.io import EventSource
 
-    source = EventSource(mc_gamma_testfile)
+    source = EventSource(mc_gamma_testfile, allowed_tels={1, 2, 3, 4})
     dl1_subarray = read_subarray_description(simulated_dl1_file)
     dl1_subarray.peek()
     dl1_subarray.info()
