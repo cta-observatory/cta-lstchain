@@ -18,9 +18,11 @@ $> python lstchain_muon_analysis_dl1.py
 
 import argparse
 import glob
+
 import numpy as np
-from ctapipe.instrument import CameraGeometry
-from astropy import units as u
+import pandas as pd
+from astropy.table import Table
+from ctapipe.instrument import SubarrayDescription
 
 from lstchain.image.muon import (
     analyze_muon_event,
@@ -28,13 +30,9 @@ from lstchain.image.muon import (
     fill_muon_event,
     tag_pix_thr,
 )
-
-from lstchain.visualization import plot_calib
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.io.io import read_telescopes_descriptions, read_subarray_description
-
-from astropy.table import Table
-import pandas as pd
+from lstchain.visualization import plot_calib
 
 parser = argparse.ArgumentParser()
 
@@ -118,8 +116,8 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
-        cam_description_table = Table.read(filename, path="instrument/telescope/camera/LSTCam")
-        geom = CameraGeometry.from_table(cam_description_table)
+        subarray_info = SubarrayDescription.from_hdf(filename)
+        geom = subarray_info.tel[lst1_tel_id].camera.geometry
 
         subarray = read_subarray_description(filename, subarray_name='LST-1')
 
@@ -137,7 +135,8 @@ def main():
             dummy_times[:] = np.nan
             parameters['dragon_time'] = dummy_times
 
-        for full_image, event_id, dragon_time in zip(images, parameters['event_id'], parameters['dragon_time']):
+        for full_image, event_id, dragon_time, mc_energy in zip(
+                images, parameters['event_id'], parameters['dragon_time'], parameters['mc_energy']):
             if args.calib_file is not None:
                 image = full_image*(~bad_pixels)
             else:
@@ -170,10 +169,11 @@ def main():
             # write ring data, including also "not-so-good" rings
             # in case we want to reconsider ring selections!:
             fill_muon_event(
-                output_parameters, good_ring, event_id, dragon_time,
-                muonintensityparam, dist_mask, muonringparam,
-                radial_distribution, size, size_outside_ring,
-                mean_pixel_charge_around_ring, muonparameters
+                mc_energy, output_parameters, good_ring, event_id,
+                dragon_time, muonintensityparam, dist_mask,
+                muonringparam, radial_distribution, size,
+                size_outside_ring, mean_pixel_charge_around_ring,
+                muonparameters
             )
 
             if max_muons is not None and num_muons == max_muons:

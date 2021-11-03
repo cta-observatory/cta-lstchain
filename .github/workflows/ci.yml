@@ -1,0 +1,71 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  NUMBA_NUM_THREADS: 1
+  MPLBACKEND: Agg
+  PYTEST_ADDOPTS: --color=yes
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # we currently only support python 3.7 since traitlets 5 requires 3.7
+        # and protozfits does not support python 3.8.
+        python-version: [3.7, 3.8]
+        ctapipe-version: [v0.10.5]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
+
+        run: |
+          . $CONDA/etc/profile.d/conda.sh
+          conda config --set always_yes yes --set changeps1 no
+          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
+
+          echo "Creating conda env"
+          conda env create -n ci -f environment.yml
+          conda activate ci
+
+          echo "Installing additional pip packages"
+          # we install ctapipe using pip to be able to select any commit, e.g. the current master
+          pip install \
+            "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
+            pytest-cov
+
+          echo "pip install ."
+          pip install .
+
+      - name: Download test data
+        env:
+          TEST_DATA_USER: ${{ secrets.test_data_user }}
+          TEST_DATA_PASSWORD: ${{ secrets.test_data_password }}
+        run: |
+          ./download_test_data.sh
+
+      - name: Tests
+        run: |
+          # github actions starts a new shell for each "step", so we need to
+          # activate our env again
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate ci
+          pytest --cov --cov-report=xml -m 'private_data or not private_data' lstchain
+
+      - uses: codecov/codecov-action@v1
+        with:
+          # disable gcov, not needed
+          functionalities: gcov

@@ -28,6 +28,7 @@ class DL1DataCheckContainer(Container):
     subrun_index = Field(-1, 'Subrun index')
     elapsed_time = Field(-1, 'Subrun time duration (from Dragon)')
     num_events = Field(-1, 'Total number of events')
+    num_cleaned_events = Field(-1, 'Number of events surviving cleaning')
     trigger_type = Field(None, 'Number of events per trigger type')
     ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
     mean_alt_tel = Field(None, 'Mean telescope altitude')
@@ -117,6 +118,7 @@ class DL1DataCheckContainer(Container):
         self.elapsed_time = table['dragon_time'][len(table)-1] - \
                             table['dragon_time'][0]
         self.num_events = mask.sum()
+        self.num_cleaned_events = np.isfinite(table['intensity'][mask]).sum()
         self.ucts_trigger_type = \
             count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
@@ -190,6 +192,11 @@ class DL1DataCheckContainer(Container):
                                      table.loc[mask, 'skewness'].to_numpy(),
                                      bins=histogram_binnings.hist_skewness)
         self.hist_skewness = counts
+
+        psi = table.loc[mask, 'psi'].to_numpy()
+        counts, _, _ = \
+            plt.hist(psi, bins=histogram_binnings.hist_psi)
+        self.hist_psi = counts
 
         counts, _, _, _ = \
             plt.hist2d(intensity, table.loc[mask, 'intercept'].to_numpy(),
@@ -357,20 +364,20 @@ class DL1DataCheckHistogramBins(Container):
     # 2d histograms
     # width and length vs. image intensity:
     hist_width = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                 np.linspace(0., 1.2, 101)]),
+                                 np.linspace(0., 0.8, 101)]),
                        'hist_width binning')
     hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                  np.linspace(0., 2., 101)]),
+                                  np.linspace(0., 1., 101)]),
                         'hist_length binning')
     hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
                                     np.linspace(-4., 4., 101)]),
                           'hist_skewness binning')
     # time gradient vs. length:
-    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 2.0, 101),
+    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
                                            np.linspace(0., 200., 101)]),
                                  'hist_tgrad_vs_length binning')
     hist_tgrad_vs_length_intensity_gt_200 =\
-        Field(np.array([np.linspace(0., 2.0, 101), np.linspace(0., 50., 101)]),
+        Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
               'hist_tgrad_vs_length_intensity_gt_200 binning')
     # time intercept (image time @ charge c.o.g.) vs. image intensity:
     hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),

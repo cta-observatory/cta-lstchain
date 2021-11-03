@@ -1,21 +1,65 @@
 {
+  "source_config" : {
+    "EventSource": {
+      "allowed_tels": [1, 2, 3, 4],
+      "max_events": null
+    },
+    "LSTEventSource": {
+      "default_trigger_type": "ucts",
+      "allowed_tels": [1],
+      "min_flatfield_adc": 3000,
+      "min_flatfield_pixel_fraction": 0.8,
+      "calibrate_flatfields_and_pedestals": false,
+      "EventTimeCalculator": {
+        "dragon_reference_counter": null,
+        "dragon_reference_time": null
+      },
+      "PointingSource":{
+        "drive_report_path": null
+      },
+      "LSTR0Corrections":{
+        "calib_scale_high_gain":1.088,
+        "calib_scale_low_gain":1.004,
+        "drs4_pedestal_path": null,
+        "calibration_path": null,
+        "drs4_time_calibration_path": null
+      }
+    }
+  },
+
   "events_filters": {
     "intensity": [0, Infinity],
     "width": [0, Infinity],
     "length": [0, Infinity],
-    "wl": [0, 1],
-    "r": [0, 1],
-    "leakage_intensity_width_2": [0, 1]
+    "wl": [0, Infinity],
+    "r": [0, Infinity],
+    "leakage_intensity_width_2": [0, Infinity]
   },
 
   "tailcut": {
     "picture_thresh":6,
     "boundary_thresh":3,
     "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":1
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  },
+  "tailcuts_clean_with_pedestal_threshold": {
+    "picture_thresh":6,
+    "boundary_thresh":3,
+    "sigma":2.5,
+    "keep_isolated_pixels":false,
+    "min_number_picture_neighbors":2,
+    "use_only_main_island":false,
+    "delta_time": 2
+  },
+  "dynamic_cleaning": {
+    "apply": true,
+    "threshold": 267,
+    "fraction_cleaning_intensity": 0.03
   },
 
-    "random_forest_regressor_args": {
+  "random_forest_energy_regressor_args": {
     "max_depth": 50,
     "min_samples_leaf": 2,
     "n_jobs": 4,
@@ -25,7 +69,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "min_samples_split": 2,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
@@ -34,7 +77,25 @@
     "warm_start": false
   },
 
-  "random_forest_classifier_args": {
+  "random_forest_disp_regressor_args": {
+    "max_depth": 50,
+    "min_samples_leaf": 2,
+    "n_jobs": 4,
+    "n_estimators": 150,
+    "bootstrap": true,
+    "criterion": "mse",
+    "max_features": "auto",
+    "max_leaf_nodes": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+
+  "random_forest_particle_classifier_args": {
     "max_depth": 100,
     "min_samples_leaf": 2,
     "n_jobs": 4,
@@ -45,7 +106,6 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_impurity_split": null,
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
@@ -54,7 +114,26 @@
     "class_weight": null
   },
 
-  "regression_features": [
+  "random_forest_disp_classifier_args": {
+    "max_depth": 100,
+    "min_samples_leaf": 2,
+    "n_jobs": 4,
+    "n_estimators": 100,
+    "criterion": "gini",
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "max_features": "auto",
+    "max_leaf_nodes": null,
+    "min_impurity_decrease": 0.0,
+    "bootstrap": true,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0.0,
+    "warm_start": false,
+    "class_weight": null
+  },
+
+  "energy_regression_features": [
     "log_intensity",
     "width",
     "length",
@@ -67,11 +146,26 @@
     "kurtosis",
     "r",
     "time_gradient",
-    "leakage_intensity_width_2",
-    "n_islands"
+    "leakage_intensity_width_2"
   ],
 
-  "classification_features": [
+  "disp_regression_features": [
+    "log_intensity",
+    "width",
+    "length",
+    "x",
+    "y",
+    "psi",
+    "phi",
+    "wl",
+    "skewness",
+    "kurtosis",
+    "r",
+    "time_gradient",
+    "leakage_intensity_width_2"
+  ],
+
+  "particle_classification_features": [
     "log_intensity",
     "width",
     "length",
@@ -85,36 +179,53 @@
     "r",
     "time_gradient",
     "leakage_intensity_width_2",
-    "n_islands",
+    "log_reco_energy",
+    "reco_disp_dx",
+    "reco_disp_dy"
+  ],
+
+  "disp_classification_features": [
+    "log_intensity",
+    "width",
+    "length",
+    "x",
+    "y",
+    "psi",
+    "phi",
+    "wl",
+    "skewness",
+    "kurtosis",
+    "r",
+    "time_gradient",
+    "leakage_intensity_width_2",
     "log_reco_energy",
     "reco_disp_dx",
     "reco_disp_dy"
   ],
 
   "allowed_tels": [1, 2, 3, 4],
-  "max_events": null,
   "custom_calibration": false,
   "write_pe_image": false,
   "mc_image_scaling_factor": 1,
   "image_extractor": "LocalPeakWindowSum",
   "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  3500
+  "CameraCalibrator": {
+    "apply_waveform_time_shift": false
   },
-  "apply_charge_correction": false,
-  "charge_scale": [1.0,1.0],
+  "time_sampling_correction_path": "default",
   "LocalPeakWindowSum":{
      "window_shift": 4,
-     "window_width":8
+     "window_width": 8,
+     "apply_integration_correction": false
     },
   "GlobalPeakWindowSum":{
      "window_shift": 4,
-     "window_width":8
+     "window_width": 8,
+     "apply_integration_correction": false
     },
   "timestamps_pointing":"ucts",
 
+  "train_gamma_src_r_deg": [0, Infinity],
 
   "source_dependent": false,
   "mc_nominal_source_x_deg": 0.4,
@@ -125,17 +236,17 @@
     "parameters": {
     }
   },
-  "calibration_product": "LSTCalibrationCalculator",
+ "calibration_product": "LSTCalibrationCalculator",
 
   "LSTCalibrationCalculator":{
-     "minimum_hg_charge_median": 5000,
-     "maximum_lg_charge_std": 300,
+    "squared_excess_noise_factor": 1.222,
      "flatfield_product": "FlasherFlatFieldCalculator",
      "pedestal_product": "PedestalIntegrator",
      "PedestalIntegrator":{
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,
+       "time_sampling_correction_path": null,
        "charge_median_cut_outliers": [-10,10],
        "charge_std_cut_outliers": [-10,10],
        "charge_product":"FixedWindowSum"
@@ -144,18 +255,22 @@
        "sample_size": 10000,
        "sample_duration":100000,
        "tel_id":1,
+       "time_sampling_correction_path": null,
        "charge_product":"LocalPeakWindowSum",
        "charge_median_cut_outliers": [-0.5,0.5],
        "charge_std_cut_outliers": [-10,10],
        "time_cut_outliers": [2,38]
      },
-      "LocalPeakWindowSum":{
+    "LocalPeakWindowSum":{
       "window_shift": 5,
-      "window_width":12
+      "window_width":12,
+      "apply_integration_correction": false
      },
-     "FixedWindowSum":{
-       "window_start": 12,
-       "window_width":12
+    "FixedWindowSum":{
+       "window_shift": 6,
+       "window_width":12,
+       "peak_index": 18,
+       "apply_integration_correction": false
     }
   }
 }

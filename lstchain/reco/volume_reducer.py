@@ -58,7 +58,7 @@ def apply_volume_reduction(event, subarray, config):
 
     Parameters
     ----------
-    event: 'ctapipe.containers.DataContainer'
+    event: 'ctapipe.containers.ArrayEventContainer'
     config: dict
         Read the parameters of the volume reduction method specified in the config file.
 
@@ -80,7 +80,7 @@ def apply_volume_reduction(event, subarray, config):
         volume_reduction_algorithm = globals()[volume_reduction_algorithm]
         parameters = config['volume_reducer']['parameters']
 
-        for tel_id in event.r0.tels_with_data:
+        for tel_id in event.r0.tel.keys():
 
             camera_geometry = subarray.tel[tel_id].camera.geometry
 

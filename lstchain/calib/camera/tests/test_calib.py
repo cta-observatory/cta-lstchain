@@ -3,6 +3,7 @@ from lstchain.calib.camera.calib import gain_selection
 from astropy.utils import deprecated
 from lstchain.calib import load_calibrator_from_config, load_gain_selector_from_config, load_image_extractor_from_config
 from ctapipe.instrument import SubarrayDescription, TelescopeDescription
+from lstchain.io.config import get_standard_config
 
 subarray = SubarrayDescription(
     "LST-1",
@@ -58,11 +59,18 @@ def test_load_calibrator_from_config_GlobalPeakWindowSum():
 def test_load_image_extractor_from_config():
     from ctapipe.image import LocalPeakWindowSum
 
+    config = get_standard_config()
+    image_extractor = load_image_extractor_from_config(config, subarray)
+
+    assert isinstance(image_extractor, LocalPeakWindowSum)
+    assert image_extractor.window_shift[0][2] == 4
+    assert image_extractor.window_width[0][2] == 8
+
     config = {'image_extractor': 'LocalPeakWindowSum',
-              'image_extractor_config': {
-                          "window_shift": 1,
-                          "window_width": 10,
-                      }
+              'LocalPeakWindowSum': {
+                  "window_shift": 1,
+                  "window_width": 10
+              }
     }
 
     image_extractor = load_image_extractor_from_config(config, subarray)

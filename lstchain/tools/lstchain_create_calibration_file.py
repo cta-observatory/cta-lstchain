@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Float, Bool
+from traitlets import Dict, List, Unicode, Int, Bool
 
 
 from ctapipe.core import Provenance, traits
@@ -11,8 +11,8 @@ from ctapipe.core import Tool
 from ctapipe.io import EventSource
 from ctapipe.containers import PixelStatusContainer
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
-from lstchain.calib.camera.r0 import CameraR0Calibrator
-from lstchain.io.lstcontainers import LSTEventType
+from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
+from ctapipe.containers import EventType
 
 __all__ = [
     'CalibrationHDF5Writer'
@@ -34,7 +34,6 @@ class CalibrationHDF5Writer(Tool):
     name = "CalibrationHDF5Writer"
     description = "Generate a HDF5 file with camera calibration coefficients"
 
-
     one_event = Bool(
         False,
         help='Stop after first calibration event'
@@ -45,36 +44,29 @@ class CalibrationHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
-    log_file = Unicode(
-        'None',
-        help='Name of the log file'
-    ).tag(config=True)
-
     calibration_product = traits.create_class_enum_trait(
        CalibrationCalculator,
         default_value='LSTCalibrationCalculator'
     )
 
-    r0calibrator_product =traits.create_class_enum_trait(
-        CameraR0Calibrator,
-        default_value='NullR0Calibrator'
-    )
+    events_to_skip = Int(
+        1000,
+        help='Number of first events to skip due to bad DRS4 pedestal correction'
+    ).tag(config=True)
 
     aliases = Dict(dict(
         input_file='EventSource.input_url',
-        output_file='CalibrationHDF5Writer.output_file',
-        log_file='CalibrationHDF5Writer.log_file',
         max_events='EventSource.max_events',
-        pedestal_file= 'LSTR0Corrections.pedestal_path',
+        output_file='CalibrationHDF5Writer.output_file',
         calibration_product='CalibrationHDF5Writer.calibration_product',
-        r0calibrator_product='CalibrationHDF5Writer.r0calibrator_product',
+        events_to_skip='CalibrationHDF5Writer.events_to_skip'
     ))
 
     classes = List([EventSource,
                     CalibrationCalculator
                     ]
-                   + traits.classes_with_traits(CameraR0Calibrator)
                    + traits.classes_with_traits(CalibrationCalculator)
+                   + traits.classes_with_traits(EventSource)
                    )
 
     def __init__(self, **kwargs):
@@ -89,9 +81,7 @@ class CalibrationHDF5Writer(Tool):
         """
         self.eventsource = None
         self.processor = None
-        self.container = None
         self.writer = None
-        self.r0calibrator = None
         self.tot_events = 0
         self.simulation = False
 
@@ -99,6 +89,10 @@ class CalibrationHDF5Writer(Tool):
 
         self.log.debug(f"Open  file")
         self.eventsource = EventSource.from_config(parent=self)
+
+        tel_id = self.eventsource.lst_service.telescope_id
+        if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
+            raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
 
         # if data remember how many event in the files
         if "LSTEventSource" in str(type(self.eventsource)):
@@ -114,14 +108,7 @@ class CalibrationHDF5Writer(Tool):
             subarray = self.eventsource.subarray
         )
 
-        if self.r0calibrator_product:
-            self.r0calibrator = CameraR0Calibrator.from_name(
-                self.r0calibrator_product,
-                parent=self
-            )
-
-
-        group_name = 'tel_' + str(self.processor.tel_id)
+        group_name = 'tel_' + str(tel_id)
 
         self.log.debug(f"Open output file {self.output_file}")
 
@@ -132,19 +119,20 @@ class CalibrationHDF5Writer(Tool):
     def start(self):
         '''Calibration coefficient calculator'''
 
-        tel_id = self.processor.tel_id
+        metadata = global_metadata(self.eventsource)
+        write_metadata(metadata, self.output_file)
+
+        tel_id = self.eventsource.lst_service.telescope_id
         new_ped = False
         new_ff = False
         end_of_file = False
 
-        # skip the first events which are badly drs4 corrected
-        events_to_skip = 1000
-
         try:
             self.log.debug(f"Start loop")
+            self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
             for count, event in enumerate(self.eventsource):
 
-                if count % 100 == 0:
+                if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
 
                 # if last event write results
@@ -161,45 +149,46 @@ class CalibrationHDF5Writer(Tool):
                         initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
 
                     ped_data = event.mon.tel[tel_id].pedestal
-                    ped_data.meta['config'] = self.config
+                    add_config_metadata(ped_data, self.config)
+                    add_global_metadata(ped_data, metadata)
 
                     ff_data = event.mon.tel[tel_id].flatfield
-                    ff_data.meta['config'] = self.config
+                    add_config_metadata(ff_data, self.config)
+                    add_global_metadata(ff_data, metadata)
 
                     status_data = event.mon.tel[tel_id].pixel_status
-                    status_data.meta['config'] = self.config
+                    add_config_metadata(status_data, self.config)
+                    add_global_metadata(status_data, metadata)
 
                     calib_data = event.mon.tel[tel_id].calibration
-                    calib_data.meta['config'] = self.config
+                    add_config_metadata(calib_data, self.config)
+                    add_global_metadata(calib_data, metadata)
 
-                # correct for low level calibration
-                self.r0calibrator.calibrate(event)
 
                 # skip first events which are badly drs4 corrected
-                if not self.simulation and count < events_to_skip:
-                    continue
-
-                # reject event without trigger type
-                if LSTEventType.is_unknown(event.r1.tel[tel_id].trigger_type):
+                if not self.simulation and count < self.events_to_skip:
                     continue
 
                 # if pedestal event
-                if LSTEventType.is_pedestal(event.r1.tel[tel_id].trigger_type) or (
+                if event.trigger.event_type==EventType.SKY_PEDESTAL or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                     < self.processor.minimum_hg_charge_median):
+
+
                     new_ped = self.processor.pedestal.calculate_pedestals(event)
 
 
                 # if flat-field event: no calibration  TIB for the moment,
                 # use a cut on the charge for ff events and on std for rejecting Magic Lidar events
-                elif LSTEventType.is_calibration(event.r1.tel[tel_id].trigger_type) or (
-                        np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+                elif event.trigger.event_type==EventType.FLATFIELD or (
+                        self.simulation and np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
                         > self.processor.minimum_hg_charge_median
                         and np.std(np.sum(event.r1.tel[tel_id].waveform[1], axis=1))
                         < self.processor.maximum_lg_charge_std):
 
-                    new_ff = self.processor.flatfield.calculate_relative_gain(event)
+                   new_ff = self.processor.flatfield.calculate_relative_gain(event)
+
                 # write pedestal results when enough statistics or end of file
                 if new_ped or end_of_file:
 

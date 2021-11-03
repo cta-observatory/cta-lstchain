@@ -16,7 +16,7 @@ file, then the output file names contain the run and subrun index (otherwise,
 only the run index)
 
 The script can also be run over one file of type datacheck_dl1_*.h5, and then
-only the plotting part ios executed.
+only the plotting part is executed.
 
 The muons_*.fits files which are produced together with the DL1 event files
 must be available in the same directory as the input files (of whatever
@@ -43,7 +43,9 @@ optional = parser.add_argument_group('optional arguments')
 # input file(s). Wildcards can be used, but inside quotes e.g. "dl1*.h5"
 required.add_argument('--input-file', type=str, required=True,
                       help='Path to DL1 data file(s) (containing pixel-wise '
-                           'charge information and image parameters)'
+                           'charge information and image parameters) OR to '
+                           'datacheck_dl1_*.h5 files (only plotting part is '
+                           'executed in that case)'
                       )
 
 # Optional arguments
@@ -52,7 +54,7 @@ optional.add_argument('--output-dir', default='.', type=str,
                       help='Directory where the output files will be written'
                       )
 
-# path for muons .fits files. If not given, it is asssumed that the files are
+# path for muons .fits files. If not given, it is assumed that the files are
 # in the same directory of the input files (either of the dl1 type
 # or of the datacheck_dl1 type)
 optional.add_argument('--muons-dir', default=None, type=str,
@@ -66,6 +68,9 @@ optional.add_argument('--max-cores', default=4, type=int,
                       )
 optional.add_argument('--omit-pdf', action='store_true',
                       help='Do NOT create the data check pdf file'
+                      )
+optional.add_argument('--batch', '-b', action='store_true',
+                      help='Run the script without plotting output'
                       )
 
 args, unknown = parser.parse_known_args()
@@ -99,12 +104,12 @@ def main():
     # output pdf with the check plots (since nothing else can be done with
     # that input, the create_pdf argument is ignored in that case:
     if os.path.basename(filenames[0]).startswith("datacheck_dl1"):
-        plot_datacheck(filenames, args.output_dir, args.muons_dir)
+        plot_datacheck(filenames, args.output_dir, args.batch, args.muons_dir)
         return
 
     # otherwise, do the full analysis to produce the dl1_datacheck h5 file
     # and the associated pdf:
-    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf)
+    check_dl1(filenames, args.output_dir, args.max_cores, not args.omit_pdf, args.batch)
 
 
 if __name__ == '__main__':

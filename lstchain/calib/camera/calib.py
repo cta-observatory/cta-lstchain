@@ -55,7 +55,7 @@ def load_image_extractor_from_config(custom_config, subarray):
 
     """
     config = replace_config(get_standard_config(), custom_config)
-    conf = Config({config['image_extractor']: config['image_extractor_config']})
+    conf = Config(config)
     return ImageExtractor.from_name(config['image_extractor'], subarray=subarray, config=conf)
 
 
@@ -162,7 +162,7 @@ def combine_channels(event, tel_id, threshold):
 
     Parameters
     ----------
-    event: `ctapipe.containers.DataContainer`
+    event: `ctapipe.containers.ArrayEventContainer`
     tel_id: int
         id of the telescope
     threshold: float
