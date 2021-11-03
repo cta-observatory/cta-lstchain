@@ -14,7 +14,7 @@ from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
 from ..reco.disp import disp_parameters_event
-from ..utils import get_event_pos_in_camera
+from ..reco.utils import get_event_pos_in_camera
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
