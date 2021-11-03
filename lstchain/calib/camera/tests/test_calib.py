@@ -43,14 +43,12 @@ def test_load_calibrator_from_config():
 
 
 def test_load_calibrator_from_config_LocalPeakWindowSum():
-    from ctapipe.image import LocalPeakWindowSum
     config = {"image_extractor": "LocalPeakWindowSum"}
     cal = load_calibrator_from_config(config, subarray)
     assert cal.image_extractor_type.tel[1] == 'LocalPeakWindowSum'
 
 
 def test_load_calibrator_from_config_GlobalPeakWindowSum():
-    from ctapipe.image import GlobalPeakWindowSum
     config = {"image_extractor": "GlobalPeakWindowSum"}
     cal = load_calibrator_from_config(config, subarray)
     assert cal.image_extractor_type.tel[1] == 'GlobalPeakWindowSum'

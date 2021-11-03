@@ -19,9 +19,12 @@ from distutils.util import strtobool
 import astropy.units as u
 import numpy as np
 import tables
-from ctapipe.image import hillas_parameters
-from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.morphology import number_of_islands
+from ctapipe.image import (
+    hillas_parameters,
+    tailcuts_clean,
+    number_of_islands,
+    apply_time_delta_cleaning,
+)
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
@@ -34,7 +37,7 @@ from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
+from lstchain.image.cleaning import apply_dynamic_cleaning
 
 log = logging.getLogger(__name__)
 
@@ -132,7 +135,7 @@ def main():
             f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
         log.info("Remove from image pixels which have charge below "
                  f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
-    
+
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
@@ -235,7 +238,7 @@ def main():
                                                boundary_th,
                                                isolated_pixels,
                                                min_n_neighbors)
-    
+
 
                 n_pixels = np.count_nonzero(signal_pixels)
 
@@ -261,7 +264,7 @@ def main():
                                                           FRACTION_CLEANING_SIZE)
                         signal_pixels = new_mask
 
-                        
+
                     # count a number of islands after all of the image cleaning steps
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
