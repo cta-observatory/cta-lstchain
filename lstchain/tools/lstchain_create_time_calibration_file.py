@@ -32,7 +32,7 @@ class TimeCalibrationHDF5Writer(Tool):
     ).tag(config=True)
 
     progress_bar = traits.Bool(
-        help="show progress bar during processing",
+        help="Show progress bar during processing",
         default_value=True,
     ).tag(config=True)
 
@@ -52,6 +52,8 @@ class TimeCalibrationHDF5Writer(Tool):
         self.path_list = [str(self.input)]
         if self.input.is_dir():
             self.path_list = sorted(self.input.glob(self.glob))
+        if not self.path_list:
+            raise FileNotFoundError(f"No files found in {self.input} for pattern {self.glob}")
 
     def start(self):
 
