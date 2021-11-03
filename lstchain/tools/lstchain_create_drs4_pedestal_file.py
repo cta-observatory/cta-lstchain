@@ -1,5 +1,5 @@
 """
-Create drs4 time pedestal fits file.
+Create drs4 pedestal fits file.
 """
 import numpy as np
 from astropy.io import fits
@@ -38,9 +38,9 @@ class PedestalFITSWriter(Tool):
     ).tag(config=True)
 
     aliases = {
-        ("i", "input"): "EventSource.input_url",
+        ("i", "input"): "LSTEventSource.input_url",
         ("o", "output"): "PedestalFITSWriter.output",
-        "max-events": "EventSource.max_events",
+        "max-events": "LSTEventSource.max_events",
         "start-r0-waveform": "DragonPedestal.r0_sample_start",
     }
     flags = {
@@ -54,7 +54,6 @@ class PedestalFITSWriter(Tool):
 
     def setup(self):
 
-        self.log.debug("Opening file")
         self.eventsource = LSTEventSource(parent=self)
         self.pixel_ids = self.eventsource.camera_config.expected_pixels_id
         self.pedestal = DragonPedestal(

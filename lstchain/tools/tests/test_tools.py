@@ -1,6 +1,29 @@
-import pytest
-from ctapipe.core import run_tool
 import os
+import pytest
+
+from ctapipe.core import run_tool
+
+
+@pytest.mark.private_data
+def test_create_drs4_pedestal_file(temp_dir_observed_files):
+    """
+    Create a drs4 pedestal fits file
+    """
+    from lstchain.tools.lstchain_create_drs4_pedestal_file import PedestalFITSWriter
+    from lstchain.tests.test_lstchain import test_r0_path
+
+    output_file = temp_dir_observed_files / "drs4_pedestal.fits"
+
+    assert (
+        run_tool(
+            PedestalFITSWriter(),
+            argv=[
+                f"--input={test_r0_path}",
+                f"--output={output_file}"
+            ]
+        )
+        == 0
+    )
 
 
 def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
