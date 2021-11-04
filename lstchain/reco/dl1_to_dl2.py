@@ -23,7 +23,6 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import OpticsDescription
 
-
 __all__ = [
     'train_energy',
     'train_disp_norm',
@@ -36,7 +35,6 @@ __all__ = [
     'get_source_dependent_parameters',
     'get_expected_source_pos'
 ]
-
 
 
 def train_energy(train, custom_config={}):
@@ -65,7 +63,7 @@ def train_energy(train, custom_config={}):
 
     reg = model(**energy_regression_args)
     reg.fit(train[features],
-                  train['log_mc_energy'])
+            train['log_mc_energy'])
 
     print("Model {} trained!".format(model))
     return reg
@@ -160,17 +158,16 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
-    print("Training model {} for disp sign regression".format(model))
+    print("Training model {} for disp sign classification".format(model))
 
-    reg = model(**classification_args)
+    clf = model(**classification_args)
     x = train[features]
     y = np.transpose(train[predict_feature])
-    reg.fit(x, y)
+    clf.fit(x, y)
 
     print("Model {} trained!".format(model))
 
-    return reg
-
+    return clf
 
 
 def train_reco(train, custom_config={}):
@@ -218,7 +215,6 @@ def train_reco(train, custom_config={}):
 
 
 def train_sep(train, custom_config={}):
-
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
 
@@ -241,11 +237,10 @@ def train_sep(train, custom_config={}):
     features = config["particle_classification_features"]
     model = RandomForestClassifier
 
-
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
     print("Training Random Forest Classifier for",
-    "Gamma/Hadron separation...")
+          "Gamma/Hadron separation...")
 
     clf = model(**classification_args)
 
@@ -314,11 +309,13 @@ def build_models(filegammas, fileprotons,
 
     if config['source_dependent']:
         src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_gamma.columns])
+        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_gamma.columns])
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
         src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_proton.columns = pd.MultiIndex.from_tuples([tuple(col[1:-1].replace('\'', '').replace(' ','').split(",")) for col in src_dep_df_proton.columns])
+        src_dep_df_proton.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_proton.columns])
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
@@ -341,54 +338,91 @@ def build_models(filegammas, fileprotons,
     src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
     foclen = OpticsDescription.from_name('LST').equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (src_r_deg <= config['train_gamma_src_r_deg'][1])]
+    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
+        src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     #Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
 
-    reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+    if config['disp_method'] == 'disp_vector':
+        reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+    elif config['disp_method'] == 'disp_norm_sign':
+        reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
+        cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
 
-    #Train classifier for gamma/hadron separation.
+    # Train classifier for gamma/hadron separation.
 
     train, testg = train_test_split(df_gamma, test_size=test_size)
     test = testg.append(df_proton, ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
 
-    temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+    if config['disp_method'] == 'disp_vector':
+        temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+    elif config['disp_method'] == 'disp_norm_sign':
+        tmp_reg_disp_norm = train_disp_norm(train, custom_config=config)
+        tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
 
-    #Apply the regressors to the test set
+    # Apply the regressors to the test set
 
     test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
-    disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
+
+    if config['disp_method'] == 'disp_vector':
+        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
+        disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        test['reco_disp_norm'] = disp_norm
+        test['reco_disp_sign'] = disp_sign
+
+        disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
+        disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
+
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
 
-    #Apply cut in reconstructed energy. New train set is the previous
-    #test with energy and disp_norm reconstructed.
+    # Apply cut in reconstructed energy. New train set is the previous
+    # test with energy and disp_norm reconstructed.
 
     train = test[test['log_reco_energy'] > energy_min]
 
-    del temp_reg_energy, temp_reg_disp_vector
+    del temp_reg_energy
 
-    #Train the Classifier
+    if config['disp_method'] == 'disp_vector':
+        del temp_reg_disp_vector
+    elif config['disp_method'] == 'disp_norm_sign':
+        del tmp_reg_disp_norm, tmp_cls_disp_sign
+
+    # Train the Classifier
 
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
         os.makedirs(path_models, exist_ok=True)
+
         file_reg_energy = path_models + "/reg_energy.sav"
-        file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-        file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(reg_energy, file_reg_energy)
-        joblib.dump(reg_disp_vector, file_reg_disp_vector)
+
+        if config['disp_method'] == 'disp_vector':
+            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
+            joblib.dump(reg_disp_vector, file_reg_disp_vector)            
+        elif config['disp_method'] == 'disp_norm_sign':
+            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
+            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
+            joblib.dump(reg_disp_norm, file_reg_disp_norm)
+            joblib.dump(cls_disp_sign, file_cls_disp_sign)            
+
+        file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(cls_gh, file_cls_gh)
 
-    return reg_energy, reg_disp_vector, cls_gh
+    if config['disp_method'] == 'disp_vector':
+        return reg_energy, reg_disp_vector, cls_gh
+    elif config['disp_method'] == 'disp_norm_sign':
+        return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
-def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u.m, custom_config={}):
+def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm={}, cls_disp_sign={}, focal_length=28 * u.m, custom_config={}):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
@@ -412,6 +446,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
     config = replace_config(standard_config, custom_config)
     energy_regression_features = config["energy_regression_features"]
     disp_regression_features = config["disp_regression_features"]
+    disp_classification_features = config["disp_classification_features"]
     classification_features = config["particle_classification_features"]
     events_filters = config["events_filters"]
 
@@ -422,15 +457,26 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
                               + config['particle_classification_features']
                               + config['disp_classification_features'],
                               )
-      
-    #Reconstruction of Energy and disp_norm distance
+
+    # Reconstruction of Energy and disp_norm distance
     dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
-    dl2['reco_energy'] = 10**(dl2['log_reco_energy'])
-    disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
+    dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
+
+    if config['disp_method'] == 'disp_vector':
+        disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
+        disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
+        dl2['reco_disp_norm'] = disp_norm
+        dl2['reco_disp_sign'] = disp_sign
+
+        disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
+        disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
+
     dl2['reco_disp_dx'] = disp_vector[:, 0]
     dl2['reco_disp_dy'] = disp_vector[:, 1]
 
-    #Construction of Source position in camera coordinates from disp_norm distance.
+    # Construction of Source position in camera coordinates from disp_norm distance.
 
     dl2['reco_src_x'], dl2['reco_src_y'] = disp.disp_to_pos(dl2.reco_disp_dx,
                                                             dl2.reco_disp_dy,
@@ -445,9 +491,8 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
         alt_tel = dl2['alt_tel'].values
         az_tel = dl2['az_tel'].values
     else:
-        alt_tel = - np.pi/2. * np.ones(len(dl2))
-        az_tel = - np.pi/2. * np.ones(len(dl2))
-
+        alt_tel = - np.pi / 2. * np.ones(len(dl2))
+        az_tel = - np.pi / 2. * np.ones(len(dl2))
 
     src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
                                                   dl2.y.values * u.m,
@@ -475,9 +520,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector, focal_length=28*u
     return dl2
 
 
-
-def get_source_dependent_parameters(data, config, focal_length=28*u.m):
-
+def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     """Get parameters dict for source-dependent analysis .
 
     Parameters:
@@ -488,7 +531,7 @@ def get_source_dependent_parameters(data, config, focal_length=28*u.m):
     """
 
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
-    
+
     if is_simu:
         if (data['mc_type'] == 0).all():
             data_type = 'mc_gamma'
@@ -496,8 +539,9 @@ def get_source_dependent_parameters(data, config, focal_length=28*u.m):
             data_type = 'mc_proton'
     else:
         data_type = 'real_data'
-    
-    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config, focal_length=focal_length)
+
+    expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config,
+                                                                         focal_length=focal_length)
 
     # ON position
     src_dep_params_dict = {}
@@ -505,13 +549,16 @@ def get_source_dependent_parameters(data, config, focal_length=28*u.m):
     src_dep_params_dict['on'] = src_dep_params
 
     if not is_simu:
-        if config.get('observation_mode')=='wobble':
+        if config.get('observation_mode') == 'wobble':
             for ioff in range(config.get('n_off_wobble')):
                 off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
-            
-                rotated_expected_src_pos_x_m = expected_src_pos_x_m  * np.cos(off_angle) - expected_src_pos_y_m * np.sin(off_angle)
-                rotated_expected_src_pos_y_m = expected_src_pos_x_m  * np.sin(off_angle) + expected_src_pos_y_m * np.cos(off_angle)
-                src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m, rotated_expected_src_pos_y_m)
+
+                rotated_expected_src_pos_x_m = expected_src_pos_x_m * np.cos(off_angle) - expected_src_pos_y_m * np.sin(
+                    off_angle)
+                rotated_expected_src_pos_y_m = expected_src_pos_x_m * np.sin(off_angle) + expected_src_pos_y_m * np.cos(
+                    off_angle)
+                src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m,
+                                                                  rotated_expected_src_pos_y_m)
                 src_dep_params['off_angle'] = np.rad2deg(off_angle)
                 src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
 
@@ -533,15 +580,15 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     src_dep_params['expected_src_x'] = expected_src_pos_x_m
     src_dep_params['expected_src_y'] = expected_src_pos_y_m
 
-    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m)**2 + (data['y'] - expected_src_pos_y_m)**2)
+    src_dep_params['dist'] = np.sqrt((data['x'] - expected_src_pos_x_m) ** 2 + (data['y'] - expected_src_pos_y_m) ** 2)
 
     disp, miss = camera_to_shower_coordinates(
         expected_src_pos_x_m,
         expected_src_pos_y_m,
         data['x'],
         data['y'],
-        data['psi']                                                                                                                                                                                                   )
-    
+        data['psi'])
+
     src_dep_params['time_gradient_from_source'] = data['time_gradient'] * np.sign(disp) * -1
     src_dep_params['skewness_from_source'] = data['skewness'] * np.sign(disp) * -1
     src_dep_params['alpha'] = np.rad2deg(np.arctan(np.abs(miss / disp)))
@@ -549,8 +596,7 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
     return src_dep_params
 
 
-def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
-
+def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
     """Get expected source position for source-dependent analysis .
 
     Parameters:
@@ -561,12 +607,12 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
     
     """
 
-    #For gamma MC, expected source position is actual one for each event
+    # For gamma MC, expected source position is actual one for each event
     if data_type == 'mc_gamma':
         expected_src_pos_x_m = data['src_x'].values
         expected_src_pos_y_m = data['src_y'].values
 
-    #For proton MC, nominal source position is one written in config file
+    # For proton MC, nominal source position is one written in config file
     if data_type == 'mc_proton':
         expected_src_pos = utils.sky_to_camera(
             u.Quantity(data['mc_alt_tel'].values + config['mc_nominal_source_x_deg'], u.deg, copy=False),
@@ -575,7 +621,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
             u.Quantity(data['mc_alt_tel'].values, u.deg, copy=False),
             u.Quantity(data['mc_az_tel'].values, u.deg, copy=False)
         )
-        
+
         expected_src_pos_x_m = expected_src_pos.x.to_value(u.m)
         expected_src_pos_y_m = expected_src_pos.y.to_value(u.m)
 
@@ -585,7 +631,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
         if config.get('observation_mode') == 'on':
             expected_src_pos_x_m = np.zeros(len(data))
             expected_src_pos_y_m = np.zeros(len(data))
-        
+
         # compute source position in camera coordinate event by event for wobble mode
         if config.get('observation_mode') == 'wobble':
 
@@ -593,14 +639,14 @@ def get_expected_source_pos(data, data_type, config, focal_length=28*u.m):
                 source_coord = SkyCoord.from_name(config.get('source_name'))
             else:
                 source_coord = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
-            
+
             time = data['dragon_time']
             obstime = Time(time, scale='utc', format='unix')
             pointing_alt = u.Quantity(data['alt_tel'], u.rad, copy=False)
-            pointing_az = u.Quantity(data['az_tel'],  u.rad, copy=False)
+            pointing_az = u.Quantity(data['az_tel'], u.rad, copy=False)
             source_pos = utils.radec_to_camera(source_coord, obstime, pointing_alt, pointing_az, focal_length)
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
-   
-    return expected_src_pos_x_m, expected_src_pos_y_m 
+
+    return expected_src_pos_x_m, expected_src_pos_y_m

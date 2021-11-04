@@ -19,7 +19,7 @@ from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
 )
-from ctapipe.image.morphology import number_of_islands
+from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
@@ -32,7 +32,7 @@ from ..calib.camera import lst_calibration, load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
+from ..image.cleaning import apply_dynamic_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
