@@ -5,10 +5,10 @@ import numpy as np
 from astropy.io import fits
 from tqdm.autonotebook import tqdm
 
-from ctapipe.core import Provenance, traits
-from ctapipe.core import Tool
+from ctapipe.core import Provenance, Tool, traits
 from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.drs4 import DragonPedestal
+from traitlets.config import Config
 
 
 class PedestalFITSWriter(Tool):
@@ -22,42 +22,73 @@ class PedestalFITSWriter(Tool):
     name = "PedestalFITSWriter"
     description = "Generate a pedestal FITS file"
 
+    input = traits.Path(
+        help="Path to fitz.fz file to create pedestal file",
+        directory_ok=False,
+        exists=True,
+    ).tag(config=True)
+
     output = traits.Path(
         default_value="pedestal.fits",
         help="Path to the generated fits pedestal file",
         directory_ok=False,
     ).tag(config=True)
 
+    max_events = traits.Int(
+        default_value=20000,
+        help="Maximum numbers of events to read",
+    ).tag(config=True)
+
     deltaT = traits.Bool(
         help="Use delta T correction", default_value=True
     ).tag(config=True)
 
+    overwrite = traits.Bool(
+        help="Overwrite output file", default_value=True
+    ).tag(config=True)
+
     progress_bar = traits.Bool(
-        help="show progress bar during processing",
+        help="Show progress bar during processing",
         default_value=True,
     ).tag(config=True)
 
     aliases = {
-        ("i", "input"): "LSTEventSource.input_url",
+        ("i", "input"): "PedestalFITSWriter.input",
         ("o", "output"): "PedestalFITSWriter.output",
-        "max-events": "LSTEventSource.max_events",
         "start-r0-waveform": "DragonPedestal.r0_sample_start",
     }
     flags = {
         "no-delta-t": (
             {"PedestalFITSWriter": {"deltaT": False}},
             "Switch off delta T corrections",
-        )
+        ),
+        "no-overwrite": (
+            {"PedestalFITSWriter": {"overwrite": False}},
+            "Do not overwrite output file",
+        ),
     }
 
     classes = [LSTEventSource, DragonPedestal]
 
     def setup(self):
 
-        self.eventsource = LSTEventSource(parent=self)
+        source_config = {
+            "LSTEventSource": {
+                "max_events": self.max_events,
+            },
+            "LSTR0Corrections": {
+                "apply_drs4_pedestal_correction": False,
+                "apply_timelapse_correction": self.deltaT,
+                "apply_spike_correction": False,
+            }
+        }
+
+        self.eventsource = LSTEventSource(input_url=self.input, config=Config(source_config))
         self.pixel_ids = self.eventsource.camera_config.expected_pixels_id
         self.pedestal = DragonPedestal(
-            tel_id=self.eventsource.tel_id, n_module=self.eventsource.camera_config.lstcam.num_modules, parent=self
+            tel_id=self.eventsource.tel_id,
+            n_module=self.eventsource.camera_config.lstcam.num_modules,
+            parent=self
         )
 
     def start(self):
@@ -69,22 +100,27 @@ class PedestalFITSWriter(Tool):
             unit="ev",
             disable=not self.progress_bar,
         ):
-            for tel_id in event.trigger.tels_with_trigger:
-                if self.deltaT:
-                    self.eventsource.r0_r1_calibrator.update_first_capacitors(event)
-                    self.eventsource.r0_r1_calibrator.time_lapse_corr(event, tel_id)
-                self.pedestal.fill_pedestal_event(event)
+            self.pedestal.fill_pedestal_event(event)
 
     def finish(self):
 
         self.pedestal.complete_pedestal()
 
         expected_pixel_id = fits.PrimaryHDU(self.pixel_ids)
-        pedestal_array = fits.ImageHDU(np.int16(self.pedestal.meanped), name="pedestal array")
-        failing_pixels_col = fits.Column(name="failing pixels", array=self.pedestal.failing_pixels_array, format="K")
-        failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_col], name="failing pixels")
+        pedestal_array = fits.ImageHDU(
+            self.pedestal.meanped.astype(np.int16),
+            name="pedestal array")
+        failing_pixels_col = fits.Column(
+            name="failing pixels",
+            array=self.pedestal.failing_pixels_array,
+            format="K"
+        )
+        failing_pixels = fits.BinTableHDU.from_columns(
+            [failing_pixels_col],
+            name="failing pixels"
+        )
         hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
-        hdulist.writeto(self.output)
+        hdulist.writeto(self.output, overwrite=self.overwrite)
 
         Provenance().add_output_file(self.output, role="mon.tel.pedestal")
 
