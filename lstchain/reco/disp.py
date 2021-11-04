@@ -141,7 +141,7 @@ def disp_vector(disp_norm, disp_angle, disp_sign):
     -------
     disp_dx, disp_dy
     """
-    return utils.polar_to_cartesian(disp_norm, disp_angle, disp_sign)
+    return np.transpose(utils.polar_to_cartesian(disp_norm, disp_angle, disp_sign))
 
 
 def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
