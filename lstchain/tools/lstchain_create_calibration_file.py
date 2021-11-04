@@ -5,11 +5,11 @@ import numpy as np
 from ctapipe.containers import PixelStatusContainer
 from ctapipe.core import Provenance, Tool, traits
 from ctapipe.io import EventSource, HDF5TableWriter
-
+from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.calibration_calculator import CalibrationCalculator
+from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 from ctapipe.containers import EventType
 from tqdm.autonotebook import tqdm
-from lstchain.io import add_config_metadata, add_global_metadata, global_metadata, write_metadata
 
 
 class CalibrationHDF5Writer(Tool):
@@ -40,10 +40,13 @@ class CalibrationHDF5Writer(Tool):
         help="Show progress bar during processing",
         default_value=True,
     ).tag(config=True)
-
     calibration_product = traits.create_class_enum_trait(
         CalibrationCalculator, default_value="LSTCalibrationCalculator"
     )
+    events_to_skip = traits.Int(
+        help='Number of first events to skip due to bad DRS4 pedestal correction',
+        default_value=1000,
+    ).tag(config=True)
 
     aliases = {
         ("i", "input_file"): "EventSource.input_url",
@@ -51,6 +54,7 @@ class CalibrationHDF5Writer(Tool):
         "max_events": "EventSource.max_events",
         "calibration_product": "CalibrationHDF5Writer.calibration_product",
         "drs4_pedestal_path": "LSTR0Corrections.drs4_pedestal_path",
+        "events_to_skip": "CalibrationHDF5Writer.events_to_skip"
     }
 
     flags = {
@@ -73,7 +77,7 @@ class CalibrationHDF5Writer(Tool):
             raise IOError("Missing (mandatory) drs4 pedestal file in traitlets")
 
         # if data remember how many events in the files
-        if "LSTEventSource" in str(type(self.eventsource)):
+        if isinstance(self.eventsource, LSTEventSource):
             self.tot_events = len(self.eventsource.multi_file)
             self.log.debug(f"Input file has file {self.tot_events} events")
         else:
@@ -92,15 +96,15 @@ class CalibrationHDF5Writer(Tool):
 
     def start(self):
         """Calibration coefficient calculator"""
+        metadata = global_metadata(self.eventsource)
+        write_metadata(metadata, self.output)
 
         new_ped = False
         new_ff = False
         end_of_file = False
 
-        # skip the first events which are badly drs4 corrected
-        events_to_skip = 1000
-
         self.log.debug(f"Start loop")
+        self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
         for count, event in tqdm(
             enumerate(self.eventsource),
             desc=self.eventsource.__class__.__name__,
@@ -123,19 +127,23 @@ class CalibrationHDF5Writer(Tool):
                     self.initialize_pixel_status(event.mon.tel[self.tel_id], event.r1.tel[self.tel_id].waveform.shape)
 
                 ped_data = event.mon.tel[self.tel_id].pedestal
-                ped_data.meta["config"] = self.config
+                add_config_metadata(ped_data, self.config)
+                add_global_metadata(ped_data, metadata)
 
                 ff_data = event.mon.tel[self.tel_id].flatfield
-                ff_data.meta["config"] = self.config
+                add_config_metadata(ff_data, self.config)
+                add_global_metadata(ff_data, metadata)
 
                 status_data = event.mon.tel[self.tel_id].pixel_status
-                status_data.meta["config"] = self.config
+                add_config_metadata(status_data, self.config)
+                add_global_metadata(status_data, metadata)
 
                 calib_data = event.mon.tel[self.tel_id].calibration
-                calib_data.meta["config"] = self.config
+                add_config_metadata(calib_data, self.config)
+                add_global_metadata(calib_data, metadata)
 
             # skip first events which are badly drs4 corrected
-            if not self.simulation and count < events_to_skip:
+            if not self.simulation and count < self.events_to_skip:
                 continue
             # if pedestal event
             if event.trigger.event_type == EventType.SKY_PEDESTAL or (
