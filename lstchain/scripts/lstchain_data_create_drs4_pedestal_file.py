@@ -76,7 +76,7 @@ def main():
         },
         "LSTR0Corrections": {
             "apply_drs4_pedestal_correction": False,
-            "apply_drs4_timelapse_correction": args.deltaT,
+            "apply_timelapse_correction": args.deltaT,
             "apply_spike_correction": False,
         }
     }
