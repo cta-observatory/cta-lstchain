@@ -33,5 +33,5 @@ def test_energy_results(tmp_path, simulated_dl2_file):
 
 
 def test_plot_models_features_importances(rf_models):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     plot_dl2.plot_models_features_importances(rf_models["path"], axes=axes, alpha=0.5, fill=False)

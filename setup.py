@@ -42,8 +42,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'astropy~=4.2',
-        'ctapipe~=0.10.5',
-        'ctapipe_io_lst~=0.9.2',
+        'ctapipe~=0.11.0',
+        'ctapipe_io_lst~=0.11.1',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy>=0.18',
@@ -53,14 +53,20 @@ setup(
         'numba',
         'numpy',
         'pandas',
+<<<<<<< HEAD
         'pyirf>=0.5',
+=======
+        'pyirf~=0.5.0',
+>>>>>>> 14c106e2d2aa47e56655125212705d96d4eb8e44
         'scipy',
         'seaborn',
         'scikit-learn',
         'tables',
         'toml',
-        'traitlets',
+        'traitlets~=5.0.5',
         'iminuit~=1.5',
+        'pymongo',
+        'pyparsing~=2.4'
     ],
     package_data={
         'lstchain': [

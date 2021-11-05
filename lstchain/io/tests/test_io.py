@@ -20,6 +20,7 @@ def merged_h5file(tmp_path, simulated_dl1_file):
 
 
 def test_write_dataframe():
+    from lstchain.io import config, global_metadata
     from lstchain.io.io import write_dataframe
 
     df = pd.DataFrame(
@@ -28,9 +29,11 @@ def test_write_dataframe():
             "N": np.random.poisson(5, size=10),
         }
     )
+    config = config.get_standard_config()
 
     with tempfile.NamedTemporaryFile() as f:
-        write_dataframe(df, f.name, "data/awesome_table")
+        meta = global_metadata(None, input_url=f.name)
+        write_dataframe(df, f.name, "data/awesome_table", config=config, meta=meta)
 
         with tables.open_file(f.name) as h5_file:
             # make sure nothing else in this group
@@ -40,6 +43,11 @@ def test_write_dataframe():
             table = h5_file.root.data.awesome_table[:]
             for col in df.columns:
                 np.testing.assert_array_equal(table[col], df[col])
+
+            # test global metadata and config are properly written
+            for k in meta.keys():
+                assert meta[k] == h5_file.root.data.awesome_table.attrs[k]
+            assert config == h5_file.root.data.awesome_table.attrs["config"]
 
         # test it's also readable by pandas directly
         df_read = pd.read_hdf(f.name, "data/awesome_table")
@@ -131,7 +139,7 @@ def test_read_subarray_description(mc_gamma_testfile, simulated_dl1_file):
     from lstchain.io.io import read_subarray_description
     from ctapipe.io import EventSource
 
-    source = EventSource(mc_gamma_testfile)
+    source = EventSource(mc_gamma_testfile, allowed_tels={1, 2, 3, 4})
     dl1_subarray = read_subarray_description(simulated_dl1_file)
     dl1_subarray.peek()
     dl1_subarray.info()

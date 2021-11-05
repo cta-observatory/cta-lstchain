@@ -137,7 +137,8 @@ def test_observed_dl1_validity(observed_dl1_files):
 
 def test_lstchain_mc_trainpipe(rf_models):
     assert rf_models["energy"].is_file()
-    assert rf_models["disp"].is_file()
+    assert rf_models["disp_norm"].is_file()
+    assert rf_models["disp_sign"].is_file()
     assert rf_models["gh_sep"].is_file()
 
 
@@ -146,7 +147,8 @@ def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton
     proton_file = fake_dl1_proton_file
     output_dir = tmp_path
     file_model_energy = output_dir / "reg_energy.sav"
-    file_model_disp = output_dir / "reg_disp_vector.sav"
+    file_model_disp_norm = output_dir / "reg_disp_norm.sav"
+    file_model_disp_sign = output_dir / "cls_disp_sign.sav"
     file_model_gh_sep = output_dir / "cls_gh.sav"
 
     run_program(
@@ -164,7 +166,9 @@ def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton
     )
 
     assert file_model_gh_sep.is_file()
-    assert file_model_disp.is_file()
+    # assert file_model_disp.is_file()
+    assert file_model_disp_norm.is_file()
+    assert file_model_disp_sign.is_file()
     assert file_model_energy.is_file()
 
 

@@ -696,7 +696,7 @@ def add_delta_t_key(events):
 
     # Get delta t of real data and add it to the data frame
     if "dragon_time" in events.columns:
-        time = np.array(events.dragon_time)
+        time = np.array(events["dragon_time"])
         delta_t = np.insert(np.diff(time), 0, 0)
         events["delta_t"] = delta_t
     return events
