@@ -24,7 +24,7 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals",
                       type=int, required=True)
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__.rsplit('.dev',1)[0]
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",

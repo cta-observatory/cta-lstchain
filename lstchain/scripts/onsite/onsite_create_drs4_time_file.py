@@ -22,7 +22,7 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__.rsplit('.dev',1)[0]
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",type=int)

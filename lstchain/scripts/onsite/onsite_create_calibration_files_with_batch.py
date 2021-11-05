@@ -26,7 +26,7 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-r', '--run_list', help="Run number if the flat-field data",
                       type=int, nargs="+")
 
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__.rsplit('.dev',1)[0]
 optional.add_argument('-f', '--filters_list', help="Filter list (same order as run list)",
                       type=int, nargs="+")
 
