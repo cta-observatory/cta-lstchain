@@ -56,12 +56,12 @@ class CalibrationHDF5Writer(Tool):
     ).tag(config=True)
 
     mc_min_flatfield_adc = Float(
-        5000,
+        2000,
         help='Minimum high-gain camera median charge per pixel (ADC) for flatfield MC events'
     ).tag(config=True)
 
     mc_max_pedestal_adc = Float(
-        500,
+        300,
         help='Maximum high-gain camera median charge per pixel (ADC) for pedestal MC events'
     ).tag(config=True)
 
@@ -153,7 +153,7 @@ class CalibrationHDF5Writer(Tool):
                 if self.simulation:
                     event.r1.tel[tel_id].waveform = (
                             event.r0.tel[tel_id].waveform.astype(float)
-                            - event.mon.tel[tel_id].calibration.pedestal_per_sample
+                            - event.mon.tel[tel_id].calibration.pedestal_per_sample[..., np.newaxis]
                     )
 
                 if count % 1000 == 0 and count> self.events_to_skip:
@@ -197,7 +197,7 @@ class CalibrationHDF5Writer(Tool):
                 if event.trigger.event_type==EventType.SKY_PEDESTAL or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
-                    < self.mc_min_pedestal_adc):
+                    < self.mc_max_pedestal_adc):
 
                     new_ped = self.processor.pedestal.calculate_pedestals(event)
 
@@ -254,7 +254,6 @@ class CalibrationHDF5Writer(Tool):
                     if self.one_event:
                         break
 
-                    #self.writer.write('mon', event.mon.tel[tel_id])
         except ValueError as e:
             self.log.error(e)
 
