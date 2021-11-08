@@ -34,7 +34,7 @@ __all__ = [
     'apply_models',
     'get_source_dependent_parameters',
     'get_expected_source_pos',
-    'get_parameter_sign'
+    'calc_parameter_sign'
 ]
 
 
