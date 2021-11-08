@@ -382,7 +382,11 @@ def build_models(filegammas, fileprotons,
 
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
+    
+    test['signed_skewness'] = calc_parameter_sign(test, 'skewness') * np.abs(test['skewness'])
+    test['signed_time_gradient'] = calc_parameter_sign(test, 'time_gradient') * np.abs(test['time_gradient'])
 
+    
     # Apply cut in reconstructed energy. New train set is the previous
     # test with energy and disp_norm reconstructed.
 
