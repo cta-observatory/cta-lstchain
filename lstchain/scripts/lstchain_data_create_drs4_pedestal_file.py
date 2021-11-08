@@ -75,6 +75,7 @@ def main():
             "max_events": args.max_events,
         },
         "LSTR0Corrections": {
+            "offset": 0,
             "apply_drs4_pedestal_correction": False,
             "apply_timelapse_correction": args.deltaT,
             "apply_spike_correction": False,
