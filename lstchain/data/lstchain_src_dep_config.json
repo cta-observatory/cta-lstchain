@@ -136,7 +136,21 @@
     "dist"
   ],
 
+  "disp_method": "disp_norm_sign",
+
   "disp_regression_features": [
+    "log_intensity",
+    "width",
+    "length",
+    "wl",
+    "skewness_from_source",
+    "kurtosis",
+    "time_gradient_from_source",
+    "leakage_intensity_width_2",
+    "dist"
+  ],
+
+  "disp_classification_features": [
     "log_intensity",
     "width",
     "length",
@@ -161,18 +175,6 @@
     "dist"
   ],
 
-  "disp_classification_features": [
-    "log_intensity",
-    "width",
-    "length",
-    "wl",
-    "skewness_from_source",
-    "kurtosis",
-    "time_gradient_from_source",
-    "leakage_intensity_width_2",
-    "log_reco_energy",
-    "dist"
-  ],
     
   "allowed_tels": [1, 2, 3, 4],
   "max_events": null,

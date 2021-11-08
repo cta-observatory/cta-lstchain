@@ -3,18 +3,6 @@
 # import sys
 from setuptools import setup, find_packages
 import os
-import sys
-
-# Add lstchain folder to path (contains version.py)
-# this is needed as lstchain/__init__.py imports dependencies
-# that might not be installed before setup runs, so we cannot import
-# lstchain.version
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lstchain"))
-from version import get_version, update_release_version  # noqa
-
-
-update_release_version()
-version = get_version()
 
 
 def find_scripts(script_dir, prefix):
@@ -38,12 +26,12 @@ entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
 setup(
-    version=version,
+    use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(),
     install_requires=[
         'astropy~=4.2',
-        'ctapipe~=0.10.5',
-        'ctapipe_io_lst~=0.9.2',
+        'ctapipe~=0.11.0',
+        'ctapipe_io_lst~=0.11.1',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy>=0.18',
@@ -53,7 +41,7 @@ setup(
         'numba',
         'numpy',
         'pandas',
-        'pyirf~=0.4.0',
+        'pyirf~=0.5.0',
         'scipy',
         'seaborn',
         'scikit-learn',
@@ -62,7 +50,8 @@ setup(
         'traitlets~=5.0.5',
         'iminuit~=1.5',
         'pymongo',
-        'pyparsing~=2.4'
+        'pyparsing~=2.4',
+        'setuptools_scm',
     ],
     package_data={
         'lstchain': [
