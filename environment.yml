@@ -17,6 +17,9 @@ dependencies:
   - toml
   - protozfits=2.0
   - pyparsing~=2.4
+  - sphinx=3.5
+  - sphinx-automodapi
+  - sphinx_rtd_theme
   - traitlets=5.0
   - pip:
       - pytest_runner
