@@ -484,6 +484,20 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
                                                             dl2.y,
                                                             )
 
+    # Obtain the time gradient with signed relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined positive if light arrival time increase with distance to it. Negative otherwise:
+    dx = dl2['reco_src_x'] - dl2['x']
+    dy = dl2['reco_src_x'] - dl2['x']
+    vx = np.sign(dl2['time_gradient'])*np.cos(dl2['psi'])
+    vy = np.sign(dl2['time_gradient'])*np.sin(dl2['psi'])
+    dl2['signed_time_gradient'] = -np.sign(dx*vx + dy*vy) * np.abs(dl2['time_gradient'])
+    
+    # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined on the major image axis, such that it is typically positive for gammas
+    vx = np.sign(dl2['skewness'])*np.cos(dl2['psi'])
+    vy = np.sign(dl2['skewness'])*np.sin(dl2['psi'])
+    dl2['signed_skewness'] = -np.sign(dx*vx + dy*vy) * np.abs(dl2['skewness'])
+    
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
         az_tel = dl2['mc_az_tel'].values
