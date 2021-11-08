@@ -677,9 +677,9 @@ def calc_parameter_sign(table, parameter_name):
     """
     dx = table['reco_src_x'] - table['x']
     dy = table['reco_src_y'] - table['y']
-    vx = np.sign(table[parameter_name])*np.cos(table['psi'])
-    vy = np.sign(table[parameter_name])*np.sin(table['psi'])
+    vx = np.sign(table[parameter_name]) * np.cos(table['psi'])
+    vy = np.sign(table[parameter_name]) * np.sin(table['psi'])
 
-    return -np.sign(dx*vx + dy*vy)
+    return -np.sign(dx * vx + dy * vy)
 
 
