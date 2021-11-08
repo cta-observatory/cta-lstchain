@@ -33,7 +33,8 @@ __all__ = [
     'build_models',
     'apply_models',
     'get_source_dependent_parameters',
-    'get_expected_source_pos'
+    'get_expected_source_pos',
+    'get_parameter_sign'
 ]
 
 
@@ -486,17 +487,11 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
 
     # Obtain the time gradient with signed relative to the reconstructed shower direction (reco_src_x, reco_src_y)
     # Defined positive if light arrival time increase with distance to it. Negative otherwise:
-    dx = dl2['reco_src_x'] - dl2['x']
-    dy = dl2['reco_src_x'] - dl2['x']
-    vx = np.sign(dl2['time_gradient'])*np.cos(dl2['psi'])
-    vy = np.sign(dl2['time_gradient'])*np.sin(dl2['psi'])
-    dl2['signed_time_gradient'] = -np.sign(dx*vx + dy*vy) * np.abs(dl2['time_gradient'])
+    dl2['signed_time_gradient'] = calc_parameter_sign(dl2, 'time_gradient') * np.abs(dl2['time_gradient'])
     
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined on the major image axis, such that it is typically positive for gammas
-    vx = np.sign(dl2['skewness'])*np.cos(dl2['psi'])
-    vy = np.sign(dl2['skewness'])*np.sin(dl2['psi'])
-    dl2['signed_skewness'] = -np.sign(dx*vx + dy*vy) * np.abs(dl2['skewness'])
+    # Defined on the major image axis, such that it is typically positive for gammas:
+    dl2['signed_skewness'] = calc_parameter_sign(dl2, 'skewness') * np.abs(dl2['skewness'])
     
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
@@ -664,3 +659,23 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
 
     return expected_src_pos_x_m, expected_src_pos_y_m
+
+def calc_parameter_sign(table, parameter_name):
+    """
+    Get a meaningful sign for a parameter (time_gradient or skewness), that is, relative to the reconstructed
+    shower direction
+
+    Parameters:
+    -----------
+    table: Pandas DataFrame  (must contain parameters psi, reco_src_x, reco_src_y, x, y)
+    parameter_name: name of the parameter whose sign we want to obtain. Must be in table
+    
+    """
+    dx = table['reco_src_x'] - table['x']
+    dy = table['reco_src_y'] - table['y']
+    vx = np.sign(table[parameter_name])*np.cos(table['psi'])
+    vy = np.sign(table[parameter_name])*np.sin(table['psi'])
+
+    return -np.sign(dx*vx + dy*vy)
+
+
