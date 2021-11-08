@@ -25,7 +25,7 @@
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-# needs_sphinx = '1.0'
+ needs_sphinx = '1.5'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'lstchain'
-copyright = u'2020, LST Collaboration'
+copyright = u'2021, LST Collaboration'
 author = u'LST Collaboration'
 
 # The version info for the project you're documenting, acts as replacement for
