@@ -25,6 +25,9 @@ tools_list = find_scripts("lstchain/tools", "lstchain_")
 entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
+tests_require = ["pytest", "pytest-ordering"]
+docs_require = ["sphinx", "sphinx-automodapi", "sphinx_rtd_theme"]
+
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(),
@@ -53,6 +56,11 @@ setup(
         'pyparsing~=2.4',
         'setuptools_scm',
     ],
+    extras_require={
+        "all": tests_require + docs_require,
+        "tests": tests_require,
+        "docs": docs_require,
+    },
     package_data={
         'lstchain': [
             'data/lstchain_standard_config.json',
@@ -60,9 +68,5 @@ setup(
             'resources/LST_pixid_to_cluster.txt',
         ],
     },
-    tests_require=[
-        "pytest",
-        "pytest-ordering",
-    ],
     entry_points=entry_points,
 )
