@@ -383,6 +383,9 @@ def build_models(filegammas, fileprotons,
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
     
+    test['reco_src_x'], test['reco_src_y'] = disp.disp_to_pos(test['reco_disp_dx'], 
+                                                              test['reco_disp_dy'],
+                                                              test['x'], test['y'])    
     test['signed_skewness'] = calc_parameter_sign(test, 'skewness') * np.abs(test['skewness'])
     test['signed_time_gradient'] = calc_parameter_sign(test, 'time_gradient') * np.abs(test['time_gradient'])
 
