@@ -33,8 +33,7 @@ __all__ = [
     'build_models',
     'apply_models',
     'get_source_dependent_parameters',
-    'get_expected_source_pos',
-    'calc_parameter_sign'
+    'get_expected_source_pos'
 ]
 
 
@@ -385,10 +384,13 @@ def build_models(filegammas, fileprotons,
     
     test['reco_src_x'], test['reco_src_y'] = disp.disp_to_pos(test['reco_disp_dx'], 
                                                               test['reco_disp_dy'],
-                                                              test['x'], test['y'])    
-    test['signed_skewness'] = calc_parameter_sign(test, 'skewness') * np.abs(test['skewness'])
-    test['signed_time_gradient'] = calc_parameter_sign(test, 'time_gradient') * np.abs(test['time_gradient'])
-
+                                                              test['x'], test['y'])
+    
+    # give skewness and time gradient a meaningful sign, i.e. referred to the reconstructed source position:
+    longi, _ = camera_to_shower_coordinates(test['reco_src_x'], test['reco_src_y'], 
+                                            test['x'], test['y'], test['psi'])
+    test['signed_skewness']      = -1 * np.sign(longi) * test['skewness']
+    test['signed_time_gradient'] = -1 * np.sign(longi) * test['time_gradient']
     
     # Apply cut in reconstructed energy. New train set is the previous
     # test with energy and disp_norm reconstructed.
@@ -492,13 +494,17 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
                                                             dl2.y,
                                                             )
 
+    longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'], 
+                                            dl2['x'], dl2['y'], dl2['psi'])
+
     # Obtain the time gradient with signed relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined positive if light arrival time increase with distance to it. Negative otherwise:
-    dl2['signed_time_gradient'] = calc_parameter_sign(dl2, 'time_gradient') * np.abs(dl2['time_gradient'])
+    # Defined positive if light arrival times increase with distance to it. Negative otherwise:
+    dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
     
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined on the major image axis, such that it is typically positive for gammas:
-    dl2['signed_skewness'] = calc_parameter_sign(dl2, 'skewness') * np.abs(dl2['skewness'])
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:    
+    dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
+
     
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
@@ -666,23 +672,4 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
 
     return expected_src_pos_x_m, expected_src_pos_y_m
-
-def calc_parameter_sign(table, parameter_name):
-    """
-    Get a meaningful sign for a parameter (time_gradient or skewness), that is, relative to the reconstructed
-    shower direction
-
-    Parameters:
-    -----------
-    table: Pandas DataFrame  (must contain parameters psi, reco_src_x, reco_src_y, x, y)
-    parameter_name: name of the parameter whose sign we want to obtain. Must be in table
-    
-    """
-    dx = table['reco_src_x'] - table['x']
-    dy = table['reco_src_y'] - table['y']
-    vx = np.sign(table[parameter_name]) * np.cos(table['psi'])
-    vy = np.sign(table[parameter_name]) * np.sin(table['psi'])
-
-    return -np.sign(dx * vx + dy * vy)
-
 
