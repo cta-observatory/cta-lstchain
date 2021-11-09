@@ -497,7 +497,7 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
     longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'], 
                                             dl2['x'], dl2['y'], dl2['psi'])
 
-    # Obtain the time gradient with signed relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Obtain the time gradient with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
     # Defined positive if light arrival times increase with distance to it. Negative otherwise:
     dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
     
