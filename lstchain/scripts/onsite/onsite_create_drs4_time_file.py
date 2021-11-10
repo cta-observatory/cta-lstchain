@@ -22,7 +22,7 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",type=int)
@@ -33,7 +33,7 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
-
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
 
 args = parser.parse_args()
 run = args.run_number
@@ -43,6 +43,8 @@ stat_events = args.statistics
 base_dir = args.base_dir
 sub_run = args.sub_run
 config_file = args.config
+pro_symlink = not args.no_pro_symlink
+
 if config_file is None:
     config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 
@@ -73,10 +75,22 @@ def main():
 
         # verify output dir
         output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
+
         if not os.path.exists(output_dir):
             if not os.path.exists(output_dir):
                 print(f"--> Create directory {output_dir}")
                 os.makedirs(output_dir, exist_ok=True)
+
+        # update the default production directory
+        if pro_symlink:
+            pro="pro"
+            pro_dir = f"{output_dir}/../{pro}"
+            if os.path.exists(pro_dir):
+                os.remove(pro_dir)
+            os.symlink(prod_id, pro_dir)
+            print(f"\n--> Use symbolic link pro")
+        else:
+            pro=prod_id
 
         # search the summary file info
         run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
@@ -89,7 +103,7 @@ def main():
         # search the pedestal file of the same date
         if ped_run is None:
             # else search the pedestal file of the same date
-            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -99,7 +113,7 @@ def main():
 
         # else, if given, search a specific pedestal run
         else:
-            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run}.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:
@@ -116,7 +130,7 @@ def main():
         cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
               f"--output-file {time_file} --config {config_file} " \
               f"--run-summary-path={run_summary_path} " \
-              f"--pedestal-file {pedestal_file} --max-events {stat_events} 2>&1"
+              f"--pedestal-file {pedestal_file} --max-events {stat_events} "
         print("\n--> RUNNING...")
         subprocess.run(cmd.split())
 

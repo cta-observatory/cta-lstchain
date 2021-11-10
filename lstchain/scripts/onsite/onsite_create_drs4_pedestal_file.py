@@ -24,7 +24,7 @@ optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number with drs4 pedestals",
                       type=int, required=True)
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
@@ -34,6 +34,7 @@ optional.add_argument('-b','--base_dir', help="Base dir for the output directory
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
 
 
 args = parser.parse_args()
@@ -43,6 +44,7 @@ max_events = args.max_events
 base_dir = args.base_dir
 tel_id = args.tel_id
 yes = args.yes
+pro_symlink = not args.no_pro_symlink
 
 def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
@@ -65,6 +67,17 @@ def main():
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
+
+        # update the default priduction directory
+        if pro_symlink:
+            pro="pro"
+            pro_dir = f"{output_dir}/../{pro}"
+            if os.path.exists(pro_dir):
+                os.remove(pro_dir)
+            os.symlink(prod_id,pro_dir)
+            print(f"\n--> Use symbolic link pro")
+        else:
+            pro=prod_id
 
         # make log dir
         log_dir = f"{output_dir}/log"

@@ -26,10 +26,10 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-r', '--run_list', help="Run number if the flat-field data",
                       type=int, nargs="+")
 
-version=lstchain.__version__.rsplit('.post',1)[0]
+
 optional.add_argument('-f', '--filters_list', help="Filter list (same order as run list)",
                       type=int, nargs="+")
-
+version=lstchain.__version__
 optional.add_argument('-v', '--prod_version',
                       help="Version of the production",
                       default=f"v{version}")
@@ -57,6 +57,7 @@ optional.add_argument('--no_sys_correction',
                       default=False)
 optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)", default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
 
 
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
@@ -76,6 +77,7 @@ config_file = args.config
 sys_date = args.sys_date
 no_sys_correction = args.no_sys_correction
 yes = args.yes
+pro_symlink = not args.no_pro_symlink
 
 output_base_name = args.output_base_name
 calib_dir=f"{base_dir}/monitoring/PixelCalibration"
@@ -120,12 +122,13 @@ def main():
                 input_dir, name = os.path.split(os.path.abspath(input_file))
                 path, date = input_dir.rsplit('/', 1)
 
+                
                 # verify output dir
                 output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
                 if not os.path.exists(output_dir):
                     print(f"--> Create directory {output_dir}")
                     os.makedirs(output_dir, exist_ok=True)
-
+               
                 # verify log dir
                 log_dir = f"{calib_dir}/calibration/{date}/{prod_id}/log"
                 if not os.path.exists(log_dir):
@@ -157,6 +160,9 @@ def main():
 
                     if no_sys_correction:
                         cmd += "--no_sys_correction "
+
+                    if args.no_pro_symlink:
+                        cmd += "--no_pro_symlink "
 
                     fh.write(cmd)
 

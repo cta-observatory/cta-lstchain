@@ -34,7 +34,7 @@ required.add_argument('-r', '--run_number', help="Run number if the flat-field d
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
                       type=none_or_str)
 
-version=lstchain.__version__.rsplit('.post',1)[0]
+version=lstchain.__version__
 
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
@@ -62,6 +62,7 @@ default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera
 optional.add_argument('--config', help="Config file", default=default_config)
 optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
 
 args = parser.parse_args()
 run = args.run_number
@@ -78,6 +79,7 @@ tel_id = args.tel_id
 config_file = args.config
 mongodb = args.mongodb
 yes = args.yes
+pro_symlink = not args.no_pro_symlink
 
 def main():
 
@@ -121,6 +123,17 @@ def main():
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
 
+        if pro_symlink:
+            pro = "pro"
+            pro_dir = f"{output_dir}/../{pro}"
+            if os.path.exists(pro_dir):
+                os.remove(pro_dir)
+            os.symlink(prod_id, pro_dir)
+            print(f"\n--> Use symbolic link pro")
+        else:
+            pro = prod_id
+
+
         # make log dir
         log_dir = f"{output_dir}/log"
         if not os.path.exists(log_dir):
@@ -139,7 +152,7 @@ def main():
         # search the pedestal file of the same date
         if ped_run is None:
             # else search the pedestal file of the same date
-            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -149,7 +162,7 @@ def main():
 
         # else, if given, search a specific pedestal run
         else:
-            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run}.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:
@@ -163,7 +176,7 @@ def main():
 
         # search the last time run before or equal to the calibration run
         if time_run is None:
-            file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run*.0000.h5'))
+            file_list = sorted(Path(f"{time_dir}").rglob(f'*/{pro}/time_calibration.Run*.0000.h5'))
 
             if len(file_list) == 0:
                 raise IOError(f"No time calibration file found in the data tree for prod {prod_id}\n")
@@ -176,11 +189,11 @@ def main():
                         break
 
             if time_file is None:
-                raise IOError(f"No time calibration file found before run {run} for prod {prod_id}\n")
+                raise IOError(f"No time calibration file found before run {run} for prod {pro}\n")
 
         # if given, search a specific time file
         else:
-            file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run{time_run:05d}.0000.h5'))
+            file_list = sorted(Path(f"{time_dir}").rglob(f'*/{pro}/time_calibration.Run{time_run:05d}.0000.h5'))
             if len(file_list) == 0:
                 raise IOError(f"Time calibration file from run {time_run} not found\n")
             else:
@@ -200,18 +213,18 @@ def main():
         else:
             # use specific sys corrections
             if sys_date is not None:
-                systematics_file = f"{sys_dir}/{sys_date}/{prod_id}/ffactor_systematics_{sys_date}.h5"
+                systematics_file = f"{sys_dir}/{sys_date}/{pro}/ffactor_systematics_{sys_date}.h5"
 
             # search the first sys correction file before the run,
             # if nothing before, use the first found
             else:
-                dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}/ffactor_systematics*"))
+                dir_list = sorted(Path(sys_dir).rglob(f"*/{pro}/ffactor_systematics*"))
                 if len(dir_list) == 0:
-                    raise IOError(f"No systematic correction file found for production {prod_id} in {sys_dir}\n")
+                    raise IOError(f"No systematic correction file found for production {pro} in {sys_dir}\n")
                 else:
                     sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
-                    systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
+                    systematics_file = f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5"
             
             if not os.path.exists(systematics_file):
                 raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
