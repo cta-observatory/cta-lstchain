@@ -20,6 +20,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 import lstchain
+import os
 
 # Get configuration information from setup.cfg
 from configparser import ConfigParser
