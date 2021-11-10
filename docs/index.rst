@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 ========================================================================
- Repository for the high level analysis of the LST (``cta-lstchain``)
+ Repository for LST analysis software (``cta-lstchain``)
 ========================================================================
 
 .. currentmodule:: cta-lstchain
