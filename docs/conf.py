@@ -21,6 +21,13 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import lstchain
 
+# Get configuration information from setup.cfg
+from configparser import ConfigParser
+
+conf = ConfigParser()
+conf.read([os.path.join(os.path.dirname(__file__), "..", "setup.cfg")])
+setup_cfg = dict(conf.items("metadata"))
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -45,9 +52,11 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'lstchain'
-copyright = u'2021, LST Collaboration'
-author = u'LST Collaboration'
+project = setup_cfg["name"]
+author = setup_cfg["author"]
+copyright = "{}.  Last updated {}".format(
+    setup_cfg["author"], datetime.datetime.now().strftime("%d %b %Y %H:%M")
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
