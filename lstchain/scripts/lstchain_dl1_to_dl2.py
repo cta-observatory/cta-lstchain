@@ -140,6 +140,7 @@ def main():
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
 
         dl2_srcdep_dict = {}
+        srcindep_keys = data.keys()
 
         for i, k in enumerate(data_srcdep.columns.levels[0]):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
@@ -158,11 +159,11 @@ def main():
                 dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
                                                  cls_disp_sign = cls_disp_sign, focal_length = focal_length, custom_config = config)
 
-            dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
+            dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
-                dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
+                dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
