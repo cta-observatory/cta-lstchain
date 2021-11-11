@@ -30,7 +30,9 @@ from lstchain.io import (
     write_dl2_dataframe,
     get_dataset_keys,
     global_metadata,
-    write_metadata
+    write_metadata,
+    get_srcdep_index_keys,
+    get_srcdep_params
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
@@ -135,15 +137,14 @@ def main():
 
     # Source-dependent analysis
     if config['source_dependent']:
-        data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_srcdep.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
 
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
+        srcdep_index_keys = get_srcdep_index_keys(args.input_file)
 
-        for i, k in enumerate(data_srcdep.columns.levels[0]):
-            data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
+        for i, k in enumerate(srcdep_index_keys):
+            data_srcdep = get_srcdep_params(args.input_file, k)
+            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
                                                    finite_params=config['energy_regression_features']
