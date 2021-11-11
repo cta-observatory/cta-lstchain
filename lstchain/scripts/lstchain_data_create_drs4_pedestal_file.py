@@ -18,15 +18,15 @@ $> python lstchain_data_create_pedestal_file.py
 --max_events 9000
 
 """
-
-from traitlets.config import Config
+from distutils.util import strtobool
 import argparse
+
 import numpy as np
 from astropy.io import fits
+from traitlets.config import Config
+from tqdm.auto import tqdm
 
-from ctapipe.io import EventSource
-
-from distutils.util import strtobool
+from ctapipe_io_lst import LSTEventSource
 from lstchain.calib.camera.drs4 import DragonPedestal
 
 
@@ -50,60 +50,74 @@ parser.add_argument("--max-events",
                     type=int,
                     default=20000)
 
-parser.add_argument("--start-r0-waveform",
+parser.add_argument("--start-sample",
                     help="Start sample for waveform. Default = 11",
                     type=int,
                     default=11)
 
 parser.add_argument('--deltaT', '-s',
-                    type=lambda x: bool(strtobool(x)),
+                    type=strtobool,
                     help='Boolean. True for use deltaT correction'
                     'Default=True, use False otherwise',
                     default=True)
 
-args = parser.parse_args()
+parser.add_argument('--overwrite', action='store_true', help='Overwrite output file without asking')
 
-source_config = {
-    "LSTEventSource": {
-        "max_events":args.max_events
-    }
-}
+
 
 def main():
+    args = parser.parse_args()
     print("--> Input file: {}".format(args.input_file))
     print("--> Number of events: {}".format(args.max_events))
 
-    reader = EventSource(input_url=args.input_file, config=Config(source_config))
+    source_config = {
+        "LSTEventSource": {
+            "max_events": args.max_events,
+        },
+        "LSTR0Corrections": {
+            "offset": 0,
+            "apply_drs4_pedestal_correction": False,
+            "apply_timelapse_correction": args.deltaT,
+            "apply_spike_correction": False,
+            "select_gain": False,
+            "r1_sample_start": 0,
+            "r1_sample_end": 40,
+        }
+    }
+
+    reader = LSTEventSource(input_url=args.input_file, config=Config(source_config))
     print("--> Number of files", reader.multi_file.num_inputs())
 
-    for i, event in enumerate(reader):
-        for tel_id in event.trigger.tels_with_trigger:
+    camera_config = reader.camera_config
+    n_modules = camera_config.lstcam.num_modules
+    pedestal = DragonPedestal(
+        tel_id=reader.tel_id,
+        n_module=n_modules,
+        start_sample=args.start_sample,
+    )
 
-            if i==0:
-                n_modules = event.lst.tel[tel_id].svc.num_modules
-                pedestal = DragonPedestal(tel_id=tel_id, n_module=n_modules, r0_sample_start=args.start_r0_waveform)
-
-            if args.deltaT:
-                reader.r0_r1_calibrator.update_first_capacitors(event)
-                reader.r0_r1_calibrator.time_lapse_corr(event, tel_id)
-
-            pedestal.fill_pedestal_event(event)
-            if i%500 == 0:
-                print("i = {}, ev id = {}".format(i, event.index.event_id))
+    for event in tqdm(reader):
+        pedestal.fill_pedestal_event(event)
 
     # Finalize pedestal and write to fits file
     pedestal.finalize_pedestal()
 
-    expected_pixel_id = fits.PrimaryHDU(event.lst.tel[tel_id].svc.pixel_ids)
-    pedestal_array = fits.ImageHDU(np.int16(pedestal.meanped),
-                                   name="pedestal array")
-    failing_pixels_column = fits.Column(name='failing pixels',
-                                        array=pedestal.failing_pixels_array,
-                                        format='K')
-    failing_pixels = fits.BinTableHDU.from_columns([failing_pixels_column],
-                                                    name="failing pixels")
+    expected_pixel_id = fits.PrimaryHDU(camera_config.expected_pixels_id)
+    pedestal_array = fits.ImageHDU(
+        pedestal.meanped.astype(np.int16),
+        name="pedestal array"
+    )
+    failing_pixels_column = fits.Column(
+        name='failing pixels',
+        array=pedestal.failing_pixels_array,
+        format='K'
+    )
+    failing_pixels = fits.BinTableHDU.from_columns(
+        [failing_pixels_column],
+        name="failing pixels"
+    )
     hdulist = fits.HDUList([expected_pixel_id, pedestal_array, failing_pixels])
-    hdulist.writeto(args.output_file)
+    hdulist.writeto(args.output_file, overwrite=args.overwrite)
 
 
 if __name__ == '__main__':
