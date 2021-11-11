@@ -62,7 +62,7 @@ default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera
 optional.add_argument('--config', help="Config file", default=default_config)
 optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
 
 args = parser.parse_args()
 run = args.run_number

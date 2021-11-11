@@ -37,7 +37,7 @@ optional.add_argument('-b','--base_dir', help="Root dir for the output directory
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--input_prefix', help="Prefix of the input file names", default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
 
 args = parser.parse_args()
 date = args.date

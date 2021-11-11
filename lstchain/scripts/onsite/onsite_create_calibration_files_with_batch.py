@@ -57,7 +57,7 @@ optional.add_argument('--no_sys_correction',
                       default=False)
 optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)", default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
 
 
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")

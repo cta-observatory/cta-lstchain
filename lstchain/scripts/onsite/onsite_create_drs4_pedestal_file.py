@@ -34,7 +34,7 @@ optional.add_argument('-b','--base_dir', help="Base dir for the output directory
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume false')
+optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
 
 
 args = parser.parse_args()
