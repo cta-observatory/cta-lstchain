@@ -28,7 +28,7 @@ from ctapipe.containers import EventType
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
-from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -267,8 +267,6 @@ def r0_to_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    custom_calibration = config["custom_calibration"]
-
     source = EventSource(input_url=input_filename,
                          config=Config(config["source_config"]))
     subarray = source.subarray
@@ -355,8 +353,8 @@ def r0_to_dl1(
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
-                if not custom_calibration:
-                    cal_mc(event)
+                cal_mc(event)
+
                 if config['mc_image_scaling_factor'] != 1:
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
@@ -435,9 +433,6 @@ def r0_to_dl1(
 
                 dl1_container.fill_event_info(event)
 
-
-                if custom_calibration:
-                    lst_calibration(event, telescope_id)
 
                 # Will determine whether this event has to be written to the
                 # DL1 output or not.
