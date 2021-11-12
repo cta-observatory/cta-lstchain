@@ -327,7 +327,7 @@ class FitIntensityScan(Tool):
                         plt.plot(x, quadratic_fit(x, *popt), '--', color="C1",
                                  label=f'Pixel {pix}:\ng={popt[0]:5.2f} [ADC/pe] , B={popt[1]:5.3f}')
                         plt.xlim(min_x, max_x)
-                        plt.xlabel(f'Q-ped [ADC]')
+                        plt.xlabel('Q-ped [ADC]')
                         plt.ylabel(r'$\mathrm{\sigma_Q^2-\sigma_{ped}^2}$ [$ADC^2$]')
                         plt.xscale('log')
                         plt.yscale('log')
@@ -342,8 +342,8 @@ class FitIntensityScan(Tool):
                         plt.plot(sig, (quadratic_fit(sig, *popt) - var) / var * 100, 'o', color="C0")
                         plt.xlim(min_x,max_x)
                         plt.xscale('log')
-                        plt.ylabel(f'fit residuals %')
-                        plt.xlabel(f'Q-ped [ADC]')
+                        plt.ylabel('fit residuals %')
+                        plt.xlabel('Q-ped [ADC]')
                         plt.hlines(0, 0, np.max(sig), linestyle='dashed', color="black")
 
                     plt.tight_layout()
