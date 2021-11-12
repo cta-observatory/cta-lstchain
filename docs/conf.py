@@ -33,20 +33,39 @@ setup_cfg = dict(conf.items("metadata"))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '4.0'
+needs_sphinx = '3.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "numpydoc",
+    "nbsphinx",
+    "nbsphinx_link",
+    "sphinx_automodapi.automodapi",
+    "sphinxarg.ext",
+]
+
+numpydoc_show_class_members = False
+nbsphinx_allow_errors = True
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+# These links are ignored in the checks, necessary due to broken intersphinx for
+# these
+nitpick_ignore = [
+    ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
+    ("py:class", "ctapipe.core.tool.Tool"),
+    ("py:class", "ctapipe.core.component.Component"),
+    ("py:class", "ctapipe.core.container.Container"),
+]
+
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
 source_suffix = '.rst'
 
 # The master toctree document.

@@ -26,7 +26,14 @@ entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
 tests_require = ["pytest", "pytest-ordering"]
-docs_require = ["sphinx~=4.2", "sphinx-automodapi", "sphinx_rtd_theme"]
+docs_require = [
+    "sphinx~=4.2",
+    "sphinx-automodapi",
+    "sphinx_argparse",
+    "sphinx_rtd_theme",
+    "numpydoc",
+    "nbsphinx"
+]
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
