@@ -199,7 +199,6 @@
      "window_shift": 4,
      "window_width":8
     },
-  "timestamps_pointing":"ucts",
 
   "train_gamma_src_r_deg": [0, Infinity],
 
