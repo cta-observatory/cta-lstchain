@@ -381,7 +381,17 @@ def build_models(filegammas, fileprotons,
 
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
-
+    
+    test['reco_src_x'], test['reco_src_y'] = disp.disp_to_pos(test['reco_disp_dx'], 
+                                                              test['reco_disp_dy'],
+                                                              test['x'], test['y'])
+    
+    # give skewness and time gradient a meaningful sign, i.e. referred to the reconstructed source position:
+    longi, _ = camera_to_shower_coordinates(test['reco_src_x'], test['reco_src_y'], 
+                                            test['x'], test['y'], test['psi'])
+    test['signed_skewness']      = -1 * np.sign(longi) * test['skewness']
+    test['signed_time_gradient'] = -1 * np.sign(longi) * test['time_gradient']
+    
     # Apply cut in reconstructed energy. New train set is the previous
     # test with energy and disp_norm reconstructed.
 
@@ -484,6 +494,18 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
                                                             dl2.y,
                                                             )
 
+    longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'], 
+                                            dl2['x'], dl2['y'], dl2['psi'])
+
+    # Obtain the time gradient with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined positive if light arrival times increase with distance to it. Negative otherwise:
+    dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
+    
+    # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:    
+    dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
+
+    
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
         az_tel = dl2['mc_az_tel'].values
@@ -527,7 +549,7 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
-    
+
     """
 
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
@@ -650,3 +672,4 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
 
     return expected_src_pos_x_m, expected_src_pos_y_m
+

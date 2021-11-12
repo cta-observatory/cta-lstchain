@@ -237,7 +237,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                     fill=True,
                 )
                 plt.legend()
-            plt.xlabel(f"pe", fontsize=20)
+            plt.xlabel("pe", fontsize=20)
             plt.ylabel("pixels", fontsize=20)
 
             # pe scatter plot

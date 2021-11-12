@@ -14,6 +14,7 @@ from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
 from ..reco.disp import disp_parameters_event
+from ..reco.utils import get_event_pos_in_camera
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -219,7 +220,7 @@ class DL1ParametersContainer(Container):
         self.tel_pos_z = tel_pos[2]
 
     def set_source_camera_position(self, event, telescope):
-        source_pos = utils.get_event_pos_in_camera(event, telescope)
+        source_pos = get_event_pos_in_camera(event, telescope)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
 

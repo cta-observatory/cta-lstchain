@@ -203,13 +203,10 @@ def main():
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
 
-            for tab in [output.root[dl1_params_lstcam_key], output.root[dl1_images_lstcam_key]]:
-                # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
-                for k, item in metadata.as_dict().items():
-                    tab.attrs[k] = item
-                tab.attrs["config"] = str(config)
-                if args.noimage:
-                    break
+            # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
+            for k, item in metadata.as_dict().items():
+                output.root[dl1_params_lstcam_key].attrs[k] = item
+            output.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
             for ii, row in enumerate(image_table):
 
