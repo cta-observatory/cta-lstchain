@@ -28,7 +28,6 @@ __all__ = [
     "add_delta_t_key",
     "alt_to_theta",
     "az_to_phi",
-    "cal_cam_source_pos",
     "camera_to_altaz",
     "cartesian_to_polar",
     "clip_alt",
@@ -189,88 +188,6 @@ def az_to_phi(az):
     az: float
     """
     return -az
-
-
-@deprecated(
-    "09/07/2019",
-    message="This is a custom implementation. Use `sky_to_camera` that relies on astropy",
-)
-def cal_cam_source_pos(mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal_length):
-    """Transform Alt-Az source position into Camera(x,y) coordinates
-    source position.
-
-    Parameters:
-    -----------
-    mc_alt: float
-    Alt coordinate of the event
-
-    mc_az: float
-    Az coordinate of the event
-
-    mc_alt_tel: float
-    Alt coordinate of the telescope pointing
-
-    mc_az_tel: float
-    Az coordinate of the telescope pointing
-
-    focal_length: float
-    Focal length of the telescope
-
-    Returns:
-    --------
-    float: source_x1,
-
-    float: source_x2
-    """
-
-    mc_alt = alt_to_theta(mc_alt * u.rad).value
-    mc_az = az_to_phi(mc_az * u.rad).value
-    mc_alt_tel = alt_to_theta(mc_alt_tel * u.rad).value
-    mc_az_tel = az_to_phi(mc_az_tel * u.rad).value
-
-    # Sines and cosines of direction angles
-    cp = np.cos(mc_az)
-    sp = np.sin(mc_az)
-    ct = np.cos(mc_alt)
-    st = np.sin(mc_alt)
-
-    # Shower direction coordinates
-    sourcex = st * cp
-    sourcey = st * sp
-    sourcez = ct
-
-    source = np.array([sourcex, sourcey, sourcez])
-    source = source.T
-
-    # Rotation matrices towars the camera frame
-    rot_Matrix = np.empty((0, 3, 3))
-
-    alttel = mc_alt_tel
-    aztel = mc_az_tel
-    mat_Y = np.array(
-        [
-            [np.cos(alttel), 0, np.sin(alttel)],
-            [0, 1, 0],
-            [-np.sin(alttel), 0, np.cos(alttel)],
-        ]
-    ).T
-
-    mat_Z = np.array(
-        [
-            [np.cos(aztel), -np.sin(aztel), 0],
-            [np.sin(aztel), np.cos(aztel), 0],
-            [0, 0, 1],
-        ]
-    ).T
-
-    rot_Matrix = np.matmul(mat_Y, mat_Z)
-
-    res = np.einsum("...ji,...i", rot_Matrix, source)
-    res = res.T
-
-    source_x = -focal_length * res[0] / res[2]
-    source_y = -focal_length * res[1] / res[2]
-    return source_x, source_y
 
 
 def get_event_pos_in_camera(event, tel):

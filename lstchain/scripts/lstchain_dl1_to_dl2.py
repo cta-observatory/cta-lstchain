@@ -36,7 +36,6 @@ from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
     dl1_images_lstcam_key,
-    dl2_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )

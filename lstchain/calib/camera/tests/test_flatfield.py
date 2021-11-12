@@ -1,6 +1,6 @@
 import numpy as np
 import astropy.units as u
-from lstchain.calib.camera.flatfield import *
+from lstchain.calib.camera.flatfield import FlasherFlatFieldCalculator
 from ctapipe.containers import ArrayEventContainer
 from traitlets.config.loader import Config
 from ctapipe.instrument import SubarrayDescription, TelescopeDescription
