@@ -185,10 +185,10 @@ def main():
                 raise IOError(f"Time calibration file from run {time_run} not found\n")
             else:
                 time_file = file_list[0]
-                
+
         if not os.path.exists(time_file):
             raise IOError(f"Time calibration file {time_file} does not exist\n")
-      
+
         print(f"\n--> Time calibration file: {time_file}")
 
         sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
@@ -212,7 +212,7 @@ def main():
                     sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
                     systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
-            
+
             if not os.path.exists(systematics_file):
                 raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
 
@@ -256,20 +256,26 @@ def main():
         # produce ff calibration file
         #
 
-        cmd = f"lstchain_create_calibration_file " \
-              f"--input_file={input_file} --output_file={output_file} "\
-              f"--EventSource.default_trigger_type=tib " \
-              f"--EventSource.min_flatfield_adc={min_ff} " \
-              f"--EventSource.max_flatfield_adc={max_ff} " \
-              f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file} " \
-              f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
-              f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
-              f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
-              f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
-              f"--config={config_file} --log-file={log_file} --log-file-level=DEBUG"
+        cmd = [
+            "lstchain_create_calibration_file",
+            f"--input_file={input_file}",
+            f"--output_file={output_file}",
+            "--EventSource.default_trigger_type=tib",
+            f"--EventSource.min_flatfield_adc={min_ff}",
+            f"--EventSource.max_flatfield_adc={max_ff}",
+            f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
+            f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path}",
+            f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
+            f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
+            f"--FlatFieldCalculator.sample_size={stat_events}",
+            "--PedestalCalculator.sample_size={stat_events}",
+            f"--config={config_file}",
+            "--log-file={log_file}",
+            "--log-file-level=DEBUG",
+        ]
 
         print("\n--> RUNNING...")
-        subprocess.run(cmd.split())
+        subprocess.run(cmd, check=True)
 
         # plot and save some results
         plot_file=f"{output_dir}/log/{output_name}.pdf"

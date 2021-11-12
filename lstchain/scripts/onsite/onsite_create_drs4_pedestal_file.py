@@ -88,12 +88,14 @@ def main():
                 exit(1)
 
         # run lstchain script
-        cmd = f"lstchain_data_create_drs4_pedestal_file " \
-              f"--input-file {input_file} " \
-              f"--output-file {output_file} " \
-              f"--max-events {max_events}"
+        cmd = [
+            "lstchain_data_create_drs4_pedestal_file",
+            f"--input-file={input_file}",
+            f"--output-file={output_file}",
+            f"--max-events={max_events}",
+        ]
 
-        subprocess.run(cmd.split())
+        subprocess.run(cmd, check=True)
 
         # plot and save some results
         plot_file=f"{output_dir}/log/drs4_pedestal.Run{run:05d}.0000.pdf"
