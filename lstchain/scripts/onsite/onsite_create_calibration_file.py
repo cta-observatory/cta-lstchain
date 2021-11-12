@@ -162,7 +162,7 @@ def main():
 
         # else, if given, search a specific pedestal run
         else:
-            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run}.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run:05d}.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:
