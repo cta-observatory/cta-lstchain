@@ -175,13 +175,13 @@ def train_reco(train, custom_config={}):
     Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     train: `pandas.DataFrame`
     config: dictionnary containing configuration
 
-    Returns:
-    --------
+    Returns
+    -------
     RandomForestRegressor: reg_energy
     RandomForestRegressor: reg_disp
     """
@@ -218,8 +218,8 @@ def train_sep(train, custom_config={}):
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     train: `pandas.DataFrame`
     data set for training the RF
     features: list of strings
@@ -227,7 +227,7 @@ def train_sep(train, custom_config={}):
     classification_args: dictionnary
     config_file: str - path to a configuration file. If given, overwrite `classification_args`.
 
-    Return:
+    Returns
     -------
     `RandomForestClassifier`
     """
@@ -260,38 +260,30 @@ def build_models(filegammas, fileprotons,
     reconstruction and G/H separation. Returns 3 trained RF.
     The config in config_file superseeds the one passed in argument.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     filegammas: string
-    Name of the file with MC gamma events
-
+        Name of the file with MC gamma events
     fileprotons: string
-    Name of the file with MC proton events
-
+        Name of the file with MC proton events
     energy_min: float
-    Cut in energy for gamma/hadron separation
-
+        Cut in energy for gamma/hadron separation
     intensity_min: float
-    Cut in intensity of the showers for training RF. Default is 60 phe
-
+        Cut in intensity of the showers for training RF. Default is 60 phe
     r_min: float
-    Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
-    in the border. Default is 80% of camera radius.
-
+        Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
+        in the border. Default is 80% of camera radius.
     save_models: boolean
-    Save the trained RF in a file to use them anytime.
-
+        Save the trained RF in a file to use them anytime.
     path_models: string
-    path to store the trained RF
-
+        path to store the trained RF
     regression_args: dictionnary
-
     classification_args: dictionnary
+    config_file: str
+        Path to a configuration file. If given, overwrite `regression_args`.
 
-    config_file: str - path to a configuration file. If given, overwrite `regression_args`.
-
-    Returns:
-    --------
+    Returns
+    -------
     (regressor_energy, regressor_disp, classifier_gh)
     regressor_energy: `RandomForestRegressor`
     regressor_disp: `RandomForestRegressor`
@@ -422,25 +414,29 @@ def build_models(filegammas, fileprotons,
         return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
-def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm={}, cls_disp_sign={}, focal_length=28 * u.m, custom_config={}):
+def apply_models(
+    dl1,
+    classifier,
+    reg_energy,
+    reg_disp_vector={},
+    reg_disp_norm={},
+    cls_disp_sign={},
+    focal_length=28 * u.m,
+    custom_config={}
+):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: Pandas DataFrame
-
     features: list
-
     classifier: Random Forest Classifier
-    RF for Gamma/Hadron separation
-
+        RF for Gamma/Hadron separation
     reg_energy: Random Forest Regressor
-    RF for Energy reconstruction
-
+        RF for Energy reconstruction
     reg_disp: Random Forest Regressor
-    RF for disp_norm reconstruction
-
+        RF for disp_norm reconstruction
     """
 
     config = replace_config(standard_config, custom_config)
@@ -521,13 +517,12 @@ def apply_models(dl1, classifier, reg_energy, reg_disp_vector={}, reg_disp_norm=
 
 
 def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
-    """Get parameters dict for source-dependent analysis .
+    """Get parameters dict for source-dependent analysis.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
-    
     """
 
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
@@ -568,12 +563,11 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
 def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m):
     """Calculate source-dependent parameters with a given source position.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: Pandas DataFrame
     expected_src_pos_x_m: float
     expected_src_pos_y_m: float
-
     """
     src_dep_params = pd.DataFrame(index=data.index)
 
@@ -599,12 +593,11 @@ def calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_po
 def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
     """Get expected source position for source-dependent analysis .
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: Pandas DataFrame
     data_type: string ('mc_gamma','mc_proton','real_data')
     config: dictionnary containing configuration
-    
     """
 
     # For gamma MC, expected source position is actual one for each event

@@ -2,7 +2,8 @@
 
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
-separation of events stored in a simtelarray file.
+separation of events stored in a DL1 file.
+
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
@@ -66,10 +67,9 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None, required=False)
 
 
-args = parser.parse_args()
-
-
 def main():
+    args = parser.parse_args()
+
     custom_config = {}
     if args.config_file is not None:
         try:
