@@ -154,6 +154,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     filename = list_of_files[0]
 
     config = Config()
+    config.LSTEventSource.apply_drs4_corrections = False
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
     config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
     config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
