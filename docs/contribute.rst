@@ -21,3 +21,13 @@ Basics git command for implementing a new feature:
 Pytest
 ------
 Perform tests locally with ``pytest`` before committing the changed file.
+
+Build the documentation locally
+-------------------------------
+Install the required dependencies for building the documentation: ``pip install -e .[docs]``
+
+Compile the documentation from ``docs``: ``make clean html`` and check the result in ``_build/html/index.html``
+
+.. note::
+    Automatic documentation deployment is actually doing:
+    ``make html SPHINXOPTS="-W --keep-going -n --color -j auto"``
