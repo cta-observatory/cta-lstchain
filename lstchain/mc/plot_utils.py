@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from lstchain.spectra.crab import crab_magic, crab_hegra
+from lstchain.spectra.crab import crab_hegra
 from lstchain.visualization.plot_dl2 import plot_pos
 import numpy as np
 import astropy.units as u
@@ -14,12 +14,11 @@ __all__ = [
     'format_axes_array',
     'format_axes_sensitivity',
     'plot_Crab_SED',
-    'plot_LST_preliminary_sensitivity',
     'plot_sensitivity',
     'sensitivity_minimization_plot',
     'sensitivity_plot_comparison',
     'plot_positions_survived_events',
-    ]
+]
 
 
 def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta2):
@@ -49,7 +48,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
             # With gammaness, we start with 0.05 and increase up to n_bins_gammaness steps
             # up to reaching 1
             gammaness = 0.1 / 2 + (1 / n_bins_gammaness) * i
-            text = ax.text(theta2, gammaness, "%.2f %%" % sensitivity[energy_bin][i][j],
+            ax.text(theta2, gammaness, "%.2f %%" % sensitivity[energy_bin][i][j],
                            ha = "center", va = "center", color = "w", size = 8)
     return ax
 
@@ -161,7 +160,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     energy = np.geomspace(emin.to_value(u.TeV), emax.to_value(u.TeV), 40) * u.TeV
 
     if percentage==100:
-        kwargs.setdefault('label', f'Crab (MAGIC JHEAP 2015)')
+        kwargs.setdefault('label', 'Crab (MAGIC JHEAP 2015)')
     else:
         kwargs.setdefault('label', f'{percentage}% Crab (MAGIC JHEAP 2015)')
 
