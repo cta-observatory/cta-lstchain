@@ -1,22 +1,40 @@
-.. lstchain documentation master file, created by
-   sphinx-quickstart on Tue Aug 11 14:07:30 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-========================================================================
+========================================================
  Repository for LST analysis software (``cta-lstchain``)
-========================================================================
+========================================================
 
 .. currentmodule:: cta-lstchain
 
 **version**:  |version|
 
-
+.. _lstchain_overview:
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: Overview
+   :name: _lstchain_overview
 
+   introduction
+   contribute
+   tutorials/index
+
+.. _api_docs:
+
+.. toctree::
+  :maxdepth: 1
+  :caption: API Documentation
+  :name: _api_docs
+
+  io
+  calib
+  image
+  reco
+  mc
+  tools
+  scripts
+  visualization
+  datachecks
+  analysis
+  irf
 
 
 Indices and tables
