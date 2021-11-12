@@ -40,7 +40,7 @@ def main():
     output_file_name = 'longterm_dl1_check.h5'
     files = glob.glob('datacheck_dl1_LST-1.Run?????.h5')
     if not files:
-        raise IOError(f"No input datacheck files found\n")
+        raise IOError("No input datacheck files found")
     files.sort()
 
     # hardcoded for now, to be eventually read from data:

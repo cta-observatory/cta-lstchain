@@ -4,11 +4,10 @@ import astropy.units as u
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
-from lstchain.reco.utils import reco_source_position_sky, get_effective_time
+from lstchain.reco.utils import get_effective_time
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
-from pyirf.sensitivity import relative_sensitivity
 from gammapy.stats import WStatCountsStatistic
 
 __all__ = [
@@ -984,8 +983,6 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     final_off = np.ndarray(shape=(n_bins_energy))
     pre_on = np.ndarray(shape=(n_bins_energy))
     pre_off = np.ndarray(shape=(n_bins_energy))
-    weighted_on_per_ebin = np.ndarray(n_bins_energy)
-    weighted_off_per_ebin = np.ndarray(n_bins_energy)
     sensitivity = np.ndarray(shape = n_bins_energy)
     n_excesses_min = np.ndarray(shape = n_bins_energy)
     eff_on = np.ndarray(shape = n_bins_energy)
@@ -1023,8 +1020,6 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
 
 
 
-        events_on_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
-        events_off_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
 
         best_theta2_cut = tcut[i]#find_cut_real(events_on_after_g_cut, events_off_after_g_cut, obstime_on, obstime_off, "theta2", 0.0, 1.0, gamma_eff_theta2) * u.deg**2
         #tcut[i]=best_theta2_cut.to_value()

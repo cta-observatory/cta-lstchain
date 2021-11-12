@@ -45,10 +45,16 @@ jobs:
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov
+            pytest-cov pyflakes
 
           echo "pip install ."
           pip install .
+
+      - name: pyflakes
+        run:
+          . $CONDA/etc/profile.d/conda.sh
+          conda activate ci
+          pyflakes lstchain
 
       - name: Download test data
         env:
