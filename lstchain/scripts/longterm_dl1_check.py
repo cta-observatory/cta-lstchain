@@ -490,7 +490,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     interleaved_rate = np.array([50, 100])  # Hz
     interleaved_rate_change_run = np.array([0, 2709])
     # run number in which interleaved rates switched to the values above.
-    interleaved_rate_tolerance = 0.01  # Relative, w.r.t. expectation
+    # Tolerances below are relative, w.r.t. expectation:
+    interleaved_rate_tolerance = 0.05
+    muon_rate_tolerance = 0.15
 
 
     # Read in the camera geometry:
@@ -563,14 +565,17 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     fig_ff_rates.y_range = Range1d(nominal_interleaved_rate.min()*0.8,
                                    nominal_interleaved_rate.max()*1.1)
 
-
     fig_cosmic_rates = show_graph(x=runtime, y=cosmics_rate,
                                   ey=err_cosmics_rate,
                                   xlabel='date',
                                   ylabel='Cosmics rate',
                                   xtype='datetime', ytype='linear',
                                   point_labels=run_titles)
+    fig_cosmic_rates.y_range = Range1d(0, np.max(cosmics_rate)*1.1)
 
+    coszenith = np.sin(runsummary['mean_altitude'])
+    # empirical expression obtained from 2020-2021 data:
+    expected_mu_rate = 1.02 + 2.180 * coszenith
     fig_muring_rates = show_graph(x=runtime,
                                   y=runsummary['num_contained_mu_rings'] /
                                   runsummary['elapsed_time'],
@@ -580,7 +585,12 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                   xlabel='date',
                                   ylabel='Contained mu-rings rate',
                                   xtype='datetime', ytype='linear',
-                                  point_labels=run_titles)
+                                  point_labels=run_titles,
+                                  ylowlim=expected_mu_rate*(
+                                          1-muon_rate_tolerance),
+                                  yupplim=expected_mu_rate*(
+                                          1+muon_rate_tolerance))
+    fig_muring_rates.y_range = Range1d(0, expected_mu_rate.max()*1.25)
 
     pad_width = 550
     pad_height = 350
