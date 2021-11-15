@@ -36,6 +36,7 @@ Compile the documentation from ``docs``: ``make clean html``.
 To look at the documentation in your browser, this command is handy:
 
 .. code::
+
     python -m http.server -d _build/html
 
 Then visit the printed url.
