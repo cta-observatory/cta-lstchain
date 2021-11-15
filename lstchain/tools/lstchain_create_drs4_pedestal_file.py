@@ -77,8 +77,8 @@ class DRS4PedestalAndSpikeHeight(Tool):
     def setup(self):
         self.source = LSTEventSource(
             parent=self,
-            pointing_information=False,
-            trigger_information=False,
+            # pointing_information=False,
+            # trigger_information=False,
         )
 
         # set some config options, these are necessary for this tool,
@@ -127,31 +127,27 @@ class DRS4PedestalAndSpikeHeight(Tool):
                 'spike2': self.spike2_stats,
                 'spike3': self.spike3_stats,
             }
-            mean_baseline = self.baseline_stats.mean
+            shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
+            mean_baseline = self.baseline_stats.mean.reshape(shape)
 
             for name, stat in stats.items():
                 g = f.create_group('/', name)
 
                 for attr in ('counts', 'mean', 'std'):
-                    array = getattr(stat, attr).reshape((N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL))
+                    array = getattr(stat, attr).reshape(shape)
+
+                    # make spike heights relative to baseline
+                    if name.startswith('spike') and attr == 'mean':
+                        array -= mean_baseline
 
                     # store mean / std as int32 scaled by 100
                     # aka fixed precision with two decimal digits
                     if attr in ('mean', 'std'):
                         array *= 100
+
                     array = array.astype(np.int32)
 
                     f.create_carray(g, attr, obj=array, filters=DEFAULT_FILTERS)
-
-                if name.startswith('spike'):
-                    mask = stat.counts > 0
-                    n_spikes = stat.counts[mask].sum()
-                    spike_height = stat.mean[mask] - mean_baseline[mask]
-                    mean_height = np.average(spike_height, weights=stat.counts[mask])
-                    self.log.info(
-                        "Found %d %s, mean height = %.2f",
-                        n_spikes, name, mean_height,
-                    )
 
 
 def main():
