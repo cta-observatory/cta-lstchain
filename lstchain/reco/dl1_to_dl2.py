@@ -549,7 +549,7 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     -----------
     data: Pandas DataFrame
     config: dictionnary containing configuration
-    
+
     """
 
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
