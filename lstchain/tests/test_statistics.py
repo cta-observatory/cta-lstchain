@@ -27,3 +27,25 @@ def test_online_statistics():
         else:
             assert np.isnan(stats.var).all()
             assert np.isnan(stats.std).all()
+
+
+def test_online_statistics_at_indices():
+    from lstchain.statistics import OnlineStats
+
+
+    rng = np.random.default_rng()
+    N = 10
+    data = rng.normal(size=10000)
+    indices = rng.integers(0, N, len(data), endpoint=False)
+
+    stats = OnlineStats(n=N)
+    stats.add_values_at_indices(indices, data)
+
+
+    assert np.all(stats.counts == np.bincount(indices))
+    mean = stats.mean
+    std = stats.std
+
+    for i in range(N):
+        assert np.isclose(mean[i], np.mean(data[indices == i]))
+        assert np.isclose(std[i], np.std(data[indices == i], ddof=1))

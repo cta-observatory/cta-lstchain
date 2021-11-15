@@ -30,6 +30,22 @@ class OnlineStats:
         delta2 = value - self._mean[idx]
         self._m2[idx] += delta * delta2
 
+    def add_values(self, values):
+        '''Add a new value in each of the tracked statistics'''
+        if values.ndim != 1 or len(values) != self.n:
+            raise ValueError('Expected a 1d array of length OnlineStats.n')
+
+        for i in range(self.n):
+            self.add_value(i, values[i])
+
+    def add_values_at_indices(self, indices, values):
+        '''Add a new value in each of the tracked statistics'''
+        if values.ndim != 1 or len(values) != len(indices):
+            raise ValueError('Expected two 1d arrays of matching length')
+
+        for i in range(len(indices)):
+            self.add_value(indices[i], values[i])
+
     @property
     def mean(self):
         '''Get the current mean values of all tracked statistics'''
