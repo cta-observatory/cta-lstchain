@@ -20,6 +20,9 @@ dependencies:
   - sphinx~=4.2
   - sphinx-automodapi
   - sphinx_rtd_theme
+  - sphinx-argparse
+  - nbsphinx
+  - numpydoc
   - traitlets=5.0
   - pip:
       - pytest_runner

@@ -41,6 +41,7 @@ needs_sphinx = '3.0'
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
     "numpydoc",
     "nbsphinx",
     "sphinx_automodapi.automodapi",
@@ -54,13 +55,27 @@ autosummary_generate = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.6", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "astropy": ("https://docs.astropy.org/en/latest/", None),
+    "pytables": ("https://www.pytables.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
+    "ctapipe": ("https://cta-observatory.github.io/ctapipe/", None)
+}
+
 # These links are ignored in the checks, necessary due to broken intersphinx for
 # these
 nitpick_ignore = [
-    ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
-    ("py:class", "ctapipe.core.tool.Tool"),
-    ("py:class", "ctapipe.core.component.Component"),
-    ("py:class", "ctapipe.core.container.Container"),
+    # ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
+    # ("py:class", "ctapipe.core.tool.Tool"),
+    # ("py:class", "ctapipe.core.component.Component"),
+    # ("py:class", "ctapipe.core.container.Container"),
 ]
 
 # The suffix(es) of source filenames.
