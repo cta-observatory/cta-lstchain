@@ -553,9 +553,16 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     # Plot interleaved flatfield rates
     fig_ff_rates = show_graph(x=runtime, y= ff_rate, ey=err_ff_rate,
                               xlabel='date',
-                              ylabel='Interleaved flat field rate',
+                              ylabel='Interleaved flat field rate (Hz)',
                               xtype='datetime', ytype='linear',
-                              point_labels=run_titles)
+                              point_labels=run_titles,
+                              ylowlim=expected_interleaved_rate*(
+                              1-interleaved_rate_tolerance),
+                              yupplim=expected_interleaved_rate*(
+                              1+interleaved_rate_tolerance))
+    fig_ff_rates.y_range = Range1d(nominal_interleaved_rate.min()*0.8,
+                                   nominal_interleaved_rate.max()*1.1)
+
 
     fig_cosmic_rates = show_graph(x=runtime, y=cosmics_rate,
                                   ey=err_cosmics_rate,
@@ -904,24 +911,32 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 mode='mouse',
                                 point_policy='snap_to_data'))
 
+    print("Anomalies in", ylabel, ":")
+
+    too_high = np.array(len(y) * [False])
+    too_low  = np.array(len(y) * [False])
     if ylowlim is not None:
         fig.line(x=x, y=ylowlim, line_dash='dashed')
-        bad_runs = (y < ylowlim).to_numpy()
-        if bad_runs.sum() > 0:
-            fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
-            for runlabel, val in zip(np.array(point_labels)[bad_runs],
-                                     y[bad_runs]):
-                print(runlabel, ",", ylabel, ": {a:.2f}".format(a=val))
-
+        too_low |= (y < ylowlim)
     if yupplim is not None:
         fig.line(x=x, y=yupplim, line_dash='dashed')
-        bad_runs = (y > yupplim).to_numpy()
-        if bad_runs.sum() > 0:
-            fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
-            for runlabel, val in zip(np.array(point_labels)[bad_runs],
-                                     y[bad_runs]):
-                print(runlabel, ",", ylabel, ": {a:.2f}".format(a=val))
+        too_high |=  (y > yupplim)
 
+    bad_runs = too_low | too_high
+
+    if bad_runs.sum() > 0:
+        fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
+        for runlabel, val, low in zip(np.array(point_labels)[bad_runs],
+                                      y[bad_runs], too_low[bad_runs]):
+            print("  ", runlabel, ":")
+            tag = "(too high)"
+            if low:
+                tag = "(too low)"
+            print("     ", ylabel, ": {a:.2f}".format(a=val), tag)
+
+    else:
+        print("   None")
+    print("")
 
     return fig
 
