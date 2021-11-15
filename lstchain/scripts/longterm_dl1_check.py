@@ -484,12 +484,21 @@ def main():
 
 def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
-    # First read in the camera geometry:
+    # Some data needed as reference, to verify the validity of the measured
+    # values.
+    deadtime_per_event = 7e-6  # s
+    interleaved_rate = np.array([50, 100])  # Hz
+    interleaved_rate_change_run = np.array([0, 2709])
+    # run number in which interleaved rates switched to the values above.
+    interleaved_rate_tolerance = 0.01  # Relative, w.r.t. expectation
+
+
+    # Read in the camera geometry:
     subarray_info = SubarrayDescription.from_hdf(filename)
     camgeom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
-    file = tables.open_file('longterm_dl1_check.h5')
+    file = tables.open_file(filename)
 
     bokeh_output_file(Path(filename).with_suffix('.html'),
                       title='LST1 long-term DL1 data check')
@@ -503,46 +512,66 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                  date = date.strftime("%b %d %Y %H:%M:%S")))
 
     runsummary = pd.read_hdf(filename, 'runsummary')
+    ped_rate = runsummary['num_pedestals'] / runsummary['elapsed_time']
+    err_ped_rate = (np.sqrt(runsummary['num_pedestals']) /
+                    runsummary['elapsed_time'])
+    ff_rate = runsummary['num_flatfield'] / runsummary['elapsed_time']
+    err_ff_rate = (np.sqrt(runsummary['num_flatfield']) /
+                    runsummary['elapsed_time'])
+    cosmics_rate = runsummary['num_cosmics'] / runsummary['elapsed_time']
+    err_cosmics_rate = (np.sqrt(runsummary['num_cosmics']) /
+                    runsummary['elapsed_time'])
+    total_rate = ped_rate + ff_rate + cosmics_rate
+    deadtime_fraction = np.array(total_rate) * deadtime_per_event
+
+    # Find expected rate of interleaveds, from the nominal rate and the deadtime
+    nominal_interleaved_rate = []
+    for run in runsummary['runnumber']:
+        index = np.argwhere(interleaved_rate_change_run<=run).max()
+        nominal_interleaved_rate.append(interleaved_rate[index])
+    nominal_interleaved_rate = np.array(nominal_interleaved_rate)
+    expected_interleaved_rate = ((1 - deadtime_fraction) *
+                                 nominal_interleaved_rate)
+
+    runtime = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
+
+    # Plot interleaved pedestal rates
     page0 = Panel()
-    fig_ped_rates = show_graph(x=pd.to_datetime(runsummary['time'],
-                                                origin='unix', unit='s'),
-                               y=runsummary['num_pedestals'] /
-                                 runsummary['elapsed_time'],
+    fig_ped_rates = show_graph(x=runtime, y=ped_rate, ey=err_ped_rate,
                                xlabel='date',
-                               ylabel='Interleaved pedestals rate',
-                               ey=np.sqrt(runsummary['num_pedestals']) /
-                                  runsummary['elapsed_time'],
+                               ylabel='Interleaved pedestals rate (Hz)',
                                xtype='datetime', ytype='linear',
-                               point_labels=run_titles)
-    fig_ff_rates = show_graph(x=pd.to_datetime(runsummary['time'],
-                                               origin='unix', unit='s'),
-                               y=runsummary['num_flatfield'] /
-                                 runsummary['elapsed_time'],
-                               xlabel='date',
-                               ylabel='Interleaved flat field rate',
-                               ey=np.sqrt(runsummary['num_flatfield']) /
-                                  runsummary['elapsed_time'],
-                               xtype='datetime', ytype='linear',
-                               point_labels=run_titles)
-    fig_cosmic_rates = show_graph(x=pd.to_datetime(runsummary['time'],
-                                                   origin='unix', unit='s'),
-                                  y=runsummary['num_cosmics'] /
-                                  runsummary['elapsed_time'],
+                               point_labels=run_titles,
+                               ylowlim=expected_interleaved_rate*(
+                               1-interleaved_rate_tolerance),
+                               yupplim=expected_interleaved_rate*(
+                               1+interleaved_rate_tolerance))
+
+    fig_ped_rates.y_range = Range1d(nominal_interleaved_rate.min()*0.8,
+                                    nominal_interleaved_rate.max()*1.1)
+
+    # Plot interleaved flatfield rates
+    fig_ff_rates = show_graph(x=runtime, y= ff_rate, ey=err_ff_rate,
+                              xlabel='date',
+                              ylabel='Interleaved flat field rate',
+                              xtype='datetime', ytype='linear',
+                              point_labels=run_titles)
+
+    fig_cosmic_rates = show_graph(x=runtime, y=cosmics_rate,
+                                  ey=err_cosmics_rate,
                                   xlabel='date',
                                   ylabel='Cosmics rate',
-                                  ey=np.sqrt(runsummary['num_cosmics']) /
-                                     runsummary['elapsed_time'],
                                   xtype='datetime', ytype='linear',
                                   point_labels=run_titles)
-    fig_muring_rates = show_graph(x=pd.to_datetime(runsummary['time'],
-                                                   origin='unix', unit='s'),
+
+    fig_muring_rates = show_graph(x=runtime,
                                   y=runsummary['num_contained_mu_rings'] /
                                   runsummary['elapsed_time'],
-                                  xlabel='date',
-                                  ylabel='Contained mu-rings rate',
                                   ey=np.sqrt(runsummary[
                                                  'num_contained_mu_rings']) /
                                                  runsummary['elapsed_time'],
+                                  xlabel='date',
+                                  ylabel='Contained mu-rings rate',
                                   xtype='datetime', ytype='linear',
                                   point_labels=run_titles)
 
@@ -817,7 +846,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
 def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                xtype='linear', ytype='linear',
-               point_labels=None):
+               point_labels=None, ylowlim=None, yupplim=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
 
@@ -831,6 +860,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     xtype: 'log', 'linear', 'datetime'
     ytype: 'log', 'linear', 'datetime'
     point_labels: one label per point, to be displayed when mouse overs near point
+    ylowlim, yupplim: ndarrays, min and max acceptable values of the plotted
+    quantity, same dimension as x and y
 
     Returns
     -------
@@ -842,7 +873,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     source = ColumnDataSource(data=dict(x=x, y=y))
     if point_labels is not None:
         source.data['point_labels'] = point_labels
-    fig.circle(x='x', y='y', size=2, source=source)
+    datapoints = fig.circle(x='x', y='y', size=2, source=source)
 
     if eylow is None:
         eylow = ey
@@ -869,8 +900,28 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     if point_labels is not None:
         fig.add_tools(HoverTool(tooltips=[('value', '@y'),
                                           ('point id', '@point_labels')],
+                                renderers=[datapoints],
                                 mode='mouse',
                                 point_policy='snap_to_data'))
+
+    if ylowlim is not None:
+        fig.line(x=x, y=ylowlim, line_dash='dashed')
+        bad_runs = (y < ylowlim).to_numpy()
+        if bad_runs.sum() > 0:
+            fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
+            for runlabel, val in zip(np.array(point_labels)[bad_runs],
+                                     y[bad_runs]):
+                print(runlabel, ",", ylabel, ": {a:.2f}".format(a=val))
+
+    if yupplim is not None:
+        fig.line(x=x, y=yupplim, line_dash='dashed')
+        bad_runs = (y > yupplim).to_numpy()
+        if bad_runs.sum() > 0:
+            fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
+            for runlabel, val in zip(np.array(point_labels)[bad_runs],
+                                     y[bad_runs]):
+                print(runlabel, ",", ylabel, ": {a:.2f}".format(a=val))
+
 
     return fig
 
