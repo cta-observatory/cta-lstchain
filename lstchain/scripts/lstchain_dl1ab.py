@@ -73,10 +73,10 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+
     std_config = get_standard_config()
 
     log.setLevel(logging.INFO)

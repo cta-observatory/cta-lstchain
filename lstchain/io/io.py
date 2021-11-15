@@ -1,29 +1,36 @@
-import h5py
-from multiprocessing import Pool
-import numpy as np
-import pandas as pd
-from astropy.table import Table, vstack, QTable
-import tables
-from tables import open_file
+import logging
 import os
 import re
+from multiprocessing import Pool
+
 import astropy.units as u
 import ctapipe
-import lstchain
 import ctapipe_io_lst
-from ctapipe.io import HDF5TableReader
+import h5py
+import lstchain
+import numpy as np
+import pandas as pd
+import tables
+from astropy.table import Table, vstack, QTable
 from ctapipe.containers import SimulationConfigContainer
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription
+)
+from ctapipe.io import HDF5TableReader
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-from tqdm import tqdm
-# from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
+from tables import open_file
+from tqdm import tqdm
 
-import logging
+from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +81,11 @@ HDF5_ZSTD_FILTERS = tables.Filters(
 def read_simu_info_hdf5(filename):
     """
     Read simu info from an hdf5 file
+
+    Parameters
+    ----------
+    filename: str
+        path to the HDF5 file
 
     Returns
     -------

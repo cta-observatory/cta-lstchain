@@ -37,13 +37,12 @@ def plot_features(data, true_hadroness=False):
     """Plot the distribution of different features that characterize
     events, such as hillas parameters or MC data.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: pandas DataFrame
-
-true_hadroness:
-    True: True gammas and proton events are plotted (they are separated using true hadroness).
-    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
+    true_hadroness:
+        True: True gammas and proton events are plotted (they are separated using true hadroness).
+        False: Gammas and protons are separated using reconstructed hadroness (hadro_rec).
     """
     hadro = "reco_type"
     if true_hadroness:
@@ -276,15 +275,14 @@ def read_resolutions(filename):
 def plot_disp(data, true_hadroness=False):
     """Plot the performance of reconstructed position
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: pandas DataFrame
-
     true_hadroness: boolean
-    True: True gammas and proton events are plotted (they are separated
-    using true hadroness).
-    False: Gammas and protons are separated using reconstructed
-    hadroness (hadro_rec)
+        True: True gammas and proton events are plotted (they are separated
+        using true hadroness).
+        False: Gammas and protons are separated using reconstructed
+        hadroness (hadro_rec)
     """
     hadro = "reco_type"
     if true_hadroness:
@@ -581,7 +579,7 @@ def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_nor
 
     Parameters
     ----------
-   dl2_data: `pandas.DataFrame`
+    dl2_data: `pandas.DataFrame`
         Reconstructed MC events at DL2+ level.
     ax: `matplotlib.pyplot.axes` or None
     bias_correction: `bool`
