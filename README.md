@@ -3,6 +3,8 @@
 Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
 
+- **Source code:** https://github.com/cta-observatory/cta-lstchain
+- **Documentation:** https://cta-observatory.github.io/cta-lstchain/
 
 Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
 In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
