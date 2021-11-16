@@ -423,10 +423,11 @@ def main():
             cosmics['mu_hg_peak_sample_stddev'].extend([contained_mu['hg_peak_sample'].std()])
 
             if contained_mu_wholerun is None:
-                contained_mu_wholerun = df_muons
+                contained_mu_wholerun = contained_mu
             else:
-                contained_mu_wholerun = pd.concat([contained_mu_wholerun, df_muons], ignore_index=True)
-
+                contained_mu_wholerun = pd.concat([contained_mu_wholerun,
+                                                   contained_mu],
+                                                  ignore_index=True)
 
         if empty_files > 0:
             print('   Run {0:d} had {1:d} subruns with no valid muon rings!'.format(runnumber, empty_files))
