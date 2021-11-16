@@ -856,7 +856,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             tcont = t[(t['ring_containment'] > 0.999) &
                       (t['muon_efficiency'] < 1)]
             mean_width = np.append(mean_width,
-                                     np.mean(tcont['ring_width']))
+                                   np.mean(tcont['ring_width']))
             sem_width = np.append(sem_width,
                                   sem(tcont['ring_width']))
             mean_effi = np.append(mean_effi,

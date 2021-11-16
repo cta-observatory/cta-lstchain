@@ -407,7 +407,7 @@ def main():
             # contained and clean muon rings:
             contained_mu = df_muons[(df_muons['ring_containment'] > 0.99) &
                                     (df_muons['size_outside'] < 1) &
-                                    (df_muons['muon_efficiency']) < 1]
+                                    (df_muons['muon_efficiency'] < 1)]
 
             num_contained_mu_rings_in_run += len(contained_mu)
 
