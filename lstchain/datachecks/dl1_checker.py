@@ -35,7 +35,7 @@ from ctapipe.visualization import CameraDisplay
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 # from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
-from scipy.stats import poisson, sem, median_abs_Deviation
+from scipy.stats import poisson, sem
 
 from lstchain.datachecks.containers import DL1DataCheckContainer
 from lstchain.datachecks.containers import DL1DataCheckHistogramBins
@@ -793,13 +793,10 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         num_rings = np.array([])
         num_contained_rings = np.array([])
 
-        # Efficiency and width from the likelihood fit often have outliers
-        # Hence we use median and median absolute deviation instead of mean
-        # and standard deviation
-        median_width = np.array([])
-        mad_width = np.array([])
-        median_effi = np.array([])
-        mad_effi = np.array([])
+        mean_width = np.array([])
+        sem_width = np.array([])
+        mean_effi = np.array([])
+        sem_effi = np.array([])
 
         dcfile = \
             parse_datacheck_dl1_filename(os.path.basename(datacheck_filename))
@@ -846,24 +843,26 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             muons_table = vstack([muons_table, t])
 
         t = Table.read(good_files[0])
-        tcont = t[t['ring_containment'] > 0.999]
+        tcont = t[(t['ring_containment'] > 0.999) &
+                  (t['muon_efficiency'] < 1)]
 
-        median_width = np.median(tcont['ring_width'])
-        mad_width = median_abs_Deviation(tcont['ring_width'])
-        median_effi = np.median(tcont['muon_efficiency'])
-        mad_effi = median_abs_Deviation(tcont['muon_efficiency'])
+        mean_width = np.mean(tcont['ring_width'])
+        sem_width = sem(tcont['ring_width'])
+        mean_effi = np.mean(tcont['muon_efficiency'])
+        sem_effi = sem(tcont['muon_efficiency'])
         contained_muons = tcont
         for filename in good_files[1:]:
             t = Table.read(filename)
-            tcont = t[t['ring_containment'] > 0.999]
-            median_width = np.append(median_width,
-                                     np.median(tcont['ring_width']))
+            tcont = t[(t['ring_containment'] > 0.999) &
+                      (t['muon_efficiency'] < 1)]
+            mean_width = np.append(mean_width,
+                                     np.mean(tcont['ring_width']))
             sem_width = np.append(sem_width,
-                                  median_abs_Deviation(tcont['ring_width']))
-            median_effi = np.append(median_effi,
+                                  sem(tcont['ring_width']))
+            mean_effi = np.append(mean_effi,
                                     np.mean(tcont['muon_efficiency']))
-            mad_effi = np.append(mad_effi,
-                                 median_abs_Deviation(tcont['muon_efficiency']))
+            mad_effi = np.append(sem_effi,
+                                 sem(tcont['muon_efficiency']))
             contained_muons = vstack([contained_muons, tcont])
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
@@ -969,13 +968,13 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         axes[1, 1].set_xlabel('ring width (deg)')
         axes[1, 1].set_ylabel('estimated telescope efficiency for muons')
 
-        axes[0, 2].errorbar(good_subruns, median_effi, yerr=mad_effi, fmt='o',
+        axes[0, 2].errorbar(good_subruns, mean_effi, yerr=sem_effi, fmt='o',
                             markersize=3.)
         axes[0, 2].set_xlabel('subrun index')
         axes[0, 2].set_ylabel('estimated telescope efficiency for muons')
         axes[0, 2].grid(linewidth=0.3, linestyle=':')
         axes[0, 2].set_ylim(0., 0.5)
-        axes[1, 2].errorbar(good_subruns, median_width, yerr=mad_width, fmt='o',
+        axes[1, 2].errorbar(good_subruns, mean_width, yerr=sem_width, fmt='o',
                             markersize=3.)
         axes[1, 2].set_xlabel('subrun index')
         axes[1, 2].set_ylabel('ring width (deg)')
