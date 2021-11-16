@@ -36,6 +36,11 @@ conda env create -f environment.yml
 conda activate lst-dev
 ```
 
+**Note**: To prevent packages you installed with `pip install --user` from taking precedence over the conda environment, run:
+```
+conda env config vars set PYTHONNOUSERSITE=1 -n <environment_name>
+```
+
 To update the environment (e.g. when depenencies got updated), use:
 ```
 conda env update -n lst-dev -f environment.yml
