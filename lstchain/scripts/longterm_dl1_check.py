@@ -568,7 +568,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     fig_cosmic_rates = show_graph(x=runtime, y=cosmics_rate,
                                   ey=err_cosmics_rate,
                                   xlabel='date',
-                                  ylabel='Cosmics rate',
+                                  ylabel='Cosmics rate (/s)',
                                   xtype='datetime', ytype='linear',
                                   point_labels=run_titles)
     fig_cosmic_rates.y_range = Range1d(0, np.max(cosmics_rate)*1.1)
@@ -583,7 +583,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                                  'num_contained_mu_rings']) /
                                                  runsummary['elapsed_time'],
                                   xlabel='date',
-                                  ylabel='Contained mu-rings rate',
+                                  ylabel='Contained mu-rings rate (/s)',
                                   xtype='datetime', ytype='linear',
                                   point_labels=run_titles,
                                   ylowlim=expected_mu_rate*(
@@ -866,6 +866,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                point_labels=None, ylowlim=None, yupplim=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
+    It also checks limits of the values (if provided) and writes out a text
+    log reporting outliers
 
     Parameters
     ----------
@@ -921,7 +923,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 mode='mouse',
                                 point_policy='snap_to_data'))
 
-    print("Anomalies in", ylabel, ":")
+    if ylowlim is not None or yupplim is not None:
+        print("Anomalies in", ylabel, ":")
 
     too_high = np.array(len(y) * [False])
     too_low  = np.array(len(y) * [False])
@@ -943,10 +946,11 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
             if low:
                 tag = "(too low)"
             print("     ", ylabel, ": {a:.2f}".format(a=val), tag)
+            print("")
 
-    else:
+    elif ylowlim is not None or yupplim is not None:
         print("   None")
-    print("")
+        print("")
 
     return fig
 
