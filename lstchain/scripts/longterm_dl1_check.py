@@ -512,6 +512,18 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     # Flat field std dev of pixel time relative to camera mean (ns):
     ff_max_time_stdev = 0.5
 
+    # Minimum muon ring intensity (pe)
+    min_muon_intensity = 2000
+
+    # global peak HG sample id range in muon ring events:
+    muon_peak_hg_sample_range = (8, 18)
+
+    # maximum muon ring width:
+    max_muon_ring_width = 0.08 # deg
+
+    # minimum telescope efficiency as derived from muons:
+    min_muon_efficiency = 0.16
+
     # Read in the camera geometry:
     subarray_info = SubarrayDescription.from_hdf(filename)
     camgeom = subarray_info.tel[tel_id].camera.geometry
@@ -745,8 +757,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                              ey=runsummary['mu_effi_stddev'] / np.sqrt(
                                      runsummary['num_contained_mu_rings']),
                              xtype='datetime', ytype='linear',
-                             point_labels=run_titles)
-    fig_mu_effi.y_range = Range1d(0.,1.1*np.max(runsummary['mu_effi_mean']))
+                             point_labels=run_titles,
+                             ylowlim=min_muon_efficiency)
+    fig_mu_effi.y_range = Range1d(0., 0.22)
 
     fig_mu_width = show_graph(x=pd.to_datetime(runsummary['time'],
                                                origin='unix', unit='s'),
@@ -756,14 +769,16 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                               ey=runsummary['mu_width_stddev'] / np.sqrt(
                                       runsummary['num_contained_mu_rings']),
                               xtype='datetime', ytype='linear',
-                              point_labels=run_titles)
-    fig_mu_width.y_range = Range1d(0.,1.1*np.max(runsummary['mu_width_mean']))
+                              point_labels=run_titles,
+                              yupplim=max_muon_ring_width)
+    fig_mu_width.y_range = Range1d(0., 0.1)
 
     fig_mu_intensity = show_graph(
         x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
         y=runsummary['mu_intensity_mean'], xlabel='date',
         ylabel='mean muon ring intensity (p.e.)',
-        xtype='datetime', ytype='linear', point_labels=run_titles)
+        xtype='datetime', ytype='linear', point_labels=run_titles,
+        ylowlim=min_muon_intensity)
     fig_mu_intensity.y_range = \
         Range1d(0., 1.1 * np.max(runsummary['mu_intensity_mean']))
 
@@ -772,7 +787,10 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
         y=runsummary['mu_hg_peak_sample_mean'], xlabel='date',
         ey=runsummary['mu_hg_peak_sample_stddev'],
         ylabel='HG global peak sample id (mean&RMS)',
-        xtype='datetime', ytype='linear', point_labels=run_titles)
+        xtype='datetime', ytype='linear', point_labels=run_titles,
+        ylowlim=muon_peak_hg_sample_range[0],
+        yupplim=muon_peak_hg_sample_range[1]
+    )
     fig_mu_hg_peak.y_range = Range1d(0., 38.)
     row1 = [fig_mu_effi, fig_mu_width]
     row2 = [fig_mu_intensity, fig_mu_hg_peak]
