@@ -505,7 +505,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     run_fraction = 0.5
 
     # Flat field pixel charges (just for the mean; the std dev may be strongly
-    # affected by stars), in pe:
+    # affected by stars), in pe.
     ff_charge = 75
     ff_charge_tolerance = 0.1 # relative tolerance
 
@@ -514,7 +514,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     ff_max_rel_time =  0.3
 
     # Flat field std dev of pixel time relative to camera mean (ns):
-    ff_max_time_stdev = 0.5
+    ff_max_rel_time_stdev = 0.5
 
     # Reference rate of >30 pe pulses in cosmics, parametrization vs. pixel
     # id & zenith:
@@ -534,6 +534,20 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     # minimum telescope efficiency as derived from muons:
     min_muon_efficiency = 0.16
+
+    # maximum camera averages:
+    max_average_ped_charge_stdev = 5 # pe
+    max_fraction_surviving_pedestals = 0.05
+    # ff charge & time, using some of the individual pixels' limits:
+    max_average_ff_charge = ff_charge * (1 + ff_charge_tolerance)
+    min_average_ff_charge = ff_charge * (1 - ff_charge_tolerance)
+    max_average_ff_rel_time_stdev = ff_max_rel_time_stdev
+
+    max_average_ff_time_stdev = 1.2
+    min_average_ff_time = 12 # ns
+    max_average_ff_time = 23 # ns
+    max_average_ff_charge_stdev = 11 # pe
+
 
     # Read in the camera geometry:
     subarray_info = SubarrayDescription.from_hdf(filename)
@@ -729,9 +743,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
                        run_titles, showlog=False, display_range=[0.2, 0.7],
-                       content_upplim=ff_max_time_stdev)
+                       content_upplim=ff_max_rel_time_stdev)
     pixel_report('Flat-Field rel. time std dev', stddev, 0,
-                 ff_max_time_stdev, run_fraction)
+                 ff_max_rel_time_stdev, run_fraction)
 
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -865,7 +879,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
             y=frac, xlabel='date',
             ylabel='Fraction of pedestals surviving cleaning',
             ey=err, xtype='datetime', ytype='linear',
-            point_labels=run_titles)
+            point_labels=run_titles,
+            yupplim=max_fraction_surviving_pedestals)
+    fig_ped_clean_fraction.y_range = Range1d(0, 0.12)
 
     row1 = [fig_ped, fig_ped_stddev]
     row2 = [fig_ped_clean_fraction]
@@ -886,8 +902,10 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                ylabel='Cam-averaged FF Q (pe/pixel)',
                                ey=runsummary['ff_charge_mean_err'],
                                xtype='datetime', ytype='linear',
-                               point_labels=run_titles)
-    fig_flatfield.y_range = Range1d(0.,1.1*np.max(runsummary['ff_charge_mean']))
+                               point_labels=run_titles,
+                               ylowlim=min_average_ff_charge,
+                               yupplim=max_average_ff_charge)
+    fig_flatfield.y_range = Range1d(0., 100)
 
     fig_ff_stddev = show_graph(x=pd.to_datetime(runsummary['time'],
                                                 origin='unix',
@@ -897,7 +915,8 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                ylabel='Cam-averaged FF Q std '
                                       'dev (pe/pixel)',
                                xtype='datetime', ytype='linear',
-                               point_labels=run_titles)
+                               point_labels=run_titles,
+                               yupplim=max_average_ff_charge_stdev)
     fig_ff_stddev.y_range = \
         Range1d(0.,1.1*np.max(runsummary['ff_charge_stddev']))
 
@@ -909,7 +928,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                              ylabel='Cam-averaged FF time (ns)',
                              ey=runsummary['ff_time_mean_err'],
                              xtype='datetime', ytype='linear',
-                             point_labels=run_titles)
+                             point_labels=run_titles,
+                             ylowlim=min_average_ff_time,
+                             yupplim=max_average_ff_time)
 
     fig_ff_time_std = show_graph(x=pd.to_datetime(runsummary['time'],
                                                   origin='unix',
@@ -919,7 +940,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                  ylabel='Cam-averaged FF t std '
                                         'dev (ns)',
                                  xtype='datetime', ytype='linear',
-                                 point_labels=run_titles)
+                                 point_labels=run_titles,
+                                 yupplim=max_average_ff_time_stdev)
+    fig_ff_time_std.y_range = Range1d(0, 2)
     fig_ff_rel_time_std = show_graph(x=pd.to_datetime(runsummary['time'],
                                                       origin='unix',
                                                       unit='s'),
@@ -928,7 +951,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                      ylabel='Cam-averaged FF '
                                             'rel. pix t std dev (ns)',
                                      xtype='datetime', ytype='linear',
-                                     point_labels=run_titles)
+                                     point_labels=run_titles,
+                                     yupplim=max_average_ff_rel_time_stdev)
+
     fig_ff_rel_time_std.y_range = \
         Range1d(0., np.max([1., runsummary['ff_rel_time_stddev'].max()]))
 
