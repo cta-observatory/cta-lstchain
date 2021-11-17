@@ -742,7 +742,8 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
-                       run_titles, showlog=False, display_range=[0.2, 0.7],
+                       run_titles, showlog=False,
+                       display_range=[0.2, max(0.7, 1.1*np.nanmax(stddev))],
                        content_upplim=ff_max_rel_time_stdev)
     pixel_report('Flat-Field rel. time std dev', stddev, 0,
                  ff_max_rel_time_stdev, run_fraction)
@@ -1038,7 +1039,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     too_high = np.array(len(y) * [False])
     too_low  = np.array(len(y) * [False])
     if ylowlim is not None:
-        fig.line(x=x, y=ylowlim, line_dash='dashed', color='blue')
+        fig.line(x=x, y=ylowlim, line_dash='dashed', color='orange',
+                 line_width=2)
         too_low |= (y < ylowlim)
     if yupplim is not None:
         fig.line(x=x, y=yupplim, line_dash='dashed', color='red')

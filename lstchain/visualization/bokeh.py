@@ -301,7 +301,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                           value=content_lowlim[0]))
         p2.line(x='pix_id', y='value', source=source2_lowlim,
-                line_dash='dashed', color='blue')
+                line_dash='dashed', color='orange', line_width=2)
     source2_upplim = None
     if content_upplim is not None:
         if np.isscalar(content_upplim):
