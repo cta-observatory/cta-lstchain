@@ -5,8 +5,8 @@ import tables
 from traitlets.config import Config
 
 from ctapipe.io.hdf5tableio import DEFAULT_FILTERS
-from ctapipe.core import Tool
-from ctapipe.core.traits import Path, Integer
+from ctapipe.core import Tool, Provenance, ToolConfigurationError
+from ctapipe.core.traits import Path, Integer, flag, Bool
 
 from ctapipe_io_lst import LSTEventSource
 from ctapipe_io_lst.calibration import get_spike_A_positions
@@ -66,20 +66,56 @@ class DRS4PedestalAndSpikeHeight(Tool):
     skip_samples_front = Integer(default_value=10).tag(config=True)
     skip_samples_end = Integer(default_value=1).tag(config=True)
 
+    progress_bar = Bool(
+        help="show progress bar during processing", default_value=False
+    ).tag(config=True)
+
+    overwrite = Bool(
+        help=(
+            "If true, overwrite output without asking,"
+            " else fail if output file already exists"
+        ),
+        default_value=False
+    ).tag(config=True)
+
     aliases = {
         ('i', 'input'): 'LSTEventSource.input_url',
         ('o', 'output'): 'DRS4PedestalAndSpikeHeight.output_path',
         ('m', 'max-events'): 'LSTEventSource.max_events',
     }
 
+    flags = {
+        **flag(
+            "overwrite",
+            "DRS4PedestalAndSpikeHeight.overwrite",
+            "Overwrite output file if it exists",
+            "Fail if output file already exists",
+        ),
+        **flag(
+            "progress",
+            "DRS4PedestalAndSpikeHeight.progress_bar",
+            "show a progress bar during event processing",
+            "don't show a progress bar during event processing",
+        ),
+    }
+
     classes = [LSTEventSource]
 
     def setup(self):
-        self.source = LSTEventSource(
-            parent=self,
-            # pointing_information=False,
-            # trigger_information=False,
-        )
+        self.output_path = self.output_path.expanduser().resolve()
+        if self.output_path.exists():
+            if self.overwrite:
+                self.log.warning("Overwriting %s", self.output_path)
+                self.output_path.unlink()
+            else:
+                raise ToolConfigurationError(
+                    f"Output file {self.output_path} exists"
+                    ", use the `overwrite` option or choose another `output_path` "
+                )
+        self.log.debug("output path: %s", self.output_path)
+        Provenance().add_output_file(str(self.output_path), role="DL1/Event")
+
+        self.source = LSTEventSource(parent=self)
 
         # set some config options, these are necessary for this tool,
         # so we set them here and not via the config system
@@ -100,11 +136,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
     def start(self):
         tel_id = self.source.tel_id
 
-        total = len(self.source.multi_file)
-        if self.source.max_events is not None:
-            total = min(self.source.max_events, total)
-
-        for event in tqdm(self.source, total=total):
+        for event in tqdm(self.source, disable=not self.progress_bar):
             fill_stats(
                 event.r1.tel[tel_id].waveform,
                 self.source.r0_r1_calibrator.first_cap[tel_id],
