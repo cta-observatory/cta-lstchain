@@ -937,8 +937,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                                                   unit='s'),
                                  y=runsummary['ff_time_stddev'],
                                  xlabel='date',
-                                 ylabel='Cam-averaged FF t std '
-                                        'dev (ns)',
+                                 ylabel='Cam-averaged FF time std dev (ns)',
                                  xtype='datetime', ytype='linear',
                                  point_labels=run_titles,
                                  yupplim=max_average_ff_time_stdev)
