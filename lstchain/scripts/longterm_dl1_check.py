@@ -495,8 +495,22 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     # run number in which interleaved rates switched to the values above.
     # Tolerances below are relative, w.r.t. expectation:
     interleaved_rate_tolerance = 0.05
+    # Muon rates
+    mu_a = 1.02
+    mu_b = 2.180  # reference muon rate = mu_b + mu_b * cos(zenith)
     muon_rate_tolerance = 0.15
 
+    # Fraction of processed runs in which a pixel must be beyond tolerances
+    # in order to be reported:
+    run_fraction = 0.5
+
+    # Flat field pixel charges (just for the mean; the std dev may be strongly
+    # affected by stars), in pe:
+    ff_charge = 75
+    ff_charge_tolerance = 0.1 # relative tolerance
+
+    # Flat field std dev of pixel time relative to camera mean (ns):
+    ff_max_time_stdev = 0.5
 
     # Read in the camera geometry:
     subarray_info = SubarrayDescription.from_hdf(filename)
@@ -578,7 +592,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     coszenith = np.sin(runsummary['mean_altitude'])
     # empirical expression obtained from 2020-2021 data:
-    expected_mu_rate = 1.02 + 2.180 * coszenith
+    expected_mu_rate = mu_a + mu_b * coszenith
     fig_muring_rates = show_graph(x=runtime,
                                   y=runsummary['num_contained_mu_rings'] /
                                   runsummary['elapsed_time'],
@@ -650,12 +664,25 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
         mean.append(item)
     for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
         stddev.append(item)
-    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
-                       pad_height, 'Flat-Field mean charge (pe)', run_titles)
-    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
-                       pad_height, 'Flat-Field charge std dev (pe)', run_titles)
+    mean = np.array(mean)
+    stddev = np.array(stddev)
+    row1 = show_camera(mean, engineering_geom, pad_width,
+                       pad_height, 'Flat-Field mean charge (pe)', run_titles,
+                       display_range=[0, 100],
+                       content_lowlim=ff_charge*(1-ff_charge_tolerance),
+                       content_upplim=ff_charge*(1+ff_charge_tolerance))
+    pixel_report('Flat-Field mean charge', mean,
+                 ff_charge * (1 - ff_charge_tolerance),
+                 ff_charge * (1 + ff_charge_tolerance),
+                 run_fraction)
+
+    row2 = show_camera(stddev, engineering_geom, pad_width,
+                       pad_height, 'Flat-Field charge std dev (pe)',
+                       run_titles,
+                       display_range=[0, 14])
     grid2 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
+
     page2.child = grid2
     page2.title = 'Interleaved flat field, charge'
 
@@ -666,12 +693,18 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
         mean.append(item)
     for item in file.root.pixwise_runsummary.col('ff_pix_rel_time_stddev'):
         stddev.append(item)
-    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
+    mean = np.array(mean)
+    stddev = np.array(stddev)
+    row1 = show_camera(mean, engineering_geom, pad_width,
                        pad_height, 'Flat-Field mean relative time (ns)',
                        run_titles, showlog=False)
-    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
+    row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
-                       run_titles, showlog=False)
+                       run_titles, showlog=False, display_range=[0.2, 0.7],
+                       content_upplim=ff_max_time_stdev)
+    pixel_report('Flat-Field rel. time std dev', stddev, 0,
+                 ff_max_time_stdev, run_fraction)
+
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page3.child = grid3
@@ -957,6 +990,38 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
 
     return fig
 
+def pixel_report(title, value, low_limit, upp_limit, run_fraction):
+    '''
+    Parameters
+    ----------
+    title: describes que quantity store in value
+    value:  ndarray num_runs * num_pixels, run- and pixel-wise quantity
+    low_limit: below this, value is not considered healthy
+    upp_limit: above this, value is not considered healthy
+    run_fraction: minimum fraction of runs in which a pixel must be
+    unhealthy to report it
+
+    Returns
+    -------
+
+    '''
+
+    too_low  = value < low_limit
+    too_high = value > upp_limit
+    # In how many of the processed runs is each pixel faulty?:
+    too_low_count  = np.sum(too_low, axis=0)  # [n_pixels]
+    too_high_count = np.sum(too_high, axis=0)
+    print(title+',', 'anomalous pixels:')
+    num_runs = value.shape[0]
+    for pix_id in np.flatnonzero(too_low_count > run_fraction * num_runs):
+        print('id', pix_id, 'too low in', too_low_count[pix_id],
+              'of', num_runs, 'runs')
+    for pix_id in np.flatnonzero(too_high_count > run_fraction * num_runs):
+        print('id', pix_id, 'too high in', too_high_count[pix_id], 'of',
+              num_runs, 'runs')
+    print()
+
+    return
 
 if __name__ == '__main__':
     main()

@@ -11,7 +11,8 @@ import copy
 import logging
 from bokeh.layouts import gridplot
 from bokeh.models import HoverTool
-from bokeh.models import ColumnDataSource, CustomJS, Slider, RangeSlider
+from bokeh.models import ColumnDataSource, CustomJS, Slider
+from bokeh.models import Range1d, RangeSlider
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
@@ -147,7 +148,8 @@ class CameraDisplay:
         self.update()
 
 def show_camera(content, geom, pad_width, pad_height, label, titles=None,
-                showlog=True):
+                showlog=True, display_range=None,
+                content_lowlim=None, content_upplim=None):
     """
 
     Parameters
@@ -164,6 +166,12 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     sets of pixels inside "content"
     titles: list of N strings, with the title specific to each of the sets
     of pixel values to be displayed: for example, indicating run numbers
+
+    content_lowlim: lowest value of "content" which is considered healthy,
+    below which a message will be written out
+    content_upplim: highest value considered healthy, same as above
+    display_range: range of "content" to be displayed
+
 
     Returns
     -------
@@ -193,10 +201,14 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     if titles is None:
         titles = ['']*numsets
 
-    # We plot the range which contains 99.8 of all events, so that
+    # By default we plot the range which contains 99.8 of all events, so that
     # outliers do not prevent us from seing the bulk of the data:
     display_min = np.nanquantile(allimages,0.001)
     display_max = np.nanquantile(allimages, 0.999)
+
+    if display_range is not None:
+        display_min = display_range[0]
+        display_max = display_range[1]
 
     cam = CameraDisplay(camgeom, display_min, display_max,
                         label, titles[0], use_notebook=False, autoshow=False)
@@ -279,10 +291,19 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
-    p2.circle(x='pix_id', y='value', size=2, source=source2)
+    pixel_data = p2.circle(x='pix_id', y='value', size=2, source=source2)
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
-                  mode='mouse', point_policy='snap_to_data'))
+                  mode='mouse', point_policy='snap_to_data',
+                  renderers=[pixel_data]))
+
+    if content_lowlim is not None:
+        p2.line(x=[0, cam.geom.n_pixels],
+                y=[content_lowlim, content_lowlim], line_dash='dashed')
+    if content_upplim is not None:
+        p2.line(x=[0, cam.geom.n_pixels],
+                y=[content_upplim, content_upplim], line_dash='dashed')
+    p2.y_range = Range1d(display_min, display_max)
 
     allhists = []
     alledges = []
@@ -290,7 +311,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     # We define 50 bins between display_min and display_max
     # Note that values beyond that range won't be histogrammed and hence will
     # not appear on the "p3" figure below.
-    nbins = 50
+    nbins = 100
     for image in allimages:
         hist, edges = np.histogram(image[~np.isnan(image)], bins=nbins,
                                    range=(display_min, display_max))
