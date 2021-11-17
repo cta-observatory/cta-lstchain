@@ -518,9 +518,10 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     # Reference rate of >30 pe pulses in cosmics, parametrization vs. pixel
     # id & zenith:
-    # (r30[0] + r30[1] * cos(zenith)) * (r30[2] * pixel_index)  events / second
+    # (r30[0] + r30[1] * cos(zenith)) + r30[2] * pixel_index  events /
+    # second
     r30 = [1.3733, 4.5928, -6.3577e-04]
-    rate_above_30_tolerance = 0.2
+    rate_above_30_tolerance = 0.25
 
     # Minimum muon ring intensity (pe)
     min_muon_intensity = 2000
@@ -750,10 +751,12 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
         pulse_rate_above_30.append(item * num_crs / elapsed_time)
 
     reference_rate_above_30 = (np.array(engineering_geom.n_pixels *
-                                        [r30[0] + r30[1] * coszenith]).T *
+                                        [r30[0] + r30[1] * coszenith]).T +
                                np.array(len(runsummary)*
                                         [r30[2] * np.array(engineering_geom.pix_id)])
                                )
+    r30_lowlim = reference_rate_above_30 * (1 - rate_above_30_tolerance)
+    r30_upplim = reference_rate_above_30 * (1 + rate_above_30_tolerance)
 
     row1 = show_camera(np.array(pulse_rate_above_10), engineering_geom,
                        pad_width, pad_height,
@@ -763,11 +766,9 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
                        pad_width, pad_height,
                        'Cosmics, rate of >30pe pulses', run_titles,
                        display_range=[0, 12],
-                        content_lowlim=reference_rate_above_30*(
-                                                    1-rate_above_30_tolerance),
-                        content_upplim=reference_rate_above_30*(
-                                                    1+rate_above_30_tolerance)
-                       )
+                       content_lowlim=r30_lowlim, content_upplim=r30_upplim)
+    pixel_report('Cosmics, rate of >30pe pulses', np.array(pulse_rate_above_30),
+                 r30_lowlim, r30_upplim, run_fraction)
 
     grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1013,16 +1014,15 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     too_high = np.array(len(y) * [False])
     too_low  = np.array(len(y) * [False])
     if ylowlim is not None:
-        fig.line(x=x, y=ylowlim, line_dash='dashed')
+        fig.line(x=x, y=ylowlim, line_dash='dashed', color='blue')
         too_low |= (y < ylowlim)
     if yupplim is not None:
-        fig.line(x=x, y=yupplim, line_dash='dashed')
+        fig.line(x=x, y=yupplim, line_dash='dashed', color='red')
         too_high |=  (y > yupplim)
 
     bad_runs = too_low | too_high
 
     if bad_runs.sum() > 0:
-        fig.circle(x=x[bad_runs], y=y[bad_runs], color='red', size=3)
         for runlabel, val, low in zip(np.array(point_labels)[bad_runs],
                                       y[bad_runs], too_low[bad_runs]):
             print("  ", runlabel, ":")
@@ -1046,8 +1046,8 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     value:  ndarray num_runs * num_pixels, run- and pixel-wise quantity
     low_limit: scalar or ndarray num_runs * num_pixels. Below this, value is
     not considered healthy
-    upp_limit: if larger than this, value is not considered healthy. Same as
-    above.
+    upp_limit: if larger than this, value is not considered healthy. Same
+    types as above.
     run_fraction: minimum fraction of runs in which a pixel must be
     unhealthy to report it
 

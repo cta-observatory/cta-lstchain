@@ -215,6 +215,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     cam.image = allimages[0]
     cam.figure.title.text = titles[0]
 
+
     allimageslog = []
     camlog = None
     source1log = None
@@ -292,21 +293,29 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
     pixel_data = p2.circle(x='pix_id', y='value', size=2, source=source2)
+
+    source2_lowlim = None
+    if content_lowlim is not None:
+        if np.isscalar(content_lowlim):
+            content_lowlim = content_lowlim* np.ones_like(content)
+        source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                          value=content_lowlim[0]))
+        p2.line(x='pix_id', y='value', source=source2_lowlim,
+                line_dash='dashed', color='blue')
+    source2_upplim = None
+    if content_upplim is not None:
+        if np.isscalar(content_upplim):
+            content_upplim = content_upplim* np.ones_like(content)
+        source2_upplim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                                     value=content_upplim[0]))
+        p2.line(x='pix_id', y='value', source=source2_upplim,
+                line_dash='dashed', color='red')
+
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
                   mode='mouse', point_policy='snap_to_data',
                   renderers=[pixel_data]))
 
-    if content_lowlim is not None:
-        if np.isscalar(content_lowlim):
-            content_lowlim = content_lowlim* np.ones_like(content)
-        p2.line(x=np.linspace(0, cam.geom.n_pixels-1, cam.geom.n_pixels),
-                y=content_lowlim[0], line_dash='dashed')
-    if content_upplim is not None:
-        if np.isscalar(content_upplim):
-            content_upplim = content_upplim* np.ones_like(content)
-        p2.line(x=np.linspace(0, cam.geom.n_pixels-1, cam.geom.n_pixels),
-                y=content_upplim[0], line_dash='dashed')
     p2.y_range = Range1d(display_min, display_max)
 
     allhists = []
@@ -339,6 +348,11 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         titles = [None]*len(allimages)
 
     cdsdata = dict(z=allimages, hist=allhists, edges=alledges, titles=titles)
+    if content_lowlim is not None:
+        # BEWARE!! these have to be lists of arrays. Not 2D numpy arrays!!
+        cdsdata['lowlim'] = [x for x in content_lowlim]
+    if content_upplim is not None:
+        cdsdata['upplim'] = [x for x in content_upplim]
     if showlog:
         cdsdata['zlog'] = allimageslog
 
@@ -346,7 +360,10 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log = source1log,
-                                  source2=source2, source3=source3,
+                                  source2=source2,
+                                  source2_lowlim=source2_lowlim,
+                                  source2_upplim=source2_upplim,
+                                  source3=source3,
                                   zz=cds_allimages,
                                   title=cam.figure.title,
                                   titlelog=titlelog,
@@ -354,6 +371,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
+        varzlow = zz.data['lowlim']
+        varzupp = zz.data['upplim']
         var edges = zz.data['edges']
         var hist = zz.data['hist']
         for (var i = 0; i < source1.data['image'].length; i++) {
@@ -363,6 +382,11 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                  source1log.data['image'][i] = zlog[slider_value-1][i]
              }
              source2.data['value'][i] = source1.data['image'][i]
+             
+             if (source2_lowlim != null)
+                 source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
+             if (source2_upplim != null)
+                 source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
         }
         for (var i = 0; i < source3.data['top'].length; i++) {
             source3.data['top'][i] = hist[slider_value-1][i]
@@ -376,6 +400,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
             source1log.change.emit()
         }
         source2.change.emit()
+        source2_lowlim.change.emit()
+        source2_upplim.change.emit()
         source3.change.emit()
     """)
 
