@@ -167,7 +167,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     titles: list of N strings, with the title specific to each of the sets
     of pixel values to be displayed: for example, indicating run numbers
 
-    content_lowlim: lowest value of "content" which is considered healthy,
+    content_lowlim: scalar or ndarray of shape(N, number_of_pixels),
+    same as content: lowest value of "content" which is considered healthy,
     below which a message will be written out
     content_upplim: highest value considered healthy, same as above
     display_range: range of "content" to be displayed
@@ -184,7 +185,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     # patch to reduce gaps between bokeh's cam circular pixels:
     camgeom = copy.deepcopy(geom)
-    #camgeom.pix_area *= 1.3
 
     numsets = 1
     if np.ndim(content) > 1:
@@ -298,11 +298,15 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                   renderers=[pixel_data]))
 
     if content_lowlim is not None:
-        p2.line(x=[0, cam.geom.n_pixels],
-                y=[content_lowlim, content_lowlim], line_dash='dashed')
+        if np.isscalar(content_lowlim):
+            content_lowlim = content_lowlim* np.ones_like(content)
+        p2.line(x=np.linspace(0, cam.geom.n_pixels-1, cam.geom.n_pixels),
+                y=content_lowlim[0], line_dash='dashed')
     if content_upplim is not None:
-        p2.line(x=[0, cam.geom.n_pixels],
-                y=[content_upplim, content_upplim], line_dash='dashed')
+        if np.isscalar(content_upplim):
+            content_upplim = content_upplim* np.ones_like(content)
+        p2.line(x=np.linspace(0, cam.geom.n_pixels-1, cam.geom.n_pixels),
+                y=content_upplim[0], line_dash='dashed')
     p2.y_range = Range1d(display_min, display_max)
 
     allhists = []
@@ -339,7 +343,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         cdsdata['zlog'] = allimageslog
 
     cds_allimages = ColumnDataSource(data=cdsdata)
-
+    # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log = source1log,
                                   source2=source2, source3=source3,

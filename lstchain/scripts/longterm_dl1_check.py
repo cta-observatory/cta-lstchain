@@ -509,8 +509,18 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     ff_charge = 75
     ff_charge_tolerance = 0.1 # relative tolerance
 
+    # Limits of FF mean pixel time (ns) w.r.t. camera average:
+    ff_min_rel_time = -0.3
+    ff_max_rel_time =  0.3
+
     # Flat field std dev of pixel time relative to camera mean (ns):
     ff_max_time_stdev = 0.5
+
+    # Reference rate of >30 pe pulses in cosmics, parametrization vs. pixel
+    # id & zenith:
+    # (r30[0] + r30[1] * cos(zenith)) * (r30[2] * pixel_index)  events / second
+    r30 = [1.3733, 4.5928, -6.3577e-04]
+    rate_above_30_tolerance = 0.2
 
     # Minimum muon ring intensity (pe)
     min_muon_intensity = 2000
@@ -709,7 +719,12 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     stddev = np.array(stddev)
     row1 = show_camera(mean, engineering_geom, pad_width,
                        pad_height, 'Flat-Field mean relative time (ns)',
-                       run_titles, showlog=False)
+                       run_titles, showlog=False, display_range=[-1, 1],
+                       content_lowlim=ff_min_rel_time,
+                       content_upplim=ff_max_rel_time)
+    pixel_report('Flat-Field mean relative time', mean,
+                 ff_min_rel_time, ff_max_rel_time, run_fraction)
+
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
                        run_titles, showlog=False, display_range=[0.2, 0.7],
@@ -723,21 +738,36 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     page3.title = 'Interleaved flat field, time'
 
     page4 = Panel()
-    pulse_fraction_above_10 = []
-    pulse_fraction_above_30 = []
-    for item in file.root.pixwise_runsummary.col(
-            'cosmics_pix_fraction_pulses_above10'):
-        pulse_fraction_above_10.append(item)
-    for item in file.root.pixwise_runsummary.col(
-            'cosmics_pix_fraction_pulses_above30'):
-        pulse_fraction_above_30.append(item)
+    pulse_rate_above_10 = []
+    pulse_rate_above_30 = []
+    for item, num_crs, elapsed_time in zip(file.root.pixwise_runsummary.col(
+            'cosmics_pix_fraction_pulses_above10'), runsummary['num_cosmics'],
+            runsummary['elapsed_time']):
+        pulse_rate_above_10.append(item * num_crs / elapsed_time)
+    for item, num_crs, elapsed_time in zip(file.root.pixwise_runsummary.col(
+            'cosmics_pix_fraction_pulses_above30'), runsummary['num_cosmics'],
+            runsummary['elapsed_time']):
+        pulse_rate_above_30.append(item * num_crs / elapsed_time)
 
-    row1 = show_camera(np.array(pulse_fraction_above_10), engineering_geom,
+    reference_rate_above_30 = (np.array(engineering_geom.n_pixels *
+                                        [r30[0] + r30[1] * coszenith]).T *
+                               np.array(len(runsummary)*
+                                        [r30[2] * np.array(engineering_geom.pix_id)])
+                               )
+
+    row1 = show_camera(np.array(pulse_rate_above_10), engineering_geom,
                        pad_width, pad_height,
-                       'Cosmics, fraction of >10pe pulses', run_titles)
-    row2 = show_camera(np.array(pulse_fraction_above_30), engineering_geom,
+                       'Cosmics, rate of >10pe pulses', run_titles,
+                       display_range=[0, 150])
+    row2 = show_camera(np.array(pulse_rate_above_30), engineering_geom,
                        pad_width, pad_height,
-                       'Cosmics, fraction of >30pe pulses', run_titles)
+                       'Cosmics, rate of >30pe pulses', run_titles,
+                       display_range=[0, 12],
+                        content_lowlim=reference_rate_above_30*(
+                                                    1-rate_above_30_tolerance),
+                        content_upplim=reference_rate_above_30*(
+                                                    1+rate_above_30_tolerance)
+                       )
 
     grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1014,8 +1044,10 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     ----------
     title: describes que quantity store in value
     value:  ndarray num_runs * num_pixels, run- and pixel-wise quantity
-    low_limit: below this, value is not considered healthy
-    upp_limit: above this, value is not considered healthy
+    low_limit: scalar or ndarray num_runs * num_pixels. Below this, value is
+    not considered healthy
+    upp_limit: if larger than this, value is not considered healthy. Same as
+    above.
     run_fraction: minimum fraction of runs in which a pixel must be
     unhealthy to report it
 
