@@ -12,11 +12,12 @@ dependencies:
   - h5py
   - ipython
   - jupyter
+  - matplotlib>=3.5
   - notebook
   - joblib
   - toml
   - protozfits=2.0
-  - pyparsing~=2.4
+  - pyparsing
   - sphinx~=4.2
   - sphinx-automodapi
   - sphinx_rtd_theme
