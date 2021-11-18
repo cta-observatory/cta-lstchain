@@ -47,7 +47,7 @@ setup(
         'gammapy>=0.18',
         'h5py',
         'joblib',
-        'matplotlib>=3.3',
+        'matplotlib>=3.5',
         'numba',
         'numpy',
         'pandas',
@@ -60,7 +60,7 @@ setup(
         'traitlets~=5.0.5',
         'iminuit~=1.5',
         'pymongo',
-        'pyparsing~=2.4',
+        'pyparsing',
         'setuptools_scm',
     ],
     extras_require={
