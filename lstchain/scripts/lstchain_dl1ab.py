@@ -319,7 +319,8 @@ def main():
                 image_mask[ii] = signal_pixels
 
             output.root[dl1_params_lstcam_key][:] = params
-            output.root[dl1_images_lstcam_key][:]['image_mask'] = image_mask
+            if not args.noimage:
+                output.root[dl1_images_lstcam_key][:]['image_mask'] = image_mask
 
     write_metadata(metadata, args.output_file)
 
