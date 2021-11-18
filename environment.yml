@@ -12,6 +12,7 @@ dependencies:
   - h5py
   - ipython
   - jupyter
+  - matplotlib>=3.3
   - notebook
   - joblib
   - toml
