@@ -200,9 +200,12 @@ def main():
         if increase_psf:
             set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
+        image_mask_save = not args.noimage and 'image_mask' in input.root[dl1_images_lstcam_key].colnames
+
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
-            image_mask = output.root[dl1_images_lstcam_key].col('image_mask')
+            if image_mask_save:
+                image_mask = output.root[dl1_images_lstcam_key].col('image_mask')
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
@@ -316,10 +319,12 @@ def main():
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
-                image_mask[ii] = signal_pixels
+
+                if image_mask_save:
+                    image_mask[ii] = signal_pixels
 
             output.root[dl1_params_lstcam_key][:] = params
-            if not args.noimage:
+            if image_mask_save:
                 output.root[dl1_images_lstcam_key][:]['image_mask'] = image_mask
 
     write_metadata(metadata, args.output_file)
