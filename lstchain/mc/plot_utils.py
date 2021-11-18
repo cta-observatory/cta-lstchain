@@ -130,8 +130,8 @@ def format_axes_sensitivity(ax):
     `matplotlib.pyplot.axis`
     """
 
-    ax.set_xscale("log", nonposx='clip')
-    ax.set_yscale("log", nonposy='clip')
+    ax.set_xscale("log", nonpositive='clip')
+    ax.set_yscale("log", nonpositive='clip')
     # ax.set_xlim(5e-2, 9.e1)
     # ax.set_ylim(1.e-14, 5.e-10)
     ax.set_xlabel("Energy [TeV]")
