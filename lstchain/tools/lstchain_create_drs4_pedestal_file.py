@@ -2,7 +2,6 @@ import numpy as np
 from tqdm import tqdm
 import numba
 import tables
-from traitlets.config import Config
 
 from ctapipe.io.hdf5tableio import DEFAULT_FILTERS
 from ctapipe.core import Tool, Provenance, ToolConfigurationError
@@ -62,12 +61,26 @@ def fill_stats(
 class DRS4PedestalAndSpikeHeight(Tool):
     name = 'lstchain_create_drs4_pedestal_file'
 
-    output_path = Path(directory_ok=False).tag(config=True)
-    skip_samples_front = Integer(default_value=10).tag(config=True)
-    skip_samples_end = Integer(default_value=1).tag(config=True)
+    output_path = Path(
+        directory_ok=False,
+        help='Path for the output hdf5 file of pedestal baseline and spike heights',
+    ).tag(config=True)
+    skip_samples_front = Integer(
+        default_value=10,
+        help='Do not include first N samples in pedestal calculation'
+    ).tag(config=True)
+    skip_samples_end = Integer(
+        default_value=1,
+        help='Do not include last N samples in pedestal calculation'
+    ).tag(config=True)
 
     progress_bar = Bool(
         help="show progress bar during processing", default_value=False
+    ).tag(config=True)
+
+    skip_events = Integer(
+        default_value=1000,
+        help='Skip this amount of events at the start to assure working delta T calibration',
     ).tag(config=True)
 
     full_statistics = Bool(
@@ -151,6 +164,9 @@ class DRS4PedestalAndSpikeHeight(Tool):
         tel_id = self.source.tel_id
 
         for event in tqdm(self.source, disable=not self.progress_bar):
+            if event.count < self.skip_events:
+                continue
+
             fill_stats(
                 event.r1.tel[tel_id].waveform,
                 self.source.r0_r1_calibrator.first_cap[tel_id],
