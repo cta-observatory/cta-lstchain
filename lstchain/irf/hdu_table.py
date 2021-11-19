@@ -150,8 +150,10 @@ def create_hdu_index_hdu(
             try:
                 hdu_list = fits.open(filepath)
                 evt_hdr = hdu_list["EVENTS"].header
-                gti_hdr = hdu_list["GTI"].header
-                pnt_hdr = hdu_list["POINTING"].header
+
+                # just test they are here
+                hdu_list["GTI"].header
+                hdu_list["POINTING"].header
             except Exception:
                 log.error(f"fits corrupted for file {file}")
                 continue
@@ -192,7 +194,7 @@ def create_hdu_index_hdu(
         hdu_index_tables.append(t_pnt)
         hdu_names = [
             "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
-            "PSF", "GH CUTS", "RAD_MAX"
+            "PSF" # , "GH CUTS", "RAD_MAX" For energy-dependent cuts
         ]
 
         for irf in hdu_names:
@@ -362,8 +364,6 @@ def create_event_list(
             # Optional columns
             "GAMMANESS": data["gh_score"],
             "MULTIP": u.Quantity(np.repeat(len(tel_list), len(data)), dtype=int),
-
-            ## Combine earlier and then use same, or do it differently
             "GLON": reco_icrs.galactic.l.to(u.deg),
             "GLAT": reco_icrs.galactic.b.to(u.deg),
             "ALT": data["reco_alt"].to(u.deg),
@@ -381,6 +381,7 @@ def create_event_list(
             "TIME": u.Quantity(time_params["t_start"], unit=u.s, ndmin=1),
             "RA_PNT": u.Quantity(pnt_icrs.ra.to(u.deg), ndmin=1),
             "DEC_PNT": u.Quantity(pnt_icrs.dec.to(u.deg), ndmin=1),
+            # Optional Columns
             "ALT_PNT": u.Quantity(data["pointing_alt"][0].to(u.deg), ndmin=1),
             "AZ_PNT": u.Quantity(data["pointing_az"][0].to(u.deg), ndmin=1),
         }

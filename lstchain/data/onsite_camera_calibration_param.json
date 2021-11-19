@@ -1,65 +1,80 @@
 {
-   "version": 1,
-   "CalibrationHDF5Writer": {
-     "one_event": true,
-     "events_to_skip": 1000,
-     "calibration_product": "LSTCalibrationCalculator",
-     "log_level":"DEBUG",   
-     "log_config": {
-       "loggers": {
-        
-       "ctapipe.CalibrationHDF5Writer.LSTEventSource":{
-        "propagate": false,
-        "level": "INFO",
-	"handlers": [
-	   "console"
-	 ]  
-       },
-       "ctapipe.io.hdf5tableio.HDF5TableWriter":{
-        "level": "INFO",
-	"handlers": [
-	   "console"
-	 ]  
-       }              
-     } 
-     }    
-    }, 
-   "LSTEventSource": {  
-    "allowed_tels": [1],
+  "version": 1,
+  "CalibrationHDF5Writer": {
+    "one_event": true,
+    "events_to_skip": 1000,
+    "calibration_product": "LSTCalibrationCalculator",
+    "log_level": "DEBUG",
+    "log_config": {
+      "loggers": {
+        "ctapipe.CalibrationHDF5Writer.LSTEventSource": {
+          "propagate": false,
+          "level": "INFO",
+          "handlers": [
+            "console"
+          ]
+        },
+        "ctapipe.io.hdf5tableio.HDF5TableWriter": {
+          "level": "INFO",
+          "handlers": [
+            "console"
+          ]
+        }
+      }
+    }
+  },
+  "LSTEventSource": {
+    "allowed_tels": [
+      1
+    ],
     "LSTR0Corrections": {
       "select_gain": false
     }
-   }, 
-   "LSTCalibrationCalculator": {
-     "squared_excess_noise_factor": 1.222,
-     "flatfield_product": "FlasherFlatFieldCalculator",
-     "pedestal_product": "PedestalIntegrator"
-   },
-   "PedestalIntegrator":{
-     "sample_duration":100000,
-     "tel_id":1,
-     "charge_median_cut_outliers": [-10,10],
-     "charge_std_cut_outliers": [-10,10],
-     "charge_product":"FixedWindowSum"
-   },
-   "FlasherFlatFieldCalculator":{
-     "sample_duration":100000,
-     "tel_id":1,
-     "charge_product":"LocalPeakWindowSum",
-     "charge_median_cut_outliers": [-0.5,0.5],
-     "charge_std_cut_outliers": [-10,10],
-     "time_cut_outliers": [2,38]
-   },
-   
-   "LocalPeakWindowSum":{
-      "window_shift": 5,
-      "window_width": 12,
-      "apply_integration_correction": false
-   },
-   "FixedWindowSum":{
-      "peak_index": 18,
-      "window_shift": 6,
-      "window_width": 12,
-      "apply_integration_correction": false
-   }
+  },
+  "LSTCalibrationCalculator": {
+    "squared_excess_noise_factor": 1.222,
+    "flatfield_product": "FlasherFlatFieldCalculator",
+    "pedestal_product": "PedestalIntegrator"
+  },
+  "PedestalIntegrator": {
+    "sample_duration": 100000,
+    "tel_id": 1,
+    "charge_median_cut_outliers": [
+      -10,
+      10
+    ],
+    "charge_std_cut_outliers": [
+      -10,
+      10
+    ],
+    "charge_product": "FixedWindowSum"
+  },
+  "FlasherFlatFieldCalculator": {
+    "sample_duration": 100000,
+    "tel_id": 1,
+    "charge_product": "LocalPeakWindowSum",
+    "charge_median_cut_outliers": [
+      -0.5,
+      0.5
+    ],
+    "charge_std_cut_outliers": [
+      -10,
+      10
+    ],
+    "time_cut_outliers": [
+      2,
+      38
+    ]
+  },
+  "LocalPeakWindowSum": {
+    "window_shift": 5,
+    "window_width": 12,
+    "apply_integration_correction": false
+  },
+  "FixedWindowSum": {
+    "peak_index": 18,
+    "window_shift": 6,
+    "window_width": 12,
+    "apply_integration_correction": false
+  }
 }

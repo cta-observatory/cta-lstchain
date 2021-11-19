@@ -50,7 +50,7 @@ parser.add_argument("--max-events",
                     type=int,
                     default=20000)
 
-parser.add_argument("--start-r0-waveform",
+parser.add_argument("--start-sample",
                     help="Start sample for waveform. Default = 11",
                     type=int,
                     default=11)
@@ -75,9 +75,13 @@ def main():
             "max_events": args.max_events,
         },
         "LSTR0Corrections": {
+            "offset": 0,
             "apply_drs4_pedestal_correction": False,
             "apply_timelapse_correction": args.deltaT,
             "apply_spike_correction": False,
+            "select_gain": False,
+            "r1_sample_start": 0,
+            "r1_sample_end": 40,
         }
     }
 
@@ -89,7 +93,7 @@ def main():
     pedestal = DragonPedestal(
         tel_id=reader.tel_id,
         n_module=n_modules,
-        r0_sample_start=args.start_r0_waveform,
+        start_sample=args.start_sample,
     )
 
     for event in tqdm(reader):
