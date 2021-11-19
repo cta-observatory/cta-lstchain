@@ -154,6 +154,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     filename = list_of_files[0]
 
     config = Config()
+    config.LSTEventSource.apply_drs4_corrections = False
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
     config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
     config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
@@ -260,15 +261,15 @@ def main():
     """
     Build an astropy Table with run summary information and write it
     as ECSV file with the following information (one row per run):
-     - run_id
-     - number of subruns
-     - type of run (DRS4, CALI, DATA, CONF)
-     - start of the run
-     - dragon reference UCTS timestamp if available (-1 otherwise)
-     - dragon reference time source ("ucts" or "run_date")
-     - dragon_reference_module_id
-     - dragon_reference_module_index
-     - dragon_reference_counter
+    - run_id
+    - number of subruns
+    - type of run (DRS4, PEDCALIB, DATA, ERROR)
+    - start of the run
+    - dragon reference UCTS timestamp if available (-1 otherwise)
+    - dragon reference time source ("ucts" or "run_date")
+    - dragon_reference_module_id
+    - dragon_reference_module_index
+    - dragon_reference_counter
     """
 
     args = parser.parse_args()

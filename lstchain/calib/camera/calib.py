@@ -24,15 +24,16 @@ def load_gain_selector_from_config(custom_config):
     """
     Return a gain selector from a custom config.
     The passed custom_config superseeds the standard config.
+
     Parameters
     ----------
     custom_config: dictionnary. Should contain:
-        - gain_selector
-        - gain_selector_config
+     - gain_selector
+     - gain_selector_config
 
     Returns
     -------
-
+    gain_selector: ctapipe.calib.camera.GainSelector
     """
 
     config = replace_config(get_standard_config(), custom_config)
@@ -44,15 +45,16 @@ def load_image_extractor_from_config(custom_config, subarray):
     """
     Return an image extractor from a custom config.
     The passed custom_config superseeds the standard config.
+
     Parameters
     ----------
-    config: dictionnary. Should contains:
-        - image_extractor
-        - image_extractor_config
+    config: dictionnary. Should contain:
+     - image_extractor
+     - image_extractor_config
 
     Returns
     -------
-
+    image_extractor: ctapipe.image.ImageExtractor
     """
     config = replace_config(get_standard_config(), custom_config)
     conf = Config(config)
@@ -74,7 +76,7 @@ def load_calibrator_from_config(custom_config, subarray):
 
     Returns
     -------
-
+    calibrator: ctapipe.calib.CameraCalibrator
     """
 
     config = replace_config(get_standard_config(), custom_config)

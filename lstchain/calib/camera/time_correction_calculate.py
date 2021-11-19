@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-from numba import jit, njit, prange
+from numba import njit, prange
 
 from ctapipe.core import Component
 from ctapipe.core.traits import Int, Float, Unicode

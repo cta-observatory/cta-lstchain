@@ -229,8 +229,6 @@ def process_dl1_file(filename, bins, tel_id=1):
         # create flatfield mask from the images table. For the time being,
         # trigger type tags are not reliable. We first identify flatfield events
         # by their looks.
-        image = image_table.col('image')
-
         flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.

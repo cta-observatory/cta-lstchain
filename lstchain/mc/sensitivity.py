@@ -4,11 +4,10 @@ import astropy.units as u
 from .mc import rate, weight
 from lstchain.spectra.crab import crab_hegra
 from lstchain.spectra.proton import proton_bess
-from lstchain.reco.utils import reco_source_position_sky, get_effective_time
+from lstchain.reco.utils import get_effective_time
 from astropy.coordinates.angle_utilities import angular_separation
 from lstchain.io import read_simu_info_merged_hdf5
 from lstchain.io.io import dl2_params_lstcam_key
-from pyirf.sensitivity import relative_sensitivity
 from gammapy.stats import WStatCountsStatistic
 
 __all__ = [
@@ -30,16 +29,15 @@ __all__ = [
     ]
 
 def read_sim_par(file):
-
     """
     Read MC simulated parameters
 
     Parameters
-    ---------
+    ----------
     file: `hdf5 file`
 
     Returns
-    ---------
+    -------
     par: `dict` with simulated parameters
 
     """
@@ -68,14 +66,14 @@ def process_mc(dl2_file, mc_type):
     Process the MC simulated and reconstructed to extract the relevant
     parameters to compute the sensitivity
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     dl2_file:  dl2 file with mc parameters
     events: `pandas DataFrame' dl2 events
     mc_type: 'string' type of particle
 
     Returns
-    ---------
+    -------
     gammaness: `numpy.ndarray`
     angdist2:  `numpy.ndarray` angular distance squared
     e_reco:    `numpy.ndarray` reconstructed energies
@@ -155,13 +153,13 @@ def get_weights(mc_par, spectral_par):
     """
     Calculate the weight to transform from MC spectra to target spectra
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     mc_par:  `dict` MC spectral parameters
     spectral_par: `dict`spectral parameters of desired spectrum
 
     Returns
-    ---------
+    -------
     w: `float` weight
 
     """
@@ -197,8 +195,8 @@ def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency
     This function calculates the difference between the number of events after the cut
     in feature and gamma_efficiency*total number of events
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     events:  `pd.dataframe` Dataframe of events
     rates: `np.ndarray` gamma rates
     obstime: `observation time`
@@ -227,13 +225,13 @@ def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency
 def samesign(a,b):
     """
     Check if two numbers have the same sign
-    Paramenters
-    ---------
+    Parameters
+    ----------
     a: `float`
     b: `float`
 
     Returns
-    ---------
+    -------
     a * b > 0: `bool` True if a and b have the same sign
 
     """
@@ -245,8 +243,8 @@ def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficienc
     Bisection method is used to find the root of the function
     Number of events after cuts - gamma_efficiency*total number of events
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     events:  `pd.dataframe` Dataframe of events
     rates: `np.ndarray` gamma rates
     obstime: `observation time`
@@ -256,7 +254,7 @@ def find_cut(events, rates, obstime, feature, low_cut, high_cut, gamma_efficienc
     gamma_efficiency: `float` target gamma efficiency for the cut
 
     Returns
-    ---------
+    -------
     midpoint: `float` cut in feature
 
     """
@@ -296,8 +294,8 @@ def find_cut_real(events_on, events_off, obstime_on, obstime_off, feature, low_c
     Bisection method is used to find the root of the function
     Number of events after cuts - gamma_efficiency*total number of events
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     events:  `pd.dataframe` Dataframe of events
     rates: `np.ndarray` gamma rates
     obstime: `observation time`
@@ -307,7 +305,7 @@ def find_cut_real(events_on, events_off, obstime_on, obstime_off, feature, low_c
     gamma_efficiency: `float` target gamma efficiency for the cut
 
     Returns
-    ---------
+    -------
     midpoint: `float` cut in feature
 
     """
@@ -345,13 +343,13 @@ def calculate_sensitivity(n_excesses, n_background, alpha):
     Sensitivity calculation using n_excesses/sqrt(n_background)
 
     Parameters
-    ---------
+    ----------
     n_excesses:   `numpy.ndarray` number of excess events in the signal region
     n_background:   `numpy.ndarray` number of events in the background region
     alpha: `numpy.ndarray` inverse of the number of off positions
 
     Returns
-    ---------
+    -------
     sensitivity: `numpy.ndarray` in percentage of Crab units
     """
     significance = n_excesses / np.sqrt(n_background * alpha)
@@ -369,7 +367,7 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
     theta2
 
     Parameters
-    ---------
+    ----------
     n_on_events:   `numpy.ndarray` number of ON events in the signal region
     n_background:   `numpy.ndarray` number of events in the background region
     alpha: `float` inverse of the number of off positions
@@ -377,7 +375,7 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
     n_bins_theta2: `int` number of bins in theta2
 
     Returns
-    ---------
+    -------
     sensitivity: `numpy.ndarray` sensitivity in percentage of Crab units
     n_excesses_5sigma: `numpy.ndarray` number of excesses corresponding to
                 a 5 sigma significance
@@ -406,14 +404,14 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
     https://ui.adsabs.harvard.edu/abs/1983ApJ...272..317L/abstract
 
     Parameters
-    ---------
+    ----------
     n_on_events:   `numpy.ndarray` number of ON events in the signal region
     n_background: `numpy.ndarray` number of events in the background region
     alpha:        `float` inverse of the number of off positions
     n_bins_energy:`int` number of bins in energy
 
     Returns
-    ---------
+    -------
     sensitivity: `numpy.ndarray` sensitivity in percentage of Crab units
     n_excesses_5sigma: `numpy.ndarray` number of excesses corresponding to
                 a 5 sigma significance
@@ -449,12 +447,12 @@ def bin_definition(n_bins_gammaness, n_bins_theta2):
     optimization of the sensitivity
 
     Parameters
-    ---------
+    ----------
     n_bins_gammaness:   `int` number of bins in gammaness
     n_bins_theta2:   `int` number of bins in theta2
 
     Returns
-    ---------
+    -------
     gammaness_bins, theta2_bins: `numpy.ndarray` binning of gammaness and theta2
 
     """
@@ -472,15 +470,16 @@ def ring_containment(angdist2, ring_radius, ring_halfwidth):
     """
     Calculate containment of cosmic ray particles with reconstructed positions
     within a ring of radius=ring_radius and half width=ring_halfwidth
+
     Parameters
-    ---------
+    ----------
     angdist2:       `numpy.ndarray` angular distance squared w.r.t.
                     the center of the camera
     ring_radius:    `float` ring radius
     ring_halfwidth: `float` halfwidth of the ring
 
     Returns
-    ---------
+    -------
     contained: `numpy.ndarray` bool array
     area: angular area of the ring
 
@@ -513,7 +512,7 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     on gamma efficiency
 
     Parameters
-    ---------
+    ----------
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed protons
     ntelescopes_gammas: `int` number of telescopes used
@@ -527,7 +526,7 @@ def sensitivity_gamma_efficiency(dl2_file_g, dl2_file_p,
     obstime: `Quantity` Observation time in seconds
 
     Returns
-    ---------
+    -------
     energy: `array` center of energy bins
     sensitivity: `array` sensitivity per energy bin
 
@@ -723,7 +722,7 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
     on gamma efficiency using real protons as background events
 
     Parameters
-    ---------
+    ----------
     dl2_file_g: `string` path to h5 file of reconstructed gammas
     dl2_file_p: `string' path to h5 file of reconstructed real protons
     ntelescopes_gammas: `int` number of telescopes used
@@ -737,7 +736,7 @@ def sensitivity_gamma_efficiency_real_protons(dl2_file_g, dl2_file_p,
     obstime: `Quantity` Observation time in seconds
 
     Returns
-    ---------
+    -------
     energy: `array` center of energy bins
     sensitivity: `array` sensitivity per energy bin
 
@@ -945,7 +944,7 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     on gamma efficiency using real data as ON and OFF events
 
     Parameters
-    ---------
+    ----------
     dl2_file_g: `string` path to h5 file of ON events
     dl2_file_p: `string' path to h5 file of OFF events
     ntelescopes_gammas: `int` number of telescopes used
@@ -959,7 +958,7 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     obstime: `Quantity` Observation time in seconds
 
     Returns
-    ---------
+    -------
     energy: `array` center of energy bins
     sensitivity: `array` sensitivity per energy bin
 
@@ -984,8 +983,6 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
     final_off = np.ndarray(shape=(n_bins_energy))
     pre_on = np.ndarray(shape=(n_bins_energy))
     pre_off = np.ndarray(shape=(n_bins_energy))
-    weighted_on_per_ebin = np.ndarray(n_bins_energy)
-    weighted_off_per_ebin = np.ndarray(n_bins_energy)
     sensitivity = np.ndarray(shape = n_bins_energy)
     n_excesses_min = np.ndarray(shape = n_bins_energy)
     eff_on = np.ndarray(shape = n_bins_energy)
@@ -1023,8 +1020,6 @@ def sensitivity_gamma_efficiency_real_data(dl2_file_on, dl2_file_off,
 
 
 
-        events_on_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
-        events_off_after_g_cut=events_bin_on[events_bin_on.gammaness > best_g_cut]
 
         best_theta2_cut = tcut[i]#find_cut_real(events_on_after_g_cut, events_off_after_g_cut, obstime_on, obstime_off, "theta2", 0.0, 1.0, gamma_eff_theta2) * u.deg**2
         #tcut[i]=best_theta2_cut.to_value()
