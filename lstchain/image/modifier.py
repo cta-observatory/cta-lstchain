@@ -273,8 +273,11 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # integration correction (in data that is currently, as of
     # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
     # adc to pe conversion factors )
-    pedestal_calibrator.image_extractor.apply_integration_correction = True
-    shower_calibrator.image_extractor.apply_integration_correction = True
+    pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
+    shower_calibrator.image_extractors[shower_extractor_type].apply_integration_correction = True
+    
+    
+    
 
     # Pulse integration window width of the (biased) extractor for showers:
     shower_extractor_window_width = config[config['image_extractor']]['window_width']
