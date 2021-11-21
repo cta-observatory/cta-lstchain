@@ -89,7 +89,7 @@ def main():
         # search the pedestal file of the same date
         if ped_run is None:
             # else search the pedestal file of the same date
-            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -113,10 +113,10 @@ def main():
         time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
 
         print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
-        cmd = f"lstchain_data_create_time_calibration_file  --input-file {input_file} " \
+        cmd = f"lstchain_data_create_time_calibration_file --input-file {input_file} " \
               f"--output-file {time_file} --config {config_file} " \
               f"--run-summary-path={run_summary_path} " \
-              f"--pedestal-file {pedestal_file} --max-events {stat_events} 2>&1"
+              f"--pedestal-file {pedestal_file} --max-events {stat_events}"
         print("\n--> RUNNING...")
         subprocess.run(cmd.split())
 
