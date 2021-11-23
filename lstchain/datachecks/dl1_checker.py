@@ -233,6 +233,11 @@ def process_dl1_file(filename, bins, tel_id=1):
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.
 
+        # Revise flatfield_mask : event_type can be rarely wrong, so check
+        # here that all events looks like interleaved flat field events:
+        flatfield_mask &= ((parameters['intensity'] > 50000) &
+                           (parameters['concentration_pixel'] < 0.005))
+
         pedestal_mask = (parameters['event_type'] ==
                          EventType.SKY_PEDESTAL.value)
 
