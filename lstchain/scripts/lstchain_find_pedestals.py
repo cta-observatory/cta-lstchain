@@ -8,15 +8,30 @@ each sub-run, called pedestal_ids_RunXXXXX.YYYY.h5, which contains a single
 table with one column, 'event_id'
 """
 
+import argparse
 import glob
 import os
 import numpy as np
 import pandas as pd
 
+from pathlib import Path
 from ctapipe.io import read_table
 from lstchain.paths import parse_dl1_filename
 
+parser = argparse.ArgumentParser(description="Interleaved Pedestal Finder")
+
+parser.add_argument(
+    '-o', '--output-dir', type=Path,
+    help='Path where to store the reco dl1 events',
+    default='./dl1_data/'
+)
+
 def main():
+
+    args = parser.parse_args()
+    output_dir = args.output_dir.absolute()
+    output_dir.mkdir(exist_ok=True)
+
     files = glob.glob('dl1_LST-1.Run?????.????.h5')
     if not files:
         raise IOError("No input dl1 files found")
@@ -65,8 +80,9 @@ def main():
                                                               'Hz')
         print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
         df = pd.DataFrame({'event_id': event_id[pedmask]})
-        output_file = 'pedestal_ids_Run{:0>5}.{:0>4}.h5'.format(run_number,
-                                                        subrun_index)
+        output_file = Path(output_dir,
+                           'pedestal_ids_Run{:0>5}.{:0>4}.h5'.format(run_number,
+                                                                     subrun_index))
         df.to_hdf(output_file, key='interleaved_pedestal_ids', mode='w')
 
 
