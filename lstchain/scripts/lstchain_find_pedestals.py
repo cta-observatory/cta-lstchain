@@ -33,6 +33,7 @@ def main():
     output_dir.mkdir(exist_ok=True)
 
     files = glob.glob('dl1_LST-1.Run?????.????.h5')
+    files.sort()
     if not files:
         raise IOError("No input dl1 files found")
     files.sort()
