@@ -4,7 +4,7 @@ Usage:
 $> python lstchain_tune_nsb.py
 --config  config_file.json     (must be the one used in the DL1 production)
 --input-mc  simtel_file.simtel.gz    simulation simtel file
---input-data_dl1 dl1_data.h5         real data DL1 file
+--input-data dl1_data.h5         real data DL1 file
 
 Calculates the parameters needed to tune the NSB in MC DL1 files (in the
 DL1ab stage) to the level of NSB in a given data file
