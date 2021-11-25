@@ -100,7 +100,6 @@ def main():
         n_module=n_modules,
         start_sample=args.start_sample,
     )
-    print(args.progress)
     for event in tqdm(reader, disable=not args.progress):
         pedestal.fill_pedestal_event(event)
 
