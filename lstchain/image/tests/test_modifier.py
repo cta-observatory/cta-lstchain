@@ -60,5 +60,5 @@ def test_calculate_noise_parameters(mc_gamma_testfile, observed_dl1_files):
         observed_dl1_files["dl1_file1"]
     )
     assert extra_noise_in_dim_pixels == 0.0
-    assert np.isclose(extra_bias_in_dim_pixels,11.20862)
+    assert np.isclose(extra_bias_in_dim_pixels, 11.20862)
     assert extra_noise_in_bright_pixels == 0.0
