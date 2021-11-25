@@ -330,7 +330,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # will integrate around it, and the additional noise is unbiased because
     # it won't modify the integration range.
     extra_noise_in_bright_pixels = \
-        ((data_median_std_ped_pe ** 2 - mc_unbiased_std_ped_pe ** 2) *
+        ((data_median_std_ped_pe**2 - mc_unbiased_std_ped_pe**2) *
          shower_extractor_window_width / pedestal_extractor_window_width)
 
     # Just in case, makes sure we just add noise if the MC noise is smaller
@@ -346,9 +346,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # maximum distance (in pe) from peak, to avoid strong impact of outliers:
     maxq = 10
     # calculate widening of the noise bump:
-    added_noise = (np.sum(dq[dq<maxq]**2) / len(dq[dq<maxq]) -
-                   np.sum(dqmc[dqmc<maxq]**2) / len(dqmc[dqmc < maxq]))
-    added_noise = (max(0, added_noise)) ** 0.5
+    added_noise = (np.sum(dq[dq<maxq]**2)/len(dq[dq<maxq]) -
+                   np.sum(dqmc[dqmc<maxq]**2)/len(dqmc[dqmc < maxq]))
+    added_noise = (max(0, added_noise))**0.5
     extra_noise_in_dim_pixels = added_noise
 
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
