@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 """
-This script has to be launched (with no arguments) on a directory containing
-DL1 sub-run (i.e. not merged) LST real data files. It will find the
-event_id's of interleaved pedestals, and write them out into one hdf5 file for
-each sub-run, called pedestal_ids_RunXXXXX.YYYY.h5, which contains a single
-table with one column, 'event_id'
+This script reads all DL1 subrun files (i.e. not merged) in the input
+directory, and finds the event_id's of interleaved pedestals. It writes them
+out into one hdf5 file for each sub-run, called pedestal_ids_RunXXXXX.YYYY.h5,
+which contains a single table with one column, 'event_id'
 """
 
 import argparse
@@ -20,27 +19,30 @@ from lstchain.paths import parse_dl1_filename
 
 parser = argparse.ArgumentParser(description="Interleaved Pedestal Finder")
 
-parser.add_argument(
-    '-o', '--output-dir', type=Path,
-    help='Path where to store the reco dl1 events',
-    default='./dl1_data/'
-)
+parser.add_argument('-f', '--input-dir', dest='srcdir',
+                    type=str, default='./',
+                    help='path to the directory of the DL1 files'
+                    )
+
+parser.add_argument('output_dir', metavar='output-dir', type=Path,
+                    help='Path where to store the output hdf5 files'
+                    )
 
 def main():
 
     args = parser.parse_args()
-    output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
 
-    files = glob.glob('dl1_LST-1.Run?????.????.h5')
-    files.sort()
+    files = glob.glob(args.srcdir+'dl1_LST-1.Run?????.????.h5')
     if not files:
         raise IOError("No input dl1 files found")
     files.sort()
 
+    output_dir = args.output_dir.absolute()
+    output_dir.mkdir(exist_ok=True)
+
     for file in files:
-        run_number = parse_dl1_filename(os.path.basename(file)).run
-        subrun_index = parse_dl1_filename(os.path.basename(file)).subrun
+        run_info = parse_dl1_filename(file)
+        run_number, subrun_index = run_info.run, run_info.subrun
 
         # Approximate interleaved pedestal frequency in Hz:
         approximate_frequency = 50
@@ -54,7 +56,7 @@ def main():
         ffmask = ((table['intensity'] > 3e4) &
                   (table['concentration_pixel'] < 0.005))
 
-        pedmask = np.array(len(table)*[False])
+        pedmask = np.zeros(len(table), dtype=bool)
         pedmask[~ffmask] = find_pedestals(all_times[~ffmask],
                                           approximate_frequency)
 
@@ -87,20 +89,20 @@ def main():
         df.to_hdf(output_file, key='interleaved_pedestal_ids', mode='w')
 
 
-def find_pedestals(timestamps, aprox_frequency=50):
+def find_pedestals(timestamps, expected_frequency=50):
     """
     Parameters
     ----------
     timestamps: ndarray, series of timestamps of LST1 events from a sub-run
-    aprox_frequency: approximate frequency (Hz) of the interleaved pedestals
-    for the epoch of the observations
+    expected_frequency: expected approximate frequency (Hz) of the interleaved
+    pedestals for the epoch of the observations
 
     Returns
     a mask which is True for the elements of timestamps which are most evenly
     distributed (and with the given approximate frequency)
 
     The function finds the set of events which are most evenly distributed
-    in time with the approximate frequency aprox_frequency. This should be the
+    in time with the approximate frequency expected_frequency. This should be the
     interleaved pedestals, which are very regularly spaced in time to better
     (typically) than microsec precision. Better to pass an array of
     timestamps in which flatfield events (easily recognizable) have been
@@ -109,7 +111,7 @@ def find_pedestals(timestamps, aprox_frequency=50):
     -------
 
     """
-    period_mean = 1 / aprox_frequency
+    period_mean = 1 / expected_frequency
     period_step_width = 1e-7  # s
     period_step_range = np.linspace(-50, 50, 101)
 
@@ -121,7 +123,7 @@ def find_pedestals(timestamps, aprox_frequency=50):
     average_nevents_per_bin = 1
     # number of bins for the phase-folded histogram:
     nbins = int(len(timestamps) / average_nevents_per_bin)
-    # aprox average_nevents_per_bin cosmics will remain per bin
+    # approximately average_nevents_per_bin cosmics will remain per bin
     # (i.e. a contamination for the genuine pedestals we are looking for)
 
     # Find the period:
@@ -159,15 +161,22 @@ def find_pedestals(timestamps, aprox_frequency=50):
     # Include them if content is at least 10% of the max:
     ifirst = ibin
     ilast = ibin
-    if best_contents[ibin - 1] > 0.1 * best_contents[ibin]:
-        ifirst = ibin - 1
-    if best_contents[ibin + 1] > 0.1 * best_contents[ibin]:
-        ilast = ibin + 1
+
+    bin_before = (ibin + len(best_contents) - 1) % len(best_contents)
+    bin_after = (ibin + 1) % len(best_contents)
+
+    if best_contents[bin_before] > 0.1 * best_contents[ibin]:
+        ifirst = bin_before
+    if best_contents[bin_after] > 0.1 * best_contents[ibin]:
+        ilast = bin_after
 
     minval = best_bins[ifirst]
-    maxval = best_bins[ilast + 1]
+    maxval = best_bins[ilast+1]
 
-    return ((tmod > minval) & (tmod < maxval))
+    if ilast >= ifirst:
+        return ((tmod > minval) & (tmod < maxval))
+    else:
+        return ((tmod < maxval) | (tmod > minval))
 
 if __name__ == '__main__':
     main()
