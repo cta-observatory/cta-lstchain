@@ -154,7 +154,7 @@ def get_dataset_keys(filename):
 
     def walk(name, obj):
         if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
+            dataset_keys.append('/'+name)
 
     with h5py.File(filename, "r") as file:
         file.visititems(walk)
