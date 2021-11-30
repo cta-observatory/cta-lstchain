@@ -257,6 +257,15 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+@pytest.mark.private_data
+def test_lstchain_find_pedestals(temp_dir_observed_files):
+    run_program(
+        "lstchain_find_pedestals",
+        "--input-dir",
+        temp_dir_observed_files,
+        temp_dir_observed_files,
+    )
+    assert (temp_dir_observed_files / "pedestal_ids_Run02008.0100.h5").is_file()
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):

@@ -81,7 +81,11 @@ def main():
                                                               (all_times[-1] -
                                                                all_times[0])),
                                                               'Hz')
+        if pedmask.sum() == 0:
+            continue
+
         print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
+
         df = pd.DataFrame({'event_id': event_id[pedmask]})
         output_file = Path(output_dir,
                            'pedestal_ids_Run{:0>5}.{:0>4}.h5'.format(run_number,
