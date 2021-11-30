@@ -258,7 +258,7 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_y" in dl2_df.columns
 
 @pytest.mark.private_data
-def test_lstchain_find_pedestals(temp_dir_observed_files):
+def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
     run_program(
         "lstchain_find_pedestals",
         "--input-dir",

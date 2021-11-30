@@ -8,8 +8,6 @@ which contains a single table with one column, 'event_id'
 """
 
 import argparse
-import glob
-import os
 import numpy as np
 import pandas as pd
 
@@ -20,7 +18,7 @@ from lstchain.paths import parse_dl1_filename
 parser = argparse.ArgumentParser(description="Interleaved Pedestal Finder")
 
 parser.add_argument('-f', '--input-dir', dest='srcdir',
-                    type=str, default='./',
+                    type=Path, default='./',
                     help='path to the directory of the DL1 files'
                     )
 
@@ -32,13 +30,12 @@ def main():
 
     args = parser.parse_args()
 
-    files = glob.glob(args.srcdir+'dl1_LST-1.Run?????.????.h5')
+    files = sorted(args.srcdir.glob('dl1_LST-1.Run?????.????.h5'))
     if not files:
         raise IOError("No input dl1 files found")
-    files.sort()
 
     output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     for file in files:
         run_info = parse_dl1_filename(file)
