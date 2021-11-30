@@ -325,7 +325,7 @@ def main():
 
             output.root[dl1_params_lstcam_key][:] = params
             if image_mask_save:
-                output.root[dl1_images_lstcam_key][:]['image_mask'] = image_mask
+                output.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
     write_metadata(metadata, args.output_file)
 
