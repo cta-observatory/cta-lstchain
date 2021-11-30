@@ -212,10 +212,10 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
     assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
-    assert "dl1/event/telescope/image/LST_LSTCam" in get_dataset_keys(
+    assert dl1_images_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
-    assert "dl1/event/telescope/parameters/LST_LSTCam" in get_dataset_keys(
+    assert dl1_params_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
 
