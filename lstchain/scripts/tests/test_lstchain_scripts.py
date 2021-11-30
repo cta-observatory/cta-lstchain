@@ -15,6 +15,11 @@ from lstchain.io.io import (
     dl1_images_lstcam_key,
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key,
+    dl1_params_tel_mon_ped_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_params_src_dep_lstcam_key,
+    dl2_params_src_dep_lstcam_key
 )
 
 from lstchain.io.config import get_standard_config
@@ -113,14 +118,15 @@ def test_observed_dl1_validity(observed_dl1_files):
 
     dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
 
-    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
-    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
-    assert 'configuration/instrument/subarray/layout' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/optics' in dl1_tables
+    assert dl1_params_lstcam_key in dl1_tables
+    assert dl1_images_lstcam_key in dl1_tables
+    assert dl1_params_tel_mon_cal_key in dl1_tables
+    assert dl1_params_tel_mon_ped_key in dl1_tables
+    assert dl1_params_tel_mon_flat_key in dl1_tables
+    assert '/configuration/instrument/subarray/layout' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/optics' in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
