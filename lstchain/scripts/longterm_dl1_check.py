@@ -16,6 +16,7 @@ showing the evolution of many such values.
 """
 
 import argparse
+import logging
 import copy
 from pathlib import Path
 
@@ -24,7 +25,7 @@ import pandas as pd
 import tables
 from astropy.table import Table
 from bokeh.io import output_file as bokeh_output_file
-from bokeh.io import show
+from bokeh.io import show, save
 from bokeh.layouts import gridplot, column
 from bokeh.models import Div, ColumnDataSource, Whisker, HoverTool, Range1d
 from bokeh.models.widgets import Tabs, Panel
@@ -33,6 +34,8 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.visualization.bokeh import show_camera
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="DL1 multi-run data checker")
 parser.add_argument('--input-dir', '-d', action='store', type=Path,
@@ -45,10 +48,23 @@ parser.add_argument('--output-file', '-o', action='store', type=Path,
                     help='.h5 output file name',
                     default='./longterm_dl1_check.h5')
 
+parser.add_argument('--batch', '-b', action='store_true',
+                    help='Run the script without opening html output'
+                    )
+
 def main():
+
     args = parser.parse_args()
 
     output_file_name = args.output_file
+    # Create directories if needed:
+    output_file_name.parent.mkdir(parents=True, exist_ok=True)
+
+    log.setLevel(logging.INFO)
+    handler = logging.FileHandler(output_file_name.with_suffix('.log'),
+                                  mode='w')
+    logging.getLogger().addHandler(handler)
+
     files = sorted(args.input_dir.glob('datacheck_dl1_LST-1.Run?????.h5'))
 
     if not files:
@@ -168,7 +184,7 @@ def main():
         try:
             a = tables.open_file(file)
         except FileNotFoundError:
-            print('Could not read file', file, '- skipping...')
+            log.warning('Could not read file', file, '- skipping...')
             continue
 
         runnumber = int(file.name[file.name.find('.Run')+4:
@@ -181,7 +197,7 @@ def main():
             try:
                 node = a.get_node(name)
             except Exception:
-                print('   Table', name, 'is missing!')
+                log.warning('   Table', name, 'is missing!')
                 datatables.append(None)
                 continue
 
@@ -266,7 +282,7 @@ def main():
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
-            nevents = table.col('num_events') # events per subrun
+            nevents = table.col('num_events') #events per subrun
             events_in_run = nevents.sum()
 
             runsummary['num_pedestals'].extend([table.col('num_events').sum()])
@@ -281,7 +297,7 @@ def main():
             # Mean pedestal charge through a run, for each pixel:
             charge_mean = np.sum(table.col('charge_mean')*nevents[:, None],
                                  axis=0) / events_in_run
-            # Now store the pixel-averaged mean pedestal charge:
+            # Now store the pixel-averaged mean pedestal charge:
             runsummary['ped_charge_mean'].extend([np.nanmean(charge_mean)])
             npixels=len(charge_mean)
             runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
@@ -318,7 +334,7 @@ def main():
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
-            nevents = table.col('num_events') # events per subrun
+            nevents = table.col('num_events') # events per subrun
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
 
@@ -329,7 +345,7 @@ def main():
             time_mean = np.sum(table.col('time_mean') * nevents[:, None],
                                  axis=0) / events_in_run
 
-            # Now store the pixel-averaged mean charge:
+            # Now store the pixel-averaged mean charge:
             runsummary['ff_charge_mean'].extend([np.nanmean(charge_mean)])
             npixels=len(charge_mean)
             runsummary['ff_charge_mean_err'].extend([np.nanstd(charge_mean) /
@@ -398,7 +414,7 @@ def main():
             try:
                 dat = Table.read(mufile, format='fits')
             except Exception:
-                print('   File', mufile, 'not found - going on')
+                log.warning('   File', mufile, 'not found - going on')
             if dat is None or len(dat) == 0:
                 empty_files += 1
                 cosmics['num_contained_mu_rings'].extend([0])
@@ -441,7 +457,8 @@ def main():
                                                   ignore_index=True)
 
         if empty_files > 0:
-            print('   Run {0:d} had {1:d} subruns with no valid muon rings!'.format(runnumber, empty_files))
+            log.warning('   Run {0:d} had {1:d} subruns with no valid muon '
+              'rings!'.format(runnumber, empty_files))
 
         # fill the runsummary muons part:
         if contained_mu_wholerun is not None:
@@ -495,10 +512,10 @@ def main():
     subarray_info = SubarrayDescription.from_hdf(files[0])
     subarray_info.to_hdf(output_file_name)
 
-    plot(output_file_name)
+    plot(output_file_name, args.batch)
 
 
-def plot(filename='longterm_dl1_check.h5', tel_id=1):
+def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Some data needed as reference, to verify the validity of the measured
     # values.
@@ -641,7 +658,7 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
     fig_cosmic_rates.y_range = Range1d(0, np.max(cosmics_rate)*1.1)
 
     coszenith = np.sin(runsummary['mean_altitude'])
-    # empirical expression obtained from 2020-2021 data:
+    # empirical expression obtained from 2020-2021 data:
     expected_mu_rate = mu_a + mu_b * coszenith
     fig_muring_rates = show_graph(x=runtime,
                                   y=runsummary['num_contained_mu_rings'] /
@@ -981,8 +998,11 @@ def plot(filename='longterm_dl1_check.h5', tel_id=1):
 
     tabs = Tabs(tabs=[page0, page0b, page1, page2,
                       page3, page4, page5, page6, page7])
-    show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
+    if batch:
+        save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
+    else:
+        show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
 
 def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                xtype='linear', ytype='linear',
@@ -1047,7 +1067,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 point_policy='snap_to_data'))
 
     if ylowlim is not None or yupplim is not None:
-        print("Anomalies in", ylabel, ":")
+        log.info("Anomalies in " + ylabel + ":")
 
     too_high = np.array(len(y) * [False])
     too_low  = np.array(len(y) * [False])
@@ -1064,16 +1084,16 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     if bad_runs.sum() > 0:
         for runlabel, val, low in zip(np.array(point_labels)[bad_runs],
                                       y[bad_runs], too_low[bad_runs]):
-            print("  ", runlabel, ":")
-            tag = "(too high)"
+            log.info("   " + runlabel + ":")
+            tag = " (too high)"
             if low:
-                tag = "(too low)"
-            print("     ", ylabel, ": {a:.2f}".format(a=val), tag)
-            print("")
+                tag = " (too low)"
+            log.info("      " + ylabel + ": {a:.2f}".format(a=val) + tag)
+            log.info("")
 
     elif ylowlim is not None or yupplim is not None:
-        print("   None")
-        print("")
+        log.info("    None")
+        log.info("")
 
     return fig
 
@@ -1100,15 +1120,15 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     # In how many of the processed runs is each pixel faulty?:
     too_low_count  = np.sum(too_low, axis=0)  # [n_pixels]
     too_high_count = np.sum(too_high, axis=0)
-    print(title+',', 'anomalous pixels:')
+    log.info(title + ', anomalous pixels:')
     num_runs = value.shape[0]
     for pix_id in np.flatnonzero(too_low_count > run_fraction * num_runs):
-        print('id', pix_id, 'too low in', too_low_count[pix_id],
-              'of', num_runs, 'runs')
+        log.info(f'id {pix_id} too low in {too_low_count[pix_id]}  of  '
+                 f'{num_runs} runs')
     for pix_id in np.flatnonzero(too_high_count > run_fraction * num_runs):
-        print('id', pix_id, 'too high in', too_high_count[pix_id], 'of',
-              num_runs, 'runs')
-    print()
+        log.info(f'id  {pix_id}  too high in {too_high_count[pix_id]} of '
+                 f'{num_runs} runs')
+    log.info('')
 
     return
 
