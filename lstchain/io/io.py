@@ -62,13 +62,14 @@ __all__ = [
     'merge_dl2_runs'
 ]
 
-dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
+dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
-dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
-dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
-dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
+dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
+dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
@@ -154,7 +155,7 @@ def get_dataset_keys(filename):
 
     def walk(name, obj):
         if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
+            dataset_keys.append('/'+name)
 
     with h5py.File(filename, "r") as file:
         file.visititems(walk)
