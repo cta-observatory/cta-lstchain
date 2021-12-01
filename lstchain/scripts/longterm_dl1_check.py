@@ -61,14 +61,20 @@ def main():
     output_file_name.parent.mkdir(parents=True, exist_ok=True)
 
     log.setLevel(logging.INFO)
-    handler = logging.FileHandler(output_file_name.with_suffix('.log'),
-                                  mode='w')
+    logfilename = output_file_name.with_suffix('.log')
+    handler = logging.FileHandler(logfilename, mode='w')
     logging.getLogger().addHandler(handler)
 
     files = sorted(args.input_dir.glob('datacheck_dl1_LST-1.Run?????.h5'))
 
     if not files:
         raise IOError("No input datacheck files found")
+
+    print('Processing', len(files), 'datacheck files...')
+    print('Writing out:')
+    print('    ', logfilename)
+    print('    ', output_file_name)
+    print('    ', output_file_name.with_suffix('.html'))
 
     # hardcoded for now, to be eventually read from data:
     numpixels = 1855
@@ -408,7 +414,9 @@ def main():
         num_contained_mu_rings_in_run = 0
 
         for subrun in subruns:
-            mufile = 'muons_LST-1.Run{0:05d}.{1:04d}.fits'.format(runnumber, subrun)
+            mufile = Path(args.input_dir,
+                          'muons_LST-1.Run{0:05d}.{1:04d}.fits'.format(
+                                  runnumber, subrun))
 
             dat = None
             try:
@@ -518,7 +526,9 @@ def main():
 def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Some data needed as reference, to verify the validity of the measured
-    # values.
+    # values. Some of these are just typical values obtained from the actual
+    # observations between ~ July 2020 and August 20201
+
     deadtime_per_event = 7e-6  # s
     interleaved_rate = np.array([50, 100])  # Hz
     interleaved_rate_change_run = np.array([0, 2709])
@@ -529,6 +539,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     mu_a = 1.02
     mu_b = 2.180  # reference muon rate = mu_b + mu_b * cos(zenith)
     muon_rate_tolerance = 0.15
+
+    # cosmics rates
+    cosmics_a = 3065.64
+    cosmics_b = 3403.23 # reference cosmics rate = mu_b + mu_b * cos(zenith)
+    cosmics_rate_tolerance = 0.30
 
     # Fraction of processed runs in which a pixel must be beyond tolerances
     # in order to be reported:
@@ -649,15 +664,21 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     fig_ff_rates.y_range = Range1d(nominal_interleaved_rate.min()*0.8,
                                    nominal_interleaved_rate.max()*1.1)
 
+    coszenith = np.sin(runsummary['mean_altitude'])
+    # empirical expression obtained from 2020-2021 data:
+    expected_cosmics_rate = cosmics_a + cosmics_b * coszenith
     fig_cosmic_rates = show_graph(x=runtime, y=cosmics_rate,
                                   ey=err_cosmics_rate,
                                   xlabel='date',
                                   ylabel='Cosmics rate (/s)',
                                   xtype='datetime', ytype='linear',
-                                  point_labels=run_titles)
-    fig_cosmic_rates.y_range = Range1d(0, np.max(cosmics_rate)*1.1)
+                                  point_labels=run_titles,
+                                  ylowlim=expected_cosmics_rate*(
+                                          1-cosmics_rate_tolerance),
+                                  yupplim=expected_cosmics_rate*(
+                                          1+cosmics_rate_tolerance))
+    fig_cosmic_rates.y_range = Range1d(0, np.max(expected_cosmics_rate)*1.4)
 
-    coszenith = np.sin(runsummary['mean_altitude'])
     # empirical expression obtained from 2020-2021 data:
     expected_mu_rate = mu_a + mu_b * coszenith
     fig_muring_rates = show_graph(x=runtime,
