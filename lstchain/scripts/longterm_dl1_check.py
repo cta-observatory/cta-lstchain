@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
 """
-This script has to be run in a directory containing LST1 DL1 datacheck files, of
-those containing inf for a whole run, with name pattern
-datacheck_dl1_LST-1.Run?????.h5
+This script reads in LST1 DL1 datacheck files, of those containing info for a
+whole run, with name pattern datacheck_dl1_LST-1.Run?????.h5. It takes all
+files in the input directory. It also reads, if available in the same path,
+the corresponding muons*fits files.
 
-The corresponding muon*fits files (which are subrun-wise) have to be present
-in the same directory.
-
-The output is the file longterm_dl1_check.h5 file, which contains tables with
-some run-wise summary values for plotting long-term evolution of the DL1 data.
+The output is the file longterm_dl1_check.h5 file (the name can be modified via
+commandline), which contains tables with some run-wise summary values for
+plotting long-term evolution of the DL1 data.
 It also produces an interactive web page, longterm_dl1_check.html with plots
-showing the evolution of many such values.
+showing the evolution of many such values. If not in batch mode, the page is
+opened by the default browser at the end of execution.
+
+It also produces a longterm_dl1_check.log file with warnings about values
+which are beyond certain limits.
 
 """
 
@@ -33,7 +36,7 @@ from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 
-from lstchain.visualization.bokeh import show_camera
+from lstchain.visualization.bokeh import show_camera, get_pixel_location
 
 log = logging.getLogger(__name__)
 
@@ -203,7 +206,7 @@ def main():
             try:
                 node = a.get_node(name)
             except Exception:
-                log.warning('   Table', name, 'is missing!')
+                log.warning('Table', name, 'is missing!')
                 datatables.append(None)
                 continue
 
@@ -422,7 +425,7 @@ def main():
             try:
                 dat = Table.read(mufile, format='fits')
             except Exception:
-                log.warning('   File', mufile, 'not found - going on')
+                log.warning('File', mufile, 'not found - going on')
             if dat is None or len(dat) == 0:
                 empty_files += 1
                 cosmics['num_contained_mu_rings'].extend([0])
@@ -465,8 +468,8 @@ def main():
                                                   ignore_index=True)
 
         if empty_files > 0:
-            log.warning('   Run {0:d} had {1:d} subruns with no valid muon '
-              'rings!'.format(runnumber, empty_files))
+            log.warning('Run {0:d} had {1:d} subruns with no valid muon '
+                  'rings!'.format(runnumber, empty_files))
 
         # fill the runsummary muons part:
         if contained_mu_wholerun is not None:
@@ -520,6 +523,10 @@ def main():
     subarray_info = SubarrayDescription.from_hdf(files[0])
     subarray_info.to_hdf(output_file_name)
 
+    log.info('_________________________________________________')
+    log.info('')
+    log.info('WARNINGS relative to the quality of the data:')
+    log.info('')
     plot(output_file_name, args.batch)
 
 
@@ -1136,6 +1143,12 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     '''
 
+    npixels = value.shape[1]
+
+    # maximum fraction of faulty pixels that will be reported individually.
+    # Beyomd that just a generic warning is displayed:
+    max_fraction_for_detailed_warning = 0.05
+
     too_low  = value < low_limit
     too_high = value > upp_limit
     # In how many of the processed runs is each pixel faulty?:
@@ -1143,12 +1156,28 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     too_high_count = np.sum(too_high, axis=0)
     log.info(title + ', anomalous pixels:')
     num_runs = value.shape[0]
-    for pix_id in np.flatnonzero(too_low_count > run_fraction * num_runs):
-        log.info(f'id {pix_id} too low in {too_low_count[pix_id]}  of  '
-                 f'{num_runs} runs')
-    for pix_id in np.flatnonzero(too_high_count > run_fraction * num_runs):
-        log.info(f'id  {pix_id}  too high in {too_high_count[pix_id]} of '
-                 f'{num_runs} runs')
+
+    too_low_pix_ids = np.flatnonzero(too_low_count > run_fraction * num_runs)
+    too_high_pix_ids = np.flatnonzero(too_high_count > run_fraction * num_runs)
+
+    if len(too_low_pix_ids) < max_fraction_for_detailed_warning * npixels:
+        for pix_id in too_low_pix_ids:
+            log.info(f'id {pix_id} ({get_pixel_location(pix_id)}) too low in'
+                     f' {too_low_count[pix_id]} of {num_runs} runs')
+    else:
+        log.info(f'More than {int(100*max_fraction_for_detailed_warning)}% of '
+                 f'the pixels are too low in more than {int(run_fraction*100)}%'
+                 f'of the runs!')
+
+    if len(too_high_pix_ids) <  max_fraction_for_detailed_warning * npixels:
+        for pix_id in too_high_pix_ids:
+            log.info(f'id  {pix_id} ({get_pixel_location(pix_id)}) too high in'
+                     f' {too_high_count[pix_id]} of {num_runs} runs')
+    else:
+        log.info(f'More than {int(100*max_fraction_for_detailed_warning)}% of '
+                 f'the pixels are too high in more than '
+                 f'{int(run_fraction*100)}% of the runs!')
+
     log.info('')
 
     return
