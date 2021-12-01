@@ -17,7 +17,7 @@ from lstchain.paths import parse_dl1_filename
 
 parser = argparse.ArgumentParser(description="Interleaved Pedestal Finder")
 
-parser.add_argument('-f', '--input-dir', dest='srcdir',
+parser.add_argument('-d', '--input-dir', dest='srcdir',
                     type=Path, default='./',
                     help='path to the directory of the DL1 files'
                     )
