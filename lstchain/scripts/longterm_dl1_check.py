@@ -15,8 +15,8 @@ showing the evolution of many such values.
 
 """
 
+import argparse
 import copy
-import glob
 from pathlib import Path
 
 import numpy as np
@@ -34,14 +34,25 @@ from ctapipe.instrument import SubarrayDescription
 
 from lstchain.visualization.bokeh import show_camera
 
+parser = argparse.ArgumentParser(description="DL1 multi-run data checker")
+parser.add_argument('--input-dir', '-d', action='store', type=Path,
+                    dest='input_dir',
+                    help='path to the datacheck_dl1_LST-1.RunXXXXX.h5 files',
+                    default='./')
+
+parser.add_argument('--output-file', '-o', action='store', type=Path,
+                    dest='output_file',
+                    help='.h5 output file name',
+                    default='./longterm_dl1_check.h5')
 
 def main():
+    args = parser.parse_args()
 
-    output_file_name = 'longterm_dl1_check.h5'
-    files = glob.glob('datacheck_dl1_LST-1.Run?????.h5')
+    output_file_name = args.output_file
+    files = sorted(args.input_dir.glob('datacheck_dl1_LST-1.Run?????.h5'))
+
     if not files:
         raise IOError("No input datacheck files found")
-    files.sort()
 
     # hardcoded for now, to be eventually read from data:
     numpixels = 1855
@@ -160,8 +171,8 @@ def main():
             print('Could not read file', file, '- skipping...')
             continue
 
-        print(file)
-        runnumber = int(file[file.find('.Run')+4:file.find('.Run')+9])
+        runnumber = int(file.name[file.name.find('.Run')+4:
+                                  file.name.find('.Run')+9])
 
         datatables = []
         for name in ['/dl1datacheck/cosmics',
@@ -457,7 +468,8 @@ def main():
             runsummary['mu_hg_peak_sample_mean'].extend([np.nan])
             runsummary['mu_hg_peak_sample_stddev'].extend([np.nan])
 
-    pd.DataFrame(runsummary).to_hdf(output_file_name, key='runsummary', mode='w')
+    pd.DataFrame(runsummary).to_hdf(output_file_name, key='runsummary',
+                                    mode='w', format='table')
 
     # Now write the pixel-wise run summary info:
     h5file = tables.open_file(output_file_name, mode="a")
@@ -475,7 +487,8 @@ def main():
 
     # Finally the tables with info by event type:
     for d, name in zip(dicts, ['cosmics', 'pedestals', 'flatfield']):
-        pd.DataFrame(d).to_hdf(output_file_name, key=name, mode='a')
+        pd.DataFrame(d).to_hdf(output_file_name, key=name, mode='a',
+                               format='table')
 
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):

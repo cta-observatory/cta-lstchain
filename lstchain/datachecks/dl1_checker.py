@@ -32,6 +32,9 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
+
+from ctapipe_io_lst import TriggerBits
+
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 # from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
@@ -94,11 +97,10 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
             logger.error(f'File {str(filename)} not found!')
             raise FileNotFoundError
 
-    # try to determine which trigger_type tag is more reliable for
-    # identifying interleaved pedestals. We check which one has
-    # more values == 32, which is the pedestal tag. The one called
-    # "trigger_type" is the TIB trigger type. The fastest way to do
-    # this for the whole run seems to be using normal pytables:
+    # We count the number of events identified as interleaved pedestals by
+    # each trigger type, just counting events with TriggerBits.PEDESTAL.value.
+    # The one called "trigger_type" is the TIB trigger type. This is faster
+    # pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
     for filename in filenames:
         with tables.open_file(filename,
@@ -106,12 +108,18 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
     num_pedestals = {'trigger_type':
-                         (np.array(trig_tags['trigger_type']) == 32).sum(),
+                         (np.array(trig_tags['trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum(),
                      'ucts_trigger_type':
-                         (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
-    logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
+                         (np.array(trig_tags['ucts_trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum()}
+    logger.info(f'Number of pedestal trigger tags: {num_pedestals}')
 
-    # Choose what source to use for obtaining the trigger type:
+    # Choose what source to use for obtaining the trigger type.
+    # We use event_type which is filled by the event source (it uses when
+    # possible the trigger types, but also heuristic methods to identify the
+    # interleaved events)
+    #
     trigger_source = 'event_type'
 
     # create container for the histograms' binnings, to be saved in the hdf5
