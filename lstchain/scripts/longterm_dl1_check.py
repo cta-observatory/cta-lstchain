@@ -274,7 +274,6 @@ def main():
                             # no more trigger types are stored for this subrun
                             break
                         elif (trigtype[0] & TriggerBits.CALIBRATION.value) == 0:
-                            print('HOLA', trigtype[0], TriggerBits.CALIBRATION.value)
                             num_wrong_tags[k][j] += trigtype[1]
 
             flatfield['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
