@@ -137,6 +137,12 @@ def main():
                   'num_cosmics': [],
                   'num_pedestals': [],
                   'num_flatfield': [],
+                  'num_wrong_ucts_tags_in_cosmics': [],
+                  'num_wrong_ucts_tags_in_pedestals': [],
+                  'num_wrong_ucts_tags_in_flatfield': [],
+                  'num_wrong_tib_tags_in_cosmics': [],
+                  'num_wrong_tib_tags_in_pedestals': [],
+                  'num_wrong_tib_tags_in_flatfield': [],
                   'num_pedestals_after_cleaning': [],
                   'num_contained_mu_rings': [],
                   'ff_charge_mean': [],   # camera average of mean pix FF charge
@@ -296,7 +302,16 @@ def main():
         runsummary['min_altitude'].extend([table.col('mean_alt_tel').min()])
         runsummary['mean_altitude'].extend([table.col('mean_alt_tel').mean()])
         runsummary['max_altitude'].extend([table.col('mean_alt_tel').max()])
-        runsummary['num_cosmics'].extend([table.col('num_events').sum()])
+        num_events = table.col('num_events').sum()
+        runsummary['num_cosmics'].extend([num_events])
+
+        # Number of wrong trigger tags for this run only (add up only
+        # the numbers for its subruns (a total of len(table)):
+        nwucts = np.sum(cosmics['wrong_ucts_trig_type'][-len(table):])
+        runsummary['num_wrong_ucts_tags_in_cosmics'].extend([nwucts])
+        nwtib = np.sum(cosmics['wrong_tib_trig_type'][-len(table):])
+        runsummary['num_wrong_tib_tags_in_cosmics'].extend([nwtib])
+
         runsummary['cosmics_fraction_pulses_above10'].extend(
                 [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
                  runsummary['num_cosmics'][-1]])
@@ -315,7 +330,16 @@ def main():
             nevents = table.col('num_events') #events per subrun
             events_in_run = nevents.sum()
 
-            runsummary['num_pedestals'].extend([table.col('num_events').sum()])
+            num_events = table.col('num_events').sum()
+            runsummary['num_pedestals'].extend([num_events])
+
+            # Number of wrong trigger tags for this run only (add up only
+            # the numbers for its subruns (a total of len(table)):
+            nwucts = np.sum(pedestals['wrong_ucts_trig_type'][-len(table):])
+            runsummary['num_wrong_ucts_tags_in_pedestals'].extend([nwucts])
+            nwtib = np.sum(pedestals['wrong_tib_trig_type'][-len(table):])
+            runsummary['num_wrong_tib_tags_in_pedestals'].extend([nwtib])
+
             runsummary['num_pedestals_after_cleaning'].extend([table.col(
                     'num_cleaned_events').sum()])
 
@@ -350,6 +374,8 @@ def main():
 
         else:
             runsummary['num_pedestals'].extend([np.nan])
+            runsummary['num_wrong_ucts_tags_in_pedestals'].extend([np.nan])
+            runsummary['num_wrong_tib_tags_in_pedestals'].extend([np.nan])
             runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ped_fraction_pulses_above10'].extend([np.nan])
             runsummary['ped_fraction_pulses_above30'].extend([np.nan])
@@ -367,6 +393,13 @@ def main():
             nevents = table.col('num_events') # events per subrun
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
+
+            # Number of wrong trigger tags for this run only (add up only
+            # the numbers for its subruns (a total of len(table)):
+            nwucts = np.sum(flatfield['wrong_ucts_trig_type'][-len(table):])
+            runsummary['num_wrong_ucts_tags_in_flatfield'].extend([nwucts])
+            nwtib = np.sum(flatfield['wrong_tib_trig_type'][-len(table):])
+            runsummary['num_wrong_tib_tags_in_flatfield'].extend([nwtib])
 
             # Mean flat field charge through a run, for each pixel:
             charge_mean = np.sum(table.col('charge_mean') * nevents[:, None],
@@ -414,6 +447,9 @@ def main():
                     [table.col('relative_time_stddev').mean(axis=0)])
         else:
             runsummary['num_flatfield'].extend([np.nan])
+            runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
+            runsummary['num_wrong_tib_tags_in_flatfield'].extend([np.nan])
+            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
@@ -735,7 +771,36 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0.child = grid0
     page0.title = 'Event rates'
 
+
+
     page0b = Panel()
+
+    items = []
+    for trigtype in ['ucts', 'tib']:
+        for evttype in ['pedestals', 'flatfield', 'cosmics']:
+            wrong_fraction = (
+                    runsummary['num_wrong_'+trigtype+'_tags_in_'+evttype] /
+                    runsummary['num_'+evttype])
+            fig = show_graph(x=runtime, y=wrong_fraction,
+                             xlabel='date',
+                             ylabel='Fraction of '+evttype+' with wrong '+trigtype+' trigger types',
+                             size=4,
+                             xtype='datetime', ytype='linear',
+                             point_labels=run_titles)
+            items.append(fig)
+
+    pad_width = 550
+    pad_height = 350
+    row1 = items[:3]
+    row2 = items[3:]
+    grid0b = gridplot([row1, row2], sizing_mode=None,
+                      plot_width=pad_width, plot_height=pad_height)
+    page0b.child = grid0b
+    page0b.title = 'Trigger tags'
+
+
+
+    page0c = Panel()
     altmin = np.rad2deg(runsummary['min_altitude'])
     altmean = np.rad2deg(runsummary['mean_altitude'])
     altmax = np.rad2deg(runsummary['max_altitude'])
@@ -749,10 +814,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                               point_labels=run_titles)
     fig_altitude.y_range = Range1d(altmin.min()*0.95, altmax.max()*1.05)
     row1 = [fig_altitude]
-    grid0b = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+    grid0c = gridplot([row1], sizing_mode=None, plot_width=pad_width,
                       plot_height=pad_height)
-    page0b.child = grid0b
-    page0b.title = 'Pointing'
+    page0c.child = grid0c
+    page0c.title = 'Pointing'
+
 
     page1 = Panel()
     pad_width = 350
@@ -974,7 +1040,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     page7 = Panel()
     pad_width = 550
-    pad_height = 280
+    pad_height = 350
     fig_flatfield = show_graph(x=pd.to_datetime(runsummary['time'],
                                                 origin='unix',
                                                 unit='s'),
@@ -1038,15 +1104,14 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         Range1d(0., np.max([1., runsummary['ff_rel_time_stddev'].max()]))
 
     row1 = [fig_flatfield, fig_ff_stddev]
-    row2 = [fig_ff_time, fig_ff_time_std]
-    row3 = [fig_ff_rel_time_std]
+    row2 = [fig_ff_time, fig_ff_time_std, fig_ff_rel_time_std]
 
-    grid7 = gridplot([row1, row2, row3], sizing_mode=None, plot_width=pad_width,
+    grid7 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
 
-    tabs = Tabs(tabs=[page0, page0b, page1, page2,
+    tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
                       page3, page4, page5, page6, page7])
 
     if batch:
@@ -1056,7 +1121,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
 
 def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
-               xtype='linear', ytype='linear',
+               xtype='linear', ytype='linear', size=2,
                point_labels=None, ylowlim=None, yupplim=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
@@ -1086,7 +1151,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     source = ColumnDataSource(data=dict(x=x, y=y))
     if point_labels is not None:
         source.data['point_labels'] = point_labels
-    datapoints = fig.circle(x='x', y='y', size=2, source=source)
+    datapoints = fig.circle(x='x', y='y', size=size, source=source)
 
     if eylow is None:
         eylow = ey
