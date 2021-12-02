@@ -242,9 +242,11 @@ def process_dl1_file(filename, bins, tel_id=1):
         # the two tables correspond one to one.
 
         # Revise flatfield_mask : event_type can be rarely wrong, so check
-        # here that all events looks like interleaved flat field events:
-        flatfield_mask &= ((parameters['intensity'] > 50000) &
-                           (parameters['concentration_pixel'] < 0.005))
+        # here that all events look like interleaved flat field events:
+        # Note (AM, 20211202): finally we won't use this, the event source
+        # takes care of it
+        # flatfield_mask &= ((parameters['intensity'] > 50000) &
+        #                    (parameters['concentration_pixel'] < 0.005))
 
         pedestal_mask = (parameters['event_type'] ==
                          EventType.SKY_PEDESTAL.value)
