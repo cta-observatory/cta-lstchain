@@ -92,7 +92,10 @@ def main():
                'elapsed_time': [],
                'events': [],
                'azimuth': [],
-               'altitude': []}
+               'altitude': [],
+               # number of events with wrong trigger type:
+               'wrong_ucts_trig_type': [],
+               'wrong_tib_trig_type': []}
 
     pedestals = copy.deepcopy(cosmics)
     flatfield = copy.deepcopy(cosmics)
@@ -116,10 +119,6 @@ def main():
     pedestals['fraction_pulses_above30'] = [] # fraction of >30 pe pulses
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
-
-    # number of events with wrong trigger type:
-    flatfield['wrong_ucts_trig_type'] = []
-    flatfield['wrong_tib_trig_type'] = []
 
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
@@ -219,10 +218,26 @@ def main():
 
         subruns = None
 
+        trig_tags = [TriggerBits.PHYSICS.value,
+                     TriggerBits.PEDESTAL.value,
+                     TriggerBits.CALIBRATION.value]
+
         # fill data which are common to all tables:
-        for table, d in zip(datatables, dicts):
+        for table, d, tag in zip(datatables, dicts, trig_tags):
             if table is None:
                 continue
+            # check the number of wrong trigger types, i.e. those events which
+            # do not have the expected trigger bits for a cosmic, pedestal or
+            # flatfield event, depending on the table we are processing. Note
+            # that the events were classified in the tables (see
+            # dl1_checker.py) using event_type as filled by the LST event source
+            #
+            # num_wrong_tags = [ndarray, ndarray]  (for ucts & tib respectively)
+            # Each array has one entry per subrun, with the number of mismatches
+            num_wrong_tags = trigtag_mismatches(table, tag)
+            d['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
+            d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
+
             d['runnumber'].extend(len(table)*[runnumber])
             d['subrun'].extend(table.col('subrun_index'))
             d['elapsed_time'].extend(table.col('elapsed_time'))
@@ -236,6 +251,7 @@ def main():
 
         if datatables[0] is not None:
             table = a.root.dl1datacheck.cosmics
+
             cosmics['fraction_pulses_above10'].extend(
                     table.col('num_pulses_above_0010_pe').mean(axis=1) /
                     table.col('num_events'))
@@ -258,26 +274,6 @@ def main():
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
-
-            # check the number of wrong trigger types, i.e. those events which
-            # do not have the flat-field bit.
-            num_wrong_tags = [np.zeros_like(table), np.zeros_like(table)]
-            # ^^^  to count [ucts, tib] in each subrun
-            for k, type in enumerate(['ucts_trigger_type', 'trigger_type']):
-                for j, subrun_trigger_statistics in enumerate(table.col(type)):
-                    for trigtype in subrun_trigger_statistics:
-                        # trigtype is an array of two elements: trigtype[0] (if
-                        # not 0) is the trigger type, and trigtype[1] the
-                        # number of events in the subrun which have that
-                        # trigger type.
-                        if trigtype[0] == 0:
-                            # no more trigger types are stored for this subrun
-                            break
-                        elif (trigtype[0] & TriggerBits.CALIBRATION.value) == 0:
-                            num_wrong_tags[k][j] += trigtype[1]
-
-            flatfield['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
-            flatfield['wrong_tib_trig_type'].extend(num_wrong_tags[1])
 
             flatfield['charge_mean'].extend(
                     np.nanmean(table.col('charge_mean'), axis=1))
@@ -1208,6 +1204,43 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     log.info('')
 
     return
+
+def trigtag_mismatches(table, tag_value):
+    """
+
+    Parameters
+    ----------
+    table: one events table of the datacheck_dl1*h5 file (cosmics, pedestals
+    or flatfield)
+    tag_value: a trigger type value for comparing it with the ones in
+    trigger_type and ucts_trigger_type
+
+    Returns
+    -------
+    num_wrong_tags [ndarray, ndarray] each of the arrays with same
+    number of elements as number of rows in the tabke (i.e. = number of subruns)
+    The arrays contain the number of non-matching tags, for ucts and tib
+    respectively
+
+    """
+
+    num_wrong_tags = [np.zeros_like(table), np.zeros_like(table)]
+    # ^^^  to count [ucts, tib] in each subrun
+    for k, type in enumerate(['ucts_trigger_type', 'trigger_type']):
+        for j, subrun_trigger_statistics in enumerate(table.col(type)):
+            for trigtype in subrun_trigger_statistics:
+                # trigtype is an array of two elements: trigtype[0] (when
+                # not =0) is the trigger type, and trigtype[1] the
+                # number of events in the subrun which have that
+                # trigger type.
+                if trigtype[0] == 0:
+                    # no more trigger types are stored for this subrun
+                    break
+                elif (trigtype[0] & tag_value) == 0:
+                    num_wrong_tags[k][j] += trigtype[1]
+
+    return num_wrong_tags
+
 
 if __name__ == '__main__':
     main()
