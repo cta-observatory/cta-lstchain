@@ -35,6 +35,7 @@ from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
+from ctapipe_io_lst import TriggerBits
 
 from lstchain.visualization.bokeh import show_camera, get_pixel_location
 
@@ -115,6 +116,10 @@ def main():
     pedestals['fraction_pulses_above30'] = [] # fraction of >30 pe pulses
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
+
+    # number of events with wrong trigger type:
+    flatfield['wrong_ucts_trig_type'] = []
+    flatfield['wrong_tib_trig_type'] = []
 
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
@@ -253,15 +258,36 @@ def main():
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
-            flatfield['charge_mean'].extend(
-                    table.col('charge_mean').mean(axis=1))
-            flatfield['charge_stddev'].extend(
-                    table.col('charge_stddev').mean(axis=1))
-            flatfield['rel_time_mean'].extend(
-                    table.col('relative_time_mean').mean(axis=1))
-            flatfield['rel_time_stddev'].extend(
-                    table.col('relative_time_stddev').mean(axis=1))
 
+            # check the number of wrong trigger types, i.e. those events which
+            # do not have the flat-field bit.
+            num_wrong_tags = [np.zeros_like(table), np.zeros_like(table)]
+            # ^^^  to count [ucts, tib] in each subrun
+            for k, type in enumerate(['ucts_trigger_type', 'trigger_type']):
+                for j, subrun_trigger_statistics in enumerate(table.col(type)):
+                    for trigtype in subrun_trigger_statistics:
+                        # trigtype is an array of two elements: trigtype[0] (if
+                        # not 0) is the trigger type, and trigtype[1] the
+                        # number of events in the subrun which have that
+                        # trigger type.
+                        if trigtype[0] == 0:
+                            # no more trigger types are stored for this subrun
+                            break
+                        elif (trigtype[0] & TriggerBits.CALIBRATION.value) == 0:
+                            print('HOLA', trigtype[0], TriggerBits.CALIBRATION.value)
+                            num_wrong_tags[k][j] += trigtype[1]
+
+            flatfield['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
+            flatfield['wrong_tib_trig_type'].extend(num_wrong_tags[1])
+
+            flatfield['charge_mean'].extend(
+                    np.nanmean(table.col('charge_mean'), axis=1))
+            flatfield['charge_stddev'].extend(
+                    np.nanmean(table.col('charge_stddev'), axis=1))
+            flatfield['rel_time_mean'].extend(
+                    np.nanmean(table.col('relative_time_mean'), axis=1))
+            flatfield['rel_time_stddev'].extend(
+                    np.nanmean(table.col('relative_time_stddev'), axis=1))
 
         table = a.root.dl1datacheck.cosmics
 
@@ -497,7 +523,8 @@ def main():
             runsummary['mu_hg_peak_sample_stddev'].extend([np.nan])
 
     pd.DataFrame(runsummary).to_hdf(output_file_name, key='runsummary',
-                                    mode='w', format='table')
+                                    mode='w', format='table',
+                                    data_columns=runsummary.keys())
 
     # Now write the pixel-wise run summary info:
     h5file = tables.open_file(output_file_name, mode="a")
@@ -516,7 +543,7 @@ def main():
     # Finally the tables with info by event type:
     for d, name in zip(dicts, ['cosmics', 'pedestals', 'flatfield']):
         pd.DataFrame(d).to_hdf(output_file_name, key=name, mode='a',
-                               format='table')
+                               format='table', data_columns=d.keys())
 
     # We write out the camera geometry information, assuming it is the same
     # for all files (hence we take it from the first one):
@@ -1031,6 +1058,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
     else:
         show(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
+
 
 def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                xtype='linear', ytype='linear',
