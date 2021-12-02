@@ -27,7 +27,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
     optimized figure array
 
     Parameters
-    --------
+    ----------
     ax:    `matplotlib.pyplot.axis`
     sensitivity:  `numpy.ndarray`  sensitivity array
     energy_bin:    `int`  energy bin number
@@ -35,7 +35,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
     n_bins_theta2:    `int`  number of bins in theta2
 
     Returns
-    --------
+    -------
     ax:    `matplotlib.pyplot.axis`
 
     """
@@ -58,12 +58,12 @@ def format_axes_ebin(ax, img):
     Format axes for the theta2 and gammaness optimization per energy bin
 
     Parameters
-    --------
+    ----------
     ax:    `matplotlib.pyplot.axis`
     img:    `matplotlib.image.AxesImage`
 
     Returns
-    --------
+    -------
     ax:    `matplotlib.pyplot.axis`
 
     """
@@ -90,14 +90,14 @@ def format_axes_array(ax, arr_i, arr_j, plot):
     figure array with all energy bins together
 
     Parameters
-    --------
+    ----------
     ax:    `matplotlib.pyplot.axis`
     arr_i: `int` i index for the square plot
     arr_j: `int` j index for the square plot
     plot:  `matplotlib.pyplot.figure`
 
     Returns
-    --------
+    -------
     ax:    `matplotlib.pyplot.axis`
     """
     ax.set_aspect(0.5)
@@ -130,8 +130,8 @@ def format_axes_sensitivity(ax):
     `matplotlib.pyplot.axis`
     """
 
-    ax.set_xscale("log", nonposx='clip')
-    ax.set_yscale("log", nonposy='clip')
+    ax.set_xscale("log", nonpositive='clip')
+    ax.set_yscale("log", nonpositive='clip')
     # ax.set_xlim(5e-2, 9.e1)
     # ax.set_ylim(1.e-14, 5.e-10)
     ax.set_xlabel("Energy [TeV]")
@@ -144,7 +144,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     Plot a percentage of the Crab SED
 
     Parameters
-    --------
+    ----------
     emin: `astropy.units.quantity.Quantity` compatible with energies
     emax:  astropy.units.quantity.Quantity compatible with energies
     percentage:  `float`  percentage of the Crab Nebula to be plotted
@@ -152,7 +152,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     kwargs: kwargs for `matplotlib.pyplot.plot`
 
     Returns
-    --------
+    -------
     ax:    `matplotlib.pyplot.axis`
     """
     ax = plt.gca() if ax is None else ax
@@ -182,13 +182,13 @@ def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
     Plot the achieved sensitivity
 
     Parameters
-    --------
+    ----------
     ax:          `matplotlib.pyplot.axis`
     energy:      `astropy.units.quantity.Quantity`  energy array
     sensitivity: `numpy.ndarray`  sensitivity array (bins of energy)
 
     Returns
-    --------
+    -------
     ax:    `matplotlib.pyplot.axis`
 
     """
@@ -218,8 +218,9 @@ def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2
     cuts were properly applied
 
     TODO: Save plots!
+
     Parameters
-    --------
+    ----------
     n_bins_energy:    `int`  number of bins in energy
     n_bins_gammaness:    `int`  number of bins in gammaness
     n_bins_theta2:    `int`  number of bins in theta2
@@ -227,12 +228,11 @@ def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2
     sensitivity_3Darray: `numpy.ndarray`  sensitivity array (bins of energy, gammaness and theta2)
 
     Returns
-    --------
+    -------
     figarr: `matplotlib.pyplot.figure`
-
     """
 
-    #TODO : To be changed!!!
+    # TODO: To be changed!!!
     # if (n_bins_energy == 12):
     #     figarr, axarr = plt.subplots(4,3, sharex=True, sharey=True, figsize=(13.2,18))
 
@@ -278,15 +278,14 @@ def sensitivity_plot_comparison(energy, sensitivity, ax=None):
     We plot the sensitivity achieved, MAGIC sensitivity and Crab SEDs
 
     Parameters
-    --------
+    ----------
     n_bins_energy:   `int`  number of bins in energy
     energy:    `numpy.ndarray`  sensitivity array
     sens: `numpy.ndarray`  sensitivity array (bins of energy, gammaness and theta2)
 
     Returns
-    --------
+    -------
     fig_sens: `matplotlib.pyplot.figure` Figure containing sensitivity plot
-
     """
 
     # Final sensitivity plot
@@ -318,7 +317,7 @@ def plot_positions_survived_events(df_gammas,
     Plot positions of surviving events after cuts
 
     Parameters
-    --------
+    ----------
     df_gammas: `pandas.DataFrame` gammas dl2 parameters
     df_protons: `pandas.DataFrame` protons dl2 parameters
     gammaness_g: `numpy.ndarray`  gammaness array of gamma events
@@ -331,10 +330,6 @@ def plot_positions_survived_events(df_gammas,
     n_bins_energy: `int`  number of bins in energy
     gammaness_bins: `numpy.ndarray`  gammaness bins
     theta2_bins: `numpy.ndarray`  theta2 bins
-
-    Returns
-    --------
-
     """
 
     e_reco_g = df_gammas.reco_energy

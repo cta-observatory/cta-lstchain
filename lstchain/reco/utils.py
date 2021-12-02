@@ -1,14 +1,10 @@
-#!/usr/bin/env python3
-"""Module with auxiliar functions:
-Transform AltAz coordinates into Camera coordinates (This should be
-implemented already in ctapipe but I haven't managed to find how to
-do it)
-Calculate source position from disp_norm distance.
-Calculate disp_ distance from source position.
+"""
+Module with auxiliar functions:
 
-Usage:
-
-"import utils"
+ - Transform AltAz coordinates into Camera coordinates (This should be
+   implemented already in ctapipe but I haven't managed to find how to do it).
+ - Calculate source position from disp_norm distance.
+ - Calculate disp distance from source position.
 """
 
 import logging
@@ -63,14 +59,14 @@ def rotate(flat_object, degree=0, origin=(0, 0)):
     """
     Rotate 2D object around given axle
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     array-like flat_object: 2D object to rotate
     tuple origin: rotation axle coordinates
     int degree: rotation angle in degrees
 
-    Returns:
-    --------
+    Returns
+    -------
     NDArray with new coordinates
     """
     angle = np.deg2rad(degree)
@@ -94,14 +90,14 @@ def extract_source_position(
     """
     Extract source position from data
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     pandas.DataFrame data: input data
     str observed_source_name: Name of the observed source
     astropy.units.m equivalent_focal_length: Equivalent focal length of a telescope
 
-    Returns:
-    --------
+    Returns
+    -------
     2D array of coordinates of the source in form [(x),(y)] in astropy.units.m
     """
     observed_source = SkyCoord.from_name(observed_source_name)
@@ -123,13 +119,13 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
     """
     Computes a square of theta (angle from z-axis) from camera frame coordinates
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     pandas.DataFrame data: Input data
     2D array (x,y) source_position: Observed source position in astropy.units.m
     float conversion_factor: Conversion factor (default 0.1/0.05 deg/m)
 
-    Returns:
+    Returns
     -------
     Array with `theta2` values
     """
@@ -144,12 +140,12 @@ def compute_alpha(data):
     """
     Computes the angle between the shower major axis and polar angle of the shower centroid
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     pandas.DataFrame data: Input data
 
-    Returns:
-    --------
+    Returns
+    -------
     Array with `alpha` values
     """
     # phi and psi range [-np.pi, +np.pi]
@@ -161,15 +157,15 @@ def compute_alpha(data):
 
 def alt_to_theta(alt):
     """Transforms altitude (angle from the horizon upwards) to theta
-    (angle from z-axis) for simtel array coordinate systems
-    Parameters:
-    -----------
+    (angle from z-axis) for simtel array coordinate systems.
+
+    Parameters
+    ----------
     alt: float
 
-    Returns:
-    --------
+    Returns
+    -------
     float: theta
-
     """
 
     return (90 * u.deg - alt).to(alt.unit)
@@ -178,13 +174,14 @@ def alt_to_theta(alt):
 def az_to_phi(az):
     """Transforms azimuth (angle from north towards east)
     to phi (angle from x-axis towards y-axis)
-    for simtel array coordinate systems
-    Parameters:
-    -----------
+    for simtel array coordinate systems.
+
+    Parameters
+    ----------
     az: float
 
-    Returns:
-    --------
+    Returns
+    -------
     az: float
     """
     return -az
@@ -192,7 +189,8 @@ def az_to_phi(az):
 
 def get_event_pos_in_camera(event, tel):
     """
-    Return the position of the source in the camera frame
+    Return the position of the source in the camera frame.
+
     Parameters
     ----------
     event: `ctapipe.containers.ArrayEventContainer`
@@ -247,7 +245,8 @@ def reco_source_position_sky(
 
 def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=None):
     """
-    Compute camera to Horizontal frame (Altitude-Azimuth system). For MC assume the default ObsTime.
+    Compute camera to Horizontal frame (Altitude-Azimuth system).
+    For MC assume the default ObsTime.
 
     Parameters
     ----------
@@ -263,22 +262,21 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=None
         pointing altitude in angle unit
     obstime: `~astropy.time.Time`
 
-
     Returns
     -------
     sky frame: `astropy.coordinates.SkyCoord`
        in AltAz frame
-    Example:
-    --------
-    import astropy.units as u
-    import numpy as np
-    pos_x = np.array([0, 0]) * u.m
-    pos_y = np.array([0, 0]) * u.m
-    focal = 28*u.m
-    pointing_alt = np.array([1.0, 1.0]) * u.rad
-    pointing_az = np.array([0.2, 0.5]) * u.rad
-    sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
 
+    Examples
+    --------
+    >>> import astropy.units as u
+    >>> import numpy as np
+    >>> pos_x = np.array([0, 0]) * u.m
+    >>> pos_y = np.array([0, 0]) * u.m
+    >>> focal = 28 * u.m
+    >>> pointing_alt = np.array([1.0, 1.0]) * u.rad
+    >>> pointing_az = np.array([0.2, 0.5]) * u.rad
+    >>> sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
     """
     if not obstime:
         logging.info("No time given. To be use only for MC data.")
@@ -301,7 +299,9 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=None
 
 def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
     """
-    Coordinate transform from aky position (alt, az) (in angles) to camera coordinates (x, y) in distance
+    Coordinate transform from aky position (alt, az) (in angles)
+    to camera coordinates (x, y) in distance.
+
     Parameters
     ----------
     alt: astropy Quantity
@@ -332,6 +332,7 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
     """
     Coordinate transform from sky coordinate to camera coordinates (x, y) in distance
+
     Parameters
     ----------
     sky_coordinate: astropy.coordinates.sky_coordinate.SkyCoord
@@ -536,6 +537,7 @@ def filter_events(
 def linear_imputer(y, missing_values=np.nan, copy=True):
     """
     Replace missing values in y with values from a linear interpolation on their position in the array.
+
     Parameters
     ----------
     y: list or `numpy.array`
@@ -543,6 +545,7 @@ def linear_imputer(y, missing_values=np.nan, copy=True):
         The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
     copy : bool, default=True
         If True, a copy of X will be created. If False, imputation will be done in-place whenever possible.
+
     Returns
     -------
     `numpy.array` : array with `missing_values` imputed
@@ -565,6 +568,7 @@ def linear_imputer(y, missing_values=np.nan, copy=True):
 def impute_pointing(dl1_data, missing_values=np.nan):
     """
     Impute missing pointing values using `linear_imputer` and replace them inplace
+
     Parameters
     ----------
     dl1_data: `pandas.DataFrame`
@@ -597,6 +601,7 @@ def add_delta_t_key(events):
     dataframe.
     Should be only used only with non-filtered data frames,
     so events are consecutive.
+
     Parameters
     ----------
     events: pandas DataFrame of dl1 events
