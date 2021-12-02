@@ -216,7 +216,7 @@ def main():
             try:
                 node = a.get_node(name)
             except Exception:
-                log.warning('Table', name, 'is missing!')
+                log.warning('Table '+name+' is missing!')
                 datatables.append(None)
                 continue
 
@@ -482,7 +482,7 @@ def main():
             try:
                 dat = Table.read(mufile, format='fits')
             except Exception:
-                log.warning('File', mufile, 'not found - going on')
+                log.warning('File '+mufile+' not found - going on')
             if dat is None or len(dat) == 0:
                 empty_files += 1
                 cosmics['num_contained_mu_rings'].extend([0])
