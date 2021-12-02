@@ -263,23 +263,24 @@ def create_event_list(
 
     Parameters
     ----------
-        Data: DL2 data file
-                'astropy.table.QTable'
-        Run: Run number
-                Int
-        Source_name: Name of the source
-                Str
-        Source_pos: Ra/Dec position of the source
-                'astropy.coordinates.SkyCoord'
-        Effective_time: Effective time of triggered events of the run
-                Float
-        Elapsed_time: Total elapsed time of triggered events of the run
-                Float
+    Data: DL2 data file
+            'astropy.table.QTable'
+    Run: Run number
+            Int
+    Source_name: Name of the source
+            Str
+    Source_pos: Ra/Dec position of the source
+            'astropy.coordinates.SkyCoord'
+    Effective_time: Effective time of triggered events of the run
+            Float
+    Elapsed_time: Total elapsed time of triggered events of the run
+            Float
+
     Returns
     -------
-        Events HDU:  `astropy.io.fits.BinTableHDU`
-        GTI HDU:  `astropy.io.fits.BinTableHDU`
-        Pointing HDU:  `astropy.io.fits.BinTableHDU`
+    Events HDU:  `astropy.io.fits.BinTableHDU`
+    GTI HDU:  `astropy.io.fits.BinTableHDU`
+    Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
 
     tel_list = np.unique(data["tel_id"])
