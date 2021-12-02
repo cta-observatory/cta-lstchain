@@ -125,12 +125,11 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
     picture threshold above the base one. That is, we calculate here the base
     picture threshold that will ensure that the condition is fulfilled
 
-    Returns: scalar
-    the value of the picture threshold that has to be used in data and
+    Returns
+    -------
+    (scalar) the value of the picture threshold that has to be used in data and
     MC to ensure that no more than max_fraction of the camera gets an
     increased value via tailcuts_clean_with_pedestal_threshold
-
-    -------
 
     """
     std_config = get_standard_config()
@@ -157,4 +156,4 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
     # Return the first integer value above new_threshold (to avoid too many
     # different cleaning settings in different runs):
 
-    return np.floor(1 + new_threshold)
+    return np.ceil(new_threshold)
