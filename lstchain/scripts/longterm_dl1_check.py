@@ -305,7 +305,7 @@ def main():
         num_events = table.col('num_events').sum()
         runsummary['num_cosmics'].extend([num_events])
 
-        # Number of wrong trigger tags for this run only (add up only
+        # Number of wrong trigger tags for this whole run (add up only
         # the numbers for its subruns (a total of len(table)):
         nwucts = np.sum(cosmics['wrong_ucts_trig_type'][-len(table):])
         runsummary['num_wrong_ucts_tags_in_cosmics'].extend([nwucts])
@@ -333,7 +333,7 @@ def main():
             num_events = table.col('num_events').sum()
             runsummary['num_pedestals'].extend([num_events])
 
-            # Number of wrong trigger tags for this run only (add up only
+            # Number of wrong trigger tags for this whole run (add up only
             # the numbers for its subruns (a total of len(table)):
             nwucts = np.sum(pedestals['wrong_ucts_trig_type'][-len(table):])
             runsummary['num_wrong_ucts_tags_in_pedestals'].extend([nwucts])
@@ -774,7 +774,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
 
     page0b = Panel()
-
     items = []
     for trigtype in ['ucts', 'tib']:
         for evttype in ['pedestals', 'flatfield', 'cosmics']:
@@ -783,12 +782,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                     runsummary['num_'+evttype])
             fig = show_graph(x=runtime, y=wrong_fraction,
                              xlabel='date',
-                             ylabel='Fraction of '+evttype+' with wrong '+trigtype+' trigger types',
+                             ylabel='Fraction of '+evttype+' with wrong '+\
+                                    trigtype+' trigger types',
                              size=4,
                              xtype='datetime', ytype='linear',
                              point_labels=run_titles)
             items.append(fig)
-
     pad_width = 550
     pad_height = 350
     row1 = items[:3]
