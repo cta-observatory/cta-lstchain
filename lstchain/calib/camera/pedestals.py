@@ -43,6 +43,8 @@ class PedestalIntegrator(PedestalCalculator):
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         directory_ok=False,
         help='Path to time sampling correction file',
     ).tag(config=True)

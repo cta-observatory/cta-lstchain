@@ -43,6 +43,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         exists=True, directory_ok=False,
         help='Path to time sampling correction file'
     ).tag(config=True)

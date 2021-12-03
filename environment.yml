@@ -7,7 +7,7 @@ dependencies:
   - numpy=1.21
   - astropy~=4.2
   - pip
-  - ctapipe~=0.11
+  - ctapipe=0.12
   - gammapy=0.18
   - h5py
   - ipython
@@ -26,11 +26,10 @@ dependencies:
   - sphinx-argparse
   - nbsphinx
   - numpydoc
-  - traitlets=5.0
   - pandas
   - pymongo
   - seaborn
   - pip:
-      - ctapipe_io_lst~=0.13.2
+      - ctapipe_io_lst~=0.14.0
       - ctaplot~=0.5.5
       - pyirf~=0.5.0
