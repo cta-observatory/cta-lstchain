@@ -45,7 +45,7 @@ base_dir = args.base_dir
 tel_id = args.tel_id
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
-
+calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
 def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
 
@@ -63,7 +63,7 @@ def main():
         path, date = input_dir.rsplit('/', 1)
 
         # verify and make output dir
-        output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/{date}/{prod_id}"
+        output_dir = f"{calib_dir}/drs4_baseline/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)

@@ -48,7 +48,7 @@ config_file = args.config
 prefix = args.input_prefix
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
-
+calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
 def main():
 
     try:
@@ -59,7 +59,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/{date}/{prod_id}"
+        output_dir = f"{calib_dir}/ffactor_systematics/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
@@ -75,7 +75,7 @@ def main():
             pro = prod_id
 
         # verify input dir
-        input_dir=f"{base_dir}/monitoring/PixelCalibration/calibration/{date}/{pro}"
+        input_dir=f"{calib_dir}/calibration/{date}/{pro}"
         if not os.path.exists(input_dir):
             raise IOError(f"Input directory {input_dir} not found\n")
 

@@ -49,6 +49,7 @@ if config_file is None:
     config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 
 max_events = 1000000
+calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 def main():
 
@@ -74,7 +75,7 @@ def main():
         path, date = input_dir.rsplit('/', 1)
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
+        output_dir = f"{calib_dir}/drs4_time_sampling_from_FF/{date}/{prod_id}"
 
         if not os.path.exists(output_dir):
             if not os.path.exists(output_dir):
@@ -98,7 +99,7 @@ def main():
             raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
         # pedestal base dir
-        ped_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/"
+        ped_dir = f"{calib_dir}/drs4_baseline/"
 
         # search the pedestal file of the same date
         if ped_run is None:
@@ -109,7 +110,7 @@ def main():
             if len(file_list) > 1:
                 raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
             else:
-                pedestal_file = file_list[0]
+                pedestal_file = file_list[0].resolve()
 
         # else, if given, search a specific pedestal run
         else:
@@ -117,7 +118,7 @@ def main():
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:
-                pedestal_file = file_list[0]
+                pedestal_file = file_list[0].resolve()
 
         print(f"\n--> Pedestal file: {pedestal_file}")
 

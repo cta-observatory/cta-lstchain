@@ -80,6 +80,7 @@ config_file = args.config
 mongodb = args.mongodb
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
+calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 def main():
 
@@ -118,7 +119,7 @@ def main():
         path, date = input_dir.rsplit('/', 1)
 
         # verify output dir
-        output_dir = f"{base_dir}/monitoring/PixelCalibration/calibration/{date}/{prod_id}"
+        output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
         if not os.path.exists(output_dir):
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
@@ -147,7 +148,7 @@ def main():
 
         print(f"\n--> Use run summary {run_summary_path}")
         # pedestal base dir
-        ped_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/"
+        ped_dir = f"{calib_dir}/drs4_baseline/"
 
         # search the pedestal file of the same date
         if ped_run is None:
@@ -158,7 +159,7 @@ def main():
             if len(file_list) > 1:
                 raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
             else:
-                pedestal_file = file_list[0]
+                pedestal_file = file_list[0].resolve()
 
         # else, if given, search a specific pedestal run
         else:
@@ -166,13 +167,13 @@ def main():
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:
-                pedestal_file = file_list[0]
+                pedestal_file = file_list[0].resolve()
 
         print(f"\n--> Pedestal file: {pedestal_file}")
 
         # search for time calibration file
         time_file = None
-        time_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF"
+        time_dir = f"{calib_dir}/drs4_time_sampling_from_FF"
 
         # search the last time run before or equal to the calibration run
         if time_run is None:
@@ -184,7 +185,7 @@ def main():
                 for file in file_list:
                     run_in_list = file.stem.rsplit("Run")[1].rsplit('.')[0]
                     if int(run_in_list) <= run:
-                        time_file = file
+                        time_file = file.resolve()
                     else:
                         break
 
@@ -197,14 +198,14 @@ def main():
             if len(file_list) == 0:
                 raise IOError(f"Time calibration file from run {time_run} not found\n")
             else:
-                time_file = file_list[0]
+                time_file = file_list[0].resolve()
                 
         if not os.path.exists(time_file):
             raise IOError(f"Time calibration file {time_file} does not exist\n")
       
         print(f"\n--> Time calibration file: {time_file}")
 
-        sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
+        sys_dir = f"{calib_dir}/ffactor_systematics/"
 
         # define systematic correction file
         if no_sys_correction:
@@ -213,7 +214,7 @@ def main():
         else:
             # use specific sys corrections
             if sys_date is not None:
-                systematics_file = f"{sys_dir}/{sys_date}/{pro}/ffactor_systematics_{sys_date}.h5"
+                systematics_file = Path(f"{sys_dir}/{sys_date}/{pro}/ffactor_systematics_{sys_date}.h5").resolve()
 
             # search the first sys correction file before the run,
             # if nothing before, use the first found
@@ -224,7 +225,7 @@ def main():
                 else:
                     sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
-                    systematics_file = f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5"
+                    systematics_file = Path(f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5").resolve()
             
             if not os.path.exists(systematics_file):
                 raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")

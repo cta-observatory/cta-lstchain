@@ -80,7 +80,8 @@ yes = args.yes
 pro_symlink = not args.no_pro_symlink
 
 output_base_name = args.output_base_name
-calib_dir=f"{base_dir}/monitoring/PixelCalibration"
+
+calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 def main():
 
