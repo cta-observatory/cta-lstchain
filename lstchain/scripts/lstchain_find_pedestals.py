@@ -26,6 +26,7 @@ parser.add_argument('output_dir', metavar='output-dir', type=Path,
                     help='Path where to store the output hdf5 files'
                     )
 
+
 def main():
 
     args = parser.parse_args()
@@ -41,7 +42,8 @@ def main():
         run_info = parse_dl1_filename(file)
         run_number, subrun_index = run_info.run, run_info.subrun
 
-        # Approximate interleaved pedestal frequency in Hz:
+        # Approximate interleaved pedestal frequency in Hz. This changed once (so far) in the life of LST.
+        # We just use the run number to decide which frequency we should expect:
         approximate_frequency = 50
         if run_number > 2708:
             approximate_frequency = 100
@@ -58,7 +60,7 @@ def main():
                                           approximate_frequency)
 
         # Now remove the 10 brightest events (might be cosmics accidentally
-        # falling in the time windows determined by time_pedestals). the
+        # falling in the time windows determined by time_pedestals). The
         # expected value of cosmics is smaller that, so we are probably
         # removing some pedestals, but it does not harm.
 
@@ -99,6 +101,7 @@ def find_pedestals(timestamps, expected_frequency=50):
     pedestals for the epoch of the observations
 
     Returns
+    -------
     a mask which is True for the elements of timestamps which are most evenly
     distributed (and with the given approximate frequency)
 
@@ -109,7 +112,6 @@ def find_pedestals(timestamps, expected_frequency=50):
     timestamps in which flatfield events (easily recognizable) have been
     excluded.
 
-    -------
 
     """
     period_mean = 1 / expected_frequency
@@ -179,5 +181,6 @@ def find_pedestals(timestamps, expected_frequency=50):
     else:
         return ((tmod < maxval) | (tmod > minval))
 
+      
 if __name__ == '__main__':
     main()
