@@ -153,7 +153,23 @@ def main():
         # search the pedestal file of the same date
         if ped_run is None:
             # else search the pedestal file of the same date
+<<<<<<< HEAD
+||||||| merged common ancestors
+<<<<<<< Temporary merge branch 1
+=======
+
+>>>>>>> fdac38777f5edea616cf4647601b53884f5ea4e8
             file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.fits'))
+<<<<<<< HEAD
+||||||| merged common ancestors
+||||||| merged common ancestors
+            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
+=======
+            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
+>>>>>>> Temporary merge branch 2
+=======
+
+>>>>>>> fdac38777f5edea616cf4647601b53884f5ea4e8
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:

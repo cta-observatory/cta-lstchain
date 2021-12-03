@@ -105,7 +105,7 @@ def main():
         if ped_run is None:
             # else search the pedestal file of the same date
 
-            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -133,6 +133,7 @@ def main():
               f"--output-file {time_file} --config {config_file} " \
               f"--run-summary-path={run_summary_path} " \
               f"--pedestal-file {pedestal_file} --max-events {stat_events} "
+
         print("\n--> RUNNING...")
         subprocess.run(cmd.split())
 
