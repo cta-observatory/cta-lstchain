@@ -3,8 +3,9 @@ from tqdm import tqdm
 import numba
 import tables
 
-from ctapipe.io.hdf5tableio import DEFAULT_FILTERS
-from ctapipe.core import Tool, Provenance, ToolConfigurationError
+from ctapipe.io.hdf5tableio import HDF5TableWriter
+from ctapipe.io.tableio import FixedPointColumnTransform
+from ctapipe.core import Tool, Provenance, ToolConfigurationError, Container, Field
 from ctapipe.core.traits import Path, Integer, flag, Bool
 
 from ctapipe_io_lst import LSTEventSource
@@ -12,6 +13,35 @@ from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES
 
 from ..statistics import OnlineStats
+
+
+
+class DRS4CalibrationContainer(Container):
+    baseline_mean = Field(
+        None,
+        "Mean baseline of each capacitor, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
+        dtype=np.float32,
+        ndim=3,
+    )
+    baseline_std = Field(
+        None,
+        "Std Dev. of the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
+        dtype=np.float32,
+        ndim=3,
+    )
+    baseline_counts = Field(
+        None,
+        "Number of events used for the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
+        dtype=np.int32,
+        ndim=3,
+    )
+
+    spike_height = Field(
+        None,
+        "Mean spike height for each pixel, shape (N_GAINS, N_PIXELS, 3)",
+        ndim=3,
+        dtype=np.float32,
+    )
 
 
 @numba.njit(cache=True, inline='always')
@@ -103,6 +133,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
         ('i', 'input'): 'LSTEventSource.input_url',
         ('o', 'output'): 'DRS4PedestalAndSpikeHeight.output_path',
         ('m', 'max-events'): 'LSTEventSource.max_events',
+        ('s', 'skip-events'): 'DRS4PedestalAndSpikeHeight.skip_events',
     }
 
 
@@ -197,50 +228,33 @@ class DRS4PedestalAndSpikeHeight(Tool):
         return spike_heights
 
     def finish(self):
+        tel_id = self.source.tel_id
         self.log.info('Writing output to %s', self.output_path)
+        key = f'r1/monitoring/drs4_baseline/tel_{tel_id:03d}'
 
-        with tables.open_file(self.output_path, 'w') as f:
+
+        with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
+            trafo = FixedPointColumnTransform(
+                scale=10,
+                offset=0,
+                source_dtype=np.float32,
+                target_dtype=np.int32,
+            )
+            for col in ['baseline_mean', 'baseline_std', 'spike_height']:
+                writer.add_column_transform(key, col, trafo)
 
             shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
+            spike_height = self.mean_spike_height()
 
-            g = f.create_group('/', 'baseline')
-            for attr in ('counts', 'mean', 'std'):
-                array = getattr(self.baseline_stats, attr).reshape(shape)
-
-                # store mean / std as int32 scaled by 100
-                # aka fixed precision with two decimal digits
-                if attr in ('mean', 'std'):
-                    array *= 100
-
-                array = array.astype(np.int32)
-                f.create_carray(g, attr, obj=array, filters=DEFAULT_FILTERS)
-
-
-            f.create_carray(
-                "/", "spike_height",
-                obj=self.mean_spike_height()
+            drs4_calibration = DRS4CalibrationContainer(
+                baseline_mean=self.baseline_stats.mean.reshape(shape).astype(np.float32),
+                baseline_std=self.baseline_stats.std.reshape(shape).astype(np.float32),
+                baseline_counts=self.baseline_stats.counts.reshape(shape).astype(np.int32),
+                spike_height=spike_height,
             )
 
-            mean_baseline = self.baseline_stats.mean.reshape(shape)
-            if self.full_statistics:
-                for i in range(3):
-                    stats = getattr(self, f'spike{i}_stats')
-                    g = f.create_group('/', f'spike{i}')
-                    for attr in ('counts', 'mean', 'std'):
-                        array = getattr(stats, attr).reshape(shape)
-
-                        # correct mean for baseline
-                        if attr == 'mean':
-                            array -= mean_baseline
-
-                        # store mean / std as int32 scaled by 100
-                        # aka fixed precision with two decimal digits
-                        if attr in ('mean', 'std'):
-                            array *= 100
-
-                        array = array.astype(np.int32)
-                        f.create_carray(g, attr, obj=array, filters=DEFAULT_FILTERS)
+            writer.write(key, drs4_calibration)
 
 
 def main():
