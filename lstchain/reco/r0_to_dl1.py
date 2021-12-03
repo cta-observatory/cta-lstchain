@@ -85,7 +85,6 @@ def setup_writer(writer, subarray, is_simulation):
 
     for tel_name in tel_names:
         # None values in telescope/image table
-        writer.exclude(f'telescope/image/{tel_name}', 'image_mask')
         writer.exclude(f'telescope/image/{tel_name}', 'parameters')
         # None values in telescope/parameters table
         writer.exclude(f'telescope/parameters/{tel_name}', 'hadroness')
@@ -231,7 +230,11 @@ def get_dl1(
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
 
+    # save the applied cleaning mask
+    calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
+
     return dl1_container
+
 
 def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
@@ -417,12 +420,6 @@ def r0_to_dl1(
                 add_global_metadata(extra_im, metadata)
                 add_config_metadata(extra_im, config)
 
-                # write image first, so we are sure nothing here modifies it
-                writer.write(
-                    table_name=f'telescope/image/{tel_name}',
-                    containers=[event.index, dl1_tel, extra_im]
-                )
-
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
                 mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
@@ -483,6 +480,11 @@ def r0_to_dl1(
 
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
+
+                writer.write(
+                    table_name=f'telescope/image/{tel_name}',
+                    containers=[event.index, dl1_tel, extra_im]
+                )
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:

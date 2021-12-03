@@ -26,10 +26,7 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     if mean_3_max_signal < threshold:
         return signal_pixels
 
-    cleaned_img = image.copy()
-    cleaned_img[~signal_pixels] = 0
     dynamic_threshold = fraction * mean_3_max_signal
-    mask_dynamic_cleaning = (cleaned_img >= dynamic_threshold)
-    new_mask_after_dynamic_cleaning = np.logical_and(signal_pixels,
-                                                     mask_dynamic_cleaning)
-    return new_mask_after_dynamic_cleaning
+    mask_dynamic_cleaning = (image >= dynamic_threshold) & signal_pixels
+
+    return mask_dynamic_cleaning
