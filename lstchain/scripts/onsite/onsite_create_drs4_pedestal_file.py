@@ -68,7 +68,7 @@ def main():
             print(f"--> Create directory {output_dir}")
             os.makedirs(output_dir, exist_ok=True)
 
-        # update the default priduction directory
+        # update the default production directory
         if pro_symlink:
             pro="pro"
             pro_dir = f"{output_dir}/../{pro}"
