@@ -114,10 +114,10 @@ parser.add_argument(
     help='Maximum number of events to be processed.',
 )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True)
 
@@ -184,7 +184,6 @@ def main():
         output_filename=output_filename,
         custom_config=config,
     )
-
 
 
 if __name__ == '__main__':

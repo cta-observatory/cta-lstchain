@@ -233,7 +233,7 @@ def main():
         print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
     # define charge file names
-        print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
+        print("\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
 
         if filters is not None:
             filter_info=f"_filters_{filters}"
@@ -241,9 +241,9 @@ def main():
             filter_info = ""
 
         # remember there are no systematic corrections
-        prefix=""
+        prefix = ""
         if no_sys_correction:
-            prefix=f"no_sys_corrected_"
+            prefix = "no_sys_corrected_"
 
         output_name = f"{prefix}{output_base_name}{filter_info}.Run{run:05d}.{sub_run:04d}"
 
@@ -263,7 +263,7 @@ def main():
                 os.remove(output_file)
                 os.remove(log_file)
             else:
-                print(f"\n--> Output file exists already. Stop")
+                print("\n--> Output file exists already. Stop")
                 exit(1)
 
         #
@@ -314,8 +314,10 @@ def search_filter(run):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No mongo DB filter information."
-                      f" You must pass the filters by argument: -f [filters]")
+        raise IOError(
+            "--> No mongo DB filter information."
+            " You must pass the filters by argument: -f [filters]"
+        )
 
     return filters
 
@@ -336,7 +338,8 @@ def define_FF_selection_range(filters):
             transm_file = os.path.join(os.path.dirname(__file__), "../../data/filters_transmission.dat")
 
             f = open(transm_file, 'r')
-            header = f.readline()
+            # skip header
+            f.readline()
             trasm = {}
             for line in f:
                 columns = line.split()
@@ -355,7 +358,7 @@ def define_FF_selection_range(filters):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No FF selection range information")
+        raise IOError("--> No FF selection range information")
 
     return min_ff, max_ff
 

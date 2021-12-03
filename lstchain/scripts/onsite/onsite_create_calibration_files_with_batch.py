@@ -157,7 +157,7 @@ def main():
                         f"--config {config_file} --time_run {time_run} "
 
                     if yes:
-                        cmd += f"--yes "
+                        cmd += "--yes "
 
                     if no_sys_correction:
                         cmd += "--no_sys_correction "

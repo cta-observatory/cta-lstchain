@@ -97,7 +97,7 @@ def main():
             if yes or remove:
                 os.remove(output_file)
             else:
-                print(f"\n--> Output file exists already. Stop")
+                print("\n--> Output file exists already. Stop")
                 exit(1)
 
         # run lstchain script

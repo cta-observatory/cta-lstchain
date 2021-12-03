@@ -102,7 +102,7 @@ def main():
                 os.remove(output_file)
                 os.remove(log_file)
             else:
-                print(f"\n--> Output file exists already. Stop")
+                print("\n--> Output file exists already. Stop")
                 exit(1)
 
         print(f"\n--> Plot file {plot_file}")

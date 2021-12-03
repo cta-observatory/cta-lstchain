@@ -5,15 +5,25 @@ import numpy as np
 import pandas as pd
 import pkg_resources
 import pytest
+import tables
 from astropy import units as u
 from astropy.time import Time
 
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl2_params_lstcam_key,
+    dl1_images_lstcam_key,
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key,
+    dl1_params_tel_mon_ped_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_params_src_dep_lstcam_key,
+    dl2_params_src_dep_lstcam_key
 )
+
+from lstchain.io.config import get_standard_config
+import json
 
 
 def find_entry_points(package_name):
@@ -108,14 +118,15 @@ def test_observed_dl1_validity(observed_dl1_files):
 
     dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
 
-    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
-    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
-    assert 'configuration/instrument/subarray/layout' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/optics' in dl1_tables
+    assert dl1_params_lstcam_key in dl1_tables
+    assert dl1_images_lstcam_key in dl1_tables
+    assert dl1_params_tel_mon_cal_key in dl1_tables
+    assert dl1_params_tel_mon_ped_key in dl1_tables
+    assert dl1_params_tel_mon_flat_key in dl1_tables
+    assert '/configuration/instrument/subarray/layout' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/optics' in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
@@ -201,10 +212,10 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
     assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
-    assert "dl1/event/telescope/image/LST_LSTCam" in get_dataset_keys(
+    assert dl1_images_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
-    assert "dl1/event/telescope/parameters/LST_LSTCam" in get_dataset_keys(
+    assert dl1_params_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
 
@@ -270,6 +281,42 @@ def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
 
 def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
+    with tables.open_file(simulated_dl1ab) as output:
+        assert dl1_images_lstcam_key in output.root
+
+
+def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
+    """Produce a new simulated dl1 file using the dl1ab script."""
+    output_file = tmp_path / "dl1ab_no_images.h5"
+
+    config_path = tmp_path / 'config.json'
+    with config_path.open('w') as f:
+        config = get_standard_config()
+        config['tailcut']["picture_thresh"] = 10
+        config['tailcut']["boundary_thresh"] = 5
+        json.dump(config, f)
+
+    run_program(
+        "lstchain_dl1ab",
+        "-f", simulated_dl1_file,
+        "-o", output_file,
+        "-c", config_path,
+        '--no-image=True',
+    )
+
+    with tables.open_file(output_file, 'r') as output:
+        assert dl1_images_lstcam_key not in output.root
+        assert dl1_params_lstcam_key in output.root
+
+        new_parameters = output.root[dl1_params_lstcam_key][:]
+
+        with tables.open_file(simulated_dl1_file, 'r') as input_file:
+            old_parameters = input_file.root[dl1_params_lstcam_key][:]
+
+            # new cleaning should result in less pixels
+            assert (new_parameters['n_pixels'] <= old_parameters['n_pixels']).all()
+            assert (new_parameters['n_pixels'] < old_parameters['n_pixels']).any()
+            assert (new_parameters['length'] != old_parameters['length']).any()
 
 
 @pytest.mark.private_data
@@ -350,3 +397,5 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_module_index" in run_summary_table.columns
     assert "dragon_reference_counter" in run_summary_table.columns
     assert "dragon_reference_source" in run_summary_table.columns
+
+    assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
