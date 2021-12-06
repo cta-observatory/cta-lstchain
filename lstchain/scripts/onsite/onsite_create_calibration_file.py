@@ -93,6 +93,8 @@ def main():
     # define the FF selection cuts
     if args.min_ff is None or args.max_ff is None:
         min_ff, max_ff = define_FF_selection_range(filters)
+    else:
+        min_ff, max_ff = args.min_ff, args.max_ff
 
     print(f"\n--> Start calculating calibration from run {run}, filters {filters}")
 
@@ -268,9 +270,9 @@ def main():
             f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
             f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
             f"--FlatFieldCalculator.sample_size={stat_events}",
-            "--PedestalCalculator.sample_size={stat_events}",
+            f"--PedestalCalculator.sample_size={stat_events}",
             f"--config={config_file}",
-            "--log-file={log_file}",
+            f"--log-file={log_file}",
             "--log-file-level=DEBUG",
         ]
 
