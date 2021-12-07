@@ -150,24 +150,33 @@ def main():
                     fh.write("#SBATCH --mem-per-cpu=10G\n")
                     fh.write("#SBATCH -D %s \n" % output_dir)
 
-                    cmd = f"srun onsite_create_calibration_file -r {run} " \
-                        f"-p {ped_run} -v {prod_id} --sub_run {sub_run} " \
-                        f"-b {base_dir} -s {stat_events} --output_base_name {output_base_name} " \
-                        f"--filters {filters} --sys_date {sys_date} " \
-                        f"--config {config_file} --time_run {time_run} "
+                    cmd = [
+                        "srun",
+                        "onsite_create_calibration_file",
+                        f"-r {run}",
+                        f"-p {ped_run}",
+                        f"-v {prod_id}",
+                        f"--sub_run={sub_run}",
+                        f"-b {base_dir}",
+                        f"-s {stat_events}",
+                        f"--output_base_name={output_base_name}",
+                        f"--filters={filters}",
+                        f"--sys_date={sys_date}",
+                        f"--config={config_file}",
+                        "--time_run={time_run}",
+                    ]
 
                     if yes:
-                        cmd += "--yes "
+                        cmd.append("--yes")
 
                     if no_sys_correction:
-                        cmd += "--no_sys_correction "
+                        cmd.append("--no_sys_correction")
 
-                    if args.no_pro_symlink:
-                        cmd += "--no_pro_symlink "
+                    # join command together with newline, line continuation and indentation
+                    fh.write(" \\\n  ".join(cmd))
+                    fh.write('\n')
 
-                    fh.write(cmd)
-
-                subprocess.run(["sbatch",job_file])
+                subprocess.run(["sbatch", job_file], check=True)
 
             except Exception as e:
                 print(f"\n >>> Exception: {e}. Run skipped")
