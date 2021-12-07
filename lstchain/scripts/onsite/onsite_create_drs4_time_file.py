@@ -1,4 +1,5 @@
 #!/usr//bin/env python
+
 """
 
  Onsite script for creating a drs4 time sampling correction file to be run as a command line:
@@ -7,7 +8,6 @@
 
 """
 
-import sys
 import argparse
 import os
 from pathlib import Path
@@ -52,86 +52,83 @@ def main():
 
     print(f"\n--> Start calculating drs4 time corrections from run {run}")
 
-    # verify config file
-    if not os.path.exists(config_file):
-        print("Config file {config_file} does not exists.")
-        sys.exit(1)
+    try:
+        # verify config file
+        if not os.path.exists(config_file):
+            raise IOError(f"Config file {config_file} does not exists. \n")
 
+        print(f"\n--> Config file {config_file}")
 
-    print(f"\n--> Config file {config_file}")
+        # verify input file
+        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
+        if len(file_list) == 0:
+            raise IOError(f"Run {run} not found\n")
+        else:
+            input_file = file_list[0]
+        print(f"\n--> Input file: {input_file}")
 
-    # verify input file
-    file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
-    if len(file_list) == 0:
-        print(f"Run {run} not found")
-        sys.exit(2)
-    else:
-        input_file = file_list[0]
-    print(f"\n--> Input file: {input_file}")
+        # find date
+        input_dir, name = os.path.split(os.path.abspath(input_file))
+        path, date = input_dir.rsplit('/', 1)
 
-    # find date
-    input_dir, name = os.path.split(os.path.abspath(input_file))
-    path, date = input_dir.rsplit('/', 1)
-
-    # verify output dir
-    output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
-    if not os.path.exists(output_dir):
+        # verify output dir
+        output_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_time_sampling_from_FF/{date}/{prod_id}"
         if not os.path.exists(output_dir):
-            print(f"--> Create directory {output_dir}")
-            os.makedirs(output_dir, exist_ok=True)
+            if not os.path.exists(output_dir):
+                print(f"--> Create directory {output_dir}")
+                os.makedirs(output_dir, exist_ok=True)
 
-    # search the summary file info
-    run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
-    if not os.path.exists(run_summary_path):
-        print(f"Night summary file {run_summary_path} does not exist")
-        sys.exit(3)
+        # search the summary file info
+        run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
+        if not os.path.exists(run_summary_path):
+            raise IOError(f"Night summary file {run_summary_path} does not exist\n")
 
-    # pedestal base dir
-    ped_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/"
+        # pedestal base dir
+        ped_dir = f"{base_dir}/monitoring/PixelCalibration/drs4_baseline/"
 
-    # search the pedestal file of the same date
-    if ped_run is None:
-        # else search the pedestal file of the same date
-        file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
-        if len(file_list) == 0:
-            print(f"No pedestal file found for date {date}")
-            sys.exit(4)
-        if len(file_list) > 1:
-            print(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
-            sys.exit(5)
+        # search the pedestal file of the same date
+        if ped_run is None:
+            # else search the pedestal file of the same date
+            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
+            if len(file_list) == 0:
+                raise IOError(f"No pedestal file found for date {date}\n")
+            if len(file_list) > 1:
+                raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
+            else:
+                pedestal_file = file_list[0]
+
+        # else, if given, search a specific pedestal run
         else:
-            pedestal_file = file_list[0]
+            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
+            if len(file_list) == 0:
+                raise IOError(f"Pedestal file from run {ped_run} not found\n")
+            else:
+                pedestal_file = file_list[0]
 
-    # else, if given, search a specific pedestal run
-    else:
-        file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
-        if len(file_list) == 0:
-            print(f"Pedestal file from run {ped_run} not found")
-            sys.exit(6)
-        else:
-            pedestal_file = file_list[0]
+        print(f"\n--> Pedestal file: {pedestal_file}")
 
-    print(f"\n--> Pedestal file: {pedestal_file}")
+        #
+        # produce drs4 time calibration file
+        #
+        time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
 
-    #
-    # produce drs4 time calibration file
-    #
-    time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
+        print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
+        cmd = [
+            "lstchain_data_create_time_calibration_file",
+            f"--input-file={input_file}",
+            f"--output-file={time_file}",
+            f"--config={config_file}",
+            f"--run-summary-path={run_summary_path}",
+            f"--pedestal-file={pedestal_file}",
+            f"--max-events={stat_events}",
+        ]
+        print("\n--> RUNNING...")
+        subprocess.run(cmd, check=True)
 
-    print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
-    cmd = [
-        "lstchain_data_create_time_calibration_file",
-        f"--input-file={input_file}",
-        f"--output-file={time_file}",
-        f"--config={config_file}",
-        f"--run-summary-path={run_summary_path}",
-        f"--pedestal-file={pedestal_file}",
-        f"--max-events={stat_events}",
-    ]
-    print("\n--> RUNNING...")
-    subprocess.run(cmd, check=True)
+        print("\n--> END")
 
-    print("\n--> END")
+    except Exception as e:
+        print(f"\n >>> Exception: {e}")
 
 
 if __name__ == '__main__':
