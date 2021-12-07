@@ -108,7 +108,8 @@ def main():
     # verify input file
     file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
     if len(file_list) == 0:
-        raise IOError(f"Run {run} not found\n")
+        print(f"Run {run} not found")
+        sys.exit(2)
     else:
         input_file = file_list[0]
     print(f"\n--> Input file: {input_file}")
@@ -133,7 +134,7 @@ def main():
     run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
     if not os.path.exists(run_summary_path):
         print(f"Night summary file {run_summary_path} does not exist")
-        sys.exit(2)
+        sys.exit(3)
 
     print(f"\n--> Use run summary {run_summary_path}")
     # pedestal base dir
@@ -144,9 +145,11 @@ def main():
         # else search the pedestal file of the same date
         file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
         if len(file_list) == 0:
-            raise IOError(f"No pedestal file found for date {date}\n")
+            print(f"No pedestal file found for date {date}")
+            sys.exit(4)
         if len(file_list) > 1:
-            raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
+            print(f"Too many pedestal files found for date {date}: {file_list}, choose one run")
+            sys.exit(5)
         else:
             pedestal_file = file_list[0]
 
@@ -155,7 +158,7 @@ def main():
         file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{prod_id}/drs4_pedestal.Run{ped_run}.0000.fits'))
         if len(file_list) == 0:
             print(f"Pedestal file from run {ped_run} not found")
-            sys.exit(3)
+            sys.exit(6)
         else:
             pedestal_file = file_list[0]
 
@@ -171,7 +174,7 @@ def main():
 
         if len(file_list) == 0:
             print(f"No time calibration file found in the data tree for prod {prod_id}")
-            sys.exit(4)
+            sys.exit(7)
         else:
             for file in file_list:
                 run_in_list = file.stem.rsplit("Run")[1].rsplit('.')[0]
@@ -182,20 +185,20 @@ def main():
 
         if time_file is None:
             print(f"No time calibration file found before run {run} for prod {prod_id}")
-            sys.exit(5)
+            sys.exit(8)
 
     # if given, search a specific time file
     else:
         file_list = sorted(Path(f"{time_dir}").rglob(f'*/{prod_id}/time_calibration.Run{time_run:05d}.0000.h5'))
         if len(file_list) == 0:
             print(f"Time calibration file from run {time_run} not found")
-            sys.exit(6)
+            sys.exit(9)
         else:
             time_file = file_list[0]
 
     if not os.path.exists(time_file):
         print(f"Time calibration file {time_file} does not exist")
-        sys.exit(7)
+        sys.exit(10)
 
     print(f"\n--> Time calibration file: {time_file}")
 
@@ -216,7 +219,7 @@ def main():
             dir_list = sorted(Path(sys_dir).rglob(f"*/{prod_id}/ffactor_systematics*"))
             if len(dir_list) == 0:
                 print(f"No systematic correction file found for production {prod_id} in {sys_dir}")
-                sys.exit(8)
+                sys.exit(11)
             else:
                 sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                 selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
@@ -224,7 +227,7 @@ def main():
 
         if not os.path.exists(systematics_file):
             print(f"F-factor systematics correction file {systematics_file} does not exist\n")
-            sys.exit(9)
+            sys.exit(12)
 
     print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
