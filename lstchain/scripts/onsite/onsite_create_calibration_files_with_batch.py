@@ -109,78 +109,74 @@ def main():
 
         for sub_run in sub_run_list:
             print(f"\n--> Runs {run} and sub-run {sub_run}")
-            try:
-                # verify input file
-                file_list = sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
-                if len(file_list) == 0:
-                    raise IOError(f"Run {run} not found\n")
-                else:
-                    input_file = file_list[0]
+            
+            # verify input file
+            file_list = sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
+            if len(file_list) == 0:
+                raise IOError(f"Run {run} not found\n")
+            else:
+                input_file = file_list[0]
 
-                print(f"--> Input file: {input_file}")
+            print(f"--> Input file: {input_file}")
 
-                # find date
-                input_dir, name = os.path.split(os.path.abspath(input_file))
-                path, date = input_dir.rsplit('/', 1)
+            # find date
+            input_dir, name = os.path.split(os.path.abspath(input_file))
+            path, date = input_dir.rsplit('/', 1)
 
-                
-                # verify output dir
-                output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
-                if not os.path.exists(output_dir):
-                    print(f"--> Create directory {output_dir}")
-                    os.makedirs(output_dir, exist_ok=True)
-               
-                # verify log dir
-                log_dir = f"{calib_dir}/calibration/{date}/{prod_id}/log"
-                if not os.path.exists(log_dir):
-                    print(f"--> Create directory {log_dir}\n")
-                    os.makedirs(log_dir, exist_ok=True)
 
-                # job file              
-                now = datetime.now().replace(microsecond=0).isoformat(sep='T')
-                job_file = f"{log_dir}/run_{run}_subrun_{sub_run}_date_{now}.job"
+            # verify output dir
+            output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
+            if not os.path.exists(output_dir):
+                print(f"--> Create directory {output_dir}")
+                os.makedirs(output_dir, exist_ok=True)
 
-                with open(job_file, "w") as fh:
-                    fh.write("#!/bin/bash\n")
-                    fh.write("#SBATCH --job-name=%s.job\n" % run)
-                    fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run,sub_run,now))
-                    fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run,sub_run,now))
-                    fh.write("#SBATCH -p short\n")
-                    fh.write("#SBATCH --cpus-per-task=1\n")
-                    fh.write("#SBATCH --mem-per-cpu=10G\n")
-                    fh.write("#SBATCH -D %s \n" % output_dir)
+            # verify log dir
+            log_dir = f"{calib_dir}/calibration/{date}/{prod_id}/log"
+            if not os.path.exists(log_dir):
+                print(f"--> Create directory {log_dir}\n")
+                os.makedirs(log_dir, exist_ok=True)
 
-                    cmd = [
-                        "srun",
-                        "onsite_create_calibration_file",
-                        f"-r {run}",
-                        f"-p {ped_run}",
-                        f"-v {prod_id}",
-                        f"--sub_run={sub_run}",
-                        f"-b {base_dir}",
-                        f"-s {stat_events}",
-                        f"--output_base_name={output_base_name}",
-                        f"--filters={filters}",
-                        f"--sys_date={sys_date}",
-                        f"--config={config_file}",
-                        "--time_run={time_run}",
-                    ]
+            # job file
+            now = datetime.now().replace(microsecond=0).isoformat(sep='T')
+            job_file = f"{log_dir}/run_{run}_subrun_{sub_run}_date_{now}.job"
 
-                    if yes:
-                        cmd.append("--yes")
+            with open(job_file, "w") as fh:
+                fh.write("#!/bin/bash\n")
+                fh.write("#SBATCH --job-name=%s.job\n" % run)
+                fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run,sub_run,now))
+                fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run,sub_run,now))
+                fh.write("#SBATCH -p short\n")
+                fh.write("#SBATCH --cpus-per-task=1\n")
+                fh.write("#SBATCH --mem-per-cpu=10G\n")
+                fh.write("#SBATCH -D %s \n" % output_dir)
 
-                    if no_sys_correction:
-                        cmd.append("--no_sys_correction")
+                cmd = [
+                    "srun",
+                    "onsite_create_calibration_file",
+                    f"-r {run}",
+                    f"-p {ped_run}",
+                    f"-v {prod_id}",
+                    f"--sub_run={sub_run}",
+                    f"-b {base_dir}",
+                    f"-s {stat_events}",
+                    f"--output_base_name={output_base_name}",
+                    f"--filters={filters}",
+                    f"--sys_date={sys_date}",
+                    f"--config={config_file}",
+                    f"--time_run={time_run}",
+                ]
 
-                    # join command together with newline, line continuation and indentation
-                    fh.write(" \\\n  ".join(cmd))
-                    fh.write('\n')
+                if yes:
+                    cmd.append("--yes")
 
-                subprocess.run(["sbatch", job_file], check=True)
+                if no_sys_correction:
+                    cmd.append("--no_sys_correction")
 
-            except Exception as e:
-                print(f"\n >>> Exception: {e}. Run skipped")
-                continue
+                # join command together with newline, line continuation and indentation
+                fh.write(" \\\n  ".join(cmd))
+                fh.write('\n')
+
+            subprocess.run(["sbatch", job_file], check=True)
 
 
 if __name__ == '__main__':
