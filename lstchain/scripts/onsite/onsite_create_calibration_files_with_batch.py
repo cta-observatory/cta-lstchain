@@ -159,7 +159,7 @@ def main():
                         f"--filters={filters}",
                         f"--sys_date={sys_date}",
                         f"--config={config_file}",
-                        f"--time_run={time_run}",
+                        "--time_run={time_run}",
                     ]
 
                     if yes:
