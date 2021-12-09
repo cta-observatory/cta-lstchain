@@ -1197,7 +1197,7 @@ def get_srcdep_params(filename, key):
     Parameters
     ----------
     filename: str - path to the HDF5 file
-    key: `str` - multi index key correspoinding to an expected source position (e.g. 'on', 'off_180')
+    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
 
     Returns
     -------
