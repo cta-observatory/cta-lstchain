@@ -27,13 +27,13 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
     """
     Get the x, y coordinates of the pixels in the telescope frame
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     geom: CameraGeometry
     equivalent_focal_length:    Focal length of the telescope
 
     Returns
-    ---------
+    -------
     fov_lon, fov_lat:    `floats` coordinates in  the TelescopeFrame
     """
 
@@ -49,15 +49,15 @@ def fit_muon(x, y, image, geom, tailcuts):
     """
     Fit the muon ring
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     x, y:    `floats` coordinates in  the TelescopeFrame
     image:   `np.ndarray` number of photoelectrons in each pixel
     geom:    CameraGeometry
     image:   `list` tail cuts for image cleaning
 
     Returns
-    ---------
+    -------
     muonringparam: ``
     clean_mask:    `np.ndarray` mask after cleaning
     dist:          `np.ndarray` distance of every pixel
@@ -100,8 +100,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     """
     Analyze an event to fit a muon ring
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     event_id:   `int` id of the analyzed event
     image:      `np.ndarray` number of photoelectrons in each pixel
     geom:       CameraGeometry
@@ -111,7 +111,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     plots_path: `string` path to store the figures
 
     Returns
-    ---------
+    -------
 
     muonintensityoutput MuonEfficiencyContainer
     dist_mask           ndarray, pixels used in ring intensity likelihood fit
@@ -134,7 +134,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     tailcuts = [10, 5]
 
     cam_rad = (
-                          lst1_description.camera.geometry.guess_radius() / lst1_description.optics.equivalent_focal_length) * u.rad
+        lst1_description.camera.geometry.guess_radius() / lst1_description.optics.equivalent_focal_length
+    ) * u.rad
 
     # some cuts for good ring selection:
     min_pix = 148  # (8%) minimum number of pixels in the ring with >0 signal
@@ -316,14 +317,14 @@ def muon_filter(image, thr_low=0, thr_up=1.e10):
     Tag muon with a double threshold on the image photoelectron size
     Default values apply no tagging
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     image:      `np.ndarray` number of photoelectrons in each pixel
     thr_low: `float` lower size threshold in photoelectrons
     thr_up: `float` upper size threshold in photoelectrons
 
     Returns
-    ---------
+    -------
     `bool` it determines whether a muon was tagged or not
 
     """
@@ -335,15 +336,15 @@ def tag_pix_thr(image, thr_low=50, thr_up=500, pe_thr=10):
     Tag event with a double threshold on the number of pixels above 10 photoelectrons
     Default values apply elimination of pedestal and calibration events
 
-    Paramenters
-    ---------
+    Parameters
+    ----------
     image:      `np.ndarray` number of photoelectrons in each pixel
     thr_low: `int` lower threshold for number of pixel > 10 pe
     thr_up: `int` upper threshold for number of pixel > 10 pe
     pe_thr: 'float' minimum number of photoelectrons for a pixel to be counted
 
     Returns
-    ---------
+    -------
     `bool` it determines whether a the event is in the given nr of pixel range
 
     """
@@ -354,6 +355,7 @@ def tag_pix_thr(image, thr_low=50, thr_up=500, pe_thr=10):
 
 def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
     """
+    Calculate the radial distribution of the muon ring
 
     Parameters
     ----------

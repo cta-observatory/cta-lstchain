@@ -93,6 +93,8 @@ def main():
     # define the FF selection cuts
     if args.min_ff is None or args.max_ff is None:
         min_ff, max_ff = define_FF_selection_range(filters)
+    else:
+        min_ff, max_ff = args.min_ff, args.max_ff
 
     print(f"\n--> Start calculating calibration from run {run}, filters {filters}")
 
@@ -139,7 +141,7 @@ def main():
         # search the pedestal file of the same date
         if ped_run is None:
             # else search the pedestal file of the same date
-            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob(f'drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{prod_id}/").rglob('drs4_pedestal*.0000.fits'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -185,10 +187,10 @@ def main():
                 raise IOError(f"Time calibration file from run {time_run} not found\n")
             else:
                 time_file = file_list[0]
-                
+
         if not os.path.exists(time_file):
             raise IOError(f"Time calibration file {time_file} does not exist\n")
-      
+
         print(f"\n--> Time calibration file: {time_file}")
 
         sys_dir = f"{base_dir}/monitoring/PixelCalibration/ffactor_systematics/"
@@ -212,14 +214,14 @@ def main():
                     sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
                     selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
                     systematics_file = f"{sys_dir}/{selected_date}/{prod_id}/ffactor_systematics_{selected_date}.h5"
-            
+
             if not os.path.exists(systematics_file):
                 raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
 
         print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
     # define charge file names
-        print(f"\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
+        print("\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
 
         if filters is not None:
             filter_info=f"_filters_{filters}"
@@ -227,9 +229,9 @@ def main():
             filter_info = ""
 
         # remember there are no systematic corrections
-        prefix=""
+        prefix = ""
         if no_sys_correction:
-            prefix=f"no_sys_corrected_"
+            prefix = "no_sys_corrected_"
 
         output_name = f"{prefix}{output_base_name}{filter_info}.Run{run:05d}.{sub_run:04d}"
 
@@ -249,27 +251,33 @@ def main():
                 os.remove(output_file)
                 os.remove(log_file)
             else:
-                print(f"\n--> Output file exists already. Stop")
+                print("\n--> Output file exists already. Stop")
                 exit(1)
 
         #
         # produce ff calibration file
         #
 
-        cmd = f"lstchain_create_calibration_file " \
-              f"--input_file={input_file} --output_file={output_file} "\
-              f"--EventSource.default_trigger_type=tib " \
-              f"--EventSource.min_flatfield_adc={min_ff} " \
-              f"--EventSource.max_flatfield_adc={max_ff} " \
-              f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file} " \
-              f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path} " \
-              f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file} " \
-              f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file} " \
-              f"--FlatFieldCalculator.sample_size={stat_events} --PedestalCalculator.sample_size={stat_events} " \
-              f"--config={config_file} --log-file={log_file} --log-file-level=DEBUG"
+        cmd = [
+            "lstchain_create_calibration_file",
+            f"--input_file={input_file}",
+            f"--output_file={output_file}",
+            "--EventSource.default_trigger_type=tib",
+            f"--EventSource.min_flatfield_adc={min_ff}",
+            f"--EventSource.max_flatfield_adc={max_ff}",
+            f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
+            f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path}",
+            f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
+            f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
+            f"--FlatFieldCalculator.sample_size={stat_events}",
+            f"--PedestalCalculator.sample_size={stat_events}",
+            f"--config={config_file}",
+            f"--log-file={log_file}",
+            "--log-file-level=DEBUG",
+        ]
 
         print("\n--> RUNNING...")
-        subprocess.run(cmd.split())
+        subprocess.run(cmd, check=True)
 
         # plot and save some results
         plot_file=f"{output_dir}/log/{output_name}.pdf"
@@ -300,8 +308,10 @@ def search_filter(run):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No mongo DB filter information."
-                      f" You must pass the filters by argument: -f [filters]")
+        raise IOError(
+            "--> No mongo DB filter information."
+            " You must pass the filters by argument: -f [filters]"
+        )
 
     return filters
 
@@ -322,7 +332,8 @@ def define_FF_selection_range(filters):
             transm_file = os.path.join(os.path.dirname(__file__), "../../data/filters_transmission.dat")
 
             f = open(transm_file, 'r')
-            header = f.readline()
+            # skip header
+            f.readline()
             trasm = {}
             for line in f:
                 columns = line.split()
@@ -341,7 +352,7 @@ def define_FF_selection_range(filters):
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
-        raise IOError(f"--> No FF selection range information")
+        raise IOError("--> No FF selection range information")
 
     return min_ff, max_ff
 

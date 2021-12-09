@@ -47,14 +47,14 @@ def int_diff_sp(emin, emax, sp_idx, e0):
     """
 
     Parameters
-    --------
+    ----------
     emin:  `float`  minimum energy
     emax:  `float`  maximum energy
     sp_idx:`float`  spectral index of the power-law distribution
     e0:    `float`  normalization energy
 
     Returns
-    --------
+    -------
     integral_e: `float` energy integral
 
     TODO: Introduce any spectral form
@@ -91,9 +91,8 @@ def rate(shape, emin, emax, param, cone, area):
     dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
-    ----------
+    -------
     rate: `float` rate of events
-
     """
 
     if(cone == 0):
@@ -160,7 +159,7 @@ def weight(shape, emin, emax, sim_sp_idx, rate, nev, w_param):
     dFdE  = f0 * np.power(E / e0, alpha + beta * np.log10(E/e0))
 
     Returns
-    ----------
+    -------
     weight: `float` rate of events
     """
 

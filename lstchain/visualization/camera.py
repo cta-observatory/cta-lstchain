@@ -3,7 +3,6 @@ from ..reco.disp import disp_vector
 import astropy.units as u
 import matplotlib.pyplot as plt
 from ctapipe.visualization import CameraDisplay
-from ctapipe.instrument import CameraGeometry
 
 __all__ = [
     'overlay_disp_vector',

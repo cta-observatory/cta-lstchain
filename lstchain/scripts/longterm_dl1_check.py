@@ -40,7 +40,7 @@ def main():
     output_file_name = 'longterm_dl1_check.h5'
     files = glob.glob('datacheck_dl1_LST-1.Run?????.h5')
     if not files:
-        raise IOError(f"No input datacheck files found\n")
+        raise IOError("No input datacheck files found")
     files.sort()
 
     # hardcoded for now, to be eventually read from data:
@@ -820,6 +820,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                point_labels=None):
     '''
     Function to display a simple "y vs. x" graph, with y error bars
+
     Parameters
     ----------
     x: ndarray, x coordinates
@@ -829,8 +830,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     ylabel: y-axis label
     xtype: 'log', 'linear', 'datetime'
     ytype: 'log', 'linear', 'datetime'
-    point_labels: one label per point, to be displayed when mouse overs near
-                  point
+    point_labels: one label per point, to be displayed when mouse overs near point
 
     Returns
     -------
