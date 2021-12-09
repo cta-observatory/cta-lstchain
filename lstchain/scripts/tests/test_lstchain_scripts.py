@@ -47,6 +47,8 @@ def run_program(*args):
             f"Running {args[0]} failed with return code {result.returncode}"
             f", output: \n {result.stdout}"
         )
+    else:
+        return result
 
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
@@ -144,6 +146,35 @@ def test_observed_dl1_validity(observed_dl1_files):
         0,
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def tune_nsb(mc_gamma_testfile, observed_dl1_files):
+    return run_program(
+        "lstchain_tune_nsb",
+        "--config",
+        "lstchain/data/lstchain_standard_config.json",
+        "--input-mc",
+        mc_gamma_testfile,
+        "--input-data",
+        observed_dl1_files["dl1_file1"],
+    )
+
+
+def test_validity_tune_nsb(tune_nsb):
+    output_lines = tune_nsb.stdout.splitlines()
+    for line in output_lines:
+        if "increase_nsb" in line:
+            assert line == '  "increase_nsb": true,'
+        if "extra_noise_in_dim_pixels" in line:
+            assert line == '  "extra_noise_in_dim_pixels": 0.0,'
+        if "extra_bias_in_dim_pixels" in line:
+            assert line == '  "extra_bias_in_dim_pixels": 11.209,'
+        if "transition_charge" in line:
+            assert line == '  "transition_charge": 8,'
+        if "extra_noise_in_bright_pixels" in line:
+            assert line == '  "extra_noise_in_bright_pixels": 0.0'
 
 
 def test_lstchain_mc_trainpipe(rf_models):
