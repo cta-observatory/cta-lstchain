@@ -100,15 +100,20 @@ def main():
         # produce intensity scan fit file
         #
 
-        cmd = f"lstchain_fit_intensity_scan " \
-              f"--config={config_file} --input_dir={input_dir} --output_path={output_file} "\
-              f"--plot_path={plot_file} --sub_run={sub_run} " \
-              f"--input_prefix={prefix} --log-file={log_file} --log-file-level=DEBUG "
+        cmd = [
+            "lstchain_fit_intensity_scan",
+            f"--config={config_file}",
+            f"--input_dir={input_dir}",
+            f"--output_path={output_file}",
+            f"--plot_path={plot_file}",
+            f"--sub_run={sub_run}",
+            f"--input_prefix={prefix}",
+            f"--log-file={log_file}",
+            "--log-file-level=DEBUG",
+        ]
 
         print("\n--> RUNNING...")
-        subprocess.run(cmd.split())
-
-
+        subprocess.run(cmd, check=True)
         print("\n--> END")
 
     except Exception as e:
