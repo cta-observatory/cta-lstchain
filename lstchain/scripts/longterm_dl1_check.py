@@ -1153,7 +1153,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
 
     # Nothing to plot if all nans (like e.g. for muon plots when no muon info
     # was read)
-    if (np.sum(~np.isnan(x)) == 0) or (np.sum(~np.isnan(y)) == 0):
+    if np.all(np.isnan(x)) or np.all(np.isnan(y)):
         return None
 
     fig = figure(background_fill_color='#ffffff', x_axis_label=xlabel,
