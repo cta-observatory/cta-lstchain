@@ -762,7 +762,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                                           1-muon_rate_tolerance),
                                   yupplim=expected_mu_rate*(
                                           1+muon_rate_tolerance))
-    fig_muring_rates.y_range = Range1d(0, expected_mu_rate.max()*1.25)
+    if fig_muring_rates:
+        fig_muring_rates.y_range = Range1d(0, expected_mu_rate.max()*1.25)
 
     pad_width = 550
     pad_height = 350
@@ -952,7 +953,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                              xtype='datetime', ytype='linear',
                              point_labels=run_titles,
                              ylowlim=min_muon_efficiency)
-    fig_mu_effi.y_range = Range1d(0., 0.22)
+    if fig_mu_effi:
+        fig_mu_effi.y_range = Range1d(0., 0.22)
 
     fig_mu_width = show_graph(x=pd.to_datetime(runsummary['time'],
                                                origin='unix', unit='s'),
@@ -964,7 +966,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                               xtype='datetime', ytype='linear',
                               point_labels=run_titles,
                               yupplim=max_muon_ring_width)
-    fig_mu_width.y_range = Range1d(0., 0.1)
+    if fig_mu_width:
+        fig_mu_width.y_range = Range1d(0., 0.1)
 
     fig_mu_intensity = show_graph(
         x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
@@ -972,9 +975,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         ylabel='mean muon ring intensity (p.e.)',
         xtype='datetime', ytype='linear', point_labels=run_titles,
         ylowlim=min_muon_intensity)
-    fig_mu_intensity.y_range = \
-        Range1d(0., 1.1 * np.max(runsummary['mu_intensity_mean']))
-
+    if fig_mu_intensity:
+        fig_mu_intensity.y_range = Range1d(0., 1.1 * np.max(runsummary[
+                                                                'mu_intensity_mean']))
     fig_mu_hg_peak = show_graph(
         x=pd.to_datetime(runsummary['time'], origin='unix', unit='s'),
         y=runsummary['mu_hg_peak_sample_mean'], xlabel='date',
@@ -984,7 +987,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         ylowlim=muon_peak_hg_sample_range[0],
         yupplim=muon_peak_hg_sample_range[1]
     )
-    fig_mu_hg_peak.y_range = Range1d(0., 38.)
+    if fig_mu_hg_peak:
+        fig_mu_hg_peak.y_range = Range1d(0., 38.)
     row1 = [fig_mu_effi, fig_mu_width]
     row2 = [fig_mu_intensity, fig_mu_hg_peak]
 
