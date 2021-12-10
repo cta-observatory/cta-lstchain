@@ -60,10 +60,15 @@ parser.add_argument(
     default='*.h5',
 )
 
-args = parser.parse_args()
+parser.add_argument(
+    '--progress',
+    action='store_true',
+    help='Display a progress bar during event processing'
+)
 
 
 def main():
+    args = parser.parse_args()
 
     if args.run_number:
         run = f'Run{args.run_number:05d}'
@@ -83,7 +88,12 @@ def main():
     if args.smart:
         smart_merge_h5files(file_list, args.outfile, node_keys=keys)
     else:
-        auto_merge_h5files(file_list, args.outfile, nodes_keys=keys)
+        auto_merge_h5files(
+            file_list,
+            args.outfile,
+            nodes_keys=keys,
+            progress_bar=args.progress
+        )
 
 
 if __name__ == '__main__':
