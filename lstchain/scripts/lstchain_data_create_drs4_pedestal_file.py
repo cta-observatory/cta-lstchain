@@ -78,6 +78,7 @@ def main():
     source_config = {
         "LSTEventSource": {
             "max_events": args.max_events,
+            "pointing_information": False,
         },
         "LSTR0Corrections": {
             "offset": 0,
