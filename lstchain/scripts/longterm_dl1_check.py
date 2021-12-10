@@ -1149,6 +1149,12 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
 
     fig = figure(background_fill_color='#ffffff', x_axis_label=xlabel,
                  x_axis_type=xtype, y_axis_type=ytype, y_axis_label=ylabel)
+
+    # Nothing to plot if all nans (like e.g. for muon plots when no muon info
+    # was read)
+    if (np.sum(~np.isnan(x)) == 0) or (np.sum(~np.isnan(y))):
+        return fig
+
     source = ColumnDataSource(data=dict(x=x, y=y))
     if point_labels is not None:
         source.data['point_labels'] = point_labels
