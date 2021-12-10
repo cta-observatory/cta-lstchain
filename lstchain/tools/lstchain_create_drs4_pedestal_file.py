@@ -108,11 +108,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
         help="show progress bar during processing", default_value=False
     ).tag(config=True)
 
-    skip_events = Integer(
-        default_value=1000,
-        help='Skip this amount of events at the start to assure working delta T calibration',
-    ).tag(config=True)
-
     full_statistics = Bool(
         help=(
             "If True, write spike{1,2,3} mean, count, std for each capacitor."
@@ -133,7 +128,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
         ('i', 'input'): 'LSTEventSource.input_url',
         ('o', 'output'): 'DRS4PedestalAndSpikeHeight.output_path',
         ('m', 'max-events'): 'LSTEventSource.max_events',
-        ('s', 'skip-events'): 'DRS4PedestalAndSpikeHeight.skip_events',
     }
 
 
@@ -199,9 +193,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
         tel_id = self.source.tel_id
 
         for event in tqdm(self.source, disable=not self.progress_bar):
-            if event.count < self.skip_events:
-                continue
-
             fill_stats(
                 event.r1.tel[tel_id].waveform,
                 self.source.r0_r1_calibrator.first_cap[tel_id],
@@ -226,8 +217,11 @@ class DRS4PedestalAndSpikeHeight(Tool):
             counts = stats.counts.reshape(shape)
             spike_height = stats.mean.reshape(shape) - mean_baseline
             spike_height[counts == 0] = 0
-            mean_height = np.average(spike_height, weights=counts, axis=2)
-            spike_heights[:, :, i] = mean_height
+
+            # np.ma does not raise an error if the weights sum to 0
+            mean_height = np.ma.average(spike_height, weights=counts, axis=2)
+            # convert masked array to dense, replacing invalid values with nan
+            spike_heights[:, :, i] = mean_height.filled(np.nan)
 
         return spike_heights
 

@@ -5,6 +5,7 @@ import numpy as np
 
 from ctapipe.core import run_tool
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL
+from ctapipe.io import read_table
 import tables
 
 
@@ -31,14 +32,17 @@ def test_create_drs4_pedestal_file(tmp_path):
     assert ret == 0, 'Running DRS4PedestalAndSpikeHeight tool failed'
     assert output_path.is_file(), 'Output file not written'
 
-    with tables.open_file(output_path, 'r') as f:
-        baseline_mean = f.root.baseline.mean[:].astype(np.float32) / 100
-        baseline_counts = f.root.baseline.counts[:]
+    drs4_data = read_table(output_path, '/r1/monitoring/drs4_baseline/tel_001')[0]
+    baseline_mean = drs4_data['baseline_mean']
+    baseline_counts = drs4_data['baseline_std']
 
-        assert baseline_mean.shape == (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
-        assert np.isclose(np.average(baseline_mean, weights=baseline_counts), 400, rtol=0.05)
+    assert baseline_mean.shape == (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
+    assert np.isclose(np.average(baseline_mean[baseline_counts > 0], weights=baseline_counts[baseline_counts > 0]), 400, rtol=0.05)
 
-        for sample, expected in zip([1, 2, 3], [47, 53, 6]):
-            spike_mean = f.root[f'spike{sample}'].mean[:].astype(np.float32) / 100
-            spike_mean[spike_mean < 0] = np.nan
-            assert np.isclose(np.nanmean(spike_mean), expected, atol=5)
+    spike_height = drs4_data['spike_height']
+    spike_height[spike_height < 0] = np.nan
+    mean_spike_height = np.nanmean(spike_height, axis=(0, 1))
+
+    # these are the expected spike heights, but due to the low statistics,
+    # we need to use a rather large atol
+    assert np.allclose(mean_spike_height, [46, 53, 7], atol=2)
