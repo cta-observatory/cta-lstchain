@@ -46,7 +46,7 @@ parser.add_argument('--input-dir', '-d', type=Path,
                     help='path to the datacheck_dl1_LST-1.RunXXXXX.h5 files',
                     default='./')
 
-parser.add_argument('--muons-dir', '-d', type=Path,
+parser.add_argument('--muons-dir', type=Path,
                     help='path to the muons_LST-1.RunXXXXX.YYYY.fits files',
                     default='./')
 
