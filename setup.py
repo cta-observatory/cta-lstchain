@@ -40,6 +40,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'astropy~=4.2',
+        'bokeh~=1.0',
         'ctapipe~=0.11.0',
         'ctapipe_io_lst~=0.11.1',
         'ctaplot~=0.5.5',
