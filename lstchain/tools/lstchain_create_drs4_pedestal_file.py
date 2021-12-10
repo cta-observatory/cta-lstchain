@@ -173,7 +173,11 @@ class DRS4PedestalAndSpikeHeight(Tool):
         self.log.debug("output path: %s", self.output_path)
         Provenance().add_output_file(str(self.output_path), role="DL1/Event")
 
-        self.source = LSTEventSource(parent=self)
+        self.source = LSTEventSource(
+            parent=self,
+            pointing_information=False,
+            trigger_information=False,
+        )
 
         # set some config options, these are necessary for this tool,
         # so we set them here and not via the config system
