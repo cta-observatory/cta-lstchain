@@ -94,7 +94,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
-            logger.error(f'File {str(filename)} not found!')
+            logger.error(f'File {filename} not found!')
             raise FileNotFoundError
 
     # We count the number of events identified as interleaved pedestals by
@@ -876,7 +876,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                                   sem(tcont['ring_width']))
             mean_effi = np.append(mean_effi,
                                     np.mean(tcont['muon_efficiency']))
-            mad_effi = np.append(sem_effi,
+            sem_effi = np.append(sem_effi,
                                  sem(tcont['muon_efficiency']))
             contained_muons = vstack([contained_muons, tcont])
 

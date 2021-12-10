@@ -321,7 +321,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     allhists = []
     alledges = []
 
-    # We define 50 bins between display_min and display_max
+    # We define 100 bins between display_min and display_max
     # Note that values beyond that range won't be histogrammed and hence will
     # not appear on the "p3" figure below.
     nbins = 100

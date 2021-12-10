@@ -42,13 +42,15 @@ from lstchain.visualization.bokeh import show_camera, get_pixel_location
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="DL1 multi-run data checker")
-parser.add_argument('--input-dir', '-d', action='store', type=Path,
-                    dest='input_dir',
+parser.add_argument('--input-dir', '-d', type=Path,
                     help='path to the datacheck_dl1_LST-1.RunXXXXX.h5 files',
                     default='./')
 
-parser.add_argument('--output-file', '-o', action='store', type=Path,
-                    dest='output_file',
+parser.add_argument('--muons-dir', '-d', type=Path,
+                    help='path to the muons_LST-1.RunXXXXX.YYYY.fits files',
+                    default='./')
+
+parser.add_argument('--output-file', '-o', type=Path,
                     help='.h5 output file name',
                     default='./longterm_dl1_check.h5')
 
@@ -203,7 +205,7 @@ def main():
         try:
             a = tables.open_file(file)
         except FileNotFoundError:
-            log.warning('Could not read file ' + file + ' - skipping...')
+            log.warning(f'Could not read file {file} - skipping...')
             continue
 
         runnumber = int(file.name[file.name.find('.Run')+4:
@@ -216,7 +218,7 @@ def main():
             try:
                 node = a.get_node(name)
             except Exception:
-                log.warning('Table ' + name + ' is missing!')
+                log.warning('Table {name} is missing!')
                 datatables.append(None)
                 continue
 
@@ -474,15 +476,14 @@ def main():
         num_contained_mu_rings_in_run = 0
 
         for subrun in subruns:
-            mufile = Path(args.input_dir,
-                          'muons_LST-1.Run{0:05d}.{1:04d}.fits'.format(
-                                  runnumber, subrun))
-
+            mufile = Path(args.muons_dir,
+                          f'muons_LST-1.Run{runnumber:05d}.'
+                          f'{subrun:04d}.fits')
             dat = None
             try:
                 dat = Table.read(mufile, format='fits')
             except Exception:
-                log.warning('File ' + mufile + ' not found - going on')
+                log.warning(f'File {mufile} not found - going on')
             if dat is None or len(dat) == 0:
                 empty_files += 1
                 cosmics['num_contained_mu_rings'].extend([0])
@@ -525,8 +526,8 @@ def main():
                                                   ignore_index=True)
 
         if empty_files > 0:
-            log.warning('Run {0:d} had {1:d} subruns with no valid muon '
-                  'rings!'.format(runnumber, empty_files))
+            log.warning(f'Run {runnumber:d} had {empty_files:d} subruns with '
+                        f'no valid muon rings!')
 
         # fill the runsummary muons part:
         if contained_mu_wholerun is not None:
@@ -1182,7 +1183,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
                                 point_policy='snap_to_data'))
 
     if ylowlim is not None or yupplim is not None:
-        log.info("Anomalies in " + ylabel + ":")
+        log.info(f'Anomalies in {ylabel}:')
 
     too_high = np.array(len(y) * [False])
     too_low  = np.array(len(y) * [False])
@@ -1199,16 +1200,16 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     if bad_runs.sum() > 0:
         for runlabel, val, low in zip(np.array(point_labels)[bad_runs],
                                       y[bad_runs], too_low[bad_runs]):
-            log.info("   " + runlabel + ":")
-            tag = " (too high)"
+            log.info('    {runlabel}:')
+            tag = '(too high)'
             if low:
-                tag = " (too low)"
-            log.info("      " + ylabel + ": {a:.2f}".format(a=val) + tag)
-            log.info("")
+                tag = '(too low)'
+            log.info(f'       {ylabel}: {val:.2f} {tag}')
+            log.info('')
 
     elif ylowlim is not None or yupplim is not None:
-        log.info("    None")
-        log.info("")
+        log.info('    None')
+        log.info('')
 
     return fig
 
@@ -1241,7 +1242,7 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     # In how many of the processed runs is each pixel faulty?:
     too_low_count  = np.sum(too_low, axis=0)  # [n_pixels]
     too_high_count = np.sum(too_high, axis=0)
-    log.info(title + ', anomalous pixels:')
+    log.info(f'{title}, anomalous pixels:')
     num_runs = value.shape[0]
 
     too_low_pix_ids = np.flatnonzero(too_low_count > run_fraction * num_runs)
