@@ -3,12 +3,13 @@
 """
 This script reads in LST1 DL1 datacheck files, of those containing info for a
 whole run, with name pattern datacheck_dl1_LST-1.Run?????.h5. It takes all
-files in the input directory. It also reads, if available in the same path,
-the corresponding muons*fits files.
+files in the input directory. It also reads, in the directory indicated (
+muons-dir), the corresponding muons*fits files if available.
 
 The output is the file longterm_dl1_check.h5 file (the name can be modified via
 commandline), which contains tables with some run-wise summary values for
 plotting long-term evolution of the DL1 data.
+
 It also produces an interactive web page, longterm_dl1_check.html with plots
 showing the evolution of many such values. If not in batch mode, the page is
 opened by the default browser at the end of execution.
