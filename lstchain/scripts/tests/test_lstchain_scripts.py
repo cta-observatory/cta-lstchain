@@ -15,6 +15,11 @@ from lstchain.io.io import (
     dl1_images_lstcam_key,
     get_dataset_keys,
     dl1_params_src_dep_lstcam_key,
+    dl1_params_tel_mon_ped_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
+    dl1_params_src_dep_lstcam_key,
+    dl2_params_src_dep_lstcam_key
 )
 
 from lstchain.io.config import get_standard_config
@@ -42,6 +47,8 @@ def run_program(*args):
             f"Running {args[0]} failed with return code {result.returncode}"
             f", output: \n {result.stdout}"
         )
+    else:
+        return result
 
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
@@ -113,14 +120,15 @@ def test_observed_dl1_validity(observed_dl1_files):
 
     dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
 
-    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
-    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
-    assert 'configuration/instrument/subarray/layout' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/optics' in dl1_tables
+    assert dl1_params_lstcam_key in dl1_tables
+    assert dl1_images_lstcam_key in dl1_tables
+    assert dl1_params_tel_mon_cal_key in dl1_tables
+    assert dl1_params_tel_mon_ped_key in dl1_tables
+    assert dl1_params_tel_mon_flat_key in dl1_tables
+    assert '/configuration/instrument/subarray/layout' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/optics' in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
@@ -138,6 +146,35 @@ def test_observed_dl1_validity(observed_dl1_files):
         0,
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def tune_nsb(mc_gamma_testfile, observed_dl1_files):
+    return run_program(
+        "lstchain_tune_nsb",
+        "--config",
+        "lstchain/data/lstchain_standard_config.json",
+        "--input-mc",
+        mc_gamma_testfile,
+        "--input-data",
+        observed_dl1_files["dl1_file1"],
+    )
+
+
+def test_validity_tune_nsb(tune_nsb):
+    output_lines = tune_nsb.stdout.splitlines()
+    for line in output_lines:
+        if "increase_nsb" in line:
+            assert line == '  "increase_nsb": true,'
+        if "extra_noise_in_dim_pixels" in line:
+            assert line == '  "extra_noise_in_dim_pixels": 0.0,'
+        if "extra_bias_in_dim_pixels" in line:
+            assert line == '  "extra_bias_in_dim_pixels": 11.209,'
+        if "transition_charge" in line:
+            assert line == '  "transition_charge": 8,'
+        if "extra_noise_in_bright_pixels" in line:
+            assert line == '  "extra_noise_in_bright_pixels": 0.0'
 
 
 def test_lstchain_mc_trainpipe(rf_models):
@@ -206,10 +243,10 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
     assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
-    assert "dl1/event/telescope/image/LST_LSTCam" in get_dataset_keys(
+    assert dl1_images_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
-    assert "dl1/event/telescope/parameters/LST_LSTCam" in get_dataset_keys(
+    assert dl1_params_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
 
