@@ -93,6 +93,7 @@ class DL1ParametersContainer(Container):
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
     tib_time = Field(None, 'TIB time event trigger')
+    ucts_jump = Field(False, 'UCTS info jumped (corrected)')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     log_mc_energy = Field(None, 'log of simulated energy/TeV')
