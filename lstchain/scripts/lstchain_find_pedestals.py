@@ -10,6 +10,7 @@ which contains a single table with one column, 'event_id'
 import argparse
 import numpy as np
 import pandas as pd
+import tables
 
 from pathlib import Path
 from ctapipe.io import read_table
@@ -89,8 +90,11 @@ def main():
         output_file = Path(output_dir,
                            'pedestal_ids_Run{:0>5}.{:0>4}.h5'.format(run_number,
                                                                      subrun_index))
-        df.to_hdf(output_file, key='interleaved_pedestal_ids', mode='w')
-
+        # df.to_hdf(output_file, key='interleaved_pedestal_ids', mode='w',
+        #           format='table', data_columns=True)
+        with tables.open_file(output_file, "w") as outfile:
+            outfile.create_table("/", "interleaved_pedestal_ids",
+                                 obj=df.to_records(index=False))
 
 def find_pedestals(timestamps, expected_frequency=50):
     """
