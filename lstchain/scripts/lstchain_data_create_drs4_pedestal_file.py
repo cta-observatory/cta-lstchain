@@ -61,8 +61,13 @@ parser.add_argument('--deltaT', '-s',
                     'Default=True, use False otherwise',
                     default=True)
 
-parser.add_argument('--overwrite', action='store_true', help='Overwrite output file without asking')
+parser.add_argument('--overwrite',
+                    action='store_true',
+                    help='Overwrite output file without asking')
 
+parser.add_argument('--progress', 
+                    action='store_true',
+                    help='Display a progress bar during event processing')
 
 
 def main():
@@ -73,6 +78,7 @@ def main():
     source_config = {
         "LSTEventSource": {
             "max_events": args.max_events,
+            "pointing_information": False,
         },
         "LSTR0Corrections": {
             "offset": 0,
@@ -95,8 +101,7 @@ def main():
         n_module=n_modules,
         start_sample=args.start_sample,
     )
-
-    for event in tqdm(reader):
+    for event in tqdm(reader, disable=not args.progress):
         pedestal.fill_pedestal_event(event)
 
     # Finalize pedestal and write to fits file

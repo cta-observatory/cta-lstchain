@@ -27,6 +27,7 @@
     "allowed_tels": [
       1
     ],
+    "pointing_information": false,
     "LSTR0Corrections": {
       "select_gain": false
     }
