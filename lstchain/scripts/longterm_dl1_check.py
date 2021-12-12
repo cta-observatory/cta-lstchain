@@ -690,6 +690,14 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                                  date = date.strftime("%b %d %Y %H:%M:%S")))
 
     runsummary = pd.read_hdf(filename, 'runsummary')
+
+    if np.sum(runsummary['num_ucts_jumps']) > 0:
+        log.info('Attention: UCTS jumps were detected and corrected:')
+        for run, njumps in zip(runsummary['runnumber'],
+                               runsummary['num_ucts_jumps']):
+            log.info(f'   Run {run}: {njumps}  jumps')
+        log.info('')
+
     ped_rate = runsummary['num_pedestals'] / runsummary['elapsed_time']
     err_ped_rate = (np.sqrt(runsummary['num_pedestals']) /
                     runsummary['elapsed_time'])
