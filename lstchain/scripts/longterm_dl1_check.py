@@ -98,7 +98,8 @@ def main():
                'altitude': [],
                # number of events with wrong trigger type:
                'wrong_ucts_trig_type': [],
-               'wrong_tib_trig_type': []}
+               'wrong_tib_trig_type': [],
+               'num_ucts_jumps': []}
 
     pedestals = copy.deepcopy(cosmics)
     flatfield = copy.deepcopy(cosmics)
@@ -143,6 +144,7 @@ def main():
                   'num_wrong_ucts_tags_in_cosmics': [],
                   'num_wrong_ucts_tags_in_pedestals': [],
                   'num_wrong_ucts_tags_in_flatfield': [],
+                  'num_ucts_jumps': [],
                   'num_wrong_tib_tags_in_cosmics': [],
                   'num_wrong_tib_tags_in_pedestals': [],
                   'num_wrong_tib_tags_in_flatfield': [],
@@ -232,6 +234,9 @@ def main():
                      TriggerBits.CALIBRATION.value]
 
         # fill data which are common to all tables:
+
+        total_num_ucts_jumps = 0  # To add up all jumps, for any event type
+
         for table, d, tag in zip(datatables, dicts, trig_tags):
             if table is None:
                 continue
@@ -246,6 +251,8 @@ def main():
             num_wrong_tags = trigtag_mismatches(table, tag)
             d['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
+            d['num_ucts_jumps'].extend(table.col('num_ucts_jumps'))
+            total_num_ucts_jumps += np.sum(table.col('num_ucts_jumps'))
 
             d['runnumber'].extend(len(table)*[runnumber])
             d['subrun'].extend(table.col('subrun_index'))
@@ -314,6 +321,9 @@ def main():
         runsummary['num_wrong_ucts_tags_in_cosmics'].extend([nwucts])
         nwtib = np.sum(cosmics['wrong_tib_trig_type'][-len(table):])
         runsummary['num_wrong_tib_tags_in_cosmics'].extend([nwtib])
+
+        # number of ucts jumps in the run, for any kind of event type:
+        runsummary['num_ucts_jumps'].extend([total_num_ucts_jumps])
 
         runsummary['cosmics_fraction_pulses_above10'].extend(
                 [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
