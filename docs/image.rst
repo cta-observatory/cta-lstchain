@@ -1,7 +1,7 @@
 .. _image:
 
-Image
-=====
+Image (``image``)
+=================
 
 Submodules
 ----------
@@ -18,6 +18,19 @@ lstchain.image.modifier
 -----------------------
 
 .. automodule:: lstchain.image.modifier
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+lstchain.image.muon
+-------------------
+
+.. automodule:: lstchain.image.muon.muon_analysis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: lstchain.image.muon.plot_muon
    :members:
    :undoc-members:
    :show-inheritance:

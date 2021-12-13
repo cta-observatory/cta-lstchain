@@ -1,25 +1,23 @@
-__all__ = [
-    'add_noise_in_pixels',
-    'calculate_noise_parameters',
-    'random_psf_smearer',
-]
-
 import logging
 
 import numpy as np
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.io import EventSource, read_table
 from numba import njit
+from scipy.interpolate import interp1d
 from traitlets.config import Config
 
 from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
 
-from scipy.interpolate import interp1d
-import numpy as np
-from numba import njit
+__all__ = [
+    'add_noise_in_pixels',
+    'calculate_noise_parameters',
+    'random_psf_smearer',
+]
 
 log = logging.getLogger(__name__)
+
 
 # number of neighbors of completely surrounded pixels of hexagonal cameras:
 N_PIXEL_NEIGHBORS = 6
@@ -33,27 +31,31 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
 
     Parameters
     ----------
-    rng: numpy.random.default_rng  random number generator
-
-    image: charges (p.e.) in the camera
-
-    To be tuned by comparing the starting MC and data:
-
-    extra_noise_in_dim_pixels: mean additional number of p.e. to be added (
-    Poisson noise) to pixels with charge below transition_charge
-
-    extra_bias_in_dim_pixels: mean bias (w.r.t. original charge) of the new
-    charge in pixels. Should be 0 for non-peak-search pulse integrators
-
-    transition_charge: border between "dim" and "bright" pixels
-
-    extra_noise_in_bright_pixels: mean additional number of p.e. to be added (
-    Poisson noise) to pixels with charge above transition_charge. This is
-    unbiased, i.e. Poisson noise is introduced, and its average subtracted,
-    so that the mean charge in bright pixels remains unaltered. This is
-    because we assume that above transition_charge the integration window
-    is determined by the Cherenkov light, and would not be modified by the
-    additional NSB noise (presumably small compared to the C-light)
+    rng : numpy.random.default_rng
+        Random number generator
+    image
+        Charges (p.e.) in the camera
+    extra_noise_in_dim_pixels
+        Mean additional number of p.e. to be added (Poisson noise) to
+        pixels with charge below transition_charge. To be tuned by
+        comparing the starting MC and data
+    extra_bias_in_dim_pixels
+        Mean bias (w.r.t. original charge) of the new charge in pixels.
+        Should be 0 for non-peak-search pulse integrators. To be tuned by
+        comparing the starting MC and data
+    transition_charge
+        Border between "dim" and "bright" pixels. To be tuned by
+        comparing the starting MC and data
+    extra_noise_in_bright_pixels
+        Mean additional number of p.e. to be added (Poisson noise) to
+        pixels with charge above transition_charge. This is unbiased,
+        i.e. Poisson noise is introduced, and its average subtracted,
+        so that the mean charge in bright pixels remains unaltered.
+        This is because we assume that above transition_charge the
+        integration window is determined by the Cherenkov light, and
+        would not be modified by the additional NSB noise (presumably
+        small compared to the C-light). To be tuned by
+        comparing the starting MC and data
 
     Returns
     -------
@@ -82,17 +84,15 @@ def random_psf_smearer(image, fraction, indices, indptr):
     """
     Parameters
     ----------
-    image: charges (p.e.) in the camera
-
-    indices: camera_geometry.neighbor_matrix_sparse.indices
-
-    indptr: camera_geometry.neighbor_matrix_sparse.indptr
-
-    fraction: fraction of the light in a pixel that will be
-    distributed among its immediate surroundings, i.e. immediate
-    neighboring pixels, according to Poisson statistics. Some light is
-    lost for pixels which are at the camera edge and hence don't have all
-    possible neighbors
+    image
+        Charges (p.e.) in the camera
+    indices : camera_geometry.neighbor_matrix_sparse.indices
+    indptr : camera_geometry.neighbor_matrix_sparse.indptr
+    fraction:
+        Fraction of the light in a pixel that will be distributed among its
+        immediate surroundings, i.e. immediate neighboring pixels, according
+        to Poisson statistics. Some light is lost for pixels  which are at
+        the camera edge and hence don't have all possible neighbors
 
     Returns
     -------
@@ -115,7 +115,7 @@ def random_psf_smearer(image, fraction, indices, indptr):
         new_image[pixel] -= to_smear
 
         # add light to neighbor pixels
-        neighbors = indices[indptr[pixel] : indptr[pixel + 1]]
+        neighbors = indices[indptr[pixel]: indptr[pixel + 1]]
         n_neighbors = len(neighbors)
 
         # all neighbors are equally likely to receive the charge
