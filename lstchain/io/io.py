@@ -275,7 +275,8 @@ def auto_merge_h5files(
                             # https://github.com/cta-observatory/cta-lstchain/issues/671
                             out_node.append(in_node.read().astype(out_node.dtype))
                     except:
-                        log.exception("Can't append node {} from file {}".format(k, filename))
+                        log.error("Can't append node {} from file {}".format(k, filename))
+                        raise
             bar.update(1)
 
 
