@@ -7,7 +7,6 @@ from .event_selection import EventSelector, DL3FixedCuts, DataBinning
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
-    smart_merge_h5files,
     write_simtel_energy_histogram,
     write_mcheader,
     write_dl2_dataframe,
@@ -37,7 +36,6 @@ __all__ = [
     'DataBinning',
     'get_dataset_keys',
     'auto_merge_h5files',
-    'smart_merge_h5files',
     'write_simtel_energy_histogram',
     'write_mcheader',
     'write_dl2_dataframe',

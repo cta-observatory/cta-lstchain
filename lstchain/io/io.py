@@ -46,7 +46,6 @@ __all__ = [
     'check_metadata',
     'read_metadata',
     'auto_merge_h5files',
-    'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
     'add_config_metadata',
@@ -211,17 +210,17 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
 
 
 def auto_merge_h5files(
-        file_list,
-        output_filename='merged.h5',
-        nodes_keys=None,
-        merge_arrays=False,
-        filters=HDF5_ZSTD_FILTERS,
-        progress_bar=False,
+    file_list,
+    output_filename="merged.h5",
+    nodes_keys=None,
+    merge_arrays=False,
+    filters=HDF5_ZSTD_FILTERS,
+    progress_bar=False
 ):
     """
     Automatic merge of HDF5 files.
-    A list of nodes keys can be provided to merge only these nodes.
-    If None, all nodes are merged.
+    A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    It may be also used to create a new file output_filename from content stored in another file.
 
     Parameters
     ----------
@@ -230,7 +229,12 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
+    progress_bar: bool
     """
+
+    file_list = list(file_list)
+    if len(file_list) > 1:
+        file_list = merging_check(file_list)
 
     if nodes_keys is None:
         keys = set(get_dataset_keys(file_list[0]))
@@ -242,27 +246,32 @@ def auto_merge_h5files(
         with open_file(file_list[0]) as f1:
             for k in keys:
                 if type(f1.root[k]) == tables.table.Table:
-                    merge_file.create_table(
+                    t = merge_file.create_table(
                         os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                         os.path.basename(k),
                         createparents=True,
                         obj=f1.root[k].read()
                     )
+                    for att in f1.root[k].attrs._f_list():
+                        t.attrs[att] = f1.root[k].attrs[att]
                 if type(f1.root[k]) == tables.array.Array:
                     if merge_arrays:
-                        merge_file.create_earray(
+                        a = merge_file.create_earray(
                             os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
                             obj=f1.root[k].read()
                         )
                     else:
-                        merge_file.create_array(
+                        a = merge_file.create_array(
                             os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
                             os.path.basename(k),
                             createparents=True,
                             obj=f1.root[k].read()
                         )
+                    for att in f1.root[k].attrs._f_list():
+                        a.attrs[att] = f1.root[k].attrs[att]
+
         bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
@@ -280,6 +289,17 @@ def auto_merge_h5files(
                         log.error("Can't append node {} from file {}".format(k, filename))
                         raise
             bar.update(1)
+
+    # merge global metadata and store source file names
+    metadata0 = read_metadata(file_list[0])
+    source_filenames = [str(file_list[0])]
+    for file in file_list[1:]:
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+    write_metadata(metadata0, output_filename)
 
 
 def merging_check(file_list):
@@ -324,44 +344,10 @@ def merging_check(file_list):
             assert subarray_info == subarray_info0
 
         except AssertionError:
-            log.exception(f"{filename} cannot be smart merged '¯\_(ツ)_/¯'")
+            log.exception(f"{filename} cannot be merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
-
-
-def smart_merge_h5files(
-    file_list, output_filename="merged.h5", node_keys=None, merge_arrays=False
-):
-    """
-    Check that HDF5 files are compatible for merging and merge them
-
-    Parameters
-    ----------
-    file_list: list of paths to hdf5 files
-    output_filename: path to the merged file
-    node_keys
-    merge_arrays: bool
-    """
-    smart_list = merging_check(file_list)
-    auto_merge_h5files(
-        smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
-    )
-
-    # Merge metadata and store source file names
-    metadata0 = read_metadata(smart_list[0])
-    source_filenames = [str(smart_list[0])]
-
-    for file in smart_list[1:]:
-        metadata = read_metadata(file)
-        check_metadata(metadata0, metadata)
-        source_filenames.append(str(file))
-
-    with open_file(output_filename, mode="a") as file:
-        sources = file.create_group("/", "source_filenames", "List of files merged")
-        file.create_array(sources, "filenames", source_filenames, "List of files merged")
-
-    write_metadata(metadata0, output_filename)
 
 
 def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
