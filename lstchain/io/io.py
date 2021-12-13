@@ -227,6 +227,7 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
+    progress_bar: bool
     """
 
     file_list = list(file_list)
@@ -287,11 +288,15 @@ def auto_merge_h5files(
                         raise
             bar.update(1)
 
-    # merge global metadata
+    # merge global metadata and store source file names
     metadata0 = read_metadata(file_list[0])
+    source_filenames = [str(file_list[0])]
     for file in file_list[1:]:
-        metadata = read_metadata(file)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
     write_metadata(metadata0, output_filename)
 
 
