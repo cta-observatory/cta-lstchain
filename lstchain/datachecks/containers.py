@@ -124,7 +124,8 @@ class DL1DataCheckContainer(Container):
             count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
             count_trig_types(table['trigger_type'][mask])
-        self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
+        if 'ucts_jump' in table.columns:
+            self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
         self.mean_alt_tel = np.mean(table['alt_tel'])
         self.mean_az_tel = np.mean(table['az_tel'])
 
