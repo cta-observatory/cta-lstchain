@@ -76,6 +76,7 @@ def main():
     source_config = Config({
         "LSTEventSource": {
             "max_events" : args.max_events,
+            "pointing_information": False,
             "default_trigger_type" : 'tib',
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
