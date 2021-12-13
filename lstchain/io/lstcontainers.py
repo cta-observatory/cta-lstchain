@@ -276,7 +276,6 @@ class MetaData(Container):
     """
     Some metadata
     """
-    SOURCE_FILENAMES = Field([], "filename of the source file")
     LSTCHAIN_VERSION = Field(None, "version of lstchain")
     CTAPIPE_VERSION = Field(None, "version of ctapipe")
     CTAPIPE_IO_LST_VERSION = Field(None, "version of ctapipe_io_lst")
