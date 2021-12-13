@@ -9,6 +9,8 @@ import tables
 from astropy import units as u
 from astropy.time import Time
 
+from ctapipe.io import read_table
+
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl2_params_lstcam_key,
@@ -292,6 +294,19 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+@pytest.mark.private_data
+def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
+    run_program(
+        "lstchain_find_pedestals",
+        "--input-dir",
+        temp_dir_observed_files,
+        temp_dir_observed_files,
+    )
+    for subrun, expected_length in zip((0, 100), (0, 1)):
+        path = temp_dir_observed_files / f"pedestal_ids_Run02008.{subrun:04d}.h5"
+        assert path.is_file()
+        t = read_table(path, "/interleaved_pedestal_ids")
+        assert len(t) == expected_length
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
@@ -357,7 +372,9 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     assert output_dl1ab.is_file()
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-3, equal_nan=True)
+    np.testing.assert_allclose(dl1.to_numpy(dtype='float'),
+                               dl1ab.to_numpy(dtype='float'), rtol=1e-3,
+                               equal_nan=True)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
