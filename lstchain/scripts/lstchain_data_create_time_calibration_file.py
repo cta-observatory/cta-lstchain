@@ -16,11 +16,11 @@ $> python lstchain_data_create_time_calibration_file.py
 import argparse
 import glob
 import logging
-import numpy as np
 from traitlets.config.loader import Config
 from ctapipe.io import EventSource
 from lstchain.io.config import read_configuration_file
 from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
+from tqdm.auto import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -45,16 +45,18 @@ parser.add_argument('--config', '-c',
                     help='Path to a configuration file. If none is given, a standard configuration is applied')
 
 parser.add_argument('--pedestal-file', '-p',
-                    help='Path to drs4 pedestal file ')
+                    help='Path to drs4 pedestal file ', required=True)
 
 parser.add_argument('--run-summary-path',
-                    help='Path to run summary file ')
+                    help='Path to run summary file ', required=True)
 
-
-args = parser.parse_args()
+parser.add_argument('--progress',
+                    action='store_true',
+                    help='Display a progress bar during event processing')
 
 
 def main():
+    args = parser.parse_args()
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
@@ -74,6 +76,7 @@ def main():
     source_config = Config({
         "LSTEventSource": {
             "max_events" : args.max_events,
+            "pointing_information": False,
             "default_trigger_type" : 'tib',
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
@@ -86,21 +89,22 @@ def main():
 
     config.merge(source_config)
 
+    with EventSource(path_list[0]) as s:
+        subarray = s.subarray
+
+    timeCorr = TimeCorrectionCalculate(
+        calib_file_path=args.output_file,
+        config=config,
+        subarray=subarray
+    )
+
     for i, path in enumerate(path_list):
         log.info(f'File {i+1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
 
         reader = EventSource(input_url=path, config=config)
 
-        if i==0:
-            timeCorr = TimeCorrectionCalculate(calib_file_path=args.output_file,
-                                               config=config,
-                                               subarray=reader.subarray)
-
-        for event in reader:
-            if event.index.event_id % 5000 == 0:
-                log.info(f'event id = {event.index.event_id}')
-
+        for event in tqdm(reader, disable=not args.progress):
             timeCorr.calibrate_peak_time(event)
 
     # write output

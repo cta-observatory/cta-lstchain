@@ -18,9 +18,8 @@ from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
     tailcuts_clean,
-    apply_time_delta_cleaning,
 )
-from ctapipe.image.morphology import number_of_islands
+from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
@@ -29,10 +28,11 @@ from ctapipe.containers import EventType
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
-from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
+from ..image.cleaning import apply_dynamic_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -41,6 +41,7 @@ from ..io import (
 )
 from ..io import (
     add_global_metadata,
+    add_config_metadata,
     global_metadata,
     write_calibration_data,
     write_mcheader,
@@ -84,7 +85,6 @@ def setup_writer(writer, subarray, is_simulation):
 
     for tel_name in tel_names:
         # None values in telescope/image table
-        writer.exclude(f'telescope/image/{tel_name}', 'image_mask')
         writer.exclude(f'telescope/image/{tel_name}', 'parameters')
         # None values in telescope/parameters table
         writer.exclude(f'telescope/parameters/{tel_name}', 'hadroness')
@@ -145,10 +145,15 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    # pop delta_time and use_main_island, so we can cleaning_parameters to tailcuts
+    # pop delta_time and use_main_island, so we can pass cleaning_parameters to
+    # tailcuts
     cleaning_parameters = config["tailcut"].copy()
     delta_time = cleaning_parameters.pop("delta_time", None)
     use_main_island = cleaning_parameters.pop("use_only_main_island", True)
+
+    use_dynamic_cleaning = False
+    if "apply" in config["dynamic_cleaning"]:
+        use_dynamic_cleaning = config["dynamic_cleaning"]["apply"]
 
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
@@ -163,6 +168,24 @@ def get_dl1(
     n_pixels = np.count_nonzero(signal_pixels)
 
     if n_pixels > 0:
+
+        if delta_time is not None:
+            signal_pixels = apply_time_delta_cleaning(
+                camera_geometry,
+                signal_pixels,
+                peak_time,
+                min_number_neighbors=1,
+                time_limit=delta_time
+            )
+
+        if use_dynamic_cleaning:
+            threshold_dynamic = config['dynamic_cleaning']['threshold']
+            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
+            signal_pixels = apply_dynamic_cleaning(image,
+                                                   signal_pixels,
+                                                   threshold_dynamic,
+                                                   fraction_dynamic)
+
         # check the number of islands
         num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
 
@@ -171,19 +194,6 @@ def get_dl1(
             n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
-
-        if delta_time is not None:
-            # makes sure only signal pixels are used in the time check:
-            cleaned_pixel_times = peak_time.copy()
-            cleaned_pixel_times[~signal_pixels] = np.nan
-
-            signal_pixels = apply_time_delta_cleaning(
-                camera_geometry,
-                signal_pixels,
-                cleaned_pixel_times,
-                min_number_neighbors=1,
-                time_limit=delta_time
-            )
 
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
@@ -197,9 +207,13 @@ def get_dl1(
             # convert ctapipe's width and length (in m) to deg:
             foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
             width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
+            width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, foclen))
             length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
+            length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, foclen))
             dl1_container.width = width
+            dl1_container.width_uncertainty = width_uncertainty
             dl1_container.length = length
+            dl1_container.length_uncertainty = length_uncertainty
             dl1_container.wl = dl1_container.width / dl1_container.length
 
             dl1_container.set_timing_features(camera_geometry[signal_pixels],
@@ -216,7 +230,11 @@ def get_dl1(
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
 
+    # save the applied cleaning mask
+    calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
+
     return dl1_container
+
 
 def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
@@ -252,14 +270,12 @@ def r0_to_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    custom_calibration = config["custom_calibration"]
-
     source = EventSource(input_url=input_filename,
                          config=Config(config["source_config"]))
     subarray = source.subarray
     is_simu = source.is_simulation
 
-    metadata = global_metadata(source)
+    metadata = global_metadata()
     write_metadata(metadata, output_filename)
 
     cal_mc = load_calibrator_from_config(config, subarray)
@@ -340,8 +356,8 @@ def r0_to_dl1(
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
-                if not custom_calibration:
-                    cal_mc(event)
+                cal_mc(event)
+
                 if config['mc_image_scaling_factor'] != 1:
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
@@ -356,6 +372,9 @@ def r0_to_dl1(
 
                     #initialize the event monitoring data
                     event.mon = deepcopy(source.r0_r1_calibrator.mon_data)
+                    for container in [event.mon.tel[tel_id].pedestal, event.mon.tel[tel_id].flatfield, event.mon.tel[tel_id].calibration]:
+                        add_global_metadata(container, metadata)
+                        add_config_metadata(container, config)
 
                     # write the first calibration event (initialized from calibration h5 file)
                     write_calibration_data(writer,
@@ -398,12 +417,8 @@ def r0_to_dl1(
                 # extra info for the image table
                 extra_im.tel_id = telescope_id
                 extra_im.selected_gain_channel = event.r1.tel[telescope_id].selected_gain_channel
-
-                # write image first, so we are sure nothing here modifies it
-                writer.write(
-                    table_name=f'telescope/image/{tel_name}',
-                    containers=[event.index, dl1_tel, extra_im]
-                )
+                add_global_metadata(extra_im, metadata)
+                add_config_metadata(extra_im, config)
 
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
                 mirror_area = subarray.tel[telescope_id].optics.mirror_area
@@ -415,9 +430,6 @@ def r0_to_dl1(
 
                 dl1_container.fill_event_info(event)
 
-
-                if custom_calibration:
-                    lst_calibration(event, telescope_id)
 
                 # Will determine whether this event has to be written to the
                 # DL1 output or not.
@@ -464,9 +476,15 @@ def r0_to_dl1(
 
                 for container in [extra_im, dl1_container, event.r0, dl1_tel]:
                     add_global_metadata(container, metadata)
+                    add_config_metadata(container, config)
 
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
+
+                writer.write(
+                    table_name=f'telescope/image/{tel_name}',
+                    containers=[event.index, dl1_tel, extra_im]
+                )
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:

@@ -237,7 +237,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                     fill=True,
                 )
                 plt.legend()
-            plt.xlabel(f"pe", fontsize=20)
+            plt.xlabel("pe", fontsize=20)
             plt.ylabel("pixels", fontsize=20)
 
             # pe scatter plot
@@ -274,16 +274,18 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 # median_ped = ped_data.charge_median[chan]
                 mean_ped = ped_data.charge_mean[chan]
                 ped_std = ped_data.charge_std[chan]
+                dc_to_pe = calib_data.dc_to_pe[chan]
+                time_correction = calib_data.time_correction[chan]
 
                 # select good pixels
                 select = np.logical_not(mask[chan])
-                fig = plt.figure(chan + 10, figsize=(12, 18))
+                fig = plt.figure(chan + 10, figsize=(12, 24))
                 fig.tight_layout(rect=[0, 0.0, 1, 0.95])
 
                 fig.suptitle(f"Run {run} channel: {channel[chan]}", fontsize=25)
 
                 # charge
-                plt.subplot(321)
+                plt.subplot(421)
                 plt.tight_layout()
                 median = int(np.median(charge_mean[select]))
                 rms = np.std(charge_mean[select])
@@ -293,7 +295,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.hist(charge_mean[select], bins=50, label=label)
                 plt.legend()
 
-                plt.subplot(322)
+                plt.subplot(422)
                 plt.tight_layout()
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("charge std", fontsize=20)
@@ -304,7 +306,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.legend()
 
                 # pedestal charge
-                plt.subplot(323)
+                plt.subplot(423)
                 plt.tight_layout()
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("pedestal", fontsize=20)
@@ -315,7 +317,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.legend()
 
                 # pedestal std
-                plt.subplot(324)
+                plt.subplot(424)
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("pedestal std", fontsize=20)
                 median = np.median(ped_std[select])
@@ -325,7 +327,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.legend()
 
                 # relative gain
-                plt.subplot(325)
+                plt.subplot(425)
                 plt.tight_layout()
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("relative signal", fontsize=20)
@@ -336,7 +338,19 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.legend()
 
                 # photon electrons
-                plt.subplot(326)
+                plt.subplot(426)
+                plt.tight_layout()
+                plt.ylabel("pixels", fontsize=20)
+                plt.xlabel("time corrections [ns]", fontsize=20)
+                median = np.median(time_correction[select])
+                rms = np.std(time_correction[select])
+                label = f"Median {median:3.2f}, std {rms:3.2f}"
+                plt.hist(time_correction[select].value, bins=50, label=label)
+                plt.legend()
+
+                plt.subplots_adjust(top=0.92)
+                # photon electrons
+                plt.subplot(427)
                 plt.tight_layout()
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("pe", fontsize=20)
@@ -346,6 +360,23 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.hist(n_pe[select], bins=50, label=label)
                 plt.legend()
                 plt.subplots_adjust(top=0.92)
+
+                # gain
+                plt.subplot(428)
+                plt.tight_layout()
+                plt.ylabel("pixels", fontsize=20)
+                plt.xlabel("flat-fielded gain [ADC/pe]", fontsize=20)
+                denominator = dc_to_pe[select]
+                numerator = 1.
+
+                gain = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
+                median = np.median(gain)
+                rms = np.std(gain)
+                label = f"Median {median:3.2f}, std {rms:3.2f}"
+                plt.hist(gain, bins=50, label=label)
+                plt.legend()
+                plt.subplots_adjust(top=0.92)
+
 
                 pdf.savefig(plt.gcf())
                 plt.close()

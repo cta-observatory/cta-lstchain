@@ -1,6 +1,3 @@
-import tempfile
-from pathlib import Path
-
 import pandas as pd
 import pytest
 
@@ -32,26 +29,18 @@ def pytest_configure(config):
             config.option.markexpr += "not private_data"
 
 
-@pytest.fixture(scope="session")
-def temp_dir():
-    """Shared temporal directory for the tests."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
-
 
 @pytest.fixture(scope="session")
-def temp_dir_simulated_files():
+def temp_dir_simulated_files(tmp_path_factory):
     """Temporal common directory for processing simulated data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("simulated_files")
 
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
-def temp_dir_observed_files():
+def temp_dir_observed_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("observed_files")
 
 
 @pytest.fixture(scope="session")
@@ -217,8 +206,9 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     proton_file = simulated_dl1_file
     models_path = temp_dir_simulated_files
     file_model_energy = models_path / "reg_energy.sav"
-    file_model_disp = models_path / "reg_disp_vector.sav"
     file_model_gh_sep = models_path / "cls_gh.sav"
+    file_model_disp_norm = models_path / "reg_disp_norm.sav"
+    file_model_disp_sign = models_path / "cls_disp_sign.sav"
 
     run_program(
         "lstchain_mc_trainpipe",
@@ -231,9 +221,10 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     )
     return {
         "energy": file_model_energy,
-        "disp": file_model_disp,
         "gh_sep": file_model_gh_sep,
         "path": models_path,
+        "disp_norm": file_model_disp_norm,
+        "disp_sign": file_model_disp_sign,
     }
 
 

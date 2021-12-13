@@ -1,27 +1,36 @@
-import h5py
-from multiprocessing import Pool
-import numpy as np
-import pandas as pd
-from astropy.table import Table, vstack, QTable
-import tables
-from tables import open_file
+import logging
 import os
+import re
+from multiprocessing import Pool
+
 import astropy.units as u
 import ctapipe
+import ctapipe_io_lst
+import h5py
 import lstchain
-from ctapipe.io import HDF5TableReader
+import numpy as np
+import pandas as pd
+import tables
+from astropy.table import Table, vstack, QTable
 from ctapipe.containers import SimulationConfigContainer
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription
+)
+from ctapipe.io import HDF5TableReader
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-from tqdm import tqdm
-# from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
+from tables import open_file
+from tqdm import tqdm
 
-import logging
+from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +49,7 @@ __all__ = [
     'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
+    'add_config_metadata',
     'write_subarray_tables',
     'write_metadata',
     'write_dataframe',
@@ -52,13 +62,14 @@ __all__ = [
     'merge_dl2_runs'
 ]
 
-dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
+dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
-dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
-dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
-dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
+dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
+dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
@@ -71,6 +82,11 @@ HDF5_ZSTD_FILTERS = tables.Filters(
 def read_simu_info_hdf5(filename):
     """
     Read simu info from an hdf5 file
+
+    Parameters
+    ----------
+    filename: str
+        path to the HDF5 file
 
     Returns
     -------
@@ -139,7 +155,7 @@ def get_dataset_keys(filename):
 
     def walk(name, obj):
         if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
+            dataset_keys.append('/'+name)
 
     with h5py.File(filename, "r") as file:
         file.visititems(walk)
@@ -192,10 +208,18 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def auto_merge_h5files(
+        file_list,
+        output_filename='merged.h5',
+        nodes_keys=None,
+        merge_arrays=False,
+        filters=HDF5_ZSTD_FILTERS,
+        progress_bar=False,
+):
     """
     Automatic merge of HDF5 files.
-    A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    A list of nodes keys can be provided to merge only these nodes.
+    If None, all nodes are merged.
 
     Parameters
     ----------
@@ -211,7 +235,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
-    bar = tqdm(total=len(file_list))
+    bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
@@ -322,12 +346,19 @@ def smart_merge_h5files(
         smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
     )
 
-    # Merge metadata
+    # Merge metadata and store source file names
     metadata0 = read_metadata(smart_list[0])
+    source_filenames = [str(smart_list[0])]
+
     for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+
     write_metadata(metadata0, output_filename)
 
 
@@ -765,7 +796,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source):
+def global_metadata():
     """
     Get global metadata container
 
@@ -773,11 +804,12 @@ def global_metadata(source):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
+
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
+    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(source.input_url))
 
     return metadata
 
@@ -794,6 +826,29 @@ def add_global_metadata(container, metadata):
     meta_dict = metadata.as_dict()
     for k, item in meta_dict.items():
         container.meta[k] = item
+
+
+def add_config_metadata(container, configuration):
+    """
+    Add configuration parameters to a container in container.meta.config
+
+    Parameters
+    ----------
+    container: `ctapipe.containers.Container`
+    configuration: config dict
+    """
+    linted_config = str(configuration)
+    linted_config = linted_config.replace("<LazyConfigValue {}>", "None")
+    linted_config = re.sub(r"<LazyConfigValue\svalue=(.*?)>", "\\1", linted_config)
+    linted_config = re.sub(r"DeferredConfigString\((.*?)\)", "\\1", linted_config)
+    linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
+    linted_config = linted_config.replace("\'", "\"")
+    linted_config = linted_config.replace("None", "\"None\"")
+    linted_config = linted_config.replace("inf",  "\"inf\"")
+    linted_config = linted_config.replace("True", "true")
+    linted_config = linted_config.replace("False", "false")
+
+    container.meta["config"] = linted_config
 
 
 def write_subarray_tables(writer, event, metadata=None):
@@ -814,7 +869,7 @@ def write_subarray_tables(writer, event, metadata=None):
     writer.write(table_name="subarray/trigger", containers=[event.index, event.trigger])
 
 
-def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
+def write_dataframe(dataframe, outfile, table_path, mode="a", index=False, config=None, meta=None):
     """
     Write a pandas dataframe to a HDF5 file using pytables formatting.
 
@@ -824,6 +879,8 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
     outfile: path
     table_path: str
         path to the table to write in the HDF5 file
+    config: config metadata
+    meta: global metadata
     """
     if not table_path.startswith("/"):
         table_path = "/" + table_path
@@ -831,15 +888,20 @@ def write_dataframe(dataframe, outfile, table_path, mode="a", index=False):
     with tables.open_file(outfile, mode=mode) as f:
         path, table_name = table_path.rsplit("/", maxsplit=1)
 
-        f.create_table(
+        t = f.create_table(
             path,
             table_name,
             dataframe.to_records(index=index),
             createparents=True,
         )
+        if config:
+            t.attrs["config"] = config
+        if meta:
+            for k, item in meta.as_dict().items():
+                t.attrs[k] = item
 
 
-def write_dl2_dataframe(dataframe, outfile):
+def write_dl2_dataframe(dataframe, outfile, config=None, meta=None):
     """
     Write DL2 dataframe to a HDF5 file
 
@@ -847,8 +909,10 @@ def write_dl2_dataframe(dataframe, outfile):
     ----------
     dataframe: `pandas.DataFrame`
     outfile: path
+    config: config metadata
+    meta: global metadata
     """
-    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key)
+    write_dataframe(dataframe, outfile=outfile, table_path=dl2_params_lstcam_key, config=config, meta=meta)
 
 
 def add_column_table(table, ColClass, col_label, values):

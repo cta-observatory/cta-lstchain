@@ -11,7 +11,7 @@ from . import image
 from . import irf
 
 from .io import standard_config
-from .version import get_version
+from .version import __version__
 
 __all__ = [
     "reco",
@@ -26,7 +26,6 @@ __all__ = [
     "__version__",
 ]
 
-__version__ = get_version(pep440=False)
 
 if (
     astropy.version.major == 4

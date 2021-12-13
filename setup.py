@@ -3,18 +3,6 @@
 # import sys
 from setuptools import setup, find_packages
 import os
-import sys
-
-# Add lstchain folder to path (contains version.py)
-# this is needed as lstchain/__init__.py imports dependencies
-# that might not be installed before setup runs, so we cannot import
-# lstchain.version
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lstchain"))
-from version import get_version, update_release_version  # noqa
-
-
-update_release_version()
-version = get_version()
 
 
 def find_scripts(script_dir, prefix):
@@ -37,31 +25,49 @@ tools_list = find_scripts("lstchain/tools", "lstchain_")
 entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
+tests_require = ["pytest", "pytest-ordering"]
+docs_require = [
+    "sphinx~=4.2",
+    "sphinx-automodapi",
+    "sphinx_argparse",
+    "sphinx_rtd_theme",
+    "numpydoc",
+    "nbsphinx"
+]
+
 setup(
-    version=version,
+    use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(),
     install_requires=[
         'astropy~=4.2',
-        'ctapipe~=0.10.5',
-        'ctapipe_io_lst~=0.9.2',
+        'ctapipe~=0.11.0',
+        'ctapipe_io_lst~=0.12.0',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy>=0.18',
         'h5py',
         'joblib',
-        'matplotlib',
+        'matplotlib>=3.5',
         'numba',
         'numpy',
         'pandas',
-        'pyirf~=0.4.0',
+        'pyirf~=0.5.0',
         'scipy',
         'seaborn',
         'scikit-learn',
         'tables',
         'toml',
-        'traitlets',
+        'traitlets~=5.0.5',
         'iminuit~=1.5',
+        'pymongo',
+        'pyparsing',
+        'setuptools_scm',
     ],
+    extras_require={
+        "all": tests_require + docs_require,
+        "tests": tests_require,
+        "docs": docs_require,
+    },
     package_data={
         'lstchain': [
             'data/lstchain_standard_config.json',
@@ -69,9 +75,5 @@ setup(
             'resources/LST_pixid_to_cluster.txt',
         ],
     },
-    tests_require=[
-        "pytest",
-        "pytest-ordering",
-    ],
     entry_points=entry_points,
 )

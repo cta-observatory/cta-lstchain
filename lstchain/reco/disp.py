@@ -129,7 +129,8 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
 
 def disp_vector(disp_norm, disp_angle, disp_sign):
     """
-    Compute `disp_norm.dx` and `disp_norm.dy` vector from `disp_norm.norm`, `disp_norm.angle` and `disp_norm.sign`
+    Compute `disp_norm.dx` and `disp_norm.dy` vector from `disp_norm.norm`,
+    `disp_norm.angle` and `disp_norm.sign`
 
     Parameters
     ----------
@@ -141,23 +142,24 @@ def disp_vector(disp_norm, disp_angle, disp_sign):
     -------
     disp_dx, disp_dy
     """
-    return utils.polar_to_cartesian(disp_norm, disp_angle, disp_sign)
+    return np.transpose(utils.polar_to_cartesian(disp_norm, disp_angle, disp_sign))
 
 
 def disp_to_pos(disp_dx, disp_dy, cog_x, cog_y):
     """
-    Calculates source position in camera coordinates(x,y) from the reconstructed disp
+    Calculates source position in camera coordinates(x,y)
+    from the reconstructed disp.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     disp: DispContainer
     cog_x: float
-    Coordinate x of the center of gravity of Hillas ellipse
+        Coordinate x of the center of gravity of Hillas ellipse
     cog_y: float
-    Coordinate y of the center of gravity of Hillas ellipse
+        Coordinate y of the center of gravity of Hillas ellipse
 
-    Returns:
-    --------
+    Returns
+    -------
     (source_pos_x, source_pos_y)
     """
     source_pos_x = cog_x + disp_dx
