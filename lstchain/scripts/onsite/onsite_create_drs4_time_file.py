@@ -105,7 +105,7 @@ def main():
         if ped_run is None:
             # else search the pedestal file of the same date
 
-            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.h5'))
             if len(file_list) == 0:
                 raise IOError(f"No pedestal file found for date {date}\n")
             if len(file_list) > 1:
@@ -115,7 +115,7 @@ def main():
 
         # else, if given, search a specific pedestal run
         else:
-            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run:05d}.0000.fits'))
+            file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run:05d}.0000.h5'))
             if len(file_list) == 0:
                 raise IOError(f"Pedestal file from run {ped_run} not found\n")
             else:

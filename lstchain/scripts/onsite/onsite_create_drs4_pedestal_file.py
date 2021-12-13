@@ -86,7 +86,7 @@ def main():
             os.makedirs(log_dir, exist_ok=True)
 
         # define output file
-        output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.fits"
+        output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.h5"
 
         if os.path.exists(output_file):
             remove = False
@@ -102,9 +102,9 @@ def main():
 
         # run lstchain script
         cmd = [
-            "lstchain_data_create_drs4_pedestal_file",
-            f"--input-file={input_file}",
-            f"--output-file={output_file}",
+            "lstchain_create_drs4_pedestal_file",
+            f"--input={input_file}",
+            f"--output={output_file}",
             f"--max-events={max_events}",
         ]
 
