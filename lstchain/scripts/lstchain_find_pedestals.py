@@ -82,9 +82,9 @@ def main():
                                                                all_times[0])),
                                                               'Hz')
         if pedmask.sum() == 0:
-            continue
-
-        print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
+            print('  No interleaved pedestals found!')
+        else:
+            print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
 
         df = pd.DataFrame({'event_id': event_id[pedmask]})
         output_file = Path(output_dir,
