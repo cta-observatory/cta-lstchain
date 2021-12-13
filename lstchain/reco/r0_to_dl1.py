@@ -460,7 +460,9 @@ def r0_to_dl1(
                     # FIXME: just keep it as time, table writer and reader handle it
                     dl1_container.dragon_time = event.trigger.time.unix
                     dl1_container.tib_time = 0
-                    dl1_container.ucts_jump = event.lst.tel[telescope_id].evt.ucts_jump
+                    if 'ucts_jump' in vars(event.lst.tel[
+                                               telescope_id].evt.__class__):
+                        dl1_container.ucts_jump = event.lst.tel[telescope_id].evt.ucts_jump
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
                     dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
                 else:
