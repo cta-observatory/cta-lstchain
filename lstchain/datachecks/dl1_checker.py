@@ -32,6 +32,9 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
+
+from ctapipe_io_lst import TriggerBits
+
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 # from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
@@ -91,14 +94,13 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
-            logger.error(f'File {str(filename)} not found!')
+            logger.error(f'File {filename} not found!')
             raise FileNotFoundError
 
-    # try to determine which trigger_type tag is more reliable for
-    # identifying interleaved pedestals. We check which one has
-    # more values == 32, which is the pedestal tag. The one called
-    # "trigger_type" is the TIB trigger type. The fastest way to do
-    # this for the whole run seems to be using normal pytables:
+    # We count the number of events identified as interleaved pedestals by
+    # each trigger type, just counting events with TriggerBits.PEDESTAL.value.
+    # The one called "trigger_type" is the TIB trigger type. This is faster
+    # pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
     for filename in filenames:
         with tables.open_file(filename,
@@ -106,12 +108,18 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
     num_pedestals = {'trigger_type':
-                         (np.array(trig_tags['trigger_type']) == 32).sum(),
+                         (np.array(trig_tags['trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum(),
                      'ucts_trigger_type':
-                         (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
-    logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
+                         (np.array(trig_tags['ucts_trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum()}
+    logger.info(f'Number of pedestal trigger tags: {num_pedestals}')
 
-    # Choose what source to use for obtaining the trigger type:
+    # Choose what source to use for obtaining the trigger type.
+    # We use event_type which is filled by the event source (it uses when
+    # possible the trigger types, but also heuristic methods to identify the
+    # interleaved events)
+    #
     trigger_source = 'event_type'
 
     # create container for the histograms' binnings, to be saved in the hdf5
@@ -229,11 +237,16 @@ def process_dl1_file(filename, bins, tel_id=1):
         # create flatfield mask from the images table. For the time being,
         # trigger type tags are not reliable. We first identify flatfield events
         # by their looks.
-        image = image_table.col('image')
-
         flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.
+
+        # Revise flatfield_mask : event_type can be rarely wrong, so check
+        # here that all events look like interleaved flat field events:
+        # Note (AM, 20211202): finally we won't use this, the event source
+        # takes care of it
+        # flatfield_mask &= ((parameters['intensity'] > 50000) &
+        #                    (parameters['concentration_pixel'] < 0.005))
 
         pedestal_mask = (parameters['event_type'] ==
                          EventType.SKY_PEDESTAL.value)
@@ -794,6 +807,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         # Some quantities we want to have vs. subrun index:
         num_rings = np.array([])
         num_contained_rings = np.array([])
+
         mean_width = np.array([])
         sem_width = np.array([])
         mean_effi = np.array([])
@@ -844,7 +858,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             muons_table = vstack([muons_table, t])
 
         t = Table.read(good_files[0])
-        tcont = t[t['ring_containment'] > 0.999]
+        tcont = t[(t['ring_containment'] > 0.999) &
+                  (t['muon_efficiency'] < 1)]
+
         mean_width = np.mean(tcont['ring_width'])
         sem_width = sem(tcont['ring_width'])
         mean_effi = np.mean(tcont['muon_efficiency'])
@@ -852,11 +868,16 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         contained_muons = tcont
         for filename in good_files[1:]:
             t = Table.read(filename)
-            tcont = t[t['ring_containment'] > 0.999]
-            mean_width = np.append(mean_width, np.mean(tcont['ring_width']))
-            sem_width = np.append(sem_width, sem(tcont['ring_width']))
-            mean_effi = np.append(mean_effi, np.mean(tcont['muon_efficiency']))
-            sem_effi = np.append(sem_effi, sem(tcont['muon_efficiency']))
+            tcont = t[(t['ring_containment'] > 0.999) &
+                      (t['muon_efficiency'] < 1)]
+            mean_width = np.append(mean_width,
+                                   np.mean(tcont['ring_width']))
+            sem_width = np.append(sem_width,
+                                  sem(tcont['ring_width']))
+            mean_effi = np.append(mean_effi,
+                                    np.mean(tcont['muon_efficiency']))
+            sem_effi = np.append(sem_effi,
+                                 sem(tcont['muon_efficiency']))
             contained_muons = vstack([contained_muons, tcont])
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)

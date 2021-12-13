@@ -1,6 +1,3 @@
-import tempfile
-from pathlib import Path
-
 import pandas as pd
 import pytest
 
@@ -32,26 +29,18 @@ def pytest_configure(config):
             config.option.markexpr += "not private_data"
 
 
-@pytest.fixture(scope="session")
-def temp_dir():
-    """Shared temporal directory for the tests."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
-
 
 @pytest.fixture(scope="session")
-def temp_dir_simulated_files():
+def temp_dir_simulated_files(tmp_path_factory):
     """Temporal common directory for processing simulated data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("simulated_files")
 
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
-def temp_dir_observed_files():
+def temp_dir_observed_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("observed_files")
 
 
 @pytest.fixture(scope="session")
