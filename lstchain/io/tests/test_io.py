@@ -32,7 +32,7 @@ def test_write_dataframe():
     config = config.get_standard_config()
 
     with tempfile.NamedTemporaryFile() as f:
-        meta = global_metadata(None, input_url=f.name)
+        meta = global_metadata()
         write_dataframe(df, f.name, "data/awesome_table", config=config, meta=meta)
 
         with tables.open_file(f.name) as h5_file:
@@ -104,6 +104,10 @@ def test_merging_check(simulated_dl1_file):
 @pytest.mark.run(after="test_r0_to_dl1")
 def test_smart_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
+
+    # check source filenames is properly written
+    with tables.open_file(merged_h5file) as file:
+        assert len(file.root.source_filenames.filenames) == 2
 
 
 @pytest.mark.run(after="test_r0_to_dl1")

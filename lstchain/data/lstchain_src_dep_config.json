@@ -178,7 +178,6 @@
     
   "allowed_tels": [1, 2, 3, 4],
   "max_events": null,
-  "custom_calibration": false,
   "write_pe_image": false,
   "mc_image_scaling_factor": 1,
   "CameraCalibrator": {

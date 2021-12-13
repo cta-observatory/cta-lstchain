@@ -208,10 +208,18 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def auto_merge_h5files(
+        file_list,
+        output_filename='merged.h5',
+        nodes_keys=None,
+        merge_arrays=False,
+        filters=HDF5_ZSTD_FILTERS,
+        progress_bar=False,
+):
     """
     Automatic merge of HDF5 files.
-    A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    A list of nodes keys can be provided to merge only these nodes.
+    If None, all nodes are merged.
 
     Parameters
     ----------
@@ -227,7 +235,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
-    bar = tqdm(total=len(file_list))
+    bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:
@@ -337,12 +345,19 @@ def smart_merge_h5files(
         smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
     )
 
-    # Merge metadata
+    # Merge metadata and store source file names
     metadata0 = read_metadata(smart_list[0])
+    source_filenames = [str(smart_list[0])]
+
     for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+
     write_metadata(metadata0, output_filename)
 
 
@@ -780,7 +795,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source, input_url=""):
+def global_metadata():
     """
     Get global metadata container
 
@@ -788,15 +803,12 @@ def global_metadata(source, input_url=""):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
-    if source:
-        input_url = source.input_url
 
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
     metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
     return metadata
 
