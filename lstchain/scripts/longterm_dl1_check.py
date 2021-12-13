@@ -251,8 +251,13 @@ def main():
             num_wrong_tags = trigtag_mismatches(table, tag)
             d['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
-            d['num_ucts_jumps'].extend(table.col('num_ucts_jumps'))
-            total_num_ucts_jumps += np.sum(table.col('num_ucts_jumps'))
+
+            if 'num_ucts_jumps' in table.colnames:
+                d['num_ucts_jumps'].extend(table.col('num_ucts_jumps'))
+                total_num_ucts_jumps += np.sum(table.col('num_ucts_jumps'))
+            # In case we are running over lstchain <v0.8 datacheck files:
+            else:
+                d['num_ucts_jumps'].extend(np.zeros(table.nrows, dtype='int'))
 
             d['runnumber'].extend(len(table)*[runnumber])
             d['subrun'].extend(table.col('subrun_index'))
