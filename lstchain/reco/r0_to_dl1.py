@@ -19,7 +19,7 @@ from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
 )
-from ctapipe.image.morphology import number_of_islands
+from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
@@ -28,11 +28,11 @@ from ctapipe.containers import EventType
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
-from ..calib.camera import lst_calibration, load_calibrator_from_config
+from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
-from ..image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
+from ..image.cleaning import apply_dynamic_cleaning
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -85,7 +85,6 @@ def setup_writer(writer, subarray, is_simulation):
 
     for tel_name in tel_names:
         # None values in telescope/image table
-        writer.exclude(f'telescope/image/{tel_name}', 'image_mask')
         writer.exclude(f'telescope/image/{tel_name}', 'parameters')
         # None values in telescope/parameters table
         writer.exclude(f'telescope/parameters/{tel_name}', 'hadroness')
@@ -231,7 +230,11 @@ def get_dl1(
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
 
+    # save the applied cleaning mask
+    calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
+
     return dl1_container
+
 
 def r0_to_dl1(
     input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
@@ -266,8 +269,6 @@ def r0_to_dl1(
         raise IOError(str(output_filename) + ' exists, exiting.')
 
     config = replace_config(standard_config, custom_config)
-
-    custom_calibration = config["custom_calibration"]
 
     source = EventSource(input_url=input_filename,
                          config=Config(config["source_config"]))
@@ -355,8 +356,8 @@ def r0_to_dl1(
             # write sub tables
             if is_simu:
                 write_subarray_tables(writer, event, metadata)
-                if not custom_calibration:
-                    cal_mc(event)
+                cal_mc(event)
+
                 if config['mc_image_scaling_factor'] != 1:
                     rescale_dl1_charge(event, config['mc_image_scaling_factor'])
 
@@ -419,12 +420,6 @@ def r0_to_dl1(
                 add_global_metadata(extra_im, metadata)
                 add_config_metadata(extra_im, config)
 
-                # write image first, so we are sure nothing here modifies it
-                writer.write(
-                    table_name=f'telescope/image/{tel_name}',
-                    containers=[event.index, dl1_tel, extra_im]
-                )
-
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
                 mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
@@ -435,9 +430,6 @@ def r0_to_dl1(
 
                 dl1_container.fill_event_info(event)
 
-
-                if custom_calibration:
-                    lst_calibration(event, telescope_id)
 
                 # Will determine whether this event has to be written to the
                 # DL1 output or not.
@@ -488,6 +480,11 @@ def r0_to_dl1(
 
                 writer.write(table_name=f'telescope/parameters/{tel_name}',
                              containers=[event.index, dl1_container])
+
+                writer.write(
+                    table_name=f'telescope/image/{tel_name}',
+                    containers=[event.index, dl1_tel, extra_im]
+                )
 
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:

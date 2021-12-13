@@ -1,29 +1,36 @@
-import h5py
-from multiprocessing import Pool
-import numpy as np
-import pandas as pd
-from astropy.table import Table, vstack, QTable
-import tables
-from tables import open_file
+import logging
 import os
 import re
+from multiprocessing import Pool
+
 import astropy.units as u
 import ctapipe
-import lstchain
 import ctapipe_io_lst
-from ctapipe.io import HDF5TableReader
+import h5py
+import lstchain
+import numpy as np
+import pandas as pd
+import tables
+from astropy.table import Table, vstack, QTable
 from ctapipe.containers import SimulationConfigContainer
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription
+)
+from ctapipe.io import HDF5TableReader
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-from tqdm import tqdm
-# from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
+from tables import open_file
+from tqdm import tqdm
 
-import logging
+from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 
 log = logging.getLogger(__name__)
 
@@ -55,13 +62,14 @@ __all__ = [
     'merge_dl2_runs'
 ]
 
-dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
+dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
-dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
-dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
-dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
+dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
+dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
@@ -74,6 +82,11 @@ HDF5_ZSTD_FILTERS = tables.Filters(
 def read_simu_info_hdf5(filename):
     """
     Read simu info from an hdf5 file
+
+    Parameters
+    ----------
+    filename: str
+        path to the HDF5 file
 
     Returns
     -------
@@ -142,7 +155,7 @@ def get_dataset_keys(filename):
 
     def walk(name, obj):
         if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
+            dataset_keys.append('/'+name)
 
     with h5py.File(filename, "r") as file:
         file.visititems(walk)
@@ -195,10 +208,18 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def auto_merge_h5files(
+        file_list,
+        output_filename='merged.h5',
+        nodes_keys=None,
+        merge_arrays=False,
+        filters=HDF5_ZSTD_FILTERS,
+        progress_bar=False,
+):
     """
     Automatic merge of HDF5 files.
-    A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    A list of nodes keys can be provided to merge only these nodes.
+    If None, all nodes are merged.
 
     Parameters
     ----------
@@ -214,7 +235,7 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     else:
         keys = set(nodes_keys)
 
-    bar = tqdm(total=len(file_list))
+    bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
             for k in keys:

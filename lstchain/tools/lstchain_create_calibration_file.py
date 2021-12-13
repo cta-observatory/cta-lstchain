@@ -87,7 +87,7 @@ class CalibrationHDF5Writer(Tool):
 
     def setup(self):
 
-        self.log.debug(f"Open  file")
+        self.log.debug("Opening file")
         self.eventsource = EventSource.from_config(parent=self)
 
         tel_id = self.eventsource.lst_service.telescope_id
@@ -128,7 +128,7 @@ class CalibrationHDF5Writer(Tool):
         end_of_file = False
 
         try:
-            self.log.debug(f"Start loop")
+            self.log.debug("Start loop")
             self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
             for count, event in enumerate(self.eventsource):
 
@@ -224,10 +224,10 @@ class CalibrationHDF5Writer(Tool):
                     self.processor.calculate_calibration_coefficients(event)
 
                     # write calib and pixel status
-                    self.log.debug(f"Write pixel_status data")
-                    self.writer.write('pixel_status',status_data)
+                    self.log.debug("Write pixel_status data")
+                    self.writer.write('pixel_status', status_data)
 
-                    self.log.debug(f"Write calibration data")
+                    self.log.debug("Write calibration data")
                     self.writer.write('calibration', calib_data)
                     if self.one_event:
                         break

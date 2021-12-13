@@ -15,7 +15,7 @@ jobs:
         # we currently only support python 3.7 since traitlets 5 requires 3.7
         # and protozfits does not support python 3.8.
         python-version: [3.7, 3.8]
-        ctapipe-version: [v0.10.5]
+        ctapipe-version: [v0.11.0]
 
     steps:
       - uses: actions/checkout@v2
@@ -45,10 +45,16 @@ jobs:
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov
+            pytest-cov pyflakes
 
           echo "pip install ."
           pip install .
+
+      - name: pyflakes
+        run:
+          . $CONDA/etc/profile.d/conda.sh
+          conda activate ci
+          pyflakes lstchain
 
       - name: Download test data
         env:
@@ -69,3 +75,36 @@ jobs:
         with:
           # disable gcov, not needed
           functionalities: gcov
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install doc dependencies
+        run: |
+          sudo apt update --yes && sudo apt install --yes git build-essential pandoc graphviz
+          pip install -U pip setuptools wheel
+          pip install -e .[docs]
+          git describe --tags
+          python -c 'import lstchain; print(lstchain.__version__)'
+      - name: Build docs
+        run: cd docs && make html SPHINXOPTS="-W --keep-going -n --color -j auto"
+
+      - name: Deploy to gihub pages
+        # only run on push to master
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: docs/_build/html
+          CLEAN: true
+          SINGLE_COMMIT: true

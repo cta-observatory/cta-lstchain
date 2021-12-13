@@ -19,9 +19,12 @@ from distutils.util import strtobool
 import astropy.units as u
 import numpy as np
 import tables
-from ctapipe.image import hillas_parameters
-from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.morphology import number_of_islands
+from ctapipe.image import (
+    hillas_parameters,
+    tailcuts_clean,
+    number_of_islands,
+    apply_time_delta_cleaning,
+)
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
@@ -34,7 +37,7 @@ from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.image.cleaning import apply_time_delta_cleaning, apply_dynamic_cleaning
+from lstchain.image.cleaning import apply_dynamic_cleaning
 
 log = logging.getLogger(__name__)
 
@@ -70,10 +73,10 @@ parser.add_argument('--pedestal-cleaning', action='store',
                     help='Boolean. True to use pedestal cleaning',
                     default=False)
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+
     std_config = get_standard_config()
 
     log.setLevel(logging.INFO)
@@ -132,7 +135,7 @@ def main():
             f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
         log.info("Remove from image pixels which have charge below "
                  f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
-    
+
     use_only_main_island = True
     if "use_only_main_island" in config[clean_method_name]:
         use_only_main_island = config[clean_method_name]["use_only_main_island"]
@@ -197,16 +200,17 @@ def main():
         if increase_psf:
             set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
+        image_mask_save = not args.noimage and 'image_mask' in input.root[dl1_images_lstcam_key].colnames
+
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
+            if image_mask_save:
+                image_mask = output.root[dl1_images_lstcam_key].col('image_mask')
 
-            for tab in [output.root[dl1_params_lstcam_key], output.root[dl1_images_lstcam_key]]:
-                # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
-                for k, item in metadata.as_dict().items():
-                    tab.attrs[k] = item
-                tab.attrs["config"] = str(config)
-                if args.noimage:
-                    break
+            # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
+            for k, item in metadata.as_dict().items():
+                output.root[dl1_params_lstcam_key].attrs[k] = item
+            output.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
             for ii, row in enumerate(image_table):
 
@@ -235,7 +239,7 @@ def main():
                                                boundary_th,
                                                isolated_pixels,
                                                min_n_neighbors)
-    
+
 
                 n_pixels = np.count_nonzero(signal_pixels)
 
@@ -261,7 +265,7 @@ def main():
                                                           FRACTION_CLEANING_SIZE)
                         signal_pixels = new_mask
 
-                        
+
                     # count a number of islands after all of the image cleaning steps
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
@@ -314,10 +318,14 @@ def main():
                     dl1_container['disp_sign'] = disp_sign
 
                 for p in parameters_to_update:
-
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
+                if image_mask_save:
+                    image_mask[ii] = signal_pixels
+
             output.root[dl1_params_lstcam_key][:] = params
+            if image_mask_save:
+                output.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
     write_metadata(metadata, args.output_file)
 

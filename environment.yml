@@ -4,23 +4,30 @@ channels:
   - cta-observatory
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.8
   - astropy~=4.2
   - pip
-  - ctapipe~=0.10.5
+  - ctapipe~=0.11
   - gammapy>=0.18
   - h5py
   - ipython
   - jupyter
+  - matplotlib>=3.5
   - notebook
   - joblib
   - toml
   - protozfits=2.0
-  - pyparsing~=2.4
+  - pyparsing
+  - sphinx~=4.2
+  - sphinx-automodapi
+  - sphinx_rtd_theme
+  - sphinx-argparse
+  - nbsphinx
+  - numpydoc
   - traitlets=5.0
   - pip:
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.9.2
+      - ctapipe_io_lst~=0.12.0
       - ctaplot
-      - pyirf~=0.4.0
+      - pyirf~=0.5.0

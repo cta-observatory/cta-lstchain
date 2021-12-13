@@ -8,7 +8,7 @@ def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord,
     """
     
 
-    Paramenters
+    Parameters
     ---------
     ax:               `matplotlib.pyplot.axis`
     geom:             CameraGeometry  

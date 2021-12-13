@@ -1,4 +1,3 @@
-import pytest
 from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
 import numpy as np
 import pandas as pd
