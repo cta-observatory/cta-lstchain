@@ -80,7 +80,7 @@ def main():
     else:
         keys = None
 
-    auto_merge_h5files(file_list, args.outfile, nodes_keys=keys)
+    auto_merge_h5files(file_list, args.outfile, nodes_keys=keys, progress_bar=args.progress)
 
 
 if __name__ == '__main__':

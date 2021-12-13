@@ -213,6 +213,7 @@ def auto_merge_h5files(
     nodes_keys=None,
     merge_arrays=False,
     filters=HDF5_ZSTD_FILTERS,
+    progress_bar=False
 ):
     """
     Automatic merge of HDF5 files.
