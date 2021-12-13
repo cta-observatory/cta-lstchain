@@ -2,7 +2,6 @@
 Factory for the estimation of the flat field coefficients
 """
 
-import os
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator

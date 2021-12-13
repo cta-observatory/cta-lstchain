@@ -50,7 +50,7 @@ parser.add_argument("--max-events",
                     type=int,
                     default=20000)
 
-parser.add_argument("--start-r0-waveform",
+parser.add_argument("--start-sample",
                     help="Start sample for waveform. Default = 11",
                     type=int,
                     default=11)
@@ -61,8 +61,13 @@ parser.add_argument('--deltaT', '-s',
                     'Default=True, use False otherwise',
                     default=True)
 
-parser.add_argument('--overwrite', action='store_true', help='Overwrite output file without asking')
+parser.add_argument('--overwrite',
+                    action='store_true',
+                    help='Overwrite output file without asking')
 
+parser.add_argument('--progress', 
+                    action='store_true',
+                    help='Display a progress bar during event processing')
 
 
 def main():
@@ -73,11 +78,16 @@ def main():
     source_config = {
         "LSTEventSource": {
             "max_events": args.max_events,
+            "pointing_information": False,
         },
         "LSTR0Corrections": {
+            "offset": 0,
             "apply_drs4_pedestal_correction": False,
             "apply_timelapse_correction": args.deltaT,
             "apply_spike_correction": False,
+            "select_gain": False,
+            "r1_sample_start": 0,
+            "r1_sample_end": 40,
         }
     }
 
@@ -89,10 +99,9 @@ def main():
     pedestal = DragonPedestal(
         tel_id=reader.tel_id,
         n_module=n_modules,
-        r0_sample_start=args.start_r0_waveform,
+        start_sample=args.start_sample,
     )
-
-    for event in tqdm(reader):
+    for event in tqdm(reader, disable=not args.progress):
         pedestal.fill_pedestal_event(event)
 
     # Finalize pedestal and write to fits file

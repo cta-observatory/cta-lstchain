@@ -1,32 +1,31 @@
-#!/usr/bin/env python
 """
 **TEMPORARY** module with functions to perform a volume reduction to LST data:
 
 This is a temporary implementation of the 'tailcut and dilation' volume reduction method.
 The volume reduction produces reduced waveforms and write them in the DL0 container.
 
-To date, the ** DL0 container is overwritten ** if the volume reduction is applied.
+To date, the **DL0 container is overwritten** if the volume reduction is applied.
 
-
-Usage:
+Usage
+-----
 In the configuration file:
-(...)
 
-"volume_reducer":{
-    "algorithm": "zero_suppression_tailcut_dilation",
-    "parameters": { # add here the desired tailcut parameters. See function's help for default parameters.
+.. code-block:: python
+
+    "volume_reducer":{
+        "algorithm": "zero_suppression_tailcut_dilation",
+        "parameters": { # add here the desired tailcut parameters. See function's help for default parameters.
+        }
     }
- }
-
-(...)
 """
+
 from ctapipe.image.cleaning import tailcuts_clean, dilate
 
 __all__ = [
     'get_volume_reduction_method',
     'apply_volume_reduction',
     'zero_suppression_tailcut_dilation'
-    ]
+]
 
 
 def get_volume_reduction_method(config_file):
@@ -53,22 +52,18 @@ def get_volume_reduction_method(config_file):
 
 def apply_volume_reduction(event, subarray, config):
     """
-    Checks the volume reduction algorithm defined in the config file, and if not None, it applies
-     to a **calibrated** event the volume reduction method.
+    Checks the volume reduction algorithm defined in the
+    config file, and if not None, it applies to a **calibrated**
+    event the volume reduction method. Modifies the event container
+    by applying the computed mask to the image, the waveform and the
+    peak_time objects, as: `image[~mask] = 0, ...`
 
     Parameters
     ----------
     event: 'ctapipe.containers.ArrayEventContainer'
     config: dict
-        Read the parameters of the volume reduction method specified in the config file.
-
-    Returns
-    -------
-    none
-        Modifies the event container by applying the computed mask to the image, the waveform
-        and the peak_time objects, as:
-            image[~mask] = 0, ...
-
+        Read the parameters of the volume reduction method
+        specified in the config file.
     """
     volume_reduction_algorithm = get_volume_reduction_method(config)
 
@@ -102,13 +97,7 @@ def apply_volume_reduction(event, subarray, config):
 
 def zero_suppression_tailcut_dilation(geom, image, number_of_dilation=3, **kwargs):
     """
-    `tailcut_clean` + 3 * `dilate` volume reducer method.
-
-    Default parameters for the tailcut_clean:
-        'picture_thresh': 8
-        'boundary_thresh': 4
-        'keep_isolated_pixels': True
-        'min_number_picture_neighbors': 0
+    Zero suppression and tailcut cleaning with dilation.
 
     Parameters
     ----------
@@ -126,6 +115,15 @@ def zero_suppression_tailcut_dilation(geom, image, number_of_dilation=3, **kwarg
     mask_0_suppression: object - ndarray
         A boolean mask (array) that contains the zero suppressed pixels.
 
+    Notes
+    -----
+    `tailcut_clean` + 3 * `dilate` volume reducer method.
+    Default parameters for the tailcut_clean:
+
+        >>> 'picture_thresh': 8
+        >>> 'boundary_thresh': 4
+        >>> 'keep_isolated_pixels': True
+        >>> 'min_number_picture_neighbors': 0
     """
     kwargs.setdefault('picture_thresh', 8)
     kwargs.setdefault('boundary_thresh', 4)

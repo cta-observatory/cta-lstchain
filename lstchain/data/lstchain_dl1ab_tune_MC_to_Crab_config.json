@@ -1,10 +1,10 @@
 {
   "image_modifier": {
     "increase_nsb": true,
-    "extra_noise_in_dim_pixels": 1.25,
-    "extra_bias_in_dim_pixels": 0.55,
+    "extra_noise_in_dim_pixels": 1.2,
+    "extra_bias_in_dim_pixels": 0.5,
     "transition_charge": 8,
-    "extra_noise_in_bright_pixels": 2.05,
+    "extra_noise_in_bright_pixels": 1.2,
     "increase_psf": true,
     "smeared_light_fraction": 0.125
   },
