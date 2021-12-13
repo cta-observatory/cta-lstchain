@@ -1234,7 +1234,7 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     if bad_runs.sum() > 0:
         for runlabel, val, low in zip(np.array(point_labels)[bad_runs],
                                       y[bad_runs], too_low[bad_runs]):
-            log.info('    {runlabel}:')
+            log.info(f'    {runlabel}:')
             tag = '(too high)'
             if low:
                 tag = '(too low)'
