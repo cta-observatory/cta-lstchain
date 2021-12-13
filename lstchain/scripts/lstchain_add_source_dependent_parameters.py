@@ -62,7 +62,7 @@ def main():
  
     src_dep_df = pd.concat(get_source_dependent_parameters(dl1_params, config, focal_length=focal_length), axis=1)
 
-    metadata = global_metadata(None, input_url=dl1_filename)
+    metadata = global_metadata()
     write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key, config=config, meta=metadata)
 
 if __name__ == '__main__':

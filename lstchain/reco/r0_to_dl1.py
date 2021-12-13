@@ -276,7 +276,7 @@ def r0_to_dl1(
     subarray = source.subarray
     is_simu = source.is_simulation
 
-    metadata = global_metadata(source)
+    metadata = global_metadata()
     write_metadata(metadata, output_filename)
 
     cal_mc = load_calibrator_from_config(config, subarray)

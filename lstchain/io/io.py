@@ -59,7 +59,9 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'extract_observation_time',
-    'merge_dl2_runs'
+    'merge_dl2_runs',
+    'get_srcdep_index_keys',
+    'get_srcdep_params'
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -275,7 +277,8 @@ def auto_merge_h5files(
                             # https://github.com/cta-observatory/cta-lstchain/issues/671
                             out_node.append(in_node.read().astype(out_node.dtype))
                     except:
-                        log.exception("Can't append node {} from file {}".format(k, filename))
+                        log.error("Can't append node {} from file {}".format(k, filename))
+                        raise
             bar.update(1)
 
 
@@ -345,12 +348,19 @@ def smart_merge_h5files(
         smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
     )
 
-    # Merge metadata
+    # Merge metadata and store source file names
     metadata0 = read_metadata(smart_list[0])
+    source_filenames = [str(smart_list[0])]
+
     for file in smart_list[1:]:
         metadata = read_metadata(file)
         check_metadata(metadata0, metadata)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
+        source_filenames.append(str(file))
+
+    with open_file(output_filename, mode="a") as file:
+        sources = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+
     write_metadata(metadata0, output_filename)
 
 
@@ -788,7 +798,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source, input_url=""):
+def global_metadata():
     """
     Get global metadata container
 
@@ -796,15 +806,12 @@ def global_metadata(source, input_url=""):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
-    if source:
-        input_url = source.input_url
 
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
     metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
     return metadata
 
@@ -1180,3 +1187,58 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
+
+
+def get_srcdep_index_keys(filename):
+    """
+    get index column name of source-dependent multi index columns
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+
+    Returns
+    -------
+    source-dependent index names
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+
+    return data.columns.levels[0]
+
+
+def get_srcdep_params(filename, key):
+    """
+    get srcdep parameter data frame
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+        
+    return data[key]
