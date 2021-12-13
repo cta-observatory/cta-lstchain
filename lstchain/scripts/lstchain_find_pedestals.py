@@ -78,10 +78,10 @@ def main():
         n_pedestals = np.count_nonzero(pedmask)
         pedestal_rate = n_pedestals / (all_times[-1] - all_times[0])
         print(file)
+        print(f'  Rate of identified pedestals: {pedestal_rate:.3f} Hz')
 
         if n_pedestals > 0:
-            print(f'  Rate of identified pedestals: {pedestal_rate:.3f} Hz')
-            print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
+            print(f'  Maximum intensity: {np.nanmax(intensity[pedmask]):.1f} pe')
         else:
             print('  Did not find any pedestal events')
 
