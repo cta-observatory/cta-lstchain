@@ -59,7 +59,9 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'extract_observation_time',
-    'merge_dl2_runs'
+    'merge_dl2_runs',
+    'get_srcdep_index_keys',
+    'get_srcdep_params'
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -1185,3 +1187,58 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
+
+
+def get_srcdep_index_keys(filename):
+    """
+    get index column name of source-dependent multi index columns
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+
+    Returns
+    -------
+    source-dependent index names
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+
+    return data.columns.levels[0]
+
+
+def get_srcdep_params(filename, key):
+    """
+    get srcdep parameter data frame
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+        
+    return data[key]
