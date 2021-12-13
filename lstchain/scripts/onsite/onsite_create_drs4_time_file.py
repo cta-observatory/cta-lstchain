@@ -30,6 +30,7 @@ optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If 
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path, default=Path('/fefs/aswg/data/real/R0'))
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
@@ -63,7 +64,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
+        file_list = sorted(args.r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
             raise IOError(f"Run {run} not found\n")
         else:
