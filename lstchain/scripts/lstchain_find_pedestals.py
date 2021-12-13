@@ -75,26 +75,27 @@ def main():
         remove_indices = decreasing_intensity_ordered_indices[pedmask2]
         pedmask[remove_indices[:10]] = False
 
-        event_id = table['event_id']
+        n_pedestals = np.count_nonzero(pedmask)
+        pedestal_rate = n_pedestals / (all_times[-1] - all_times[0])
         print(file)
-        print('  Rate of identified pedestals: {:.3f}'.format(pedmask.sum() /
-                                                              (all_times[-1] -
-                                                               all_times[0])),
-                                                              'Hz')
-        if pedmask.sum() == 0:
-            print('  No interleaved pedestals found!')
-        else:
-            print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
 
-        df = pd.DataFrame({'event_id': event_id[pedmask]})
-        output_file = Path(output_dir,
-                           'pedestal_ids_Run{:0>5}.{:0>4}.h5'.format(run_number,
-                                                                     subrun_index))
-        # df.to_hdf(output_file, key='interleaved_pedestal_ids', mode='w',
-        #           format='table', data_columns=True)
+        if n_pedestals > 0:
+            print(f'  Rate of identified pedestals: {pedestal_rate:.3f} Hz')
+            print('  Maximum intensity:', np.nanmax(intensity[pedmask]), 'pe')
+        else:
+            print('  Did not find any pedestal events')
+
+        output_file = Path(
+            output_dir,
+            f'pedestal_ids_Run{run_number:0>5}.{subrun_index:0>4}.h5'
+        )
+
+        data = table[pedmask][['obs_id', 'event_id']].as_array()
         with tables.open_file(output_file, "w") as outfile:
-            outfile.create_table("/", "interleaved_pedestal_ids",
-                                 obj=df.to_records(index=False))
+            outfile.create_table(
+                "/", "interleaved_pedestal_ids",
+                obj=data,
+            )
 
 def find_pedestals(timestamps, expected_frequency=50):
     """
@@ -185,6 +186,6 @@ def find_pedestals(timestamps, expected_frequency=50):
     else:
         return ((tmod < maxval) | (tmod > minval))
 
-      
+
 if __name__ == '__main__':
     main()

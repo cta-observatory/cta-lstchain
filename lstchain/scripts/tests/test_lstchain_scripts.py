@@ -9,6 +9,8 @@ import tables
 from astropy import units as u
 from astropy.time import Time
 
+from ctapipe.io import read_table
+
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl2_params_lstcam_key,
@@ -302,7 +304,11 @@ def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
         temp_dir_observed_files,
         temp_dir_observed_files,
     )
-    assert (temp_dir_observed_files / "pedestal_ids_Run02008.0100.h5").is_file()
+    for subrun, expected_length in zip((0, 100), (0, 1)):
+        path = temp_dir_observed_files / f"pedestal_ids_Run02008.{subrun:04d}.h5"
+        assert path.is_file()
+        t = read_table(path, "/interleaved_pedestal_ids")
+        assert len(t) == expected_length
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
