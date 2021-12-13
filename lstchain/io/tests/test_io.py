@@ -9,11 +9,11 @@ from astropy.table import Table
 
 @pytest.fixture
 def merged_h5file(tmp_path, simulated_dl1_file):
-    """Produce a smart merged h5 file from simulated dl1 files."""
-    from lstchain.io.io import smart_merge_h5files
+    """Produce a merged h5 file from simulated dl1 files."""
+    from lstchain.io.io import auto_merge_h5files
 
     merged_dl1_file = tmp_path / "dl1_merged.h5"
-    smart_merge_h5files(
+    auto_merge_h5files(
         [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file
     )
     return merged_dl1_file
@@ -102,7 +102,7 @@ def test_merging_check(simulated_dl1_file):
 
 
 @pytest.mark.run(after="test_r0_to_dl1")
-def test_smart_merge_h5files(merged_h5file):
+def test_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
 
     # check source filenames is properly written
@@ -120,7 +120,7 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
     assert mcheader.num_showers == 20000
 
 
-@pytest.mark.run(after="test_smart_merge_h5files")
+@pytest.mark.run(after="test_merge_h5files")
 def test_read_simu_info_merged_hdf5(merged_h5file):
     from lstchain.io.io import read_simu_info_merged_hdf5
 

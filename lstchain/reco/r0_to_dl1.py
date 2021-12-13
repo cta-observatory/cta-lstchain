@@ -101,6 +101,7 @@ def setup_writer(writer, subarray, is_simulation):
             writer.exclude(f'telescope/parameters/{tel_name}', 'dragon_time')
             writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_time')
             writer.exclude(f'telescope/parameters/{tel_name}', 'tib_time')
+            writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_jump')
             writer.exclude(f'telescope/parameters/{tel_name}', 'ucts_trigger_type')
         else:
             writer.exclude(f'telescope/parameters/{tel_name}', 'mc_energy')
@@ -459,7 +460,9 @@ def r0_to_dl1(
                     # FIXME: just keep it as time, table writer and reader handle it
                     dl1_container.dragon_time = event.trigger.time.unix
                     dl1_container.tib_time = 0
-
+                    if 'ucts_jump' in vars(event.lst.tel[
+                                               telescope_id].evt.__class__):
+                        dl1_container.ucts_jump = event.lst.tel[telescope_id].evt.ucts_jump
                     dl1_container.ucts_trigger_type = event.lst.tel[telescope_id].evt.ucts_trigger_type
                     dl1_container.trigger_type = event.lst.tel[telescope_id].evt.tib_masked_trigger
                 else:

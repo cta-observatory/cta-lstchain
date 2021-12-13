@@ -150,9 +150,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
             event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
 
-        # real data
-        if event.meta['origin'] != 'hessio':
-            self.trigger_time = event.trigger.time
+        # time
+        self.trigger_time = event.trigger.tel[self.tel_id].time
 
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
