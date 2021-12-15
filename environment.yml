@@ -8,7 +8,7 @@ dependencies:
   - astropy~=4.2
   - pip
   - ctapipe~=0.11
-  - gammapy>=0.18
+  - gammapy=0.18
   - h5py
   - ipython
   - jupyter
