@@ -114,6 +114,11 @@ parser.add_argument(
     help='Maximum number of events to be processed.',
 )
 
+parser.add_argument(
+    '--pedestal-ids-path', type=Path,
+    help='Path to the file containing the event ids of interleaved pedestals',
+)
+
 
 def main():
     args = parser.parse_args()
@@ -169,6 +174,8 @@ def main():
 
     if args.pointing_file is not None:
         lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
+    if args.pedestal_ids_path is not None:
+        lst_event_source['pedestal_ids_path'] = args.pedestal_ids_path
 
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:

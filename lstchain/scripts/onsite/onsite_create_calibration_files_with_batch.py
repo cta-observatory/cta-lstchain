@@ -160,11 +160,16 @@ def main():
                     f"-b {base_dir}",
                     f"-s {stat_events}",
                     f"--output_base_name={output_base_name}",
-                    f"--filters={filters}",
-                    f"--sys_date={sys_date}",
                     f"--config={config_file}",
                     f"--time_run={time_run}",
                 ]
+
+                if filters is not None:
+                    cmd.append(f"--filters={filters}")
+
+                if sys_date is not None:
+                    cmd.append(f"--sys_date={sys_date}")
+
 
                 if yes:
                     cmd.append("--yes")
