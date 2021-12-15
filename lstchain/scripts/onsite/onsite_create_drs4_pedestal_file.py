@@ -31,7 +31,7 @@ optional.add_argument('-m', '--max_events', help="Number of events to be process
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
                       type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path, default=Path('/fefs/aswg/data/real/R0'))
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path)
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
@@ -53,7 +53,8 @@ def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
 
     # verify input file
-    file_list = sorted(args.r0_dir.rglob(f'*{run:05d}.0000*'))
+    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
+    file_list = sorted(r0_dir.rglob(f'*{run:05d}.0000*'))
     if len(file_list) == 0:
         print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
         raise NameError()
