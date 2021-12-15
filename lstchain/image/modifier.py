@@ -14,6 +14,8 @@ __all__ = [
     'add_noise_in_pixels',
     'calculate_noise_parameters',
     'random_psf_smearer',
+    'tune_nsb_on_waveform',
+    'calculate_required_additional_nsb'
 ]
 
 log = logging.getLogger(__name__)
@@ -353,3 +355,183 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
 
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
            extra_noise_in_bright_pixels
+
+
+def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
+                         dt, pulse_templates, gain, charge_spe_cumulative_pdf):
+    """
+    Inject single photon pulses in existing R1 waveforms to increase NSB.
+    Parameters
+    ----------
+    waveform: charge (p.e. / ns) in each pixel and sampled time
+    added_nsb_fraction: fraction of the original NSB in simulation to be added
+    original_nsb: original NSB rate (astropy unit Hz)
+    dt: time between waveform samples (astropy unit s)
+    pulse_templates: `lstchain.reconstructor.NormalizedPulseTemplate` containing
+    the single p.e. pulse template used for the injection
+    gain: gain channel identifier for each pixel
+    charge_spe_cumulative_pdf: `scipy.interpolate.interp1d` Single p.e. gain
+    fluctuation cumulative pdf used to randomise the normalisation of
+    injected pulses
+    """
+    n_pixels, n_samples = waveform.shape
+    duration = (20 + n_samples) * dt  # TODO check needed time window, effect of edges
+    t = np.arange(-20, n_samples) * dt.value
+    mean_added_nsb = (added_nsb_fraction * original_nsb) * duration
+    rng = np.random.default_rng()
+    additional_nsb = rng.poisson(mean_added_nsb, n_pixels)
+    added_nsb_time = rng.uniform(-20 * dt.value, -20 * dt.value + duration.value, (n_pixels, max(additional_nsb)))
+    added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
+
+    baseline_correction = (added_nsb_fraction * original_nsb * dt).value
+    waveform -= baseline_correction
+    for i in range(n_pixels):
+        for j in range(additional_nsb[i]):
+            waveform[i] += (added_nsb_amp[i][j]
+                            * (pulse_templates(t[20:] - added_nsb_time[i][j], 'HG' if gain[i] else 'LG')))
+
+
+def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
+    # TODO check if good estimation
+    # TODO reduce duplicated code with 'calculate_noise_parameters'
+    """
+    Calculates the additional NSB needed in the MC waveforms
+    to match a real data DL1 file
+    Parameters
+    ----------
+    simtel_filename: a simtel file containing showers, from the production
+    (same NSB and telescope settings) as the one on which the correction will
+    be applied. It must contain pixel-wise info on true number of p.e.'s from
+    C-photons (will be used to identify pixels which only contain noise).
+    data_dl1_filename: a real data DL1 file (processed with calibration
+    settings corresponding to those with which the MC is to be processed).
+    It must contain calibrated images, i.e. "DL1a" data. This file has the
+    "target" NSB which we want to have in the MC files, for better
+    agreement of data and simulations.
+    config: configuration containing the calibration
+    settings used for processing both the data and the MC files above
+    Returns
+    -------
+    extra_nsb: Fraction of the additional NSB in data compared to MC.
+    data_ped_variance: Pedestal variance from data
+    mc_ped_variance: Pedestal variance from MC
+    """
+
+    log.setLevel(logging.INFO)
+
+    if config is None:
+        config = standard_config
+
+    # Real data DL1 tables:
+    data_dl1_calibration = read_table(data_dl1_filename,
+                                      '/dl1/event/telescope/monitoring/calibration')
+    data_dl1_pedestal = read_table(data_dl1_filename,
+                                   '/dl1/event/telescope/monitoring/pedestal')
+    unusable = data_dl1_calibration['unusable_pixels']
+    # Locate pixels with HG declared unusable either in original calibration or
+    # in interleaved events:
+    bad_pixels = unusable[0][0]  # original calibration
+    for tf in unusable[1:][0]:  # calibrations with interleaved
+        bad_pixels = np.logical_or(bad_pixels, tf)
+    good_pixels = ~bad_pixels
+
+    # First index:  1,2,... = values from interleaved (0 is for original
+    # calibration run)
+    # Second index: 0 = high gain
+    # Third index: pixels
+
+    # HG adc to pe conversion factors from interleaved calibrations:
+    data_HG_dc_to_pe = data_dl1_calibration['dc_to_pe'][:, 0, :]
+    # Pixel-wise pedestal standard deviation (for an unbiased extractor),
+    # in adc counts:
+    data_HG_ped_std = data_dl1_pedestal['charge_std'][1:, 0, :]
+    # indices which connect each pedestal calculation to a given calibration:
+    calibration_id = data_dl1_pedestal['calibration_id'][1:]
+    # convert pedestal st deviations to p.e.
+    dummy = []
+    for i, x in enumerate(data_HG_ped_std[:, ]):
+        dummy.append(x * data_HG_dc_to_pe[calibration_id[i],])
+    dummy = np.array(dummy)
+
+    # Average for all interleaved calibrations (in case there are more than one)
+    data_HG_ped_std_pe = np.mean(dummy, axis=0)  # one value per pixel
+
+    # Identify noisy pixels, likely containing stars - we want to adjust MC to
+    # the average diffuse NSB across the camera
+    data_median_std_ped_pe = np.median(data_HG_ped_std_pe)
+    data_std_std_ped_pe = np.std(data_HG_ped_std_pe)
+    log.info(f'Real data: median across camera of good pixels\' pedestal std '
+             f'{data_median_std_ped_pe:.3f} p.e.')
+    brightness_limit = data_median_std_ped_pe + 3 * data_std_std_ped_pe
+    too_bright_pixels = (data_HG_ped_std_pe > brightness_limit)
+    log.info(f'Number of pixels beyond 3 std dev of median: '
+             f'{too_bright_pixels.sum()}, (above {brightness_limit:.2f} p.e.)')
+
+    # Exclude too bright pixels, besides those with unusable calibration:
+    good_pixels &= ~too_bright_pixels
+    # recalculate the median of the pixels' std dev, with good_pixels:
+    data_median_std_ped_pe = np.median(data_HG_ped_std_pe[good_pixels])
+
+    log.info(f'Good and not too bright pixels: {good_pixels.sum()}')
+
+    # Event reader for simtel file:
+    mc_reader = EventSource(input_url=simtel_filename, config=Config(config))
+
+    # Obtain the configuration with which the pedestal calculations were
+    # performed:
+    ped_config = config['LSTCalibrationCalculator']['PedestalIntegrator']
+    tel_id = ped_config['tel_id']
+    # Obtain the (unbiased) extractor used for pedestal calculations:
+    pedestal_calibrator = CameraCalibrator(
+        image_extractor_type=ped_config['charge_product'],
+        config=Config(config['LSTCalibrationCalculator']),
+        subarray=mc_reader.subarray)
+
+    # Obtain the (usually biased) extractor used for shower images:
+    shower_extractor_type = config['image_extractor']
+    shower_calibrator = CameraCalibrator(
+        image_extractor_type=shower_extractor_type, config=Config(config),
+        subarray=mc_reader.subarray)
+
+    # Since these extractors are now for use on MC, we have to apply the pulse
+    # integration correction (in data that is currently, as of
+    # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
+    # adc to pe conversion factors )
+    pedestal_calibrator.image_extractor.apply_integration_correction = True
+    shower_calibrator.image_extractor.apply_integration_correction = True
+
+    # MC pedestals integrated with the unbiased pedestal extractor
+    mc_ped_charges = []
+    # MC pedestals integrated with the biased shower extractor
+    mc_ped_charges_biased = []
+
+    for event in mc_reader:
+        if tel_id not in event.trigger.tels_with_trigger:
+            continue
+        # Extract the signals as we do for pedestals (unbiased fixed window
+        # extractor):
+        pedestal_calibrator(event)
+        charges = event.dl1.tel[tel_id].image
+
+        # True number of pe's from Cherenkov photons (to identify noise-only pixels)
+        true_image = event.simulation.tel[tel_id].true_image
+        mc_ped_charges.append(charges[true_image == 0])
+
+        # Now extract the signal as we would do for shower events (usually
+        # with a biased extractor, e.g. LocalPeakWindowSum):
+        shower_calibrator(event)
+        charges_biased = event.dl1.tel[tel_id].image
+        mc_ped_charges_biased.append(charges_biased[true_image == 0])
+
+    # All pixels behave (for now) in the same way in MC, just put them together
+    mc_ped_charges = np.concatenate(mc_ped_charges)
+    mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
+
+    # Find the additional noise (in data w.r.t. MC) for the unbiased extractor
+    # The idea is that pedestal std scales with NSB (But better correction with sqrt(variance ratio-1) observed)
+
+    data_ped_variance = data_median_std_ped_pe ** 2
+    mc_ped_variance = mc_unbiased_std_ped_pe ** 2
+    extra_nsb = ((data_ped_variance - mc_ped_variance)
+                 / mc_ped_variance)
+    return np.sqrt(extra_nsb), data_ped_variance, mc_ped_variance
