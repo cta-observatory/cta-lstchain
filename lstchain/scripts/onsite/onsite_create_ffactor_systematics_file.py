@@ -49,87 +49,85 @@ prefix = args.input_prefix
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
 calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+
+
 def main():
 
-    try:
-        # verify config file
-        if not os.path.exists(config_file):
-            raise IOError(f"Config file {config_file} does not exists. \n")
+    # verify config file
+    if not os.path.exists(config_file):
+        raise IOError(f"Config file {config_file} does not exists. \n")
 
-        print(f"\n--> Config file {config_file}")
+    print(f"\n--> Config file {config_file}")
 
-        # verify output dir
-        output_dir = f"{calib_dir}/ffactor_systematics/{date}/{prod_id}"
-        if not os.path.exists(output_dir):
-            print(f"--> Create directory {output_dir}")
-            os.makedirs(output_dir, exist_ok=True)
+    # verify output dir
+    output_dir = f"{calib_dir}/ffactor_systematics/{date}/{prod_id}"
+    if not os.path.exists(output_dir):
+        print(f"--> Create directory {output_dir}")
+        os.makedirs(output_dir, exist_ok=True)
 
-        if pro_symlink:
-            pro = "pro"
-            pro_dir = f"{output_dir}/../{pro}"
-            if os.path.exists(pro_dir):
-                os.remove(pro_dir)
-            os.symlink(prod_id, pro_dir)
-            print(f"\n--> Use symbolic link pro")
+    if pro_symlink:
+        pro = "pro"
+        pro_dir = f"{output_dir}/../{pro}"
+        if os.path.exists(pro_dir):
+            os.remove(pro_dir)
+        os.symlink(prod_id, pro_dir)
+        print(f"\n--> Use symbolic link pro")
+    else:
+        pro = prod_id
+
+    # verify input dir
+    input_dir=f"{calib_dir}/calibration/{date}/{pro}"
+    if not os.path.exists(input_dir):
+        raise IOError(f"Input directory {input_dir} not found\n")
+
+    print(f"\n--> Input directory {input_dir}")
+
+    # make log dir
+    log_dir = f"{output_dir}/log"
+    if not os.path.exists(log_dir):
+        print(f"--> Create directory {log_dir}")
+        os.makedirs(log_dir, exist_ok=True)
+
+    # define output file names
+    output_file = f"{output_dir}/{prefix}_scan_fit_{date}.{sub_run:04d}.h5"
+    log_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.log"
+    plot_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
+
+    if os.path.exists(output_file):
+        remove = False
+
+        if not yes and os.getenv('SLURM_JOB_ID') is None:
+            remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+
+        if yes or remove:
+            os.remove(output_file)
+            os.remove(log_file)
         else:
-            pro = prod_id
+            print("\n--> Output file exists already. Stop")
+            exit(1)
 
-        # verify input dir
-        input_dir=f"{calib_dir}/calibration/{date}/{pro}"
-        if not os.path.exists(input_dir):
-            raise IOError(f"Input directory {input_dir} not found\n")
+    print(f"\n--> Plot file {plot_file}")
+    print(f"\n--> Log file {log_file}")
 
-        print(f"\n--> Input directory {input_dir}")
+    #
+    # produce intensity scan fit file
+    #
 
-        # make log dir
-        log_dir = f"{output_dir}/log"
-        if not os.path.exists(log_dir):
-            print(f"--> Create directory {log_dir}")
-            os.makedirs(log_dir, exist_ok=True)
+    cmd = [
+        "lstchain_fit_intensity_scan",
+        f"--config={config_file}",
+        f"--input_dir={input_dir}",
+        f"--output_path={output_file}",
+        f"--plot_path={plot_file}",
+        f"--sub_run={sub_run}",
+        f"--input_prefix={prefix}",
+        f"--log-file={log_file}",
+        "--log-file-level=DEBUG",
+    ]
 
-        # define output file names
-        output_file = f"{output_dir}/{prefix}_scan_fit_{date}.{sub_run:04d}.h5"
-        log_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.log"
-        plot_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
-
-        if os.path.exists(output_file):
-            remove = False
-
-            if not yes and os.getenv('SLURM_JOB_ID') is None:
-                remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
-
-            if yes or remove:
-                os.remove(output_file)
-                os.remove(log_file)
-            else:
-                print("\n--> Output file exists already. Stop")
-                exit(1)
-
-        print(f"\n--> Plot file {plot_file}")
-        print(f"\n--> Log file {log_file}")
-
-        #
-        # produce intensity scan fit file
-        #
-
-        cmd = [
-            "lstchain_fit_intensity_scan",
-            f"--config={config_file}",
-            f"--input_dir={input_dir}",
-            f"--output_path={output_file}",
-            f"--plot_path={plot_file}",
-            f"--sub_run={sub_run}",
-            f"--input_prefix={prefix}",
-            f"--log-file={log_file}",
-            "--log-file-level=DEBUG",
-        ]
-
-        print("\n--> RUNNING...")
-        subprocess.run(cmd, check=True)
-        print("\n--> END")
-
-    except Exception as e:
-        print(f"\n >>> Exception: {e}")
+    print("\n--> RUNNING...")
+    subprocess.run(cmd, check=True)
+    print("\n--> END")
 
 
 if __name__ == '__main__':

@@ -47,79 +47,77 @@ tel_id = args.tel_id
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
 calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+
+
 def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
 
-    try:
-        # verify input file
-        file_list = sorted(args.r0_dir.rglob(f'*{run:05d}.0000*'))
-        if len(file_list) == 0:
-            print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
-            raise NameError()
+    # verify input file
+    file_list = sorted(args.r0_dir.rglob(f'*{run:05d}.0000*'))
+    if len(file_list) == 0:
+        print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
+        raise NameError()
+    else:
+        input_file = f"{file_list[0]}"
+
+    # find date
+    input_dir, name = os.path.split(os.path.abspath(input_file))
+    path, date = input_dir.rsplit('/', 1)
+
+    # verify and make output dir
+    output_dir = f"{calib_dir}/drs4_baseline/{date}/{prod_id}"
+    if not os.path.exists(output_dir):
+        print(f"--> Create directory {output_dir}")
+        os.makedirs(output_dir, exist_ok=True)
+
+    # update the default production directory
+    if pro_symlink:
+        pro="pro"
+        pro_dir = f"{output_dir}/../{pro}"
+        if os.path.exists(pro_dir):
+            os.remove(pro_dir)
+        os.symlink(prod_id,pro_dir)
+        print(f"\n--> Use symbolic link pro")
+    else:
+        pro=prod_id
+
+    # make log dir
+    log_dir = f"{output_dir}/log"
+    if not os.path.exists(log_dir):
+        print(f"--> Create directory {log_dir}")
+        os.makedirs(log_dir, exist_ok=True)
+
+    # define output file
+    output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.h5"
+
+    if os.path.exists(output_file):
+        remove = False
+
+        if not yes and os.getenv('SLURM_JOB_ID') is None:
+            remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
+
+        if yes or remove:
+            os.remove(output_file)
         else:
-            input_file = f"{file_list[0]}"
+            print("\n--> Output file exists already. Stop")
+            exit(1)
 
-        # find date
-        input_dir, name = os.path.split(os.path.abspath(input_file))
-        path, date = input_dir.rsplit('/', 1)
+    # run lstchain script
+    cmd = [
+        "lstchain_create_drs4_pedestal_file",
+        f"--input={input_file}",
+        f"--output={output_file}",
+        f"--max-events={max_events}",
+    ]
 
-        # verify and make output dir
-        output_dir = f"{calib_dir}/drs4_baseline/{date}/{prod_id}"
-        if not os.path.exists(output_dir):
-            print(f"--> Create directory {output_dir}")
-            os.makedirs(output_dir, exist_ok=True)
+    subprocess.run(cmd, check=True)
 
-        # update the default production directory
-        if pro_symlink:
-            pro="pro"
-            pro_dir = f"{output_dir}/../{pro}"
-            if os.path.exists(pro_dir):
-                os.remove(pro_dir)
-            os.symlink(prod_id,pro_dir)
-            print(f"\n--> Use symbolic link pro")
-        else:
-            pro=prod_id
+    # plot and save some results
+    plot_file=f"{output_dir}/log/drs4_pedestal.Run{run:05d}.0000.pdf"
+    print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
+    drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=400)
 
-        # make log dir
-        log_dir = f"{output_dir}/log"
-        if not os.path.exists(log_dir):
-            print(f"--> Create directory {log_dir}")
-            os.makedirs(log_dir, exist_ok=True)
-
-        # define output file
-        output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.h5"
-
-        if os.path.exists(output_file):
-            remove = False
-
-            if not yes and os.getenv('SLURM_JOB_ID') is None:
-                remove = query_yes_no(">>> Output file exists already. Do you want to remove it?")
-
-            if yes or remove:
-                os.remove(output_file)
-            else:
-                print("\n--> Output file exists already. Stop")
-                exit(1)
-
-        # run lstchain script
-        cmd = [
-            "lstchain_create_drs4_pedestal_file",
-            f"--input={input_file}",
-            f"--output={output_file}",
-            f"--max-events={max_events}",
-        ]
-
-        subprocess.run(cmd, check=True)
-
-        # plot and save some results
-        plot_file=f"{output_dir}/log/drs4_pedestal.Run{run:05d}.0000.pdf"
-        print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-        drs4.plot_pedestals(input_file, output_file, run, plot_file, tel_id=tel_id, offset_value=400)
-
-        print("\n--> END")
-
-    except Exception as e:
-        print(f"\n >>> Exception: {e}")
+    print("\n--> END")
 
 
 if __name__ == '__main__':
