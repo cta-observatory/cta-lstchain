@@ -30,7 +30,7 @@ optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If 
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path)
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)

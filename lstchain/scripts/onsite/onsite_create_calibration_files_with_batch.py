@@ -44,7 +44,7 @@ optional.add_argument('--time_run',
                       help="Run for the time calibration. If None, search the last time run before or equal the first filter scan run",
                       type=int)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path)
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
 
 optional.add_argument('--sub_run_list',
                       help="sub-run list to be processed.",
