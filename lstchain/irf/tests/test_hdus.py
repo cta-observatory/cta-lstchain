@@ -5,7 +5,7 @@ from astropy.table import Table
 @pytest.mark.run(after="test_write_dl2_dataframe")
 @pytest.mark.private_data
 def test_create_event_list(observed_dl2_file, simulated_irf_file):
-    from lstchain.irf.hdu_table import create_event_list
+    from lstchain.irf.hdu_table import create_event_list, add_icrs_position_params
     from lstchain.io.io import read_data_dl2_to_QTable
     from lstchain.reco.utils import get_effective_time
     from astropy.coordinates import SkyCoord
@@ -14,12 +14,14 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
     events = read_data_dl2_to_QTable(observed_dl2_file)
     t_eff, t_tot = get_effective_time(events)
     events = events[events["intensity"] > 200]
+    source_pos = SkyCoord(ra=83.633, dec=22.01, unit="deg")
+    events = add_icrs_position_params(events, source_pos)
 
     evts, gti, pnt = create_event_list(
         events,
         run_number=2008,
         source_name="Crab",
-        source_pos=SkyCoord(ra=83.633, dec=22.01, unit="deg"),
+        source_pos=source_pos,
         effective_time=t_eff.value,
         elapsed_time=t_tot.value,
     )
