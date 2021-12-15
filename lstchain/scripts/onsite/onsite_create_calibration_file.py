@@ -18,11 +18,6 @@ import lstchain
 import subprocess
 import pymongo
 
-def none_or_str(value):
-    if value == "None":
-        return None
-    return value
-
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
                                  formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -32,7 +27,7 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
 optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
-                      type=none_or_str)
+                      type=int)
 
 version=lstchain.__version__
 
@@ -42,11 +37,14 @@ optional.add_argument('-s', '--statistics', help="Number of events for the flat-
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
 
-optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=none_or_str)
-optional.add_argument('--sys_date',
-                      help="Date of systematic correction file (format YYYYMMDD). \n"
-                           "Default: automatically search the best date \n",
-                      type = none_or_str)
+optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
+optional.add_argument(
+    '--sys_date',
+    help=(
+        "Date of systematic correction file (format YYYYMMDD). \n"
+        "Default: automatically search the best date \n"
+    ),
+)
 optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
@@ -56,7 +54,7 @@ optional.add_argument('--output_base_name', help="Base of output file name (chan
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
-optional.add_argument('-f','--filters', help="Calibox filters", type=none_or_str)
+optional.add_argument('-f','--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
