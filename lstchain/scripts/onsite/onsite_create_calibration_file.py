@@ -36,6 +36,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path, default=Path('/fefs/aswg/data/real/R0'))
 
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
 optional.add_argument(
@@ -107,7 +108,7 @@ def main():
         print(f"\n--> Config file {config_file}")
 
         # verify input file
-        file_list=sorted(Path(f"{base_dir}/R0").rglob(f'*{run}.{sub_run:04d}*'))
+        file_list=sorted(args.r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
         if len(file_list) == 0:
             raise IOError(f"Run {run} not found\n")
         else:
