@@ -12,7 +12,7 @@ Usage:
 $> python lstchain_data_r0_to_dl1.py
 --input-file LST-1.1.Run02030.0000.fits.fz
 --output-dir ./
---pedestal-file drs4_pedestal.Run2028.0000.fits
+--pedestal-file drs4_pedestal.Run2028.0000.h5
 --calibration-file calibration.Run2029.0000.hdf5
 --time-calibration-file time_calibration.Run2029.0000.hdf5
 
