@@ -45,6 +45,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
 
     config = {
         "LSTEventSource": {
+            "pointing_information": False,
             "allowed_tels": [1],
             "LSTR0Corrections": {
                 "drs4_pedestal_path": pedestal_file,

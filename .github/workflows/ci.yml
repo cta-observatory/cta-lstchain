@@ -38,7 +38,8 @@ jobs:
           sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
 
           echo "Creating conda env"
-          conda env create -n ci -f environment.yml
+          conda install -c conda-forge mamba
+          mamba env create -n ci -f environment.yml
           conda activate ci
 
           echo "Installing additional pip packages"

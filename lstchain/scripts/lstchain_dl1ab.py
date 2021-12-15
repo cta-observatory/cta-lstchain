@@ -32,7 +32,7 @@ from lstchain.io import get_dataset_keys, auto_merge_h5files
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata, write_metadata
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 
@@ -182,7 +182,7 @@ def main():
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
     metadata = read_metadata(args.input_file)
-
+    
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
         dl1_params_input = input.root[dl1_params_lstcam_key].colnames
@@ -200,8 +200,12 @@ def main():
         if increase_psf:
             set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
+        image_mask_save = not args.noimage and 'image_mask' in input.root[dl1_images_lstcam_key].colnames
+
         with tables.open_file(args.output_file, mode='a') as output:
             params = output.root[dl1_params_lstcam_key].read()
+            if image_mask_save:
+                image_mask = output.root[dl1_images_lstcam_key].col('image_mask')
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
@@ -314,12 +318,14 @@ def main():
                     dl1_container['disp_sign'] = disp_sign
 
                 for p in parameters_to_update:
-
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
-            output.root[dl1_params_lstcam_key][:] = params
+                if image_mask_save:
+                    image_mask[ii] = signal_pixels
 
-    write_metadata(metadata, args.output_file)
+            output.root[dl1_params_lstcam_key][:] = params
+            if image_mask_save:
+                output.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
 
 if __name__ == '__main__':
