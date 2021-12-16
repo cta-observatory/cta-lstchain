@@ -206,7 +206,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
                         label=label,
                     )
 
-                    label = "baseline correction \n + dt corr + interp. spikes"
+                    label = "baseline correction \n + dt corr + corrected spikes"
 
                     plt.step(
                         t,
