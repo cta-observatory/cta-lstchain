@@ -1,7 +1,6 @@
 import numpy as np
 from tqdm import tqdm
 import numba
-import tables
 
 from ctapipe.io.hdf5tableio import HDF5TableWriter
 from ctapipe.io.tableio import FixedPointColumnTransform
@@ -13,7 +12,6 @@ from ctapipe_io_lst.calibration import get_spike_A_positions
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES
 
 from ..statistics import OnlineStats
-
 
 
 class DRS4CalibrationContainer(Container):
@@ -105,7 +103,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
     ).tag(config=True)
 
     progress_bar = Bool(
-        help="show progress bar during processing", default_value=False
+        help="Show progress bar during processing", default_value=True
     ).tag(config=True)
 
     full_statistics = Bool(
@@ -130,7 +128,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
         ('m', 'max-events'): 'LSTEventSource.max_events',
     }
 
-
     flags = {
         **flag(
             "overwrite",
@@ -141,13 +138,13 @@ class DRS4PedestalAndSpikeHeight(Tool):
         **flag(
             "progress",
             "DRS4PedestalAndSpikeHeight.progress_bar",
-            "show a progress bar during event processing",
-            "don't show a progress bar during event processing",
+            "Show a progress bar during event processing",
+            "Do not show a progress bar during event processing",
         ),
         **flag(
             "full-statistics",
             "DRS4PedestalAndSpikeHeight.full_statistics",
-            "Wether to write the full statistics about spikes or not",
+            "Whether to write the full statistics about spikes or not",
         ),
     }
 
@@ -229,7 +226,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
         tel_id = self.source.tel_id
         self.log.info('Writing output to %s', self.output_path)
         key = f'r1/monitoring/drs4_baseline/tel_{tel_id:03d}'
-
 
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
