@@ -36,6 +36,11 @@ optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+parser.add_argument(
+    '--no-progress',
+    action='store_true',
+    help='Do not display a progress bar during event processing'
+)
 
 
 args = parser.parse_args()
@@ -110,6 +115,9 @@ def main():
         f"--output={output_file}",
         f"--max-events={max_events}",
     ]
+
+    if args.no_progress:
+        cmd.append("--no-progress")
 
     subprocess.run(cmd, check=True)
 

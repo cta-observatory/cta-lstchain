@@ -65,9 +65,9 @@ parser.add_argument('--overwrite',
                     action='store_true',
                     help='Overwrite output file without asking')
 
-parser.add_argument('--progress', 
+parser.add_argument('--no-progress',
                     action='store_true',
-                    help='Display a progress bar during event processing')
+                    help='Do not display a progress bar during event processing')
 
 
 def main():
@@ -101,7 +101,7 @@ def main():
         n_module=n_modules,
         start_sample=args.start_sample,
     )
-    for event in tqdm(reader, disable=not args.progress):
+    for event in tqdm(reader, disable=args.no_progress):
         pedestal.fill_pedestal_event(event)
 
     # Finalize pedestal and write to fits file

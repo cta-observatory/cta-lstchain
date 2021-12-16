@@ -56,9 +56,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--progress',
+    '--no-progress',
     action='store_true',
-    help='Display a progress bar during event processing'
+    help='Do not display the progress bar during event processing'
 )
 
 
@@ -80,7 +80,12 @@ def main():
     else:
         keys = None
 
-    auto_merge_h5files(file_list, args.outfile, nodes_keys=keys, progress_bar=args.progress)
+    auto_merge_h5files(
+        file_list,
+        args.outfile,
+        nodes_keys=keys,
+        progress_bar=not args.no_progress
+    )
 
 
 if __name__ == '__main__':
