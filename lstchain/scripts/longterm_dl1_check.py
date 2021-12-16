@@ -663,7 +663,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     min_muon_efficiency = 0.16
 
     # maximum camera averages:
-    max_average_ped_charge_stdev = 5 # pe
     max_fraction_surviving_pedestals = 0.05
     # ff charge & time, using some of the individual pixels' limits:
     max_average_ff_charge = ff_charge * (1 + ff_charge_tolerance)

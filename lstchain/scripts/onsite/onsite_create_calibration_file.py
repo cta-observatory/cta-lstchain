@@ -116,8 +116,8 @@ def main():
     print(f"\n--> Input file: {input_file}")
 
     # find date
-    input_dir, name = os.path.split(os.path.abspath(input_file))
-    path, date = input_dir.rsplit('/', 1)
+    input_dir, _ = os.path.split(os.path.abspath(input_file))
+    _, date = input_dir.rsplit('/', 1)
 
     # verify output dir
     output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
@@ -131,7 +131,7 @@ def main():
         if os.path.exists(pro_dir):
             os.remove(pro_dir)
         os.symlink(prod_id, pro_dir)
-        print(f"\n--> Use symbolic link pro")
+        print("\n--> Use symbolic link pro")
     else:
         pro = prod_id
 
@@ -154,7 +154,7 @@ def main():
     # search the pedestal file of the same date
     if ped_run is None:
         # else search the pedestal file of the same date
-        file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.h5'))
+        file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.h5'))
         if len(file_list) == 0:
             raise IOError(f"No pedestal file found for date {date}\n")
         if len(file_list) > 1:

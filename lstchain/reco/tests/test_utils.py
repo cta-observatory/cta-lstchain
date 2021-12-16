@@ -186,7 +186,7 @@ def test_get_obstime_real():
 def test_get_geomagnetic_delta():
 
     time_mc = Time("2020-06-29", format="iso").decimalyear
-    geomag_dec = -5.0674 * np.pi / 180 * u.rad
+    # geomag_dec = -5.0674 * np.pi / 180 * u.rad
     geomag_inc = 37.4531 * np.pi / 180 * u.rad
 
     delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr

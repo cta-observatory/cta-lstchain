@@ -52,7 +52,7 @@ jobs:
           pip install .
 
       - name: pyflakes
-        run:
+        run: |
           . $CONDA/etc/profile.d/conda.sh
           conda activate ci
           pyflakes lstchain
