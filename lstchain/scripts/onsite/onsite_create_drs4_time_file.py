@@ -35,6 +35,11 @@ optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, de
 default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+parser.add_argument(
+    '--no-progress',
+    action='store_true',
+    help='Do not display a progress bar during event processing'
+)
 
 args = parser.parse_args()
 run = args.run_number
@@ -139,6 +144,9 @@ def main():
         f"--pedestal-file={pedestal_file}",
         f"--max-events={stat_events}",
     ]
+
+    if args.no_progress:
+        cmd.append("--no-progress")
 
     print("\n--> RUNNING...")
     subprocess.run(cmd, check=True)

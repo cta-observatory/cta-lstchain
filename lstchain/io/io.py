@@ -215,7 +215,7 @@ def auto_merge_h5files(
     nodes_keys=None,
     merge_arrays=False,
     filters=HDF5_ZSTD_FILTERS,
-    progress_bar=False
+    progress_bar=True
 ):
     """
     Automatic merge of HDF5 files.
@@ -229,7 +229,8 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
-    progress_bar: bool
+    progress_bar : bool
+        Enabling the display of the progress bar during event processing.
     """
 
     file_list = list(file_list)
