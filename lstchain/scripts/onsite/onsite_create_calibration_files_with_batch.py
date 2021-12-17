@@ -157,22 +157,25 @@ def main():
                     "srun",
                     "onsite_create_calibration_file",
                     f"-r {run}",
-                    f"-p {ped_run}",
                     f"-v {prod_id}",
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",
                     f"--output_base_name={output_base_name}",
                     f"--config={config_file}",
-                    f"--time_run={time_run}",
                 ]
+
+                if ped_run is not None:
+                    cmd.append(f"--pedestal_run={ped_run}")
+
+                if time_run is not None:
+                    cmd.append(f"--time_run={time_run}")
 
                 if filters is not None:
                     cmd.append(f"--filters={filters}")
 
                 if sys_date is not None:
                     cmd.append(f"--sys_date={sys_date}")
-
 
                 if yes:
                     cmd.append("--yes")
