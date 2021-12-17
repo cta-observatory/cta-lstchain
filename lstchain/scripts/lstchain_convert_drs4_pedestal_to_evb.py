@@ -29,13 +29,13 @@ parser.add_argument(
     '-c', '--camera-config',
     default=default_camera_config,
     type=Path,
-    help='Camera confiuration XML file'
+    help='Camera configuration XML file'
 )
 parser.add_argument('-t', '--tel-id', default=1, type=int)
 
 
 def read_pedestal(path, tel_id):
-    '''Read the pedestal array from a fits file'''
+    '''Read the pedestal array from a h5 file'''
     table = read_table(path, f"/r1/monitoring/drs4_baseline/tel_{tel_id:03d}")
     return table[0]['baseline_mean']
 
