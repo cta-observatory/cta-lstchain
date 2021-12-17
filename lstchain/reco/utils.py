@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
-from astropy.utils import deprecated
 from ctapipe.coordinates import CameraFrame
 
 from . import disp

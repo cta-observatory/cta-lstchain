@@ -9,7 +9,6 @@ which contains a single table with one column, 'event_id'
 
 import argparse
 import numpy as np
-import pandas as pd
 import tables
 
 from pathlib import Path
