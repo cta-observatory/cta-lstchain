@@ -1,4 +1,4 @@
-name: CI
+name: Deploy
 
 on:
   push:
@@ -10,9 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      # make sure we have version info
-      - run: git fetch --tags
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -22,8 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           python --version
-          pip install -U pip setuptools wheel
-          python setup.py sdist
+          pip install -U build
+          python -m build
 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@master
