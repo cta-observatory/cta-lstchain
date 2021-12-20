@@ -12,13 +12,13 @@ are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-- You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
+- You will need to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) (recommended) or [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
 
 
 ### As user
 
 ```
-LSTCHAIN_VER=0.7.3
+LSTCHAIN_VER=0.8.2  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
