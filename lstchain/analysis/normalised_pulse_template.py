@@ -131,6 +131,28 @@ class NormalizedPulseTemplate:
             return cls(amplitude_HG=hg, amplitude_LG=lg, time=t,
                        amplitude_HG_err=dhg, amplitude_LG_err=dlg)
 
+    @classmethod
+    def load_from_eventsource(cls, eventsource_camera_readout):
+        """
+        Load a pulse template from an event source camera readout.
+        Read the sampling rate to create a time variable reaching
+        9 ns at the HG maximum
+        Parameters
+        ----------
+        cls: This class
+        eventsource_camera_readout: `CameraReadout`
+            CameraReadout object obtained from the LST event source
+        Return
+        ----------
+        cls(): Instance of NormalizedPulseTemplate receiving the information
+               from the input file
+        """
+        t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
+        hg, lg = eventsource_camera_readout.reference_pulse_shape
+        i = np.argmax(hg)
+        t = t - t[i] + 9.0
+        return cls(amplitude_HG=hg, amplitude_LG=lg, time=t)
+
     @staticmethod
     def _normalize(time, amplitude, error):
         """

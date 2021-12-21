@@ -496,13 +496,10 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     # integration correction (in data that is currently, as of
     # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
     # adc to pe conversion factors )
-    pedestal_calibrator.image_extractor.apply_integration_correction = True
-    shower_calibrator.image_extractor.apply_integration_correction = True
+    pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
 
     # MC pedestals integrated with the unbiased pedestal extractor
     mc_ped_charges = []
-    # MC pedestals integrated with the biased shower extractor
-    mc_ped_charges_biased = []
 
     for event in mc_reader:
         if tel_id not in event.trigger.tels_with_trigger:
@@ -515,12 +512,6 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         # True number of pe's from Cherenkov photons (to identify noise-only pixels)
         true_image = event.simulation.tel[tel_id].true_image
         mc_ped_charges.append(charges[true_image == 0])
-
-        # Now extract the signal as we would do for shower events (usually
-        # with a biased extractor, e.g. LocalPeakWindowSum):
-        shower_calibrator(event)
-        charges_biased = event.dl1.tel[tel_id].image
-        mc_ped_charges_biased.append(charges_biased[true_image == 0])
 
     # All pixels behave (for now) in the same way in MC, just put them together
     mc_ped_charges = np.concatenate(mc_ped_charges)
