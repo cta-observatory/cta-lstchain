@@ -1,8 +1,10 @@
 .. _tools:
 
-Tools
-=====
+==============================
+Command line Tools (``tools``)
+==============================
 
+Tools to perform LST calibration and data analysis.
 
 Submodules
 ----------
