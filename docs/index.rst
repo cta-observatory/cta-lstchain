@@ -1,8 +1,8 @@
 .. _lstchain:
 
-===========================================================
- Repository for LST analysis software (:mod:`cta-lstchain`)
-===========================================================
+========================================================
+ Repository for LST analysis software (``cta-lstchain``)
+========================================================
 
 .. currentmodule:: cta-lstchain
 
