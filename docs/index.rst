@@ -28,9 +28,3 @@
 
   lstchain_api/index
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
