@@ -1,15 +1,8 @@
+API Docs
+=====================
+
 .. toctree::
   :maxdepth: 1
-  :caption: API Documentation
+  :glob:
 
-  analysis
-  calib	    
-  datachecks
-  image
-  io
-  irf
-  mc
-  reco
-  scripts
-  tools
-  visualization
+  */index
