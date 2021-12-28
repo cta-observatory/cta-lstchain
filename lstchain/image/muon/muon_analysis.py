@@ -11,7 +11,7 @@ from ctapipe.coordinates import (
     TelescopeFrame,
 )
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.muon (
+from ctapipe.image.muon import (
     MuonIntensityFitter,
     MuonRingFitter
 )
