@@ -22,8 +22,8 @@ In the configuration file:
 from ctapipe.image.cleaning import tailcuts_clean, dilate
 
 __all__ = [
-    'get_volume_reduction_method',
     'apply_volume_reduction',
+    'get_volume_reduction_method',
     'zero_suppression_tailcut_dilation'
 ]
 
