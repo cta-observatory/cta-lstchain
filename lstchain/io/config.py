@@ -3,10 +3,10 @@ import os
 from copy import copy
 
 __all__ = [
-    'read_configuration_file',
-    'get_standard_config',
-    'replace_config',
     'get_cleaning_parameters'
+    'get_standard_config',
+    'read_configuration_file',
+    'replace_config',
 ]
 
 
@@ -61,6 +61,7 @@ def replace_config(base_config, new_config):
         config[k] = new_config[k]
 
     return config
+
 
 def get_cleaning_parameters(config, clean_method_name):
     """
