@@ -1,7 +1,10 @@
 .. _datachecks:
 
-Datachecks
-==========
+===========================
+Datachecks (``datachecks``)
+===========================
+
+Module containing functions producing the LST datachecks. Currently reaching DL1 level.
 
 Submodules
 ----------

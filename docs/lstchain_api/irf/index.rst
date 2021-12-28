@@ -1,7 +1,10 @@
 .. _irf:
 
-IRF
-===
+======================================
+Intrument Response Functions (``irf``)
+======================================
+
+Library containing the functions and classes to produce LST IRFs using MC DL2 files.
 
 Submodules
 ----------

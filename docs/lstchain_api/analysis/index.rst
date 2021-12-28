@@ -1,7 +1,10 @@
 .. _analysis:
 
-Post DL2 analysis
-=================
+========
+Analysis
+========
+
+Module containing scripts to perform :math:`{\theta}^2/{\alpha}` plots using DL2 files.
 
 Submodules
 ----------

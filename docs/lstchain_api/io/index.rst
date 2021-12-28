@@ -1,8 +1,10 @@
 .. _io:
 
-I/O
-===
+======================
+ Input/Output (``io``)
+======================
 
+`lstchain.io` contains functions and containers to read and write LST data. Also important for the data reading is the `ctapipe_io_lst` library, that contains the event source to read LST data.
 
 Submodules
 ----------
