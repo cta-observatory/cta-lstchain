@@ -1,8 +1,12 @@
+
 import logging
 
 import numpy as np
 from ctapipe.calib.camera import CameraCalibrator
-from ctapipe.io import EventSource, read_table
+from ctapipe.io import (
+    EventSource,
+    read_table,
+)
 from numba import njit
 from scipy.interpolate import interp1d
 from traitlets.config import Config
@@ -14,6 +18,7 @@ __all__ = [
     'add_noise_in_pixels',
     'calculate_noise_parameters',
     'random_psf_smearer',
+    'set_numba_seed',
 ]
 
 log = logging.getLogger(__name__)

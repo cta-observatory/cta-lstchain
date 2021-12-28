@@ -2,13 +2,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from ctapipe.containers import MuonEfficiencyContainer, MuonParametersContainer
-from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe.containers import (
+    MuonEfficiencyContainer,
+    MuonParametersContainer,
+)
+from ctapipe.coordinates import (
+    CameraFrame,
+    TelescopeFrame,
+)
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.muon import MuonRingFitter
-from ctapipe.image.muon.features import ring_completeness, ring_containment
+from ctapipe.image.muon (
+    MuonIntensityFitter,
+    MuonRingFitter
+)
+from ctapipe.image.muon.features import (
+    ring_completeness,
+    ring_containment,
+)
 
-from ctapipe.image.muon import MuonIntensityFitter
 from lstchain.image.muon import plot_muon_event
 
 __all__ = [
@@ -149,8 +160,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     tailcuts = [10, 5]
 
     cam_rad = (
-        lst1_description.camera.geometry.guess_radius() / lst1_description.optics.equivalent_focal_length
-    ) * u.rad
+                      lst1_description.camera.geometry.guess_radius() / lst1_description.optics.equivalent_focal_length
+              ) * u.rad
 
     # some cuts for good ring selection:
     min_pix = 148  # (8%) minimum number of pixels in the ring with >0 signal
