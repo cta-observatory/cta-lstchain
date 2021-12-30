@@ -1,15 +1,29 @@
-import numpy as np
-from tqdm import tqdm
 import numba
-
+import numpy as np
+from ctapipe.core import (
+    Container,
+    Field,
+    Provenance,
+    Tool,
+    ToolConfigurationError,
+)
+from ctapipe.core.traits import (
+    Bool,
+    Integer,
+    Path,
+    flag,
+)
 from ctapipe.io.hdf5tableio import HDF5TableWriter
 from ctapipe.io.tableio import FixedPointColumnTransform
-from ctapipe.core import Tool, Provenance, ToolConfigurationError, Container, Field
-from ctapipe.core.traits import Path, Integer, flag, Bool
-
 from ctapipe_io_lst import LSTEventSource
 from ctapipe_io_lst.calibration import get_spike_A_positions
-from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL, N_SAMPLES
+from ctapipe_io_lst.constants import (
+    N_CAPACITORS_PIXEL,
+    N_GAINS,
+    N_PIXELS,
+    N_SAMPLES,
+)
+from tqdm import tqdm
 
 from ..statistics import OnlineStats
 
@@ -49,16 +63,16 @@ def flat_index(gain, pixel, cap):
 
 @numba.njit(cache=True)
 def fill_stats(
-    waveform,
-    first_cap,
-    last_first_cap,
-    last_readout_time,
-    baseline_stats,
-    spike0_stats,
-    spike1_stats,
-    spike2_stats,
-    skip_samples_front,
-    skip_samples_end,
+        waveform,
+        first_cap,
+        last_first_cap,
+        last_readout_time,
+        baseline_stats,
+        spike0_stats,
+        spike1_stats,
+        spike2_stats,
+        skip_samples_front,
+        skip_samples_end,
 ):
     for gain in range(N_GAINS):
         for pixel in range(N_PIXELS):
