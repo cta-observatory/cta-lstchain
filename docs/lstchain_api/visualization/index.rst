@@ -49,13 +49,6 @@ lstchain.visualization.plot\_drs4
    :undoc-members:
    :show-inheritance:
 
-lstchain.visualization.plot\_irfs
----------------------------------
-
-.. automodule:: lstchain.visualization.plot_irfs
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------
