@@ -28,7 +28,7 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 __all__ = [
     'apply_models',
     'build_models',
-    'get_expected_source_pos'
+    'get_expected_source_pos',
     'get_source_dependent_parameters',
     'train_disp_norm',
     'train_disp_sign',

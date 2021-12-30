@@ -4,7 +4,7 @@ Functions to check the contents of LST DL1 files and associated muon ring files
 
 __all__ = [
     'check_dl1',
-    'merge_dl1datacheck_files'
+    'merge_dl1datacheck_files',
     'plot_datacheck',
     'plot_mean_and_stddev',
     'plot_trigger_types',

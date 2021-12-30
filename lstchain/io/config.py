@@ -3,7 +3,7 @@ import os
 from copy import copy
 
 __all__ = [
-    'get_cleaning_parameters'
+    'get_cleaning_parameters',
     'get_standard_config',
     'read_configuration_file',
     'replace_config',

@@ -8,7 +8,7 @@ __all__ = [
     'disp',
     'disp_parameters',
     'disp_parameters_event',
-    'disp_to_pos'
+    'disp_to_pos',
     'disp_vector',
     'miss',
     ]
