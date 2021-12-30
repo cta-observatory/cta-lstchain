@@ -1,3 +1,5 @@
+.. _lstchain:
+
 ========================================================
  Repository for LST analysis software (``cta-lstchain``)
 ========================================================
@@ -17,29 +19,12 @@
    contribute
    tutorials/index
 
-.. _api_docs:
+.. _lstchain_docs:
 
 .. toctree::
   :maxdepth: 1
   :caption: API Documentation
   :name: _api_docs
 
-  io
-  calib
-  image
-  reco
-  mc
-  tools
-  scripts
-  visualization
-  datachecks
-  analysis
-  irf
+  lstchain_api/index
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

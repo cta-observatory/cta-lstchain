@@ -1,8 +1,10 @@
 .. _visualization:
 
-Visualization
-=============
+=================================
+Visualization (``visualization``)
+=================================
 
+Visualization modules.
 
 Submodules
 ----------

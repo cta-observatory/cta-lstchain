@@ -1,7 +1,15 @@
 .. _image:
 
+=================
 Image (``image``)
 =================
+
+Module containing image processing customly implemented in lstchain. This includes:
+
+* Dynamic image cleaning.
+* Noise adder at DL1 level to mimic real NSB conditions.
+* Muon fit and analysis.
+
 
 Submodules
 ----------
