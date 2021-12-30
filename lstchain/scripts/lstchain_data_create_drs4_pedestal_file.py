@@ -18,17 +18,16 @@ $> python lstchain_data_create_pedestal_file.py
 --max_events 9000
 
 """
-from distutils.util import strtobool
 import argparse
+from distutils.util import strtobool
 
 import numpy as np
 from astropy.io import fits
-from traitlets.config import Config
-from tqdm.auto import tqdm
-
 from ctapipe_io_lst import LSTEventSource
-from lstchain.calib.camera.drs4 import DragonPedestal
+from tqdm.auto import tqdm
+from traitlets.config import Config
 
+from lstchain.calib.camera.drs4 import DragonPedestal
 
 parser = argparse.ArgumentParser()
 
@@ -42,7 +41,6 @@ parser.add_argument("--output-file", '-o', type=str, action='store',
                     dest='output_file',
                     help="Path where script create pedestal file",
                     default=None, required=True)
-
 
 # Optional arguments
 parser.add_argument("--max-events",
@@ -58,7 +56,7 @@ parser.add_argument("--start-sample",
 parser.add_argument('--deltaT', '-s',
                     type=strtobool,
                     help='Boolean. True for use deltaT correction'
-                    'Default=True, use False otherwise',
+                         'Default=True, use False otherwise',
                     default=True)
 
 parser.add_argument('--overwrite',

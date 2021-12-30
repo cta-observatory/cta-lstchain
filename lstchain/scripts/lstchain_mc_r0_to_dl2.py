@@ -15,12 +15,14 @@ $> python lstchain_mc_r0_to_dl2.py
 
 """
 
-from ctapipe.utils import get_dataset_path
 import argparse
 import os
 from distutils.util import strtobool
-from lstchain.paths import r0_to_dl1_filename
 from pathlib import Path
+
+from ctapipe.utils import get_dataset_path
+
+from lstchain.paths import r0_to_dl1_filename
 
 parser = argparse.ArgumentParser(description="MC Pipeline R0 to DL2.")
 
@@ -39,7 +41,7 @@ parser.add_argument('--path-models', '-p', action='store', type=str,
 parser.add_argument('--store-dl1', '-s1', action='store', type=lambda x: bool(strtobool(x)),
                     dest='store_dl1',
                     help='Boolean. True for storing DL1 file'
-                    'Default=False, use True otherwise',
+                         'Default=False, use True otherwise',
                     default=True)
 
 parser.add_argument('--output-dir', '-o', type=Path,

@@ -26,27 +26,26 @@ parser = argparse.ArgumentParser(description="Tune NSB")
 # Required arguments
 parser.add_argument(
     '--config', type=Path,
-        help='Path to the configuration file for the production (must be the '
-             'one used for calibration and DL1 creation)',
-        required=True,
+    help='Path to the configuration file for the production (must be the '
+         'one used for calibration and DL1 creation)',
+    required=True,
 )
 parser.add_argument(
     '--input-mc', type=Path,
-        help='Path to a simtel file of the production (must include the true '
-             'p.e. images)',
-        required=True,
+    help='Path to a simtel file of the production (must include the true '
+         'p.e. images)',
+    required=True,
 )
 parser.add_argument(
     '--input-data', type=Path,
-        help='Path to a data DL1 file of the production (must include DL1a)',
-        required=True,
+    help='Path to a data DL1 file of the production (must include DL1a)',
+    required=True,
 )
 
 args = parser.parse_args()
 
 
 def main():
-
     if not args.config.is_file():
         log.error('Config file does not exist or is not a file')
         sys.exit(1)

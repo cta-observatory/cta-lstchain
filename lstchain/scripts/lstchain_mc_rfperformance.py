@@ -21,7 +21,12 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 from ctapipe.instrument import SubarrayDescription
-from lstchain.io import standard_config, replace_config, read_configuration_file
+
+from lstchain.io import (
+    read_configuration_file,
+    replace_config,
+    standard_config,
+)
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
@@ -106,7 +111,7 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, cls_disp_sign = cls_disp_sign, 
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm, cls_disp_sign=cls_disp_sign,
                                   focal_length=focal_length, custom_config=config)
 
     ####PLOT SOME RESULTS#####

@@ -28,16 +28,22 @@ from ctapipe.image import (
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
+from lstchain.image.cleaning import apply_dynamic_cleaning
+from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 from lstchain.io import get_dataset_keys, auto_merge_h5files
-from lstchain.io.config import get_cleaning_parameters
-from lstchain.io.config import get_standard_config
-from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata
+from lstchain.io.config import (
+    get_cleaning_parameters,
+    get_standard_config,
+    read_configuration_file,
+    replace_config,
+)
+from lstchain.io.io import (
+    dl1_images_lstcam_key,
+    dl1_params_lstcam_key,
+    read_metadata,
+)
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
-
-from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.image.cleaning import apply_dynamic_cleaning
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +120,7 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
+                 f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
@@ -132,7 +138,7 @@ def main():
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
         FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
         log.info("Using dynamic cleaning for events with average size of the "
-            f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
+                 f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
         log.info("Remove from image pixels which have charge below "
                  f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
 
@@ -182,7 +188,7 @@ def main():
 
     auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
     metadata = read_metadata(args.input_file)
-    
+
     with tables.open_file(args.input_file, mode='r') as input:
         image_table = input.root[dl1_images_lstcam_key]
         dl1_params_input = input.root[dl1_params_lstcam_key].colnames
@@ -195,7 +201,7 @@ def main():
 
         if increase_nsb:
             rng = np.random.default_rng(
-                    input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+                input.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         if increase_psf:
             set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
@@ -240,7 +246,6 @@ def main():
                                                isolated_pixels,
                                                min_n_neighbors)
 
-
                 n_pixels = np.count_nonzero(signal_pixels)
 
                 if n_pixels > 0:
@@ -264,7 +269,6 @@ def main():
                                                           THRESHOLD_DYNAMIC_CLEANING,
                                                           FRACTION_CLEANING_SIZE)
                         signal_pixels = new_mask
-
 
                     # count a number of islands after all of the image cleaning steps
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
