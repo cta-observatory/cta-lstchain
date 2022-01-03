@@ -6,7 +6,6 @@ from multiprocessing import Pool
 import astropy.units as u
 import ctapipe
 import ctapipe_io_lst
-import h5py
 import lstchain
 import numpy as np
 import pandas as pd
@@ -29,6 +28,7 @@ from eventio.search_utils import yield_toplevel_of_type
 from pyirf.simulations import SimulatedEventsInfo
 from tables import open_file
 from tqdm import tqdm
+from contextlib import ExitStack
 
 from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 
@@ -60,7 +60,8 @@ __all__ = [
     'extract_observation_time',
     'merge_dl2_runs',
     'get_srcdep_index_keys',
-    'get_srcdep_params'
+    'get_srcdep_params',
+    'copy_h5_nodes',
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -140,7 +141,7 @@ def read_simu_info_merged_hdf5(filename):
     return combined_mcheader
 
 
-def get_dataset_keys(filename):
+def get_dataset_keys(h5file):
     """
     Return a list of all dataset keys in a HDF5 file
 
@@ -152,14 +153,21 @@ def get_dataset_keys(filename):
     -------
     list of keys
     """
-    dataset_keys = []
+    # we use exit_stack to make sure we close the h5file again if it
+    # was not an already open tables.File
+    exit_stack = ExitStack()
 
-    def walk(name, obj):
-        if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append('/'+name)
+    with exit_stack:
 
-    with h5py.File(filename, "r") as file:
-        file.visititems(walk)
+        if not isinstance(h5file, tables.File):
+            h5file = exit_stack.enter_context(tables.open_file(h5file, 'r'))
+
+        dataset_keys = [
+            node._v_pathname
+            for node in h5file.root._f_walknodes()
+            if not isinstance(node, tables.Group)
+        ]
+
 
     return dataset_keys
 
@@ -209,6 +217,62 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
+def copy_h5_nodes(from_file, to_file, nodes=None):
+    '''
+    Copy dataset (Table and Array) nodes from ``from_file`` to ``to_file``.
+
+    Parameters
+    ----------
+    from_file: tables.File
+        input h5 file opened with tables
+    to_file: tables.File
+        output h5 file opened with tables, must be writable
+    node_keys: Iterable[str]
+        Keys to copy, if None, all Table and Array nodes in ``from_file``
+        are copied.
+    '''
+    if nodes is None:
+        keys = set(get_dataset_keys(from_file))
+    else:
+        keys = set(nodes)
+
+    groups = set()
+
+    for k in keys:
+        in_node = from_file.root[k]
+        parent_path = in_node._v_parent._v_pathname
+        name = in_node._v_name
+        groups.add(parent_path)
+
+        if isinstance(in_node, tables.Table):
+            t = to_file.create_table(
+                parent_path,
+                name,
+                createparents=True,
+                obj=from_file.root[k].read()
+            )
+            for att in from_file.root[k].attrs._f_list():
+                t.attrs[att] = from_file.root[k].attrs[att]
+
+        elif isinstance(in_node, tables.Array):
+            a = to_file.create_array(
+                parent_path,
+                name,
+                createparents=True,
+                obj=from_file.root[k].read()
+            )
+            for att in from_file.root[k].attrs._f_list():
+                a.attrs[att] = in_node.attrs[att]
+
+    # after copying the datasets, also make sure we copy group metadata
+    # of all copied groups
+    for k in groups:
+        from_node = from_file.root[k]
+        to_node = to_file.root[k]
+        for attr in from_node._v_attrs._f_list():
+            to_node._v_attrs[attr] = from_node._v_attrs[attr]
+
+
 def auto_merge_h5files(
     file_list,
     output_filename="merged.h5",
@@ -245,33 +309,7 @@ def auto_merge_h5files(
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            for k in keys:
-                if type(f1.root[k]) == tables.table.Table:
-                    t = merge_file.create_table(
-                        os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                        os.path.basename(k),
-                        createparents=True,
-                        obj=f1.root[k].read()
-                    )
-                    for att in f1.root[k].attrs._f_list():
-                        t.attrs[att] = f1.root[k].attrs[att]
-                if type(f1.root[k]) == tables.array.Array:
-                    if merge_arrays:
-                        a = merge_file.create_earray(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                            os.path.basename(k),
-                            createparents=True,
-                            obj=f1.root[k].read()
-                        )
-                    else:
-                        a = merge_file.create_array(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                            os.path.basename(k),
-                            createparents=True,
-                            obj=f1.root[k].read()
-                        )
-                    for att in f1.root[k].attrs._f_list():
-                        a.attrs[att] = f1.root[k].attrs[att]
+            copy_h5_nodes(f1, merge_file, )
 
         bar.update(1)
         for filename in file_list[1:]:
@@ -345,7 +383,7 @@ def merging_check(file_list):
             assert subarray_info == subarray_info0
 
         except AssertionError:
-            log.exception(f"{filename} cannot be merged '¯\_(ツ)_/¯'")
+            log.exception(rf"{filename} cannot be merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
