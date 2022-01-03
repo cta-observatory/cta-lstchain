@@ -699,6 +699,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         log.info('Attention: UCTS jumps were detected and corrected:')
         for run, njumps in zip(runsummary['runnumber'],
                                runsummary['num_ucts_jumps']):
+            if njumps == 0:
+              continue
             log.info(f'   Run {run}: {njumps}  jumps')
         log.info('')
 
