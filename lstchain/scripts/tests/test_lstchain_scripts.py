@@ -216,6 +216,8 @@ def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton
 
 def test_lstchain_merge_dl1_hdf5_files(merged_simulated_dl1_file):
     assert merged_simulated_dl1_file.is_file()
+    hdf5_file = tables.open_file(merged_simulated_dl1_file)
+    assert len(hdf5_file.root.source_filenames.filenames) == 2
 
 
 @pytest.mark.private_data
