@@ -131,8 +131,8 @@ class DL1DataCheckContainer(Container):
             # not be counted.
             uj = table['ucts_jump']
             # find the first False value, and set to False also all the earlier ones:
-            for k in range(np.where(uj==False)[0][0]):
-                uj[k] = False
+            first_non_jump = np.nonzero(~uj)[0][0]
+            uj[:first_non_jump] = False
             self.num_ucts_jumps = np.sum(uj[mask])
         self.mean_alt_tel = np.mean(table['alt_tel'])
         self.mean_az_tel = np.mean(table['az_tel'])
