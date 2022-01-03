@@ -944,6 +944,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                                )
     r30_lowlim = reference_rate_above_30 * (1 - rate_above_30_tolerance)
     r30_upplim = reference_rate_above_30 * (1 + rate_above_30_tolerance)
+    
+    # The outermost pixels, on the camera corners, just because of their position, have 
+    # lower values of this rate of >30 pe pulses. We just set a looser lower limit 
+    # requirement (we just halve the value) on pixels with id >= 1800, to avoid lots of 
+    # unnecessary warnings:
+    r30_lowlim[:, 1800:] = 0.5 * r30_lowlim[:, 1800:]
 
     row1 = show_camera(np.array(pulse_rate_above_10), engineering_geom,
                        pad_width, pad_height,
