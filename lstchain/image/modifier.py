@@ -277,9 +277,9 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # adc to pe conversion factors )
     pedestal_calibrator.image_extractors[ped_config['charge_product']].apply_integration_correction = True
     shower_calibrator.image_extractors[shower_extractor_type].apply_integration_correction = True
-    
-    
-    
+
+
+
 
     # Pulse integration window width of the (biased) extractor for showers:
     shower_extractor_window_width = config[config['image_extractor']]['window_width']
@@ -486,9 +486,6 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
         config=Config(config['LSTCalibrationCalculator']),
         subarray=mc_reader.subarray)
 
-    # Obtain the (usually biased) extractor used for shower images:
-    shower_extractor_type = config['image_extractor']
-
     # Since these extractors are now for use on MC, we have to apply the pulse
     # integration correction (in data that is currently, as of
     # lstchain v0.7.5, replaced by an empirical (hard-coded) correction of the
@@ -522,4 +519,3 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     extra_nsb = ((data_ped_variance - mc_ped_variance)
                  / mc_ped_variance)
     return np.sqrt(extra_nsb), data_ped_variance, mc_ped_variance
-
