@@ -488,9 +488,6 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
 
     # Obtain the (usually biased) extractor used for shower images:
     shower_extractor_type = config['image_extractor']
-    shower_calibrator = CameraCalibrator(
-        image_extractor_type=shower_extractor_type, config=Config(config),
-        subarray=mc_reader.subarray)
 
     # Since these extractors are now for use on MC, we have to apply the pulse
     # integration correction (in data that is currently, as of

@@ -4,15 +4,17 @@ from scipy.interpolate import interp1d
 
 class NormalizedPulseTemplate:
     """
-        Class for handling the template for the pulsed response of the pixels
-        of the camera to a single photo-electron in high and low gain.
+    Class for handling the template for the pulsed response of the pixels
+    of the camera to a single photo-electron in high and low gain.
+
     """
 
     def __init__(self, amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
                  amplitude_LG_err=None):
         """
-            Save the pulse template and optional error
-            and create an interpolation.
+        Save the pulse template and optional error
+        and create an interpolation.
+
         Parameters
         ----------
         amplitude_HG/LG: array
@@ -22,6 +24,7 @@ class NormalizedPulseTemplate:
             Times of the samples
         amplitude_HG/LG_err: array
             Error on the pulse template amplitude
+
         """
 
         self.time = np.array(time)
@@ -42,9 +45,10 @@ class NormalizedPulseTemplate:
 
     def __call__(self, time, gain, amplitude=1, t_0=0, baseline=0):
         """
-            Use the interpolated template to access the value of the pulse at
-            time = time in gain regime = gain. Additionally, an alternative
-            normalisation, origin of time and baseline can be used.
+        Use the interpolated template to access the value of the pulse at
+        time = time in gain regime = gain. Additionally, an alternative
+        normalisation, origin of time and baseline can be used.
+
         Parameters
         ----------
         time: float array
@@ -53,15 +57,17 @@ class NormalizedPulseTemplate:
             Identifier of the gain channel used for each pixel
             Either "HG" or "LG"
         amplitude: float
-            Normalisation factor to aply to the template
+            Normalisation factor to apply to the template
         t_0: float
             Shift in the origin of time
         baseline: float array
-            Baseline to be substracted for each pixel
+            Baseline to be subtracted for each pixel
+
         Return
         ----------
         y: array
             Value of the template in each pixel at the requested times
+
         """
 
         y = amplitude * self._template[gain](time - t_0) + baseline
@@ -69,10 +75,11 @@ class NormalizedPulseTemplate:
 
     def get_error(self, time, gain, amplitude=1, t_0=0):
         """
-            Use the interpolated error on the template to access the value
-            of the pulse at time = time in gain regime = gain.
-            Additionally, an alternative normalisation and origin of time
-            can be used.
+        Use the interpolated error on the template to access the value
+        of the pulse at time = time in gain regime = gain.
+        Additionally, an alternative normalisation and origin of time
+        can be used.
+
         Parameters
         ----------
         time: float array
@@ -84,10 +91,12 @@ class NormalizedPulseTemplate:
             Normalisation factor to apply to the error
         t_0: float
             Shift in the origin of time
+
         Return
         ----------
         y: array
             Value of the template in each pixel at the requested times
+
         """
 
         y = amplitude * self._template_err[gain](time - t_0)
@@ -95,11 +104,13 @@ class NormalizedPulseTemplate:
 
     def save(self, filename):
         """
-            Save a loaded template to a text file.
+        Save a loaded template to a text file.
+
         Parameters
         ----------
         filename: string
             Location of the output text file
+
         """
 
         data = np.vstack([self.time, self.amplitude_HG, self.amplitude_HG_err,
@@ -112,15 +123,18 @@ class NormalizedPulseTemplate:
         Load a pulse template from a text file.
         Allows for only one gain channel and no errors,
         two gain channels and no errors or two gain channels with errors.
+
         Parameters
         ----------
         cls: This class
         filename: string
             Location of the template file
+
         Return
         ----------
         cls(): Instance of NormalizedPulseTemplate receiving the information
                from the input file
+
         """
 
         data = np.loadtxt(filename).T
@@ -142,15 +156,18 @@ class NormalizedPulseTemplate:
         Load a pulse template from an event source camera readout.
         Read the sampling rate to create a time variable reaching
         9 ns at the HG maximum
+
         Parameters
         ----------
         cls: This class
         eventsource_camera_readout: `CameraReadout`
             CameraReadout object obtained from the LST event source
+
         Return
         ----------
         cls(): Instance of NormalizedPulseTemplate receiving the information
                from the input file
+
         """
 
         t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
@@ -163,28 +180,31 @@ class NormalizedPulseTemplate:
     def _normalize(time, amplitude, error):
         """
         Normalize the pulse template in p.e/ns.
+
         """
 
-        normalization = np.sum(amplitude)*(np.max(time)-np.min(time))/len(time)
-        return amplitude/normalization, error/normalization
+        normalization = np.sum(amplitude) * (np.max(time) - np.min(time)) / len(time)
+        return amplitude / normalization, error / normalization
 
     def _interpolate(self):
         """
         Creates a normalised interpolation of the pulse template from a
         discrete and non-normalised input. Also normalises the error.
+
         Return
         ----------
         A dictionary containing a 1d cubic interpolation of the normalised
         amplitude of the template versus time,
         for the high and low gain channels.
+
         """
 
         self.amplitude_HG, self.amplitude_HG_err = self._normalize(self.time,
-                                                         self.amplitude_HG,
-                                                         self.amplitude_HG_err)
+                                                                   self.amplitude_HG,
+                                                                   self.amplitude_HG_err)
         self.amplitude_LG, self.amplitude_LG_err = self._normalize(self.time,
-                                                         self.amplitude_LG,
-                                                         self.amplitude_LG_err)
+                                                                   self.amplitude_LG,
+                                                                   self.amplitude_LG_err)
         return {"HG": interp1d(self.time, self.amplitude_HG, kind='cubic',
                                bounds_error=False, fill_value=0.,
                                assume_sorted=True),
@@ -196,11 +216,13 @@ class NormalizedPulseTemplate:
         """
         Creates an interpolation of the error on the pulse template
         from a discrete and normalised input.
+
         Return
         ----------
         A dictionary containing a 1d cubic interpolation of the error on the
         normalised amplitude of the template versus time,
         for the high and low gain channels.
+
         """
 
         return {"HG": interp1d(self.time, self.amplitude_HG_err, kind='cubic',
@@ -212,14 +234,16 @@ class NormalizedPulseTemplate:
 
     def compute_time_of_max(self):
         """
-            Find the average of the times of maximum
-            of the high and low gain pulse shapes.
+        Find the average of the times of maximum
+        of the high and low gain pulse shapes.
+
         Returns
         -------
         t_max: float
             Time of maximum of the pulse shapes (averaged)
+
         """
 
         t_max = (self.time[np.argmax(self.amplitude_HG)] +
-                 self.time[np.argmax(self.amplitude_LG)])/2
+                 self.time[np.argmax(self.amplitude_LG)]) / 2
         return t_max
