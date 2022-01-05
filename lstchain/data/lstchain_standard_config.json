@@ -255,5 +255,10 @@
        "peak_index": 18,
        "apply_integration_correction": false
     }
+  },
+  "waveform_nsb_tuning":{
+    "nsb_tuning": false,
+    "nsb_tuning_ratio": 0.89,
+    "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
   }
 }

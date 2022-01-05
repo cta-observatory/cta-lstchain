@@ -23,6 +23,7 @@ class NormalizedPulseTemplate:
         amplitude_HG/LG_err: array
             Error on the pulse template amplitude
         """
+
         self.time = np.array(time)
         self.amplitude_HG = np.array(amplitude_HG)
         self.amplitude_LG = np.array(amplitude_LG)
@@ -62,6 +63,7 @@ class NormalizedPulseTemplate:
         y: array
             Value of the template in each pixel at the requested times
         """
+
         y = amplitude * self._template[gain](time - t_0) + baseline
         return np.array(y)
 
@@ -87,6 +89,7 @@ class NormalizedPulseTemplate:
         y: array
             Value of the template in each pixel at the requested times
         """
+
         y = amplitude * self._template_err[gain](time - t_0)
         return np.array(y)
 
@@ -98,6 +101,7 @@ class NormalizedPulseTemplate:
         filename: string
             Location of the output text file
         """
+
         data = np.vstack([self.time, self.amplitude_HG, self.amplitude_HG_err,
                           self.amplitude_LG, self.amplitude_LG_err])
         np.savetxt(filename, data.T)
@@ -118,6 +122,7 @@ class NormalizedPulseTemplate:
         cls(): Instance of NormalizedPulseTemplate receiving the information
                from the input file
         """
+
         data = np.loadtxt(filename).T
         assert len(data) in [2, 3, 5]
         if len(data) == 2:  # one shape in file
@@ -147,6 +152,7 @@ class NormalizedPulseTemplate:
         cls(): Instance of NormalizedPulseTemplate receiving the information
                from the input file
         """
+
         t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
         hg, lg = eventsource_camera_readout.reference_pulse_shape
         i = np.argmax(hg)
@@ -158,6 +164,7 @@ class NormalizedPulseTemplate:
         """
         Normalize the pulse template in p.e/ns.
         """
+
         normalization = np.sum(amplitude)*(np.max(time)-np.min(time))/len(time)
         return amplitude/normalization, error/normalization
 
@@ -171,6 +178,7 @@ class NormalizedPulseTemplate:
         amplitude of the template versus time,
         for the high and low gain channels.
         """
+
         self.amplitude_HG, self.amplitude_HG_err = self._normalize(self.time,
                                                          self.amplitude_HG,
                                                          self.amplitude_HG_err)
@@ -194,6 +202,7 @@ class NormalizedPulseTemplate:
         normalised amplitude of the template versus time,
         for the high and low gain channels.
         """
+
         return {"HG": interp1d(self.time, self.amplitude_HG_err, kind='cubic',
                                bounds_error=False, fill_value=np.inf,
                                assume_sorted=True),
@@ -210,6 +219,7 @@ class NormalizedPulseTemplate:
         t_max: float
             Time of maximum of the pulse shapes (averaged)
         """
+
         t_max = (self.time[np.argmax(self.amplitude_HG)] +
                  self.time[np.argmax(self.amplitude_LG)])/2
         return t_max
