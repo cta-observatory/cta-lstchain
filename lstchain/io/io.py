@@ -298,8 +298,10 @@ def auto_merge_h5files(
         source_filenames.append(str(file))
 
     with open_file(output_filename, mode="a") as file:
-        sources = file.create_group("/", "source_filenames", "List of files merged")
-        file.create_array(sources, "filenames", source_filenames, "List of files merged")
+        if "/source_filenames" in file.root:
+            file.remove_node("/", "source_filenames", recursive=True)
+        sources_group = file.create_group("/", "source_filenames", "List of files merged")
+        file.create_array(sources_group, "filenames", source_filenames, "List of files merged")
     write_metadata(metadata0, output_filename)
 
 
