@@ -23,6 +23,7 @@ from .io import (
     HDF5_ZSTD_FILTERS,
     get_srcdep_index_keys,
     get_srcdep_params,
+    add_source_filenames,
 )
 
 standard_config = get_standard_config()
@@ -53,4 +54,5 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'get_srcdep_index_keys',
     'get_srcdep_params',
+    'add_source_filenames'
 ]
