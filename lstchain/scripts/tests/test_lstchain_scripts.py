@@ -327,6 +327,8 @@ def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     with tables.open_file(simulated_dl1ab) as output:
         assert dl1_images_lstcam_key in output.root
+        assert '/source_filenames' in output.root
+        assert len(output.root.source_filenames.filenames[:]) == 1
 
 
 def test_dl1ab_no_images(simulated_dl1_file, tmp_path):

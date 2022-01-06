@@ -28,7 +28,7 @@ from ctapipe.image import (
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
-from lstchain.io import get_dataset_keys, copy_h5_nodes
+from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
@@ -201,8 +201,10 @@ def main():
 
         image_mask_save = not args.noimage and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
-        with tables.open_file(args.output_file, mode='a') as outfile:
+        with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
+            add_source_filenames(outfile, [args.input_file])
+
 
             params = outfile.root[dl1_params_lstcam_key].read()
             if image_mask_save:

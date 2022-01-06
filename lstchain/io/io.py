@@ -62,6 +62,7 @@ __all__ = [
     'get_srcdep_index_keys',
     'get_srcdep_params',
     'copy_h5_nodes',
+    'add_source_filenames',
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -309,7 +310,7 @@ def auto_merge_h5files(
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            copy_h5_nodes(f1, merge_file, )
+            copy_h5_nodes(f1, merge_file)
 
         bar.update(1)
         for filename in file_list[1:]:
@@ -329,18 +330,30 @@ def auto_merge_h5files(
                         raise
             bar.update(1)
 
+        add_source_filenames(merge_file, file_list)
+
     # merge global metadata and store source file names
     metadata0 = read_metadata(file_list[0])
-    source_filenames = [str(file_list[0])]
-    for file in file_list[1:]:
-        source_filenames.append(str(file))
-
-    with open_file(output_filename, mode="a") as file:
-        if "/source_filenames" in file.root:
-            file.remove_node("/", "source_filenames", recursive=True)
-        sources_group = file.create_group("/", "source_filenames", "List of files merged")
-        file.create_array(sources_group, "filenames", source_filenames, "List of files merged")
     write_metadata(metadata0, output_filename)
+
+
+
+def add_source_filenames(h5file, file_list):
+    exit_stack = ExitStack()
+
+    with exit_stack:
+        if not isinstance(h5file, tables.File):
+            h5file = exit_stack.enter_context(tables.open_file(h5file, 'a'))
+
+
+    # we replace any existing node
+    if "/source_filenames" in h5file.root:
+        h5file.remove_node("/", "source_filenames", recursive=True)
+
+    file_list = [str(p) for p in file_list]
+
+    sources_group = h5file.create_group("/", "source_filenames", "List of input files")
+    h5file.create_array(sources_group, "filenames", file_list, "List of files merged")
 
 
 def merging_check(file_list):
