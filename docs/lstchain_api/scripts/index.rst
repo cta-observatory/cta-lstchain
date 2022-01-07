@@ -1,12 +1,13 @@
 .. _scripts:
 
-Scripts
-=======
+==================================
+Command line Scripts (``scripts``)
+==================================
 The scripts to be executed from the command line are described below:
 
 .. note::
    Currently both `scripts` and `Tools` are meant to be run from the command line.
-   Please see also :doc:`tools` section for more information.
+   Please see also :ref:`tools` section for more information.
 
 * `lstchain_data_r0_to_dl1`_
 * `lstchain_dl1ab`_

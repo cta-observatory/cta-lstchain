@@ -36,7 +36,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
 optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path, default=Path('/fefs/aswg/data/real/R0'))
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
 
 optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
 optional.add_argument(
@@ -107,7 +107,8 @@ def main():
     print(f"\n--> Config file {config_file}")
 
     # verify input file
-    file_list=sorted(args.r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
+    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
+    file_list=sorted(r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
     if len(file_list) == 0:
         raise IOError(f"Run {run} not found\n")
     else:
@@ -115,8 +116,8 @@ def main():
     print(f"\n--> Input file: {input_file}")
 
     # find date
-    input_dir, name = os.path.split(os.path.abspath(input_file))
-    path, date = input_dir.rsplit('/', 1)
+    input_dir, _ = os.path.split(os.path.abspath(input_file))
+    _, date = input_dir.rsplit('/', 1)
 
     # verify output dir
     output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
@@ -130,7 +131,7 @@ def main():
         if os.path.exists(pro_dir):
             os.remove(pro_dir)
         os.symlink(prod_id, pro_dir)
-        print(f"\n--> Use symbolic link pro")
+        print("\n--> Use symbolic link pro")
     else:
         pro = prod_id
 
@@ -153,7 +154,7 @@ def main():
     # search the pedestal file of the same date
     if ped_run is None:
         # else search the pedestal file of the same date
-        file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob(f'drs4_pedestal*.0000.h5'))
+        file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.h5'))
         if len(file_list) == 0:
             raise IOError(f"No pedestal file found for date {date}\n")
         if len(file_list) > 1:

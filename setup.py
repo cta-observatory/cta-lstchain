@@ -42,7 +42,7 @@ setup(
         'astropy~=4.2',
         'bokeh~=1.0',
         'ctapipe~=0.11.0',
-        'ctapipe_io_lst~=0.13.0',
+        'ctapipe_io_lst~=0.13.2',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.18.2',
@@ -71,9 +71,8 @@ setup(
     },
     package_data={
         'lstchain': [
-            'data/lstchain_standard_config.json',
-            'data/onsite_camera_calibration_param.json',
-            'resources/LST_pixid_to_cluster.txt',
+            'data/*',
+            'resources/*',
         ],
     },
     entry_points=entry_points,

@@ -16,12 +16,10 @@ from lstchain.io.io import (
     dl2_params_lstcam_key,
     dl1_images_lstcam_key,
     get_dataset_keys,
-    dl1_params_src_dep_lstcam_key,
     dl1_params_tel_mon_ped_key,
     dl1_params_tel_mon_cal_key,
     dl1_params_tel_mon_flat_key,
     dl1_params_src_dep_lstcam_key,
-    dl2_params_src_dep_lstcam_key
 )
 
 from lstchain.io.config import get_standard_config
@@ -172,7 +170,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 10.554,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.269,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -218,6 +216,8 @@ def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton
 
 def test_lstchain_merge_dl1_hdf5_files(merged_simulated_dl1_file):
     assert merged_simulated_dl1_file.is_file()
+    hdf5_file = tables.open_file(merged_simulated_dl1_file)
+    assert len(hdf5_file.root.source_filenames.filenames) == 2
 
 
 @pytest.mark.private_data
@@ -327,6 +327,8 @@ def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     with tables.open_file(simulated_dl1ab) as output:
         assert dl1_images_lstcam_key in output.root
+        assert '/source_filenames' in output.root
+        assert len(output.root.source_filenames.filenames[:]) == 1
 
 
 def test_dl1ab_no_images(simulated_dl1_file, tmp_path):

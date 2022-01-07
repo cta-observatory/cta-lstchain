@@ -31,11 +31,16 @@ optional.add_argument('-m', '--max_events', help="Number of events to be process
                       type=int, default=20000)
 optional.add_argument('-b','--base_dir', help="Base dir for the output directory tree",
                       type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree", type=Path, default=Path('/fefs/aswg/data/real/R0'))
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
                       type=int, default=1)
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+parser.add_argument(
+    '--no-progress',
+    action='store_true',
+    help='Do not display a progress bar during event processing'
+)
 
 
 args = parser.parse_args()
@@ -53,7 +58,8 @@ def main():
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
 
     # verify input file
-    file_list = sorted(args.r0_dir.rglob(f'*{run:05d}.0000*'))
+    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
+    file_list = sorted(r0_dir.rglob(f'*{run:05d}.0000*'))
     if len(file_list) == 0:
         print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
         raise NameError()
@@ -77,7 +83,7 @@ def main():
         if os.path.exists(pro_dir):
             os.remove(pro_dir)
         os.symlink(prod_id,pro_dir)
-        print(f"\n--> Use symbolic link pro")
+        print("\n--> Use symbolic link pro")
     else:
         pro=prod_id
 
@@ -109,6 +115,9 @@ def main():
         f"--output={output_file}",
         f"--max-events={max_events}",
     ]
+
+    if args.no_progress:
+        cmd.append("--no-progress")
 
     subprocess.run(cmd, check=True)
 

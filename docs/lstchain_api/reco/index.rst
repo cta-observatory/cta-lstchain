@@ -1,8 +1,12 @@
 .. _reco:
 
+=========================
 Reconstruction (``reco``)
 =========================
 
+Module containing functions and classes to reconstruct data. This includes:
+* r0 to dl1 functions, including charge integration and application of the calibration, data volume reduction and other utils
+* dl1 to dl2 functions, including disp calculation and random forest training and application
 
 Submodules
 ----------
