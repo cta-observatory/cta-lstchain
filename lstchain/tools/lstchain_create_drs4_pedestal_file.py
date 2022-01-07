@@ -227,6 +227,24 @@ class DRS4PedestalAndSpikeHeight(Tool):
         self.log.info('Writing output to %s', self.output_path)
         key = f'r1/monitoring/drs4_baseline/tel_{tel_id:03d}'
 
+        shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
+        baseline_mean = self.baseline_stats.mean.reshape(shape).astype(np.float32)
+        baseline_std = self.baseline_stats.std.reshape(shape).astype(np.float32)
+        baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.int32)
+
+        n_negative = np.count_nonzero(baseline_mean < 0)
+        if n_negative > 0:
+            gain, pixel, capacitor = np.nonzero(baseline_mean < 0)
+            self.log.critical('Some baseline values are smaller than 0')
+            self.log.info(f"Negative baselines in {gain}, {pixel}, {capacitor}")
+
+        n_small = np.count_nonzero(baseline_mean < 25)
+        if n_small > 0:
+            gain, pixel, capacitor = np.nonzero(baseline_mean < 25)
+            self.log.warning('Some baseline values are smaller than 25')
+            self.log.info(f"Small baselines in {gain}, {pixel}, {capacitor}")
+
+
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
             trafo = FixedPointColumnTransform(
@@ -238,13 +256,12 @@ class DRS4PedestalAndSpikeHeight(Tool):
             for col in ['baseline_mean', 'baseline_std', 'spike_height']:
                 writer.add_column_transform(key, col, trafo)
 
-            shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
             spike_height = self.mean_spike_height()
 
             drs4_calibration = DRS4CalibrationContainer(
-                baseline_mean=self.baseline_stats.mean.reshape(shape).astype(np.float32),
-                baseline_std=self.baseline_stats.std.reshape(shape).astype(np.float32),
-                baseline_counts=self.baseline_stats.counts.reshape(shape).astype(np.int32),
+                baseline_mean=baseline_mean,
+                baseline_std=baseline_std,
+                baseline_counts=baseline_counts,
                 spike_height=spike_height,
             )
 
