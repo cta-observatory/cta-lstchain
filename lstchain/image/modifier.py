@@ -518,4 +518,4 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     mc_ped_variance = mc_unbiased_std_ped_pe ** 2
     extra_nsb = ((data_ped_variance - mc_ped_variance)
                  / mc_ped_variance)
-    return np.sqrt(extra_nsb), data_ped_variance, mc_ped_variance
+    return extra_nsb, data_ped_variance, mc_ped_variance
