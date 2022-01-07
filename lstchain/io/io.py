@@ -346,14 +346,14 @@ def add_source_filenames(h5file, file_list):
             h5file = exit_stack.enter_context(tables.open_file(h5file, 'a'))
 
 
-    # we replace any existing node
-    if "/source_filenames" in h5file.root:
-        h5file.remove_node("/", "source_filenames", recursive=True)
+        # we replace any existing node
+        if "/source_filenames" in h5file.root:
+            h5file.remove_node("/", "source_filenames", recursive=True)
 
-    file_list = [str(p) for p in file_list]
+        file_list = [str(p) for p in file_list]
 
-    sources_group = h5file.create_group("/", "source_filenames", "List of input files")
-    h5file.create_array(sources_group, "filenames", file_list, "List of files merged")
+        sources_group = h5file.create_group("/", "source_filenames", "List of input files")
+        h5file.create_array(sources_group, "filenames", file_list, "List of files merged")
 
 
 def merging_check(file_list):
