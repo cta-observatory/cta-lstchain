@@ -235,14 +235,18 @@ class DRS4PedestalAndSpikeHeight(Tool):
         n_negative = np.count_nonzero(baseline_mean < 0)
         if n_negative > 0:
             gain, pixel, capacitor = np.nonzero(baseline_mean < 0)
-            self.log.critical('Some baseline values are smaller than 0')
-            self.log.info(f"Negative baselines in {gain}, {pixel}, {capacitor}")
+            self.log.critical(f'{n_negative} baseline values are smaller than 0')
+            self.log.info("Gain | Pixel | Capacitor | Baseline ")
+            for g, p, c in zip(gain, pixel, capacitor):
+                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
 
         n_small = np.count_nonzero(baseline_mean < 25)
         if n_small > 0:
             gain, pixel, capacitor = np.nonzero(baseline_mean < 25)
-            self.log.warning('Some baseline values are smaller than 25')
-            self.log.info(f"Small baselines in {gain}, {pixel}, {capacitor}")
+            self.log.warning(f'{n_small} baseline values are smaller than 25')
+            self.log.info("Gain | Pixel | Capacitor | Baseline ")
+            for g, p, c in zip(gain, pixel, capacitor):
+                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
 
 
         with HDF5TableWriter(self.output_path) as writer:
