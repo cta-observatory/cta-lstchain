@@ -62,3 +62,53 @@ def test_calculate_noise_parameters(mc_gamma_testfile, observed_dl1_files):
     assert extra_noise_in_dim_pixels == 0.0
     assert np.isclose(extra_bias_in_dim_pixels, 10.5, rtol=0.1)
     assert extra_noise_in_bright_pixels == 0.0
+
+
+def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files):
+    from lstchain.image.modifier import calculate_required_additional_nsb
+    [extra_nsb,
+     data_ped_variance,
+     mc_ped_variance] = calculate_required_additional_nsb(
+        mc_gamma_testfile,
+        observed_dl1_files["dl1_file1"]
+    )
+    # Test mc_gamma_testfile file event.simulation.tel[1].true_image is None
+    # Files are not adapted to obtain usable results
+    assert data_ped_variance == 0.0
+    assert np.isnan(mc_ped_variance)
+    assert np.isnan(extra_nsb)
+
+
+def test_tune_nsb_on_waveform():
+    import astropy.units as u
+    from scipy.interpolate import interp1d
+    from lstchain.image.modifier import tune_nsb_on_waveform
+    from lstchain.analysis.normalised_pulse_template import NormalizedPulseTemplate
+    waveform = np.array(
+        [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+         [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]]
+    )
+    added_nsb_fraction, original_nsb = 0.2, 0.1 * u.GHz
+    dt = 1 * u.ns
+    amplitude_HG = np.zeros(40)
+    amplitude_LG = np.zeros(40)
+    amplitude_HG[19] = 0.25
+    amplitude_HG[20] = 1.0
+    amplitude_HG[21] = 0.25
+    amplitude_LG[19] = 0.4
+    amplitude_LG[20] = 1.0
+    amplitude_LG[21] = 0.4
+    time = np.linspace(-10,30,40)
+    pulse_templates = NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
+                                              amplitude_LG_err=None)
+    gain = np.array(['HG', 'LG'])
+    spe = np.loadtxt('../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat').T
+    spe_integral = np.cumsum(spe[1])
+    charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
+                                         bounds_error=False, fill_value=0.,
+                                         assume_sorted=True)
+    tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
+                         dt, pulse_templates, gain, charge_spe_cumulative_pdf)
+    #  assert may be randomly wrong in very unusual cases
+    assert np.any(waveform != 0)
+    assert np.isclose(np.mean(waveform), 0.0, atol=0.2)
