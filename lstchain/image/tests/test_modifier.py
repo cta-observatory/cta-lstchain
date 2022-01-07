@@ -80,6 +80,7 @@ def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files
 
 
 def test_tune_nsb_on_waveform():
+    import os
     import astropy.units as u
     from scipy.interpolate import interp1d
     from lstchain.image.modifier import tune_nsb_on_waveform
@@ -88,7 +89,7 @@ def test_tune_nsb_on_waveform():
         [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
          [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]]
     )
-    added_nsb_fraction, original_nsb = 0.2, 0.1 * u.GHz
+    added_nsb_fraction, original_nsb = 1.0, 0.1 * u.GHz
     dt = 1 * u.ns
     amplitude_HG = np.zeros(40)
     amplitude_LG = np.zeros(40)
@@ -102,7 +103,7 @@ def test_tune_nsb_on_waveform():
     pulse_templates = NormalizedPulseTemplate(amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
                                               amplitude_LG_err=None)
     gain = np.array(['HG', 'LG'])
-    spe = np.loadtxt('../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat').T
+    spe = np.loadtxt(os.path.join(os.path.dirname(__file__), '../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat')).T
     spe_integral = np.cumsum(spe[1])
     charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                          bounds_error=False, fill_value=0.,

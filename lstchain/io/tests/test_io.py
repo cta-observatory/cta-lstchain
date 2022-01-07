@@ -149,3 +149,10 @@ def test_read_subarray_description(mc_gamma_testfile, simulated_dl1_file):
     dl1_subarray.info()
     assert len(dl1_subarray.tels) == len(source.subarray.tels)
     assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
+
+
+def test_extract_simulation_nsb(mc_gamma_testfile):
+    from lstchain.io.io import extract_simulation_nsb
+    nsb = extract_simulation_nsb(mc_gamma_testfile)
+    assert np.isclose(nsb[0], 0.317, rtol=0.1)
+    assert np.isclose(nsb[1], 0.276, rtol=0.1)
