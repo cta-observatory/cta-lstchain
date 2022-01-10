@@ -46,10 +46,9 @@ parser.add_argument('--pattern', '-p',
                     default='*.fits',
 )
 
-args = parser.parse_args()
-
-
 def main():
+    args = parser.parse_args()
+    
     if args.run_number:
         run = f'Run{args.run_number:05d}'
         file_list = sorted(filter(

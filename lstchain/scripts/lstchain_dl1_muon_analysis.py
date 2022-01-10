@@ -3,8 +3,7 @@
 """
 Script to perform the analysis of muon events.
 
-- Inputs are a DL1a data file (pixel information is needed) and a
-calibration file
+- Inputs are a DL1a data file (pixel information is needed) and a calibration file
 - Output is a table with muon parameters (to be updated to a dataframe!)
 
 Usage:
@@ -81,11 +80,10 @@ parser.add_argument(
     help="Maximum number of processed muon ring candidates",
 )
 
-args = parser.parse_args()
-
 
 def main():
-
+    args = parser.parse_args()
+    
     print("input files: {}".format(args.input_file))
     print("calib file: {}".format(args.calib_file))
     print("output file: {}".format(args.output_file))
