@@ -3,7 +3,6 @@ from tqdm import tqdm
 import numba
 
 from ctapipe.io.hdf5tableio import HDF5TableWriter
-from ctapipe.io.tableio import FixedPointColumnTransform
 from ctapipe.core import Tool, Provenance, ToolConfigurationError, Container, Field
 from ctapipe.core.traits import Path, Integer, flag, Bool
 
