@@ -657,7 +657,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # second
     r30 = [1.3733, 4.5928, -6.3577e-04]
     rate_above_30_tolerance = 0.25
-
+    pixel_index_limit = 1729
+    # The lower tolerance for the >30 pe pulse rate will be halved for 
+    # pixels with id >= pixel_index_limit ("corner pixels" which indeed have
+    # lower rates just due to geometrical reasons)
+    
     # Minimum muon ring intensity (pe)
     min_muon_intensity = 2000
 
@@ -706,6 +710,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         log.info('Attention: UCTS jumps were detected and corrected:')
         for run, njumps in zip(runsummary['runnumber'],
                                runsummary['num_ucts_jumps']):
+            if njumps == 0:
+              continue
             log.info(f'   Run {run}: {njumps}  jumps')
         log.info('')
 
@@ -944,6 +950,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                                )
     r30_lowlim = reference_rate_above_30 * (1 - rate_above_30_tolerance)
     r30_upplim = reference_rate_above_30 * (1 + rate_above_30_tolerance)
+    
+    # The outermost pixels, on the camera corners, just because of their position, have 
+    # lower values of this rate of >30 pe pulses. We just set a looser lower limit for
+    # them, to avoid lots of unnecessary warnings:
+    r30_lowlim[:, pixel_index_limit:] = 0.5 * r30_lowlim[:, pixel_index_limit:]
 
     row1 = show_camera(np.array(pulse_rate_above_10), engineering_geom,
                        pad_width, pad_height,

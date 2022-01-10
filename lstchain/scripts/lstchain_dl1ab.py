@@ -30,7 +30,7 @@ from ctapipe.instrument import SubarrayDescription
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.io import get_dataset_keys, auto_merge_h5files
+from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 from lstchain.io.config import (
     get_cleaning_parameters,
     get_standard_config,
@@ -186,12 +186,11 @@ def main():
     if args.noimage:
         nodes_keys.remove(dl1_images_lstcam_key)
 
-    auto_merge_h5files([args.input_file], args.output_file, nodes_keys=nodes_keys)
     metadata = read_metadata(args.input_file)
 
-    with tables.open_file(args.input_file, mode='r') as input:
-        image_table = input.root[dl1_images_lstcam_key]
-        dl1_params_input = input.root[dl1_params_lstcam_key].colnames
+    with tables.open_file(args.input_file, mode='r') as infile:
+        image_table = infile.root[dl1_images_lstcam_key]
+        dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
@@ -201,22 +200,26 @@ def main():
 
         if increase_nsb:
             rng = np.random.default_rng(
-                input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+                    infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         if increase_psf:
-            set_numba_seed(input.root.dl1.event.subarray.trigger.col('obs_id')[0])
+            set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
-        image_mask_save = not args.noimage and 'image_mask' in input.root[dl1_images_lstcam_key].colnames
+        image_mask_save = not args.noimage and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
-        with tables.open_file(args.output_file, mode='a') as output:
-            params = output.root[dl1_params_lstcam_key].read()
+        with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
+            copy_h5_nodes(infile, outfile, nodes=nodes_keys)
+            add_source_filenames(outfile, [args.input_file])
+
+
+            params = outfile.root[dl1_params_lstcam_key].read()
             if image_mask_save:
-                image_mask = output.root[dl1_images_lstcam_key].col('image_mask')
+                image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
-                output.root[dl1_params_lstcam_key].attrs[k] = item
-            output.root[dl1_params_lstcam_key].attrs["config"] = str(config)
+                outfile.root[dl1_params_lstcam_key].attrs[k] = item
+            outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
             for ii, row in enumerate(image_table):
 
@@ -327,9 +330,9 @@ def main():
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
 
-            output.root[dl1_params_lstcam_key][:] = params
+            outfile.root[dl1_params_lstcam_key][:] = params
             if image_mask_save:
-                output.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
+                outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
 
 if __name__ == '__main__':
