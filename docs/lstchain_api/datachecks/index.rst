@@ -14,8 +14,6 @@ Module containing functions producing the LST datachecks. Currently reaching DL1
 Reference/API
 =============
 
-.. automodapi:: lstchain.datachecks
-   :no-inheritance-diagram:
 .. automodapi:: lstchain.datachecks.containers
    :no-inheritance-diagram:
 .. automodapi:: lstchain.datachecks.dl1_checker
