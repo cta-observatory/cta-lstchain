@@ -58,7 +58,10 @@ but are always run in the CI.
 
 To download the test files locally, run `./download_test_data.sh`.
 It will ask for username and password and requires `wget` to be installed.
-Ask one of the project maintainers for the credentials.
+Ask one of the project maintainers for the credentials. If 
+you are a member of the LST collaboration you can also obtain them here:
+
+https://ctaoobservatory.sharepoint.com/:i:/r/sites/ctan-onsite-it/Shared%20Documents/General/information_2.jpg?csf=1&web=1&e=suUkV6
 
 To run the tests that need those private data file, add `-m private_data`
 to the pytest call, e.g.:
