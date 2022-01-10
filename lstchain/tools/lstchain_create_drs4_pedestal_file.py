@@ -18,7 +18,7 @@ class DRS4CalibrationContainer(Container):
     baseline_mean = Field(
         None,
         "Mean baseline of each capacitor, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.float32,
+        dtype=np.uint16,
         ndim=3,
     )
     baseline_std = Field(
@@ -30,7 +30,7 @@ class DRS4CalibrationContainer(Container):
     baseline_counts = Field(
         None,
         "Number of events used for the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.int32,
+        dtype=np.uint16,
         ndim=3,
     )
 
@@ -38,7 +38,7 @@ class DRS4CalibrationContainer(Container):
         None,
         "Mean spike height for each pixel, shape (N_GAINS, N_PIXELS, 3)",
         ndim=3,
-        dtype=np.float32,
+        dtype=np.uint16,
     )
 
 
@@ -220,7 +220,20 @@ class DRS4PedestalAndSpikeHeight(Tool):
             # convert masked array to dense, replacing invalid values with nan
             spike_heights[:, :, i] = mean_height.filled(np.nan)
 
-        return spike_heights
+        unknown_spike_heights = np.isnan(spike_heights).any(axis=2)
+        n_unknown_spike_heights = np.count_nonzero(unknown_spike_heights)
+
+        if n_unknown_spike_heights > 0:
+            self.log.warning(f'Could not determine spike height for {n_unknown_spike_heights} channels')
+            self.log.warning(f'Gain, pixel: {np.nonzero(unknown_spike_heights)}')
+
+            # replace any unknown pixels with the mean over the camera
+            camera_mean_spike_height = np.nanmean(spike_heights, axis=(0, 1))
+            self.log.warning(f'Using camera mean of {camera_mean_spike_height} for these pixels')
+            spike_heights[unknown_spike_heights] = camera_mean_spike_height
+
+        spike_heights = np.clip(np.round(spike_heights), 0, np.iinfo(np.uint16).max)
+        return spike_heights.astype(np.uint16)
 
     def finish(self):
         tel_id = self.source.tel_id
@@ -228,9 +241,9 @@ class DRS4PedestalAndSpikeHeight(Tool):
         key = f'r1/monitoring/drs4_baseline/tel_{tel_id:03d}'
 
         shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
-        baseline_mean = self.baseline_stats.mean.reshape(shape).astype(np.float32)
+        baseline_mean = self.baseline_stats.mean.reshape(shape)
         baseline_std = self.baseline_stats.std.reshape(shape).astype(np.float32)
-        baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.int32)
+        baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.uint16)
 
         n_negative = np.count_nonzero(baseline_mean < 0)
         if n_negative > 0:
@@ -249,18 +262,15 @@ class DRS4PedestalAndSpikeHeight(Tool):
                 self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
 
 
+        # Convert baseline mean and spike heights to uint16, handle missing
+        # values and values smaller 0, larger maxint
+        baseline_mean = np.clip(np.round(baseline_mean), 0, np.iinfo(np.uint16).max)
+        baseline_mean = baseline_mean.astype(np.uint16)
+        spike_height = self.mean_spike_height()
+
+
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
-            trafo = FixedPointColumnTransform(
-                scale=10,
-                offset=0,
-                source_dtype=np.float32,
-                target_dtype=np.int32,
-            )
-            for col in ['baseline_mean', 'baseline_std', 'spike_height']:
-                writer.add_column_transform(key, col, trafo)
-
-            spike_height = self.mean_spike_height()
 
             drs4_calibration = DRS4CalibrationContainer(
                 baseline_mean=baseline_mean,
