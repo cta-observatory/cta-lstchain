@@ -6,7 +6,6 @@ from multiprocessing import Pool
 import astropy.units as u
 import ctapipe
 import ctapipe_io_lst
-import h5py
 import numpy as np
 import pandas as pd
 import tables
