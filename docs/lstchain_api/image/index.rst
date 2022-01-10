@@ -1,8 +1,13 @@
 .. _image:
 
-=================
-Image (``image``)
-=================
+===============
+Image (`image`)
+===============
+
+.. currentmodule:: lstchain.image
+
+Introduction
+============ 
 
 Module containing image processing customly implemented in lstchain. This includes:
 
@@ -11,42 +16,17 @@ Module containing image processing customly implemented in lstchain. This includ
 * Muon fit and analysis.
 
 
-Submodules
-----------
 
-lstchain.image.cleaning
------------------------
+Reference/API
+=============
 
-.. automodule:: lstchain.image.cleaning
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-lstchain.image.modifier
------------------------
-
-.. automodule:: lstchain.image.modifier
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-lstchain.image.muon
--------------------
-
-.. automodule:: lstchain.image.muon.muon_analysis
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: lstchain.image.muon.plot_muon
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: lstchain.image
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: lstchain.image
+   :no-inheritance-diagram:
+.. automodapi:: lstchain.image.cleaning
+   :no-inheritance-diagram:
+.. automodapi:: lstchain.image.modifier
+   :no-inheritance-diagram:
+.. automodapi:: lstchain.image.muon.muon_analysis
+   :no-inheritance-diagram:
+.. automodapi:: lstchain.image.muon.plot_muon
+   :no-inheritance-diagram:
