@@ -24,7 +24,7 @@ class DRS4CalibrationContainer(Container):
     baseline_std = Field(
         None,
         "Std Dev. of the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.float32,
+        dtype=np.uint16,
         ndim=3,
     )
     baseline_counts = Field(
@@ -242,7 +242,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
 
         shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
         baseline_mean = self.baseline_stats.mean.reshape(shape)
-        baseline_std = self.baseline_stats.std.reshape(shape).astype(np.float32)
+        baseline_std = self.baseline_stats.std.reshape(shape)
         baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.uint16)
 
         n_negative = np.count_nonzero(baseline_mean < 0)
@@ -266,6 +266,8 @@ class DRS4PedestalAndSpikeHeight(Tool):
         # values and values smaller 0, larger maxint
         baseline_mean = np.clip(np.round(baseline_mean), 0, np.iinfo(np.uint16).max)
         baseline_mean = baseline_mean.astype(np.uint16)
+        baseline_std = np.clip(np.round(baseline_std), 0, np.iinfo(np.uint16).max)
+        baseline_std = baseline_std.astype(np.uint16)
         spike_height = self.mean_spike_height()
 
 
