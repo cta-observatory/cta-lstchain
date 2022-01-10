@@ -41,6 +41,12 @@ class DRS4CalibrationContainer(Container):
     )
 
 
+def convert_to_uint16(array):
+    '''Convert an array to uint16, rounding and clipping before to avoid under/overflow'''
+    array = np.clip(np.round(array), 0, np.iinfo(np.uint16).max)
+    return array.astype(np.uint16)
+
+
 @numba.njit(cache=True, inline='always')
 def flat_index(gain, pixel, cap):
     return N_PIXELS * N_CAPACITORS_PIXEL * gain + N_CAPACITORS_PIXEL * pixel + cap
@@ -231,8 +237,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
             self.log.warning(f'Using camera mean of {camera_mean_spike_height} for these pixels')
             spike_heights[unknown_spike_heights] = camera_mean_spike_height
 
-        spike_heights = np.clip(np.round(spike_heights), 0, np.iinfo(np.uint16).max)
-        return spike_heights.astype(np.uint16)
+        return spike_heights
 
     def finish(self):
         tel_id = self.source.tel_id
@@ -263,12 +268,9 @@ class DRS4PedestalAndSpikeHeight(Tool):
 
         # Convert baseline mean and spike heights to uint16, handle missing
         # values and values smaller 0, larger maxint
-        baseline_mean = np.clip(np.round(baseline_mean), 0, np.iinfo(np.uint16).max)
-        baseline_mean = baseline_mean.astype(np.uint16)
-        baseline_std = np.clip(np.round(baseline_std), 0, np.iinfo(np.uint16).max)
-        baseline_std = baseline_std.astype(np.uint16)
-        spike_height = self.mean_spike_height()
-
+        baseline_mean = convert_to_uint16(baseline_mean)
+        baseline_std = convert_to_uint16(baseline_std)
+        spike_height = convert_to_uint16(self.mean_spike_height())
 
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
