@@ -35,11 +35,12 @@ def test_create_drs4_pedestal_file(tmp_path):
     baseline_mean = drs4_data['baseline_mean']
     baseline_counts = drs4_data['baseline_std']
 
+    assert baseline_mean.dtype == np.uint16
     assert baseline_mean.shape == (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
     assert np.isclose(np.average(baseline_mean[baseline_counts > 0], weights=baseline_counts[baseline_counts > 0]), 400, rtol=0.05)
 
     spike_height = drs4_data['spike_height']
-    spike_height[spike_height < 0] = np.nan
+    assert spike_height.dtype == np.uint16
     mean_spike_height = np.nanmean(spike_height, axis=(0, 1))
 
     # these are the expected spike heights, but due to the low statistics,

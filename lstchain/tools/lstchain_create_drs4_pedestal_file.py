@@ -3,7 +3,6 @@ from tqdm import tqdm
 import numba
 
 from ctapipe.io.hdf5tableio import HDF5TableWriter
-from ctapipe.io.tableio import FixedPointColumnTransform
 from ctapipe.core import Tool, Provenance, ToolConfigurationError, Container, Field
 from ctapipe.core.traits import Path, Integer, flag, Bool
 
@@ -18,19 +17,19 @@ class DRS4CalibrationContainer(Container):
     baseline_mean = Field(
         None,
         "Mean baseline of each capacitor, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.float32,
+        dtype=np.uint16,
         ndim=3,
     )
     baseline_std = Field(
         None,
         "Std Dev. of the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.float32,
+        dtype=np.uint16,
         ndim=3,
     )
     baseline_counts = Field(
         None,
         "Number of events used for the baseline calculation, shape (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)",
-        dtype=np.int32,
+        dtype=np.uint16,
         ndim=3,
     )
 
@@ -38,8 +37,14 @@ class DRS4CalibrationContainer(Container):
         None,
         "Mean spike height for each pixel, shape (N_GAINS, N_PIXELS, 3)",
         ndim=3,
-        dtype=np.float32,
+        dtype=np.uint16,
     )
+
+
+def convert_to_uint16(array):
+    '''Convert an array to uint16, rounding and clipping before to avoid under/overflow'''
+    array = np.clip(np.round(array), 0, np.iinfo(np.uint16).max)
+    return array.astype(np.uint16)
 
 
 @numba.njit(cache=True, inline='always')
@@ -220,6 +225,18 @@ class DRS4PedestalAndSpikeHeight(Tool):
             # convert masked array to dense, replacing invalid values with nan
             spike_heights[:, :, i] = mean_height.filled(np.nan)
 
+        unknown_spike_heights = np.isnan(spike_heights).any(axis=2)
+        n_unknown_spike_heights = np.count_nonzero(unknown_spike_heights)
+
+        if n_unknown_spike_heights > 0:
+            self.log.warning(f'Could not determine spike height for {n_unknown_spike_heights} channels')
+            self.log.warning(f'Gain, pixel: {np.nonzero(unknown_spike_heights)}')
+
+            # replace any unknown pixels with the mean over the camera
+            camera_mean_spike_height = np.nanmean(spike_heights, axis=(0, 1))
+            self.log.warning(f'Using camera mean of {camera_mean_spike_height} for these pixels')
+            spike_heights[unknown_spike_heights] = camera_mean_spike_height
+
         return spike_heights
 
     def finish(self):
@@ -227,24 +244,41 @@ class DRS4PedestalAndSpikeHeight(Tool):
         self.log.info('Writing output to %s', self.output_path)
         key = f'r1/monitoring/drs4_baseline/tel_{tel_id:03d}'
 
+        shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
+        baseline_mean = self.baseline_stats.mean.reshape(shape)
+        baseline_std = self.baseline_stats.std.reshape(shape)
+        baseline_counts = self.baseline_stats.counts.reshape(shape).astype(np.uint16)
+
+        n_negative = np.count_nonzero(baseline_mean < 0)
+        if n_negative > 0:
+            gain, pixel, capacitor = np.nonzero(baseline_mean < 0)
+            self.log.critical(f'{n_negative} baseline values are smaller than 0')
+            self.log.info("Gain | Pixel | Capacitor | Baseline ")
+            for g, p, c in zip(gain, pixel, capacitor):
+                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
+
+        n_small = np.count_nonzero(baseline_mean < 25)
+        if n_small > 0:
+            gain, pixel, capacitor = np.nonzero(baseline_mean < 25)
+            self.log.warning(f'{n_small} baseline values are smaller than 25')
+            self.log.info("Gain | Pixel | Capacitor | Baseline ")
+            for g, p, c in zip(gain, pixel, capacitor):
+                self.log.info(f"{g:4d} | {p:4d} | {c:9d} | {baseline_mean[g][p][c]:6.1f}")
+
+
+        # Convert baseline mean and spike heights to uint16, handle missing
+        # values and values smaller 0, larger maxint
+        baseline_mean = convert_to_uint16(baseline_mean)
+        baseline_std = convert_to_uint16(baseline_std)
+        spike_height = convert_to_uint16(self.mean_spike_height())
+
         with HDF5TableWriter(self.output_path) as writer:
             Provenance().add_output_file(str(self.output_path))
-            trafo = FixedPointColumnTransform(
-                scale=10,
-                offset=0,
-                source_dtype=np.float32,
-                target_dtype=np.int32,
-            )
-            for col in ['baseline_mean', 'baseline_std', 'spike_height']:
-                writer.add_column_transform(key, col, trafo)
-
-            shape = (N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL)
-            spike_height = self.mean_spike_height()
 
             drs4_calibration = DRS4CalibrationContainer(
-                baseline_mean=self.baseline_stats.mean.reshape(shape).astype(np.float32),
-                baseline_std=self.baseline_stats.std.reshape(shape).astype(np.float32),
-                baseline_counts=self.baseline_stats.counts.reshape(shape).astype(np.int32),
+                baseline_mean=baseline_mean,
+                baseline_std=baseline_std,
+                baseline_counts=baseline_counts,
                 spike_height=spike_height,
             )
 
