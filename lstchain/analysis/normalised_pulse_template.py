@@ -118,7 +118,7 @@ class NormalizedPulseTemplate:
         np.savetxt(filename, data.T)
 
     @classmethod
-    def load(cls, filename):
+    def load_from_file(cls, filename):
         """
         Load a pulse template from a text file.
         Allows for only one gain channel and no errors,
@@ -183,7 +183,7 @@ class NormalizedPulseTemplate:
 
         """
 
-        normalization = np.sum(amplitude) * (np.max(time) - np.min(time)) / len(time)
+        normalization = np.sum(amplitude) * (np.max(time) - np.min(time)) / (len(time)-1)
         return amplitude / normalization, error / normalization
 
     def _interpolate(self):
