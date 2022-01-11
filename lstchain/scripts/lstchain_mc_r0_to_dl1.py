@@ -43,11 +43,10 @@ parser.add_argument('--config', '-c', action='store', type=Path,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
-
+    args = parser.parse_args()
+    
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir / r0_to_dl1_filename(args.input_file.name)

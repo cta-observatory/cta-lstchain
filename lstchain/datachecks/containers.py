@@ -352,6 +352,9 @@ def count_trig_types(array):
     return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
 
 class DL1DataCheckHistogramBins(Container):
+    """
+    Histogram bins for the DL1 Datacheck
+    """
 
     # delta_t between consecutive events (ms)
     hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),

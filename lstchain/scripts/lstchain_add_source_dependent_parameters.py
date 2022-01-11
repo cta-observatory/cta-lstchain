@@ -42,10 +42,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 def main():
 
+    args = parser.parse_args()
+    
     dl1_filename = os.path.abspath(args.input_file)
 
     config = get_standard_config()

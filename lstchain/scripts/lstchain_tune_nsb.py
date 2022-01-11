@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Usage:
 
@@ -42,10 +44,9 @@ parser.add_argument(
         required=True,
 )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
 
     if not args.config.is_file():
         log.error('Config file does not exist or is not a file')
