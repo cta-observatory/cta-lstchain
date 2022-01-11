@@ -73,11 +73,10 @@ optional.add_argument('--batch', '-b', action='store_true',
                       help='Run the script without plotting output'
                       )
 
-args, unknown = parser.parse_known_args()
-
 
 def main():
-
+    args, unknown = parser.parse_known_args()
+    
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger(__name__)
 

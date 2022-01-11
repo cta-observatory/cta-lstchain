@@ -1,5 +1,7 @@
+.hypothesis
 test_data
 .pytest_cache
+_version.py
 _version_cache.py
 
 # Compiled files

@@ -1,30 +1,36 @@
-import h5py
-from multiprocessing import Pool
-import numpy as np
-import pandas as pd
-from astropy.table import Table, vstack, QTable
-import tables
-from tables import open_file
+import logging
 import os
 import re
+from multiprocessing import Pool
+
 import astropy.units as u
 import ctapipe
-import lstchain
 import ctapipe_io_lst
-from ctapipe.io import HDF5TableReader
+import lstchain
+import numpy as np
+import pandas as pd
+import tables
+from astropy.table import Table, vstack, QTable
 from ctapipe.containers import SimulationConfigContainer
+# from ctapipe.tools.stage1 import Stage1ProcessorTool
+from ctapipe.instrument import (
+    OpticsDescription,
+    CameraGeometry,
+    CameraDescription,
+    CameraReadout,
+    TelescopeDescription,
+    SubarrayDescription
+)
+from ctapipe.io import HDF5TableReader
 from ctapipe.io import HDF5TableWriter
 from eventio import Histograms
 from eventio.search_utils import yield_toplevel_of_type
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
-from ..reco.utils import get_geomagnetic_delta, geomag_dec, geomag_inc
-from tqdm import tqdm
-# from ctapipe.tools.stage1 import Stage1ProcessorTool
-from ctapipe.instrument import OpticsDescription, CameraGeometry, CameraDescription, CameraReadout, \
-    TelescopeDescription, SubarrayDescription
 from pyirf.simulations import SimulatedEventsInfo
+from tables import open_file
+from tqdm import tqdm
+from contextlib import ExitStack
 
-import logging
+from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +46,6 @@ __all__ = [
     'check_metadata',
     'read_metadata',
     'auto_merge_h5files',
-    'smart_merge_h5files',
     'global_metadata',
     'add_global_metadata',
     'add_config_metadata',
@@ -53,16 +58,21 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'extract_observation_time',
-    'merge_dl2_runs'
+    'merge_dl2_runs',
+    'get_srcdep_index_keys',
+    'get_srcdep_params',
+    'copy_h5_nodes',
+    'add_source_filenames',
 ]
 
-dl1_params_tel_mon_ped_key = "dl1/event/telescope/monitoring/pedestal"
+dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
 dl1_params_tel_mon_cal_key = "/dl1/event/telescope/monitoring/calibration"
-dl1_params_lstcam_key = "dl1/event/telescope/parameters/LST_LSTCam"
-dl1_images_lstcam_key = "dl1/event/telescope/image/LST_LSTCam"
-dl2_params_lstcam_key = "dl2/event/telescope/parameters/LST_LSTCam"
-dl1_params_src_dep_lstcam_key = "dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
-dl2_params_src_dep_lstcam_key = "dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_params_tel_mon_flat_key = "/dl1/event/telescope/monitoring/flatfield"
+dl1_params_lstcam_key = "/dl1/event/telescope/parameters/LST_LSTCam"
+dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
+dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
+dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
@@ -75,6 +85,11 @@ HDF5_ZSTD_FILTERS = tables.Filters(
 def read_simu_info_hdf5(filename):
     """
     Read simu info from an hdf5 file
+
+    Parameters
+    ----------
+    filename: str
+        path to the HDF5 file
 
     Returns
     -------
@@ -127,7 +142,7 @@ def read_simu_info_merged_hdf5(filename):
     return combined_mcheader
 
 
-def get_dataset_keys(filename):
+def get_dataset_keys(h5file):
     """
     Return a list of all dataset keys in a HDF5 file
 
@@ -139,14 +154,21 @@ def get_dataset_keys(filename):
     -------
     list of keys
     """
-    dataset_keys = []
+    # we use exit_stack to make sure we close the h5file again if it
+    # was not an already open tables.File
+    exit_stack = ExitStack()
 
-    def walk(name, obj):
-        if type(obj) == h5py._hl.dataset.Dataset:
-            dataset_keys.append(name)
+    with exit_stack:
 
-    with h5py.File(filename, "r") as file:
-        file.visititems(walk)
+        if not isinstance(h5file, tables.File):
+            h5file = exit_stack.enter_context(tables.open_file(h5file, 'r'))
+
+        dataset_keys = [
+            node._v_pathname
+            for node in h5file.root._f_walknodes()
+            if not isinstance(node, tables.Group)
+        ]
+
 
     return dataset_keys
 
@@ -196,10 +218,74 @@ def stack_tables_h5files(filenames_list, output_filename="merged.h5", keys=None)
         merged_table.write(output_filename, path=k, append=True)
 
 
-def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, merge_arrays=False, filters=HDF5_ZSTD_FILTERS):
+def copy_h5_nodes(from_file, to_file, nodes=None):
+    '''
+    Copy dataset (Table and Array) nodes from ``from_file`` to ``to_file``.
+
+    Parameters
+    ----------
+    from_file: tables.File
+        input h5 file opened with tables
+    to_file: tables.File
+        output h5 file opened with tables, must be writable
+    node_keys: Iterable[str]
+        Keys to copy, if None, all Table and Array nodes in ``from_file``
+        are copied.
+    '''
+    if nodes is None:
+        keys = set(get_dataset_keys(from_file))
+    else:
+        keys = set(nodes)
+
+    groups = set()
+
+    for k in keys:
+        in_node = from_file.root[k]
+        parent_path = in_node._v_parent._v_pathname
+        name = in_node._v_name
+        groups.add(parent_path)
+
+        if isinstance(in_node, tables.Table):
+            t = to_file.create_table(
+                parent_path,
+                name,
+                createparents=True,
+                obj=from_file.root[k].read()
+            )
+            for att in from_file.root[k].attrs._f_list():
+                t.attrs[att] = from_file.root[k].attrs[att]
+
+        elif isinstance(in_node, tables.Array):
+            a = to_file.create_array(
+                parent_path,
+                name,
+                createparents=True,
+                obj=from_file.root[k].read()
+            )
+            for att in from_file.root[k].attrs._f_list():
+                a.attrs[att] = in_node.attrs[att]
+
+    # after copying the datasets, also make sure we copy group metadata
+    # of all copied groups
+    for k in groups:
+        from_node = from_file.root[k]
+        to_node = to_file.root[k]
+        for attr in from_node._v_attrs._f_list():
+            to_node._v_attrs[attr] = from_node._v_attrs[attr]
+
+
+def auto_merge_h5files(
+    file_list,
+    output_filename="merged.h5",
+    nodes_keys=None,
+    merge_arrays=False,
+    filters=HDF5_ZSTD_FILTERS,
+    progress_bar=True
+):
     """
     Automatic merge of HDF5 files.
     A list of nodes keys can be provided to merge only these nodes. If None, all nodes are merged.
+    It may be also used to create a new file output_filename from content stored in another file.
 
     Parameters
     ----------
@@ -208,39 +294,24 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
     nodes_keys: list of path
     merge_arrays: bool
     filters
+    progress_bar : bool
+        Enabling the display of the progress bar during event processing.
     """
+
+    file_list = list(file_list)
+    if len(file_list) > 1:
+        file_list = merging_check(file_list)
 
     if nodes_keys is None:
         keys = set(get_dataset_keys(file_list[0]))
     else:
         keys = set(nodes_keys)
 
-    bar = tqdm(total=len(file_list))
+    bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            for k in keys:
-                if type(f1.root[k]) == tables.table.Table:
-                    merge_file.create_table(
-                        os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                        os.path.basename(k),
-                        createparents=True,
-                        obj=f1.root[k].read()
-                    )
-                if type(f1.root[k]) == tables.array.Array:
-                    if merge_arrays:
-                        merge_file.create_earray(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                            os.path.basename(k),
-                            createparents=True,
-                            obj=f1.root[k].read()
-                        )
-                    else:
-                        merge_file.create_array(
-                            os.path.join('/', k.rsplit('/', maxsplit=1)[0]),
-                            os.path.basename(k),
-                            createparents=True,
-                            obj=f1.root[k].read()
-                        )
+            copy_h5_nodes(f1, merge_file)
+
         bar.update(1)
         for filename in file_list[1:]:
             common_keys = keys.intersection(get_dataset_keys(filename))
@@ -255,8 +326,34 @@ def auto_merge_h5files(file_list, output_filename='merged.h5', nodes_keys=None, 
                             # https://github.com/cta-observatory/cta-lstchain/issues/671
                             out_node.append(in_node.read().astype(out_node.dtype))
                     except:
-                        log.exception("Can't append node {} from file {}".format(k, filename))
+                        log.error("Can't append node {} from file {}".format(k, filename))
+                        raise
             bar.update(1)
+
+        add_source_filenames(merge_file, file_list)
+
+    # merge global metadata and store source file names
+    metadata0 = read_metadata(file_list[0])
+    write_metadata(metadata0, output_filename)
+
+
+
+def add_source_filenames(h5file, file_list):
+    exit_stack = ExitStack()
+
+    with exit_stack:
+        if not isinstance(h5file, tables.File):
+            h5file = exit_stack.enter_context(tables.open_file(h5file, 'a'))
+
+
+        # we replace any existing node
+        if "/source_filenames" in h5file.root:
+            h5file.remove_node("/", "source_filenames", recursive=True)
+
+        file_list = [str(p) for p in file_list]
+
+        sources_group = h5file.create_group("/", "source_filenames", "List of input files")
+        h5file.create_array(sources_group, "filenames", file_list, "List of files merged")
 
 
 def merging_check(file_list):
@@ -301,37 +398,10 @@ def merging_check(file_list):
             assert subarray_info == subarray_info0
 
         except AssertionError:
-            log.exception(f"{filename} cannot be smart merged '¯\_(ツ)_/¯'")
+            log.exception(rf"{filename} cannot be merged '¯\_(ツ)_/¯'")
             mergeable_list.remove(filename)
 
     return mergeable_list
-
-
-def smart_merge_h5files(
-    file_list, output_filename="merged.h5", node_keys=None, merge_arrays=False
-):
-    """
-    Check that HDF5 files are compatible for merging and merge them
-
-    Parameters
-    ----------
-    file_list: list of paths to hdf5 files
-    output_filename: path to the merged file
-    node_keys
-    merge_arrays: bool
-    """
-    smart_list = merging_check(file_list)
-    auto_merge_h5files(
-        smart_list, output_filename, nodes_keys=node_keys, merge_arrays=merge_arrays
-    )
-
-    # Merge metadata
-    metadata0 = read_metadata(smart_list[0])
-    for file in smart_list[1:]:
-        metadata = read_metadata(file)
-        check_metadata(metadata0, metadata)
-        metadata0.SOURCE_FILENAMES.extend(metadata.SOURCE_FILENAMES)
-    write_metadata(metadata0, output_filename)
 
 
 def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=HDF5_ZSTD_FILTERS, metadata={}):
@@ -768,7 +838,7 @@ def check_metadata(metadata1, metadata2):
         assert metadata1[k] == metadata2[k]
 
 
-def global_metadata(source, input_url=""):
+def global_metadata():
     """
     Get global metadata container
 
@@ -776,15 +846,12 @@ def global_metadata(source, input_url=""):
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
-    if source:
-        input_url = source.input_url
 
     metadata = MetaData()
     metadata.LSTCHAIN_VERSION = lstchain.__version__
     metadata.CTAPIPE_VERSION = ctapipe.__version__
     metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
     metadata.CONTACT = "LST Consortium"
-    metadata.SOURCE_FILENAMES.append(os.path.basename(input_url))
 
     return metadata
 
@@ -1175,3 +1242,58 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     observation_time = sum([t.total_seconds() for t in observation_times])
     df = pd.concat(df_list)
     return observation_time, df
+
+
+def get_srcdep_index_keys(filename):
+    """
+    get index column name of source-dependent multi index columns
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+
+    Returns
+    -------
+    source-dependent index names
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+
+    return data.columns.levels[0]
+
+
+def get_srcdep_params(filename, key):
+    """
+    get srcdep parameter data frame
+
+    Parameters
+    ----------
+    filename: str - path to the HDF5 file
+    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    dataset_keys = get_dataset_keys(filename)
+
+    if dl2_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+
+    elif dl1_params_src_dep_lstcam_key in dataset_keys:
+        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+
+    if not isinstance(data.columns, pd.MultiIndex):
+        data.columns = pd.MultiIndex.from_tuples(
+            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
+        
+    return data[key]
