@@ -28,25 +28,26 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
                         extra_bias_in_dim_pixels, transition_charge,
                         extra_noise_in_bright_pixels):
     """
+    Addition of Poissonian noise to the pixels
 
     Parameters
     ----------
-    rng : numpy.random.default_rng
+    rng : `numpy.random.default_rng`
         Random number generator
-    image
+    image: `np.ndarray`
         Charges (p.e.) in the camera
-    extra_noise_in_dim_pixels
+    extra_noise_in_dim_pixels: `float`
         Mean additional number of p.e. to be added (Poisson noise) to
         pixels with charge below transition_charge. To be tuned by
         comparing the starting MC and data
-    extra_bias_in_dim_pixels
+    extra_bias_in_dim_pixels: `float`
         Mean bias (w.r.t. original charge) of the new charge in pixels.
         Should be 0 for non-peak-search pulse integrators. To be tuned by
         comparing the starting MC and data
-    transition_charge
+    transition_charge: `float`
         Border between "dim" and "bright" pixels. To be tuned by
         comparing the starting MC and data
-    extra_noise_in_bright_pixels
+    extra_noise_in_bright_pixels: `float`
         Mean additional number of p.e. to be added (Poisson noise) to
         pixels with charge above transition_charge. This is unbiased,
         i.e. Poisson noise is introduced, and its average subtracted,
@@ -59,7 +60,8 @@ def add_noise_in_pixels(rng, image, extra_noise_in_dim_pixels,
 
     Returns
     -------
-    Modified (noisier) image
+    image: `np.ndarray`
+        Modified (noisier) image
 
     """
 
@@ -82,13 +84,16 @@ def set_numba_seed(seed):
 @njit(cache=True)
 def random_psf_smearer(image, fraction, indices, indptr):
     """
+    Random PSF smearer
+
     Parameters
     ----------
-    image
+    image: `np.ndarray`
         Charges (p.e.) in the camera
-    indices : camera_geometry.neighbor_matrix_sparse.indices
+    indices : `camera_geometry.neighbor_matrix_sparse.indices`
+        Pixel indices.
     indptr : camera_geometry.neighbor_matrix_sparse.indptr
-    fraction:
+    fraction: `float`
         Fraction of the light in a pixel that will be distributed among its
         immediate surroundings, i.e. immediate neighboring pixels, according
         to Poisson statistics. Some light is lost for pixels  which are at
@@ -96,7 +101,8 @@ def random_psf_smearer(image, fraction, indices, indptr):
 
     Returns
     -------
-    Modified (smeared) image
+    new_image: `np.ndarray`
+        Modified (smeared) image
 
     """
 
@@ -135,31 +141,36 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     """
     Calculates the parameters needed to increase the noise in an MC DL1 file
     to match the noise in a real data DL1 file, using add_noise_in_pixels
+    The returned parameters are those needed by the function add_noise_in_pixels (see
+    description in its documentation above).
 
     Parameters
     ----------
-    simtel_filename: a simtel file containing showers, from the same
-    production (same NSB and telescope settings) as the MC DL1 file below. It
-    must contain pixel-wise info on true number of p.e.'s from C-photons (
-    will be used to identify pixels which only contain noise).
+    simtel_filename: `str`
+        a simtel file containing showers, from the same
+        production (same NSB and telescope settings) as the MC DL1 file below. It
+        must contain pixel-wise info on true number of p.e.'s from C-photons (
+        will be used to identify pixels which only contain noise).
 
-    data_dl1_filename: a real data DL1 file (processed with calibration
-    settings corresponding to those with which the MC is to be processed).
-    It must contain calibrated images, i.e. "DL1a" data. This file has the
-    "target" noise which we want to have in the MC files, for better
-    agreement of data and simulations.
+    data_dl1_filename: `str`
+        a real data DL1 file (processed with calibration
+        settings corresponding to those with which the MC is to be processed).
+        It must contain calibrated images, i.e. "DL1a" data. This file has the
+        "target" noise which we want to have in the MC files, for better
+        agreement of data and simulations.
 
-    config_filename: configuration file containing the calibration
-    settings used for processing both the data and the MC files above
+    config_filename: `str`
+        configuration file containing the calibration
+        settings used for processing both the data and the MC files above
 
     Returns
     -------
-    extra_noise_in_dim_pixels
-    extra_bias_in_dim_pixels
-    extra_noise_in_bright_pixels
-
-    These are the parameters needed by the function add_noise_in_pixels (see
-    description in its documentation above).
+    extra_noise_in_dim_pixels: `float`
+        Extra noise of dim pixels.
+    extra_bias_in_dim_pixels: `float`
+        Extra bias of dim pixels.
+    extra_noise_in_bright_pixels: `float`
+        Extra noise of bright pixels
 
     """
 
