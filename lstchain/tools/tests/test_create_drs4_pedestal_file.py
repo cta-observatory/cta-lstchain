@@ -6,7 +6,6 @@ import numpy as np
 from ctapipe.core import run_tool
 from ctapipe_io_lst.constants import N_GAINS, N_PIXELS, N_CAPACITORS_PIXEL
 from ctapipe.io import read_table
-import tables
 
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data')).absolute()

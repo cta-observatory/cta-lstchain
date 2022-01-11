@@ -125,7 +125,15 @@ class DL1DataCheckContainer(Container):
         self.trigger_type = \
             count_trig_types(table['trigger_type'][mask])
         if 'ucts_jump' in table.columns:
-            self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
+            # After one (or n) genuine UCTS jumps in a run, the first event (or n events) 
+            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
+            # but these are not new jumps, just the ones from previous subruns, so they should 
+            # not be counted.
+            uj = table['ucts_jump']
+            # find the first False value, and set to False also all the earlier ones:
+            first_non_jump = np.where(uj==False)[0][0]
+            uj[:first_non_jump] = False
+            self.num_ucts_jumps = np.sum(uj[mask])
         self.mean_alt_tel = np.mean(table['alt_tel'])
         self.mean_az_tel = np.mean(table['az_tel'])
 

@@ -1,7 +1,10 @@
 .. _calib:
 
-Calibration
-===========
+========================
+ Calibration (``calib``)
+========================
+
+Module containing functions and classes needed for the Calibration of LST data. 
 
 Module contents
 ---------------

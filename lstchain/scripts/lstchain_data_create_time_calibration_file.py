@@ -50,9 +50,9 @@ parser.add_argument('--pedestal-file', '-p',
 parser.add_argument('--run-summary-path',
                     help='Path to run summary file ', required=True)
 
-parser.add_argument('--progress',
+parser.add_argument('--no-progress',
                     action='store_true',
-                    help='Display a progress bar during event processing')
+                    help='Do not display a progress bar during event processing')
 
 
 def main():
@@ -104,7 +104,7 @@ def main():
 
         reader = EventSource(input_url=path, config=config)
 
-        for event in tqdm(reader, disable=not args.progress):
+        for event in tqdm(reader, disable=args.no_progress):
             timeCorr.calibrate_peak_time(event)
 
     # write output

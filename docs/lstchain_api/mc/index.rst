@@ -1,7 +1,10 @@
 .. _mc:
 
-MC
-==
+===================
+MonteCarlo (``mc``)
+===================
+
+Module containing functions to analyze MC data and compute sensitivity curves.
 
 Submodules
 ----------

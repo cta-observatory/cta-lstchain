@@ -1,3 +1,4 @@
+.hypothesis
 test_data
 .pytest_cache
 _version.py

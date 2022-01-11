@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 import tables
 from astropy.table import Table
+from ctapipe.instrument import SubarrayDescription
 
 
 @pytest.fixture
@@ -12,10 +13,17 @@ def merged_h5file(tmp_path, simulated_dl1_file):
     """Produce a merged h5 file from simulated dl1 files."""
     from lstchain.io.io import auto_merge_h5files
 
+    subarray_before = SubarrayDescription.from_hdf(simulated_dl1_file)
+
     merged_dl1_file = tmp_path / "dl1_merged.h5"
     auto_merge_h5files(
         [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file
     )
+
+    subarray_merged = SubarrayDescription.from_hdf(merged_dl1_file)
+
+    # check that subarray name is correctly retained
+    assert subarray_before.name == subarray_merged.name
     return merged_dl1_file
 
 

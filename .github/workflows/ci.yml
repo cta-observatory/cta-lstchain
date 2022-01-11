@@ -52,7 +52,7 @@ jobs:
           pip install .
 
       - name: pyflakes
-        run:
+        run: |
           . $CONDA/etc/profile.d/conda.sh
           conda activate ci
           pyflakes lstchain
@@ -93,6 +93,13 @@ jobs:
         run: |
           sudo apt update --yes && sudo apt install --yes git build-essential pandoc graphviz
           pip install -U pip setuptools wheel
+
+          # hotfix for gammapy being build against a too recent numpy,
+          # remove after updating to gammapy 0.19
+          pip install 'numpy~=1.20.3' Cython 'setuptools_scm[toml]'
+          pip install --no-build-isolation 'gammapy~=0.18.2'
+          # end hotfix for gammapy
+
           pip install -e .[docs]
           git describe --tags
           python -c 'import lstchain; print(lstchain.__version__)'

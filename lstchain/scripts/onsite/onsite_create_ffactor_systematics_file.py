@@ -71,7 +71,7 @@ def main():
         if os.path.exists(pro_dir):
             os.remove(pro_dir)
         os.symlink(prod_id, pro_dir)
-        print(f"\n--> Use symbolic link pro")
+        print("\n--> Use symbolic link pro")
     else:
         pro = prod_id
 
