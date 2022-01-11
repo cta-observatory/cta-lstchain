@@ -332,6 +332,7 @@ def r0_to_dl1(
             filters=HDF5_ZSTD_FILTERS,
             metadata=metadata,
         )
+    nsb_tuning = False
     if 'waveform_nsb_tuning' in config.keys():
         nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
         if nsb_tuning:
@@ -364,8 +365,6 @@ def r0_to_dl1(
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
-    else:
-        nsb_tuning = False
 
     with HDF5TableWriter(
         filename=output_filename,
