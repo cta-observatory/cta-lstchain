@@ -5,6 +5,10 @@ Introduction
 
 ``lstchain`` is the analysis library for the observed and simulated LST-1 data.
 
+Dependencies
+------------
+``lstchain`` heavily depends on ``ctapipe``
+
 Data levels
 ===========
 
