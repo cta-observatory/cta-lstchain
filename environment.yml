@@ -1,8 +1,7 @@
 name: lst-dev
 channels:
-  - default
-  - cta-observatory
   - conda-forge
+  - default
 dependencies:
   - python=3.8
   - astropy~=4.2
