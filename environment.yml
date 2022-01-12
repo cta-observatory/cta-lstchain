@@ -4,6 +4,7 @@ channels:
   - default
 dependencies:
   - python=3.8
+  - numpy=1.21
   - astropy~=4.2
   - pip
   - ctapipe~=0.11
