@@ -42,10 +42,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 def main():
 
+    args = parser.parse_args()
+    
     dl1_filename = os.path.abspath(args.input_file)
 
     config = get_standard_config()
@@ -62,7 +62,7 @@ def main():
  
     src_dep_df = pd.concat(get_source_dependent_parameters(dl1_params, config, focal_length=focal_length), axis=1)
 
-    metadata = global_metadata(None, input_url=dl1_filename)
+    metadata = global_metadata()
     write_dataframe(src_dep_df, dl1_filename, dl1_params_src_dep_lstcam_key, config=config, meta=metadata)
 
 if __name__ == '__main__':

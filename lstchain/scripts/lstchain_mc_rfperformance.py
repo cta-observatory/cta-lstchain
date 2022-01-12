@@ -72,10 +72,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+    
     custom_config = {}
     if args.config_file is not None:
         try:

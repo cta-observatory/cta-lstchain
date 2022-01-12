@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
-from astropy.utils import deprecated
 from ctapipe.coordinates import CameraFrame
 
 from . import disp
@@ -44,6 +43,7 @@ __all__ = [
     "sky_to_camera",
     "source_dx_dy",
     "source_side",
+    "get_geomagnetic_delta",
 ]
 
 # position of the LST1
@@ -51,6 +51,17 @@ location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184
 obstime = Time("2018-11-01T02:00")
 horizon_frame = AltAz(location=location, obstime=obstime)
 
+# Geomagnetic parameters for the LST1 as per
+# https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm and
+# using IGRF model on date  TIME_MC = 2020-06-29
+GEOM_MAG_REFERENCE_TIME = Time("2020-06-29", format="iso")
+GEOMAG_DEC = (-5.0674 * u.deg).to(u.rad)
+GEOMAG_INC = (37.4531 * u.deg).to(u.rad)
+GEOMAG_TOTAL = 38.7305 * u.uT
+
+DELTA_DEC = (0.1656 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_INC = (-0.0698 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_TOTAL = 0.009 * u.uT / u.yr
 
 log = logging.getLogger(__name__)
 
@@ -516,7 +527,7 @@ def filter_events(
 
     for col, (lower_limit, upper_limit) in filters.items():
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
-        
+
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
         with pd.option_context('mode.use_inf_as_null', True):
@@ -677,3 +688,71 @@ def get_effective_time(events):
     t_eff = t_elapsed / (1 + rate * dead_time)
 
     return t_eff, t_elapsed
+
+
+
+def get_geomagnetic_field_orientation(time=None):
+    '''
+    Linearly extrapolate the geomagnetic field parameters from the
+    reference period to the given timestamp.
+
+    time: astropy.time.Time or None
+        Timestamp for which to calculate. If ``None``, ``Time.now()`` is used.
+    '''
+    if time is None:
+        time = Time.now()
+
+    t_diff = (time - GEOM_MAG_REFERENCE_TIME).to(u.yr)
+
+    dec = GEOMAG_DEC + DELTA_DEC * t_diff
+    inc = GEOMAG_INC + DELTA_INC * t_diff
+
+    return dec.to(u.rad), inc.to(u.rad)
+
+
+def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
+    """
+    From a given geomagnetic declination and inclination angle along with
+    telescope zenith and azimuth pointing to get the angle between the
+    geomagnetic field and the shower axis, for a single telescope.
+
+    If no geomagnetic parameters are provided, use default for LST-1 by
+    estimating the predicted values as per
+    https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm
+    for the current time.
+
+    Parameters
+    ----------
+    zen: astropy.units.Quantity[angle]
+        Zenith pointing angle
+    az: astropy.units.Quantity[angle]
+        Azimuth pointing angle.
+    geomag_dec: astropy.units.Quantity[angle]
+        Geomagnetic declination measures the difference between the
+        measurement of true magnetic north and the geographical north,
+        eastwards. Hence we add to the azimuth measurement as it is measured
+        westwards.
+    geomag_inc: astropy.units.Quantity[angle]
+        Geomagnetic inclination, 'dip angle' is the angle between the
+        geomagnetic field and the horizontal plane.
+    time: astropy.time.Time
+        If geomag_inc or geomag_dec are not give, use this time to
+        calculate them using `get_geomagnetic_field_orientation`.
+        If time is None, use the current time.
+
+    Returns
+    -------
+    delta: Angle between geomagnetic field and the shower axis.
+    """
+
+    if geomag_dec is None or geomag_inc is None:
+        geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
+
+    term = (
+        (np.sin(geomag_inc) * np.cos(zen)) +
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+    )
+
+    delta = np.arccos(term)
+
+    return delta

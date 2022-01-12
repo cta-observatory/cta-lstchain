@@ -18,7 +18,7 @@ from ctapipe.core import Container, Field
 
 class DL1DataCheckContainer(Container):
     """
-    Container to store outcome of the DL1 data check
+    Container to store the subrun-wise outcome of the DL1 data check
     """
 
     geomlogger = logging.getLogger('ctapipe.instrument.camera')
@@ -31,6 +31,7 @@ class DL1DataCheckContainer(Container):
     num_cleaned_events = Field(-1, 'Number of events surviving cleaning')
     trigger_type = Field(None, 'Number of events per trigger type')
     ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
+    num_ucts_jumps = Field(-1, 'Number of observed (and corrected) UCTS jumps')
     mean_alt_tel = Field(None, 'Mean telescope altitude')
     mean_az_tel = Field(None, 'Mean telescope azimuth')
 
@@ -123,6 +124,16 @@ class DL1DataCheckContainer(Container):
             count_trig_types(table['ucts_trigger_type'][mask])
         self.trigger_type = \
             count_trig_types(table['trigger_type'][mask])
+        if 'ucts_jump' in table.columns:
+            # After one (or n) genuine UCTS jumps in a run, the first event (or n events) 
+            # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
+            # but these are not new jumps, just the ones from previous subruns, so they should 
+            # not be counted.
+            uj = table['ucts_jump']
+            # find the first False value, and set to False also all the earlier ones:
+            first_non_jump = np.where(uj==False)[0][0]
+            uj[:first_non_jump] = False
+            self.num_ucts_jumps = np.sum(uj[mask])
         self.mean_alt_tel = np.mean(table['alt_tel'])
         self.mean_az_tel = np.mean(table['az_tel'])
 
@@ -341,6 +352,9 @@ def count_trig_types(array):
     return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
 
 class DL1DataCheckHistogramBins(Container):
+    """
+    Histogram bins for the DL1 Datacheck
+    """
 
     # delta_t between consecutive events (ms)
     hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),

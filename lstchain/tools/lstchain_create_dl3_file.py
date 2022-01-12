@@ -18,8 +18,9 @@ from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
-from lstchain.irf import create_event_list
+from lstchain.irf import create_event_list, add_icrs_position_params
 from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
+
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -57,6 +58,7 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --fixed-gh-cut 0.9
+        --fixed-theta-cut 0.2
         --overwrite
 
     Or pass the selection cuts based on fixed gamma efficiency:
@@ -122,6 +124,7 @@ class DataReductionFITSWriter(Tool):
         "input-irf": "DataReductionFITSWriter.input_irf",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
         "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
+        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -159,7 +162,6 @@ class DataReductionFITSWriter(Tool):
                     f"Output file {self.output_file} already exists,"
                     " use --overwrite to overwrite"
                 )
-
         if not (self.source_ra or self.source_dec):
             self.source_pos = SkyCoord.from_name(self.source_name)
         elif bool(self.source_ra) != bool(self.source_dec):
@@ -174,6 +176,7 @@ class DataReductionFITSWriter(Tool):
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        ## To reduce the table columns further, add a selection of columns to be read and used.
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
@@ -187,12 +190,14 @@ class DataReductionFITSWriter(Tool):
             self.data = self.fixed_cuts.apply_opt_gh_cuts(
                 self.data, self.gh_cuts
             )
+            self.data = add_icrs_position_params(self.data, self.source_pos)
             self.log.info(
                 "Using fixed gamma efficiency of " +
                 f'{self.gh_cuts.meta["GH_EFF"]}'
             )
         else:
             self.data = self.fixed_cuts.gh_cut(self.data)
+            self.data = add_icrs_position_params(self.data, self.source_pos)
             self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
         self.log.info("Generating event list")

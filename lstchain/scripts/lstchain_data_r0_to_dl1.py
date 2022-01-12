@@ -12,7 +12,7 @@ Usage:
 $> python lstchain_data_r0_to_dl1.py
 --input-file LST-1.1.Run02030.0000.fits.fz
 --output-dir ./
---pedestal-file drs4_pedestal.Run2028.0000.fits
+--pedestal-file drs4_pedestal.Run2028.0000.h5
 --calibration-file calibration.Run2029.0000.hdf5
 --time-calibration-file time_calibration.Run2029.0000.hdf5
 
@@ -114,6 +114,11 @@ parser.add_argument(
     help='Maximum number of events to be processed.',
 )
 
+parser.add_argument(
+    '--pedestal-ids-path', type=Path,
+    help='Path to the file containing the event ids of interleaved pedestals',
+)
+
 
 def main():
     args = parser.parse_args()
@@ -169,6 +174,8 @@ def main():
 
     if args.pointing_file is not None:
         lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
+    if args.pedestal_ids_path is not None:
+        lst_event_source['pedestal_ids_path'] = args.pedestal_ids_path
 
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:

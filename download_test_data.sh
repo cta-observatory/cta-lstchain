@@ -24,6 +24,7 @@ wget \
 	-R "*.html*,*.gif" \
 	--no-host-directories --cut-dirs=1 \
 	--no-parent \
+	--level=inf \
 	--user="$TEST_DATA_USER" \
 	--password="$TEST_DATA_PASSWORD" \
 	--no-verbose \

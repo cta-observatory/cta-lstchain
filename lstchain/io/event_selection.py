@@ -17,6 +17,10 @@ class EventSelector(Component):
     Filter values used for event filters and list of finite parameters are
     taken as inputs and filter_events() is used on a table of events
     called in with the Component.
+
+    For event_type, we choose the sub-array trigger of 32, which is for 
+    gamma-ray event candidate, as per the latest CTA R1 Event Data Model.
+    So we add a free max value - 33, to use in the filter_events function.
     """
 
     filters = Dict(

@@ -5,17 +5,25 @@ import pandas as pd
 import pytest
 import tables
 from astropy.table import Table
+from ctapipe.instrument import SubarrayDescription
 
 
 @pytest.fixture
 def merged_h5file(tmp_path, simulated_dl1_file):
-    """Produce a smart merged h5 file from simulated dl1 files."""
-    from lstchain.io.io import smart_merge_h5files
+    """Produce a merged h5 file from simulated dl1 files."""
+    from lstchain.io.io import auto_merge_h5files
+
+    subarray_before = SubarrayDescription.from_hdf(simulated_dl1_file)
 
     merged_dl1_file = tmp_path / "dl1_merged.h5"
-    smart_merge_h5files(
+    auto_merge_h5files(
         [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file
     )
+
+    subarray_merged = SubarrayDescription.from_hdf(merged_dl1_file)
+
+    # check that subarray name is correctly retained
+    assert subarray_before.name == subarray_merged.name
     return merged_dl1_file
 
 
@@ -32,7 +40,7 @@ def test_write_dataframe():
     config = config.get_standard_config()
 
     with tempfile.NamedTemporaryFile() as f:
-        meta = global_metadata(None, input_url=f.name)
+        meta = global_metadata()
         write_dataframe(df, f.name, "data/awesome_table", config=config, meta=meta)
 
         with tables.open_file(f.name) as h5_file:
@@ -102,8 +110,12 @@ def test_merging_check(simulated_dl1_file):
 
 
 @pytest.mark.run(after="test_r0_to_dl1")
-def test_smart_merge_h5files(merged_h5file):
+def test_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
+
+    # check source filenames is properly written
+    with tables.open_file(merged_h5file) as file:
+        assert len(file.root.source_filenames.filenames) == 2
 
 
 @pytest.mark.run(after="test_r0_to_dl1")
@@ -116,7 +128,7 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
     assert mcheader.num_showers == 20000
 
 
-@pytest.mark.run(after="test_smart_merge_h5files")
+@pytest.mark.run(after="test_merge_h5files")
 def test_read_simu_info_merged_hdf5(merged_h5file):
     from lstchain.io.io import read_simu_info_merged_hdf5
 

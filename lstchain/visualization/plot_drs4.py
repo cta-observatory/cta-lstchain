@@ -45,6 +45,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
 
     config = {
         "LSTEventSource": {
+            "pointing_information": False,
             "allowed_tels": [1],
             "LSTR0Corrections": {
                 "drs4_pedestal_path": pedestal_file,
@@ -179,8 +180,6 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
 
             pix = 0
             pad = 420
-            offset_value = reader.r0_r1_calibrator.offset.tel[tel_id]
-
             # plot corrected waveforms of first 8 events
             for i, ev in enumerate(reader):
                 for chan in np.arange(2):
@@ -207,7 +206,7 @@ def plot_pedestals(data_file, pedestal_file, run=0, plot_file=None, tel_id=1, of
                         label=label,
                     )
 
-                    label = "baseline correction \n + dt corr + interp. spikes"
+                    label = "baseline correction \n + dt corr + corrected spikes"
 
                     plt.step(
                         t,

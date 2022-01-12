@@ -9,11 +9,16 @@ import tables
 from astropy import units as u
 from astropy.time import Time
 
+from ctapipe.io import read_table
+
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl2_params_lstcam_key,
     dl1_images_lstcam_key,
     get_dataset_keys,
+    dl1_params_tel_mon_ped_key,
+    dl1_params_tel_mon_cal_key,
+    dl1_params_tel_mon_flat_key,
     dl1_params_src_dep_lstcam_key,
 )
 
@@ -42,6 +47,8 @@ def run_program(*args):
             f"Running {args[0]} failed with return code {result.returncode}"
             f", output: \n {result.stdout}"
         )
+    else:
+        return result
 
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
@@ -113,14 +120,15 @@ def test_observed_dl1_validity(observed_dl1_files):
 
     dl1_tables = get_dataset_keys(observed_dl1_files["dl1_file1"])
 
-    assert 'dl1/event/telescope/monitoring/calibration' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/flatfield' in dl1_tables
-    assert 'dl1/event/telescope/monitoring/pedestal' in dl1_tables
-    assert 'dl1/event/telescope/image/LST_LSTCam' in dl1_tables
-    assert 'configuration/instrument/subarray/layout' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert 'configuration/instrument/telescope/optics' in dl1_tables
+    assert dl1_params_lstcam_key in dl1_tables
+    assert dl1_images_lstcam_key in dl1_tables
+    assert dl1_params_tel_mon_cal_key in dl1_tables
+    assert dl1_params_tel_mon_ped_key in dl1_tables
+    assert dl1_params_tel_mon_flat_key in dl1_tables
+    assert '/configuration/instrument/subarray/layout' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
+    assert '/configuration/instrument/telescope/optics' in dl1_tables
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns
@@ -138,6 +146,35 @@ def test_observed_dl1_validity(observed_dl1_files):
         0,
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def tune_nsb(mc_gamma_testfile, observed_dl1_files):
+    return run_program(
+        "lstchain_tune_nsb",
+        "--config",
+        "lstchain/data/lstchain_standard_config.json",
+        "--input-mc",
+        mc_gamma_testfile,
+        "--input-data",
+        observed_dl1_files["dl1_file1"],
+    )
+
+
+def test_validity_tune_nsb(tune_nsb):
+    output_lines = tune_nsb.stdout.splitlines()
+    for line in output_lines:
+        if "increase_nsb" in line:
+            assert line == '  "increase_nsb": true,'
+        if "extra_noise_in_dim_pixels" in line:
+            assert line == '  "extra_noise_in_dim_pixels": 0.0,'
+        if "extra_bias_in_dim_pixels" in line:
+            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+        if "transition_charge" in line:
+            assert line == '  "transition_charge": 8,'
+        if "extra_noise_in_bright_pixels" in line:
+            assert line == '  "extra_noise_in_bright_pixels": 0.0'
 
 
 def test_lstchain_mc_trainpipe(rf_models):
@@ -179,6 +216,8 @@ def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton
 
 def test_lstchain_merge_dl1_hdf5_files(merged_simulated_dl1_file):
     assert merged_simulated_dl1_file.is_file()
+    hdf5_file = tables.open_file(merged_simulated_dl1_file)
+    assert len(hdf5_file.root.source_filenames.filenames) == 2
 
 
 @pytest.mark.private_data
@@ -194,8 +233,6 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
         merged_dl1_observed_file,
         "--no-image",
         "False",
-        "--smart",
-        "False",
         "--run-number",
         "2008",
         "--pattern",
@@ -206,10 +243,10 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
     assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
-    assert "dl1/event/telescope/image/LST_LSTCam" in get_dataset_keys(
+    assert dl1_images_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
-    assert "dl1/event/telescope/parameters/LST_LSTCam" in get_dataset_keys(
+    assert dl1_params_lstcam_key in get_dataset_keys(
         merged_dl1_observed_file
     )
 
@@ -257,6 +294,19 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+@pytest.mark.private_data
+def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
+    run_program(
+        "lstchain_find_pedestals",
+        "--input-dir",
+        temp_dir_observed_files,
+        temp_dir_observed_files,
+    )
+    for subrun, expected_length in zip((0, 100), (0, 1)):
+        path = temp_dir_observed_files / f"pedestal_ids_Run02008.{subrun:04d}.h5"
+        assert path.is_file()
+        t = read_table(path, "/interleaved_pedestal_ids")
+        assert len(t) == expected_length
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
@@ -277,6 +327,8 @@ def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     with tables.open_file(simulated_dl1ab) as output:
         assert dl1_images_lstcam_key in output.root
+        assert '/source_filenames' in output.root
+        assert len(output.root.source_filenames.filenames[:]) == 1
 
 
 def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
@@ -322,7 +374,9 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     assert output_dl1ab.is_file()
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1, dl1ab, rtol=1e-3, equal_nan=True)
+    np.testing.assert_allclose(dl1.to_numpy(dtype='float'),
+                               dl1ab.to_numpy(dtype='float'), rtol=1e-3,
+                               equal_nan=True)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):

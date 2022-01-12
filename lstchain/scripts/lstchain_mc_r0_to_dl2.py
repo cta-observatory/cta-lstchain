@@ -14,10 +14,9 @@ $> python lstchain_mc_r0_to_dl2.py
 --path-models ./trained_models
 
 """
-
-from ctapipe.utils import get_dataset_path
 import argparse
 import os
+from ctapipe.utils import get_dataset_path
 from distutils.util import strtobool
 from lstchain.paths import r0_to_dl1_filename
 from pathlib import Path
@@ -53,10 +52,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+    
     outdir = args.outdir.absolute()
     dl1_file = outdir / r0_to_dl1_filename(args.datafile.name)
 

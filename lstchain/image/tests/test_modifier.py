@@ -27,7 +27,6 @@ def test_psf_smearer(fraction):
        [1, 1, 0, 0, 0, 1, 0],  # 6
     ]))
 
-
     smeared = random_psf_smearer(image, fraction, neighbor_matrix.indices, neighbor_matrix.indptr)
     # no charge lost in this case
     assert image.sum() == smeared.sum()
@@ -50,3 +49,16 @@ def test_psf_smearer(fraction):
 
     # neighbors should loose 3/6 fractions of the charge
     assert np.allclose((1 - 0.5 * fraction) * image[1:], smeared[1:], rtol=0.05)
+
+
+def test_calculate_noise_parameters(mc_gamma_testfile, observed_dl1_files):
+    from lstchain.image.modifier import calculate_noise_parameters
+    [extra_noise_in_dim_pixels,
+     extra_bias_in_dim_pixels,
+     extra_noise_in_bright_pixels] = calculate_noise_parameters(
+        mc_gamma_testfile,
+        observed_dl1_files["dl1_file1"]
+    )
+    assert extra_noise_in_dim_pixels == 0.0
+    assert np.isclose(extra_bias_in_dim_pixels, 11.3, atol=0.1)
+    assert extra_noise_in_bright_pixels == 0.0
