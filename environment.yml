@@ -29,5 +29,5 @@ dependencies:
   - seaborn
   - pip:
       - ctapipe_io_lst~=0.13.2
-      - ctaplot
+      - ctaplot~=0.5.5
       - pyirf~=0.5.0
