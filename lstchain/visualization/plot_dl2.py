@@ -12,7 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
-from astropy.table import Table
+from astropy.table import Table, QTable
 from matplotlib.cm import get_cmap
 from scipy.stats import norm
 
@@ -172,10 +172,10 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     """
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
-    ctaplot.resolution_per_energy(dl2_data.mc_energy, dl2_data.reco_energy, dl2_data.reco_energy)
-    ctaplot.plot_energy_resolution(dl2_data.mc_energy, dl2_data.reco_energy, ax=axes[0, 0], bias_correction=False)
+    ctaplot.resolution_per_energy(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, dl2_data.reco_energy*u.TeV)
+    ctaplot.plot_energy_resolution(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, ax=axes[0, 0], bias_correction=False)
     ctaplot.plot_energy_resolution_cta_requirement('north', ax=axes[0, 0], color='black')
-    ctaplot.plot_energy_bias(dl2_data.mc_energy, dl2_data.reco_energy, ax=axes[1, 0])
+    ctaplot.plot_energy_bias(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, ax=axes[1, 0])
     ctaplot.plot_migration_matrix(dl2_data.mc_energy.apply(np.log10),
                                   dl2_data.reco_energy.apply(np.log10),
                                   ax=axes[0, 1],
@@ -191,15 +191,16 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[0, 0].label_outer()
     axes[1, 0].set_title("")
     axes[1, 0].set_ylabel("Energy bias")
-    for ax in axes.ravel(): ax.grid(which='both')
+    for ax in axes.ravel():
+        ax.grid(True, which='both')
     axes[1, 1].remove()
 
     fig.tight_layout()
 
     if points_outfile:
-        e_bins, e_res = ctaplot.energy_resolution_per_energy(dl2_data.mc_energy, dl2_data.reco_energy)
-        e_bins, e_bias = ctaplot.energy_bias(dl2_data.mc_energy, dl2_data.reco_energy)
-        write_energy_resolutions(points_outfile, e_bins * u.TeV, e_res, e_bias)
+        e_bins, e_res = ctaplot.energy_resolution_per_energy(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV)
+        e_bins, e_bias = ctaplot.energy_bias(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV)
+        write_energy_resolutions(points_outfile, e_bins, e_res, e_bias)
 
     if plot_outfile:
         fig.savefig(plot_outfile)
@@ -214,13 +215,13 @@ def write_energy_resolutions(outfile, e_bins, res, bias=None, overwrite=False, a
     Parameters
     ----------
     outfile: str
-    e_bins: `numpy.ndarray`
+    e_bins: `numpy.ndarray` or `astropy.Quantity`
     res: `np.ndarray`
     bias: `np.ndarray`
     overwrite
     append
     """
-    e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
+    e_bins_t = QTable(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
     data = res
     names = ['energy_res', 'energy_res_err_lo', 'energy_res_err_hi']
@@ -240,12 +241,12 @@ def write_angular_resolutions(outfile, e_bins, res, overwrite=False, append=True
     Parameters
     ----------
     outfile: str
-    e_bins: `numpy.ndarray`
+    e_bins: `numpy.ndarray` or `astropy.Quantity`
     res: `np.ndarray`
     overwrite
     append
     """
-    e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
+    e_bins_t = QTable(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
     data = res
     names = ['angular_res', 'angular_res_err_lo', 'angular_res_err_hi']
@@ -593,8 +594,8 @@ def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_nor
     ax: `matplotlib.pyplot.axes`
     """
 
-    ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy,
-                                        dl2_data.reco_energy,
+    ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy*u.TeV,
+                                        dl2_data.reco_energy*u.TeV,
                                         ax=ax,
                                         bias_correction=bias_correction,
                                         **kwargs,
@@ -626,11 +627,11 @@ def plot_angular_resolution(dl2_data, ax=None, bias_correction=False, cta_req_no
     ax: `matplotlib.pyplot.axes`
     """
 
-    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt,
-                                                    dl2_data.reco_az,
-                                                    dl2_data.mc_alt,
-                                                    dl2_data.mc_az,
-                                                    dl2_data.reco_energy,
+    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt*u.rad,
+                                                    dl2_data.reco_az*u.rad,
+                                                    dl2_data.mc_alt*u.rad,
+                                                    dl2_data.mc_az*u.rad,
+                                                    dl2_data.reco_energy*u.TeV,
                                                     ax=ax,
                                                     bias_correction=bias_correction,
                                                     **kwargs
@@ -660,21 +661,21 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
-    ax = ctaplot.plot_theta2(dl2_data.reco_alt,
-                             dl2_data.reco_az,
-                             dl2_data.mc_alt,
-                             dl2_data.mc_az,
+    ax = ctaplot.plot_theta2(dl2_data.reco_alt*u.rad,
+                             dl2_data.reco_az*u.rad,
+                             dl2_data.mc_alt*u.rad,
+                             dl2_data.mc_az*u.rad,
                              ax=axes[0, 0],
                              bins=100,
                              range=(0, 1),
                              )
     ax.grid()
 
-    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt,
-                                               dl2_data.reco_az,
-                                               dl2_data.mc_alt,
-                                               dl2_data.mc_az,
-                                               dl2_data.reco_energy,
+    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt*u.rad,
+                                               dl2_data.reco_az*u.rad,
+                                               dl2_data.mc_alt*u.rad,
+                                               dl2_data.mc_az*u.rad,
+                                               dl2_data.reco_energy*u.TeV,
                                                ax=axes[0, 1],
                                                )
 
@@ -682,8 +683,8 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[0, 1].grid()
     axes[0, 1].legend()
 
-    ctaplot.plot_migration_matrix(dl2_data.mc_alt,
-                                  dl2_data.reco_alt,
+    ctaplot.plot_migration_matrix(dl2_data.mc_alt*u.rad,
+                                  dl2_data.reco_alt*u.rad,
                                   ax=axes[1, 0],
                                   colorbar=True,
                                   xy_line=True,
@@ -693,8 +694,8 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[1, 0].set_xlabel('simu alt [rad]')
     axes[1, 0].set_ylabel('reco alt [rad]')
 
-    ctaplot.plot_migration_matrix(dl2_data.mc_az,
-                                  dl2_data.reco_az,
+    ctaplot.plot_migration_matrix(dl2_data.mc_az*u.rad,
+                                  dl2_data.reco_az*u.rad,
                                   ax=axes[1, 1],
                                   colorbar=True,
                                   xy_line=True,
@@ -707,11 +708,11 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     fig.tight_layout()
 
     if points_outfile:
-        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.reco_alt,
-                                                                dl2_data.reco_az,
-                                                                dl2_data.mc_alt,
-                                                                dl2_data.mc_az,
-                                                                dl2_data.reco_energy,
+        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.reco_alt*u.rad,
+                                                                dl2_data.reco_az*u.rad,
+                                                                dl2_data.mc_alt*u.rad,
+                                                                dl2_data.mc_az*u.rad,
+                                                                dl2_data.reco_energy*u.TeV,
                                                                 )
 
         write_angular_resolutions(points_outfile, e_bins * u.TeV, ang_res * u.rad)

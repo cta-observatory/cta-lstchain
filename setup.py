@@ -43,7 +43,7 @@ setup(
         'bokeh~=1.0',
         'ctapipe~=0.11.0',
         'ctapipe_io_lst~=0.13.2',
-        'ctaplot~=0.5.5',
+        'ctaplot~=0.6.1',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.18.2',
         'h5py',
