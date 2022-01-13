@@ -12,7 +12,8 @@ dependencies:
   - h5py
   - ipython
   - jupyter
-  - matplotlib>=3.5
+  - matplotlib=3.4
+  - pyparsing=2.4
   - notebook
   - joblib
   - toml

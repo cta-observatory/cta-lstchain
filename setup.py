@@ -48,7 +48,8 @@ setup(
         'gammapy~=0.18.2',
         'h5py',
         'joblib',
-        'matplotlib>=3.5',
+        'matplotlib~=3.4.3',  # 3.5 is incompatible with gammapy 0.18.2
+        'pyparsing~=2.4',     # fixes issue with matplotlib math in mpl < 3.5
         'numba',
         'numpy',
         'pandas',
