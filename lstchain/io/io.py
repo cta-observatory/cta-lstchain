@@ -313,7 +313,7 @@ def auto_merge_h5files(
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            copy_h5_nodes(f1, merge_file)
+            copy_h5_nodes(f1, merge_file, nodes=keys)
 
         bar.update(1)
         for filename in file_list[1:]:
