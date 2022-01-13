@@ -172,9 +172,11 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     """
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
-    ctaplot.resolution_per_energy(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, dl2_data.reco_energy*u.TeV)
-    ctaplot.plot_energy_resolution(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, ax=axes[0, 0], bias_correction=False)
+    ctaplot.plot_energy_resolution(dl2_data.mc_energy.values*u.TeV,
+                                   dl2_data.reco_energy.values*u.TeV,
+                                   ax=axes[0, 0], bias_correction=False)
     ctaplot.plot_energy_resolution_cta_requirement('north', ax=axes[0, 0], color='black')
+
     ctaplot.plot_energy_bias(dl2_data.mc_energy*u.TeV, dl2_data.reco_energy*u.TeV, ax=axes[1, 0])
     ctaplot.plot_migration_matrix(dl2_data.mc_energy.apply(np.log10),
                                   dl2_data.reco_energy.apply(np.log10),
