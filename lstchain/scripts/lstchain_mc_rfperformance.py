@@ -27,11 +27,6 @@ from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
 
-try:
-    import ctaplot
-except ImportError as e:
-    print("ctaplot not installed, some plotting function will be missing")
-
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Train and Apply Random Forests.")
@@ -77,10 +72,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+    
     custom_config = {}
     if args.config_file is not None:
         try:

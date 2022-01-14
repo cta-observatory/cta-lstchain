@@ -2,7 +2,8 @@
 
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
-separation of events stored in a simtelarray file.
+separation of events stored in a DL1 file.
+
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
@@ -30,13 +31,14 @@ from lstchain.io import (
     write_dl2_dataframe,
     get_dataset_keys,
     global_metadata,
-    write_metadata
+    write_metadata,
+    get_srcdep_index_keys,
+    get_srcdep_params
 )
 from lstchain.io.io import (
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
     dl1_images_lstcam_key,
-    dl2_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )
@@ -66,10 +68,9 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None, required=False)
 
 
-args = parser.parse_args()
-
-
 def main():
+    args = parser.parse_args()
+
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -135,14 +136,14 @@ def main():
 
     # Source-dependent analysis
     if config['source_dependent']:
-        data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_srcdep.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
 
         dl2_srcdep_dict = {}
+        srcindep_keys = data.keys()
+        srcdep_index_keys = get_srcdep_index_keys(args.input_file)
 
-        for i, k in enumerate(data_srcdep.columns.levels[0]):
-            data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
+        for i, k in enumerate(srcdep_index_keys):
+            data_srcdep = get_srcdep_params(args.input_file, k)
+            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
                                                    finite_params=config['energy_regression_features']
@@ -158,11 +159,11 @@ def main():
                 dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
                                                  cls_disp_sign = cls_disp_sign, focal_length = focal_length, custom_config = config)
 
-            dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
+            dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
-                dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
+                dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
@@ -181,7 +182,7 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    metadata = global_metadata(None, input_url=output_file)
+    metadata = global_metadata()
     write_metadata(metadata, output_file)
 
     with open_file(args.input_file, 'r') as h5in:

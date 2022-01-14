@@ -22,11 +22,13 @@ from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
-from lstchain.irf.hdu_table import create_event_list
+from lstchain.irf.hdu_table import create_event_list, add_icrs_position_params
 from lstchain.irf.interpolate import (
     check_in_delaunay_triangle, compare_irfs, interpolate_irf
 )
+
 from lstchain.io import EventSelector, DL3FixedCuts
+
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -66,6 +68,7 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --fixed-gh-cut 0.9
+        --fixed-theta-cut 0.2
         --overwrite
     Or use a list of IRFs for including interpolated IRF:
     > lstchain_create_dl3_file
@@ -145,6 +148,7 @@ class DataReductionFITSWriter(Tool):
         ("f", "final-irf-file"): "DataReductionFITSWriter.final_irf_file",
         "interp-method": "DataReductionFITSWriter.interp_method",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
+        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -235,11 +239,13 @@ class DataReductionFITSWriter(Tool):
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        ## To reduce the table columns further, add a selection of columns to be read and used.
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         self.data = self.event_sel.filter_cut(self.data)
         self.data = self.fixed_cuts.gh_cut(self.data)
+        self.data = add_icrs_position_params(self.data, self.source_pos)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing, self.data_params = create_event_list(

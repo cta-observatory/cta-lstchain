@@ -15,19 +15,16 @@ $> python lstchain_mc_sensitivity.py
 """
 
 
-from lstchain.mc.sensitivity import sensitivity_gamma_efficiency, sensitivity_gamma_efficiency_real_protons, sensitivity_gamma_efficiency_real_data
+from lstchain.mc.sensitivity import sensitivity_gamma_efficiency_real_protons, sensitivity_gamma_efficiency_real_data
 import matplotlib.pyplot as plt
 import astropy.units as u
 import pandas as pd
 from lstchain.io.io import dl2_params_lstcam_key
-from astropy.table import Table
 import numpy as np
 import argparse
 import ctaplot
-from lstchain.reco import utils
 import seaborn as sns
 from lstchain.io import read_simu_info_merged_hdf5
-from lstchain.spectra.crab import crab_hegra
 from lstchain.mc import plot_utils
 import os
 
@@ -54,12 +51,11 @@ parser.add_argument('--output_path', '--o', type = str,
                     dest = 'output_path',
                     help = 'path where to save plot images')
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+    
     ntelescopes_gamma = 1
-    ntelescopes_protons = 1
     n_bins_energy = 20  #  Number of energy bins
     obstime = 50 * 3600 * u.s
     noff = 5

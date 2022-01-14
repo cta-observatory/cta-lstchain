@@ -32,6 +32,9 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
+
+from ctapipe_io_lst import TriggerBits
+
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 # from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
@@ -46,21 +49,26 @@ from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
 
 def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False):
     """
+    Check DL1 files
 
     Parameters
     ----------
-    batch: bool, run in batch mode
-    create_pdf: bool, create PDF file
-    filenames: string, Path, or a list of them, _sorted_ (by growing subrun
-    index). Name(s) of the input DL1 .h5 file(s)
-    output_path: directory where output will be written
-    max_cores: maximum number of processes that the function will spawn (each
+    batch: bool
+        run in batch mode
+    create_pdf: bool
+        create PDF file
+    filenames: str, Path, or a list of them, _sorted_ (by growing subrun
+    index). 
+        Name(s) of the input DL1 .h5 file(s)
+    output_path: 
+        directory where output will be written
+    max_cores: int
+        maximum number of processes that the function will spawn (each
     processing a different subrun)
 
     Returns
     -------
     None
-
     """
 
     logger = logging.getLogger(__name__)
@@ -91,14 +99,13 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # check that all files exist:
     for filename in filenames:
         if not os.path.exists(filename):
-            logger.error(f'File {str(filename)} not found!')
+            logger.error(f'File {filename} not found!')
             raise FileNotFoundError
 
-    # try to determine which trigger_type tag is more reliable for
-    # identifying interleaved pedestals. We check which one has
-    # more values == 32, which is the pedestal tag. The one called
-    # "trigger_type" is the TIB trigger type. The fastest way to do
-    # this for the whole run seems to be using normal pytables:
+    # We count the number of events identified as interleaved pedestals by
+    # each trigger type, just counting events with TriggerBits.PEDESTAL.value.
+    # The one called "trigger_type" is the TIB trigger type. This is faster
+    # pytables:
     trig_tags = {'trigger_type': [], 'ucts_trigger_type': []}
     for filename in filenames:
         with tables.open_file(filename,
@@ -106,12 +113,18 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
     num_pedestals = {'trigger_type':
-                         (np.array(trig_tags['trigger_type']) == 32).sum(),
+                         (np.array(trig_tags['trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum(),
                      'ucts_trigger_type':
-                         (np.array(trig_tags['ucts_trigger_type']) == 32).sum()}
-    logger.info(f'Number of == 32 (pedestal) trigger tags: {num_pedestals}')
+                         (np.array(trig_tags['ucts_trigger_type']) ==
+                          TriggerBits.PEDESTAL.value).sum()}
+    logger.info(f'Number of pedestal trigger tags: {num_pedestals}')
 
-    # Choose what source to use for obtaining the trigger type:
+    # Choose what source to use for obtaining the trigger type.
+    # We use event_type which is filled by the event source (it uses when
+    # possible the trigger types, but also heuristic methods to identify the
+    # interleaved events)
+    #
     trigger_source = 'event_type'
 
     # create container for the histograms' binnings, to be saved in the hdf5
@@ -177,17 +190,20 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
 
 def process_dl1_file(filename, bins, tel_id=1):
     """
+    Process DL1 file
 
     Parameters
     ----------
-    filename: string, or Path, input DL1 .h5 file to be checked
-    bins: DL1DataCheckHistogramBins container indicating binning of histograms
+    filename: str, or Path
+        input DL1 .h5 file to be checked
+    bins: DL1DataCheckHistogramBins container
+        indicating binning of histograms
     tel_id: int
         Telescope ID (default=1)
 
     Returns
     -------
-    dl1datacheck_pedestals, dl1datacheck_flatfield, dl1datacheck_cosmics
+    `dl1datacheck_pedestals`, `dl1datacheck_flatfield`, `dl1datacheck_cosmics`
     Containers of type DL1DataCheckContainer, with info on the three types of
     events: interleaved pedestals, interleaved flatfield events, and cosmics.
     If one or more of them is None, it means they have not been filled,
@@ -229,11 +245,16 @@ def process_dl1_file(filename, bins, tel_id=1):
         # create flatfield mask from the images table. For the time being,
         # trigger type tags are not reliable. We first identify flatfield events
         # by their looks.
-        image = image_table.col('image')
-
         flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
         # The same mask should be valid for image_table, since the entry in
         # the two tables correspond one to one.
+
+        # Revise flatfield_mask : event_type can be rarely wrong, so check
+        # here that all events look like interleaved flat field events:
+        # Note (AM, 20211202): finally we won't use this, the event source
+        # takes care of it
+        # flatfield_mask &= ((parameters['intensity'] > 50000) &
+        #                    (parameters['concentration_pixel'] < 0.005))
 
         pedestal_mask = (parameters['event_type'] ==
                          EventType.SKY_PEDESTAL.value)
@@ -289,16 +310,20 @@ def process_dl1_file(filename, bins, tel_id=1):
 
 def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None, tel_id=1):
     """
+    Plot datacheck
 
     Parameters
     ----------
-    datacheck_filename: list of strings, or pathlib.Path, name(s) of .h5
-    files produced by the function check_dl1, starting from DL1 event files
-    If it is a list of file names, we expect each of the files to correspond to
-    one subrun of the same run.
-    out_path: optional; if not given, it will be the same of file filename
-    batch: bool, run in batch mode
-    muons_dir
+    datacheck_filename: list of strings, or pathlib.Path
+        name(s) of .h5 files produced by the function check_dl1, starting from
+        DL1 event files. If it is a list of file names, we expect each of the
+        files to correspond to one subrun of the same run.
+    out_path: str
+        optional; if not given, it will be the same of file filename
+    batch: bool
+        run in batch mode
+    muons_dir: str
+        directory for muon fits files
     tel_id: int
         Telescope ID (default=1)
 
@@ -794,6 +819,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         # Some quantities we want to have vs. subrun index:
         num_rings = np.array([])
         num_contained_rings = np.array([])
+
         mean_width = np.array([])
         sem_width = np.array([])
         mean_effi = np.array([])
@@ -844,7 +870,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
             muons_table = vstack([muons_table, t])
 
         t = Table.read(good_files[0])
-        tcont = t[t['ring_containment'] > 0.999]
+        tcont = t[(t['ring_containment'] > 0.999) &
+                  (t['muon_efficiency'] < 1)]
+
         mean_width = np.mean(tcont['ring_width'])
         sem_width = sem(tcont['ring_width'])
         mean_effi = np.mean(tcont['muon_efficiency'])
@@ -852,11 +880,16 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         contained_muons = tcont
         for filename in good_files[1:]:
             t = Table.read(filename)
-            tcont = t[t['ring_containment'] > 0.999]
-            mean_width = np.append(mean_width, np.mean(tcont['ring_width']))
-            sem_width = np.append(sem_width, sem(tcont['ring_width']))
-            mean_effi = np.append(mean_effi, np.mean(tcont['muon_efficiency']))
-            sem_effi = np.append(sem_effi, sem(tcont['muon_efficiency']))
+            tcont = t[(t['ring_containment'] > 0.999) &
+                      (t['muon_efficiency'] < 1)]
+            mean_width = np.append(mean_width,
+                                   np.mean(tcont['ring_width']))
+            sem_width = np.append(sem_width,
+                                  sem(tcont['ring_width']))
+            mean_effi = np.append(mean_effi,
+                                    np.mean(tcont['muon_efficiency']))
+            sem_effi = np.append(sem_effi,
+                                 sem(tcont['muon_efficiency']))
             contained_muons = vstack([contained_muons, tcont])
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=pagesize)
@@ -979,20 +1012,23 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
 
 def plot_trigger_types(dchecktables, trigger_name, axes):
     """
+    Plot trigger types
 
     Parameters
     ----------
     dchecktables: array of python tables created with DL1DataCheckContainer
-    containers (each row is one subrun). The plotted trigger type statistics
-    will be the global ones, adding up the numbers from all the tables and
-    all the rows in each table.
-    Inside the table the trigger type columns have shape (n,10,2). n is the
-    number of rows (one per subrun). 10 is the number of possible trigger
-    types (just fixed to a safely large value). The remaining 2 are the pairs
-    (trigger_id, number of entries with that id)
+    containers (each row is one subrun).
+        The plotted trigger type statistics will be the global ones, adding
+        up the numbers from all the tables and all the rows in each table.
+        Inside the table the trigger type columns have shape (n,10,2). n is the
+        number of rows (one per subrun). 10 is the number of possible trigger
+        types (just fixed to a safely large value). The remaining 2 are the pairs
+        (trigger_id, number of entries with that id)
 
-    trigger_name: name of the trigger type column in the tables
-    axes: where to place the plots
+    trigger_name:
+        name of the trigger type column in the tables
+    axes:
+        where to place the plots
 
     Returns
     -------
@@ -1025,24 +1061,31 @@ def plot_trigger_types(dchecktables, trigger_name, axes):
 
 def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False, norm='lin'):
     """
+    The subrun-wise mean and std dev values are used to calculate the
+    run-wise (i.e. for all processed subruns which appear in the table)
+    counterparts of the same, which are then plotted.
+
     Parameters
     ----------
-    batch: bool, run in batch mode
-    table:  python table containing pixel-wise information to be displayed
-    camgeom: camera geometry
-    columns: list of 2 strings, columns of 'table', first one is the mean and
+    batch: bool
+        run in batch mode
+    table:
+        python table containing pixel-wise information to be displayed
+    camgeom:
+        camera geometry
+    columns:
+        list of 2 strings, columns of 'table', first one is the mean and
     the second the std deviation to be plotted
-    labels: plot titles
-    pagesize: [width, height] in cm
-    norm:  lin or log, z-scale of camera displays
+    labels: str
+        plot titles
+    pagesize: float, float
+        [width, height] in cm
+    norm:  str
+        lin or log, z-scale of camera displays
 
     Returns
     -------
     None
-
-    The subrun-wise mean and std dev values are used to calculate the
-    run-wise (i.e. for all processed subruns which appear in the table)
-    counterparts of the same, which are then plotted.
 
     """
 
@@ -1099,14 +1142,18 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
 
 def write_error_page(tablename, pagesize):
     """
+    Write error page
 
     Parameters
     ----------
-    tablename: name of the table which has no entries to be plotted
-    pagesize: [width, height] (cm)
+    tablename: str
+        name of the table which has no entries to be plotted
+    pagesize: float, float
+        [width, height] (cm)
     Returns
     -------
     None
+
     """
     _, axes = plt.subplots(nrows=1, ncols=1, figsize=pagesize)
     plt.text(0.5, 0.5, 'Sorry, no ' + tablename + ' to plot here!',
@@ -1117,18 +1164,21 @@ def write_error_page(tablename, pagesize):
 
 def merge_dl1datacheck_files(file_list):
     """
+    Merge DL1 Datacheck files
 
     Parameters
     ----------
-    file_list: list of strings, names of files of the kind produced by
-    function check_dl1
+    file_list:
+        list of strings, names of files of the kind produced by
+        function check_dl1
 
     Returns
     -------
-    merged_filename: name of the .h5 file which contains all the rows of the
-    files in the list (in the tables cosmics, pedestals and flatfield)
-    The camera geometry, histogram_binnings and used_trigger_tag are copied
-    just from the first file
+    merged_filename: str
+        name of the .h5 file which contains all the rows of the
+        files in the list (in the tables cosmics, pedestals and flatfield)
+        The camera geometry, histogram_binnings and used_trigger_tag are
+        copied just from the first file
 
     """
 

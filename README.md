@@ -3,6 +3,8 @@
 Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
 
+- **Source code:** https://github.com/cta-observatory/cta-lstchain
+- **Documentation:** https://cta-observatory.github.io/cta-lstchain/
 
 Note that notebooks are currently not tested and not guaranteed to be up-to-date.   
 In doubt, refer to tested code and scripts: basic functions of lstchain (reduction steps R0-->DL1 and DL1-->DL2) 
@@ -10,13 +12,13 @@ are unit tested and should be working as long as the build status is passing.
 
 ## Install
 
-- You will need to install [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
+- You will need to install [miniconda](https://docs.conda.io/en/latest/miniconda.html) (recommended) or [anaconda](https://www.anaconda.com/distribution/#download-section) first. 
 
 
 ### As user
 
 ```
-LSTCHAIN_VER=0.7.3
+LSTCHAIN_VER=0.8.2.post1  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
@@ -32,6 +34,11 @@ git clone https://github.com/cta-observatory/cta-lstchain.git
 cd cta-lstchain
 conda env create -f environment.yml
 conda activate lst-dev
+```
+
+**Note**: To prevent packages you installed with `pip install --user` from taking precedence over the conda environment, run:
+```
+conda env config vars set PYTHONNOUSERSITE=1 -n <environment_name>
 ```
 
 To update the environment (e.g. when depenencies got updated), use:
@@ -51,7 +58,10 @@ but are always run in the CI.
 
 To download the test files locally, run `./download_test_data.sh`.
 It will ask for username and password and requires `wget` to be installed.
-Ask one of the project maintainers for the credentials.
+Ask one of the project maintainers for the credentials. If 
+you are a member of the LST collaboration you can also obtain them here:
+
+https://ctaoobservatory.sharepoint.com/:i:/r/sites/ctan-onsite-it/Shared%20Documents/General/information_2.jpg?csf=1&web=1&e=suUkV6
 
 To run the tests that need those private data file, add `-m private_data`
 to the pytest call, e.g.:

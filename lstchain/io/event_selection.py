@@ -15,6 +15,10 @@ class EventSelector(Component):
     Filter values used for event filters and list of finite parameters are
     taken as inputs and filter_events() is used on a table of events
     called in with the Component.
+
+    For event_type, we choose the sub-array trigger of 32, which is for 
+    gamma-ray event candidate, as per the latest CTA R1 Event Data Model.
+    So we add a free max value - 33, to use in the filter_events function.
     """
 
     filters = Dict(
@@ -169,9 +173,13 @@ class DataBinning(Component):
     def true_energy_bins(self):
         """
         Creates bins per decade for true MC energy using pyirf function.
+        The overflow binning added is not needed at the current stage.
 
-        The overflow binning added is not needed at the current stage
-        It can be used as - add_overflow_bins(***)[1:-1]
+        Examples
+        --------
+        It can be used as:
+
+        >>> add_overflow_bins(***)[1:-1]
         """
         true_energy = create_bins_per_decade(
             self.true_energy_min * u.TeV,
@@ -183,9 +191,13 @@ class DataBinning(Component):
     def reco_energy_bins(self):
         """
         Creates bins per decade for reconstructed MC energy using pyirf function.
+        The overflow binning added is not needed at the current stage.
 
-        The overflow binning added is not needed at the current stage
-        It can be used as - add_overflow_bins(***)[1:-1]
+        Examples
+        --------
+        It can be used as:
+
+        >>> add_overflow_bins(***)[1:-1]
         """
         reco_energy = create_bins_per_decade(
             self.reco_energy_min * u.TeV,
@@ -207,7 +219,7 @@ class DataBinning(Component):
 
     def fov_offset_bins(self):
         """
-        Creates bins for single/multiple FoV offset
+        Creates bins for single/multiple FoV offset.
         """
         fov_offset = (
             np.linspace(

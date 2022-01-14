@@ -50,11 +50,13 @@ parser.add_argument('--pedestal-file', '-p',
 parser.add_argument('--run-summary-path',
                     help='Path to run summary file ', required=True)
 
-
-args = parser.parse_args()
+parser.add_argument('--no-progress',
+                    action='store_true',
+                    help='Do not display a progress bar during event processing')
 
 
 def main():
+    args = parser.parse_args()
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
@@ -74,6 +76,7 @@ def main():
     source_config = Config({
         "LSTEventSource": {
             "max_events" : args.max_events,
+            "pointing_information": False,
             "default_trigger_type" : 'tib',
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
@@ -101,7 +104,7 @@ def main():
 
         reader = EventSource(input_url=path, config=config)
 
-        for event in tqdm(reader):
+        for event in tqdm(reader, disable=args.no_progress):
             timeCorr.calibrate_peak_time(event)
 
     # write output

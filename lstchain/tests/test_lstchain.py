@@ -16,26 +16,10 @@ test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
-test_calib_path = test_data / 'real/calibration/20200218/v05/calibration.Run2006.0000.hdf5'
-test_drs4_pedestal_path = test_data / 'real/calibration/20200218/v05/drs4_pedestal.Run2005.0000.fits'
-test_time_calib_path = test_data / 'real/calibration/20200218/v05/time_calibration.Run2006.0000.hdf5'
+test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.7.6.dev606+g6e697f2d/calibration_filters_52.Run02006.0000.h5'
+test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.7.6.dev606+g6e697f2d/drs4_pedestal.Run02005.0000.h5'
+test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.7.6.dev606+g6e697f2d/time_calibration.Run01625.0000.h5'
 test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
-
-
-def test_import_calib():
-    from lstchain import calib
-
-
-def test_import_reco():
-    from lstchain import reco
-
-
-def test_import_visualization():
-    from lstchain import visualization
-
-
-def test_import_lstio():
-    from lstchain import io
 
 
 @pytest.mark.run(order=1)
@@ -108,6 +92,7 @@ def test_get_source_dependent_parameters(simulated_dl1_file):
 
     dl1_params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     src_dep_df = get_source_dependent_parameters(dl1_params, standard_config)
+    assert "alpha" in src_dep_df['on'].columns
 
 
 @pytest.mark.run(order=2)
@@ -193,7 +178,7 @@ def test_disp_to_pos():
 
 def test_change_frame_camera_sky():
     from lstchain.reco.utils import sky_to_camera, camera_to_altaz
-    import astropy.units as u
+
     x = np.random.rand(1) * u.m
     y = np.random.rand(1) * u.m
     focal_length = 5 * u.m

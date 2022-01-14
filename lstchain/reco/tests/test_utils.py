@@ -183,35 +183,34 @@ def test_get_obstime_real():
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
 
+def test_get_geomagnetic_field_orientation():
+    from lstchain.reco.utils import (
+        get_geomagnetic_field_orientation,
+        GEOM_MAG_REFERENCE_TIME,
+        GEOMAG_INC,
+        GEOMAG_DEC,
+    )
+
+    assert get_geomagnetic_field_orientation(GEOM_MAG_REFERENCE_TIME) == (GEOMAG_DEC, GEOMAG_INC)
+
+    # value calculated with https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm
+    # for given date using IGRF2020 model
+    time = Time("2021-06-30")
+    dec, inc = get_geomagnetic_field_orientation(time)
+    assert np.isclose(dec.to(u.deg), -4.8985 * u.deg, atol=0.05)
+    assert np.isclose(inc.to(u.deg), 37.3801 * u.deg, atol=0.05)
+
+
 def test_get_geomagnetic_delta():
+    from lstchain.reco.utils import get_geomagnetic_delta, GEOM_MAG_REFERENCE_TIME
 
-    time_mc = Time("2020-06-29", format="iso").decimalyear
-    geomag_dec = -5.0674 * np.pi / 180 * u.rad
-    geomag_inc = 37.4531 * np.pi / 180 * u.rad
+    # this is just a regression test assuming the values were correct when
+    # first implementing the function
+    inc = get_geomagnetic_delta(zen=20 * u.deg, az=0 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
+    assert u.isclose(inc, 0.57002008 * u.rad)
 
-    delta_inc = -0.0698 * np.pi / 180 * u.rad / u.yr
-
-    t_diff = (Time.now().decimalyear - time_mc) * u.yr
-    geomag_inc_now = (geomag_inc + delta_inc * t_diff).to_value(u.rad)
-
-    # Values at (azimuth+geomag_dec) = 0, np.pi, delta has min, max
-    zen_0 = np.arccos(np.sin(geomag_inc_now))
-    term_0 = (
-        (np.sin(geomag_inc_now) * np.cos(zen_0)) +
-        (np.cos(geomag_inc_now) * np.sin(zen_0) * np.cos(0))
-    )
-
-    delta_min = np.arccos(term_0)
-
-    zen_1 = - np.arctan(np.tan(geomag_inc_now)/np.cos(np.pi))
-    term_1 = (
-        (np.sin(geomag_inc_now) * np.cos(zen_1)) +
-        (np.cos(geomag_inc_now) * np.sin(zen_1) * np.cos(np.pi))
-    )
-    delta_max = np.arccos(term_1)
-
-    assert delta_min == 0
-    assert delta_max == np.pi/2
+    inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
+    assert u.isclose(inc, 0.20785624 * u.rad)
 
 
 def test_get_az_from_interp_params():
@@ -226,10 +225,14 @@ def test_get_az_from_interp_params():
     zen_2 = - np.arctan(np.tan(geomag_inc))
 
     phi_1 = get_az_from_interp_params(
-        zen_1, del_1, geomag_dec, geomag_inc
+        zen=zen_1, b_delta=del_1,
+        geomag_dec=geomag_dec,
+        geomag_inc=geomag_inc
     )
     phi_2 = get_az_from_interp_params(
-        zen_2, del_2, geomag_dec, geomag_inc
+        zen=zen_2, b_delta=del_2, 
+        geomag_dec=geomag_dec,
+        geomag_inc=geomag_inc
     )
 
     assert np.isclose(phi_1, -geomag_dec)
