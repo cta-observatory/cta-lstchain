@@ -128,6 +128,11 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    source_dep = traits.Bool(
+        help="True for source-dependent analysis",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3FixedCuts, DataBinning]
 
     aliases = {
@@ -150,6 +155,10 @@ class IRFFITSWriter(Tool):
         "overwrite": (
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
+        ),
+        "source-dep": (
+            {"IRFFITSWriter": {"source_dep": True}},
+            "Source-dependent analysis will be performed",
         )
     }
 
@@ -232,16 +241,25 @@ class IRFFITSWriter(Tool):
                     p["simulated_spectrum"],
                 )
 
-            for prefix in ("true", "reco"):
-                k = f"{prefix}_source_fov_offset"
-                p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)
-            # calculate theta / distance between reco and assumed source position
-            p["events"]["theta"] = calculate_theta(
-                p["events"],
-                assumed_source_az=p["events"]["true_az"],
-                assumed_source_alt=p["events"]["true_alt"],
-            )
-            self.log.debug(p["simulation_info"])
+            if not self.source_depe:
+                for prefix in ("true", "reco"):
+                    k = f"{prefix}_source_fov_offset"
+                    p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)
+
+                # calculate theta / distance between reco and assumed source position
+                p["events"]["theta"] = calculate_theta(
+                    p["events"],
+                    assumed_source_az=p["events"]["true_az"],
+                    assumed_source_alt=p["events"]["true_alt"],
+                )
+                self.log.debug(p["simulation_info"])
+
+            else:
+                # Alpha cut is applied for source-dependent analysis.
+                # To adapt source-dependent analysis to pyirf codes, true position is set as reco position
+                # for survived events after alpha cut
+                p["events"]["true_source_fov_offset"] = calculate_source_fov_offset(p["events"], prefix="true")
+                p["events"]["reco_source_fov_offset"] = p["events"]["true_source_fov_offset"]
 
         gammas = self.mc_particle["gamma"]["events"]
 
@@ -252,8 +270,12 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.gh_cut(gammas)
 
         if self.point_like:
-            gammas = self.fixed_cuts.theta_cut(gammas)
-            self.log.info('Theta cuts applied for point like IRF')
+           if not self.source_dep:
+                gammas = self.fixed_cuts.theta_cut(gammas)
+                self.log.info('Theta cuts applied for point like IRF')
+            else:
+                gammas = self.fixed_cuts.alpha_cut(gammas)
+                self.log.info('Alpha cuts applied for point like IRF')
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -280,6 +302,10 @@ class IRFFITSWriter(Tool):
             background = self.event_sel.filter_cut(background)
             background = self.fixed_cuts.allowed_tels_filter(background)
             background = self.fixed_cuts.gh_cut(background)
+
+            if self.source_dep:
+                background = self.fixed_cuts.alpha_cut(background)
+                background['reco_source_fov_offset'] = gammas["true_source_fov_offset"].mean().to_value() * u.deg
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
