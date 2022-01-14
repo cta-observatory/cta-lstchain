@@ -3,8 +3,10 @@ from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
 
 import numpy as np
+import operator
 import astropy.units as u
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
+from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 
 __all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
@@ -50,6 +52,16 @@ class DL3FixedCuts(Component):
         default_value=0.6,
     ).tag(config=True)
 
+    fixed_gh_max_efficiency = Float(
+        help="Fixed max gamma efficiency for optimized g/h cuts in %",
+        default_value=95,
+    ).tag(config=True)
+
+    fixed_theta_containment = Float(
+        help="Fixed % containment region for theta cuts",
+        default=68,
+    ).tag(config=True)
+
     fixed_theta_cut = Float(
         help="Fixed selection cut for theta",
         default_value=0.2,
@@ -64,8 +76,70 @@ class DL3FixedCuts(Component):
     def gh_cut(self, data):
         return data[data["gh_score"] > self.fixed_gh_cut]
 
+    def opt_gh_cuts(
+        self, data, energy_bins, min_value=0.1,
+        max_value=0.99, smoothing=None, min_events=10
+    ):
+        #To be sure to have the efficiency in between 0 and 100
+        if self.fixed_gh_max_efficiency < 1:
+            self.fixed_gh_max_efficiency *= 100
+
+        gh_cuts = calculate_percentile_cut(
+            data["gh_score"],
+            data["reco_energy"],
+            bins = energy_bins,
+            min_value = min_value,
+            max_value = max_value,
+            fill_value = data["gh_score"].max(),
+            percentile = 100 - self.fixed_gh_max_efficiency,
+            smoothing = smoothing,
+            min_events = min_events,
+        )
+        return gh_cuts
+
+    def apply_opt_gh_cuts(self, data, gh_cuts):
+        """
+        Apply a given energy dependent gh cuts to a data file
+        """
+
+        data["selected_gh"] = evaluate_binned_cut(
+            data["gh_score"],
+            data["reco_energy"],
+            gh_cuts,
+            operator.ge,
+        )
+        return data[data["selected_gh"]]
+
     def theta_cut(self, data):
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
+
+    def opt_theta_cuts(
+        self, data, energy_bins, min_value=0.05 * u.deg,
+        fill_value=0.32 * u.deg, max_value=0.32 * u.deg,
+        smoothing=None, min_events=10
+    ):
+        if self.fixed_theta_containment < 1:
+            self.fixed_theta_containment *= 100
+
+        theta_cuts = calculate_percentile_cut(
+            data["theta"],
+            data["reco_energy"],
+            bins = energy_bins,
+            min_value = min_value,
+            max_value = max_value,
+            fill_value = fill_value,
+            percentile = self.fixed_theta_containment,
+            smoothing = smoothing,
+            min_events = min_events,
+        )
+
+        data["selected_theta"] = evaluate_binned_cut(
+            data["theta"],
+            data["reco_energy"],
+            theta_cuts,
+            operator.le,
+        )
+        return data[data["selected_theta"]], theta_cuts
 
     def allowed_tels_filter(self, data):
         mask = np.zeros(len(data), dtype=bool)

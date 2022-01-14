@@ -11,6 +11,7 @@ copy and append the relevant example config files, into a custom config file.
 """
 
 from astropy.io import fits
+from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
@@ -18,7 +19,7 @@ from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list, add_icrs_position_params
-from lstchain.io import EventSelector, DL3FixedCuts
+from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
 
 
 __all__ = ["DataReductionFITSWriter"]
@@ -59,6 +60,18 @@ class DataReductionFITSWriter(Tool):
         --fixed-gh-cut 0.9
         --fixed-theta-cut 0.2
         --overwrite
+
+    Or pass the selection cuts based on fixed gamma efficiency:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        --input-irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --optimize-gh
+        --fixed_gh_max_efficiency 95
+        --overwrite
     """
 
     input_dl2 = traits.Path(
@@ -93,6 +106,11 @@ class DataReductionFITSWriter(Tool):
         help="DEC position of the source"
     ).tag(config=True)
 
+    optimize_gh = traits.Bool(
+        help="If true, use a fixed gamma efficiency for optimizing the cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=False,
@@ -105,6 +123,7 @@ class DataReductionFITSWriter(Tool):
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         "input-irf": "DataReductionFITSWriter.input_irf",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
+        "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
         "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
@@ -115,6 +134,10 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
+        ),
+        "optimize-gh": (
+            {"DataReductionFITSWriter": {"optimize_gh": True}},
+            "Uses cuts optimization",
         ),
     }
 
@@ -127,6 +150,7 @@ class DataReductionFITSWriter(Tool):
 
         self.event_sel = EventSelector(parent=self)
         self.fixed_cuts = DL3FixedCuts(parent=self)
+        self.data_bin = DataBinning(parent=self)
 
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():
@@ -157,8 +181,24 @@ class DataReductionFITSWriter(Tool):
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         self.data = self.event_sel.filter_cut(self.data)
-        self.data = self.fixed_cuts.gh_cut(self.data)
-        self.data = add_icrs_position_params(self.data, self.source_pos)
+
+        if self.optimize_gh and self.input_irf:
+
+            irf = fits.open(self.input_irf)
+            self.gh_cuts = QTable.read(irf, hdu="GH CUTS")
+
+            self.data = self.fixed_cuts.apply_opt_gh_cuts(
+                self.data, self.gh_cuts
+            )
+            self.data = add_icrs_position_params(self.data, self.source_pos)
+            self.log.info(
+                "Using fixed gamma efficiency of " +
+                f'{self.gh_cuts.meta["GH_EFF"]}'
+            )
+        else:
+            self.data = self.fixed_cuts.gh_cut(self.data)
+            self.data = add_icrs_position_params(self.data, self.source_pos)
+            self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
@@ -173,6 +213,7 @@ class DataReductionFITSWriter(Tool):
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
+
         if self.input_irf:
             irf = fits.open(self.input_irf)
             self.log.info("Adding IRF HDUs")
