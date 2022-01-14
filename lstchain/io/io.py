@@ -1132,7 +1132,7 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos):
     """
     Read data DL2 files from lstchain and return QTable format
     Parameters
@@ -1159,7 +1159,19 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
 
     data = QTable.from_pandas(data)
 
