@@ -33,7 +33,7 @@ from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_
 from lstchain.io.config import get_cleaning_parameters
 from lstchain.io.config import get_standard_config
 from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, global_metadata, write_metadata
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 
@@ -118,7 +118,7 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
+                 f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
@@ -184,7 +184,7 @@ def main():
     if args.noimage:
         nodes_keys.remove(dl1_images_lstcam_key)
 
-    metadata = read_metadata(args.input_file)
+    metadata = global_metadata()
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
@@ -333,6 +333,8 @@ def main():
             outfile.root[dl1_params_lstcam_key][:] = params
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
+
+        write_metadata(metadata, args.output_file)
 
 
 if __name__ == '__main__':
