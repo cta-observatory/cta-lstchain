@@ -14,6 +14,7 @@ $> python lstchain_dl1ab.py
 import sys
 import argparse
 import logging
+from pathlib import Path
 from distutils.util import strtobool
 
 import astropy.units as u
@@ -81,7 +82,7 @@ def main():
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
-    if args.output_file.exists():
+    if Path(args.output_file).exists():
         log.critical('Outputfile already exists')
         sys.exit(1)
 
