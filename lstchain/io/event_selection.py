@@ -55,6 +55,11 @@ class DL3FixedCuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
+    fixed_alpha_cut = Float(
+        help="Fixed selection cut for alpha",
+        default_value=20,
+    ).tag(config=True)
+
     allowed_tels = List(
         help="List of allowed LST telescope ids",
         trait=Int(),
@@ -66,6 +71,9 @@ class DL3FixedCuts(Component):
 
     def theta_cut(self, data):
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
+        
+    def alpha_cut(self, data):
+        return data[data["alpha"].to_value(u.deg) < self.fixed_alpha_cut]
 
     def allowed_tels_filter(self, data):
         mask = np.zeros(len(data), dtype=bool)
