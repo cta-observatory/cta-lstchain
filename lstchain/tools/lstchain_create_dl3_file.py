@@ -10,15 +10,20 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
 
+import pandas as pd
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
+from astropy.table import vstack
+from astropy.time import Time
+import astropy.units as u
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io import read_data_dl2_to_QTable
+from lstchain.io import read_data_dl2_to_QTable, get_srcdep_index_keys
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list, add_icrs_position_params
 from lstchain.io import EventSelector, DL3FixedCuts
+from lstchain.reco.utils import camera_to_altaz
 
 
 __all__ = ["DataReductionFITSWriter"]
@@ -98,6 +103,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    source_dep = traits.Bool(
+        help="If True, source-dependent analysis will be performed.",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3FixedCuts]
 
     aliases = {
@@ -115,6 +125,10 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
+        ),
+        "source-dep": (
+            {"DataReductionFITSWriter": {"source_dep": True}},
+            "source-dependent analysis if True",
         ),
     }
 
@@ -151,14 +165,47 @@ class DataReductionFITSWriter(Tool):
 
     def start(self):
 
-        self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-        ## To reduce the table columns further, add a selection of columns to be read and used.
-        self.effective_time, self.elapsed_time = get_effective_time(self.data)
-        self.run_number = run_info_from_filename(self.input_dl2)[1]
+        if not self.source_dep:
+            self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+            ## To reduce the table columns further, add a selection of columns to be read and used.
+            self.effective_time, self.elapsed_time = get_effective_time(self.data)
+            self.run_number = run_info_from_filename(self.input_dl2)[1]
 
-        self.data = self.event_sel.filter_cut(self.data)
-        self.data = self.fixed_cuts.gh_cut(self.data)
-        self.data = add_icrs_position_params(self.data, self.source_pos)
+            self.data = self.event_sel.filter_cut(self.data)
+            self.data = self.fixed_cuts.gh_cut(self.data)
+            self.data = add_icrs_position_params(self.data, self.source_pos)
+
+        else:
+            
+            srcdep_pos_keys = get_srcdep_index_keys(self.input_dl2)
+
+            for i, srcdep_pos in enumerate(srcdep_pos_keys):
+                data_temp = read_data_dl2_to_QTable(str(self.input_dl2), srcdep_pos=srcdep_pos)
+
+                if i==0:
+                    self.effective_time, self.elapsed_time = get_effective_time(data_temp)
+                    self.run_number = run_info_from_filename(self.input_dl2)[1]
+
+                data_temp = self.event_sel.filter_cut(data_temp)
+                data_temp = self.fixed_cuts.gh_cut(data_temp)
+                data_temp = self.fixed_cuts.alpha_cut(data_temp)
+
+                # set expected source positions as reco positions
+                time = data_temp['dragon_time']
+                obstime = Time(time, scale='utc', format='unix')
+                expected_src_x = data_temp['expected_src_x'] * u.m
+                expected_src_y = data_temp['expected_src_y'] * u.m
+                focal = 28 * u.m
+                pointing_alt = data_temp['pointing_alt']
+                pointing_az  = data_temp['pointing_az']
+                expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+                data_temp["reco_alt"] = expected_src_altaz.alt
+                data_temp["reco_az"]  = expected_src_altaz.az
+
+                if i==0:
+                    self.data = data_temp
+                else:
+                    self.data = vstack([self.data, data_temp])
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
