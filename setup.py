@@ -25,7 +25,7 @@ tools_list = find_scripts("lstchain/tools", "lstchain_")
 entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
-tests_require = ["pytest", "pytest-ordering"]
+tests_require = ["pytest"]
 docs_require = [
     "sphinx~=4.2",
     "sphinx-automodapi",
@@ -48,9 +48,10 @@ setup(
         'gammapy~=0.18.2',
         'h5py',
         'joblib',
-        'matplotlib>=3.5',
+        'matplotlib~=3.4.3',  # 3.5 is incompatible with gammapy 0.18.2
+        'pyparsing~=2.4',     # fixes issue with matplotlib math in mpl < 3.5
         'numba',
-        'numpy',
+        'numpy<1.22.0a0',
         'pandas',
         'pyirf~=0.5.0',
         'scipy',

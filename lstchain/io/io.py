@@ -23,8 +23,9 @@ from ctapipe.instrument import (
 )
 from ctapipe.io import HDF5TableReader
 from ctapipe.io import HDF5TableWriter
-from eventio import Histograms
-from eventio.search_utils import yield_toplevel_of_type
+from eventio import Histograms, EventIOFile
+from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
+from eventio.simtel.objects import History, HistoryConfig
 from pyirf.simulations import SimulatedEventsInfo
 from tables import open_file
 from tqdm import tqdm
@@ -62,6 +63,8 @@ __all__ = [
     'merge_dl2_runs',
     'get_srcdep_index_keys',
     'get_srcdep_params',
+    'parse_cfg_bytestring',
+    'extract_simulation_nsb',
     'copy_h5_nodes',
     'add_source_filenames',
 ]
@@ -311,7 +314,7 @@ def auto_merge_h5files(
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            copy_h5_nodes(f1, merge_file)
+            copy_h5_nodes(f1, merge_file, nodes=keys)
 
         bar.update(1)
         for filename in file_list[1:]:
@@ -1298,3 +1301,38 @@ def get_srcdep_params(filename, key):
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
     return data[key]
+
+
+def parse_cfg_bytestring(bytestring):
+    """
+    Parse configuration as read by eventio
+    :param bytes bytestring: A ``Bytes`` object with configuration data for one parameter
+    :return: Tuple in form ``('parameter_name', 'value')``
+    """
+    line_decoded = bytestring.decode('utf-8').rstrip()
+    if 'ECHO' in line_decoded or '#' in line_decoded:
+        return None
+    line_list = line_decoded.split('%', 1)[0]  # drop comment
+    res = re.sub(' +', ' ', line_list).strip().split(' ', 1)  # remove extra whitespaces and split
+    return res[0].upper(), res[1]
+
+
+def extract_simulation_nsb(filename):
+    """
+    Get current run NSB from configuration in simtel file
+    :param str filename: Input file name
+    :return array of `float` by tel_id: NSB rate
+    """
+    nsb = []
+    with EventIOFile(filename) as f:
+        for o in yield_all_subobjects(f, [History, HistoryConfig]):
+            if hasattr(o, 'parse'):
+                try:
+                    cfg_element = parse_cfg_bytestring(o.parse()[1])
+                    if cfg_element is not None:
+                        if cfg_element[0] == 'NIGHTSKY_BACKGROUND':
+                            nsb.append(float(cfg_element[1].strip('all:')))
+                except Exception as e:
+                    print('Unexpected end of %s,\n caught exception %s', filename, e)
+    return nsb
+
