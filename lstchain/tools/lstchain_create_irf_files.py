@@ -270,7 +270,7 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.gh_cut(gammas)
 
         if self.point_like:
-           if not self.source_dep:
+            if not self.source_dep:
                 gammas = self.fixed_cuts.theta_cut(gammas)
                 self.log.info('Theta cuts applied for point like IRF')
             else:

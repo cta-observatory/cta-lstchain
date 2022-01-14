@@ -10,7 +10,6 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
 
-import pandas as pd
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.table import vstack
