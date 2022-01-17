@@ -673,11 +673,11 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
                              )
     ax.grid()
 
-    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt*u.rad,
-                                               dl2_data.reco_az*u.rad,
-                                               dl2_data.mc_alt*u.rad,
-                                               dl2_data.mc_az*u.rad,
-                                               dl2_data.reco_energy*u.TeV,
+    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt.values * u.rad,
+                                               dl2_data.reco_az.values * u.rad,
+                                               dl2_data.mc_alt.values * u.rad,
+                                               dl2_data.mc_az.values * u.rad,
+                                               dl2_data.reco_energy.values * u.TeV,
                                                ax=axes[0, 1],
                                                )
 
