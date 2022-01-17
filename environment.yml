@@ -19,6 +19,7 @@ dependencies:
   - toml
   - protozfits=2.0
   - pyparsing
+  - scikit-learn=1.0
   - sphinx~=4.2
   - sphinx-automodapi
   - sphinx_rtd_theme

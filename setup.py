@@ -56,7 +56,7 @@ setup(
         'pyirf~=0.5.0',
         'scipy',
         'seaborn',
-        'scikit-learn',
+        'scikit-learn~=1.0',
         'tables',
         'toml',
         'traitlets~=5.0.5',
