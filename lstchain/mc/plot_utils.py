@@ -140,6 +140,7 @@ def format_axes_sensitivity(ax):
     ax.grid(ls='--', alpha=.5)
 
 
+@u.quantity_input(emin=u.TeV, emax=u.TeV)
 def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     """
     Plot a percentage of the Crab SED
@@ -218,6 +219,10 @@ def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
                     sensitivity[mask] / (100 * sens_unit) * (dFdE[0] * egeom[mask] * egeom[mask]).to(sens_unit),
                     xerr=binsize[mask], **kwargs)
 
+    ax.set_xlabel(f'Energy / {energy.unit}')
+    ax.set_ylabel(f'Sensitivity / ({sensitivity.unit})')
+    plt.tight_layout()
+
     return ax
 
 
@@ -282,6 +287,7 @@ def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2
     return figarr
 
 
+@u.quantity_input(energy=u.TeV, sensitivity=u.TeV/(u.m**2*u.s))
 def sensitivity_plot_comparison(energy, sensitivity, ax=None):
     """
     Main sensitivity plot.
