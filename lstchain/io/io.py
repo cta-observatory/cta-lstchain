@@ -381,7 +381,9 @@ def merging_check(file_list):
     -------
     list: list of paths of files that can be merged
     """
-    assert len(file_list) > 1, "The list of files is too short"
+    if len(file_list) < 2:
+        raise ValueError("Need at least two files for merging")
+
     mergeable_list = file_list.copy()
 
     first_file = mergeable_list[0]
@@ -406,8 +408,8 @@ def merging_check(file_list):
 
             assert subarray_info == subarray_info0
 
-        except AssertionError:
-            log.exception(rf"{filename} cannot be merged '¯\_(ツ)_/¯'")
+        except ValueError as e:
+            log.error(rf"{filename} cannot be merged '¯\_(ツ)_/¯: {e}'")
             mergeable_list.remove(filename)
 
     return mergeable_list
@@ -774,7 +776,10 @@ def check_mcheader(mcheader1, mcheader2):
             keys.remove(k)
 
     for k in keys:
-        assert mcheader1[k] == mcheader2[k]
+        v1 = mcheader1[k]
+        v2 = mcheader2[k]
+        if v1 != v2:
+            raise ValueError('MC headers do not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -790,7 +795,8 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
     # It does not matter that the number of simulated showers is the same
     keys = ["bins_energy", "bins_core_dist"]
     for k in keys:
-        assert (thrown_events_hist1[k] == thrown_events_hist2[k]).all()
+        if (thrown_events_hist1[k] != thrown_events_hist2[k]).all():
+            raise ValueError(f'Key {k} does not match for histograms')
 
 
 def write_metadata(metadata, output_filename):
