@@ -133,6 +133,10 @@ def main():
             dummy_times[:] = np.nan
             parameters['dragon_time'] = dummy_times
 
+        # fill MC energies with -1 in case they do not exist (like in real data):
+        if 'mc_energy' not in parameters.keys():
+            parameters['mc_energy'] = np.ones_like(parameters['event_id']) * -1
+
         for full_image, event_id, dragon_time, mc_energy in zip(
                 images, parameters['event_id'], parameters['dragon_time'], parameters['mc_energy']):
             if args.calib_file is not None:
