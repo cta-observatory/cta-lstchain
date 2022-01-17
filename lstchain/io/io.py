@@ -1132,7 +1132,7 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info
 
 
-def read_data_dl2_to_QTable(filename, srcdep_pos):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
     Read data DL2 files from lstchain and return QTable format
     Parameters
