@@ -663,10 +663,10 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
-    ax = ctaplot.plot_theta2(dl2_data.reco_alt*u.rad,
-                             dl2_data.reco_az*u.rad,
-                             dl2_data.mc_alt*u.rad,
-                             dl2_data.mc_az*u.rad,
+    ax = ctaplot.plot_theta2(dl2_data.reco_alt.values * u.rad,
+                             dl2_data.reco_az.values * u.rad,
+                             dl2_data.mc_alt.values * u.rad,
+                             dl2_data.mc_az.values * u.rad,
                              ax=axes[0, 0],
                              bins=100,
                              range=(0, 1),
