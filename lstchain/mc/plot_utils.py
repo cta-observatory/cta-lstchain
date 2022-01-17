@@ -203,10 +203,14 @@ def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
     ax.set_yscale("log")
     ax.set_xscale("log")
 
+    kwargs.setdefault('marker', 'o')
+    kwargs.setdefault('color', 'C3')
+    kwargs.setdefault('label', 'sensitivity')
+
     ax.errorbar(egeom[mask].to_value(),
                 (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
                                             * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(),
-                xerr=binsize[mask].to_value(), marker='o', color='C3', label='Sensitivity')
+                xerr=binsize[mask].to_value(), **kwargs)
 
     return ax
 
