@@ -761,7 +761,10 @@ def check_mcheader(mcheader1, mcheader2):
     -------
 
     """
-    assert mcheader1.keys() == mcheader2.keys()
+    if mcheader1.keys() != mcheader2.keys():
+        different = set(mcheader1.keys()).symmetric_difference(mcheader2.keys())
+        raise ValueError(f'MC header keys do not match, differing keys: {different}')
+
     # It does not matter that the number of simulated showers is the same
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
@@ -792,7 +795,13 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
     thrown_events_hist1: `lstchain.io.lstcontainers.ThrownEventsHistogram`
     thrown_events_hist2: `lstchain.io.lstcontainers.ThrownEventsHistogram`
     """
-    assert thrown_events_hist1.keys() == thrown_events_hist2.keys()
+    keys1 = set(thrown_events_hist1.keys())
+    keys2 = set(thrown_events_hist2.keys())
+    if keys1 != keys2:
+        different = keys1.symmetric_difference(keys2)
+        raise ValueError(f'Histogram keys do not match, differing keys: {different}')
+
+
     # It does not matter that the number of simulated showers is the same
     keys = ["bins_energy", "bins_core_dist"]
     for k in keys:
@@ -848,7 +857,12 @@ def check_metadata(metadata1, metadata2):
     metadata1: `lstchain.io.MetaData`
     metadata2: `lstchain.io.MetaData`
     """
-    assert metadata1.keys() == metadata2.keys()
+    keys1 = set(metadata1.keys())
+    keys2 = set(metadata2.keys())
+    if keys1 != keys2:
+        different = keys1.symmetric_difference(keys2)
+        raise ValueError(f'Metadata keys do not match, differing keys: {different}')
+
     keys = ["LSTCHAIN_VERSION"]
     for k in keys:
         v1 = metadata1[k]
