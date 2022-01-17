@@ -241,7 +241,7 @@ class IRFFITSWriter(Tool):
                     p["simulated_spectrum"],
                 )
 
-            if not self.source_depe:
+            if not self.source_dep:
                 for prefix in ("true", "reco"):
                     k = f"{prefix}_source_fov_offset"
                     p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)

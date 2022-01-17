@@ -188,6 +188,7 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.event_sel.filter_cut(data_temp)
                 data_temp = self.fixed_cuts.gh_cut(data_temp)
                 data_temp = self.fixed_cuts.alpha_cut(data_temp)
+                data_temp = add_icrs_position_params(data_temp, self.source_pos)
 
                 # set expected source positions as reco positions
                 time = data_temp['dragon_time']
