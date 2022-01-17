@@ -406,7 +406,8 @@ def merging_check(file_list):
                 check_mcheader(mcheader0, mcheader)
                 check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
 
-            assert subarray_info == subarray_info0
+            if subarray_info != subarray_info0:
+                raise ValueError('Subarrays do not match')
 
         except ValueError as e:
             log.error(rf"{filename} cannot be merged '¯\_(ツ)_/¯: {e}'")
@@ -850,7 +851,10 @@ def check_metadata(metadata1, metadata2):
     assert metadata1.keys() == metadata2.keys()
     keys = ["LSTCHAIN_VERSION"]
     for k in keys:
-        assert metadata1[k] == metadata2[k]
+        v1 = metadata1[k]
+        v2 = metadata2[k]
+        if v1 != v2:
+            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():
