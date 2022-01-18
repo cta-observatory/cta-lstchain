@@ -58,7 +58,6 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --fixed-gh-cut 0.9
-        --fixed-theta-cut 0.2
         --overwrite
 
     Or pass the selection cuts based on fixed gamma efficiency:
@@ -70,7 +69,6 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --optimize-gh
-        --fixed_gh_max_efficiency 95
         --overwrite
     """
 
@@ -123,8 +121,6 @@ class DataReductionFITSWriter(Tool):
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         "input-irf": "DataReductionFITSWriter.input_irf",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
-        "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
-        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -173,19 +169,25 @@ class DataReductionFITSWriter(Tool):
 
         self.log.debug(f"Output DL3 file: {self.output_file}")
 
+        if self.optimize_gh and self.input_irf:
+            try:
+                QTable.read(self.input_irf, hdu="GH CUTS")
+            except KeyError:
+                raise ToolConfigurationError(
+                    f"{self.input_irf} does not have GH CUTS HDU, or "
+                    "does not have energy-dependent gammaness cuts"
+                )
+
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-        ## To reduce the table columns further, add a selection of columns to be read and used.
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.optimize_gh and self.input_irf:
-
-            irf = fits.open(self.input_irf)
-            self.gh_cuts = QTable.read(irf, hdu="GH CUTS")
+        if self.optimize_gh:
+            self.gh_cuts = QTable.read(self.input_irf, hdu="GH CUTS")
 
             self.data = self.fixed_cuts.apply_opt_gh_cuts(
                 self.data, self.gh_cuts

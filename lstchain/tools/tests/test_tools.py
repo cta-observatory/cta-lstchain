@@ -69,6 +69,7 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
                 f"--output-irf-file={irf_file}",
                 "--overwrite",
                 "--optimize-gh",
+                "--point-like",
                 "--optimize-th"
             ],
             cwd=temp_dir_observed_files,

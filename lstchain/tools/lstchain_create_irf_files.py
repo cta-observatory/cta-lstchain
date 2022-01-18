@@ -208,6 +208,9 @@ class IRFFITSWriter(Tool):
         else:
             self.only_gamma_irf = True
 
+        if self.optimize_gh or self.optimize_th:
+            self.optimize_gh = self.optimize_th = True
+
         self.event_sel = EventSelector(parent=self)
         self.fixed_cuts = DL3FixedCuts(parent=self)
         self.data_bin = DataBinning(parent=self)
