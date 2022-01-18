@@ -3,7 +3,7 @@
 import os
 import shutil
 import sys
-from distutils.util import strtobool
+
 
 __all__ = [
     'check_and_make_dir',
@@ -14,6 +14,17 @@ __all__ = [
     'query_yes_no',
 ]
 
+
+def str_to_bool(answer):
+    if answer.lower() in {'y', 'yes'}:
+        return True
+
+    if answer.lower() in {'n', 'no'}:
+        return False
+
+    raise ValueError('Invalid choice, use one of [y, yes, n, no]')
+
+
 def query_yes_no(question, default="yes"):
     """
     Ask a yes/no question via raw_input() and return their answer.
@@ -22,38 +33,43 @@ def query_yes_no(question, default="yes"):
     ----------
     question: str
         question to the user
+
     default: str - "yes", "no" or None
         resumed answer if the user just hits <Enter>.
         "yes" or "no" will set a default answer for the user
         None will require a clear answer from the user
+
     Returns
     -------
     bool - True for "yes", False for "no"
     """
-    valid = {"yes": True, "y": True, "ye": True,
-             "no": False, "n": False}
+
     if default is None:
         prompt = " [y/n] "
     elif default == "yes":
         prompt = " [Y/n] "
+        default = True
     elif default == "no":
         prompt = " [y/N] "
+        default = False
     else:
         raise ValueError("invalid default answer: '%s'" % default)
 
     while True:
         sys.stdout.write(question + prompt)
         choice = input().lower()
-        if default is not None and choice == '':
-            return valid[default]
+        if choice == '' and default is not None:
+            return default
         else:
             try:
-                return bool(strtobool(choice))
-            except:
-                sys.stdout.write("Please respond with 'yes' or 'no' "
-                                 "(or 'y' or 'n').\n")
+                return str_to_bool(choice)
+            except ValueError:
+                print(
+                    "Please respond with 'yes' or 'no' (or 'y' or 'n').",
+                    file=sys.stderr,
+                )
 
-                
+
 def query_continue(question, default="no"):
     """
     Ask a question and if the answer is no, exit the program.

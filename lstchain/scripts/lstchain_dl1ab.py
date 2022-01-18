@@ -15,7 +15,6 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from distutils.util import strtobool
 
 import astropy.units as u
 import numpy as np
@@ -49,36 +48,38 @@ from lstchain.reco.r0_to_dl1 import parametrize_image
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
-    description="Recompute DL1b parameters from a DL1a file")
+    description="Recompute DL1b parameters from a DL1a file"
+)
 
 # Required arguments
-parser.add_argument('--input-file', '-f', action='store', type=str,
-                    dest='input_file',
-                    help='path to the DL1a file ',
-                    default=None, required=True)
+parser.add_argument(
+    '-f', '--input-file',
+    required=True,
+    help='path to the DL1a file ',
+)
 
-parser.add_argument('--output-file', '-o', action='store', type=str,
-                    dest='output_file',
-                    help='key for the table of new parameters',
-                    default=None, required=True)
+parser.add_argument(
+    '-o', '--output-file',
+    required=True,
+    help='key for the table of new parameters',
+)
 # Optional arguments
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    '-c', '--config',
+    dest='config_file',
+    help='Path to a configuration file. If none is given, a standard configuration is applied',
+)
 
-parser.add_argument('--no-image', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='noimage',
-                    help='Boolean. True to remove the images in output file',
-                    default=False)
+parser.add_argument(
+    '--no-image', action='store_true',
+    help='Boolean. True to remove the images in output file',
+)
 
-parser.add_argument('--pedestal-cleaning', action='store',
-                    type=lambda x: bool(strtobool(x)),
-                    dest='pedestal_cleaning',
-                    help='Boolean. True to use pedestal cleaning',
-                    default=False)
+parser.add_argument(
+    '--no-pedestal-cleaning', action='store_false',
+    dest='pedestal_cleaning',
+    help='Disable pedestal cleaning. This is also done automatically for simulations.',
+)
 
 
 def main():
@@ -98,6 +99,10 @@ def main():
     else:
         config = std_config
 
+
+    with tables.open_file(args.input_file, 'r') as f:
+        is_simulation = 'simulation' in f.root
+
     increase_nsb = False
     increase_psf = False
     if "image_modifier" in config:
@@ -111,10 +116,13 @@ def main():
         transition_charge = imconfig["transition_charge"]
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-        if (increase_nsb or increase_psf) and args.noimage is False:
+        if (increase_nsb or increase_psf) and args.no_image is False:
             log.info("NOTE: Using the image_modifier options means images will "
                      "not be saved.")
-            args.noimage = True
+            args.no_image = True
+
+    if is_simulation:
+        args.pedestal_cleaning = False
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
@@ -187,7 +195,7 @@ def main():
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
-    if args.noimage:
+    if args.no_image:
         nodes_keys.remove(dl1_images_lstcam_key)
 
     metadata = read_metadata(args.input_file)
@@ -209,7 +217,7 @@ def main():
         if increase_psf:
             set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
-        image_mask_save = not args.noimage and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
+        image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
