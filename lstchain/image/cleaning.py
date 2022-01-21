@@ -5,24 +5,27 @@ __all__ = ['apply_dynamic_cleaning']
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     """
+    Application of the dynamic cleaning
 
     Parameters
     ----------
-    image
+    image: `np.ndarray`
           Pixel charges
     signal_pixels
-    threshold
+    threshold: `float`
         Minimum average charge in the 3 brightest pixels to apply
         the dynamic cleaning (else nothing is done)
-    fraction
+    fraction: `float`
         Pixels below fraction * (average charge in the 3 brightest pixels)
         will be removed from the cleaned image
 
     Returns
     -------
-    Mask with the selected pixels after the dynamic cleaning
+    mask_dynamic_cleaning: `np.ndarray`
+        Mask with the selected pixels after the dynamic cleaning
 
     """
+
     max_3_value_index = np.argsort(image)[-3:]
     mean_3_max_signal = np.mean(image[max_3_value_index])
 

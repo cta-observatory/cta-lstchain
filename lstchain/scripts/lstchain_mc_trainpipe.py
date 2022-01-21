@@ -51,12 +51,12 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
-    # Train the models
-
+    args = parser.parse_args()
+    
+    #Train the models
+        
     config = {}
     if args.config_file is not None:
         try:

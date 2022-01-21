@@ -16,9 +16,9 @@ test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
-test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.7.6.dev606+g6e697f2d/calibration_filters_52.Run02006.0000.h5'
-test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.7.6.dev606+g6e697f2d/drs4_pedestal.Run02005.0000.h5'
-test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.7.6.dev606+g6e697f2d/time_calibration.Run01625.0000.h5'
+test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.8.2.post2.dev48+gb1343281/calibration_filters_52.Run02006.0000.h5'
+test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.8.2.post2.dev48+gb1343281/drs4_pedestal.Run02005.0000.h5'
+test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.8.2.post2.dev48+gb1343281/time_calibration.Run01625.0000.h5'
 test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
 
 

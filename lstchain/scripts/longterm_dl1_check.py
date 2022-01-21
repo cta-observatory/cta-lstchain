@@ -627,7 +627,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     interleaved_rate_tolerance = 0.05
     # Muon rates
     mu_a = 1.02
-    mu_b = 2.180  # reference muon rate = mu_b + mu_b * cos(zenith)
+    mu_b = 2.180  # reference muon rate = mu_a + mu_b * cos(zenith)
     muon_rate_tolerance = 0.15
 
     # cosmics rates

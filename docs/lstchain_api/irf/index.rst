@@ -1,26 +1,17 @@
 .. _irf:
 
-======================================
-Intrument Response Functions (``irf``)
-======================================
+====================================
+Intrument Response Functions (`irf`)
+====================================
+
+.. currentmodule:: lstchain.io
+
+Introduction
+============ 
 
 Library containing the functions and classes to produce LST IRFs using MC DL2 files.
 
-Submodules
-----------
-
-lstchain.irf.hdu\_table module
-------------------------------
-
-.. automodule:: lstchain.irf.hdu_table
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: lstchain.irf
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: lstchain.irf.hdu_table
+   :no-inheritance-diagram:
+.. automodapi:: lstchain.irf
+   :no-inheritance-diagram:

@@ -2,6 +2,7 @@ import logging
 import os
 import re
 from multiprocessing import Pool
+import warnings
 
 import astropy.units as u
 import ctapipe
@@ -23,8 +24,9 @@ from ctapipe.io import (
     HDF5TableReader,
     HDF5TableWriter,
 )
-from eventio import Histograms
-from eventio.search_utils import yield_toplevel_of_type
+from eventio import Histograms, EventIOFile
+from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
+from eventio.simtel.objects import History, HistoryConfig
 from pyirf.simulations import SimulatedEventsInfo
 from tables import open_file
 from tqdm import tqdm
@@ -50,6 +52,7 @@ __all__ = [
     'check_metadata',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
+    'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
     'get_srcdep_index_keys',
@@ -58,6 +61,7 @@ __all__ = [
     'global_metadata',
     'merge_dl2_runs',
     'merging_check',
+    'parse_cfg_bytestring',
     'read_camera_geometries',
     'read_camera_readouts',
     'read_data_dl2_to_QTable',
@@ -86,6 +90,7 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
+
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -262,31 +267,36 @@ def copy_h5_nodes(from_file, to_file, nodes=None):
 
     groups = set()
 
-    for k in keys:
-        in_node = from_file.root[k]
-        parent_path = in_node._v_parent._v_pathname
-        name = in_node._v_name
-        groups.add(parent_path)
+    with warnings.catch_warnings():
+        # when copying nodes, we have no control over names
+        # so it does not make sense to warn about them
+        warnings.simplefilter('ignore', tables.NaturalNameWarning)
 
-        if isinstance(in_node, tables.Table):
-            t = to_file.create_table(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                t.attrs[att] = from_file.root[k].attrs[att]
+        for k in keys:
+            in_node = from_file.root[k]
+            parent_path = in_node._v_parent._v_pathname
+            name = in_node._v_name
+            groups.add(parent_path)
 
-        elif isinstance(in_node, tables.Array):
-            a = to_file.create_array(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                a.attrs[att] = in_node.attrs[att]
+            if isinstance(in_node, tables.Table):
+                t = to_file.create_table(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    t.attrs[att] = from_file.root[k].attrs[att]
+
+            elif isinstance(in_node, tables.Array):
+                a = to_file.create_array(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    a.attrs[att] = in_node.attrs[att]
 
     # after copying the datasets, also make sure we copy group metadata
     # of all copied groups
@@ -333,7 +343,7 @@ def auto_merge_h5files(
     bar = tqdm(total=len(file_list), disable=not progress_bar)
     with open_file(output_filename, 'w', filters=filters) as merge_file:
         with open_file(file_list[0]) as f1:
-            copy_h5_nodes(f1, merge_file)
+            copy_h5_nodes(f1, merge_file, nodes=keys)
 
         bar.update(1)
         for filename in file_list[1:]:
@@ -1305,3 +1315,38 @@ def get_srcdep_params(filename, key):
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
     return data[key]
+
+
+def parse_cfg_bytestring(bytestring):
+    """
+    Parse configuration as read by eventio
+    :param bytes bytestring: A ``Bytes`` object with configuration data for one parameter
+    :return: Tuple in form ``('parameter_name', 'value')``
+    """
+    line_decoded = bytestring.decode('utf-8').rstrip()
+    if 'ECHO' in line_decoded or '#' in line_decoded:
+        return None
+    line_list = line_decoded.split('%', 1)[0]  # drop comment
+    res = re.sub(' +', ' ', line_list).strip().split(' ', 1)  # remove extra whitespaces and split
+    return res[0].upper(), res[1]
+
+
+def extract_simulation_nsb(filename):
+    """
+    Get current run NSB from configuration in simtel file
+    :param str filename: Input file name
+    :return array of `float` by tel_id: NSB rate
+    """
+    nsb = []
+    with EventIOFile(filename) as f:
+        for o in yield_all_subobjects(f, [History, HistoryConfig]):
+            if hasattr(o, 'parse'):
+                try:
+                    cfg_element = parse_cfg_bytestring(o.parse()[1])
+                    if cfg_element is not None:
+                        if cfg_element[0] == 'NIGHTSKY_BACKGROUND':
+                            nsb.append(float(cfg_element[1].strip('all:')))
+                except Exception as e:
+                    print('Unexpected end of %s,\n caught exception %s', filename, e)
+    return nsb
+

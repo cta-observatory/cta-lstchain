@@ -13,6 +13,7 @@ import astropy.units as u
 import numpy as np
 import pandas as pd
 import tables
+from scipy.interpolate import interp1d
 from astropy.table import Table
 from ctapipe.calib.camera import CameraCalibrator
 from ctapipe.containers import EventType
@@ -29,9 +30,11 @@ from traitlets.config import Config
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
+from ..analysis import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
+from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
@@ -50,8 +53,8 @@ from ..io import (
     write_simtel_energy_histogram,
     write_subarray_tables,
 )
-from ..io.io import add_column_table
-from ..io.io import dl1_params_lstcam_key
+
+from ..io.io import add_column_table, extract_simulation_nsb
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 
@@ -239,7 +242,7 @@ def get_dl1(
 
 
 def r0_to_dl1(
-    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    input_filename=None,
     output_filename=None,
     custom_config={},
 ):
@@ -259,6 +262,11 @@ def r0_to_dl1(
     -------
 
     """
+
+    # using None as default and using `get_dataset_path` only inside the function
+    # prevents downloading at import time.
+    if input_filename is None:
+        get_dataset_path('gamma_test_large.simtel.gz')
 
     if output_filename is None:
         try:
@@ -330,6 +338,39 @@ def r0_to_dl1(
             filters=HDF5_ZSTD_FILTERS,
             metadata=metadata,
         )
+    nsb_tuning = False
+    if 'waveform_nsb_tuning' in config.keys():
+        nsb_tuning = config['waveform_nsb_tuning']['nsb_tuning']
+        if nsb_tuning:
+            if is_simu:
+                nsb_original = extract_simulation_nsb(input_filename)
+                pulse_template = NormalizedPulseTemplate.load_from_eventsource(
+                    subarray.tel[1].camera.readout
+                )
+                if 'nsb_tuning_ratio' in config['waveform_nsb_tuning'].keys():
+                    # get value from config to possibly extract it beforehand on multiple files for averaging purposes
+                    # or gain time
+                    nsb_tuning_ratio = config['waveform_nsb_tuning']['nsb_tuning_ratio']
+                else:
+                    # extract the pedestal variance difference between the current MC file and the target data
+                    # FIXME? fails for multiple telescopes
+                    nsb_tuning_ratio = calculate_required_additional_nsb(input_filename,
+                                                                         config['waveform_nsb_tuning']['target_data'],
+                                                                         config=config)[0]
+                spe = np.loadtxt(config['waveform_nsb_tuning']['spe_location']).T
+                spe_integral = np.cumsum(spe[1])
+                charge_spe_cumulative_pdf = interp1d(spe_integral,spe[0], kind='cubic',
+                                                     bounds_error=False, fill_value=0.,
+                                                     assume_sorted=True)
+                allowed_tel = np.zeros(len(nsb_original), dtype=bool)
+                allowed_tel[np.array(config['source_config']['LSTEventSource']['allowed_tels'])] = True
+                logger.info('Tuning NSB on MC waveform from '
+                            + str(np.asarray(nsb_original)[allowed_tel])
+                            + 'GHz to {0:d}%'.format(int(nsb_tuning_ratio * 100 + 100.5))
+                            + ' for telescopes ids ' + str(config['source_config']['LSTEventSource']['allowed_tels']))
+            else:
+                logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
+                nsb_tuning = False
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -400,6 +441,19 @@ def r0_to_dl1(
 
                     # calibrate and gain select the event by hand for DL1
                     source.r0_r1_calibrator.calibrate(event)
+
+            # Option to add nsb in waveforms
+            if nsb_tuning:
+                # FIXME? assumes same correction ratio for all telescopes
+                for tel_id in config['source_config']['LSTEventSource']['allowed_tels']:
+                    waveform = event.r1.tel[tel_id].waveform
+                    readout = subarray.tel[tel_id].camera.readout
+                    sampling_rate = readout.sampling_rate.to_value(u.GHz)
+                    dt = (1.0 / sampling_rate)
+                    selected_gains = event.r1.tel[tel_id].selected_gain_channel
+                    mask_high = (selected_gains == 0)
+                    tune_nsb_on_waveform(waveform, nsb_tuning_ratio, nsb_original[tel_id] * u.GHz,
+                                         dt * u.ns, pulse_template, mask_high, charge_spe_cumulative_pdf)
 
             # create image for all events
             r1_dl1_calibrator(event)

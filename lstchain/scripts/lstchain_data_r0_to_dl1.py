@@ -128,7 +128,7 @@ def main():
     args = parser.parse_args()
 
     output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     if not args.input_file.is_file():
         log.error('Input file does not exist or is not a file')

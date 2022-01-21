@@ -6,6 +6,7 @@ __all__ = ['plot_muon_event']
 def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord,
                     ringrad_inner, ringrad_outer, event_id):
     """
+    Function to plot single muon events
 
     Parameters
     ----------
@@ -26,6 +27,7 @@ def plot_muon_event(ax, geom, image, centroid, ringrad_camcoord,
     Returns
     -------
     ax : `matplotlib.pyplot.axis`
+
     """
 
     disp0 = CameraDisplay(geom, ax=ax)

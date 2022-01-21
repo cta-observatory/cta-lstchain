@@ -54,10 +54,10 @@ parser.add_argument('--output_path', '--o', type=str,
                     dest='output_path',
                     help='path where to save plot images')
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+    
     ntelescopes_gamma = 1
     n_bins_energy = 20  # Number of energy bins
     obstime = 50 * 3600 * u.s

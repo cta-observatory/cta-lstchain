@@ -26,6 +26,12 @@ __all__ = [
     'setup_logging',
 ]
 
+__all__ = [
+    'analyze_on_off',
+    'analyze_wobble',
+    'setup_logging',
+]
+
 LOGGER = logging.getLogger('post_dl2')
 LOGGER.setLevel(logging.DEBUG)
 LOGGING_LEVELS = {0: logging.ERROR, 1: logging.INFO, 2: logging.DEBUG}

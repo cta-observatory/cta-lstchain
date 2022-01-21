@@ -4,23 +4,17 @@
 Analysis
 ========
 
+.. currentmodule:: lstchain.analysis
+
+Introduction
+============ 
+		   
 Module containing scripts to perform :math:`{\theta}^2/{\alpha}` plots using DL2 files.
 
-Submodules
-----------
+Reference/API
+=============
 
-lstchain.analysis.post\_dl2
----------------------------
+.. automodapi:: lstchain.analysis.post_dl2
+   :no-inheritance-diagram:
 
-.. automodule:: lstchain.analysis.post_dl2
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: lstchain.analysis
-   :members:
-   :undoc-members:
-   :show-inheritance:
