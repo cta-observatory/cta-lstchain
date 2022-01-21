@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 import pandas as pd
 from lstchain.io.io import dl2_params_lstcam_key
 
