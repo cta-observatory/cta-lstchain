@@ -157,7 +157,7 @@ class DL1DataCheckContainer(Container):
                                       frame=AltAz(obstime=time_utc,
                                                   location=location))
         self.tel_ra = telescope_pointing.icrs.ra.value
-        self.tel_dec = telescope_pointing.ucrs.dec.value
+        self.tel_dec = telescope_pointing.icrs.dec.value
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
