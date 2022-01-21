@@ -59,7 +59,8 @@ def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
 
 def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulated_dl2_file):
     """
-    Generating full enclosure IRF file from a test DL2 files
+    Generating full enclosure IRF file from a test DL2 files, using
+    a config file
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
@@ -84,7 +85,7 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
 
 
 @pytest.mark.private_data
-@pytest.mark.run(after="test_create_irf")
+@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
@@ -92,8 +93,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
     irf_file = temp_dir_observed_files / "irf.fits.gz"
-    config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
-
+    
     assert (
         run_tool(
             DataReductionFITSWriter(),
@@ -110,6 +110,18 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
         )
         == 0
     )
+
+@pytest.mark.private_data
+@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
+def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
+    """
+    Generating an DL3 file from a test DL2 files and test IRF file, using
+    a config file
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
 
     assert (
         run_tool(
