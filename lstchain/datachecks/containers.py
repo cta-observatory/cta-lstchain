@@ -8,9 +8,9 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
-#from astropy.time import Time
-#from astropy.coordinates import SkyCoord, AltAz
-#from lstchain.reco.utils import location
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, AltAz
+from lstchain.reco.utils import location
 
 import warnings
 from ctapipe.core import Container, Field
@@ -40,6 +40,8 @@ class DL1DataCheckContainer(Container):
     num_ucts_jumps = Field(-1, 'Number of observed (and corrected) UCTS jumps')
     mean_alt_tel = Field(None, 'Mean telescope altitude')
     mean_az_tel = Field(None, 'Mean telescope azimuth')
+    tel_ra = Field(None, 'Telescope pointing RA (deg)')
+    tel_dec = Field(None, 'Telescope pointing declination')
 
     # sampled quantities, stored every few events:
     sampled_event_ids = Field(None, 'sampled event ids')
@@ -147,13 +149,15 @@ class DL1DataCheckContainer(Container):
         # problematic for culmination towards north, az= ~0  ~2pi):
         self.mean_az_tel = table['az_tel'][int(len(table)/2)]
         self.mean_alt_tel = table['alt_tel'][int(len(table)/2)]
-        #time_utc = Time(table['dragon_time'][int(len(table)/2)],
-        #                format="unix", scale="utc")
+        time_utc = Time(table['dragon_time'][int(len(table)/2)],
+                        format="unix", scale="utc")
         # Calculate telescope pointing in sky coordinates
-        #telescope_pointing = SkyCoord(alt=self.mean_alt_tel*u.rad,
-        #                              az=self.mean_az_tel*u.rad,
-        #                              frame=AltAz(obstime=time_utc,
-        #                                          location=location))
+        telescope_pointing = SkyCoord(alt=self.mean_alt_tel*u.rad,
+                                      az=self.mean_az_tel*u.rad,
+                                      frame=AltAz(obstime=time_utc,
+                                                  location=location))
+        self.tel_ra = telescope_pointing.icrs.ra.value
+        self.tel_dec = telescope_pointing.ucrs.dec.value
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
