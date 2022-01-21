@@ -8,9 +8,9 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, AltAz
-from lstchain.reco.utils import location
+#from astropy.time import Time
+#from astropy.coordinates import SkyCoord, AltAz
+#from lstchain.reco.utils import location
 
 import warnings
 from ctapipe.core import Container, Field
