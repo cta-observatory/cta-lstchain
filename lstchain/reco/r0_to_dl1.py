@@ -54,7 +54,7 @@ from ..io import (
     write_subarray_tables,
 )
 
-from ..io.io import add_column_table, extract_simulation_nsb
+from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
 
