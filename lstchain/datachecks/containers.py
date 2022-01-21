@@ -140,7 +140,7 @@ class DL1DataCheckContainer(Container):
             uj = table['ucts_jump']
             # find the first False value, and set to False also all the earlier ones:
             first_non_jump = np.where(uj==False)[0][0]
-            uj[:first_non_jump] = False
+            table['ucts_jump'][:first_non_jump] = False
             self.num_ucts_jumps = np.sum(uj[mask])
             self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
 
