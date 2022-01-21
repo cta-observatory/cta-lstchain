@@ -137,12 +137,13 @@ class DL1DataCheckContainer(Container):
             # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
             # but these are not new jumps, just the ones from previous subruns, so they should 
             # not be counted.
-            uj = table['ucts_jump']
+            uj = table['ucts_jump'].to_numpy(copy=True)
             # find the first False value, and set to False also all the earlier ones:
             first_non_jump = np.where(uj==False)[0][0]
-            table.loc[:first_non_jump, 'ucts_jump'] = False
+            uj[:first_non_jump] = False
+            # count only the jumps occurring in events of the type we are
+            # processing:
             self.num_ucts_jumps = np.sum(uj[mask])
-            self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
 
         # since azimuth can go through 0, just take the pointing of the
         # event in the middle of the table (the actual mean value would be
