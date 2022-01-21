@@ -17,7 +17,6 @@ $> python lstchain_mc_r0_to_dl2.py
 
 import argparse
 import os
-from ctapipe.utils import get_dataset_path
 from distutils.util import strtobool
 from pathlib import Path
 

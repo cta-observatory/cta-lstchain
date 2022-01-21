@@ -15,8 +15,6 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
-from ctapipe.image.hillas import camera_to_shower_coordinates
-from ctapipe.instrument import OpticsDescription
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
