@@ -19,6 +19,7 @@ def find_scripts(script_dir, prefix):
 
 
 lstchain_list = find_scripts("lstchain/scripts", "lstchain_")
+lstchain_list += find_scripts("lstchain/scripts", "longterm_")
 onsite_list = find_scripts("lstchain/scripts/onsite", "onsite_")
 tools_list = find_scripts("lstchain/tools", "lstchain_")
 
