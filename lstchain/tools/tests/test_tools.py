@@ -1,16 +1,16 @@
 import pytest
 from ctapipe.core import run_tool
 import os
+from astropy.io import fits
 
 
-def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
+def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
-    Generating an IRF file from a test DL2 files
+    Generating full enclosure IRF file from a test DL2 files
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
     irf_file = temp_dir_observed_files / "irf.fits.gz"
-    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_tool_config.json")
 
     assert (
         run_tool(
@@ -26,6 +26,14 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
         )
         == 0
     )
+
+def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
+    """
+    Generating point-like IRF file from a test DL2 files
+    """
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+
+    irf_file = temp_dir_observed_files / "irf.fits.gz"
 
     assert (
         run_tool(
@@ -42,6 +50,22 @@ def test_create_irf(temp_dir_observed_files, simulated_dl2_file):
         )
         == 0
     )
+
+    with fits.open(irf_file) as hdul:
+        for hdu in hdul[1:]:
+            assert 'RAD_MAX' in hdu.header
+            assert isinstance(hdu.header['RAD_MAX'], float)
+
+
+def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulated_dl2_file):
+    """
+    Generating full enclosure IRF file from a test DL2 files
+    """
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+
+    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    config_file = os.path.join(os.getcwd(), "./docs/examples/irf_tool_config.json")
+
     assert (
         run_tool(
             IRFFITSWriter(),
