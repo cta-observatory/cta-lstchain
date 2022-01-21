@@ -294,7 +294,10 @@ class IRFFITSWriter(Tool):
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
+            extra_headers["RAD_MAX"] = (
+                self.fixed_cuts.fixed_theta_cut,
+                'deg'
+            )
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
