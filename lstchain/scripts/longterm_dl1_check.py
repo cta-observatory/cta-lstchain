@@ -330,12 +330,13 @@ def main():
 
         runsummary['min_azimuth'].extend([table.col('mean_az_tel').min()])
         az = table.col('mean_az_tel')
-        mean_az = np.atan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
+        mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
         runsummary['mean_azimuth'].extend([mean_az])
         runsummary['max_azimuth'].extend([table.col('mean_az_tel').max()])
 
         ra = np.deg2rad(table.col('tel_ra'))
-        mean_ra = np.rad2deg(np.atan2(np.mean(np.sin(ra)), np.mean(np.cos(ra))))
+        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
+                ra))))
         runsummary['mean_ra'].extend([mean_ra])
 
         runsummary['mean_dec'].extend([table.col('tel_dec').mean()])
