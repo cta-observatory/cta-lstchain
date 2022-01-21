@@ -8,6 +8,11 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, AltAz
+from lstchain.reco.utils import location
+
+import warnings
 from ctapipe.core import Container, Field
 
 __all__ = [
@@ -135,8 +140,20 @@ class DL1DataCheckContainer(Container):
             first_non_jump = np.where(uj==False)[0][0]
             uj[:first_non_jump] = False
             self.num_ucts_jumps = np.sum(uj[mask])
-        self.mean_alt_tel = np.mean(table['alt_tel'])
-        self.mean_az_tel = np.mean(table['az_tel'])
+            self.num_ucts_jumps = np.sum(table['ucts_jump'][mask])
+
+        # since azimuth can go through 0, just take the pointing of the
+        # event in the middle of the table (the actual mean value would be
+        # problematic for culmination towards north, az= ~0  ~2pi):
+        self.mean_az_tel = table['az_tel'][int(len(table)/2)]
+        self.mean_alt_tel = table['alt_tel'][int(len(table)/2)]
+        #time_utc = Time(table['dragon_time'][int(len(table)/2)],
+        #                format="unix", scale="utc")
+        # Calculate telescope pointing in sky coordinates
+        #telescope_pointing = SkyCoord(alt=self.mean_alt_tel*u.rad,
+        #                              az=self.mean_az_tel*u.rad,
+        #                              frame=AltAz(obstime=time_utc,
+        #                                          location=location))
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
