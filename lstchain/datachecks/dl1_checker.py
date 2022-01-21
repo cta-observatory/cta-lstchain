@@ -313,7 +313,8 @@ def process_dl1_file(filename, bins, tel_id=1):
                dl1datacheck_cosmics
 
 
-def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=None, tel_id=1):
+def plot_datacheck(datacheck_filename, out_path=None, batch=False,
+                   muons_dir=None, create_pdf=True, tel_id=1):
     """
     Plot datacheck
 
@@ -352,6 +353,10 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
         else:
             # just a single .h5 file:
             datacheck_filename = datacheck_filename[0]
+
+    if not create_pdf:
+        # Nothing else to be done:
+        return
 
     pdf_filename = Path(datacheck_filename).with_suffix('.pdf')
     # set output directory if provided:
