@@ -10,6 +10,7 @@ they are stored at the same place as the DL3 files.
 from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
+
 __all__ = ["FITSIndexWriter"]
 
 
@@ -69,7 +70,6 @@ class FITSIndexWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
         self.file_list = []
         self.hdu_index_filename = "hdu-index.fits.gz"
         self.obs_index_filename = "obs-index.fits.gz"
@@ -77,8 +77,8 @@ class FITSIndexWriter(Tool):
     def setup(self):
 
         list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
-        if list_files == []:
-            self.log.critical(f"No files found with pattern {self.file_pattern}")
+        if len(list_files) == 0:
+            raise ToolConfigurationError(f"No files found with pattern {self.file_pattern} in {self.input_dl3_dir}")
 
         for f in list_files:
             self.file_list.append(f.name)
