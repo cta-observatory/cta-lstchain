@@ -278,7 +278,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (trigger_time + time_start).value / 2 *u.s,
+            'sample_time': (time_start +(trigger_time - time_start) / 2).value *u.s,
             'sample_time_min': time_start.value*u.s,
             'sample_time_max': trigger_time.value*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,
