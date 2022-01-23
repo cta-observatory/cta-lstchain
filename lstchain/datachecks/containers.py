@@ -312,17 +312,21 @@ class DL1DataCheckContainer(Container):
         self.hist_pixelchargespectrum = counts
 
         # Find bright stars (mag<=8 within 3 deg of telescope pointing):
-        pointing = SkyCoord(ra=self.tel_ra * u.deg, dec=self.tel_dec * u.deg)
-        bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
-                                        magnitude_cut=8)
+
+        # Just use the time in the middle of the subrun, from the sampled times:
         sampled_times = self.dragon_time
-        # Just take a representative time in the middle of the subrun:
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
+        horizon_frame = AltAz(location=location, obstime=obstime)
+        pointing = SkyCoord(az=self.mean_az_tel*u.rad,
+                            alt=self.mean_alt_tel*u.rad,
+                            frame=horizon_frame)
+        bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
+                                        magnitude_cut=8)
         camera_frame = CameraFrame(telescope_pointing=pointing,
-                                   focal_length = focal_length,
-                                   obstime = obstime,
-                                   location = location)
+                                   focal_length=focal_length,
+                                   obstime=obstime,
+                                   location=location)
         # radius around star within which we consider the pixel may be affected
         # (hence we will not raise a flag if e.g. its pedestal std dev is high):
         r_around_star = 0.25 * u.deg
