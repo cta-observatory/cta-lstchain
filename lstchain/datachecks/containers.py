@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, AltAz
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from lstchain.reco.utils import location
 
 import warnings
@@ -21,6 +21,8 @@ __all__ = [
     'count_trig_types',
 ]
 
+from ctapipe.utils import get_bright_stars
+from ctapipe.coordinates import CameraFrame
 
 class DL1DataCheckContainer(Container):
     """
@@ -75,9 +77,12 @@ class DL1DataCheckContainer(Container):
 
     # pixel-wise quantities, one entry per pixel. Used also for 2d
     # histogramming of cog position.
+
     cog_within_pixel = Field(None, 'Number of image cogs within pixel')
     cog_within_pixel_intensity_gt_200 = \
         Field(None, 'Number of image within pixel, intensity>200pe')
+
+    num_nearby_stars = Field(-1, 'Number of nearby bright stars')
     charge_mean = Field(-1, 'Mean of pixel charge')
     charge_stddev = Field(-1, 'Standard deviation of pixel charge')
     time_mean = Field(-1, 'Mean of pulse time')
@@ -269,7 +274,7 @@ class DL1DataCheckContainer(Container):
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
     def fill_pixel_wise_info(self, table, mask, histogram_binnings,
-                             event_type=''):
+                             focal_length, geom, event_type = ''):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -278,9 +283,10 @@ class DL1DataCheckContainer(Container):
         table: DL1 parameters, event-wise python table "image" from DL1 files
         mask: indicates rows that have to be used for filling this container
         histogram_binnings: container of type DL1DataCheckHistogramBins, with
-        definition of the binnings of all the histograms
-        fill_time_info: fill the information on the pixel pulse times; can be
-        set to False e.g. for pedestal events
+                            definition of the binnings of all the histograms
+        focal_length: quantity; telescope focal length
+        geom: camera geometry, ctapipe.instrument.camera.geometry.CameraGeometry
+        event_type: 'pedestals' 'flatfield' or 'cosmics'
 
         Returns
         -------
@@ -304,6 +310,33 @@ class DL1DataCheckContainer(Container):
             plt.hist(charge[charge > 0].flatten(),
                      bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
+
+        # Find bright stars (mag<=8 within 3 deg of telescope pointing):
+        pointing = SkyCoord(ra=self.tel_ra * u.deg, dec=self.tel_dec * u.deg)
+        bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
+                                        magnitude_cut=8)
+        obstime = Time(self.dragon_time, scale='utc', format='unix')
+        camera_frame = CameraFrame(telescope_pointing=pointing,
+                                   focal_length = focal_length,
+                                   obstime = obstime,
+                                   location = location)
+        # radius around star within which we consider the pixel may be affected
+        # (hence we will not raise a flag if e.g. its pedestal std dev is high):
+        r_around_star = 0.25 * u.deg
+
+        # Account for average spot shift due to coma aberration:
+        relative_shift = 1.0466 # For LST's paraboloid
+        self.num_nearby_stars = np.zeros_like(geom.pix_id)
+        for star in bright_stars:
+            star_radec = star['ra_dec']
+            star_cam = star_radec.transform_to(camera_frame)
+            x = star_cam.x.to(u.m) * relative_shift
+            y = star_cam.y.to(u.m) * relative_shift
+            angular_distance = np.rad2deg(np.arctan2(np.hypot(geom.pix_x - x,
+                                                              geom.pix_y - y),
+                                                     focal_length*relative_shift))
+            illuminated_pixels = angular_distance < r_around_star
+            self.num_nearby_stars[illuminated_pixels] += 1
 
         # for pedestal events nothing else to be done:
         if event_type == 'pedestals':

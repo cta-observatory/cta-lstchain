@@ -283,6 +283,8 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                         geom, bins)
             dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
                                                         pedestal_mask, bins,
+                                                        equivalent_focal_length,
+                                                        geom,
                                                         'pedestals')
         else:
             dl1datacheck_pedestals = None
@@ -294,6 +296,8 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                         geom, bins)
             dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
                                                         flatfield_mask, bins,
+                                                        equivalent_focal_length,
+                                                        geom,
                                                         'flatfield')
         else:
             dl1datacheck_flatfield = None
@@ -305,6 +309,8 @@ def process_dl1_file(filename, bins, tel_id=1):
                                                       geom, bins)
             dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
                                                       cosmics_mask, bins,
+                                                      equivalent_focal_length,
+                                                      geom,
                                                       'cosmics')
         else:
             dl1datacheck_cosmics = None
