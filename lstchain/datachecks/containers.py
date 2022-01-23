@@ -317,7 +317,7 @@ class DL1DataCheckContainer(Container):
                                         magnitude_cut=8)
         sampled_times = self.dragon_time
         # Just take a representative time in the middle of the subrun:
-        obstime = Time(sampled_times[int(sampled_times/2)],
+        obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
         camera_frame = CameraFrame(telescope_pointing=pointing,
                                    focal_length = focal_length,
