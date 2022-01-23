@@ -315,7 +315,10 @@ class DL1DataCheckContainer(Container):
         pointing = SkyCoord(ra=self.tel_ra * u.deg, dec=self.tel_dec * u.deg)
         bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
                                         magnitude_cut=8)
-        obstime = Time(self.dragon_time, scale='utc', format='unix')
+        sampled_times = self.dragon_time
+        # Just take a representative time in the middle of the subrun:
+        obstime = Time(sampled_times[int(sampled_times/2)],
+                       scale='utc', format='unix')
         camera_frame = CameraFrame(telescope_pointing=pointing,
                                    focal_length = focal_length,
                                    obstime = obstime,
