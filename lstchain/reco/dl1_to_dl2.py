@@ -314,9 +314,9 @@ def build_models(filegammas, fileprotons,
             subarray_info = SubarrayDescription.from_hdf(filegammas)
             tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
             focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_gamma =pd.concat(get_source_dependent_parameters(df_gamma, config, focal_length=focal_length), axis=1)
-
-        df_gamma = pd.concat([df_gamma, src_dep_df_gamma], axis=1)
+            src_dep_df_gamma = get_source_dependent_parameters(df_gamma, config, focal_length=focal_length)
+            
+        df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
         # if source-dependent parameters are already in dl1 data, just read those data
         # if not, source-dependent parameters are added here
@@ -327,9 +327,9 @@ def build_models(filegammas, fileprotons,
             subarray_info = SubarrayDescription.from_hdf(fileprotons)
             tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
             focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
-            src_dep_df_proton =pd.concat(get_source_dependent_parameters(df_proton, config, focal_length=focal_length), axis=1)
+            src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
 
-        df_proton = pd.concat([df_proton, src_dep_df_proton], axis=1)
+        df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
