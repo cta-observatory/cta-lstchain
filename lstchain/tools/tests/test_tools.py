@@ -83,6 +83,16 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
         == 0
     )
 
+
+def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated_dl2_file):
+    """
+    Generating point-like IRF file from a test DL2 files, using
+    energy-dependent optimized cuts
+    """
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+
+    irf_file = temp_dir_observed_files / "irf.fits.gz"
+
     assert (
         run_tool(
             IRFFITSWriter(),
@@ -101,6 +111,7 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
         == 0
     )
 
+
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
@@ -110,7 +121,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
     irf_file = temp_dir_observed_files / "irf.fits.gz"
-    
+
     assert (
         run_tool(
             DataReductionFITSWriter(),

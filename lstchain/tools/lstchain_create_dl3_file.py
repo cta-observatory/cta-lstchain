@@ -6,6 +6,10 @@ Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector and DL3FixedCuts Component
 and also given in some example configs in docs/examples/
 
+For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
+for passing the fixed gamma efficiency to calculate the gammaness cuts if
+each energy bin. The energy-dependent cuts are stored as GH CUTS HDU
+
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
@@ -13,24 +17,9 @@ copy and append the relevant example config files, into a custom config file.
 from astropy.io import fits
 from astropy.table import QTable
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from ctapipe.core import (
-    Provenance,
-    Tool,
-    ToolConfigurationError,
-    traits,
-)
 
-from lstchain.io import EventSelector, DL3FixedCuts
+from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable
-from lstchain.irf import (
-    add_icrs_position_params,
-    create_event_list,
-)
-from lstchain.paths import (
-    dl2_to_dl3_filename,
-    run_info_from_filename,
-)
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list, add_icrs_position_params
@@ -204,7 +193,7 @@ class DataReductionFITSWriter(Tool):
         if self.optimize_gh and self.input_irf:
             self.gh_cuts = QTable.read(self.input_irf, hdu="GH CUTS")
 
-            self.data = self.fixed_cuts.apply_opt_gh_cuts(
+            self.data = self.fixed_cuts.apply_optimized_gh_cuts(
                 self.data, self.gh_cuts
             )
             self.data = add_icrs_position_params(self.data, self.source_pos)
