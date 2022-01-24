@@ -1,34 +1,35 @@
 import logging
 import os
 import re
-from multiprocessing import Pool
 import warnings
+from multiprocessing import Pool
+from contextlib import ExitStack
 
-import astropy.units as u
-import ctapipe
-import ctapipe_io_lst
 import numpy as np
 import pandas as pd
 import tables
+from tables import open_file
+from tqdm import tqdm
+
+import astropy.units as u
 from astropy.table import Table, vstack, QTable
+
 from ctapipe.containers import SimulationConfigContainer
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.io import HDF5TableReader
-from ctapipe.io import HDF5TableWriter
+from ctapipe.io import HDF5TableReader, HDF5TableWriter
+
 from eventio import Histograms, EventIOFile
 from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
 from eventio.simtel.objects import History, HistoryConfig
-from pyirf.simulations import SimulatedEventsInfo
-from tables import open_file
-from tqdm import tqdm
-from contextlib import ExitStack
 
-import lstchain
+from pyirf.simulations import SimulatedEventsInfo
+
 from .lstcontainers import (
     ExtraMCInfo,
     MetaData,
     ThrownEventsHistogram,
 )
+
 
 log = logging.getLogger(__name__)
 
@@ -622,11 +623,14 @@ def global_metadata():
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
+    from ctapipe import __version__ as ctapipe_version
+    from ctapipe_io_lst import __version__ as ctapipe_io_lst_version
+    from .. import __version__ as lstchain_version
 
     metadata = MetaData()
-    metadata.LSTCHAIN_VERSION = lstchain.__version__
-    metadata.CTAPIPE_VERSION = ctapipe.__version__
-    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
+    metadata.LSTCHAIN_VERSION = lstchain_version
+    metadata.CTAPIPE_VERSION = ctapipe_version
+    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst_version
     metadata.CONTACT = "LST Consortium"
 
     return metadata
