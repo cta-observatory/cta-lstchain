@@ -11,9 +11,10 @@ Usage:
 $> python lstchain_dl1ab.py
 --input-file dl1_gamma_20deg_0deg_run8___cta-prod3-lapalma-2147m-LaPalma-FlashCam.simtel.gz
 """
-
+import sys
 import argparse
 import logging
+from pathlib import Path
 from distutils.util import strtobool
 
 import astropy.units as u
@@ -77,12 +78,15 @@ parser.add_argument('--pedestal-cleaning', action='store',
 def main():
     args = parser.parse_args()
 
-    std_config = get_standard_config()
-
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.getLogger().addHandler(handler)
 
+    if Path(args.output_file).exists():
+        log.critical('Outputfile already exists')
+        sys.exit(1)
+
+    std_config = get_standard_config()
     if args.config_file is not None:
         config = replace_config(std_config, read_configuration_file(args.config_file))
     else:

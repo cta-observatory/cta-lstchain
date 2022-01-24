@@ -2,6 +2,7 @@ import logging
 import os
 import re
 from multiprocessing import Pool
+import warnings
 
 import astropy.units as u
 import ctapipe
@@ -243,31 +244,36 @@ def copy_h5_nodes(from_file, to_file, nodes=None):
 
     groups = set()
 
-    for k in keys:
-        in_node = from_file.root[k]
-        parent_path = in_node._v_parent._v_pathname
-        name = in_node._v_name
-        groups.add(parent_path)
+    with warnings.catch_warnings():
+        # when copying nodes, we have no control over names
+        # so it does not make sense to warn about them
+        warnings.simplefilter('ignore', tables.NaturalNameWarning)
 
-        if isinstance(in_node, tables.Table):
-            t = to_file.create_table(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                t.attrs[att] = from_file.root[k].attrs[att]
+        for k in keys:
+            in_node = from_file.root[k]
+            parent_path = in_node._v_parent._v_pathname
+            name = in_node._v_name
+            groups.add(parent_path)
 
-        elif isinstance(in_node, tables.Array):
-            a = to_file.create_array(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                a.attrs[att] = in_node.attrs[att]
+            if isinstance(in_node, tables.Table):
+                t = to_file.create_table(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    t.attrs[att] = from_file.root[k].attrs[att]
+
+            elif isinstance(in_node, tables.Array):
+                a = to_file.create_array(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    a.attrs[att] = in_node.attrs[att]
 
     # after copying the datasets, also make sure we copy group metadata
     # of all copied groups

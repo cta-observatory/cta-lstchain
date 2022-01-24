@@ -241,7 +241,7 @@ def get_dl1(
 
 
 def r0_to_dl1(
-    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    input_filename=None,
     output_filename=None,
     custom_config={},
 ):
@@ -261,6 +261,11 @@ def r0_to_dl1(
     -------
 
     """
+
+    # using None as default and using `get_dataset_path` only inside the function
+    # prevents downloading at import time.
+    if input_filename is None:
+        get_dataset_path('gamma_test_large.simtel.gz')
 
     if output_filename is None:
         try:
