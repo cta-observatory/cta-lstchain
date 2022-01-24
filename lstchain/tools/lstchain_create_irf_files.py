@@ -368,7 +368,10 @@ class IRFFITSWriter(Tool):
             extra_headers["GH_CUT"] = self.fixed_cuts.fixed_gh_cut
 
             if self.point_like:
-                extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
+                extra_headers["RAD_MAX"] = (
+                    self.fixed_cuts.fixed_theta_cut,
+                    'deg'
+                )
         else:
             extra_headers["GH_EFF"] = (
                 self.fixed_cuts.fixed_gh_max_efficiency,
