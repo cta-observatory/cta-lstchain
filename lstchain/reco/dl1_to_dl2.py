@@ -20,10 +20,11 @@ from sklearn.model_selection import train_test_split
 
 from . import disp
 from . import utils
-from ..io import standard_config, replace_config, get_srcdep_index_keys, get_srcdep_params,
+from ..io import standard_config, replace_config, get_dataset_keys, get_srcdep_params
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
+from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
 
 
