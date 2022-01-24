@@ -4,7 +4,6 @@ Factory for the estimation of the flat field coefficients
 
 
 import numpy as np
-from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.core.traits import List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
