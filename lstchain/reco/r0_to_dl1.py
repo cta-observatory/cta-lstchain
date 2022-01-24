@@ -157,7 +157,7 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
         hillas,
     )
     dl1_container.set_leakage(camera_geometry, image, signal_pixels)
-    dl1_container.set_concentration(camera_geometry, image, hillas)
+    dl1_container.set_concentration(geom_selected, image_selectecd, hillas)
     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
 

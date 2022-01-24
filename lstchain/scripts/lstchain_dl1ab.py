@@ -21,7 +21,6 @@ import astropy.units as u
 import numpy as np
 import tables
 from ctapipe.image import (
-    hillas_parameters,
     tailcuts_clean,
     number_of_islands,
     apply_time_delta_cleaning,
