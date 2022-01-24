@@ -114,15 +114,14 @@ def main():
         print('Opening file', filename)
 
         subarray = SubarrayDescription.from_hdf(filename)
-        geom = subarray.tel[lst1_tel_id].camera.geometry
-
-        images = Table.read(filename, path=dl1_images_lstcam_key)['image']
-
-        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-
         telescope_description = subarray.tel[lst1_tel_id]
+        geom = telescope_description.camera.geometry
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
         mirror_area = telescope_description.optics.mirror_area
+
+        images = Table.read(filename, path=dl1_images_lstcam_key)['image']
+        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
 
         # fill dummy event times with NaNs in case they do not exist (like in MC):
         if 'dragon_time' not in parameters.keys():
