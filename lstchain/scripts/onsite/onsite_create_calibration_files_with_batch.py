@@ -10,26 +10,27 @@
 
 import argparse
 import os
-from pathlib import Path
-import lstchain
-import subprocess
 import shutil
+import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
+
+import lstchain
 
 # parse arguments
-parser = argparse.ArgumentParser(description='Reconstruct filter scan, this must be run after the night calibration scripts',
-                                 formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(
+    description='Reconstruct filter scan, this must be run after the night calibration scripts',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_list', help="Run number if the flat-field data",
                       type=int, nargs="+")
 
-
 optional.add_argument('-f', '--filters_list', help="Filter list (same order as run list)",
                       type=int, nargs="+")
-version=lstchain.__version__
+version = lstchain.__version__
 optional.add_argument('-v', '--prod_version',
                       help="Version of the production",
                       default=f"v{version}")
@@ -43,13 +44,15 @@ optional.add_argument('-p', '--pedestal_run',
 optional.add_argument('--time_run',
                       help="Run for the time calibration. If None, search the last time run before or equal the first filter scan run",
                       type=int)
-optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
+                      default='/fefs/aswg/data/real')
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
+                      type=Path)
 
 optional.add_argument('--sub_run_list',
                       help="sub-run list to be processed.",
                       type=int,
-                      nargs="+",default=[0])
+                      nargs="+", default=[0])
 optional.add_argument('--sys_date',
                       help="Date of systematic corrections (format YYYYMMDD). \n"
                            "Default: automatically search the best date \n")
@@ -57,12 +60,13 @@ optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
                       default=False)
-optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)", default="calibration")
+optional.add_argument('--output_base_name', help="Output file base name (change only for debugging)",
+                      default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true",
+                      help='Do not update the pro dir symbolic link, assume true')
 
-
-default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 
 args = parser.parse_args()
@@ -83,10 +87,10 @@ pro_symlink = not args.no_pro_symlink
 
 output_base_name = args.output_base_name
 
-calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
+
 
 def main():
-
     if shutil.which('srun') is None:
         sys.exit(">>> This script needs a slurm batch system. Stop")
 
@@ -126,7 +130,6 @@ def main():
             input_dir, name = os.path.split(os.path.abspath(input_file))
             path, date = input_dir.rsplit('/', 1)
 
-
             # verify output dir
             output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
             if not os.path.exists(output_dir):
@@ -146,8 +149,8 @@ def main():
             with open(job_file, "w") as fh:
                 fh.write("#!/bin/bash\n")
                 fh.write("#SBATCH --job-name=%s.job\n" % run)
-                fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run,sub_run,now))
-                fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run,sub_run,now))
+                fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run, sub_run, now))
+                fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run, sub_run, now))
                 fh.write("#SBATCH -p short\n")
                 fh.write("#SBATCH --cpus-per-task=1\n")
                 fh.write("#SBATCH --mem-per-cpu=10G\n")

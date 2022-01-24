@@ -7,8 +7,17 @@ http://gamma-astro-data-formats.readthedocs.io/en/latest/
 The Index files can be stored in a different path, but by default
 they are stored at the same place as the DL3 files.
 """
-from lstchain.irf import create_hdu_index_hdu, create_obs_index_hdu
-from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
+from ctapipe.core import (
+    Provenance,
+    Tool,
+    ToolConfigurationError,
+    traits,
+)
+
+from lstchain.irf import (
+    create_hdu_index_hdu,
+    create_obs_index_hdu,
+)
 
 __all__ = ["FITSIndexWriter"]
 

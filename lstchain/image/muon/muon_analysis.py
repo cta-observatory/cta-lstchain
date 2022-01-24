@@ -2,12 +2,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from ctapipe.containers import MuonEfficiencyContainer, MuonParametersContainer
-from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe.containers import (
+    MuonEfficiencyContainer,
+    MuonParametersContainer,
+)
+from ctapipe.coordinates import (
+    CameraFrame,
+    TelescopeFrame,
+)
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.muon import MuonIntensityFitter
-from ctapipe.image.muon import MuonRingFitter
-from ctapipe.image.muon.features import ring_completeness, ring_containment
+from ctapipe.image.muon import (
+    MuonIntensityFitter,
+    MuonRingFitter
+)
+from ctapipe.image.muon.features import (
+    ring_completeness,
+    ring_containment,
+)
 
 from lstchain.image.muon import plot_muon_event
 
