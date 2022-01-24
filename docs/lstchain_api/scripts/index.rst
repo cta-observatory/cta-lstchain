@@ -159,7 +159,7 @@ Usage
 .. _lstchain_longterm_dl1_check:
 
 lstchain_longterm_dl1_check
-++++++++++++++++++
++++++++++++++++++++++++++++
 
 .. automodule:: lstchain.scripts.lstchain_longterm_dl1_check
 
