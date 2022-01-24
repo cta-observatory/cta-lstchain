@@ -45,6 +45,7 @@ from lstchain.io.io import (
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
+from lstchain.reco.r0_to_dl1 import parametrize_image
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ def main():
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
@@ -279,6 +280,8 @@ def main():
 
                     # count a number of islands after all of the image cleaning steps
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    dl1_container.n_islands = num_islands
+
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
                     n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
                     max_island_label = np.argmax(n_pixels_on_island)
@@ -288,31 +291,17 @@ def main():
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
+                    dl1_container.n_pixels = n_pixels
 
                     if n_pixels > 0:
-                        hillas = hillas_parameters(camera_geom[signal_pixels],
-                                                   image[signal_pixels])
-
-                        dl1_container.fill_hillas(hillas)
-                        dl1_container.set_timing_features(camera_geom[signal_pixels],
-                                                          image[signal_pixels],
-                                                          peak_time[signal_pixels],
-                                                          hillas)
-
-                        dl1_container.set_leakage(camera_geom, image, signal_pixels)
-                        dl1_container.set_concentration(camera_geom, image, hillas)
-                        dl1_container.n_islands = num_islands
-                        dl1_container.wl = dl1_container.width / dl1_container.length
-                        dl1_container.n_pixels = n_pixels
-                        width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
-                        width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, focal_length))
-                        length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
-                        length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, focal_length))
-                        dl1_container.width = width
-                        dl1_container.width_uncertainty = width_uncertainty
-                        dl1_container.length = length
-                        dl1_container.length_uncertainty = length_uncertainty
-                        dl1_container.log_intensity = np.log10(dl1_container.intensity)
+                        parametrize_image(
+                            image=image,
+                            peak_time=peak_time,
+                            signal_pixels=signal_pixels,
+                            camera_geometry=camera_geom,
+                            focal_length=optics.equivalent_focal_length,
+                            dl1_container=dl1_container,
+                        )
 
                 if set(dl1_params_input).intersection(disp_params):
                     disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(

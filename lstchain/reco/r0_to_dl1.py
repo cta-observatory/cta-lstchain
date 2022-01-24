@@ -121,12 +121,52 @@ def setup_writer(writer, subarray, is_simulation):
             writer.exclude(f'telescope/parameters/{tel_name}', 'mc_core_distance')
 
 
+def _camera_distance_to_angle(distance, focal_length):
+    '''Convert a distance in the camera plane into an angle
+
+    This should be replaced by calculating image parameters in
+    telescope frame.
+    '''
+    return np.rad2deg(np.arctan(distance / focal_length))
+
+
+def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_length, dl1_container):
+    '''
+    Calculate image parameters and fill them into ``dl1_container``
+    '''
+
+    geom_selected = camera_geometry[signal_pixels]
+    image_selectecd = image[signal_pixels]
+    hillas = hillas_parameters(geom_selected, image_selectecd)
+
+    # Fill container
+    dl1_container.fill_hillas(hillas)
+
+    # convert ctapipe's width and length (in m) to deg:
+
+    for key  in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
+        value = getattr(dl1_container, key)
+        setattr(dl1_container, key, _camera_distance_to_angle(value, focal_length))
+
+    dl1_container.wl = dl1_container.width / dl1_container.length
+
+    dl1_container.set_timing_features(
+        geom_selected,
+        image_selectecd,
+        peak_time[signal_pixels],
+        hillas,
+    )
+    dl1_container.set_leakage(camera_geometry, image, signal_pixels)
+    dl1_container.set_concentration(camera_geometry, image, hillas)
+    dl1_container.log_intensity = np.log10(dl1_container.intensity)
+
+
 def get_dl1(
-        calibrated_event,
-        subarray,
-        telescope_id,
-        dl1_container=None,
-        custom_config={},
+    calibrated_event,
+    subarray,
+    telescope_id,
+    dl1_container=None,
+    custom_config={},
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -165,6 +205,7 @@ def get_dl1(
     dl1 = calibrated_event.dl1.tel[telescope_id]
     telescope = subarray.tel[telescope_id]
     camera_geometry = telescope.camera.geometry
+    optics = telescope.optics
 
     image = dl1.image
     peak_time = dl1.peak_time
@@ -193,6 +234,7 @@ def get_dl1(
 
         # check the number of islands
         num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
+        dl1_container.n_islands = num_islands
 
         if use_main_island:
             n_pixels_on_island = np.bincount(island_labels)
@@ -200,36 +242,20 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
+
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
+        dl1_container.n_pixels = n_pixels
 
         if n_pixels > 0:
-            hillas = hillas_parameters(camera_geometry[signal_pixels], image[signal_pixels])
-
-            # Fill container
-            dl1_container.fill_hillas(hillas)
-
-            # convert ctapipe's width and length (in m) to deg:
-            foclen = subarray.tel[telescope_id].optics.equivalent_focal_length
-            width = np.rad2deg(np.arctan2(dl1_container.width, foclen))
-            width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, foclen))
-            length = np.rad2deg(np.arctan2(dl1_container.length, foclen))
-            length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, foclen))
-            dl1_container.width = width
-            dl1_container.width_uncertainty = width_uncertainty
-            dl1_container.length = length
-            dl1_container.length_uncertainty = length_uncertainty
-            dl1_container.wl = dl1_container.width / dl1_container.length
-
-            dl1_container.set_timing_features(camera_geometry[signal_pixels],
-                                              image[signal_pixels],
-                                              peak_time[signal_pixels],
-                                              hillas)
-            dl1_container.set_leakage(camera_geometry, image, signal_pixels)
-            dl1_container.set_concentration(camera_geometry, image, hillas)
-            dl1_container.n_pixels = n_pixels
-            dl1_container.n_islands = num_islands
-            dl1_container.log_intensity = np.log10(dl1_container.intensity)
+            parametrize_image(
+                image=image,
+                peak_time=peak_time,
+                signal_pixels=signal_pixels,
+                camera_geometry=camera_geometry,
+                focal_length=optics.equivalent_focal_length,
+                dl1_container=dl1_container,
+            )
 
     # We set other fields which still make sense for a non-parametrized
     # image:
