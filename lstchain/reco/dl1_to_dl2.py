@@ -20,7 +20,7 @@ from sklearn.model_selection import train_test_split
 
 from . import disp
 from . import utils
-from ..io import standard_config, replace_config
+from ..io import standard_config, replace_config, get_srcdep_index_keys, get_srcdep_params,
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
@@ -304,15 +304,11 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_gamma.columns])
-        df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
+        src_dep_df_gamma = get_srcdep_params(filegammas, 'on')
+        df_gamma = pd.concat([df_gamma, src_dep_df_gamma], axis=1)
 
-        src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_proton.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_proton.columns])
-        df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
+        src_dep_df_proton = get_srcdep_params(fileprotons, 'on')
+        df_proton = pd.concat([df_proton, src_dep_df_proton], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
