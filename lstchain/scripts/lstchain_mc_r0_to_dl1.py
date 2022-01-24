@@ -13,13 +13,15 @@ $> python lstchain_mc_r0_to_dl1.py
 """
 
 import argparse
-from ctapipe.utils import get_dataset_path
-from lstchain.reco import r0_to_dl1
-from lstchain.io.config import read_configuration_file
-from lstchain.paths import r0_to_dl1_filename
-from pathlib import Path
 import logging
 import sys
+from pathlib import Path
+
+from ctapipe.utils import get_dataset_path
+
+from lstchain.io.config import read_configuration_file
+from lstchain.paths import r0_to_dl1_filename
+from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +48,7 @@ parser.add_argument('--config', '-c', action='store', type=Path,
 
 
 def main():
+
     args = parser.parse_args()
 
     # using a default of None and only using get_dataset_path here

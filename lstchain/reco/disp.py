@@ -1,15 +1,16 @@
-import numpy as np
-from ..io import lstcontainers
-from . import utils
 import astropy.units as u
+import numpy as np
+
+from . import utils
+from ..io import lstcontainers
 
 __all__ = [
     'disp',
-    'miss',
     'disp_parameters',
     'disp_parameters_event',
+    'disp_to_pos',
     'disp_vector',
-    'disp_to_pos'
+    'miss',
     ]
 
 
