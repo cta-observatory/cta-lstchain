@@ -18,7 +18,7 @@ class EventSelector(Component):
     taken as inputs and filter_events() is used on a table of events
     called in with the Component.
 
-    For event_type, we choose the sub-array trigger of 32, which is for 
+    For event_type, we choose the sub-array trigger of 32, which is for
     gamma-ray event candidate, as per the latest CTA R1 Event Data Model.
     So we add a free max value - 33, to use in the filter_events function.
     """
@@ -39,6 +39,9 @@ class EventSelector(Component):
     ).tag(config=True)
 
     def filter_cut(self, events):
+        """
+        Apply the event filters
+        """
         return filter_events(events, self.filters, self.finite_params)
 
 
@@ -52,8 +55,8 @@ class DL3FixedCuts(Component):
         default_value=0.6,
     ).tag(config=True)
 
-    fixed_gh_max_efficiency = Float(
-        help="Fixed max gamma efficiency for optimized g/h cuts in %",
+    fixed_gh_efficiency = Float(
+        help="Fixed gamma efficiency for optimized g/h cuts in %",
         default_value=95,
     ).tag(config=True)
 
@@ -74,15 +77,23 @@ class DL3FixedCuts(Component):
     ).tag(config=True)
 
     def gh_cut(self, data):
+        """
+        Applying a fixed global gammaness cut on a given data
+        """
         return data[data["gh_score"] > self.fixed_gh_cut]
 
-    def opt_gh_cuts(
+    def optimize_gh_cuts(
         self, data, energy_bins, min_value=0.1,
         max_value=0.99, smoothing=None, min_events=10
     ):
+        """
+        Evaluating an optimized energy-dependent gammaness cuts, in a given
+        data, with provided reco energy bins, and other parameters to
+        pass to the pyirf.cuts.calculate_percentile_cut function
+        """
         #To be sure to have the efficiency in between 0 and 100
-        if self.fixed_gh_max_efficiency < 1:
-            self.fixed_gh_max_efficiency *= 100
+        if self.fixed_gh_efficiency < 1:
+            self.fixed_gh_efficiency *= 100
 
         gh_cuts = calculate_percentile_cut(
             data["gh_score"],
@@ -91,15 +102,16 @@ class DL3FixedCuts(Component):
             min_value = min_value,
             max_value = max_value,
             fill_value = data["gh_score"].max(),
-            percentile = 100 - self.fixed_gh_max_efficiency,
+            percentile = 100 - self.fixed_gh_efficiency,
             smoothing = smoothing,
             min_events = min_events,
         )
         return gh_cuts
 
-    def apply_opt_gh_cuts(self, data, gh_cuts):
+    def apply_optimized_gh_cuts(self, data, gh_cuts):
         """
-        Apply a given energy dependent gh cuts to a data file
+        Apply a given energy-dependent gh cuts to a data file, along the reco
+        energy bins provided.
         """
 
         data["selected_gh"] = evaluate_binned_cut(
@@ -111,13 +123,21 @@ class DL3FixedCuts(Component):
         return data[data["selected_gh"]]
 
     def theta_cut(self, data):
+        """
+        Apply a fixed global theta cut on a given data
+        """
         return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
 
-    def opt_theta_cuts(
+    def optimize_theta_cuts(
         self, data, energy_bins, min_value=0.05 * u.deg,
         fill_value=0.32 * u.deg, max_value=0.32 * u.deg,
         smoothing=None, min_events=10
     ):
+        """
+        Evaluating an optimized energy-dependent theta cuts, in a given
+        data, with provided reco energy bins, and other parameters to
+        pass to the pyirf.cuts.calculate_percentile_cut function
+        """
         if self.fixed_theta_containment < 1:
             self.fixed_theta_containment *= 100
 
@@ -132,6 +152,13 @@ class DL3FixedCuts(Component):
             smoothing = smoothing,
             min_events = min_events,
         )
+        return theta_cuts
+
+    def apply_optimized_theta_cuts(self, data, theta_cuts):
+        """
+        Apply a given energy-dependent theta cuts to a data file, along the
+        reco energy bins provided.
+        """
 
         data["selected_theta"] = evaluate_binned_cut(
             data["theta"],
@@ -139,9 +166,12 @@ class DL3FixedCuts(Component):
             theta_cuts,
             operator.le,
         )
-        return data[data["selected_theta"]], theta_cuts
+        return data[data["selected_theta"]]
 
     def allowed_tels_filter(self, data):
+        """
+        Apply a filter on telescopes used for observation.
+        """
         mask = np.zeros(len(data), dtype=bool)
         for tel_id in self.allowed_tels:
             mask |= data["tel_id"] == tel_id

@@ -48,19 +48,27 @@ def test_dl3_fixed_cuts():
     temp_cuts.fixed_theta_containment = 68
 
     temp_data = QTable({
-        "gh_score": u.Quantity(np.tile(np.arange(0.55, 1.05, 0.1), 6)),
-        "reco_energy": u.Quantity(np.logspace(0.005, 40.5, 30), unit=u.TeV),
-        "theta": u.Quantity(np.tile([0.1, 0.2, 0.3, 0.4, 0.5], 6), unit=u.deg),
+        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
+        "reco_energy": u.Quantity(np.logspace(-2.301, 1.699, 30), unit=u.TeV),
+        "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
         "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
         "mc_type": u.Quantity(np.repeat([0], 30)),
         })
-    en_range = u.Quantity([0.1, 1, 10, 100, np.inf], unit=u.TeV)
+    en_range = u.Quantity([0.01, 0.1, 1, 10, 100, np.inf], unit=u.TeV)
 
-    assert len(temp_cuts.gh_cut(temp_data)) == 18
-    assert len(temp_cuts.theta_cut(temp_data)) == 6
+    theta_cut = temp_cuts.optimize_theta_cuts(
+        temp_data, en_range, min_events=2
+    )["cut"]
+
+    gh_cut = temp_cuts.optimize_gh_cuts(
+        temp_data, en_range, min_events=2
+    )["cut"]
+    
+    assert len(temp_cuts.gh_cut(temp_data)) == 6
+    assert len(temp_cuts.theta_cut(temp_data)) == 15
     assert len(temp_cuts.allowed_tels_filter(temp_data)) == 20
-    assert len(temp_cuts.opt_gh_cuts(temp_data, en_range)[0]) == 4
-    assert len(temp_cuts.opt_theta_cuts(temp_data, en_range)[0]) == 18
+    assert theta_cut[0] == 0.2624 * u.deg
+    assert gh_cut[1] == 0.365
 
 
 def test_data_binning():

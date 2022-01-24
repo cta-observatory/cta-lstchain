@@ -186,7 +186,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.optimize_gh:
+        if self.optimize_gh and self.input_irf:
             self.gh_cuts = QTable.read(self.input_irf, hdu="GH CUTS")
 
             self.data = self.fixed_cuts.apply_opt_gh_cuts(

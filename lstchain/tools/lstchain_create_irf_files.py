@@ -10,6 +10,12 @@ Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector, DL3FixedCuts and
 DataBinning Component and also given in some example configs in docs/examples/
 
+For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
+for passing the fixed gamma efficiency to calculate the gammaness cuts if
+each energy bin. Similarly, for energy-dependent theta cuts, use the flag
+fixed_theta_containment. The energy-dependent cuts are stored as HDUs -
+GH CUTS and RAD_MAX, and saved with other IRFs.
+
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
@@ -92,7 +98,7 @@ class IRFFITSWriter(Tool):
         --point-like (Only for point_like IRFs)
         --optimize-gh
         --optimize-th
-        --fixed-gh-max-efficiency 95
+        --fixed-gh-efficiency 95
         --fixed-theta-containment 68
     """
 
@@ -158,7 +164,7 @@ class IRFFITSWriter(Tool):
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
         "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
-        "fixed-gh-max-efficiency": "DL3FixedCuts.fixed_gh_max_efficiency",
+        "fixed-gh-efficiency": "DL3FixedCuts.fixed_gh_efficiency",
         "fixed-theta-containment": "DL3FixedCuts.fixed_theta_containment",
         "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
         "allowed-tels": "DL3FixedCuts.allowed_tels",
@@ -292,13 +298,13 @@ class IRFFITSWriter(Tool):
         gammas = self.fixed_cuts.allowed_tels_filter(gammas)
 
         if self.optimize_gh:
-            self.gh_cuts_gamma = self.fixed_cuts.opt_gh_cuts(
+            self.gh_cuts_gamma = self.fixed_cuts.optimize_gh_cuts(
                 gammas, reco_energy_bins, min_value=0.1, max_value=0.95
             )
-            gammas = self.fixed_cuts.apply_opt_gh_cuts(gammas, self.gh_cuts_gamma)
+            gammas = self.fixed_cuts.apply_optimized_gh_cuts(gammas, self.gh_cuts_gamma)
             self.log.info(
                 "Using fixed gamma efficiency of "
-                f"{self.fixed_cuts.fixed_gh_max_efficiency}"
+                f"{self.fixed_cuts.fixed_gh_efficiency}"
             )
         else:
             gammas = self.fixed_cuts.gh_cut(gammas)
@@ -306,9 +312,12 @@ class IRFFITSWriter(Tool):
 
         if self.point_like:
             if self.optimize_th:
-                gammas, self.theta_cuts = self.fixed_cuts.opt_theta_cuts(
+                self.theta_cuts = self.fixed_cuts.optimize_theta_cuts(
                     gammas, reco_energy_bins,
                     min_value=0.05 * u.deg, max_value=0.32 * u.deg,
+                )
+                gammas = self.fixed_cuts.apply_optimized_theta_cuts(
+                    gammas, self.theta_cuts
                 )
                 self.log.info(
                     "Using fixed containment region for theta of "
@@ -339,7 +348,7 @@ class IRFFITSWriter(Tool):
             )
 
             if self.optimize_gh:
-                background = self.fixed_cuts.apply_opt_gh_cuts(
+                background = self.fixed_cuts.apply_optimized_gh_cuts(
                     background, self.gh_cuts_gamma
                 )
             else:
@@ -352,7 +361,7 @@ class IRFFITSWriter(Tool):
 
         # For a fixed gh/theta cut, only a header value is added.
         # For energy dependent cuts, a new HDU are created
-        # GH_CUT and FOV_CUT are temporary non-standard header data
+        # GH_CUT is a temporary non-standard header data
         extra_headers = {
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
@@ -371,7 +380,7 @@ class IRFFITSWriter(Tool):
                 extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
         else:
             extra_headers["GH_EFF"] = (
-                self.fixed_cuts.fixed_gh_max_efficiency,
+                self.fixed_cuts.fixed_gh_efficiency,
                 "Fixed gamma/hadron efficiency"
             )
             if self.point_like and self.optimize_th:
@@ -476,9 +485,7 @@ class IRFFITSWriter(Tool):
             )
             self.log.info("PSF HDU created")
 
-        # If optimized cuts are used, create HDU and append it
         if self.optimize_gh:
-
             gh_header = self.hdus[1].header.copy()
             self.hdus.append(
                 fits.BinTableHDU(
@@ -486,6 +493,7 @@ class IRFFITSWriter(Tool):
                 )
             )
             self.log.info("GH CUTS HDU added")
+
         if self.optimize_th and self.point_like:
             self.hdus.append(
                 create_rad_max_hdu(
