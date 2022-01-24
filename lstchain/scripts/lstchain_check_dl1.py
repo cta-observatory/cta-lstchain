@@ -23,15 +23,15 @@ must be available in the same directory as the input files (of whatever
 type).
 
 """
-from warnings import simplefilter
 import argparse
 import glob
 import logging
 import os
+from warnings import simplefilter
+
 # I had enough of those annoying future warnings, hence:
 simplefilter(action='ignore', category=FutureWarning)
 from lstchain.datachecks import check_dl1, plot_datacheck
-
 
 parser = argparse.ArgumentParser(formatter_class=argparse.
                                  ArgumentDefaultsHelpFormatter)
@@ -75,6 +75,7 @@ optional.add_argument('--batch', '-b', action='store_true',
 
 
 def main():
+
     args, unknown = parser.parse_known_args()
     
     logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -83,8 +84,8 @@ def main():
     if len(unknown) > 0:
         ukn = ''
         for s in unknown:
-            ukn += s+' '
-        logger.error('Unknown options: '+ukn)
+            ukn += s + ' '
+        logger.error('Unknown options: ' + ukn)
         exit(-1)
 
     logger.info('input files: {}'.format(args.input_file))

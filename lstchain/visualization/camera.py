@@ -1,15 +1,17 @@
-import numpy as np
-from ..reco.disp import disp_vector
 import astropy.units as u
 import matplotlib.pyplot as plt
+import numpy as np
 from ctapipe.visualization import CameraDisplay
 
+from ..reco.disp import disp_vector
+
 __all__ = [
+    'display_dl1_event',
     'overlay_disp_vector',
     'overlay_hillas_major_axis',
     'overlay_source',
-    'display_dl1_event',
 ]
+
 
 def display_dl1_event(event, camera_geometry, tel_id=1, axes=None, **kwargs):
     """
@@ -82,7 +84,7 @@ def overlay_disp_vector(display, disp, hillas, **kwargs):
 
     display.axes.quiver(hillas.x, hillas.y,
                         disp.dx, disp.dy,
-                        units='xy', scale=1*u.m,
+                        units='xy', scale=1 * u.m,
                         angles='xy',
                         **kwargs,
                         )
@@ -109,4 +111,3 @@ def overlay_hillas_major_axis(display, hillas, **kwargs):
                       hillas.y + x * np.sin(hillas.psi.to(u.rad).value),
                       **kwargs,
                       )
-

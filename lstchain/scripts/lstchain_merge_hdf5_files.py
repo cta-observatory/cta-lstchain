@@ -19,10 +19,10 @@ $> python lstchain_merge_hdf5_files.py
 import argparse
 import os
 from distutils.util import strtobool
-# import tables
-from lstchain.io import get_dataset_keys
-from lstchain.io import auto_merge_h5files
 from glob import glob
+
+from lstchain.io import auto_merge_h5files
+from lstchain.io import get_dataset_keys
 
 parser = argparse.ArgumentParser(description='Merge HDF5 files')
 

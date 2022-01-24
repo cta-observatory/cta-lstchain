@@ -23,9 +23,13 @@ import logging
 import sys
 from pathlib import Path
 
-from lstchain.io import  standard_config
+from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from lstchain.paths import (
+    parse_r0_filename,
+    r0_to_dl1_filename,
+    run_to_dl1_filename,
+)
 from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
@@ -184,7 +188,6 @@ def main():
         lst_r0_corrections['calibration_path'] = args.calibration_file
     if args.time_calibration_file is not None:
         lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
-
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

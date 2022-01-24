@@ -2,18 +2,19 @@
 Containers for data check
 """
 
-__all__ = [
-    'DL1DataCheckContainer',
-    'count_trig_types',
-    'DL1DataCheckHistogramBins',
-]
-
 import logging
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
-import warnings
 from ctapipe.core import Container, Field
+
+__all__ = [
+    'DL1DataCheckContainer',
+    'DL1DataCheckHistogramBins',
+    'count_trig_types',
+]
 
 
 class DL1DataCheckContainer(Container):
@@ -116,7 +117,7 @@ class DL1DataCheckContainer(Container):
         # the elapsed time is between first and last event of the events in
         # table (we do not apply the mask here since we want to have all
         # events!)
-        self.elapsed_time = table['dragon_time'][len(table)-1] - \
+        self.elapsed_time = table['dragon_time'][len(table) - 1] - \
                             table['dragon_time'][0]
         self.num_events = mask.sum()
         self.num_cleaned_events = np.isfinite(table['intensity'][mask]).sum()
@@ -139,7 +140,7 @@ class DL1DataCheckContainer(Container):
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
-        n_jump = 1+int(self.num_events/n_samples)
+        n_jump = 1 + int(self.num_events / n_samples)
         # keep some info every n-jump-th event:
         sampled_event_ids = np.array(table['event_id'][mask][0::n_jump])
         tib_time = u.Quantity(np.array(table['tib_time'][mask][0::n_jump]),
@@ -151,7 +152,7 @@ class DL1DataCheckContainer(Container):
         # in case the resulting number of entries is <n_samples, we have to pad
         # the arrays, because hdf vector columns must have the same number of
         # elements in each row. We repeat the last value in the array
-        padding = (0, n_samples-len(sampled_event_ids))
+        padding = (0, n_samples - len(sampled_event_ids))
         self.sampled_event_ids = np.pad(sampled_event_ids, padding, mode='edge')
         self.tib_time = np.pad(tib_time, padding, mode='edge')
         self.ucts_time = np.pad(ucts_time, padding, mode='edge')
@@ -161,7 +162,7 @@ class DL1DataCheckContainer(Container):
         # all events present in the original table:
         delta_t = np.array(table['dragon_time'][1:]) - \
                   np.array(table['dragon_time'][:-1])
-        counts, _, _, = plt.hist(delta_t*1.e3,
+        counts, _, _, = plt.hist(delta_t * 1.e3,
                                  bins=histogram_binnings.hist_delta_t)
         self.hist_delta_t = counts
 
@@ -234,8 +235,8 @@ class DL1DataCheckContainer(Container):
         x = table['x'][mask]
         y = table['y'][mask]
         # event-wise, id of camera pixel which contains the image's cog:
-        cog_pixid = geom.position_to_pix_index(np.array(x)*u.m,
-                                               np.array(y)*u.m)
+        cog_pixid = geom.position_to_pix_index(np.array(x) * u.m,
+                                               np.array(y) * u.m)
         self.cog_within_pixel = np.zeros(geom.n_pixels)
         for pix in cog_pixid:
             self.cog_within_pixel[pix] += 1
@@ -246,7 +247,7 @@ class DL1DataCheckContainer(Container):
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
     def fill_pixel_wise_info(self, table, mask, histogram_binnings,
-                             event_type = ''):
+                             event_type=''):
         """
         Fills the quantities that are calculated pixel-wise
 
@@ -326,7 +327,7 @@ class DL1DataCheckContainer(Container):
             if event_type == 'flatfield':
                 return
 
-            selected_entries = np.where(charge>30, time, np.nan)
+            selected_entries = np.where(charge > 30, time, np.nan)
             self.time_mean_above_030_pe = np.nanmean(selected_entries, axis=0)
             self.time_stddev_above_030_pe = np.nanstd(selected_entries, axis=0)
 
@@ -347,15 +348,17 @@ def count_trig_types(array):
     ucts_trig_types, counts = np.unique(array, return_counts=True)
     # write the different trigger types, then the number of events of
     # each type. Pad to 10 entries (more than enough for trigger types):
-    ucts_trig_types = np.append(ucts_trig_types, (10-len(ucts_trig_types))*[0])
+    ucts_trig_types = np.append(ucts_trig_types, (10 - len(ucts_trig_types)) * [0])
     counts = np.append(counts, (10 - len(counts)) * [0])
     return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
+
+
 
 class DL1DataCheckHistogramBins(Container):
     """
     Histogram bins for the DL1 Datacheck
     """
-
+    
     # delta_t between consecutive events (ms)
     hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),
                          'hist_delta_t binning')
@@ -390,7 +393,7 @@ class DL1DataCheckHistogramBins(Container):
     hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
                                            np.linspace(0., 200., 101)]),
                                  'hist_tgrad_vs_length binning')
-    hist_tgrad_vs_length_intensity_gt_200 =\
+    hist_tgrad_vs_length_intensity_gt_200 = \
         Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
               'hist_tgrad_vs_length_intensity_gt_200 binning')
     # time intercept (image time @ charge c.o.g.) vs. image intensity:

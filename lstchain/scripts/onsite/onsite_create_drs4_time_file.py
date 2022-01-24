@@ -10,31 +10,37 @@
 
 import argparse
 import os
-from pathlib import Path
-import lstchain
 import subprocess
+from pathlib import Path
+
+import lstchain
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create time calibration files',
-                                 formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
-version=lstchain.__version__
+version = lstchain.__version__
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
-optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",type=int)
+optional.add_argument('-p', '--pedestal_run',
+                      help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
+                      type=int)
 
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=20000)
-optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree",type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
+                      default='/fefs/aswg/data/real')
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
+                      type=Path)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
-default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true",
+                      help='Do not update the pro dir symbolic link, assume true')
 parser.add_argument(
     '--no-progress',
     action='store_true',
@@ -55,10 +61,10 @@ if config_file is None:
     config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 
 max_events = 1000000
-calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
+
 
 def main():
-
     print(f"\n--> Start calculating drs4 time corrections from run {run}")
 
     # verify config file
@@ -90,14 +96,14 @@ def main():
 
     # update the default production directory
     if pro_symlink:
-        pro="pro"
+        pro = "pro"
         pro_dir = f"{output_dir}/../{pro}"
         if os.path.exists(pro_dir):
             os.remove(pro_dir)
         os.symlink(prod_id, pro_dir)
         print("\n--> Use symbolic link pro")
     else:
-        pro=prod_id
+        pro = prod_id
 
     # search the summary file info
     run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
