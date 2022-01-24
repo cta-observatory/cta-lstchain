@@ -9,7 +9,6 @@ The scripts to be executed from the command line are described below:
    Currently both `scripts` and `Tools` are meant to be run from the command line.
    Please see also :ref:`tools` section for more information.
 
-* `longterm_dl1_check`_
 * `lstchain_add_source_dependent_parameters`_
 * `lstchain_check_dl1`_
 * `lstchain_create_run_summary`_
@@ -19,6 +18,7 @@ The scripts to be executed from the command line are described below:
 * `lstchain_dl1_to_dl2`_
 * `lstchain_dl1ab`_
 * `lstchain_find_pedestals`_
+* `lstchain_longterm_dl1_check`_
 * `lstchain_mc_r0_to_dl1`_
 * `lstchain_mc_r0_to_dl2`_
 * `lstchain_mc_rfperformance`_
@@ -28,19 +28,6 @@ The scripts to be executed from the command line are described below:
 * `lstchain_merge_muon_files`_
 * `lstchain_tune_nsb`_
 
-.. _longterm_dl1_check:
-
-longterm_dl1_check
-++++++++++++++++++
-
-.. automodule:: lstchain.scripts.longterm_dl1_check
-
-Usage
------
-.. argparse::
-   :module: lstchain.scripts.longterm_dl1_check
-   :func: parser
-   :prog: longterm_dl1_check
 
 .. _lstchain_add_source_dependent_parameters:
 
@@ -169,6 +156,19 @@ Usage
    :func: parser
    :prog: lstchain_find_pedestals
 
+.. _lstchain_longterm_dl1_check:
+
+lstchain_longterm_dl1_check
+++++++++++++++++++
+
+.. automodule:: lstchain.scripts.lstchain_longterm_dl1_check
+
+Usage
+-----
+.. argparse::
+   :module: lstchain.scripts.lstchain_longterm_dl1_check
+   :func: parser
+   :prog: lstchain_longterm_dl1_check
 
 .. _lstchain_mc_r0_to_dl1:
 
