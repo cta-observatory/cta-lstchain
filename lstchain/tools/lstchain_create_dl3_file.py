@@ -13,9 +13,24 @@ copy and append the relevant example config files, into a custom config file.
 from astropy.io import fits
 from astropy.table import QTable
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from ctapipe.core import (
+    Provenance,
+    Tool,
+    ToolConfigurationError,
+    traits,
+)
 
-from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
+from lstchain.io import EventSelector, DL3FixedCuts
 from lstchain.io import read_data_dl2_to_QTable
+from lstchain.irf import (
+    add_icrs_position_params,
+    create_event_list,
+)
+from lstchain.paths import (
+    dl2_to_dl3_filename,
+    run_info_from_filename,
+)
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf import create_event_list, add_icrs_position_params

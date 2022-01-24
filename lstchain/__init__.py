@@ -1,36 +1,34 @@
-from astropy.time import TimeUnixTai, TimeFromEpoch
 import astropy
+from astropy.time import TimeUnixTai, TimeFromEpoch
 
-from . import reco
-from . import io
-from . import visualization
 from . import calib
-from . import mc
-from . import spectra
 from . import image
+from . import io
 from . import irf
-
+from . import mc
+from . import reco
+from . import spectra
+from . import visualization
 from .io import standard_config
 from .version import __version__
 
 __all__ = [
-    "reco",
+    "__version__",
+    "calib",
+    "image",
     "io",
     "irf",
-    "visualization",
-    "calib",
     "mc",
+    "reco",
     "spectra",
-    "image",
     "standard_config",
-    "__version__",
+    "visualization",
 ]
 
-
 if (
-    astropy.version.major == 4
-    and astropy.version.minor <= 2
-    and astropy.version.bugfix <= 0
+        astropy.version.major == 4
+        and astropy.version.minor <= 2
+        and astropy.version.bugfix <= 0
 ):
     # clear the cache to not depend on import orders
     TimeFromEpoch.__dict__["_epoch"]._cache.clear()
