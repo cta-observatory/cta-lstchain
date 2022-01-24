@@ -3,7 +3,6 @@ Containers for data check
 """
 
 import logging
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
