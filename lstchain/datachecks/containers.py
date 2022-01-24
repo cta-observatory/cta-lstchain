@@ -10,9 +10,10 @@ from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz
 from lstchain.reco.utils import location
-
 import warnings
 from ctapipe.core import Container, Field
+from ctapipe.utils import get_bright_stars
+from ctapipe.coordinates import CameraFrame, TelescopeFrame
 
 __all__ = [
     'DL1DataCheckContainer',
@@ -20,8 +21,6 @@ __all__ = [
     'count_trig_types',
 ]
 
-from ctapipe.utils import get_bright_stars
-from ctapipe.coordinates import CameraFrame
 
 class DL1DataCheckContainer(Container):
     """
@@ -310,7 +309,8 @@ class DL1DataCheckContainer(Container):
                      bins=histogram_binnings.hist_pixelchargespectrum)
         self.hist_pixelchargespectrum = counts
 
-        # Find bright stars (mag<=8 within 3 deg of telescope pointing):
+        # Find bright stars (mag<=8 within 3 deg of telescope pointing) and
+        # count how many of them are close to each pixel:
 
         # Just use the time in the middle of the subrun, from the sampled times:
         sampled_times = self.dragon_time
@@ -322,27 +322,26 @@ class DL1DataCheckContainer(Container):
                             frame=horizon_frame)
         bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
                                         magnitude_cut=8)
+        # Account for average relative spot shift (outwards) due to coma
+        # aberration:
+        relative_shift = 1.0466 # For LST's paraboloid
         camera_frame = CameraFrame(telescope_pointing=pointing,
-                                   focal_length=focal_length,
+                                   focal_length=focal_length*relative_shift,
                                    obstime=obstime,
                                    location=location)
-        # radius around star within which we consider the pixel may be affected
-        # (hence we will not raise a flag if e.g. its pedestal std dev is high):
-        r_around_star = 0.25 * u.deg
+        telescope_frame = TelescopeFrame(obstime=obstime, location=location)
 
-        # Account for average spot shift due to coma aberration:
-        relative_shift = 1.0466 # For LST's paraboloid
-        self.num_nearby_stars = np.zeros_like(geom.pix_id)
-        for star in bright_stars:
-            star_radec = star['ra_dec']
-            star_cam = star_radec.transform_to(camera_frame)
-            x = star_cam.x.to(u.m) * relative_shift
-            y = star_cam.y.to(u.m) * relative_shift
-            angular_distance = np.rad2deg(np.arctan2(np.hypot(geom.pix_x - x,
-                                                              geom.pix_y - y),
-                                                     focal_length*relative_shift))
-            illuminated_pixels = angular_distance < r_around_star
-            self.num_nearby_stars[illuminated_pixels] += 1
+        # radius around star within which we consider the pixel may be affected
+        # (hence we will later not raise a flag if e.g. its pedestal std dev is
+        # high):
+        r_around_star = 0.25 * u.deg
+        stars = bright_stars['ra_dec']
+        pixels = SkyCoord(x=geom.pix_x, y=geom.pix_y,
+                          frame=camera_frame).transform_to(telescope_frame)
+        angular_distance = pixels[:, np.newaxis].separation(stars)
+
+        self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
+                                                 axis=1)
 
         # for pedestal events nothing else to be done:
         if event_type == 'pedestals':
@@ -357,40 +356,40 @@ class DL1DataCheckContainer(Container):
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
             # Make nan all pulse times for charges less than 1 p.e.:
-            selected_entries = np.where(charge > 1, time, np.nan)
+            time = np.where(charge > 1, time, np.nan)
             # count how many valid pixels per event:
             n_valid_pixels = np.array([np.sum([~np.isnan(row)])
-                                       for row in selected_entries])
+                                       for row in time])
             # mean and std dev for each pixel through the whole subrun:
-            self.time_mean = np.nanmean(selected_entries, axis=0)
-            self.time_stddev = np.nanstd(selected_entries, axis=0)
+            self.time_mean = np.nanmean(time, axis=0)
+            self.time_stddev = np.nanstd(time, axis=0)
             # Now the average time in the camera, for each event:
-            tmean = np.nanmean(selected_entries, axis=1)
+            tmean = np.nanmean(time, axis=1)
 
-            # tile it to the same shape as time, to allow subtracting it from each
-            # pixel's pulse time:
-            camera_time_mean = np.tile(tmean, (time.shape[1], 1)).transpose()
-            # from camera mean time, to the same but excluding one pixel at a
-            # time:
-            camera_valid_pixels = np.tile(n_valid_pixels,
-                                          (time.shape[1], 1)).transpose()
-            rest_of_camera_valid_pixels = camera_valid_pixels - \
-                                          np.ones(camera_valid_pixels.shape)
-            mean_t_of_rest_of_camera = ((camera_time_mean *
-                                         camera_valid_pixels - time) /
-                                        rest_of_camera_valid_pixels)
+            # We do the calculation of the relative times event by event,
+            # instead of using events*pixels matrices, because keeping all
+            # necessary matrices in memory to do it in one go results in too
+            # large memory use (>5GB)
+            for ievt, event_pixtimes in enumerate(time):
+                # for each pixel we want the mean time of all the other pixels:
+                mean_t_other = np.ones_like(event_pixtimes) * tmean[ievt]
+                mean_t_other *= n_valid_pixels[ievt]
+                mean_t_other -= event_pixtimes
+                mean_t_other /= (n_valid_pixels[ievt] - 1)
+                time[ievt] -= mean_t_other
 
-            relative_time_t = time - mean_t_of_rest_of_camera
-            selected_entries = np.where(charge > 1, relative_time_t, np.nan)
-            self.relative_time_mean = np.nanmean(selected_entries, axis=0)
-            self.relative_time_stddev = np.nanstd(selected_entries, axis=0)
+            # Now time contains the times of each pixel relative to the averag
+            # of the rest of the pixels in the same event
+
+            self.relative_time_mean = np.nanmean(time, axis=0)
+            self.relative_time_stddev = np.nanstd(time, axis=0)
 
             if event_type == 'flatfield':
                 return
 
-            selected_entries = np.where(charge > 30, time, np.nan)
-            self.time_mean_above_030_pe = np.nanmean(selected_entries, axis=0)
-            self.time_stddev_above_030_pe = np.nanstd(selected_entries, axis=0)
+            time = np.where(charge > 30, time, np.nan)
+            self.time_mean_above_030_pe = np.nanmean(time, axis=0)
+            self.time_stddev_above_030_pe = np.nanstd(time, axis=0)
 
 
 def count_trig_types(array):
