@@ -304,10 +304,30 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        src_dep_df_gamma = get_srcdep_params(filegammas, 'on')
+        # if source-dependent parameters are already in dl1 data, just read those data
+        # if not, source-dependent parameters are added here
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(filegammas):
+            src_dep_df_gamma = get_srcdep_params(filegammas, 'on')
+        
+        else:
+            subarray_info = SubarrayDescription.from_hdf(filegammas)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_gamma =pd.concat(get_source_dependent_parameters(df_gamma, config, focal_length=focal_length), axis=1)
+
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma], axis=1)
 
-        src_dep_df_proton = get_srcdep_params(fileprotons, 'on')
+        # if source-dependent parameters are already in dl1 data, just read those data
+        # if not, source-dependent parameters are added here
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(fileprotons):
+            src_dep_df_proton = get_srcdep_params(fileprotons, 'on')
+
+        else:
+            subarray_info = SubarrayDescription.from_hdf(fileprotons)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_proton =pd.concat(get_source_dependent_parameters(df_proton, config, focal_length=focal_length), axis=1)
+
         df_proton = pd.concat([df_proton, src_dep_df_proton], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
