@@ -1289,7 +1289,7 @@ def get_srcdep_index_keys(filename):
     return data.columns.levels[0]
 
 
-def get_srcdep_params(filename, key):
+def get_srcdep_params(filename, key=None):
     """
     get srcdep parameter data frame
 
@@ -1297,6 +1297,7 @@ def get_srcdep_params(filename, key):
     ----------
     filename: str - path to the HDF5 file
     key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    If it is not specidied, all keys are loaded
 
     Returns
     -------
@@ -1314,7 +1315,10 @@ def get_srcdep_params(filename, key):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
-    return data[key]
+    if key is not None:
+        data = data[key]
+
+    return data
 
 
 def parse_cfg_bytestring(bytestring):
