@@ -4,7 +4,8 @@ from .hdu_table import (
     create_event_list,
     get_timing_params,
     get_pointing_params,
-    add_icrs_position_params
+    add_icrs_position_params,
+    set_expected_pos_to_reco_altaz
 )
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "create_event_list",
     "get_timing_params",
     "get_pointing_params",
-    "add_icrs_position_params"
+    "add_icrs_position_params",
+    "set_expected_pos_to_reco_altaz"
 ]

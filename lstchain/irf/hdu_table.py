@@ -18,7 +18,8 @@ __all__ = [
     "create_event_list",
     "get_timing_params",
     "get_pointing_params",
-    "add_icrs_position_params"
+    "add_icrs_position_params",
+    "set_expected_pos_to_reco_altaz"
 ]
 
 log = logging.getLogger(__name__)
@@ -317,7 +318,23 @@ def add_icrs_position_params(data, source_pos):
 
     return data
 
-
+def set_expected_pos_to_reco_altaz(data):
+    """
+    Set expected source positions to reconstructed alt, az positions for source-dependent analysis
+    This is just a trick to easily extract ON/OFF events in gammapy analysis. 
+    """
+    # set expected source positions as reco positions
+    time = data['dragon_time']
+    obstime = Time(time, scale='utc', format='unix')
+    expected_src_x = data['expected_src_x'] * u.m
+    expected_src_y = data['expected_src_y'] * u.m
+    focal = 28 * u.m
+    pointing_alt = data['pointing_alt']
+    pointing_az  = data['pointing_az']
+    expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+    data["reco_alt"] = expected_src_altaz.alt
+    data["reco_az"]  = expected_src_altaz.az
+    
 def create_event_list(
     data, run_number, source_name, source_pos, effective_time, elapsed_time
 ):

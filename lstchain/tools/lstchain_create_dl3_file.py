@@ -20,7 +20,11 @@ from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 from lstchain.io import read_data_dl2_to_QTable, get_srcdep_index_keys
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
-from lstchain.irf import create_event_list, add_icrs_position_params
+from lstchain.irf import (
+    create_event_list,
+    add_icrs_position_params,
+    set_expected_pos_to_reco_altaz
+)
 from lstchain.io import EventSelector, DL3FixedCuts
 from lstchain.reco.utils import camera_to_altaz
 
@@ -175,10 +179,10 @@ class DataReductionFITSWriter(Tool):
             self.data = add_icrs_position_params(self.data, self.source_pos)
 
         else:
-            
-            srcdep_pos_keys = get_srcdep_index_keys(self.input_dl2)
+            # source-dependent analysis
+            srcdep_wobble_angles = get_srcdep_index_keys(self.input_dl2)
 
-            for i, srcdep_pos in enumerate(srcdep_pos_keys):
+            for i, srcdep_pos in enumerate(srcdep_wobble_angles):
                 data_temp = read_data_dl2_to_QTable(str(self.input_dl2), srcdep_pos=srcdep_pos)
 
                 if i==0:
@@ -191,16 +195,7 @@ class DataReductionFITSWriter(Tool):
                 data_temp = add_icrs_position_params(data_temp, self.source_pos)
 
                 # set expected source positions as reco positions
-                time = data_temp['dragon_time']
-                obstime = Time(time, scale='utc', format='unix')
-                expected_src_x = data_temp['expected_src_x'] * u.m
-                expected_src_y = data_temp['expected_src_y'] * u.m
-                focal = 28 * u.m
-                pointing_alt = data_temp['pointing_alt']
-                pointing_az  = data_temp['pointing_az']
-                expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
-                data_temp["reco_alt"] = expected_src_altaz.alt
-                data_temp["reco_az"]  = expected_src_altaz.az
+                set_expected_pos_to_reco_altaz(data_temp)
 
                 if i==0:
                     self.data = data_temp
