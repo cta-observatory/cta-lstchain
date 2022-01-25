@@ -873,7 +873,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
                 num_rings = np.append(num_rings, 0)
                 num_contained_rings = np.append(num_contained_rings, 0)
 
-        if len(files_with_rings) == 0:
+        if len(good_files) == 0:
             write_error_page('Muons', pagesize)
             pdf.savefig()
             return
