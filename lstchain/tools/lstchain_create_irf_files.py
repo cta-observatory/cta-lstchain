@@ -318,7 +318,10 @@ class IRFFITSWriter(Tool):
             )
         else:
             gammas = self.fixed_cuts.gh_cut(gammas)
-            self.log.info(f"Using fixed G/H cut of {self.fixed_cuts.fixed_gh_cut}")
+            self.log.info(
+                "Using fixed global gammaness cut of "
+                f"{self.fixed_cuts.fixed_gh_cut}"
+            )
 
         if self.point_like:
             if self.optimize_th:
@@ -331,11 +334,14 @@ class IRFFITSWriter(Tool):
                 )
                 self.log.info(
                     "Using fixed containment region for theta of "
-                    f"{self.fixed_cuts.fixed_theta_containment}"
+                    f"{self.fixed_cuts.fixed_theta_containment} %"
                 )
             else:
                 gammas = self.fixed_cuts.theta_cut(gammas)
-                self.log.info('Theta cuts applied for point like IRF')
+                self.log.info(
+                    "Using fixed global Theta cut of "
+                    f"{self.fixed_cuts.fixed_theta_cut} for point-like IRF"
+                )
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
             mean_fov_offset = round(

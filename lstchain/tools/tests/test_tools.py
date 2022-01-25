@@ -114,6 +114,36 @@ def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated
 
 @pytest.mark.private_data
 @pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
+def test_create_dl3_optimized_cuts(temp_dir_observed_files, observed_dl2_file):
+    """
+    Generating an DL3 file from a test DL2 files and test IRF file, using
+    optimized cuts
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    irf_file = temp_dir_observed_files / "irf.fits.gz"
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_files}",
+                f"--input-irf={irf_file}",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                "--overwrite",
+                "--optimize-gh",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
+
+@pytest.mark.private_data
+@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
@@ -150,24 +180,6 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
 
     irf_file = temp_dir_observed_files / "irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
-
-    assert (
-        run_tool(
-            DataReductionFITSWriter(),
-            argv=[
-                f"--input-dl2={observed_dl2_file}",
-                f"--output-dl3-path={temp_dir_observed_files}",
-                f"--input-irf={irf_file}",
-                "--source-name=Crab",
-                "--source-ra=83.633deg",
-                "--source-dec=22.01deg",
-                "--overwrite",
-                "--optimize-gh",
-            ],
-            cwd=temp_dir_observed_files,
-        )
-        == 0
-    )
 
     assert (
         run_tool(

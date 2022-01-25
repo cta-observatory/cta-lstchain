@@ -6,9 +6,8 @@ Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector and DL3FixedCuts Component
 and also given in some example configs in docs/examples/
 
-For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
-for passing the fixed gamma efficiency to calculate the gammaness cuts if
-each energy bin. The energy-dependent cuts are stored as GH_CUTS HDU
+For using energy-dependent gammaness cuts, use the flag optimize_gh
+using the optimized gammaness cuts from the IRF file stored as GH_CUTS HDU.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
