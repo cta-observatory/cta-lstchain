@@ -26,7 +26,6 @@ from tables import open_file
 
 from lstchain.io import (
     get_dataset_keys,
-    get_srcdep_index_keys,
     get_srcdep_params,
     global_metadata,
     read_configuration_file,
