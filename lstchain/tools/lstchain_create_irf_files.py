@@ -14,7 +14,7 @@ For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
 for passing the fixed gamma efficiency to calculate the gammaness cuts if
 each energy bin. Similarly, for energy-dependent theta cuts, use the flag
 fixed_theta_containment. The energy-dependent cuts are stored as HDUs -
-GH CUTS and RAD_MAX, and saved with other IRFs.
+GH_CUTS and RAD_MAX, and saved with other IRFs.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
@@ -500,9 +500,12 @@ class IRFFITSWriter(Tool):
 
         if self.optimize_gh:
             gh_header = self.hdus[1].header.copy()
+            gh_header["HDUCLAS2"] = "GH_CUTS"
+            gh_header["HDUCLAS4"] = "GH_CUTS_2D"
+
             self.hdus.append(
                 fits.BinTableHDU(
-                    self.gh_cuts_gamma, header=gh_header, name="GH CUTS"
+                    self.gh_cuts_gamma, header=gh_header, name="GH_CUTS"
                 )
             )
             self.log.info("GH CUTS HDU added")

@@ -8,7 +8,7 @@ and also given in some example configs in docs/examples/
 
 For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
 for passing the fixed gamma efficiency to calculate the gammaness cuts if
-each energy bin. The energy-dependent cuts are stored as GH CUTS HDU
+each energy bin. The energy-dependent cuts are stored as GH_CUTS HDU
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
@@ -175,7 +175,7 @@ class DataReductionFITSWriter(Tool):
 
         if self.optimize_gh and self.input_irf:
             try:
-                QTable.read(self.input_irf, hdu="GH CUTS")
+                QTable.read(self.input_irf, hdu="GH_CUTS")
             except KeyError:
                 raise ToolConfigurationError(
                     f"{self.input_irf} does not have GH CUTS HDU, or "
@@ -191,7 +191,7 @@ class DataReductionFITSWriter(Tool):
         self.data = self.event_sel.filter_cut(self.data)
 
         if self.optimize_gh and self.input_irf:
-            self.gh_cuts = QTable.read(self.input_irf, hdu="GH CUTS")
+            self.gh_cuts = QTable.read(self.input_irf, hdu="GH_CUTS")
 
             self.data = self.fixed_cuts.apply_optimized_gh_cuts(
                 self.data, self.gh_cuts
