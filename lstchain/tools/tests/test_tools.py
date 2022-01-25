@@ -113,7 +113,6 @@ def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated
 
 
 @pytest.mark.private_data
-@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3_optimized_cuts(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file, using
@@ -143,7 +142,6 @@ def test_create_dl3_optimized_cuts(temp_dir_observed_files, observed_dl2_file):
 
 
 @pytest.mark.private_data
-@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file
@@ -170,7 +168,6 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file):
     )
 
 @pytest.mark.private_data
-@pytest.mark.run(after="test_create_irf_full_enclosure_with_config")
 def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file, using
@@ -201,7 +198,6 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
 
 
 @pytest.mark.private_data
-@pytest.mark.run(after="test_create_dl3")
 def test_index_dl3_files(temp_dir_observed_files):
     """
     Generating Index files from a given path and glob pattern for DL3 files
