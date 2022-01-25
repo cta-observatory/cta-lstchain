@@ -859,13 +859,39 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                                                origin='unix', unit='s'),
                               y=altmean,
                               xlabel='date',
-                              ylabel='Telescope altitude (mean, min, max)',
+                              ylabel='Telescope altitude (mean, min, '
+                                     'max) (deg)',
                               eylow=altmean - altmin, eyhigh=altmax - altmean,
                               xtype='datetime', ytype='linear',
                               point_labels=run_titles)
     fig_altitude.y_range = Range1d(altmin.min() * 0.95, altmax.max() * 1.05)
-    row1 = [fig_altitude]
-    grid0c = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+
+    fig_azimuth = show_graph(x=pd.to_datetime(runsummary['time'],
+                                              origin='unix', unit='s'),
+                              y=np.rad2deg(runsummary['mean_azimuth']),
+                              xlabel='date',
+                              ylabel='Telescope mean azimuth (deg)',
+                              xtype='datetime', ytype='linear',
+                              point_labels=run_titles)
+
+    fig_ra = show_graph(x=pd.to_datetime(runsummary['time'],
+                                         origin='unix', unit='s'),
+                        y=runsummary['mean_ra'],
+                        xlabel='date',
+                        ylabel='Telescope mean Right Ascension (deg)',
+                        xtype='datetime', ytype='linear',
+                        point_labels=run_titles)
+    fig_dec = show_graph(x=pd.to_datetime(runsummary['time'],
+                                          origin='unix', unit='s'),
+                         y=runsummary['mean_dec'],
+                         xlabel='date',
+                         ylabel='Telescope mean declination (deg)',
+                         xtype='datetime', ytype='linear',
+                         point_labels=run_titles)
+
+    row1 = [fig_altitude, fig_azimuth]
+    row2 = [fig_dec, fig_ra]
+    grid0c = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                       plot_height=pad_height)
     page0c.child = grid0c
     page0c.title = 'Pointing'
