@@ -152,7 +152,7 @@ def main():
 
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
-        srcdep_index_keys = get_srcdep_index_keys(args.input_file)
+        srcdep_index_keys = data_srcdep.columns.levels[0]
 
         for i, k in enumerate(srcdep_index_keys):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
