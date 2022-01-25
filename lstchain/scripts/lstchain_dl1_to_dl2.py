@@ -141,13 +141,21 @@ def main():
     # Source-dependent analysis
     if config['source_dependent']:
 
+        # if source-dependent parameters are already in dl1 data, just read those data.
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(args.input_file):
+            data_srcdep = get_srcdep_params(args.input_file)
+
+        # if not, source-dependent parameters are added now
+        else:
+            data_srcdep = pd.concat(dl1_to_dl2.get_source_dependent_parameters(
+                data, config, focal_length=focal_length), axis=1)
+
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
         srcdep_index_keys = get_srcdep_index_keys(args.input_file)
 
         for i, k in enumerate(srcdep_index_keys):
-            data_srcdep = get_srcdep_params(args.input_file, k)
-            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
+            data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
                                                    finite_params=config['energy_regression_features']
