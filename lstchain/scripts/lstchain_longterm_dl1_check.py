@@ -193,7 +193,10 @@ def main():
                           'ped_pix_fraction_pulses_above10': [],
                           'ped_pix_fraction_pulses_above30': [],
                           'cosmics_pix_fraction_pulses_above10': [],
-                          'cosmics_pix_fraction_pulses_above30': []}
+                          'cosmics_pix_fraction_pulses_above30': [],
+                          'cosmics_cog_within_pixel': [],
+                          'cosmics_cog_within_pixel_intensity_gt_200': []
+                          }
 
     # Needed for the table description for writing it out to the hdf5 file. Because
     # of the vector columns we cannot write this out using pandas:
@@ -210,6 +213,8 @@ def main():
         ped_pix_fraction_pulses_above30 = tables.Float32Col(shape=(numpixels))
         cosmics_pix_fraction_pulses_above10 = tables.Float32Col(shape=(numpixels))
         cosmics_pix_fraction_pulses_above30 = tables.Float32Col(shape=(numpixels))
+        cosmics_cog_within_pixel =  tables.Float32Col(shape=(numpixels))
+        cosmics_cog_within_pixel_intensity_gt_200 = tables.Float32Col(shape=(numpixels))
 
     dicts = [cosmics, pedestals, flatfield]
 
@@ -366,6 +371,10 @@ def main():
         pixwise_runsummary['cosmics_pix_fraction_pulses_above30'].extend(
             [table.col('num_pulses_above_0030_pe').sum(axis=0) /
              runsummary['num_cosmics'][-1]])
+        pixwise_runsummary['cosmics_cog_within_pixel'].extend(
+                [table.col('cog_within_pixel').sum(axis=0)])
+        pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200'].extend(
+                [table.col('cog_within_pixel_intensity_gt_200').sum(axis=0)])
 
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
@@ -1017,6 +1026,27 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page4.child = grid4
     page4.title = 'Cosmics'
 
+    page4b = Panel()
+
+    cogs = file.root.pixwise_runsummary.col('cosmics_cog_within_pixel')
+    row1 = show_camera(cogs,
+                       engineering_geom,
+                       pad_width, pad_height,
+                       'Cosmics, image cog distribution', run_titles,
+                       display_range=(0,1.1*np.nanmax(cogs)))
+    cogs = file.root.pixwise_runsummary.col(
+            'cosmics_cog_within_pixel_intensity_gt_200')
+    row2 = show_camera(cogs,
+            engineering_geom,
+            pad_width, pad_height,
+            'Cosmics, >200 pe image cog distribution',
+            run_titles, display_range=(0, 1.1*np.nanmax(cogs)))
+    
+    grid4b = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page4b.child = grid4b
+    page4b.title = 'Cosmics'
+
     file.close()
 
     page5 = Panel()
@@ -1196,7 +1226,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page7.title = "Interleaved FF, averages"
 
     tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
-                      page3, page4, page5, page6, page7])
+                      page3, page4, page4b, page5, page6, page7])
 
     if batch:
         save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))

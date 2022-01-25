@@ -257,13 +257,14 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
+        notnan = ~np.isnan(intensity)
         x = table['x'][mask]
         y = table['y'][mask]
         # event-wise, id of camera pixel which contains the image's cog:
         cog_pixid = geom.position_to_pix_index(np.array(x) * u.m,
                                                np.array(y) * u.m)
         self.cog_within_pixel = np.zeros(geom.n_pixels)
-        for pix in cog_pixid:
+        for pix in cog_pixid[notnan]:
             self.cog_within_pixel[pix] += 1
         self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
         # now the same for relatively bright images (intensity > 200 p.e.)
