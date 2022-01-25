@@ -151,9 +151,9 @@ def main():
 
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
-        srcdep_index_keys = data_srcdep.columns.levels[0]
+        srcdep_wobble_angles = data_srcdep.columns.levels[0]
 
-        for i, k in enumerate(srcdep_index_keys):
+        for i, k in enumerate(srcdep_wobble_angles):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],

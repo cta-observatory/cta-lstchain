@@ -55,7 +55,7 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
-    'get_srcdep_index_keys',
+    'get_srcdep_wobble_angles',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
@@ -1262,9 +1262,9 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     return observation_time, df
 
 
-def get_srcdep_index_keys(filename):
+def get_srcdep_wobble_angles(filename):
     """
-    get index column name of source-dependent multi index columns
+    get wobble angles of source-dependent multi index columns
 
     Parameters
     ----------
@@ -1272,7 +1272,7 @@ def get_srcdep_index_keys(filename):
 
     Returns
     -------
-    source-dependent index names
+    wobble angles for source-dependent parameters
     """
     dataset_keys = get_dataset_keys(filename)
 
@@ -1282,6 +1282,9 @@ def get_srcdep_index_keys(filename):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
@@ -1289,15 +1292,15 @@ def get_srcdep_index_keys(filename):
     return data.columns.levels[0]
 
 
-def get_srcdep_params(filename, key=None):
+def get_srcdep_params(filename, wobble_angles=None):
     """
     get srcdep parameter data frame
 
     Parameters
     ----------
     filename: str - path to the HDF5 file
-    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
-    If it is not specified, all keys are loaded
+    wobble_angles: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    If it is not specified, source-dependent parameters with each assumed position are loaded
 
     Returns
     -------
@@ -1311,12 +1314,15 @@ def get_srcdep_params(filename, key=None):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
-    if key is not None:
-        data = data[key]
+    if wobble_angles is not None:
+        data = data[wobble_angles]
 
     return data
 
