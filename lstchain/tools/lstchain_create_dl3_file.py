@@ -21,7 +21,10 @@ from ctapipe.core import (
 )
 
 from lstchain.io import EventSelector, DL3FixedCuts
-from lstchain.io import read_data_dl2_to_QTable
+from lstchain.io import (
+    get_srcdep_index_keys,
+    read_data_dl2_to_QTable,
+)
 from lstchain.irf import (
     add_icrs_position_params,
     create_event_list,
