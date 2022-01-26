@@ -42,6 +42,7 @@ from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
+from ctapipe.io import read_table
 from ctapipe_io_lst import TriggerBits
 
 from lstchain.visualization.bokeh import show_camera, get_pixel_location
@@ -373,40 +374,42 @@ def main():
         # subrun-wise tables (that we will later write out) for all the subruns
         # in this file
 
+        a.close()
+
         #
         # Now we fill the runsummary  and pixwise_runsummary tables.
         #
 
         # Cosmics:
-        table = a.root.dl1datacheck.cosmics
+        table = get_datacheck_table(file, "cosmics")
 
         # keep subrun list, needed later for the muons:
-        subruns = table.col('subrun_index')
+        subruns = table['subrun_index']
 
         # now fill the run-wise table - just one entry, which corresponds to
         # the file datacheck_dl1_LST-1.RunXXXXX.h5 we are processing in this
         # iteration:
         runsummary['runnumber'].extend([runnumber])
-        runsummary['time'].extend([table.col('dragon_time').mean()])
-        runsummary['elapsed_time'].extend([table.col('elapsed_time').sum()])
-        runsummary['min_altitude'].extend([table.col('mean_alt_tel').min()])
-        runsummary['mean_altitude'].extend([table.col('mean_alt_tel').mean()])
-        runsummary['max_altitude'].extend([table.col('mean_alt_tel').max()])
+        runsummary['time'].extend([table['dragon_time'].mean()])
+        runsummary['elapsed_time'].extend([table['elapsed_time'].sum()])
+        runsummary['min_altitude'].extend([table['mean_alt_tel'].min()])
+        runsummary['mean_altitude'].extend([table['mean_alt_tel'].mean()])
+        runsummary['max_altitude'].extend([table['mean_alt_tel'].max()])
 
-        runsummary['min_azimuth'].extend([table.col('mean_az_tel').min()])
-        az = table.col('mean_az_tel')
+        runsummary['min_azimuth'].extend([table['mean_az_tel'].min()])
+        az = table['mean_az_tel']
         mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
         runsummary['mean_azimuth'].extend([mean_az])
-        runsummary['max_azimuth'].extend([table.col('mean_az_tel').max()])
+        runsummary['max_azimuth'].extend([table['mean_az_tel'].max()])
 
-        ra = np.deg2rad(table.col('tel_ra'))
+        ra = np.deg2rad(table['tel_ra'])
         mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
                 ra))))
         runsummary['mean_ra'].extend([mean_ra])
 
-        runsummary['mean_dec'].extend([table.col('tel_dec').mean()])
+        runsummary['mean_dec'].extend([table['tel_dec'].mean()])
 
-        num_events = table.col('num_events').sum()
+        num_events = table['num_events'].sum()
         runsummary['num_cosmics'].extend([num_events])
 
         # Number of wrong trigger tags for this whole run (add up only
@@ -420,34 +423,33 @@ def main():
         runsummary['num_ucts_jumps'].extend([total_num_ucts_jumps])
 
         runsummary['cosmics_fraction_pulses_above10'].extend(
-            [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
+            [(table['num_pulses_above_0010_pe'].mean(axis=1)).sum() /
              runsummary['num_cosmics'][-1]])
         runsummary['cosmics_fraction_pulses_above30'].extend(
-            [(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum() /
+            [(table['num_pulses_above_0030_pe'].mean(axis=1)).sum() /
              runsummary['num_cosmics'][-1]])
         pixwise_runsummary['cosmics_pix_fraction_pulses_above10'].extend(
-            [table.col('num_pulses_above_0010_pe').sum(axis=0) /
+            [table['num_pulses_above_0010_pe'].sum(axis=0) /
              runsummary['num_cosmics'][-1]])
         pixwise_runsummary['cosmics_pix_fraction_pulses_above30'].extend(
-            [table.col('num_pulses_above_0030_pe').sum(axis=0) /
+            [table['num_pulses_above_0030_pe'].sum(axis=0) /
              runsummary['num_cosmics'][-1]])
         pixwise_runsummary['cosmics_cog_within_pixel'].extend(
-                [table.col('cog_within_pixel').sum(axis=0)])
+                [table['cog_within_pixel'].sum(axis=0)])
         pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200'].extend(
-                [table.col('cog_within_pixel_intensity_gt_200').sum(axis=0)])
+                [table['cog_within_pixel_intensity_gt_200'].sum(axis=0)])
 
 
         # Pedestals:
         if datatables[1] is not None:
-            table = a.root.dl1datacheck.pedestals
-            nevents = table.col('num_events')  # events per subrun
+            table = get_datacheck_table(file, "pedestals")
+            nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
             # [subruns, npixels]:
-            nevents_per_pix = np.transpose([nevents] *
-                                           a.root.dl1datacheck.pedestals.col(
-                                                   'charge_mean').shape[1])
+            nevents_per_pix = np.transpose([nevents] * table[
+                'charge_mean'].shape[1])
 
-            num_events = table.col('num_events').sum()
+            num_events = table['num_events'].sum()
             runsummary['num_pedestals'].extend([num_events])
 
             # Number of wrong trigger tags for this whole run (add up only
@@ -457,18 +459,18 @@ def main():
             nwtib = np.sum(pedestals['wrong_tib_trig_type'][-len(table):])
             runsummary['num_wrong_tib_tags_in_pedestals'].extend([nwtib])
 
-            runsummary['num_pedestals_after_cleaning'].extend([table.col(
-                'num_cleaned_events').sum()])
+            runsummary['num_pedestals_after_cleaning'].\
+                extend([table['num_cleaned_events'].sum()])
 
             runsummary['ped_fraction_pulses_above10'].extend(
-                [(table.col('num_pulses_above_0010_pe').mean(axis=1)).sum() /
+                [(table['num_pulses_above_0010_pe'].mean(axis=1)).sum() /
                  runsummary['num_pedestals'][-1]])
             runsummary['ped_fraction_pulses_above30'].extend(
-                [(table.col('num_pulses_above_0030_pe').mean(axis=1)).sum() /
+                [(table['num_pulses_above_0030_pe'].mean(axis=1)).sum() /
                  runsummary['num_pedestals'][-1]])
 
             # meanq is [subruns, pixels]
-            meanq = table.col('charge_mean')
+            meanq = table['charge_mean']
 
             # charge_mean is [pixels], containing pixwise means in the full run:
             charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
@@ -486,8 +488,8 @@ def main():
             # events in the subrun, and divide by the number of events in the
             # run - counting only subruns in which the pixels has no close
             # stars:
-            nstars = table.col('num_nearby_stars')
-            meanq = np.ma.array(table.col('charge_mean'), mask=nstars > 0,
+            nstars = table['num_nearby_stars']
+            meanq = np.ma.array(table['charge_mean'], mask=nstars > 0,
                                 copy=False)
             charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
                           np.ma.array(nevents_per_pix, mask=nstars > 0,
@@ -500,7 +502,7 @@ def main():
             runsummary['mean_number_of_pixels_nearby_stars'] = \
                 mean_number_of_pixels_nearby_stars
 
-            stddevq = table.col('charge_stddev')
+            stddevq = table['charge_stddev']
             charge_stddev = \
                 np.sqrt(np.sum((stddevq ** 2) * nevents[:, None],
                                axis=0) / events_in_run)
@@ -508,7 +510,7 @@ def main():
             runsummary['ped_charge_stddev'].extend([np.nanmean(charge_stddev)])
 
             # The same but excluding pixels close to stars:
-            stddevq = np.ma.masked_array(table.col('charge_stddev'),
+            stddevq = np.ma.masked_array(table['charge_stddev'],
                                          mask=nstars > 0, copy=False)
             charge_stddev = np.sqrt(np.sum((stddevq ** 2) * nevents_per_pix,
                                axis=0) / np.ma.array(nevents_per_pix,
@@ -519,15 +521,15 @@ def main():
 
 
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend(
-                [table.col('num_pulses_above_0010_pe').sum(axis=0) /
+                [table['num_pulses_above_0010_pe'].sum(axis=0) /
                  runsummary['num_pedestals'][-1]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend(
-                [table.col('num_pulses_above_0030_pe').sum(axis=0) /
+                [table['num_pulses_above_0030_pe'].sum(axis=0) /
                  runsummary['num_pedestals'][-1]])
             pixwise_runsummary['ped_pix_charge_mean'].extend(
-                [table.col('charge_mean').mean(axis=0)])
+                [table['charge_mean'].mean(axis=0)])
             pixwise_runsummary['ped_pix_charge_stddev'].extend(
-                [table.col('charge_stddev').mean(axis=0)])
+                [table['charge_stddev'].mean(axis=0)])
 
         else:
             runsummary['num_pedestals'].extend([np.nan])
@@ -549,8 +551,8 @@ def main():
             pixwise_runsummary['ped_pix_charge_stddev'].extend([numpixels * [np.nan]])
 
         if datatables[2] is not None:
-            table = a.root.dl1datacheck.flatfield
-            nevents = table.col('num_events')  # events per subrun
+            table = get_datacheck_table(file, "flatfield")
+            nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
 
@@ -562,10 +564,10 @@ def main():
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([nwtib])
 
             # Mean flat field charge through a run, for each pixel:
-            charge_mean = np.sum(table.col('charge_mean') * nevents[:, None],
+            charge_mean = np.sum(table['charge_mean'] * nevents[:, None],
                                  axis=0) / events_in_run
             # Mean flat field time through a run, for each pixel:
-            time_mean = np.sum(table.col('time_mean') * nevents[:, None],
+            time_mean = np.sum(table['time_mean'] * nevents[:, None],
                                axis=0) / events_in_run
 
             # Now store the pixel-averaged mean charge:
@@ -575,7 +577,7 @@ def main():
                                                      np.sqrt(npixels)])
             # FF charge std dev through a run, for each pixel:
             charge_stddev = \
-                np.sqrt(np.sum((table.col('charge_stddev') ** 2) * nevents[:, None],
+                np.sqrt(np.sum((table['charge_stddev'] ** 2) * nevents[:, None],
                                axis=0) / events_in_run)
             # Store the pixel-averaged FF charge std dev:
             runsummary['ff_charge_stddev'].extend([np.nanmean(charge_stddev)])
@@ -586,25 +588,25 @@ def main():
                                                    np.sqrt(npixels)])
             # FF time std dev through a run, for each pixel:
             time_stddev = \
-                np.sqrt(np.sum((table.col('time_stddev') ** 2) * nevents[:, None],
+                np.sqrt(np.sum((table['time_stddev'] ** 2) * nevents[:, None],
                                axis=0) / events_in_run)
             # Store the pixel-averaged FF time std dev:
             runsummary['ff_time_stddev'].extend([np.nanmean(time_stddev)])
 
             rel_time_stddev = \
-                np.sqrt(np.sum((table.col('relative_time_stddev') ** 2) *
+                np.sqrt(np.sum((table['relative_time_stddev'] ** 2) *
                                nevents[:, None], axis=0) / events_in_run)
             runsummary['ff_rel_time_stddev']. \
                 extend([np.nanmean(rel_time_stddev)])
 
             pixwise_runsummary['ff_pix_charge_mean'].extend(
-                [table.col('charge_mean').mean(axis=0)])
+                [table['charge_mean'].mean(axis=0)])
             pixwise_runsummary['ff_pix_charge_stddev'].extend(
-                [table.col('charge_stddev').mean(axis=0)])
+                [table['charge_stddev'].mean(axis=0)])
             pixwise_runsummary['ff_pix_rel_time_mean'].extend(
-                [table.col('relative_time_mean').mean(axis=0)])
+                [table['relative_time_mean'].mean(axis=0)])
             pixwise_runsummary['ff_pix_rel_time_stddev'].extend(
-                [table.col('relative_time_stddev').mean(axis=0)])
+                [table['relative_time_stddev'].mean(axis=0)])
         else:
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
@@ -624,7 +626,6 @@ def main():
             pixwise_runsummary['ff_pix_rel_time_stddev'].extend(
                 [numpixels * [np.nan]])
 
-        a.close()
 
         # Now process the muon files (one per subrun, containing one entry per ring):
 
@@ -1505,6 +1506,10 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     return
 
+def get_datacheck_table(filename, tablename, exclude_stars=True):
+    table = read_table(filename, f'/dl1datacheck/{tablename}')
+
+    return table
 
 def trigtag_mismatches(table, tag_value):
     """
