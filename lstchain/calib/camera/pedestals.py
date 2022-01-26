@@ -4,6 +4,7 @@ Factory for the estimation of the flat field coefficients
 
 
 import numpy as np
+from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.core.traits import List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
@@ -240,9 +241,9 @@ def calculate_time_results(
 ):
     """Calculate and return the sample time"""
     return {
-        'sample_time': (time_start + (trigger_time - time_start) / 2).unix,
-        'sample_time_min': time_start.unix,
-        'sample_time_max': trigger_time.unix,
+        'sample_time': (time_start + (trigger_time - time_start) / 2).unix*u.s,
+        'sample_time_min': time_start.unix*u.s,
+        'sample_time_max': trigger_time.unix*u.s,
     }
 
 
