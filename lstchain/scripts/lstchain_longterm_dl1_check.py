@@ -132,6 +132,9 @@ def main():
     pedestals['charge_stddev'] = []
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
+    pedestals['charge_mean_no_stars'] = []
+    pedestals['charge_stddev_no_stars'] = []
+
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
     flatfield['rel_time_mean'] = []
