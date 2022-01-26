@@ -1,17 +1,17 @@
 import pandas as pd
 import pytest
+from ctapipe.utils import get_dataset_path
 
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.scripts.tests.test_lstchain_scripts import run_program
-from ctapipe.utils import get_dataset_path
 from lstchain.tests.test_lstchain import (
+    test_calib_path,
+    test_data,
     test_drive_report,
     test_drs4_pedestal_path,
-    test_calib_path,
-    test_time_calib_path,
     test_r0_path,
     test_r0_path2,
-    test_data,
+    test_time_calib_path,
 )
 
 
@@ -27,7 +27,6 @@ def pytest_configure(config):
             config.option.markexpr += " and "
         else:
             config.option.markexpr += "not private_data"
-
 
 
 @pytest.fixture(scope="session")
@@ -120,13 +119,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path1
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path1
     )
 
     run_program(
@@ -148,13 +147,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path2
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path2
     )
 
     return {
@@ -230,7 +229,7 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
 
 @pytest.fixture(scope="session")
 @pytest.mark.private_data
-def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
+def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
     """Produce a dl2 file from an observed dl1 file."""
     real_data_dl2_file = temp_dir_observed_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
     run_program(

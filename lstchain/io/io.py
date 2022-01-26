@@ -2,27 +2,28 @@ import logging
 import os
 import re
 from multiprocessing import Pool
+import warnings
 
 import astropy.units as u
 import ctapipe
 import ctapipe_io_lst
-import lstchain
 import numpy as np
 import pandas as pd
 import tables
 from astropy.table import Table, vstack, QTable
 from ctapipe.containers import SimulationConfigContainer
-# from ctapipe.tools.stage1 import Stage1ProcessorTool
 from ctapipe.instrument import (
-    OpticsDescription,
-    CameraGeometry,
     CameraDescription,
+    CameraGeometry,
     CameraReadout,
+    OpticsDescription,
+    SubarrayDescription,
     TelescopeDescription,
-    SubarrayDescription
 )
-from ctapipe.io import HDF5TableReader
-from ctapipe.io import HDF5TableWriter
+from ctapipe.io import (
+    HDF5TableReader,
+    HDF5TableWriter,
+)
 from eventio import Histograms, EventIOFile
 from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
 from eventio.simtel.objects import History, HistoryConfig
@@ -31,41 +32,65 @@ from tables import open_file
 from tqdm import tqdm
 from contextlib import ExitStack
 
-from .lstcontainers import ThrownEventsHistogram, ExtraMCInfo, MetaData
+import lstchain
+from .lstcontainers import (
+    ExtraMCInfo,
+    MetaData,
+    ThrownEventsHistogram,
+)
 
 log = logging.getLogger(__name__)
 
-
 __all__ = [
-    'read_simu_info_hdf5',
-    'read_simu_info_merged_hdf5',
-    'get_dataset_keys',
-    'write_simtel_energy_histogram',
-    'write_mcheader',
-    'check_thrown_events_histogram',
+
+    'add_column_table',
+    'add_config_metadata',
+    'add_global_metadata',
+    'add_source_filenames',
+    'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
-    'read_metadata',
-    'auto_merge_h5files',
-    'global_metadata',
-    'add_global_metadata',
-    'add_config_metadata',
-    'write_subarray_tables',
-    'write_metadata',
-    'write_dataframe',
-    'write_dl2_dataframe',
-    'write_calibration_data',
-    'read_mc_dl2_to_QTable',
-    'read_data_dl2_to_QTable',
-    'read_dl2_params',
+    'check_thrown_events_histogram',
+    'copy_h5_nodes',
+    'extract_simulation_nsb',
     'extract_observation_time',
-    'merge_dl2_runs',
+    'get_dataset_keys',
     'get_srcdep_index_keys',
     'get_srcdep_params',
+    'get_stacked_table',
+    'global_metadata',
+    'merge_dl2_runs',
+    'merging_check',
     'parse_cfg_bytestring',
-    'extract_simulation_nsb',
-    'copy_h5_nodes',
-    'add_source_filenames',
+    'read_camera_geometries',
+    'read_camera_readouts',
+    'read_data_dl2_to_QTable',
+    'read_dl2_params',
+    'read_mc_dl2_to_QTable',
+    'read_metadata',
+    'read_optics',
+    'read_simtel_energy_histogram',
+    'read_simu_info_hdf5',
+    'read_simu_info_merged_hdf5',
+    'read_single_camera_description',
+    'read_single_camera_geometry',
+    'read_single_camera_readout',
+    'read_single_optics',
+    'read_single_telescope_description',
+    'read_subarray_description',
+    'read_subarray_table',
+    'read_telescopes_descriptions',
+    'read_telescopes_positions',
+    'recursive_copy_node',
+    'stack_tables_h5files',
+    'write_calibration_data',
+    'write_dataframe',
+    'write_dl2_dataframe',
+    'write_mcheader',
+    'write_metadata',
+    'write_simtel_energy_histogram',
+    'write_subarray_tables',
+
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -78,10 +103,10 @@ dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/L
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
-    complevel=5,            # enable compression, 5 is a good tradeoff between compression and speed
-    complib='blosc:zstd',   # compression using blosc/zstd
-    fletcher32=True,        # attach a checksum to each chunk for error correction
-    bitshuffle=False,       # for BLOSC, shuffle bits for better compression
+    complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
+    complib='blosc:zstd',  # compression using blosc/zstd
+    fletcher32=True,  # attach a checksum to each chunk for error correction
+    bitshuffle=False,  # for BLOSC, shuffle bits for better compression
 )
 
 
@@ -135,8 +160,8 @@ def read_simu_info_merged_hdf5(filename):
 
     for k in combined_mcheader.keys():
         if (
-            combined_mcheader[k] is not None
-            and combined_mcheader.fields[k].unit is not None
+                combined_mcheader[k] is not None
+                and combined_mcheader.fields[k].unit is not None
         ):
             combined_mcheader[k] = u.Quantity(
                 combined_mcheader[k], combined_mcheader.fields[k].unit
@@ -242,31 +267,36 @@ def copy_h5_nodes(from_file, to_file, nodes=None):
 
     groups = set()
 
-    for k in keys:
-        in_node = from_file.root[k]
-        parent_path = in_node._v_parent._v_pathname
-        name = in_node._v_name
-        groups.add(parent_path)
+    with warnings.catch_warnings():
+        # when copying nodes, we have no control over names
+        # so it does not make sense to warn about them
+        warnings.simplefilter('ignore', tables.NaturalNameWarning)
 
-        if isinstance(in_node, tables.Table):
-            t = to_file.create_table(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                t.attrs[att] = from_file.root[k].attrs[att]
+        for k in keys:
+            in_node = from_file.root[k]
+            parent_path = in_node._v_parent._v_pathname
+            name = in_node._v_name
+            groups.add(parent_path)
 
-        elif isinstance(in_node, tables.Array):
-            a = to_file.create_array(
-                parent_path,
-                name,
-                createparents=True,
-                obj=from_file.root[k].read()
-            )
-            for att in from_file.root[k].attrs._f_list():
-                a.attrs[att] = in_node.attrs[att]
+            if isinstance(in_node, tables.Table):
+                t = to_file.create_table(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    t.attrs[att] = from_file.root[k].attrs[att]
+
+            elif isinstance(in_node, tables.Array):
+                a = to_file.create_array(
+                    parent_path,
+                    name,
+                    createparents=True,
+                    obj=from_file.root[k].read()
+                )
+                for att in from_file.root[k].attrs._f_list():
+                    a.attrs[att] = in_node.attrs[att]
 
     # after copying the datasets, also make sure we copy group metadata
     # of all copied groups
@@ -278,12 +308,12 @@ def copy_h5_nodes(from_file, to_file, nodes=None):
 
 
 def auto_merge_h5files(
-    file_list,
-    output_filename="merged.h5",
-    nodes_keys=None,
-    merge_arrays=False,
-    filters=HDF5_ZSTD_FILTERS,
-    progress_bar=True
+        file_list,
+        output_filename="merged.h5",
+        nodes_keys=None,
+        merge_arrays=False,
+        filters=HDF5_ZSTD_FILTERS,
+        progress_bar=True
 ):
     """
     Automatic merge of HDF5 files.
@@ -419,7 +449,7 @@ def write_simtel_energy_histogram(source, output_filename, obs_id=None, filters=
     """
     # Writing histograms
     with HDF5TableWriter(
-        filename=output_filename, group_name="simulation", mode="a", filters=filters
+            filename=output_filename, group_name="simulation", mode="a", filters=filters
     ) as writer:
         writer.meta = metadata
         for hist in yield_toplevel_of_type(source.file_, Histograms):
@@ -474,7 +504,7 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
         add_global_metadata(extramc, metadata)
 
     with HDF5TableWriter(
-        filename=output_filename, group_name="simulation", mode="a", filters=filters
+            filename=output_filename, group_name="simulation", mode="a", filters=filters
     ) as writer:
         extramc.obs_id = obs_id
         writer.write("run_config", [extramc, mcheader])
@@ -504,7 +534,7 @@ def read_single_optics(filename, telescope_name):
         name=row["name"],
         num_mirrors=row["num_mirrors"],
         equivalent_focal_length=row["equivalent_focal_length"]
-        * telescope_optic_table["equivalent_focal_length"].unit,
+                                * telescope_optic_table["equivalent_focal_length"].unit,
         mirror_area=row["mirror_area"] * telescope_optic_table["mirror_area"].unit,
         num_mirror_tiles=Quantity(row["num_mirror_tiles"]),
     )
@@ -568,7 +598,7 @@ def read_camera_geometries(filename):
     subarray_layout_path = "configuration/instrument/subarray/layout"
     camera_geoms = {}
     for camera_name in set(
-        Table.read(filename, path=subarray_layout_path)["camera_type"]
+            Table.read(filename, path=subarray_layout_path)["camera_type"]
     ):
         camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
     return camera_geoms
@@ -634,7 +664,7 @@ def read_single_camera_description(filename, camera_name):
 
 
 def read_single_telescope_description(
-    filename, telescope_name, telescope_type, camera_name
+        filename, telescope_name, telescope_type, camera_name
 ):
     """
     Read a specific telescope description from a DL1 file
@@ -714,7 +744,7 @@ def read_telescopes_positions(filename):
     pos_unit = subarray_table["pos_x"].unit
     for row in subarray_table:
         pos_dict[row["tel_id"]] = (
-            np.array([row["pos_x"], row["pos_y"], row["pos_z"]]) * pos_unit
+                np.array([row["pos_x"], row["pos_y"], row["pos_z"]]) * pos_unit
         )
     return pos_dict
 
@@ -889,7 +919,7 @@ def add_config_metadata(container, configuration):
     linted_config = re.sub(r"PosixPath\((.*?)\)", "\\1", linted_config)
     linted_config = linted_config.replace("\'", "\"")
     linted_config = linted_config.replace("None", "\"None\"")
-    linted_config = linted_config.replace("inf",  "\"inf\"")
+    linted_config = linted_config.replace("inf", "\"inf\"")
     linted_config = linted_config.replace("True", "true")
     linted_config = linted_config.replace("False", "false")
 
@@ -1213,7 +1243,7 @@ def extract_observation_time(t_df):
     -------
     Observation duration in seconds
     """
-    return pd.to_datetime(t_df.dragon_time.iat[len(t_df)-1], unit='s') -\
+    return pd.to_datetime(t_df.dragon_time.iat[len(t_df) - 1], unit='s') - \
            pd.to_datetime(t_df.dragon_time.iat[0], unit='s')
 
 
@@ -1269,10 +1299,10 @@ def get_srcdep_index_keys(filename):
     dataset_keys = get_dataset_keys(filename)
 
     if dl2_params_src_dep_lstcam_key in dataset_keys:
-        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+        data = pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
 
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
-        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+        data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
@@ -1297,15 +1327,15 @@ def get_srcdep_params(filename, key):
     dataset_keys = get_dataset_keys(filename)
 
     if dl2_params_src_dep_lstcam_key in dataset_keys:
-        data =  pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
+        data = pd.read_hdf(filename, key=dl2_params_src_dep_lstcam_key)
 
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
-        data =  pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
+        data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
-        
+
     return data[key]
 
 

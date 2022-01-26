@@ -14,20 +14,24 @@ $> python lstchain_mc_r0_to_dl2.py
 --path-models ./trained_models
 
 """
+
 import argparse
 import os
-from ctapipe.utils import get_dataset_path
 from distutils.util import strtobool
-from lstchain.paths import r0_to_dl1_filename
 from pathlib import Path
+
+from ctapipe.utils import get_dataset_path
+
+from lstchain.paths import r0_to_dl1_filename
 
 parser = argparse.ArgumentParser(description="MC Pipeline R0 to DL2.")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', type=Path,
-                    dest='datafile',
-                    help='path to the file with simtelarray events',
-                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+parser.add_argument(
+    '--input-file', '-f', type=Path,
+    dest='datafile',
+    help='path to the file with simtelarray events',
+)
 
 parser.add_argument('--path-models', '-p', action='store', type=str,
                     dest='path_models',
@@ -38,7 +42,7 @@ parser.add_argument('--path-models', '-p', action='store', type=str,
 parser.add_argument('--store-dl1', '-s1', action='store', type=lambda x: bool(strtobool(x)),
                     dest='store_dl1',
                     help='Boolean. True for storing DL1 file'
-                    'Default=False, use True otherwise',
+                         'Default=False, use True otherwise',
                     default=True)
 
 parser.add_argument('--output-dir', '-o', type=Path,
@@ -55,7 +59,13 @@ parser.add_argument('--config', '-c', action='store', type=str,
 
 def main():
     args = parser.parse_args()
-    
+
+    # using a default of None and only using get_dataset_path here
+    # prevents downloading gamma_test_large when an input file is actually given
+    # or just --help is called.
+    if args.datafile is None:
+        args.datafile = get_dataset_path('gamma_test_large.simtel.gz')
+
     outdir = args.outdir.absolute()
     dl1_file = outdir / r0_to_dl1_filename(args.datafile.name)
 

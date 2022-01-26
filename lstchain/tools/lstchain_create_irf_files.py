@@ -14,37 +14,47 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
 
-import numpy as np
-
-from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io import read_mc_dl2_to_QTable
-from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
-
-from astropy.io import fits
 import astropy.units as u
+import numpy as np
 from astropy import table
-
+from astropy.io import fits
+from ctapipe.core import (
+    Provenance,
+    Tool,
+    ToolConfigurationError,
+    traits,
+)
 from pyirf.io.gadf import (
     create_aeff2d_hdu,
-    create_energy_dispersion_hdu,
     create_background_2d_hdu,
+    create_energy_dispersion_hdu,
     create_psf_table_hdu,
 )
 from pyirf.irf import (
-    effective_area_per_energy,
-    energy_dispersion,
-    effective_area_per_energy_and_fov,
     background_2d,
+    effective_area_per_energy,
+    effective_area_per_energy_and_fov,
+    energy_dispersion,
     psf_table,
 )
 from pyirf.spectral import (
-    calculate_event_weights,
-    PowerLaw,
     CRAB_MAGIC_JHEAP2015,
-    IRFDOC_PROTON_SPECTRUM,
     IRFDOC_ELECTRON_SPECTRUM,
+    IRFDOC_PROTON_SPECTRUM,
+    PowerLaw,
+    calculate_event_weights,
 )
-from pyirf.utils import calculate_source_fov_offset, calculate_theta
+from pyirf.utils import (
+    calculate_source_fov_offset,
+    calculate_theta,
+)
+
+from lstchain.io import (
+    DL3FixedCuts,
+    DataBinning,
+    EventSelector,
+)
+from lstchain.io import read_mc_dl2_to_QTable
 
 __all__ = ["IRFFITSWriter"]
 
@@ -213,7 +223,7 @@ class IRFFITSWriter(Tool):
             Provenance().add_input_file(self.input_electron_dl2)
 
         self.provenance_log = self.output_irf_file.parent / (
-            self.name + ".provenance.log"
+                self.name + ".provenance.log"
         )
 
     def start(self):
@@ -320,7 +330,10 @@ class IRFFITSWriter(Tool):
         }
         if self.point_like:
             self.log.info("Generating point_like IRF HDUs")
-            extra_headers["RAD_MAX"] = str(self.fixed_cuts.fixed_theta_cut * u.deg)
+            extra_headers["RAD_MAX"] = (
+                self.fixed_cuts.fixed_theta_cut,
+                'deg'
+            )
         else:
             self.log.info("Generating Full-Enclosure IRF HDUs")
 

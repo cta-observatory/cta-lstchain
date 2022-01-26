@@ -17,9 +17,10 @@ $> python lst-trainpipe
 """
 
 import argparse
-from lstchain.reco import dl1_to_dl2
 from distutils.util import strtobool
+
 from lstchain.io.config import read_configuration_file
+from lstchain.reco import dl1_to_dl2
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
@@ -36,19 +37,20 @@ parser.add_argument('--input-file-proton', '--fp', type=str,
 parser.add_argument('--store-rf', '-s', action='store', type=lambda x: bool(strtobool(x)),
                     dest='storerf',
                     help='Boolean. True for storing trained models in 3 files'
-                    'Default=True, use False otherwise',
+                         'Default=True, use False otherwise',
                     default=True)
 
 parser.add_argument('--output-dir', '-o', action='store', type=str,
-                     dest='path_models',
-                     help='Path to store the resulting RF',
-                     default='./trained_models/')
+                    dest='path_models',
+                    help='Path to store the resulting RF',
+                    default='./trained_models/')
 
 parser.add_argument('--config', '-c', action='store', type=str,
                     dest='config_file',
                     help='Path to a configuration file. If none is given, a standard configuration is applied',
                     default=None
                     )
+
 
 def main():
     args = parser.parse_args()
@@ -62,7 +64,6 @@ def main():
         except("Custom configuration could not be loaded !!!"):
             pass
 
-            
     dl1_to_dl2.build_models(args.gammafile,
                             args.protonfile,
                             save_models=args.storerf,

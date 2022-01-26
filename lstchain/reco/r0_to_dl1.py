@@ -15,6 +15,8 @@ import pandas as pd
 import tables
 from scipy.interpolate import interp1d
 from astropy.table import Table
+from ctapipe.calib.camera import CameraCalibrator
+from ctapipe.containers import EventType
 from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
@@ -24,18 +26,17 @@ from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
-from ctapipe.calib.camera import CameraCalibrator
-from ctapipe.containers import EventType
+
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
 from ..analysis import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..image.muon import analyze_muon_event, tag_pix_thr
-from ..image.muon import create_muon_table, fill_muon_event
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
+from ..image.muon import analyze_muon_event, tag_pix_thr
+from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
     DL1ParametersContainer,
     replace_config,
@@ -52,10 +53,10 @@ from ..io import (
     write_simtel_energy_histogram,
     write_subarray_tables,
 )
-from ..io.io import add_column_table, extract_simulation_nsb
+
+from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
-from ..io.io import dl1_params_lstcam_key
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +242,7 @@ def get_dl1(
 
 
 def r0_to_dl1(
-    input_filename=get_dataset_path('gamma_test_large.simtel.gz'),
+    input_filename=None,
     output_filename=None,
     custom_config={},
 ):
@@ -261,6 +262,11 @@ def r0_to_dl1(
     -------
 
     """
+
+    # using None as default and using `get_dataset_path` only inside the function
+    # prevents downloading at import time.
+    if input_filename is None:
+        get_dataset_path('gamma_test_large.simtel.gz')
 
     if output_filename is None:
         try:

@@ -1,13 +1,16 @@
+import astropy.units as u
+import numpy as np
 from ctapipe.core import Component
 from ctapipe.core.traits import Dict, List, Float, Int
-from lstchain.reco.utils import filter_events
-
-import numpy as np
-import astropy.units as u
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 
+from lstchain.reco.utils import filter_events
 
-__all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
+__all__ = [
+    "DL3FixedCuts",
+    "DataBinning",
+    "EventSelector",
+]
 
 
 class EventSelector(Component):

@@ -1,23 +1,24 @@
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-from lstchain.spectra.crab import crab_hegra
-from lstchain.visualization.plot_dl2 import plot_pos
-import numpy as np
 import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from ctaplot.plots import plot_sensitivity_magic_performance
+from matplotlib.colors import LogNorm
 from pyirf.spectral import CRAB_MAGIC_JHEAP2015
+
+from lstchain.spectra.crab import crab_hegra
+from lstchain.visualization.plot_dl2 import plot_pos
 
 __all__ = [
     'fill_bin_content',
-    'format_axes_ebin',
     'format_axes_array',
+    'format_axes_ebin',
     'format_axes_sensitivity',
     'plot_Crab_SED',
+    'plot_positions_survived_events',
     'plot_sensitivity',
     'sensitivity_minimization_plot',
     'sensitivity_plot_comparison',
-    'plot_positions_survived_events',
 ]
 
 
@@ -49,7 +50,7 @@ def fill_bin_content(ax, sensitivity, energy_bin, n_bins_gammaness, n_bins_theta
             # up to reaching 1
             gammaness = 0.1 / 2 + (1 / n_bins_gammaness) * i
             ax.text(theta2, gammaness, "%.2f %%" % sensitivity[energy_bin][i][j],
-                           ha = "center", va = "center", color = "w", size = 8)
+                    ha="center", va="center", color="w", size=8)
     return ax
 
 
@@ -70,8 +71,8 @@ def format_axes_ebin(ax, img):
 
     ax.set_aspect('auto')
 
-    ax.set_ylabel(r'Gammaness', fontsize = 15)
-    ax.set_xlabel(r'$\theta^2$ (deg$^2$)', fontsize = 15)
+    ax.set_ylabel(r'Gammaness', fontsize=15)
+    ax.set_xlabel(r'$\theta^2$ (deg$^2$)', fontsize=15)
 
     starty, endy = ax.get_ylim()
     ax.yaxis.set_ticks(np.arange(endy, starty, 0.1)[::-1])
@@ -79,9 +80,9 @@ def format_axes_ebin(ax, img):
     ax.xaxis.set_ticks(np.arange(startx, endx, 0.01))
 
     fig = ax.get_figure()
-    #cbaxes = fig.add_axes([0.9, 0.125, 0.03, 0.755])
-    cbar = fig.colorbar(img)#, cax=cbaxes)
-    cbar.set_label('Sensitivity (% Crab)', fontsize = 15)
+    # cbaxes = fig.add_axes([0.9, 0.125, 0.03, 0.755])
+    cbar = fig.colorbar(img)  # , cax=cbaxes)
+    cbar.set_label('Sensitivity (% Crab)', fontsize=15)
 
 
 def format_axes_array(ax, arr_i, arr_j, plot):
@@ -159,14 +160,14 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
 
     energy = np.geomspace(emin.to_value(u.TeV), emax.to_value(u.TeV), 40) * u.TeV
 
-    if percentage==100:
+    if percentage == 100:
         kwargs.setdefault('label', 'Crab (MAGIC JHEAP 2015)')
     else:
         kwargs.setdefault('label', f'{percentage}% Crab (MAGIC JHEAP 2015)')
 
     kwargs.setdefault('color', 'gray')
     ax.plot(energy.to_value(u.TeV),
-            percentage/100. * (energy**2 * CRAB_MAGIC_JHEAP2015(energy)).to_value(u.TeV / (u.cm * u.cm * u.s)),
+            percentage / 100. * (energy ** 2 * CRAB_MAGIC_JHEAP2015(energy)).to_value(u.TeV / (u.cm * u.cm * u.s)),
             **kwargs
             )
     ax.set_xscale('log')

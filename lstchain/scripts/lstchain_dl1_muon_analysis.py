@@ -29,8 +29,14 @@ from lstchain.image.muon import (
     fill_muon_event,
     tag_pix_thr,
 )
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.io.io import read_telescopes_descriptions, read_subarray_description
+from lstchain.io.io import (
+    dl1_images_lstcam_key,
+    dl1_params_lstcam_key,
+)
+from lstchain.io.io import (
+    read_subarray_description,
+    read_telescopes_descriptions,
+)
 from lstchain.visualization import plot_calib
 
 parser = argparse.ArgumentParser()
@@ -57,7 +63,6 @@ parser.add_argument(
     help="Path to corresponding calibration file (containing bad pixel information).",
 )
 
-
 # Optional argument
 parser.add_argument(
     "--plot-rings",
@@ -82,6 +87,7 @@ parser.add_argument(
 
 
 def main():
+
     args = parser.parse_args()
     
     print("input files: {}".format(args.input_file))
@@ -133,17 +139,21 @@ def main():
             dummy_times[:] = np.nan
             parameters['dragon_time'] = dummy_times
 
+        # fill MC energies with -1 in case they do not exist (like in real data):
+        if 'mc_energy' not in parameters.keys():
+            parameters['mc_energy'] = np.ones_like(parameters['event_id']) * -1
+
         for full_image, event_id, dragon_time, mc_energy in zip(
                 images, parameters['event_id'], parameters['dragon_time'], parameters['mc_energy']):
             if args.calib_file is not None:
-                image = full_image*(~bad_pixels)
+                image = full_image * (~bad_pixels)
             else:
                 image = full_image
             # print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
             #                                                           np.size(image[image > 10.])))
             # if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
             #     continue
-            if not tag_pix_thr(image): # default skips pedestal and calibration events
+            if not tag_pix_thr(image):  # default skips pedestal and calibration events
                 continue
 
             # default values apply no filtering.
@@ -156,9 +166,9 @@ def main():
                 muonringparam, good_ring, radial_distribution,
                 mean_pixel_charge_around_ring, muonparameters
             ) = analyze_muon_event(subarray,
-                event_id, image, geom, equivalent_focal_length,
-                mirror_area, args.plot_rings, args.plots_path
-            )
+                                   event_id, image, geom, equivalent_focal_length,
+                                   mirror_area, args.plot_rings, args.plots_path
+                                   )
 
             if good_ring:
                 num_muons += 1
@@ -182,6 +192,7 @@ def main():
 
     table = Table(output_parameters)
     table.write(args.output_file, format='fits', overwrite=True)
+
 
 if __name__ == '__main__':
     main()

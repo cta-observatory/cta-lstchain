@@ -4,15 +4,27 @@ Collection of core analysis methods
 
 import getpass
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
 import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 from gammapy.stats import WStatCountsStatistic
-from lstchain.io.io import merge_dl2_runs
-from lstchain.reco.utils import compute_alpha, compute_theta2, extract_source_position, filter_events, rotate
-import lstchain.visualization.plot_dl2 as plotting
 
+import lstchain.visualization.plot_dl2 as plotting
+from lstchain.io.io import merge_dl2_runs
+from lstchain.reco.utils import (
+    compute_alpha,
+    compute_theta2,
+    extract_source_position,
+    filter_events,
+    rotate
+)
+
+__all__ = [
+    'analyze_on_off',
+    'analyze_wobble',
+    'setup_logging',
+]
 
 __all__ = [
     'analyze_on_off',
@@ -58,7 +70,7 @@ def analyze_wobble(config):
     config_file
 
     """
-   
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     n_points = config['analysis']['parameters']['n_points']
     theta2_cut = config['analysis']['selection']['theta2'][0]
@@ -67,7 +79,7 @@ def analyze_wobble(config):
     observation_time, data = merge_dl2_runs(config['input']['data_tag'],
                                             config['analysis']['runs'],
                                             config['input']['columns_to_read'])
-    LOGGER.debug('\nPreselection:\n%s',config['preselection'])
+    LOGGER.debug('\nPreselection:\n%s', config['preselection'])
     for key, value in config['preselection'].items():
         LOGGER.debug('\nParameter: %s, range: %s, value type: %s', key, value, type(value))
 
@@ -79,7 +91,7 @@ def analyze_wobble(config):
     named_datasets.append(('ON data', np.array(compute_theta2(selected_data, true_source_position)), 1))
     n_on = np.sum(named_datasets[0][1] < theta2_cut)
     n_off = 0
-    rotation_angle = 360./n_points
+    rotation_angle = 360. / n_points
     origin_x = selected_data['reco_src_x']
     origin_y = selected_data['reco_src_y']
     for off_point in range(1, n_points):
@@ -87,10 +99,11 @@ def analyze_wobble(config):
         off_xy = rotate(tuple(zip(origin_x, origin_y)), rotation_angle * off_point)
         t_off_data['reco_src_x'] = [xy[0] for xy in off_xy]
         t_off_data['reco_src_y'] = [xy[1] for xy in off_xy]
-        named_datasets.append((f'OFF {rotation_angle * off_point}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
+        named_datasets.append(
+            (f'OFF {rotation_angle * off_point}', np.array(compute_theta2(t_off_data, true_source_position)), 1))
         n_off += np.sum(named_datasets[-1][1] < theta2_cut)
 
-    stat = WStatCountsStatistic(n_on, n_off, 1./(n_points - 1))
+    stat = WStatCountsStatistic(n_on, n_off, 1. / (n_points - 1))
 
     # API change for attributes significance and excess in the new gammapy version: https://docs.gammapy.org/dev/api/gammapy.stats.WStatCountsStatistic.html
     lima_significance = stat.sqrt_ts.item()
@@ -98,7 +111,7 @@ def analyze_wobble(config):
     LOGGER.info('Observation time %s', observation_time)
     LOGGER.info('Number of "ON" events %s', n_on)
     LOGGER.info('Number of "OFF" events %s', n_off)
-    LOGGER.info('ON/OFF observation time ratio %s', 1./(n_points - 1))
+    LOGGER.info('ON/OFF observation time ratio %s', 1. / (n_points - 1))
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Li&Ma significance %s', lima_significance)
     plotting.plot_1d_excess(named_datasets, lima_significance, r'$\theta^2$ [deg$^2$]', theta2_cut, ax2)
@@ -134,8 +147,8 @@ def analyze_on_off(config):
                                                     config['analysis']['runs_off'],
                                                     config['input']['columns_to_read'], 4)
     LOGGER.info("OFF observation time: %s", observation_time_off)
-    #observation_time_ratio = observation_time_on / observation_time_off
-    #LOGGER.info('Observation time ratio %s', observation_time_ratio)
+    # observation_time_ratio = observation_time_on / observation_time_off
+    # LOGGER.info('Observation time ratio %s', observation_time_ratio)
 
     selected_data_on = filter_events(data_on, config['preselection'])
     selected_data_off = filter_events(data_off, config['preselection'])
@@ -159,7 +172,8 @@ def analyze_on_off(config):
     lima_excess = stat.n_sig
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
-    plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off,  lima_norm)], lima_significance,
+    plotting.plot_1d_excess([('ON data', theta2_on, 1), (f'OFF data X {lima_norm:.2f}', theta2_off, lima_norm)],
+                            lima_significance,
                             r'$\theta^2$ [deg$^2$]', theta2_cut, ax1)
 
     # alpha analysis
@@ -182,7 +196,8 @@ def analyze_on_off(config):
     lima_excess = stat.n_sig
     LOGGER.info('Excess is %s', lima_excess)
     LOGGER.info('Excess significance is %s', lima_significance)
-    plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off,  lima_norm)], lima_significance,
+    plotting.plot_1d_excess([('ON data', alpha_on, 1), (f'OFF data X {lima_norm:.2f}', alpha_off, lima_norm)],
+                            lima_significance,
                             r'$\alpha$ [deg]', alpha_cut, ax2, 0, 90, 90)
     if config['output']['interactive'] is True:
         LOGGER.info('Interactive mode ON, plots will be only shown, but not saved')
