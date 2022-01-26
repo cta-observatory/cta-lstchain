@@ -10,7 +10,7 @@ from astropy.table import Table, QTable
 from astropy.time import Time
 
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location
+from lstchain.reco.utils import location, camera_to_altaz
 
 __all__ = [
     "add_icrs_position_params",
