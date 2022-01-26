@@ -341,6 +341,8 @@ class DL1DataCheckContainer(Container):
                           frame=camera_frame).transform_to(telescope_frame)
         angular_distance = pixels[:, np.newaxis].separation(stars)
 
+        # This counts how many stars are close to each pixel; stars can be
+        # counted more than once (for different pixels!) so don't add them up.
         self.num_nearby_stars = np.count_nonzero(angular_distance < r_around_star,
                                                  axis=1)
 
@@ -388,10 +390,11 @@ class DL1DataCheckContainer(Container):
             if event_type == 'flatfield':
                 return
 
-            time = np.where(charge > 30, time, np.nan)
-            self.time_mean_above_030_pe = np.nanmean(time, axis=0)
-            self.time_stddev_above_030_pe = np.nanstd(time, axis=0)
-
+            masked_peak_time = np.ma.array(time, mask=charge < 30,  copy=False)
+            self.time_mean_above_030_pe = masked_peak_time.mean(
+                    axis=0).filled(np.nan)
+            self.time_stddev_above_030_pe = masked_peak_time.std(
+                    axis=0).filled(np.nan)
 
 def count_trig_types(array):
     """
