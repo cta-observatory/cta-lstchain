@@ -147,7 +147,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
     Generating an DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
-    
+
     assert (
         run_tool(
             DataReductionFITSWriter(),
