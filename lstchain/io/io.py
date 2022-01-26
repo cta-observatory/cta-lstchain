@@ -55,7 +55,7 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
-    'get_srcdep_wobble_angles',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
@@ -1262,9 +1262,9 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     return observation_time, df
 
 
-def get_srcdep_wobble_angles(filename):
+def get_srcdep_assumed_positions(filename):
     """
-    get wobble angles of source-dependent multi index columns
+    get assumed positions of source-dependent multi index columns
 
     Parameters
     ----------
@@ -1272,7 +1272,7 @@ def get_srcdep_wobble_angles(filename):
 
     Returns
     -------
-    wobble angles for source-dependent parameters
+    assumed positions for source-dependent parameters
     """
     dataset_keys = get_dataset_keys(filename)
 

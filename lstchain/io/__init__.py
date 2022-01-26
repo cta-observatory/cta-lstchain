@@ -21,7 +21,7 @@ from .io import (
     read_mc_dl2_to_QTable,
     read_data_dl2_to_QTable,
     HDF5_ZSTD_FILTERS,
-    get_srcdep_wobble_angles,
+    get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
 )
@@ -52,7 +52,7 @@ __all__ = [
     'HDF5_ZSTD_FILTERS',
     'read_mc_dl2_to_QTable',
     'read_data_dl2_to_QTable',
-    'get_srcdep_wobble_angles',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'add_source_filenames'
 ]
