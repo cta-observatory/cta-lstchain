@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 import pandas as pd
 from lstchain.io.io import dl2_params_lstcam_key
 
@@ -19,7 +18,6 @@ from lstchain.mc.sensitivity import (
     find_cut_real
 )
 
-@pytest.mark.run(after='test_r0_to_dl1')
 def test_read_sim_par(simulated_dl1_file):
     par = read_sim_par(simulated_dl1_file)
 
@@ -31,7 +29,6 @@ def test_read_sim_par(simulated_dl1_file):
     assert np.isclose(par['cone'].to_value(), 10.0)
 
 
-@pytest.mark.run(after='test_apply_models')
 def test_process_mc(simulated_dl2_file):
     #Write some delta_t and dragon_time in the example dl2 file
     dl2 = pd.read_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
@@ -43,7 +40,7 @@ def test_process_mc(simulated_dl2_file):
     process_mc(simulated_dl2_file, 'gamma')
     process_mc(simulated_dl2_file, 'proton')
     process_real(simulated_dl2_file)
-    pass
+
 
 def test_diff_events_after_cut(simulated_dl2_file):
 
