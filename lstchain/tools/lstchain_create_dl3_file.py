@@ -12,6 +12,7 @@ copy and append the relevant example config files, into a custom config file.
 
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
+from astropy.table import vstack
 from ctapipe.core import (
     Provenance,
     Tool,
@@ -30,7 +31,10 @@ from lstchain.paths import (
     dl2_to_dl3_filename,
     run_info_from_filename,
 )
-from lstchain.reco.utils import get_effective_time
+from lstchain.reco.utils import(
+    camera_to_altaz,
+    get_effective_time,
+)
 
 __all__ = ["DataReductionFITSWriter"]
 
