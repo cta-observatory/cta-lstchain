@@ -405,7 +405,9 @@ def merging_check(file_list):
     -------
     list: list of paths of files that can be merged
     """
-    assert len(file_list) > 1, "The list of files is too short"
+    if len(file_list) < 2:
+        raise ValueError("Need at least two files for merging")
+
     mergeable_list = file_list.copy()
 
     first_file = mergeable_list[0]
@@ -428,10 +430,11 @@ def merging_check(file_list):
                 check_mcheader(mcheader0, mcheader)
                 check_thrown_events_histogram(thrown_events_hist0, thrown_events_hist)
 
-            assert subarray_info == subarray_info0
+            if subarray_info != subarray_info0:
+                raise ValueError('Subarrays do not match')
 
-        except AssertionError:
-            log.exception(rf"{filename} cannot be merged '¯\_(ツ)_/¯'")
+        except ValueError as e:
+            log.error(rf"{filename} cannot be merged '¯\_(ツ)_/¯: {e}'")
             mergeable_list.remove(filename)
 
     return mergeable_list
@@ -782,7 +785,10 @@ def check_mcheader(mcheader1, mcheader2):
     -------
 
     """
-    assert mcheader1.keys() == mcheader2.keys()
+    if mcheader1.keys() != mcheader2.keys():
+        different = set(mcheader1.keys()).symmetric_difference(mcheader2.keys())
+        raise ValueError(f'MC header keys do not match, differing keys: {different}')
+
     # It does not matter that the number of simulated showers is the same
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
@@ -798,7 +804,10 @@ def check_mcheader(mcheader1, mcheader2):
             keys.remove(k)
 
     for k in keys:
-        assert mcheader1[k] == mcheader2[k]
+        v1 = mcheader1[k]
+        v2 = mcheader2[k]
+        if v1 != v2:
+            raise ValueError('MC headers do not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -810,11 +819,18 @@ def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
     thrown_events_hist1: `lstchain.io.lstcontainers.ThrownEventsHistogram`
     thrown_events_hist2: `lstchain.io.lstcontainers.ThrownEventsHistogram`
     """
-    assert thrown_events_hist1.keys() == thrown_events_hist2.keys()
+    keys1 = set(thrown_events_hist1.keys())
+    keys2 = set(thrown_events_hist2.keys())
+    if keys1 != keys2:
+        different = keys1.symmetric_difference(keys2)
+        raise ValueError(f'Histogram keys do not match, differing keys: {different}')
+
+
     # It does not matter that the number of simulated showers is the same
     keys = ["bins_energy", "bins_core_dist"]
     for k in keys:
-        assert (thrown_events_hist1[k] == thrown_events_hist2[k]).all()
+        if (thrown_events_hist1[k] != thrown_events_hist2[k]).all():
+            raise ValueError(f'Key {k} does not match for histograms')
 
 
 def write_metadata(metadata, output_filename):
@@ -865,10 +881,18 @@ def check_metadata(metadata1, metadata2):
     metadata1: `lstchain.io.MetaData`
     metadata2: `lstchain.io.MetaData`
     """
-    assert metadata1.keys() == metadata2.keys()
+    keys1 = set(metadata1.keys())
+    keys2 = set(metadata2.keys())
+    if keys1 != keys2:
+        different = keys1.symmetric_difference(keys2)
+        raise ValueError(f'Metadata keys do not match, differing keys: {different}')
+
     keys = ["LSTCHAIN_VERSION"]
     for k in keys:
-        assert metadata1[k] == metadata2[k]
+        v1 = metadata1[k]
+        v2 = metadata2[k]
+        if v1 != v2:
+            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():
