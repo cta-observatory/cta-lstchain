@@ -279,10 +279,14 @@ def main():
 
         total_num_ucts_jumps = 0  # To add up all jumps, for any event type
 
-        # the tables in each file correspond to a full run, and contain one
-        # row per subrun, what we do below is to calculate average or
-        # representative values for each run:
-
+        # The tables in each file correspond to a full run, and contain one
+        # row per subrun, what we do below is
+        # - to add the subrun-wise rows to tables that will span the whole
+        #   processed set of runs
+        #
+        # - to calculate some average values for each run, some pixel-wise,
+        #  some global for the whole camera
+        #
         for table, d, tag in zip(datatables, dicts, trig_tags):
             if table is None:
                 continue
@@ -313,9 +317,10 @@ def main():
             d['azimuth'].extend(table.col('mean_az_tel'))
             d['altitude'].extend(table.col('mean_alt_tel'))
 
-        # now fill table-specific quantities. In some cases they are
+        # now fill event-type-specific quantities. In some cases they are
         # pixel-averaged values:
 
+        # Cosmics
         if datatables[0] is not None:
             table = a.root.dl1datacheck.cosmics
 
@@ -325,7 +330,7 @@ def main():
             cosmics['fraction_pulses_above30'].extend(
                 table.col('num_pulses_above_0030_pe').mean(axis=1) /
                 table.col('num_events'))
-
+        # Pedestals
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
             pedestals['fraction_pulses_above10'].extend(
@@ -352,6 +357,7 @@ def main():
             pedestals['charge_stddev_no_stars'].extend(without_stars.mean(
                     axis=1).filled(np.nan))
 
+        # Flatfield
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
 
@@ -364,12 +370,23 @@ def main():
             flatfield['rel_time_stddev'].extend(
                 np.nanmean(table.col('relative_time_stddev'), axis=1))
 
+        # So far we have just filled the pedestals, cosmics and flatfield
+        # subrun-wise tables (that we will later write out) for all the subruns
+        # in this file
+
+        #
+        # Now we fill the runsummary  and pixwise_runsummary tables.
+        #
+
+        # Cosmics:
         table = a.root.dl1datacheck.cosmics
 
-        # needed later for the muons:
+        # keep subrun list, needed later for the muons:
         subruns = table.col('subrun_index')
 
-        # now fill the run-wise table:
+        # now fill the run-wise table - just one entry, which corresponds to
+        # the file datacheck_dl1_LST-1.RunXXXXX.h5 we are processing in this
+        # iteration:
         runsummary['runnumber'].extend([runnumber])
         runsummary['time'].extend([table.col('dragon_time').mean()])
         runsummary['elapsed_time'].extend([table.col('elapsed_time').sum()])
@@ -420,10 +437,16 @@ def main():
         pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200'].extend(
                 [table.col('cog_within_pixel_intensity_gt_200').sum(axis=0)])
 
+
+        # Pedestals:
         if datatables[1] is not None:
             table = a.root.dl1datacheck.pedestals
             nevents = table.col('num_events')  # events per subrun
             events_in_run = nevents.sum()
+            # [subruns, npixels]:
+            nevents_per_pix = np.transpose([nevents] *
+                                           a.root.dl1datacheck.pedestals.col(
+                                                   'charge_mean').shape[1])
 
             num_events = table.col('num_events').sum()
             runsummary['num_pedestals'].extend([num_events])
@@ -447,9 +470,11 @@ def main():
 
             # meanq is [subruns, pixels]
             meanq = table.col('charge_mean')
-            # charge_mean is [pixels], mean in the full run:
-            charge_mean = np.sum(meanq * nevents[:, None], axis=0) / \
+
+            # charge_mean is [pixels], containing pixwise means in the full run:
+            charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
                           events_in_run
+
             # Now store the pixel-averaged mean pedestal charge:
             runsummary['ped_charge_mean'].extend([np.nanmean(charge_mean)])
             # error on the mean:
@@ -457,25 +482,28 @@ def main():
             runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                       np.sqrt(npixels)])
 
-            # The same but excludig pixels close to stars:
+            # The same but excludig pixels close to stars. We add up the
+            # subrun-wise means (if no stars), multiplied times the number of
+            # events in the subrun, and divide by the number of events in the
+            # run - counting only subruns in which the pixels has no close
+            # stars:
             nstars = table.col('num_nearby_stars')
             meanq = np.ma.array(table.col('charge_mean'), mask=nstars > 0,
                                 copy=False)
-            charge_mean = np.sum(meanq * nevents[:, None], axis=0) / \
-                          events_in_run
+            charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
+                          np.ma.array(nevents_per_pix, mask=nstars > 0,
+                                      copy=False).sum(axis=0)
             runsummary['ped_charge_mean_no_stars'].extend([np.nanmean(
                     charge_mean)])
-            npixels = len(~np.isnan(charge_mean))
-            runsummary['ped_charge_mean_err_no_stars'].extend([np.nanstd(
-                    charge_mean) / np.sqrt(npixels)])
 
+            mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
+                                                                      axis=1))
             runsummary['mean_number_of_pixels_nearby_stars'] = \
-                np.nanmean(np.nansum(nstars, axis=1))
-            # First we average vs. subrun and then we take
+                mean_number_of_pixels_nearby_stars
 
             stddevq = table.col('charge_stddev')
             charge_stddev = \
-                np.sqrt(np.sum((table.col('charge_stddev') ** 2) * nevents[:, None],
+                np.sqrt(np.sum((stddevq ** 2) * nevents[:, None],
                                axis=0) / events_in_run)
             # Store the pixel-averaged pedestal charge std dev through a run:
             runsummary['ped_charge_stddev'].extend([np.nanmean(charge_stddev)])
@@ -483,8 +511,10 @@ def main():
             # The same but excluding pixels close to stars:
             stddevq = np.ma.masked_array(table.col('charge_stddev'),
                                          mask=nstars > 0, copy=False)
-            charge_stddev = np.sqrt(np.sum((stddevq ** 2) * nevents[:, None],
-                               axis=0) / events_in_run)
+            charge_stddev = np.sqrt(np.sum((stddevq ** 2) * nevents_per_pix,
+                               axis=0) / np.ma.array(nevents_per_pix,
+                                                     mask=nstars > 0,
+                                                     copy=False).sum(axis=0))
             runsummary['ped_charge_stddev_no_stars'].extend([np.nanmean(
                     charge_stddev)])
 
