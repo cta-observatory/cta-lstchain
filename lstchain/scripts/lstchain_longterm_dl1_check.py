@@ -94,6 +94,7 @@ def main():
 
     # subrun-wise tables: cosmics, pedestals, flatfield. One dictionary per
     # each. Note that the cosmics table contains also muon ring information!
+    # The tables have one row per subrun
 
     cosmics = {'runnumber': [],
                'subrun': [],
@@ -131,9 +132,6 @@ def main():
     pedestals['charge_stddev'] = []
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
-    pedestals['charge_mean_no_stars'] = []
-    pedestals['charge_stddev_no_stars'] = []
-
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
     flatfield['rel_time_mean'] = []
@@ -172,18 +170,33 @@ def main():
                   'ff_time_stddev': [],  # camera average
                   'ff_rel_time_stddev': [],  # camera-averaged std dev of pixel t
                   # w.r.t. average of rest of pixels in camera (~ t-resolution)
+
+                  # The same as above but calculated when no nearby stars are
+                  # present:
+                  'ff_charge_mean_no_stars': [],
+                  'ff_charge_mean_err_no_stars': [],
+                  'ff_time_mean_no_stars': [],
+                  'ff_time_mean_err_no_stars': [],
+                  'ff_time_stddev_no_stars': [],
+                  'ff_rel_time_stddev_no_stars': [],
+
                   'ped_charge_mean': [],  # camera average of mean pix ped charge
                   'ped_charge_mean_err': [],  # uncertainty of the above
                   'ped_charge_stddev': [],  # camera average
-                  # The same but calculated only when no nearby pixels are
+                  # The same but calculated only when no nearby stars are
                   # present:
                   'ped_charge_mean_no_stars': [],
                   'ped_charge_mean_err_no_stars': [],
                   'ped_charge_stddev_no_stars': [],
+
                   'ped_fraction_pulses_above10': [],  # in whole camera
                   'ped_fraction_pulses_above30': [],  # in whole camera
+
                   'cosmics_fraction_pulses_above10': [],  # in whole camera
                   'cosmics_fraction_pulses_above30': [],  # in whole camera
+                  'cosmics_fraction_pulses_above10_no_stars': [],
+                  'cosmics_fraction_pulses_above30_no_stars': [],
+
                   'mu_effi_mean': [],
                   'mu_effi_stddev': [],
                   'mu_width_mean': [],
@@ -328,12 +341,12 @@ def main():
             nstars = table.col('num_nearby_stars')
             meanq = table.col('charge_mean')
             without_stars = np.ma.array(meanq, mask=nstars > 0, copy=False)
-            pedestals['charge_mean_no_stars'] = without_stars.mean(
-                    axis=1).filled(np.nan)
+            pedestals['charge_mean_no_stars'].extend(without_stars.mean(
+                    axis=1).filled(np.nan))
             stddevq = table.col('charge_stddev')
             without_stars = np.ma.array(stddevq, mask=nstars > 0, copy=False)
-            pedestals['charge_stddev_no_stars'] = without_stars.mean(
-                    axis=1).filled(np.nan)
+            pedestals['charge_stddev_no_stars'].extend(without_stars.mean(
+                    axis=1).filled(np.nan))
 
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
@@ -941,7 +954,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                               xlabel='date',
                               ylabel='Telescope mean azimuth (deg)',
                               xtype='datetime', ytype='linear',
-                              point_labels=run_titles)
+                              point_labels=run_titles, size=4)
 
     fig_ra = show_graph(x=pd.to_datetime(runsummary['time'],
                                          origin='unix', unit='s'),
@@ -949,14 +962,14 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                         xlabel='date',
                         ylabel='Telescope mean Right Ascension (deg)',
                         xtype='datetime', ytype='linear',
-                        point_labels=run_titles)
+                        point_labels=run_titles, size=4)
     fig_dec = show_graph(x=pd.to_datetime(runsummary['time'],
                                           origin='unix', unit='s'),
                          y=runsummary['mean_dec'],
                          xlabel='date',
                          ylabel='Telescope mean declination (deg)',
                          xtype='datetime', ytype='linear',
-                         point_labels=run_titles)
+                         point_labels=run_titles, size=4)
 
     row1 = [fig_altitude, fig_azimuth]
     row2 = [fig_dec, fig_ra]
