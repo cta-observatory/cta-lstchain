@@ -189,7 +189,6 @@ def main():
                   # The same but calculated only when no nearby stars are
                   # present:
                   'ped_charge_mean_no_stars': [],
-                  'ped_charge_mean_err_no_stars': [],
                   'ped_charge_stddev_no_stars': [],
 
                   'ped_fraction_pulses_above10': [],  # in whole camera
