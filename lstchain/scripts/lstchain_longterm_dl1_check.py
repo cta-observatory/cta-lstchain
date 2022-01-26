@@ -176,12 +176,12 @@ def main():
 
                   # The same as above but calculated when no nearby stars are
                   # present:
-                  'ff_charge_mean_no_stars': [],
-                  'ff_charge_mean_err_no_stars': [],
-                  'ff_time_mean_no_stars': [],
-                  'ff_time_mean_err_no_stars': [],
-                  'ff_time_stddev_no_stars': [],
-                  'ff_rel_time_stddev_no_stars': [],
+                  #'ff_charge_mean_no_stars': [],
+                  #'ff_charge_mean_err_no_stars': [],
+                  #'ff_time_mean_no_stars': [],
+                  #'ff_time_mean_err_no_stars': [],
+                  #'ff_time_stddev_no_stars': [],
+                  #'ff_rel_time_stddev_no_stars': [],
 
                   'ped_charge_mean': [],  # camera average of mean pix ped charge
                   'ped_charge_mean_err': [],  # uncertainty of the above
@@ -197,8 +197,8 @@ def main():
 
                   'cosmics_fraction_pulses_above10': [],  # in whole camera
                   'cosmics_fraction_pulses_above30': [],  # in whole camera
-                  'cosmics_fraction_pulses_above10_no_stars': [],
-                  'cosmics_fraction_pulses_above30_no_stars': [],
+                  #'cosmics_fraction_pulses_above10_no_stars': [],
+                  #'cosmics_fraction_pulses_above30_no_stars': [],
 
                   'mu_effi_mean': [],
                   'mu_effi_stddev': [],
@@ -244,6 +244,7 @@ def main():
 
     dicts = [cosmics, pedestals, flatfield]
 
+    # files are of the type datacheck_dl1_LST-1.RunXXXXX.h5
     for file in files:
 
         try:
