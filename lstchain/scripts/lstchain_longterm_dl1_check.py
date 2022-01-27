@@ -133,8 +133,8 @@ def main():
     pedestals['charge_stddev'] = []
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
-    pedestals['charge_mean_no_stars'] = []
-    pedestals['charge_stddev_no_stars'] = []
+    #pedestals['charge_mean_no_stars'] = []
+    #pedestals['charge_stddev_no_stars'] = []
 
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
@@ -189,8 +189,8 @@ def main():
                   'ped_charge_stddev': [],  # camera average
                   # The same but calculated only when no nearby stars are
                   # present:
-                  'ped_charge_mean_no_stars': [],
-                  'ped_charge_stddev_no_stars': [],
+                  #'ped_charge_mean_no_stars': [],
+                  #'ped_charge_stddev_no_stars': [],
 
                   'ped_fraction_pulses_above10': [],  # in whole camera
                   'ped_fraction_pulses_above30': [],  # in whole camera
@@ -344,19 +344,6 @@ def main():
             pedestals['charge_stddev'].extend(
                 table.col('charge_stddev').mean(axis=1))
 
-            # Now calculate the same quantities using only pixels which are
-            # not too close to bright stars, as stored in table.col(
-            # 'num_nearby_stars')
-            nstars = table.col('num_nearby_stars')
-            meanq = table.col('charge_mean')
-            without_stars = np.ma.array(meanq, mask=nstars > 0, copy=False)
-            pedestals['charge_mean_no_stars'].extend(without_stars.mean(
-                    axis=1).filled(np.nan))
-            stddevq = table.col('charge_stddev')
-            without_stars = np.ma.array(stddevq, mask=nstars > 0, copy=False)
-            pedestals['charge_stddev_no_stars'].extend(without_stars.mean(
-                    axis=1).filled(np.nan))
-
         # Flatfield
         if datatables[2] is not None:
             table = a.root.dl1datacheck.flatfield
@@ -445,10 +432,10 @@ def main():
             table = get_datacheck_table(file, "pedestals")
             nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
-            # [subruns, npixels]:
-            nevents_per_pix = np.transpose([nevents] * table[
-                'charge_mean'].shape[1])
-
+            # Events per pixel, with nans for subruns in which pixel was
+            # close to stars [subruns, npixels]:
+            nevents_per_pix = table['nevents_per_pix']
+            # total events:
             num_events = table['num_events'].sum()
             runsummary['num_pedestals'].extend([num_events])
 
@@ -483,24 +470,16 @@ def main():
             runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                       np.sqrt(npixels)])
 
-            # The same but excludig pixels close to stars. We add up the
-            # subrun-wise means (if no stars), multiplied times the number of
-            # events in the subrun, and divide by the number of events in the
-            # run - counting only subruns in which the pixels has no close
-            # stars:
-            nstars = table['num_nearby_stars']
-            meanq = np.ma.array(table['charge_mean'], mask=nstars > 0,
-                                copy=False)
-            charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
-                          np.ma.array(nevents_per_pix, mask=nstars > 0,
-                                      copy=False).sum(axis=0)
-            runsummary['ped_charge_mean_no_stars'].extend([np.nanmean(
-                    charge_mean)])
 
+            #runsummary['ped_charge_mean_no_stars'].extend([np.nanmean(
+            #        charge_mean)])
+
+            nstars = table['num_nearby_stars']
             mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
                                                                       axis=1))
             runsummary['mean_number_of_pixels_nearby_stars'] = \
                 mean_number_of_pixels_nearby_stars
+
 
             stddevq = table['charge_stddev']
             charge_stddev = \
@@ -508,17 +487,6 @@ def main():
                                axis=0) / events_in_run)
             # Store the pixel-averaged pedestal charge std dev through a run:
             runsummary['ped_charge_stddev'].extend([np.nanmean(charge_stddev)])
-
-            # The same but excluding pixels close to stars:
-            stddevq = np.ma.masked_array(table['charge_stddev'],
-                                         mask=nstars > 0, copy=False)
-            charge_stddev = np.sqrt(np.sum((stddevq ** 2) * nevents_per_pix,
-                               axis=0) / np.ma.array(nevents_per_pix,
-                                                     mask=nstars > 0,
-                                                     copy=False).sum(axis=0))
-            runsummary['ped_charge_stddev_no_stars'].extend([np.nanmean(
-                    charge_stddev)])
-
 
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend(
                 [table['num_pulses_above_0010_pe'].sum(axis=0) /
@@ -541,10 +509,12 @@ def main():
             runsummary['ped_charge_mean'].extend([np.nan])
             runsummary['ped_charge_mean_err'].extend([np.nan])
             runsummary['ped_charge_stddev'].extend([np.nan])
-            runsummary['ped_charge_mean_no_stars'].extend([np.nan])
             runsummary['mean_number_of_pixels_nearby_stars'].extend([np.nan])
-            runsummary['ped_charge_mean_err_no_stars'].extend([np.nan])
-            runsummary['ped_charge_stddev_no_stars'].extend([np.nan])
+
+            #runsummary['ped_charge_mean_no_stars'].extend([np.nan])
+            #runsummary['ped_charge_mean_err_no_stars'].extend([np.nan])
+            #runsummary['ped_charge_stddev_no_stars'].extend([np.nan])
+
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([numpixels * [np.nan]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([numpixels * [np.nan]])
             pixwise_runsummary['ped_pix_charge_mean'].extend([numpixels * [np.nan]])
@@ -1518,20 +1488,33 @@ def get_datacheck_table(filename, tablename, exclude_stars=True):
 
     Returns
     -------
-
+    table: astropy table
 
     """
+
     table = read_table(filename, f'/dl1datacheck/{tablename}')
 
-    # Set to nan pixel entries for which there were nearby stars:
+    # Set to nan pixel entries for which there were nearby stars
     for k in table.keys():
         if k == 'num_nearby_stars':
             continue
         if table[k].shape != table['num_nearby_stars'].shape:
             continue
-        table[k] = np.where(table['num_nearby_stars'] > 0,
-                            np.nan,
-                            table[k])
+
+        # Note: because of the np.nan the line below converts the column to
+        # float, but there is no problem with that (but it is more convenient,
+        # w.r.t. using a masked array, for representing the values e.g. in
+        # camera displays, where masked entries from a masked array appear for
+        # some reason as zeros, which is obviously misleading).
+        table[k] = np.where(table['num_nearby_stars'] > 0, np.nan, table[k])
+
+    # calculate the number of events per pixel that have valid data (i.e.
+    # without nearby stars)
+    nevents = table['num_events']
+    nevents_per_pix = np.transpose([nevents] * table['charge_mean'].shape[1])
+    table['nevents_per_pix'] = np.where(table['num_nearby_stars'] > 0, np.nan,
+                                        nevents_per_pix)
+
     return table
 
 def trigtag_mismatches(table, tag_value):
