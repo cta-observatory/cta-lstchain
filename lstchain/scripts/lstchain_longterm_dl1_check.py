@@ -795,8 +795,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     camgeom = subarray_info.tel[tel_id].camera.geometry
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
-    file = tables.open_file(filename)
-
     bokeh_output_file(Path(filename).with_suffix('.html'),
                       title='LST1 long-term DL1 data check')
 
