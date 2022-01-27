@@ -131,10 +131,6 @@ def main():
     pedestals['fraction_pulses_above30'] = []  # fraction of >30 pe pulses
     pedestals['charge_mean'] = []
     pedestals['charge_stddev'] = []
-    pedestals['charge_mean'] = []
-    pedestals['charge_stddev'] = []
-    #pedestals['charge_mean_no_stars'] = []
-    #pedestals['charge_stddev_no_stars'] = []
 
     flatfield['charge_mean'] = []
     flatfield['charge_stddev'] = []
@@ -166,6 +162,7 @@ def main():
                   'num_wrong_tib_tags_in_flatfield': [],
                   'num_pedestals_after_cleaning': [],
                   'num_contained_mu_rings': [],
+
                   'ff_charge_mean': [],  # camera average of mean pix FF charge
                   'ff_charge_mean_err': [],  # uncertainty of the above
                   'ff_charge_stddev': [],  # camera average
@@ -174,31 +171,13 @@ def main():
                   'ff_time_stddev': [],  # camera average
                   'ff_rel_time_stddev': [],  # camera-averaged std dev of pixel t
                   # w.r.t. average of rest of pixels in camera (~ t-resolution)
-
-                  # The same as above but calculated when no nearby stars are
-                  # present:
-                  #'ff_charge_mean_no_stars': [],
-                  #'ff_charge_mean_err_no_stars': [],
-                  #'ff_time_mean_no_stars': [],
-                  #'ff_time_mean_err_no_stars': [],
-                  #'ff_time_stddev_no_stars': [],
-                  #'ff_rel_time_stddev_no_stars': [],
-
                   'ped_charge_mean': [],  # camera average of mean pix ped charge
                   'ped_charge_mean_err': [],  # uncertainty of the above
                   'ped_charge_stddev': [],  # camera average
-                  # The same but calculated only when no nearby stars are
-                  # present:
-                  #'ped_charge_mean_no_stars': [],
-                  #'ped_charge_stddev_no_stars': [],
-
                   'ped_fraction_pulses_above10': [],  # in whole camera
                   'ped_fraction_pulses_above30': [],  # in whole camera
-
                   'cosmics_fraction_pulses_above10': [],  # in whole camera
                   'cosmics_fraction_pulses_above30': [],  # in whole camera
-                  #'cosmics_fraction_pulses_above10_no_stars': [],
-                  #'cosmics_fraction_pulses_above30_no_stars': [],
 
                   'mu_effi_mean': [],
                   'mu_effi_stddev': [],
@@ -208,6 +187,14 @@ def main():
                   'mu_hg_peak_sample_stddev': [],
                   'mu_intensity_mean': [],
                   'mean_number_of_pixels_nearby_stars': []}
+
+    # For some quantities we want also the calculation using pixels which have
+    # no nearby stars (checked on a subrun-by-subrun basis)
+    #keys = runsummary.keys()
+    #rsk = list(keys)
+    #for key in rsk[rsk.index('ff_charge_mean') : 1 + rsk.index(
+    #        'cosmics_fraction_pulses_above30')]:
+    #    runsummary[key + '_no_stars'] = []
 
     # and another one for pixel-wise run averages:
     pixwise_runsummary = {'ff_pix_charge_mean': [],
@@ -256,20 +243,25 @@ def main():
         runnumber = int(file.name[file.name.find('.Run') + 4:
                                   file.name.find('.Run') + 9])
 
+        # Lists to keep the datacheck tables for cosmics, pedestals and
+        # flatfield. The "_no_stars" list will have nans for pixels which
+        # were close to stars during a given subrun
         datatables = []
-        for name in ['/dl1datacheck/cosmics',
-                     '/dl1datacheck/pedestals',
-                     '/dl1datacheck/flatfield']:
+        datatables_no_stars = []
+
+        for tablename in ['cosmics', 'pedestals', 'flatfield']:
             try:
-                node = a.get_node(name)
+                node = a.get_node('/dl1datacheck/' + tablename)
             except Exception:
                 log.warning('Table {name} is missing!')
                 datatables.append(None)
+                datatables_no_stars.append(None)
                 continue
 
-            datatables.append(node)
-
-        subruns = None
+            datatables.append(get_datacheck_table(file, tablename))
+            datatables_no_stars.append(get_datacheck_table(file, tablename,
+                                                           exclude_stars=True))
+        a.close()
 
         trig_tags = [TriggerBits.PHYSICS.value,
                      TriggerBits.PEDESTAL.value,
@@ -303,72 +295,72 @@ def main():
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
 
             if 'num_ucts_jumps' in table.colnames:
-                d['num_ucts_jumps'].extend(table.col('num_ucts_jumps'))
-                total_num_ucts_jumps += np.sum(table.col('num_ucts_jumps'))
+                d['num_ucts_jumps'].extend(table['num_ucts_jumps'])
+                total_num_ucts_jumps += np.sum(table['num_ucts_jumps'])
             # In case we are running over lstchain <v0.8 datacheck files:
             else:
-                d['num_ucts_jumps'].extend(np.zeros(table.nrows, dtype='int'))
+                d['num_ucts_jumps'].extend(np.zeros(len(table),
+                                                    dtype='int'))
 
             d['runnumber'].extend(len(table) * [runnumber])
-            d['subrun'].extend(table.col('subrun_index'))
-            d['elapsed_time'].extend(table.col('elapsed_time'))
-            d['events'].extend(table.col('num_events'))
-            d['time'].extend(table.col('dragon_time').mean(axis=1))
-            d['azimuth'].extend(table.col('mean_az_tel'))
-            d['altitude'].extend(table.col('mean_alt_tel'))
+            d['subrun'].extend(table['subrun_index'])
+            d['elapsed_time'].extend(table['elapsed_time'])
+            d['events'].extend(table['num_events'])
+            d['time'].extend(table['dragon_time'].mean(axis=1))
+            d['azimuth'].extend(table['mean_az_tel'])
+            d['altitude'].extend(table['mean_alt_tel'])
 
         # now fill event-type-specific quantities. In some cases they are
         # pixel-averaged values:
 
         # Cosmics
         if datatables[0] is not None:
-            table = a.root.dl1datacheck.cosmics
+            table = datatables[0]
 
             cosmics['fraction_pulses_above10'].extend(
-                table.col('num_pulses_above_0010_pe').mean(axis=1) /
-                table.col('num_events'))
+                table['num_pulses_above_0010_pe'].mean(axis=1) /
+                table['num_events'])
             cosmics['fraction_pulses_above30'].extend(
-                table.col('num_pulses_above_0030_pe').mean(axis=1) /
-                table.col('num_events'))
+                table['num_pulses_above_0030_pe'].mean(axis=1) /
+                table['num_events'])
         # Pedestals
         if datatables[1] is not None:
-            table = a.root.dl1datacheck.pedestals
+            table = datatables[1]
             pedestals['fraction_pulses_above10'].extend(
-                table.col('num_pulses_above_0010_pe').mean(axis=1) /
-                table.col('num_events'))
+                table['num_pulses_above_0010_pe'].mean(axis=1) /
+                table['num_events'])
             pedestals['fraction_pulses_above30'].extend(
-                table.col('num_pulses_above_0030_pe').mean(axis=1) /
-                table.col('num_events'))
+                table['num_pulses_above_0030_pe'].mean(axis=1) /
+                table['num_events'])
             pedestals['charge_mean'].extend(
-                table.col('charge_mean').mean(axis=1))
+                table['charge_mean'].mean(axis=1))
             pedestals['charge_stddev'].extend(
-                table.col('charge_stddev').mean(axis=1))
+                table['charge_stddev'].mean(axis=1))
 
         # Flatfield
         if datatables[2] is not None:
-            table = a.root.dl1datacheck.flatfield
+            table = datatables[2]
 
             flatfield['charge_mean'].extend(
-                np.nanmean(table.col('charge_mean'), axis=1))
+                np.nanmean(table['charge_mean'], axis=1))
             flatfield['charge_stddev'].extend(
-                np.nanmean(table.col('charge_stddev'), axis=1))
+                np.nanmean(table['charge_stddev'], axis=1))
             flatfield['rel_time_mean'].extend(
-                np.nanmean(table.col('relative_time_mean'), axis=1))
+                np.nanmean(table['relative_time_mean'], axis=1))
             flatfield['rel_time_stddev'].extend(
-                np.nanmean(table.col('relative_time_stddev'), axis=1))
+                np.nanmean(table['relative_time_stddev'], axis=1))
 
         # So far we have just filled the pedestals, cosmics and flatfield
         # subrun-wise tables (that we will later write out) for all the subruns
         # in this file
 
-        a.close()
 
         #
         # Now we fill the runsummary  and pixwise_runsummary tables.
         #
 
         # Cosmics:
-        table = get_datacheck_table(file, "cosmics")
+        table = datatables[0]
 
         # keep subrun list, needed later for the muons:
         subruns = table['subrun_index']
@@ -429,7 +421,7 @@ def main():
 
         # Pedestals:
         if datatables[1] is not None:
-            table = get_datacheck_table(file, "pedestals")
+            table = datatables[1]
             nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
             # Events per pixel, with nans for subruns in which pixel was
@@ -470,10 +462,6 @@ def main():
             runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                       np.sqrt(npixels)])
 
-
-            #runsummary['ped_charge_mean_no_stars'].extend([np.nanmean(
-            #        charge_mean)])
-
             nstars = table['num_nearby_stars']
             mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
                                                                       axis=1))
@@ -510,18 +498,15 @@ def main():
             runsummary['ped_charge_mean_err'].extend([np.nan])
             runsummary['ped_charge_stddev'].extend([np.nan])
             runsummary['mean_number_of_pixels_nearby_stars'].extend([np.nan])
-
-            #runsummary['ped_charge_mean_no_stars'].extend([np.nan])
-            #runsummary['ped_charge_mean_err_no_stars'].extend([np.nan])
-            #runsummary['ped_charge_stddev_no_stars'].extend([np.nan])
-
             pixwise_runsummary['ped_pix_fraction_pulses_above10'].extend([numpixels * [np.nan]])
             pixwise_runsummary['ped_pix_fraction_pulses_above30'].extend([numpixels * [np.nan]])
             pixwise_runsummary['ped_pix_charge_mean'].extend([numpixels * [np.nan]])
             pixwise_runsummary['ped_pix_charge_stddev'].extend([numpixels * [np.nan]])
 
+
+        # Flatfield
         if datatables[2] is not None:
-            table = get_datacheck_table(file, "flatfield")
+            table = datatables[2]
             nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
@@ -595,7 +580,6 @@ def main():
                 [numpixels * [np.nan]])
             pixwise_runsummary['ff_pix_rel_time_stddev'].extend(
                 [numpixels * [np.nan]])
-
 
         # Now process the muon files (one per subrun, containing one entry per ring):
 
@@ -1474,7 +1458,7 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     return
 
-def get_datacheck_table(filename, tablename, exclude_stars=True):
+def get_datacheck_table(filename, tablename, exclude_stars=False):
     """
 
     Parameters
@@ -1492,6 +1476,22 @@ def get_datacheck_table(filename, tablename, exclude_stars=True):
 
     table = read_table(filename, f'/dl1datacheck/{tablename}')
 
+    nstars = table['num_nearby_stars']
+    npixels = nstars.shape[1]
+    nevents = table['num_events']
+    elapsed_time = table['elapsed_time']
+
+    # Add two columns containing the subrun-wise and pixel-wise elapsed time
+    # and number of events. Pixel-wise is needed in case we apply the
+    # exclusion of pixels with nearby stars:
+    nevents_per_pix = np.transpose([nevents] * npixels)
+    elapsed_time_per_pix = np.transpose([elapsed_time] * npixels)
+    table['nevents_per_pix'] = nevents_per_pix
+    table['elapsed_time_per_pix'] = elapsed_time_per_pix
+
+    if not exclude_stars:
+        return table
+
     # Set to nan pixel entries for which there were nearby stars
     for k in table.keys():
         if k == 'num_nearby_stars':
@@ -1504,19 +1504,7 @@ def get_datacheck_table(filename, tablename, exclude_stars=True):
         # w.r.t. using a masked array, for representing the values e.g. in
         # camera displays, where masked entries from a masked array appear for
         # some reason as zeros, which is obviously misleading).
-        table[k] = np.where(table['num_nearby_stars'] > 0, np.nan, table[k])
-
-    # calculate the number of events per pixel that have valid data (i.e.
-    # without nearby stars), and the corresponding elapsed observation time
-    nstars = table['num_nearby_stars']
-    nevents = table['num_events']
-    npixels = nstars.shape[1]
-    nevents_per_pix = np.transpose([nevents] * npixels)
-    table['nevents_per_pix'] = np.where(nstars > 0, np.nan, nevents_per_pix)
-    elapsed_time = table['elapsed_time']
-    elapsed_time_per_pix = np.transpose([elapsed_time] * npixels)
-    table['elapsed_time_per_pix'] = np.where(nstars > 0, np.nan,
-                                             elapsed_time_per_pix)
+        table[k] = np.where(nstars > 0, np.nan, table[k])
 
     return table
 
@@ -1539,10 +1527,10 @@ def trigtag_mismatches(table, tag_value):
 
     """
 
-    num_wrong_tags = [np.zeros_like(table), np.zeros_like(table)]
+    num_wrong_tags = [np.zeros(len(table)), np.zeros(len(table))]
     # ^^^  to count [ucts, tib] in each subrun
     for k, type in enumerate(['ucts_trigger_type', 'trigger_type']):
-        for j, subrun_trigger_statistics in enumerate(table.col(type)):
+        for j, subrun_trigger_statistics in enumerate(table[type]):
             for trigtype in subrun_trigger_statistics:
                 # trigtype is an array of two elements: trigtype[0] (when
                 # not =0) is the trigger type, and trigtype[1] the
