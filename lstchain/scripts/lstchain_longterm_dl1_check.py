@@ -1516,7 +1516,7 @@ def get_datacheck_table(filename, tablename, exclude_stars=True):
     nevents_per_pix = np.transpose([nevents] * npixels)
     table['nevents_per_pix'] = np.where(nstars > 0, np.nan, nevents_per_pix)
     elapsed_time = table['elapsed_time']
-    elapsed_time_per_pix = np.transpose([nevents] * npixels)
+    elapsed_time_per_pix = np.transpose([elapsed_time] * npixels)
     table['elapsed_time_per_pix'] = np.where(nstars > 0, np.nan,
                                              elapsed_time_per_pix)
 
