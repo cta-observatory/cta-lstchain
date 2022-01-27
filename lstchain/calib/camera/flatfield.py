@@ -92,7 +92,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             self.charge_product, parent=self, subarray=subarray
         )
 
-
     def _extract_charge(self, event):
         """
         Extract the charge and the time from a calibration event
@@ -120,8 +119,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         peak_pos = 0
         if self.extractor:
             charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
-
-
 
         # shift the time if time shift is already defined
         # (e.g. drs4 waveform time shifts for LST)
