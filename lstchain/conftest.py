@@ -1,3 +1,4 @@
+from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
 from ctapipe.utils import get_dataset_path
@@ -27,6 +28,11 @@ def pytest_configure(config):
             config.option.markexpr += " and "
         else:
             config.option.markexpr += "not private_data"
+
+
+@pytest.fixture(scope="session")
+def lst1_subarray():
+    return LSTEventSource.create_subarray(geometry_version=4)
 
 
 @pytest.fixture(scope="session")
