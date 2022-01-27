@@ -1507,8 +1507,31 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
     return
 
 def get_datacheck_table(filename, tablename, exclude_stars=True):
+    """
+
+    Parameters
+    ----------
+    filename: str, datacheck_dl1_LST-1.RunXXXXX.h5 full-run datacheck file
+    tablename: str, "pedestals" "cosmics" or "flatfield"
+    exclude_stars: set to nan all pixel values for subruns (table rows) in
+    which the given pixel had stars nearby, according to colum num_nearby_stars
+
+    Returns
+    -------
+
+
+    """
     table = read_table(filename, f'/dl1datacheck/{tablename}')
 
+    # Set to nan pixel entries for which there were nearby stars:
+    for k in table.keys():
+        if k == 'num_nearby_stars':
+            continue
+        if table[k].shape != table['num_nearby_stars'].shape:
+            continue
+        table[k] = np.where(table['num_nearby_stars'] > 0,
+                            np.nan,
+                            table[k])
     return table
 
 def trigtag_mismatches(table, tag_value):
