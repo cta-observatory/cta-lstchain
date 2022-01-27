@@ -53,6 +53,7 @@ class FITSIndexWriter(Tool):
 
     output_index_path = traits.Path(
         help="Output path for the Index files",
+        allow_none=True,
         exists=True,
         directory_ok=True,
         file_ok=False,
