@@ -8,11 +8,12 @@ which contains a single table with one column, 'event_id'
 """
 
 import argparse
+from pathlib import Path
+
 import numpy as np
 import tables
-
-from pathlib import Path
 from ctapipe.io import read_table
+
 from lstchain.paths import parse_dl1_filename
 
 parser = argparse.ArgumentParser(description="Interleaved Pedestal Finder")
@@ -28,7 +29,6 @@ parser.add_argument('output_dir', metavar='output-dir', type=Path,
 
 
 def main():
-
     args = parser.parse_args()
 
     files = sorted(args.srcdir.glob('dl1_LST-1.Run?????.????.h5'))
@@ -95,6 +95,7 @@ def main():
                 "/", "interleaved_pedestal_ids",
                 obj=data,
             )
+
 
 def find_pedestals(timestamps, expected_frequency=50):
     """
@@ -178,7 +179,7 @@ def find_pedestals(timestamps, expected_frequency=50):
         ilast = bin_after
 
     minval = best_bins[ifirst]
-    maxval = best_bins[ilast+1]
+    maxval = best_bins[ilast + 1]
 
     if ilast >= ifirst:
         return ((tmod > minval) & (tmod < maxval))

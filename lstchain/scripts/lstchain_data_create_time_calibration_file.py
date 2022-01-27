@@ -16,11 +16,13 @@ $> python lstchain_data_create_time_calibration_file.py
 import argparse
 import glob
 import logging
-from traitlets.config.loader import Config
+
 from ctapipe.io import EventSource
-from lstchain.io.config import read_configuration_file
-from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 from tqdm.auto import tqdm
+from traitlets.config.loader import Config
+
+from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
+from lstchain.io.config import read_configuration_file
 
 log = logging.getLogger(__name__)
 
@@ -75,9 +77,9 @@ def main():
 
     source_config = Config({
         "LSTEventSource": {
-            "max_events" : args.max_events,
+            "max_events": args.max_events,
             "pointing_information": False,
-            "default_trigger_type" : 'tib',
+            "default_trigger_type": 'tib',
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
             },
@@ -99,7 +101,7 @@ def main():
     )
 
     for i, path in enumerate(path_list):
-        log.info(f'File {i+1} out of {len(path_list)}')
+        log.info(f'File {i + 1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
 
         reader = EventSource(input_url=path, config=config)

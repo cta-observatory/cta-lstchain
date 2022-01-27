@@ -21,7 +21,6 @@ import astropy.units as u
 import numpy as np
 import tables
 from ctapipe.image import (
-    hillas_parameters,
     tailcuts_clean,
     number_of_islands,
     apply_time_delta_cleaning,
@@ -29,16 +28,23 @@ from ctapipe.image import (
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
+from lstchain.image.cleaning import apply_dynamic_cleaning
+from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
-from lstchain.io.config import get_cleaning_parameters
-from lstchain.io.config import get_standard_config
-from lstchain.io.config import read_configuration_file, replace_config
-from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key, read_metadata
+from lstchain.io.config import (
+    get_cleaning_parameters,
+    get_standard_config,
+    read_configuration_file,
+    replace_config,
+)
+from lstchain.io.io import (
+    dl1_images_lstcam_key,
+    dl1_params_lstcam_key,
+    read_metadata,
+)
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
-
-from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.image.cleaning import apply_dynamic_cleaning
+from lstchain.reco.r0_to_dl1 import parametrize_image
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +124,7 @@ def main():
         cleaning_params = get_cleaning_parameters(config, clean_method_name)
         pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh>pic_th) / len(pedestal_thresh):.3f}")
+                 f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
         picture_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config['tailcuts_clean_with_pedestal_threshold']}")
@@ -136,7 +142,7 @@ def main():
         THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
         FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
         log.info("Using dynamic cleaning for events with average size of the "
-            f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
+                 f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
         log.info("Remove from image pixels which have charge below "
                  f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
 
@@ -150,7 +156,7 @@ def main():
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
-    focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
@@ -247,7 +253,6 @@ def main():
                                                isolated_pixels,
                                                min_n_neighbors)
 
-
                 n_pixels = np.count_nonzero(signal_pixels)
 
                 if n_pixels > 0:
@@ -272,9 +277,10 @@ def main():
                                                           FRACTION_CLEANING_SIZE)
                         signal_pixels = new_mask
 
-
                     # count a number of islands after all of the image cleaning steps
                     num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    dl1_container.n_islands = num_islands
+
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
                     n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
                     max_island_label = np.argmax(n_pixels_on_island)
@@ -284,31 +290,17 @@ def main():
 
                     # count the surviving pixels
                     n_pixels = np.count_nonzero(signal_pixels)
+                    dl1_container.n_pixels = n_pixels
 
                     if n_pixels > 0:
-                        hillas = hillas_parameters(camera_geom[signal_pixels],
-                                                   image[signal_pixels])
-
-                        dl1_container.fill_hillas(hillas)
-                        dl1_container.set_timing_features(camera_geom[signal_pixels],
-                                                          image[signal_pixels],
-                                                          peak_time[signal_pixels],
-                                                          hillas)
-
-                        dl1_container.set_leakage(camera_geom, image, signal_pixels)
-                        dl1_container.set_concentration(camera_geom, image, hillas)
-                        dl1_container.n_islands = num_islands
-                        dl1_container.wl = dl1_container.width / dl1_container.length
-                        dl1_container.n_pixels = n_pixels
-                        width = np.rad2deg(np.arctan2(dl1_container.width, focal_length))
-                        width_uncertainty = np.rad2deg(np.arctan2(dl1_container.width_uncertainty, focal_length))
-                        length = np.rad2deg(np.arctan2(dl1_container.length, focal_length))
-                        length_uncertainty = np.rad2deg(np.arctan2(dl1_container.length_uncertainty, focal_length))
-                        dl1_container.width = width
-                        dl1_container.width_uncertainty = width_uncertainty
-                        dl1_container.length = length
-                        dl1_container.length_uncertainty = length_uncertainty
-                        dl1_container.log_intensity = np.log10(dl1_container.intensity)
+                        parametrize_image(
+                            image=image,
+                            peak_time=peak_time,
+                            signal_pixels=signal_pixels,
+                            camera_geometry=camera_geom,
+                            focal_length=optics.equivalent_focal_length,
+                            dl1_container=dl1_container,
+                        )
 
                 if set(dl1_params_input).intersection(disp_params):
                     disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(

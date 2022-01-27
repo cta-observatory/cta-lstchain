@@ -1,7 +1,6 @@
 import astropy.units as u
 import numpy as np
 
-
 __all__ = ['proton_bess']
 
 
@@ -20,7 +19,7 @@ def proton_bess(E):
     par: `dict` with spectral parameters
     """
 
-    f0 = 9.6e-6 / u.TeV / u.cm**2 / u.s / u.sr
+    f0 = 9.6e-6 / u.TeV / u.cm ** 2 / u.s / u.sr
     alpha = -2.70
     e0 = 1. * u.TeV
 
@@ -28,6 +27,6 @@ def proton_bess(E):
     par_dic = ['f0', 'alpha', 'e0']
     par = dict(zip(par_dic, par_var))
 
-    dFdEdO = f0 * np.power(E/e0, alpha)
+    dFdEdO = f0 * np.power(E / e0, alpha)
 
-    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr), par
+    return dFdEdO.to(1 / u.TeV / u.cm ** 2 / u.s / u.sr), par

@@ -33,6 +33,7 @@ __all__ = [
     "filter_events",
     "get_effective_time",
     "get_event_pos_in_camera",
+    "get_geomagnetic_delta",
     "impute_pointing",
     "linear_imputer",
     "polar_to_cartesian",

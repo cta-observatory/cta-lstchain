@@ -22,11 +22,15 @@ test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4
 test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
 
 
-@pytest.mark.run(order=1)
 def test_r0_to_dl1(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
+
     infile = mc_gamma_testfile
-    r0_to_dl1(infile, custom_config=standard_config, output_filename=tmp_path / "dl1_gamma.h5")
+    r0_to_dl1(
+        infile,
+        custom_config=standard_config,
+        output_filename=tmp_path / "dl1_gamma.h5"
+    )
 
 
 @pytest.mark.private_data
@@ -71,7 +75,6 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
-@pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
     with tables.open_file(simulated_dl1_file, 'r') as f:
@@ -95,7 +98,6 @@ def test_get_source_dependent_parameters(simulated_dl1_file):
     assert "alpha" in src_dep_df['on'].columns
 
 
-@pytest.mark.run(order=2)
 def test_build_models(simulated_dl1_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
@@ -115,7 +117,6 @@ def test_build_models(simulated_dl1_file, rf_models):
     joblib.dump(cls_disp_sign, rf_models["disp_sign"])
 
 
-@pytest.mark.run(order=3)
 def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import apply_models
     import joblib

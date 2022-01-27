@@ -8,6 +8,7 @@ import pytest
 import tables
 from astropy import units as u
 from astropy.time import Time
+from ctapipe.instrument import SubarrayDescription
 
 from ctapipe.io import read_table
 
@@ -125,10 +126,10 @@ def test_observed_dl1_validity(observed_dl1_files):
     assert dl1_params_tel_mon_cal_key in dl1_tables
     assert dl1_params_tel_mon_ped_key in dl1_tables
     assert dl1_params_tel_mon_flat_key in dl1_tables
-    assert '/configuration/instrument/subarray/layout' in dl1_tables
-    assert '/configuration/instrument/telescope/camera/geometry_LSTCam' in dl1_tables
-    assert '/configuration/instrument/telescope/camera/readout_LSTCam' in dl1_tables
-    assert '/configuration/instrument/telescope/optics' in dl1_tables
+
+    subarray = SubarrayDescription.from_hdf(observed_dl1_files['dl1_file1'])
+    assert 1 in subarray.tel
+    assert subarray.tel[1].name == "LST"
 
     assert "alt_tel" in dl1_df.columns
     assert "az_tel" in dl1_df.columns

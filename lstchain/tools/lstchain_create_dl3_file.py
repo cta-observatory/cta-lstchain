@@ -14,21 +14,34 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
 
-from astropy.io import fits
-import astropy.units as u
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from ctapipe.core import (
+    Provenance,
+    Tool,
+    ToolConfigurationError,
+    traits,
+)
 
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
-from lstchain.io.io import read_data_dl2_to_QTable
+from lstchain.io import read_data_dl2_to_QTable
 from lstchain.reco.utils import get_effective_time
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
 from lstchain.irf.hdu_table import create_event_list, add_icrs_position_params
 from lstchain.irf.interpolate import (
     check_in_delaunay_triangle, compare_irfs, interpolate_irf
 )
-
 from lstchain.io import EventSelector, DL3FixedCuts
-
+from lstchain.io import read_data_dl2_to_QTable
+from lstchain.irf import (
+    add_icrs_position_params,
+    create_event_list,
+)
+from lstchain.paths import (
+    dl2_to_dl3_filename,
+    run_info_from_filename,
+)
+from lstchain.reco.utils import get_effective_time
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -98,7 +111,7 @@ class DataReductionFITSWriter(Tool):
     ).tag(config=True)
 
     input_irf_path = traits.Path(
-        help="Compressed FITS file of IRFs",
+        help="Path for compressed FITS file of IRFs",
         exists=True,
         directory_ok=True,
         file_ok=False,

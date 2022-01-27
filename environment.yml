@@ -7,13 +7,12 @@ dependencies:
   - numpy=1.21
   - astropy~=4.2
   - pip
-  - ctapipe~=0.11
-  - gammapy=0.18
+  - ctapipe=0.12
+  - gammapy=0.19
   - h5py
   - ipython
   - jupyter
-  - matplotlib=3.4
-  - pyparsing=2.4
+  - matplotlib=3.5
   - notebook
   - joblib
   - toml
@@ -26,11 +25,10 @@ dependencies:
   - sphinx-argparse
   - nbsphinx
   - numpydoc
-  - traitlets=5.0
   - pandas
   - pymongo
   - seaborn
   - pip:
-      - ctapipe_io_lst~=0.13.2
+      - ctapipe_io_lst~=0.14.0
       - ctaplot~=0.5.5
-      - pyirf~=0.5.0
+      - pyirf~=0.6.0
