@@ -368,6 +368,7 @@ def main():
 
         # Cosmics:
         table = datatables[0]
+        table_no_stars = datatables_no_stars[0]
 
         # keep subrun list, needed later for the muons:
         subruns = table['subrun_index']
@@ -408,22 +409,24 @@ def main():
         # number of ucts jumps in the run, for any kind of event type:
         runsummary['num_ucts_jumps'].extend([total_num_ucts_jumps])
 
-        runsummary['cosmics_fraction_pulses_above10'].extend(
-            [(table['num_pulses_above_0010_pe'].mean(axis=1)).sum() /
-             runsummary['num_cosmics'][-1]])
-        runsummary['cosmics_fraction_pulses_above30'].extend(
-            [(table['num_pulses_above_0030_pe'].mean(axis=1)).sum() /
-             runsummary['num_cosmics'][-1]])
 
+        # Form camera-averaged values we use the "no_stars" version of the
+        # table, in which values for pixels with nearbu stars are set to nan:
+        runsummary['cosmics_fraction_pulses_above10'].extend(
+            [np.nansum(table_no_stars['num_pulses_above_0010_pe']) /
+             np.nansum(table_no_stars['nevents_per_pix'])])
+
+        runsummary['cosmics_fraction_pulses_above30'].extend(
+            [np.nansum(table_no_stars['num_pulses_above_0030_pe']) /
+             np.nansum(table_no_stars['nevents_per_pix'])])
 
         # Pedestals:
         if datatables[1] is not None:
             table = datatables[1]
+            table_no_stars = datatables_no_stars[1]
             nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
-            # Events per pixel, with nans for subruns in which pixel was
-            # close to stars [subruns, npixels]:
-            nevents_per_pix = table['nevents_per_pix']
+
             # total events:
             num_events = table['num_events'].sum()
             runsummary['num_pedestals'].extend([num_events])
@@ -439,23 +442,22 @@ def main():
                 extend([table['num_cleaned_events'].sum()])
 
             runsummary['ped_fraction_pulses_above10'].extend(
-                [(table['num_pulses_above_0010_pe'].mean(axis=1)).sum() /
-                 runsummary['num_pedestals'][-1]])
-            runsummary['ped_fraction_pulses_above30'].extend(
-                [(table['num_pulses_above_0030_pe'].mean(axis=1)).sum() /
-                 runsummary['num_pedestals'][-1]])
+                [np.nansum(table_no_stars['num_pulses_above_0010_pe']) /
+                 np.nansum(table_no_stars['nevents_per_pix'])])
 
-            # meanq is [subruns, pixels]
-            meanq = table['charge_mean']
+            runsummary['ped_fraction_pulses_above30'].extend(
+                [np.nansum(table_no_stars['num_pulses_above_0030_pe']) /
+                 np.nansum(table_no_stars['nevents_per_pix'])])
 
             # charge_mean is [pixels], containing pixwise means in the full run:
-            charge_mean = np.sum(meanq * nevents_per_pix, axis=0) / \
-                          events_in_run
+            charge_mean = \
+                pix_subrun_mean_to_run_mean(table_no_stars['charge_mean'],
+                                            table_no_stars['nevents_per_pix'])
 
             # Now store the pixel-averaged mean pedestal charge:
             runsummary['ped_charge_mean'].extend([np.nanmean(charge_mean)])
             # error on the mean:
-            npixels = len(~np.isnan(charge_mean))
+            npixels = (~np.isnan(charge_mean)).sum()
             runsummary['ped_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                       np.sqrt(npixels)])
 
@@ -465,11 +467,12 @@ def main():
             runsummary['mean_number_of_pixels_nearby_stars'] = \
                 mean_number_of_pixels_nearby_stars
 
+            # charge_stddev is [pixels], containing pixwise means in the full
+            # run:
+            charge_stddev = pix_subrun_std_to_run_std(
+                    table_no_stars['charge_stddev'],
+                    table_no_stars['nevents_per_pix'])
 
-            stddevq = table['charge_stddev']
-            charge_stddev = \
-                np.sqrt(np.sum((stddevq ** 2) * nevents[:, None],
-                               axis=0) / events_in_run)
             # Store the pixel-averaged pedestal charge std dev through a run:
             runsummary['ped_charge_stddev'].extend([np.nanmean(charge_stddev)])
 
@@ -488,6 +491,8 @@ def main():
         # Flatfield
         if datatables[2] is not None:
             table = datatables[2]
+            table_no_stars = datatables_no_stars[2]
+
             nevents = table['num_events']  # events per subrun
             events_in_run = nevents.sum()
             runsummary['num_flatfield'].extend([events_in_run])
@@ -500,37 +505,44 @@ def main():
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([nwtib])
 
             # Mean flat field charge through a run, for each pixel:
-            charge_mean = np.sum(table['charge_mean'] * nevents[:, None],
-                                 axis=0) / events_in_run
+            charge_mean = pix_subrun_mean_to_run_mean(
+                    table_no_stars['charge_mean'],
+                    table_no_stars['nevents_per_pix'])
+
             # Mean flat field time through a run, for each pixel:
-            time_mean = np.sum(table['time_mean'] * nevents[:, None],
-                               axis=0) / events_in_run
+            time_mean = pix_subrun_mean_to_run_mean(
+                    table_no_stars['time_mean'],
+                    table_no_stars['nevents_per_pix'])
 
             # Now store the pixel-averaged mean charge:
             runsummary['ff_charge_mean'].extend([np.nanmean(charge_mean)])
-            npixels = len(charge_mean)
+            npixels = (~np.isnan(charge_mean)).sum()
             runsummary['ff_charge_mean_err'].extend([np.nanstd(charge_mean) /
                                                      np.sqrt(npixels)])
+
             # FF charge std dev through a run, for each pixel:
-            charge_stddev = \
-                np.sqrt(np.sum((table['charge_stddev'] ** 2) * nevents[:, None],
-                               axis=0) / events_in_run)
+            charge_stddev = pix_subrun_std_to_run_std(
+                    table_no_stars['charge_stddev'],
+                    table_no_stars['nevents_per_pix'])
             # Store the pixel-averaged FF charge std dev:
             runsummary['ff_charge_stddev'].extend([np.nanmean(charge_stddev)])
 
             # Pixel-averaged mean time:
             runsummary['ff_time_mean'].extend([np.nanmean(time_mean)])
+            npixels = (~np.isnan(time_mean)).sum()
             runsummary['ff_time_mean_err'].extend([np.nanstd(time_mean) /
                                                    np.sqrt(npixels)])
             # FF time std dev through a run, for each pixel:
-            time_stddev = \
-                np.sqrt(np.sum((table['time_stddev'] ** 2) * nevents[:, None],
-                               axis=0) / events_in_run)
+            time_stddev = pix_subrun_std_to_run_std(
+                    table_no_stars['time_stddev'],
+                    table_no_stars['nevents_per_pix'])
+
             # Store the pixel-averaged FF time std dev:
             runsummary['ff_time_stddev'].extend([np.nanmean(time_stddev)])
-            rel_time_stddev = \
-                np.sqrt(np.sum((table['relative_time_stddev'] ** 2) *
-                               nevents[:, None], axis=0) / events_in_run)
+
+            rel_time_stddev = pix_subrun_std_to_run_std(
+                    table_no_stars['relative_time_stddev'],
+                    table_no_stars['nevents_per_pix'])
             runsummary['ff_rel_time_stddev']. \
                 extend([np.nanmean(rel_time_stddev)])
 
@@ -842,6 +854,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                       title='LST1 long-term DL1 data check')
 
     pixwise_runsummary = read_table(filename, '/pixwise_runsummary')
+    pixwise_runsummary_no_stars = read_table(filename,
+                                             '/pixwise_runsummary_no_stars')
     run_titles = []
     for i, run in enumerate(pixwise_runsummary['runnumber']):
         date = pd.to_datetime(pixwise_runsummary['time'][i],
@@ -885,6 +899,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     runtime = pd.to_datetime(runsummary['time'], origin='unix', unit='s')
 
     # Plot interleaved pedestal rates
+
     page0 = Panel()
     fig_ped_rates = show_graph(x=runtime, y=ped_rate, ey=err_ped_rate,
                                xlabel='date',
@@ -1052,7 +1067,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        display_range=[0, 100],
                        content_lowlim=ff_charge * (1 - ff_charge_tolerance),
                        content_upplim=ff_charge * (1 + ff_charge_tolerance))
-    pixel_report('Flat-Field mean charge', mean,
+
+    # For the check of whether the values are  in the allowed range we use
+    # those calculated excluding the subruns in which a given pixel was close
+    # to any bright star:
+    mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_charge_mean'])
+    pixel_report('Flat-Field mean charge', mean_no_stars,
                  ff_charge * (1 - ff_charge_tolerance),
                  ff_charge * (1 + ff_charge_tolerance),
                  run_fraction)
@@ -1077,7 +1097,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        run_titles, showlog=False, display_range=[-1, 1],
                        content_lowlim=ff_min_rel_time,
                        content_upplim=ff_max_rel_time)
-    pixel_report('Flat-Field mean relative time', mean,
+
+    mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_rel_time_mean'])
+    pixel_report('Flat-Field mean relative time', mean_no_stars,
                  ff_min_rel_time, ff_max_rel_time, run_fraction)
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
@@ -1085,7 +1107,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        run_titles, showlog=False,
                        display_range=[0.2, max(0.7, 1.1 * np.nanmax(stddev))],
                        content_upplim=ff_max_rel_time_stdev)
-    pixel_report('Flat-Field rel. time std dev', stddev, 0,
+    stddev_no_stars = np.array(pixwise_runsummary_no_stars[
+                                   'ff_pix_rel_time_stddev'])
+    pixel_report('Flat-Field rel. time std dev', stddev_no_stars, 0,
                  ff_max_rel_time_stdev, run_fraction)
 
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
@@ -1128,7 +1152,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        'Cosmics, rate of >30pe pulses', run_titles,
                        display_range=[0, 12],
                        content_lowlim=r30_lowlim, content_upplim=r30_upplim)
-    pixel_report('Cosmics, rate of >30pe pulses', np.array(pulse_rate_above_30),
+
+    pulse_rate_above_30_no_stars = np.array(
+        pixwise_runsummary_no_stars['cosmics_pix_fraction_pulses_above30'] *
+        pixwise_runsummary_no_stars['ncosmics_per_pix'] /
+        pixwise_runsummary_no_stars['elapsed_time_per_pix'])
+    pixel_report('Cosmics, rate of >30pe pulses', pulse_rate_above_30_no_stars,
                  r30_lowlim, r30_upplim, run_fraction)
 
     grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
