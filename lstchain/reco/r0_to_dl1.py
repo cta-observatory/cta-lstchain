@@ -338,8 +338,7 @@ def r0_to_dl1(
                                                             config=Config(config),subarray = subarray)
 
         # Component to process interleaved pedestal and flat-fields
-        calib_config = Config(config[config['calibration_product']])
-
+        calib_config = Config({config['calibration_product']: config[config['calibration_product']]})
         calibration_calculator = CalibrationCalculator.from_name(
             config['calibration_product'],
             config=calib_config,

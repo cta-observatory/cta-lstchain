@@ -123,7 +123,6 @@ class CalibrationCalculator(Component):
 
             except:
                 raise IOError(f"Problem in reading quadratic term file {self.systematic_correction_path}")
-
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
 
