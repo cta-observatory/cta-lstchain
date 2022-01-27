@@ -81,8 +81,8 @@ def setup_writer(writer, subarray, is_simulation):
     writer.exclude('subarray/trigger', 'tel')
 
     # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
-    writer._h5file.filters = HDF5_ZSTD_FILTERS
-    logger.info(f"USING FILTERS: {writer._h5file.filters}")
+    writer.h5file.filters = HDF5_ZSTD_FILTERS
+    logger.info(f"USING FILTERS: {writer.h5file.filters}")
 
 
     tel_names = {str(tel)[4:] for tel in subarray.telescope_types}

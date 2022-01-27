@@ -39,8 +39,6 @@ def read_file(file_name, tel_id=1):
     tel_id:      telescope id
     """
     with HDF5TableReader(file_name) as h5_table:
-        assert h5_table._h5file.isopen == True
-
         table = f"/tel_{tel_id}/flatfield"
         next(h5_table.read(table, ff_data))
         table = f"/tel_{tel_id}/calibration"
