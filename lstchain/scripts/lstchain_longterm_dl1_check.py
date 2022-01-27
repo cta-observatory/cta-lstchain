@@ -210,7 +210,9 @@ def main():
                           'cosmics_pix_fraction_pulses_above10': [],
                           'cosmics_pix_fraction_pulses_above30': [],
                           'cosmics_cog_within_pixel': [],
-                          'cosmics_cog_within_pixel_intensity_gt_200': []
+                          'cosmics_cog_within_pixel_intensity_gt_200': [],
+                          'ncosmics_per_pix': [],
+                          'elapsed_time_per_pix': []
                           }
     pixwise_runsummary_no_stars = copy.deepcopy(pixwise_runsummary)
 
@@ -231,6 +233,8 @@ def main():
         cosmics_pix_fraction_pulses_above30 = tables.Float32Col(shape=(numpixels))
         cosmics_cog_within_pixel =  tables.Float32Col(shape=(numpixels))
         cosmics_cog_within_pixel_intensity_gt_200 = tables.Float32Col(shape=(numpixels))
+        ncosmics_per_pix = tables.Float32Col(shape=(numpixels))
+        elapsed_time_per_pix = tables.Float32Col(shape=(numpixels))
 
     dicts = [cosmics, pedestals, flatfield]
 
@@ -254,7 +258,7 @@ def main():
 
         for tablename in ['cosmics', 'pedestals', 'flatfield']:
             try:
-                node = a.get_node('/dl1datacheck/' + tablename)
+                a.get_node('/dl1datacheck/' + tablename)
             except Exception:
                 log.warning('Table {name} is missing!')
                 datatables.append(None)
@@ -558,13 +562,20 @@ def main():
                                           ['', '_no_stars']):
                 # Cosmics
                 table = dctable[0]
-                total_nevents_per_pix = np.nansum(table['nevents_per_pix'], axis=0)
+                total_ncosmics_per_pix = np.nansum(table['nevents_per_pix'],
+                                                   axis=0)
+                total_elapsed_time_per_pix =  \
+                    np.nansum(table['elapsed_time_per_pix'], axis=0)
+                pwrs['ncosmics_per_pix'].extend([total_ncosmics_per_pix])
+                pwrs['elapsed_time_per_pix'].extend([
+                    total_elapsed_time_per_pix])
+
                 pwrs['cosmics_pix_fraction_pulses_above10'].extend(
                         [np.nansum(table['num_pulses_above_0010_pe'], axis=0) /
-                         total_nevents_per_pix])
+                         total_ncosmics_per_pix])
                 pwrs['cosmics_pix_fraction_pulses_above30'].extend(
                         [np.nansum(table['num_pulses_above_0030_pe'], axis=0) /
-                         total_nevents_per_pix])
+                         total_ncosmics_per_pix])
                 pwrs['cosmics_cog_within_pixel'].extend(
                     [np.nansum(table['cog_within_pixel'], axis=0)])
                 pwrs['cosmics_cog_within_pixel_intensity_gt_200'].extend(
@@ -573,14 +584,14 @@ def main():
                 # Pedestals
                 if dctable[1] is not None:
                     table = dctable[1]
-                    total_nevents_per_pix = np.nansum(table['nevents_per_pix'],
+                    total_nped_per_pix = np.nansum(table['nevents_per_pix'],
                                                       axis=0)
                     pwrs['ped_pix_fraction_pulses_above10'].\
                         extend([np.nansum(table['num_pulses_above_0010_pe'],
-                                          axis=0) / total_nevents_per_pix])
+                                          axis=0) / total_nped_per_pix])
                     pwrs['ped_pix_fraction_pulses_above30'].\
                         extend([np.nansum(table['num_pulses_above_0030_pe'],
-                                          axis=0) / total_nevents_per_pix])
+                                          axis=0) / total_nped_per_pix])
 
                     # For the means we consider the statistics in each subrun
                     # when recalculating the mean for the whole run:
@@ -604,8 +615,6 @@ def main():
                 if dctable[2] is not None:
                     table = dctable[2]
 
-                    total_nevents_per_pix = np.nansum(table['nevents_per_pix'],
-                                                      axis=0)
                     qmean = pix_subrun_mean_to_run_mean(table['charge_mean'],
                                                         table['nevents_per_pix'])
                     pwrs['ff_pix_charge_mean'].extend([qmean])
@@ -1018,16 +1027,14 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page1 = Panel()
     pad_width = 350
     pad_height = 370
-    mean = []
-    stddev = []
-    for item in pixwise_runsummary['ped_pix_charge_mean']:
-        mean.append(item)
-    for item in pixwise_runsummary['ped_pix_charge_stddev']:
-        stddev.append(item)
-    row1 = show_camera(np.array(mean), engineering_geom, pad_width,
+
+    mean = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
+    stddev = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
+
+    row1 = show_camera(mean, engineering_geom, pad_width,
                        pad_height, 'Pedestals mean charge',
                        run_titles)
-    row2 = show_camera(np.array(stddev), engineering_geom, pad_width,
+    row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Pedestals charge std dev',
                        run_titles)
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
@@ -1036,14 +1043,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page1.title = 'Interleaved pedestals'
 
     page2 = Panel()
-    mean = []
-    stddev = []
-    for item in pixwise_runsummary['ff_pix_charge_mean']:
-        mean.append(item)
-    for item in pixwise_runsummary['ff_pix_charge_stddev']:
-        stddev.append(item)
-    mean = np.array(mean)
-    stddev = np.array(stddev)
+
+    mean = np.array(pixwise_runsummary['ff_pix_charge_mean'])
+    stddev = np.array(pixwise_runsummary['ff_pix_charge_stddev'])
+
     row1 = show_camera(mean, engineering_geom, pad_width,
                        pad_height, 'Flat-Field mean charge (pe)', run_titles,
                        display_range=[0, 100],
@@ -1065,14 +1068,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page2.title = 'Interleaved flat field, charge'
 
     page3 = Panel()
-    mean = []
-    stddev = []
-    for item in pixwise_runsummary['ff_pix_rel_time_mean']:
-        mean.append(item)
-    for item in pixwise_runsummary['ff_pix_rel_time_stddev']:
-        stddev.append(item)
-    mean = np.array(mean)
-    stddev = np.array(stddev)
+
+    mean = np.array(pixwise_runsummary['ff_pix_rel_time_mean'])
+    stddev = np.array(pixwise_runsummary['ff_pix_rel_time_stddev'])
+
     row1 = show_camera(mean, engineering_geom, pad_width,
                        pad_height, 'Flat-Field mean relative time (ns)',
                        run_titles, showlog=False, display_range=[-1, 1],
@@ -1097,16 +1096,15 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page4 = Panel()
     pulse_rate_above_10 = []
     pulse_rate_above_30 = []
-    for item, num_crs, elapsed_time in \
-            zip(pixwise_runsummary['cosmics_pix_fraction_pulses_above10'],
-                runsummary['num_cosmics'],
-                runsummary['elapsed_time']):
-        pulse_rate_above_10.append(item * num_crs / elapsed_time)
-    for item, num_crs, elapsed_time in \
-            zip(pixwise_runsummary['cosmics_pix_fraction_pulses_above30'],
-                runsummary['num_cosmics'],
-                runsummary['elapsed_time']):
-        pulse_rate_above_30.append(item * num_crs / elapsed_time)
+
+    pulse_rate_above_10 = \
+        np.array(pixwise_runsummary['cosmics_pix_fraction_pulses_above10'] *
+                 pixwise_runsummary['ncosmics_per_pix'] /
+                 pixwise_runsummary['elapsed_time_per_pix'])
+    pulse_rate_above_30 = \
+        np.array(pixwise_runsummary['cosmics_pix_fraction_pulses_above30'] *
+                 pixwise_runsummary['ncosmics_per_pix'] /
+                 pixwise_runsummary['elapsed_time_per_pix'])
 
     reference_rate_above_30 = (np.array(engineering_geom.n_pixels *
                                         [r30[0] + r30[1] * coszenith]).T +
@@ -1121,11 +1119,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # them, to avoid lots of unnecessary warnings:
     r30_lowlim[:, pixel_index_limit:] = 0.5 * r30_lowlim[:, pixel_index_limit:]
 
-    row1 = show_camera(np.array(pulse_rate_above_10), engineering_geom,
+    row1 = show_camera(pulse_rate_above_10, engineering_geom,
                        pad_width, pad_height,
                        'Cosmics, rate of >10pe pulses', run_titles,
                        display_range=[0, 150])
-    row2 = show_camera(np.array(pulse_rate_above_30), engineering_geom,
+    row2 = show_camera(pulse_rate_above_30, engineering_geom,
                        pad_width, pad_height,
                        'Cosmics, rate of >30pe pulses', run_titles,
                        display_range=[0, 12],
