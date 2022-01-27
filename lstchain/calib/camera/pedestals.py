@@ -8,6 +8,7 @@ from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.core.traits import List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from ctapipe.image.extractor import ImageExtractor
 
 
 __all__ = [
@@ -84,6 +85,12 @@ class PedestalIntegrator(PedestalCalculator):
                 time_sampling_correction_path=self.time_sampling_correction_path)
         else:
             self.time_sampling_corrector = None
+
+
+        # fix for broken extractor setup in ctapipe baseclass
+        self.extractor = ImageExtractor.from_name(
+            self.charge_product, parent=self, subarray=subarray
+        )
 
     def _extract_charge(self, event):
         """
