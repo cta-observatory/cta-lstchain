@@ -800,15 +800,16 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     bokeh_output_file(Path(filename).with_suffix('.html'),
                       title='LST1 long-term DL1 data check')
 
+    pixwise_runsummary = read_table(filename, '/pixwise_runsummary')
     run_titles = []
-    for i, run in enumerate(file.root.pixwise_runsummary.col('runnumber')):
-        date = pd.to_datetime(file.root.pixwise_runsummary.col('time')[i],
+    for i, run in enumerate(pixwise_runsummary['runnumber']):
+        date = pd.to_datetime(pixwise_runsummary['time'][i],
                               origin='unix', unit='s')
         run_titles.append('Run {0:05d}, {date}'. \
                           format(run,
                                  date=date.strftime("%b %d %Y %H:%M:%S")))
 
-    runsummary = pd.read_hdf(filename, 'runsummary')
+    runsummary = read_table(filename, '/runsummary/table')
 
     if np.sum(runsummary['num_ucts_jumps']) > 0:
         log.info('Attention: UCTS jumps were detected and corrected:')
@@ -987,9 +988,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pad_height = 370
     mean = []
     stddev = []
-    for item in file.root.pixwise_runsummary.col('ped_pix_charge_mean'):
+    for item in pixwise_runsummary['ped_pix_charge_mean']:
         mean.append(item)
-    for item in file.root.pixwise_runsummary.col('ped_pix_charge_stddev'):
+    for item in pixwise_runsummary['ped_pix_charge_stddev']:
         stddev.append(item)
     row1 = show_camera(np.array(mean), engineering_geom, pad_width,
                        pad_height, 'Pedestals mean charge',
@@ -1005,9 +1006,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page2 = Panel()
     mean = []
     stddev = []
-    for item in file.root.pixwise_runsummary.col('ff_pix_charge_mean'):
+    for item in pixwise_runsummary['ff_pix_charge_mean']:
         mean.append(item)
-    for item in file.root.pixwise_runsummary.col('ff_pix_charge_stddev'):
+    for item in pixwise_runsummary['ff_pix_charge_stddev']:
         stddev.append(item)
     mean = np.array(mean)
     stddev = np.array(stddev)
@@ -1034,9 +1035,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page3 = Panel()
     mean = []
     stddev = []
-    for item in file.root.pixwise_runsummary.col('ff_pix_rel_time_mean'):
+    for item in pixwise_runsummary['ff_pix_rel_time_mean']:
         mean.append(item)
-    for item in file.root.pixwise_runsummary.col('ff_pix_rel_time_stddev'):
+    for item in pixwise_runsummary['ff_pix_rel_time_stddev']:
         stddev.append(item)
     mean = np.array(mean)
     stddev = np.array(stddev)
@@ -1064,13 +1065,15 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page4 = Panel()
     pulse_rate_above_10 = []
     pulse_rate_above_30 = []
-    for item, num_crs, elapsed_time in zip(file.root.pixwise_runsummary.col(
-            'cosmics_pix_fraction_pulses_above10'), runsummary['num_cosmics'],
-            runsummary['elapsed_time']):
+    for item, num_crs, elapsed_time in \
+            zip(pixwise_runsummary['cosmics_pix_fraction_pulses_above10'],
+                runsummary['num_cosmics'],
+                runsummary['elapsed_time']):
         pulse_rate_above_10.append(item * num_crs / elapsed_time)
-    for item, num_crs, elapsed_time in zip(file.root.pixwise_runsummary.col(
-            'cosmics_pix_fraction_pulses_above30'), runsummary['num_cosmics'],
-            runsummary['elapsed_time']):
+    for item, num_crs, elapsed_time in \
+            zip(pixwise_runsummary['cosmics_pix_fraction_pulses_above30'],
+                runsummary['num_cosmics'],
+                runsummary['elapsed_time']):
         pulse_rate_above_30.append(item * num_crs / elapsed_time)
 
     reference_rate_above_30 = (np.array(engineering_geom.n_pixels *
@@ -1105,14 +1108,13 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     page4b = Panel()
 
-    cogs = file.root.pixwise_runsummary.col('cosmics_cog_within_pixel')
+    cogs = pixwise_runsummary['cosmics_cog_within_pixel']
     row1 = show_camera(cogs,
                        engineering_geom,
                        pad_width, pad_height,
                        'Cosmics, image cog distribution', run_titles,
                        display_range=(0,1.1*np.nanmax(cogs)))
-    cogs = file.root.pixwise_runsummary.col(
-            'cosmics_cog_within_pixel_intensity_gt_200')
+    cogs = pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200']
     row2 = show_camera(cogs,
             engineering_geom,
             pad_width, pad_height,
@@ -1123,8 +1125,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                      plot_height=pad_height)
     page4b.child = grid4b
     page4b.title = 'Cosmics'
-
-    file.close()
 
     page5 = Panel()
     pad_width = 550
@@ -1509,11 +1509,16 @@ def get_datacheck_table(filename, tablename, exclude_stars=True):
         table[k] = np.where(table['num_nearby_stars'] > 0, np.nan, table[k])
 
     # calculate the number of events per pixel that have valid data (i.e.
-    # without nearby stars)
+    # without nearby stars), and the corresponding elapsed observation time
+    nstars = table['num_nearby_stars']
     nevents = table['num_events']
-    nevents_per_pix = np.transpose([nevents] * table['charge_mean'].shape[1])
-    table['nevents_per_pix'] = np.where(table['num_nearby_stars'] > 0, np.nan,
-                                        nevents_per_pix)
+    npixels = nstars.shape[1]
+    nevents_per_pix = np.transpose([nevents] * npixels)
+    table['nevents_per_pix'] = np.where(nstars > 0, np.nan, nevents_per_pix)
+    elapsed_time = table['elapsed_time']
+    elapsed_time_per_pix = np.transpose([nevents] * npixels)
+    table['elapsed_time_per_pix'] = np.where(nstars > 0, np.nan,
+                                             elapsed_time_per_pix)
 
     return table
 
