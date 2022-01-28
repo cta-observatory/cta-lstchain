@@ -798,6 +798,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # in order to be reported:
     run_fraction = 0.5
 
+    # Standard deviation of pedestal charge (to detect noisy pixels)
+    ped_max_charge_stddev = 2.5
+
     # Flat field pixel charges (just for the mean; the std dev may be strongly
     # affected by stars), in pe.
     ff_charge = 75
@@ -1051,7 +1054,13 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        run_titles)
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Pedestals charge std dev',
-                       run_titles)
+                       run_titles,
+                       content_upplim=ped_max_charge_stddev)
+    stddev_no_stars = np.array(pixwise_runsummary_no_stars[
+                                   'ped_pix_charge_stddev'])
+    pixel_report('Pedestal standard deviation', stddev_no_stars,
+                 0, ped_max_charge_stddev, run_fraction)
+
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
     page1.child = grid1
@@ -1145,11 +1154,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     row1 = show_camera(pulse_rate_above_10, engineering_geom,
                        pad_width, pad_height,
-                       'Cosmics, rate of >10pe pulses', run_titles,
+                       'Cosmics, rate of >10pe pulses (/s)', run_titles,
                        display_range=[0, 150])
     row2 = show_camera(pulse_rate_above_30, engineering_geom,
                        pad_width, pad_height,
-                       'Cosmics, rate of >30pe pulses', run_titles,
+                       'Cosmics, rate of >30pe pulses (/s)', run_titles,
                        display_range=[0, 12],
                        content_lowlim=r30_lowlim, content_upplim=r30_upplim)
 
