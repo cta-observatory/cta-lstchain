@@ -10,6 +10,7 @@ __all__ = [
     'overlay_disp_vector',
     'overlay_hillas_major_axis',
     'overlay_source',
+    'display_array_camera',
 ]
 
 
@@ -111,3 +112,23 @@ def overlay_hillas_major_axis(display, hillas, **kwargs):
                       hillas.y + x * np.sin(hillas.psi.to(u.rad).value),
                       **kwargs,
                       )
+
+
+def display_array_camera(image, camera_geometry, axes=None, **kwargs):
+    """
+    Display the image of an event
+    Parameters
+    ----------
+    image: array_like
+    axes: matplotlib.pyplot.axes
+    Returns
+    -------
+    d1: ctapipe.visualization.CameraDisplay
+    """
+
+    if axes is None:
+        fig, axes = plt.subplots(figsize=(10, 8))
+
+    d1 = CameraDisplay(camera_geometry, image, ax=axes, **kwargs)
+    d1.add_colorbar(ax=axes)
+    return d1
