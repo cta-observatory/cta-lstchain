@@ -33,8 +33,10 @@ from .volume_reducer import apply_volume_reduction
 from ..analysis import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
+from ..calib.camera.pixel_threshold_estimation import get_bias_and_std
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
+from .reconstructor import TimeWaveformFitter, asy_centroid
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
@@ -167,6 +169,7 @@ def get_dl1(
     telescope_id,
     dl1_container=None,
     custom_config={},
+    lhfit_args={}
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -182,6 +185,9 @@ def get_dl1(
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         supersedes the standard configuration
+    lhfit_args: Dictionary
+        Set of optional parameters needed for the DL1 extraction using the
+        likelihood fit method
 
     Returns
     -------
@@ -257,6 +263,44 @@ def get_dl1(
                 dl1_container=dl1_container,
             )
 
+            if 'lh_fit_config' in config.keys():
+                if dl1_container.mc_type > -1000 or (calibrated_event.trigger.event_type == EventType.SUBARRAY):
+                # Re-evaluate the DL1 parameters using a likelihood
+                # minimization method
+                    if dl1_container['n_pixels'] > 0:
+                        try:
+                            if not config['lh_fit_config']['no_asymmetry']:
+                                asy_center = asy_centroid(
+                                    camera_geometry[signal_pixels],
+                                    image[signal_pixels])
+                                dl1_container.x = asy_center[0]
+                                dl1_container.y = asy_center[1]
+                            get_dl1_lh_fit(calibrated_event,
+                                           subarray,
+                                           camera_geometry,
+                                           telescope_id,
+                                           normalized_pulse_template=lhfit_args["pulse_template"],
+                                           pedestal_std=lhfit_args["pedestal_std"],
+                                           dl1_container=dl1_container,
+                                           custom_config=config)
+                            dl1_container.lhfit_call_status = 1
+                            for key in ['lhfit_width', 'lhfit_width_uncertainty',
+                                        'lhfit_length', 'lhfit_length_uncertainty']:
+                                value = getattr(dl1_container, key)
+                                setattr(dl1_container, key,
+                                        _camera_distance_to_angle(value, optics.equivalent_focal_length))
+                            dl1_container.lhfit_wl = dl1_container.lhfit_width / dl1_container.lhfit_length
+                            dl1_container.lhfit_area = dl1_container.lhfit_width * dl1_container.lhfit_length
+                        except Exception as err:
+                            dl1_container.lhfit_call_status = -1
+                            logger.exception("Unexpected error encountered in : get_dl1_lh_fit()")
+                            logger.exception(err.__class__)
+                            logger.exception(err)
+                            raise
+                    else:
+                        dl1_container.lhfit_call_status = 0
+            else:
+                dl1_container.lhfit_call_status = -10
     # We set other fields which still make sense for a non-parametrized
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
@@ -264,6 +308,165 @@ def get_dl1(
     # save the applied cleaning mask
     calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
 
+    return dl1_container
+
+
+def get_dl1_lh_fit(
+    calibrated_event,
+    subarray,
+    geometry,
+    telescope_id,
+    dl1_container,
+    normalized_pulse_template,
+    pedestal_std,
+    custom_config={}):
+    """
+    Return a DL1ParametersContainer of extracted features from a calibrated
+    event. The features are extracted by maximizing an image likelihood
+    function over pixels ands time samples. The model considers an asymmetric
+    2D Gaussian distribution of the charge and a linear temporal model. The
+    spatio-temporal image model is then compared to the signal vs time in each
+    pixel while taking into account the response of the instrument from
+    calibration.
+    The DL1ParametersContainer needs to contain a first features estimation
+    as seed for the likelihood fit.
+    Parameters
+    ----------
+    calibrated_event: ctapipe event container
+    geometry: camera geometry
+    telescope_id: `int`
+    dl1_container: DL1ParametersContainer
+    normalized_pulse_template: NormalizedPulseTemplate
+    Returns
+    -------
+    DL1ParametersContainer
+    """
+    lh_fit_config = custom_config['lh_fit_config']
+
+    waveform = calibrated_event.r1.tel[telescope_id].waveform
+
+    time_shift = None
+    if dl1_container.mc_type == -9999:  # Find time shift correction for data
+        dl1_calib = calibrated_event.calibration.tel[telescope_id].dl1
+        time_shift = dl1_calib.time_shift
+        if dl1_calib.pedestal_offset is not None:
+            waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
+    readout = subarray.tel[telescope_id].camera.readout
+    sampling_rate = readout.sampling_rate.to_value(u.GHz)
+    dt = (1.0/sampling_rate)
+
+    n_pixels, n_samples = waveform.shape
+    selected_gains = calibrated_event.r1.tel[telescope_id].selected_gain_channel
+    mask_high = (selected_gains == 0)
+    if pedestal_std is not None: #  test to include interleaved correction on pedestal, NOT FUNCTIONNAL
+        error = pedestal_std[1][0] * mask_high + pedestal_std[1][1] * ~mask_high
+    else:
+        error = None
+    sigma_s = np.ones(n_pixels) * lh_fit_config['sigma_s']
+    crosstalk = np.ones(n_pixels) * lh_fit_config['crosstalk']
+
+    v = dl1_container.time_gradient
+    psi = dl1_container.psi.to(u.rad).value
+    if v < 0:
+        if psi >= 0:
+            psi = psi - np.pi
+        else:
+            psi = psi + np.pi
+
+    start_parameters = {'x_cm': dl1_container.x.to(u.m).value,
+                        'y_cm': dl1_container.y.to(u.m).value,
+                        'charge': dl1_container.intensity,
+                        't_cm': dl1_container.intercept
+                        - normalized_pulse_template.compute_time_of_max(),
+                        'v': np.abs(v),
+                        'psi': psi,
+                        'length': dl1_container.length.to(u.m).value,
+                        'wl': dl1_container.width.to(u.m).value/dl1_container.length.to(u.m).value,
+                        'rl': 0.0
+                        }
+
+    if start_parameters['length'] <= 0.02:
+        start_parameters['length'] = 0.02
+    if dl1_container.width.to(u.m).value <= 0.02:
+        start_parameters['wl'] = 0.02/start_parameters['length']
+    if np.isnan(start_parameters['t_cm']):
+        start_parameters['t_cm'] = 0.
+    if np.isnan(start_parameters['v']):
+        start_parameters['v'] = 40
+
+    t_max = n_samples * 1
+    v_min, v_max = 0,  max(2*start_parameters['v'], 50)
+    r_max = np.sqrt(geometry.pix_x**2 + geometry.pix_y**2).to(u.m).value.max()
+    rl_min, rl_max = -9, 9
+    if custom_config['lh_fit_config']['no_asymmetry']:
+        rl_min, rl_max = 0.0, 0.0
+
+    bound_parameters = {'x_cm': (dl1_container.x.to(u.m).value
+                                 - 1.0 * dl1_container.length.to(u.m).value,
+                                 dl1_container.x.to(u.m).value
+                                 + 1.0 * dl1_container.length.to(u.m).value),
+                        'y_cm': (dl1_container.y.to(u.m).value
+                                 - 1.0 * dl1_container.length.to(u.m).value,
+                                 dl1_container.y.to(u.m).value
+                                 + 1.0 * dl1_container.length.to(u.m).value),
+                        'charge': (dl1_container.intensity * 0.25,
+                                   dl1_container.intensity * 4.0),
+                        't_cm': (-10, t_max + 10),
+                        'v': (v_min, v_max),
+                        'psi': (-np.pi*2.0, np.pi*2.0),
+                        'length': (0.001,
+                                   min(2 * dl1_container.length.to(u.m).value
+                                       , r_max)),
+                        'wl': (0.001,1.0),
+                        'rl': (rl_min, rl_max)
+                        }
+    try:
+        fitter = TimeWaveformFitter(waveform=waveform,
+                                    error=error,
+                                    n_peaks=lh_fit_config['n_peaks'],
+                                    sigma_s=sigma_s,
+                                    geometry=geometry,
+                                    dt=dt, time_shift=time_shift, n_samples=n_samples,
+                                    template=normalized_pulse_template,
+                                    is_high_gain=mask_high,
+                                    crosstalk=crosstalk,
+                                    sigma_space=lh_fit_config['sigma_space'],
+                                    sigma_time=lh_fit_config['sigma_time'],
+                                    time_before_shower=lh_fit_config['time_before_shower'],
+                                    time_after_shower=lh_fit_config['time_after_shower'],
+                                    start_parameters=start_parameters,
+                                    bound_parameters=bound_parameters,
+                                    use_weight=lh_fit_config['use_weight']
+                                    )
+
+        fitter.predict(dl1_container, verbose=lh_fit_config['verbose'],
+                       ncall=lh_fit_config['ncall'])
+        if lh_fit_config['verbose'] == 2:
+            image = calibrated_event.dl1.tel[telescope_id].image
+            axes = fitter.plot_event(image, init=True)
+            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'start.png')
+            axes = fitter.plot_waveforms(image)
+            axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'waveforms.png')
+            axes = fitter.plot_event(image)
+            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'end.png')
+            axes = fitter.plot_event(image, ellipsis=False)
+            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'image.png')
+            axes = fitter.plot_residual(image)
+            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'residual.png')
+            axes = fitter.plot_model()
+            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'model.png')
+
+            for params in fitter.start_parameters.keys():
+                axes = fitter.plot_likelihood(params)
+                axes.get_figure().savefig('event/'+str(dl1_container.event_id) + params + '.png')
+            print("event plot produced, press Enter to continue "
+                  "or Ctrl+C and Enter to stop")
+            input()
+    except Exception as e:
+
+        logger.exception('Could not fit : %s', e)
+        logger.exception(e.__class__)
+        return None
     return dl1_container
 
 
@@ -397,6 +600,19 @@ def r0_to_dl1(
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
+    lhfit_args = {}
+    if 'lh_fit_config' in config.keys():
+        if is_simu or config['lh_fit_config']['use_interleaved'] is None:
+            ped_charge_std_pe = None
+        else:
+            run = parse_r0_filename(input_filename)
+            dl1_file = config['lh_fit_config']['use_interleaved'] + run_to_dl1_filename(run.tel_id, run.run, run.subrun)
+            _, ped_charge_std_pe = get_bias_and_std(dl1_file)
+        lhfit_args = {
+            "pulse_template": NormalizedPulseTemplate.load_from_eventsource(
+                    subarray.tel[1].camera.readout),
+            "pedestal_std": ped_charge_std_pe
+        }
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -527,6 +743,7 @@ def r0_to_dl1(
                         telescope_id,
                         dl1_container=dl1_container,
                         custom_config=config,
+                        lhfit_args=lhfit_args,
                     )
 
                 except HillasParameterizationError:
