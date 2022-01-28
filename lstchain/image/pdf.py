@@ -25,7 +25,7 @@ def log_gaussian(x, mean, sigma):
     return ne.evaluate("-(x - mean) ** 2 / (2 * sigma ** 2) - log((sqrt(2 * pi) * sigma))")
 
 
-def logAsy_gaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
+def log_asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
     """
     Evaluate the log of a bi-dimensional gaussian law with asymmetry along the
     main axis

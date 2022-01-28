@@ -12,7 +12,7 @@ import astropy.units as u
 
 from ctapipe.reco.reco_algorithms import Reconstructor
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from lstchain.image.pdf import log_gaussian, logAsy_gaussian2d
+from lstchain.image.pdf import log_gaussian, log_asygaussian2d
 from lstchain.visualization.camera import display_array_camera
 
 logger = logging.getLogger(__name__)
@@ -608,7 +608,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         rl = 1+rl if rl >= 0 else 1/(1-rl)
 
-        log_mu = logAsy_gaussian2d(size=charge * self.pix_area,
+        log_mu = log_asygaussian2d(size=charge * self.pix_area,
                                    x=self.pix_x,
                                    y=self.pix_y,
                                    x_cm=x_cm,
@@ -825,7 +825,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         params = self.end_parameters
 
         rl = 1+params['rl'] if params['rl'] >= 0 else 1/(1-params['rl'])
-        log_mu = logAsy_gaussian2d(size=params['charge']
+        log_mu = log_asygaussian2d(size=params['charge']
                                    * self.geometry.pix_area.to(u.m**2).value,
                                    x=self.geometry.pix_x.value,
                                    y=self.geometry.pix_y.value,
@@ -862,7 +862,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         params = self.end_parameters
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-        log_mu = logAsy_gaussian2d(size=params['charge']
+        log_mu = log_asygaussian2d(size=params['charge']
                                    * self.geometry.pix_area.to(u.m**2).value,
                                    x=self.geometry.pix_x.value,
                                    y=self.geometry.pix_y.value,
