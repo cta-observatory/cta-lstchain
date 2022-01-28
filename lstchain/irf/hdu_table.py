@@ -170,7 +170,7 @@ def create_hdu_index_hdu(
             "HDU_TYPE": "events",
             "HDU_CLASS": "events",
             "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
-            "FILE_NAME": file,
+            "FILE_NAME": str(file),
             "HDU_NAME": "EVENTS",
             "SIZE": filepath.stat().st_size,
         }
