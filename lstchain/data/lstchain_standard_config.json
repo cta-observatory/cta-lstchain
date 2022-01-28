@@ -235,11 +235,11 @@
       "charge_std_cut_outliers": [-10,10],
       "charge_product":"FixedWindowSum",
       "FixedWindowSum":{
-      "window_shift": 6,
-      "window_width":12,
-      "peak_index": 18,
-      "apply_integration_correction": false
-    }
+        "window_shift": 6,
+        "window_width":12,
+        "peak_index": 18,
+        "apply_integration_correction": false
+      }
     },
     "FlasherFlatFieldCalculator":{
       "sample_size": 10000,
