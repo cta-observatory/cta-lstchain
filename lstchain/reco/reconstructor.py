@@ -12,7 +12,7 @@ import astropy.units as u
 
 from ctapipe.reco.reco_algorithms import Reconstructor
 from lstchain.io.lstcontainers import DL1ParametersContainer
-from lstchain.image.pdf import log_gaussian, log_gaussian2d, logAsy_gaussian2d
+from lstchain.image.pdf import log_gaussian, logAsy_gaussian2d
 from lstchain.visualization.camera import display_array_camera
 
 logger = logging.getLogger(__name__)
@@ -674,7 +674,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
                    * ((self.sigma_s[mask_LL][..., None]*templates[mask_LL])**2)[..., None])
         sigma_n = (self.error[mask_LL]**2)[..., None] + sigma_n
         sigma_n = ne.evaluate("sqrt(sigma_n)")
-        log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n)
+        log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n) # NOQA
 
         # Compute the pixel likelihood using a Gaussian approximation for
         # high luminosity pixels
