@@ -279,7 +279,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     pedestal_extractor_type = ped_config['charge_product']
     pedestal_calibrator = CameraCalibrator(
         image_extractor_type=pedestal_extractor_type,
-        config=ped_config,
+        config=Config(ped_config),
         subarray=mc_reader.subarray)
 
     # Obtain the (usually biased) extractor used for shower images:
