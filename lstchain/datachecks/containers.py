@@ -2,8 +2,6 @@
 Containers for data check
 """
 
-import logging
-
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
