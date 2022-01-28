@@ -1,48 +1,39 @@
 import logging
 import os
 import re
-from multiprocessing import Pool
 import warnings
+from multiprocessing import Pool
+from contextlib import ExitStack
 
-import astropy.units as u
-import ctapipe
-import ctapipe_io_lst
 import numpy as np
 import pandas as pd
 import tables
+from tables import open_file
+from tqdm import tqdm
+
+import astropy.units as u
 from astropy.table import Table, vstack, QTable
+
 from ctapipe.containers import SimulationConfigContainer
-from ctapipe.instrument import (
-    CameraDescription,
-    CameraGeometry,
-    CameraReadout,
-    OpticsDescription,
-    SubarrayDescription,
-    TelescopeDescription,
-)
-from ctapipe.io import (
-    HDF5TableReader,
-    HDF5TableWriter,
-)
+from ctapipe.instrument import SubarrayDescription
+from ctapipe.io import HDF5TableReader, HDF5TableWriter
+
 from eventio import Histograms, EventIOFile
 from eventio.search_utils import yield_toplevel_of_type, yield_all_subobjects
 from eventio.simtel.objects import History, HistoryConfig
-from pyirf.simulations import SimulatedEventsInfo
-from tables import open_file
-from tqdm import tqdm
-from contextlib import ExitStack
 
-import lstchain
+from pyirf.simulations import SimulatedEventsInfo
+
 from .lstcontainers import (
     ExtraMCInfo,
     MetaData,
     ThrownEventsHistogram,
 )
 
+
 log = logging.getLogger(__name__)
 
 __all__ = [
-
     'add_column_table',
     'add_config_metadata',
     'add_global_metadata',
@@ -62,25 +53,13 @@ __all__ = [
     'merge_dl2_runs',
     'merging_check',
     'parse_cfg_bytestring',
-    'read_camera_geometries',
-    'read_camera_readouts',
     'read_data_dl2_to_QTable',
     'read_dl2_params',
     'read_mc_dl2_to_QTable',
     'read_metadata',
-    'read_optics',
     'read_simtel_energy_histogram',
     'read_simu_info_hdf5',
     'read_simu_info_merged_hdf5',
-    'read_single_camera_description',
-    'read_single_camera_geometry',
-    'read_single_camera_readout',
-    'read_single_optics',
-    'read_single_telescope_description',
-    'read_subarray_description',
-    'read_subarray_table',
-    'read_telescopes_descriptions',
-    'read_telescopes_positions',
     'recursive_copy_node',
     'stack_tables_h5files',
     'write_calibration_data',
@@ -513,265 +492,6 @@ def write_mcheader(mcheader, output_filename, obs_id=None, filters=HDF5_ZSTD_FIL
         writer.write("run_config", [extramc, mcheader])
 
 
-def read_single_optics(filename, telescope_name):
-    """
-    Read a specific telescope optics from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    telescope_name: str
-
-    Returns
-    -------
-    `ctapipe.instrument.optics.OpticsDescription`
-    """
-    from astropy.units import Quantity
-
-    telescope_optics_path = "/configuration/instrument/telescope/optics"
-    telescope_optic_table = Table.read(filename, path=telescope_optics_path)
-    row = telescope_optic_table[
-        np.where(telescope_name == telescope_optic_table["name"])[0][0]
-    ]
-    optics_description = OpticsDescription(
-        name=row["name"],
-        num_mirrors=row["num_mirrors"],
-        equivalent_focal_length=row["equivalent_focal_length"]
-                                * telescope_optic_table["equivalent_focal_length"].unit,
-        mirror_area=row["mirror_area"] * telescope_optic_table["mirror_area"].unit,
-        num_mirror_tiles=Quantity(row["num_mirror_tiles"]),
-    )
-    return optics_description
-
-
-def read_optics(filename):
-    """
-    Read all telescope optics from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    dictionary of ctapipe.instrument.optics.OpticsDescription by telescope names
-    """
-    telescope_optics_path = "/configuration/instrument/telescope/optics"
-    telescope_optics_table = Table.read(filename, path=telescope_optics_path)
-    optics_dict = {}
-    for telescope_name in telescope_optics_table["name"]:
-        optics_dict[telescope_name] = read_single_optics(filename, telescope_name)
-    return optics_dict
-
-
-def read_single_camera_geometry(filename, camera_name):
-    """
-    Read a specific camera geometry from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    camera_name: str
-
-    Returns
-    -------
-    `ctapipe.instrument.camera.geometry.CameraGeometry`
-    """
-    camera_geometry_path = (
-        f"/configuration/instrument/telescope/camera/geometry_{camera_name}"
-    )
-    camera_geometry = CameraGeometry.from_table(
-        Table.read(filename, camera_geometry_path)
-    )
-    return camera_geometry
-
-
-def read_camera_geometries(filename):
-    """
-    Read all camera geometries from a DL1 file
-
-    Parameters
-    ----------
-    filename
-
-    Returns
-    -------
-    dictionary of `ctapipe.instrument.camera.geometry.CameraGeometry` by camera name
-    """
-    subarray_layout_path = "configuration/instrument/subarray/layout"
-    camera_geoms = {}
-    for camera_name in set(
-            Table.read(filename, path=subarray_layout_path)["camera_type"]
-    ):
-        camera_geoms[camera_name] = read_single_camera_geometry(filename, camera_name)
-    return camera_geoms
-
-
-def read_single_camera_readout(filename, camera_name):
-    """
-    Read a specific camera readout from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    camera_name: str
-
-    Returns
-    -------
-    `ctapipe.instrument.camera.readout.CameraReadout`
-    """
-    camera_readout_path = (
-        f"/configuration/instrument/telescope/camera/readout_{camera_name}"
-    )
-    return CameraReadout.from_table(Table.read(filename, path=camera_readout_path))
-
-
-def read_camera_readouts(filename):
-    """
-    Read  all camera readouts from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    dict of `ctapipe.instrument.camera.description.CameraDescription` by tel_id
-    """
-    subarray_layout_path = "configuration/instrument/subarray/layout"
-    camera_readouts = {}
-    for row in Table.read(filename, path=subarray_layout_path):
-        camera_name = row["camera_type"]
-        camera_readouts[row["tel_id"]] = read_single_camera_readout(
-            filename, camera_name
-        )
-    return camera_readouts
-
-
-def read_single_camera_description(filename, camera_name):
-    """
-    Read a specific camera description from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    camera_name: str
-
-    Returns
-    -------
-    `ctapipe.instrument.camera.description.CameraDescription`
-    """
-    geom = read_single_camera_geometry(filename, camera_name)
-    readout = read_single_camera_readout(filename, camera_name)
-    return CameraDescription(camera_name, geometry=geom, readout=readout)
-
-
-def read_single_telescope_description(
-        filename, telescope_name, telescope_type, camera_name
-):
-    """
-    Read a specific telescope description from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    telescope_name: str
-    camera_name: str
-
-    Returns
-    -------
-    `ctapipe.instrument.telescope.TelescopeDescription`
-    """
-    optics = read_single_optics(filename, telescope_name)
-    camera_descr = read_single_camera_description(filename, camera_name)
-    return TelescopeDescription(
-        telescope_name, telescope_type, optics=optics, camera=camera_descr
-    )
-
-
-def read_subarray_table(filename):
-    """
-    Read the subarray as a table from a DL1 file
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    `astropy.table.table.Table`
-    """
-    subarray_layout_path = "configuration/instrument/subarray/layout"
-    return Table.read(filename, path=subarray_layout_path)
-
-
-def read_telescopes_descriptions(filename):
-    """
-    Read telescopes descriptions from DL1 file
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    dict of `ctapipe.instrument.telescope.TelescopeDescription` by tel_id
-    """
-    subarray_table = read_subarray_table(filename)
-    descriptions = {}
-    for row in subarray_table:
-        tel_name = row["name"]
-        camera_type = row["camera_type"]
-        optics = read_single_optics(filename, tel_name)
-        camera = read_single_camera_description(filename, camera_type)
-        descriptions[row["tel_id"]] = TelescopeDescription(
-            row["name"], row["type"], optics=optics, camera=camera
-        )
-    return descriptions
-
-
-def read_telescopes_positions(filename):
-    """
-    Read telescopes positions from DL1 file
-
-    Parameters
-    ----------
-    filename: str
-
-    Returns
-    -------
-    dictionary of telescopes positions by tel_id
-    """
-    subarray_table = read_subarray_table(filename)
-    pos_dict = {}
-    pos_unit = subarray_table["pos_x"].unit
-    for row in subarray_table:
-        pos_dict[row["tel_id"]] = (
-                np.array([row["pos_x"], row["pos_y"], row["pos_z"]]) * pos_unit
-        )
-    return pos_dict
-
-
-def read_subarray_description(filename, subarray_name="LST-1"):
-    """
-    Read subarray description from an HDF5 DL1 file
-
-    Parameters
-    ----------
-    filename: str
-    subarray_name : str
-
-    Returns
-    -------
-    `ctapipe.instrument.subarray.SubarrayDescription`
-    """
-    tel_pos = read_telescopes_positions(filename)
-    tel_descrp = read_telescopes_descriptions(filename)
-    return SubarrayDescription(
-        subarray_name, tel_positions=tel_pos, tel_descriptions=tel_descrp
-    )
-
-
 def check_mcheader(mcheader1, mcheader2):
     """
     Check that the information in two mcheaders are physically consistent.
@@ -903,11 +623,14 @@ def global_metadata():
     -------
     `lstchain.io.lstcontainers.MetaData`
     """
+    from ctapipe import __version__ as ctapipe_version
+    from ctapipe_io_lst import __version__ as ctapipe_io_lst_version
+    from .. import __version__ as lstchain_version
 
     metadata = MetaData()
-    metadata.LSTCHAIN_VERSION = lstchain.__version__
-    metadata.CTAPIPE_VERSION = ctapipe.__version__
-    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst.__version__
+    metadata.LSTCHAIN_VERSION = lstchain_version
+    metadata.CTAPIPE_VERSION = ctapipe_version
+    metadata.CTAPIPE_IO_LST_VERSION = ctapipe_io_lst_version
     metadata.CONTACT = "LST Consortium"
 
     return metadata

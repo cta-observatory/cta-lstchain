@@ -366,8 +366,6 @@ def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
     with HDF5TableReader(file_name) as h5_table:
 
         try:
-            assert h5_table._h5file.isopen == True
-
             table = f"/tel_{tel_id}/flatfield"
             next(h5_table.read(table, ff_data))
 
