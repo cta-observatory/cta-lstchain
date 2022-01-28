@@ -250,9 +250,9 @@ def calculate_time_results(
 ):
     """Calculate and return the sample time"""
     return {
-        'sample_time': (trigger_time - time_start).value / 2 *u.s,
-        'sample_time_min': time_start.value*u.s,
-        'sample_time_max': trigger_time.value*u.s,
+        'sample_time': (time_start + (trigger_time - time_start) / 2).unix*u.s,
+        'sample_time_min': time_start.unix*u.s,
+        'sample_time_max': trigger_time.unix*u.s,
     }
 
 
