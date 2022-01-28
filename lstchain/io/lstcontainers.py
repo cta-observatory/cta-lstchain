@@ -123,6 +123,42 @@ class DL1ParametersContainer(Container):
     trigger_time = Field(None, "trigger time")
     event_type = Field(None, "event type")
 
+    # Parameters obtained with the likelihood reconstruction method
+    lhfit_call_status = Field(-10, "Status of the processing of the event "
+                                   "by the LH fit method. -10: inactive,"
+                                   " 0: event with no pixels, -1: error"
+                                   " 1: success")
+    lhfit_intensity = Field(np.float64(np.nan), 'fitted intensity')
+    lhfit_log_intensity = Field(np.float64(np.nan), 'log of fitted intensity')
+    lhfit_intensity_uncertainty = Field(np.float64(np.nan), '')
+    lhfit_x = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
+    lhfit_x_uncertainty = Field(u.Quantity(np.nan, u.m), '', unit=u.m)
+    lhfit_y = Field(u.Quantity(np.nan, u.m), 'centroid y coordinate', unit=u.m)
+    lhfit_y_uncertainty = Field(u.Quantity(np.nan, u.m), '', unit=u.m)
+    lhfit_r = Field(u.Quantity(np.nan, u.m), 'radial coordinate of centroid', unit=u.m)
+    lhfit_phi = Field(Angle(np.nan, u.rad), 'polar coordinate of centroid',
+                      unit=u.rad)
+    lhfit_length = Field(u.Quantity(np.nan, u.deg), 'average model spread along the major-axis',
+                         unit=u.deg)
+    lhfit_length_uncertainty = Field(u.Quantity(np.nan, u.deg), '',
+                                     unit=u.deg)
+    lhfit_width = Field(u.Quantity(np.nan, u.deg), 'model spread along the minor-axis',
+                        unit=u.deg)
+    lhfit_psi = Field(Angle(np.nan, u.rad), 'rotation angle of the model', unit=u.rad)
+    lhfit_psi_uncertainty = Field(Angle(np.nan, u.rad), '', unit=u.rad)
+    lhfit_time_gradient = Field(np.nan, 'Time gradient in the camera')
+    lhfit_time_gradient_uncertainty = Field(np.nan, '')
+    lhfit_ref_time = Field(np.nan, 'Time of the 0 of the pulse template at the peak signal position')
+    lhfit_ref_time_uncertainty = Field(np.nan, '')
+    lhfit_length_asymmetry = Field(np.nan, "major-axis asymmetry factor", type=float)
+    lhfit_length_asymmetry_uncertainty = Field(np.nan, "", type=float)
+    lhfit_goodness_of_fit = Field(np.nan, "", type=float)
+    lhfit_TS = Field(np.float64(np.nan), "")
+    lhfit_wl = Field(u.Quantity(np.nan), "width/length")
+    lhfit_wl_uncertainty = Field(u.Quantity(np.nan), "")
+    lhfit_t_68 = Field(np.nan, 'Time gradient times length')
+    lhfit_area = Field(u.Quantity(np.nan, u.deg ** 2), '', unit=u.deg ** 2)
+
     # info not available in data
     # num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
     # trig_pix_id = Field(None, "pixels involved in the camera trigger")
