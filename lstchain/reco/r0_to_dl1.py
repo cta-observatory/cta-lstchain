@@ -373,6 +373,8 @@ def get_dl1_lh_fit(
         else:
             psi = psi + np.pi
 
+    focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
+    start_length = np.tan(dl1_container.length.to(u.rad).value) * focal_length
     start_parameters = {'x_cm': dl1_container.x.to(u.m).value,
                         'y_cm': dl1_container.y.to(u.m).value,
                         'charge': dl1_container.intensity,
@@ -380,15 +382,15 @@ def get_dl1_lh_fit(
                         - normalized_pulse_template.compute_time_of_max(),
                         'v': np.abs(v),
                         'psi': psi,
-                        'length': dl1_container.length.to(u.m).value,
-                        'wl': dl1_container.width.to(u.m).value/dl1_container.length.to(u.m).value,
+                        'length': start_length,
+                        'wl': dl1_container.wl,
                         'rl': 0.0
                         }
 
     if start_parameters['length'] <= 0.02:
         start_parameters['length'] = 0.02
-    if dl1_container.width.to(u.m).value <= 0.02:
-        start_parameters['wl'] = 0.02/start_parameters['length']
+    if start_parameters['wl'] == 0:
+        start_parameters['wl'] = 0.01
     if np.isnan(start_parameters['t_cm']):
         start_parameters['t_cm'] = 0.
     if np.isnan(start_parameters['v']):
@@ -402,20 +404,20 @@ def get_dl1_lh_fit(
         rl_min, rl_max = 0.0, 0.0
 
     bound_parameters = {'x_cm': (dl1_container.x.to(u.m).value
-                                 - 1.0 * dl1_container.length.to(u.m).value,
+                                 - 1.0 * start_parameters['length'],
                                  dl1_container.x.to(u.m).value
-                                 + 1.0 * dl1_container.length.to(u.m).value),
+                                 + 1.0 * start_parameters['length']),
                         'y_cm': (dl1_container.y.to(u.m).value
-                                 - 1.0 * dl1_container.length.to(u.m).value,
+                                 - 1.0 *start_parameters['length'],
                                  dl1_container.y.to(u.m).value
-                                 + 1.0 * dl1_container.length.to(u.m).value),
+                                 + 1.0 * start_parameters['length']),
                         'charge': (dl1_container.intensity * 0.25,
                                    dl1_container.intensity * 4.0),
                         't_cm': (-10, t_max + 10),
                         'v': (v_min, v_max),
                         'psi': (-np.pi*2.0, np.pi*2.0),
                         'length': (0.001,
-                                   min(2 * dl1_container.length.to(u.m).value
+                                   min(2 * start_parameters['length']
                                        , r_max)),
                         'wl': (0.001,1.0),
                         'rl': (rl_min, rl_max)
