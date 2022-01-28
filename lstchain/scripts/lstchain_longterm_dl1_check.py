@@ -190,13 +190,6 @@ def main():
                   'mu_intensity_mean': [],
                   'mean_number_of_pixels_nearby_stars': []}
 
-    # For some quantities we want also the calculation using pixels which have
-    # no nearby stars (checked on a subrun-by-subrun basis)
-    #keys = runsummary.keys()
-    #rsk = list(keys)
-    #for key in rsk[rsk.index('ff_charge_mean') : 1 + rsk.index(
-    #        'cosmics_fraction_pulses_above30')]:
-    #    runsummary[key + '_no_stars'] = []
 
     # and another one for pixel-wise run averages:
     pixwise_runsummary = {'ff_pix_charge_mean': [],
@@ -1127,8 +1120,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page3.title = 'Interleaved flat field, time'
 
     page4 = Panel()
-    pulse_rate_above_10 = []
-    pulse_rate_above_30 = []
 
     pulse_rate_above_10 = \
         np.array(pixwise_runsummary['cosmics_pix_fraction_pulses_above10'] *
@@ -1378,8 +1369,52 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page7.child = grid7
     page7.title = "Interleaved FF, averages"
 
+    page8 = Panel()
+    pad_width = 550
+    pad_height = 350
+
+    average_pulse_rate_above_10 = \
+        runsummary['cosmics_fraction_pulses_above10'] *  \
+        runsummary['num_cosmics'] / runsummary['elapsed_time']
+    average_pulse_rate_above_30 = \
+        runsummary['cosmics_fraction_pulses_above30'] *  \
+        runsummary['num_cosmics'] / runsummary['elapsed_time']
+
+    fig_rate10pe = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix',
+                                                unit='s'),
+                              y=average_pulse_rate_above_10,
+                              xlabel='date',
+                              ylabel='Camera-averaged rate of >10pe pulses (/s)',
+                              xtype='datetime', ytype='linear', size=4,
+                              point_labels=run_titles)
+    fig_rate10pe.y_range = \
+        Range1d(0., 1.5 * np.max(average_pulse_rate_above_10))
+
+    # We use the pixel-averaged lower and upper limits to the single pixel rates
+    # r30_lowlim.mean(axis=1)  and  r30_upplim.mean(axis=1)
+    fig_rate30pe = show_graph(x=pd.to_datetime(runsummary['time'],
+                                                origin='unix',
+                                                unit='s'),
+                              y=average_pulse_rate_above_30,
+                              xlabel='date',
+                              ylabel='Camera-averaged rate of >30pe pulses (/s)',
+                              xtype='datetime', ytype='linear', size=4,
+                              point_labels=run_titles,
+                              ylowlim=r30_lowlim.mean(axis=1),
+                              yupplim=r30_upplim.mean(axis=1))
+    fig_rate30pe.y_range = \
+        Range1d(0., 1.5 * np.max(average_pulse_rate_above_30))
+
+    row1 = [fig_rate10pe, fig_rate30pe]
+    grid8 = gridplot([row1], sizing_mode=None, plot_width=pad_width,
+                     plot_height=pad_height)
+    page8.child = grid8
+    page8.title = "Cosmics, averages"
+
     tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
-                      page3, page4, page4b, page5, page6, page7])
+                      page3, page4, page4b, page5, page6,
+                      page7, page8])
 
     if batch:
         save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
