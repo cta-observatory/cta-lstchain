@@ -7,6 +7,7 @@ from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.core.traits import  List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from ctapipe.image.extractor import ImageExtractor
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -43,6 +44,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         exists=True, directory_ok=False,
         help='Path to time sampling correction file'
     ).tag(config=True)
@@ -85,6 +88,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             )
         else:
             self.time_sampling_corrector = None
+
+        # fix for broken extractor setup in ctapipe baseclass
+        self.extractor = ImageExtractor.from_name(
+            self.charge_product, parent=self, subarray=subarray
+        )
 
 
     def _extract_charge(self, event):
