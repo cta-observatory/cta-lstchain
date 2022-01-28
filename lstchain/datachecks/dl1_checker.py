@@ -1202,7 +1202,7 @@ def merge_dl1datacheck_files(file_list):
 
     first_file_name = file_list[0]
     first_file = tables.open_file(first_file_name)
-    #  get run number and build the name of the merged file:
+    # get run number and build the name of the merged file:
     file = parse_datacheck_dl1_filename(os.path.basename(first_file_name))
     merged_filename = run_to_datacheck_dl1_filename(file.tel_id, file.run,
                                                     None, None)

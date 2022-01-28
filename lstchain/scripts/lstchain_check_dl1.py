@@ -81,6 +81,10 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger(__name__)
 
+    # Avoid "lies outside the camera" warnings from Camera geometry:
+    geomlogger = logging.getLogger('ctapipe.instrument.camera')
+    geomlogger.setLevel(logging.ERROR)
+
     if len(unknown) > 0:
         ukn = ''
         for s in unknown:

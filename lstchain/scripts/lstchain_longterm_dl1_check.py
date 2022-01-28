@@ -730,24 +730,20 @@ def main():
                                     data_columns=runsummary.keys())
 
     # Now write the pixel-wise run summary info:
-    h5file = tables.open_file(output_file_name, mode="a")
-
-    for pwrs, name in zip([pixwise_runsummary, pixwise_runsummary_no_stars],
-                          ['pixwise_runsummary',
-                           'pixwise_runsummary_no_stars']):
-
-        table = h5file.create_table('/', name, pixwise_info)
-        row = table.row
-        for i in range(len(pwrs['ff_pix_charge_mean'])):
-            # we add run number and time info also to this pixwise table:
-            row['runnumber'] = runsummary['runnumber'][i]
-            row['time'] = runsummary['time'][i]
-            for key in pwrs:
-                row[key] = pwrs[key][i]
-            row.append()
-        table.flush()
-
-    h5file.close()
+    with tables.open_file(output_file_name, mode="a") as h5file:
+        for pwrs, name in zip([pixwise_runsummary, pixwise_runsummary_no_stars],
+                              ['pixwise_runsummary',
+                               'pixwise_runsummary_no_stars']):
+            table = h5file.create_table('/', name, pixwise_info)
+            row = table.row
+            for i in range(len(pwrs['ff_pix_charge_mean'])):
+                # we add run number and time info also to this pixwise table:
+                row['runnumber'] = runsummary['runnumber'][i]
+                row['time'] = runsummary['time'][i]
+                for key in pwrs:
+                    row[key] = pwrs[key][i]
+                row.append()
+            table.flush()
 
     # Finally the tables with info by event type:
     for d, name in zip(dicts, ['cosmics', 'pedestals', 'flatfield']):

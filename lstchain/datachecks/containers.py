@@ -27,9 +27,6 @@ class DL1DataCheckContainer(Container):
     Container to store the subrun-wise outcome of the DL1 data check
     """
 
-    geomlogger = logging.getLogger('ctapipe.instrument.camera')
-    geomlogger.setLevel(logging.ERROR)
-
     # scalar quantities:
     subrun_index = Field(-1, 'Subrun index')
     elapsed_time = Field(-1, 'Subrun time duration (from Dragon)')
@@ -257,19 +254,23 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        notnan = ~np.isnan(intensity)
-        x = table['x'][mask]
-        y = table['y'][mask]
+        reconstructed = np.isfinite(table['intensity'])
+        x = table['x'][mask & reconstructed]
+        y = table['y'][mask & reconstructed]
         # event-wise, id of camera pixel which contains the image's cog:
         cog_pixid = geom.position_to_pix_index(np.array(x) * u.m,
                                                np.array(y) * u.m)
         self.cog_within_pixel = np.zeros(geom.n_pixels)
-        for pix in cog_pixid[notnan]:
+        # explicitly skip -1 values, lest they end in the highest pixel id! :
+        for pix in cog_pixid[cog_pixid != -1]:
             self.cog_within_pixel[pix] += 1
+
         self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
         # now the same for relatively bright images (intensity > 200 p.e.)
-        select = intensity > 200
+        select = table['intensity'][mask & reconstructed] > 200
         for pix in cog_pixid[select]:
+            if pix == -1:  # out of camera
+                continue
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
     def fill_pixel_wise_info(self, table, mask, histogram_binnings,
@@ -361,8 +362,8 @@ class DL1DataCheckContainer(Container):
             # Make nan all pulse times for charges less than 1 p.e.:
             time = np.where(charge > 1, time, np.nan)
             # count how many valid pixels per event:
-            n_valid_pixels = np.array([np.sum([~np.isnan(row)])
-                                       for row in time])
+            n_valid_pixels = np.count_nonzero(np.isfinite(time), axis=1)
+
             # mean and std dev for each pixel through the whole subrun:
             self.time_mean = np.nanmean(time, axis=0)
             self.time_stddev = np.nanstd(time, axis=0)
@@ -381,7 +382,7 @@ class DL1DataCheckContainer(Container):
                 mean_t_other /= (n_valid_pixels[ievt] - 1)
                 time[ievt] -= mean_t_other
 
-            # Now time contains the times of each pixel relative to the averag
+            # Now time contains the times of each pixel relative to the average
             # of the rest of the pixels in the same event
 
             self.relative_time_mean = np.nanmean(time, axis=0)
@@ -390,11 +391,9 @@ class DL1DataCheckContainer(Container):
             if event_type == 'flatfield':
                 return
 
-            masked_peak_time = np.ma.array(time, mask=charge < 30,  copy=False)
-            self.time_mean_above_030_pe = masked_peak_time.mean(
-                    axis=0).filled(np.nan)
-            self.time_stddev_above_030_pe = masked_peak_time.std(
-                    axis=0).filled(np.nan)
+            selected_entries = np.where(charge > 30, time, np.nan)
+            self.time_mean_above_030_pe = np.nanmean(selected_entries, axis=0)
+            self.time_stddev_above_030_pe = np.nanstd(selected_entries, axis=0)
 
 def count_trig_types(array):
     """
