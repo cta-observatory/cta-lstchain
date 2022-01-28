@@ -7,6 +7,7 @@ from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.core.traits import  List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from ctapipe.image.extractor import ImageExtractor
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -43,6 +44,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         exists=True, directory_ok=False,
         help='Path to time sampling correction file'
     ).tag(config=True)
@@ -85,6 +88,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             )
         else:
             self.time_sampling_corrector = None
+
+        # fix for broken extractor setup in ctapipe baseclass
+        self.extractor = ImageExtractor.from_name(
+            self.charge_product, parent=self, subarray=subarray
+        )
 
 
     def _extract_charge(self, event):
@@ -278,9 +286,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (trigger_time - time_start).value / 2 *u.s,
-            'sample_time_min': time_start.value*u.s,
-            'sample_time_max': trigger_time.value*u.s,
+            'sample_time': (time_start +(trigger_time - time_start) / 2).unix*u.s,
+            'sample_time_min': time_start.unix*u.s,
+            'sample_time_max': trigger_time.unix*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,
             'time_median': np.ma.getdata(pixel_median)*u.ns,
             'time_std': np.ma.getdata(pixel_std)*u.ns,

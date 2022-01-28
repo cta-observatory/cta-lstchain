@@ -29,14 +29,7 @@ from lstchain.image.muon import (
     fill_muon_event,
     tag_pix_thr,
 )
-from lstchain.io.io import (
-    dl1_images_lstcam_key,
-    dl1_params_lstcam_key,
-)
-from lstchain.io.io import (
-    read_subarray_description,
-    read_telescopes_descriptions,
-)
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.visualization import plot_calib
 
 parser = argparse.ArgumentParser()
@@ -89,7 +82,7 @@ parser.add_argument(
 def main():
 
     args = parser.parse_args()
-    
+
     print("input files: {}".format(args.input_file))
     print("calib file: {}".format(args.calib_file))
     print("output file: {}".format(args.output_file))
@@ -120,18 +113,15 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
-        subarray_info = SubarrayDescription.from_hdf(filename)
-        geom = subarray_info.tel[lst1_tel_id].camera.geometry
-
-        subarray = read_subarray_description(filename, subarray_name='LST-1')
-
-        images = Table.read(filename, path=dl1_images_lstcam_key)['image']
-
-        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-        telescope_description = read_telescopes_descriptions(filename)[lst1_tel_id]
-
+        subarray = SubarrayDescription.from_hdf(filename)
+        telescope_description = subarray.tel[lst1_tel_id]
+        geom = telescope_description.camera.geometry
         equivalent_focal_length = telescope_description.optics.equivalent_focal_length
         mirror_area = telescope_description.optics.mirror_area
+
+        images = Table.read(filename, path=dl1_images_lstcam_key)['image']
+        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
 
         # fill dummy event times with NaNs in case they do not exist (like in MC):
         if 'dragon_time' not in parameters.keys():
