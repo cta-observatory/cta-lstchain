@@ -261,5 +261,11 @@
     "nsb_tuning": false,
     "nsb_tuning_ratio": 0.52,
     "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
-  }
+  },
+  "FixedWindowSum":{
+      "window_shift": 6,
+      "window_width":12,
+      "peak_index": 18,
+      "apply_integration_correction": false
+    }
 }
