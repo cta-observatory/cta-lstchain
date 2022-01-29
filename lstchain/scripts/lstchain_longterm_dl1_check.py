@@ -1175,7 +1175,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        pad_width, pad_height,
                        'Cosmics, image cog distribution (/s)', run_titles,
                        display_range=(0,1.1*np.nanmax(cogs)))
-    cogs = pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200']
+    cogs = pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200'] / \
+           pixwise_runsummary['elapsed_time_per_pix']
+
     row2 = show_camera(cogs,
             engineering_geom,
             pad_width, pad_height,
