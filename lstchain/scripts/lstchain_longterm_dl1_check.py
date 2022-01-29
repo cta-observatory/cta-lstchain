@@ -209,8 +209,7 @@ def main():
                           }
     pixwise_runsummary_no_stars = copy.deepcopy(pixwise_runsummary)
 
-    # Needed for the table description for writing it out to the hdf5 file. Because
-    # of the vector columns we cannot write this out using pandas:
+    # Needed for the table description for writing it out to the hdf5 file:
     class pixwise_info(tables.IsDescription):
         runnumber = tables.Int32Col()
         time = tables.Float64Col()
