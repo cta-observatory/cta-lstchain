@@ -1163,17 +1163,23 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     page4b = Panel()
 
-    cogs = pixwise_runsummary['cosmics_cog_within_pixel']
+    # For the image centroids distributions we use the table without cuts in
+    # pixels with nearby stars, because centroid is not really as pixel-wise
+    # quantity; we use pixels only as a convenient way of make a 2d-histogram
+    # of centroid positions on the camera
+    # We set units of rate:
+    cogs = pixwise_runsummary['cosmics_cog_within_pixel'] / \
+           runsummary['elapsed_time']
     row1 = show_camera(cogs,
                        engineering_geom,
                        pad_width, pad_height,
-                       'Cosmics, image cog distribution', run_titles,
+                       'Cosmics, image cog distribution (/s)', run_titles,
                        display_range=(0,1.1*np.nanmax(cogs)))
     cogs = pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200']
     row2 = show_camera(cogs,
             engineering_geom,
             pad_width, pad_height,
-            'Cosmics, >200 pe image cog distribution',
+            'Cosmics, >200 pe image cog distribution (/s)',
             run_titles, display_range=(0, 1.1*np.nanmax(cogs)))
 
     grid4b = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
