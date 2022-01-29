@@ -252,22 +252,23 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        reconstructed = np.isfinite(table['intensity'])
-        x = table['x'][mask & reconstructed]
-        y = table['y'][mask & reconstructed]
+        x = table['x'][mask]
+        y = table['y'][mask]
         # event-wise, id of camera pixel which contains the image's cog:
         cog_pixid = geom.position_to_pix_index(np.array(x) * u.m,
                                                np.array(y) * u.m)
+
         self.cog_within_pixel = np.zeros(geom.n_pixels)
-        # explicitly skip -1 values, lest they end in the highest pixel id! :
+        # explicitly skip -1 values, lest they end in the highest pixel id...
+        # position_to_pix_index returns -1 for nan inputs or x,y outside camera!
         for pix in cog_pixid[cog_pixid != -1]:
             self.cog_within_pixel[pix] += 1
 
         self.cog_within_pixel_intensity_gt_200 = np.zeros(geom.n_pixels)
         # now the same for relatively bright images (intensity > 200 p.e.)
-        select = table['intensity'][mask & reconstructed] > 200
+        select = intensity > 200
         for pix in cog_pixid[select]:
-            if pix == -1:  # out of camera
+            if pix == -1:  # out of camera or non-reconstructed event
                 continue
             self.cog_within_pixel_intensity_gt_200[pix] += 1
 
