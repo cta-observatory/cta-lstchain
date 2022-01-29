@@ -27,16 +27,16 @@ class DL1DataCheckContainer(Container):
 
     # scalar quantities:
     subrun_index = Field(-1, 'Subrun index')
-    elapsed_time = Field(-1, 'Subrun time duration (from Dragon)')
+    elapsed_time = Field(-1*u.s, 'Subrun time duration (from Dragon)', unit=u.s)
     num_events = Field(-1, 'Total number of events')
     num_cleaned_events = Field(-1, 'Number of events surviving cleaning')
-    trigger_type = Field(None, 'Number of events per trigger type')
-    ucts_trigger_type = Field(None, 'Number of events per ucts trigger type')
+    trigger_type = Field(-1, 'Number of events per trigger type')
+    ucts_trigger_type = Field(-1, 'Number of events per ucts trigger type')
     num_ucts_jumps = Field(-1, 'Number of observed (and corrected) UCTS jumps')
-    mean_alt_tel = Field(None, 'Mean telescope altitude')
-    mean_az_tel = Field(None, 'Mean telescope azimuth')
-    tel_ra = Field(None, 'Telescope pointing RA (deg)')
-    tel_dec = Field(None, 'Telescope pointing declination')
+    mean_alt_tel = Field(np.nan*u.rad, 'Mean telescope altitude', unit=u.rad)
+    mean_az_tel = Field(np.nan*u.rad, 'Mean telescope azimuth', unit=u.rad)
+    tel_ra = Field(np.nan*u.deg, 'Telescope pointing RA', unit=u.deg)
+    tel_dec = Field(np.nan*u.deg, 'Telescope pointing declination', unit=u.deg)
 
     # sampled quantities, stored every few events:
     sampled_event_ids = Field(None, 'sampled event ids')
@@ -105,7 +105,7 @@ class DL1DataCheckContainer(Container):
         Parameters
         ----------
         subrun_index
-        table: DL1 parameters, event-wise pandas dataframe, "parameters" from
+        table: DL1 parameters, event-wise astropy table, "parameters" from
         DL1 files
         mask: defines which events in table should be considered
         geom: camera geometry (in standard frame, *not* engineering one)
@@ -122,8 +122,8 @@ class DL1DataCheckContainer(Container):
         # the elapsed time is between first and last event of the events in
         # table (we do not apply the mask here since we want to have all
         # events!)
-        self.elapsed_time = table['dragon_time'][len(table) - 1] - \
-                            table['dragon_time'][0]
+        self.elapsed_time = (table['dragon_time'][len(table) - 1] -
+                             table['dragon_time'][0]) * u.s
         self.num_events = mask.sum()
         self.num_cleaned_events = np.isfinite(table['intensity'][mask]).sum()
         self.ucts_trigger_type = \
@@ -135,7 +135,7 @@ class DL1DataCheckContainer(Container):
             # of every subsequent subrun file (if analyzed on its own) will have ucts_jump=True, 
             # but these are not new jumps, just the ones from previous subruns, so they should 
             # not be counted.
-            uj = table['ucts_jump'].to_numpy(copy=True)
+            uj = table['ucts_jump'].data.copy()
             # find the first False value, and set to False also all the earlier ones:
             first_non_jump = np.where(uj==False)[0][0]
             uj[:first_non_jump] = False
@@ -146,17 +146,17 @@ class DL1DataCheckContainer(Container):
         # since azimuth can go through 0, just take the pointing of the
         # event in the middle of the table (the actual mean value would be
         # problematic for culmination towards north, az= ~0  ~2pi):
-        self.mean_az_tel = table['az_tel'][int(len(table)/2)]
-        self.mean_alt_tel = table['alt_tel'][int(len(table)/2)]
+        self.mean_az_tel = table['az_tel'].quantity[int(len(table)/2)]
+        self.mean_alt_tel = table['alt_tel'].quantity[int(len(table)/2)]
         time_utc = Time(table['dragon_time'][int(len(table)/2)],
                         format="unix", scale="utc")
         # Calculate telescope pointing in sky coordinates
-        telescope_pointing = SkyCoord(alt=self.mean_alt_tel*u.rad,
-                                      az=self.mean_az_tel*u.rad,
+        telescope_pointing = SkyCoord(alt=self.mean_alt_tel,
+                                      az=self.mean_az_tel,
                                       frame=AltAz(obstime=time_utc,
                                                   location=location))
-        self.tel_ra = telescope_pointing.icrs.ra.to(u.deg).value
-        self.tel_dec = telescope_pointing.icrs.dec.to(u.deg).value
+        self.tel_ra = telescope_pointing.icrs.ra.to(u.deg)
+        self.tel_dec = telescope_pointing.icrs.dec.to(u.deg)
 
         # number of time samples per subrun to be stored in the container:
         n_samples = 50
@@ -196,12 +196,12 @@ class DL1DataCheckContainer(Container):
                                  bins=histogram_binnings.hist_nislands)
         self.hist_nislands = counts
 
-        intensity = table.loc[mask, 'intensity'].to_numpy()
+        intensity = table[mask]['intensity'].data
         counts, _, _ = plt.hist(intensity,
                                 bins=histogram_binnings.hist_intensity)
         self.hist_intensity = counts
 
-        dist0 = table['r'][mask]
+        dist0 = table[mask]['r']
         counts, _, _ = plt.hist(dist0, bins=histogram_binnings.hist_dist0)
         self.hist_dist0 = counts
 
@@ -211,32 +211,32 @@ class DL1DataCheckContainer(Container):
         self.hist_dist0_intensity_gt_200 = counts
 
         counts, _, _, _ = plt.hist2d(intensity,
-                                     table.loc[mask, 'width'].to_numpy(),
+                                     table[mask]['width'].data,
                                      bins=histogram_binnings.hist_width)
         self.hist_width = counts
 
         counts, _, _, _ = plt.hist2d(intensity,
-                                     table.loc[mask, 'length'].to_numpy(),
+                                     table[mask]['length'].data,
                                      bins=histogram_binnings.hist_length)
         self.hist_length = counts
 
         counts, _, _, _ = plt.hist2d(intensity,
-                                     table.loc[mask, 'skewness'].to_numpy(),
+                                     table[mask]['skewness'].data,
                                      bins=histogram_binnings.hist_skewness)
         self.hist_skewness = counts
 
-        psi = table.loc[mask, 'psi'].to_numpy()
+        psi = table[mask]['psi'].data
         counts, _, _ = \
             plt.hist(psi, bins=histogram_binnings.hist_psi)
         self.hist_psi = counts
 
         counts, _, _, _ = \
-            plt.hist2d(intensity, table.loc[mask, 'intercept'].to_numpy(),
+            plt.hist2d(intensity, table[mask]['intercept'].data,
                        bins=histogram_binnings.hist_intercept)
         self.hist_intercept = counts
 
-        length = table.loc[mask, 'length'].to_numpy()
-        tgrad = np.abs(table.loc[mask, 'time_gradient'].to_numpy())
+        length = table[mask]['length'].data
+        tgrad = np.abs(table[mask]['time_gradient'].data)
         counts, _, _, _ = \
             plt.hist2d(length, tgrad,
                        bins=histogram_binnings.hist_tgrad_vs_length)
@@ -252,11 +252,10 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        x = table['x'][mask]
-        y = table['y'][mask]
+        x = table['x'].quantity[mask]
+        y = table['y'].quantity[mask]
         # event-wise, id of camera pixel which contains the image's cog:
-        cog_pixid = geom.position_to_pix_index(np.array(x) * u.m,
-                                               np.array(y) * u.m)
+        cog_pixid = geom.position_to_pix_index(x, y)
 
         self.cog_within_pixel = np.zeros(geom.n_pixels)
         # explicitly skip -1 values, lest they end in the highest pixel id...
@@ -279,7 +278,7 @@ class DL1DataCheckContainer(Container):
 
         Parameters
         ----------
-        table: DL1 parameters, event-wise python table "image" from DL1 files
+        table: DL1 parameters, event-wise astropy table "image" from DL1 files
         mask: indicates rows that have to be used for filling this container
         histogram_binnings: container of type DL1DataCheckHistogramBins, with
                             definition of the binnings of all the histograms
@@ -292,7 +291,7 @@ class DL1DataCheckContainer(Container):
         None
 
         """
-        charge = table.col('image')[mask]
+        charge = table['image'][mask]
 
         # average charge in each pixel through the subrun:
         self.charge_mean = charge.mean(axis=0)
@@ -318,8 +317,8 @@ class DL1DataCheckContainer(Container):
         obstime = Time(sampled_times[int(len(sampled_times)/2)],
                        scale='utc', format='unix')
         horizon_frame = AltAz(location=location, obstime=obstime)
-        pointing = SkyCoord(az=self.mean_az_tel*u.rad,
-                            alt=self.mean_alt_tel*u.rad,
+        pointing = SkyCoord(az=self.mean_az_tel,
+                            alt=self.mean_alt_tel,
                             frame=horizon_frame)
         bright_stars = get_bright_stars(pointing=pointing, radius=3*u.deg,
                                         magnitude_cut=8)
@@ -350,11 +349,10 @@ class DL1DataCheckContainer(Container):
         if event_type == 'pedestals':
             return
 
-        # as of ctapipe 0.7.0, pulse times can take absurd values for pixels
-        # containing very little signal. For time plots we require at least 1
-        # p.e. We will also exclude NaNs from the calculations
+        # For time plots we require at least 1 p.e. We will also exclude nans
+        # from the calculations
 
-        time = table.col('peak_time')[mask]
+        time = table['peak_time'][mask]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 

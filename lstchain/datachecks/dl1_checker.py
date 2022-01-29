@@ -24,7 +24,6 @@ import matplotlib.dates as dates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import pandas as pd
 import tables
 from astropy import units as u
 from astropy.table import Table, vstack
@@ -32,10 +31,10 @@ from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
-from ctapipe.visualization import CameraDisplay
+from ctapipe.io import read_table
 from ctapipe_io_lst import TriggerBits
-# from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
-# from bokeh.models.widgets import Panel
+from ctapipe.visualization import CameraDisplay
+
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import poisson, sem
 
@@ -43,7 +42,7 @@ from lstchain.datachecks.containers import (
     DL1DataCheckContainer,
     DL1DataCheckHistogramBins,
 )
-from lstchain.io.io import dl1_params_lstcam_key
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.paths import (
     parse_datacheck_dl1_filename,
     parse_dl1_filename,
@@ -230,93 +229,85 @@ def process_dl1_file(filename, bins, tel_id=1):
     equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
-    with tables.open_file(filename) as file:
-        # unfortunately pandas.read_hdf does not seem compatible with
-        # 'with... as...' statements
-        parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+    parameters = read_table(filename, dl1_params_lstcam_key)
 
-        # convert cog distance to camera center from meters to degrees:
-        parameters['r'] *= m2deg
-        # time gradient from ns/m to ns/deg
-        parameters['time_gradient'] /= m2deg
+    # convert cog distance to camera center from meters to degrees:
+    parameters['r'] = parameters['r'].quantity * m2deg
+    # time gradient from ns/m to ns/deg
+    parameters['time_gradient'] = \
+        parameters['time_gradient'].quantity / m2deg
 
-        # We do not convert the x,y, cog coordinates, because only in m can
-        # CameraGeometry find the pixel where a given cog falls
+    image_table = read_table(filename, dl1_images_lstcam_key)
+    # create flatfield mask from the images table. For the time being,
+    # trigger type tags are not reliable. We first identify flatfield events
+    # by their looks.
+    flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
+    # The same mask should be valid for image_table, since the entry in
+    # the two tables correspond one to one.
 
-        # in order to read in the images we have to use tables,
-        # because pandas is not compatible with vector columns
-        image_table = file.root.dl1.event.telescope.image.LST_LSTCam
+    # Revise flatfield_mask : event_type can be rarely wrong, so check
+    # here that all events look like interleaved flat field events:
+    # Note (AM, 20211202): finally we won't use this, the event source
+    # takes care of it
+    # flatfield_mask &= ((parameters['intensity'] > 50000) &
+    #                    (parameters['concentration_pixel'] < 0.005))
 
-        # create flatfield mask from the images table. For the time being,
-        # trigger type tags are not reliable. We first identify flatfield events
-        # by their looks.
-        flatfield_mask = (parameters['event_type'] == EventType.FLATFIELD.value)
-        # The same mask should be valid for image_table, since the entry in
-        # the two tables correspond one to one.
+    pedestal_mask = (parameters['event_type'] ==
+                     EventType.SKY_PEDESTAL.value)
 
-        # Revise flatfield_mask : event_type can be rarely wrong, so check
-        # here that all events look like interleaved flat field events:
-        # Note (AM, 20211202): finally we won't use this, the event source
-        # takes care of it
-        # flatfield_mask &= ((parameters['intensity'] > 50000) &
-        #                    (parameters['concentration_pixel'] < 0.005))
+    # Now obtain by exclusion the masks for cosmics:
+    cosmics_mask = ~(pedestal_mask | flatfield_mask)
 
-        pedestal_mask = (parameters['event_type'] ==
-                         EventType.SKY_PEDESTAL.value)
+    logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
+                f' flatfield: {np.sum(flatfield_mask)}, '
+                f' cosmics: {np.sum(cosmics_mask)}')
 
-        # Now obtain by exclusion the masks for cosmics:
-        cosmics_mask = ~(pedestal_mask | flatfield_mask)
+    # Fill quantities which depend on event-wise (i.e. not
+    # pixel-wise) parameters.
+    # Set None for a container that has not been filled,
+    # otherwise it will give trouble in the plotting stage.
 
-        logger.info(f'   pedestals: {np.sum(pedestal_mask)}, '
-                    f' flatfield: {np.sum(flatfield_mask)}, '
-                    f' cosmics: {np.sum(cosmics_mask)}')
+    if pedestal_mask.sum() > 1:
+        dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
+                                                    parameters,
+                                                    pedestal_mask,
+                                                    geom, bins)
+        dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
+                                                    pedestal_mask, bins,
+                                                    equivalent_focal_length,
+                                                    geom,
+                                                    'pedestals')
+    else:
+        dl1datacheck_pedestals = None
 
-        # Fill quantities which depend on event-wise (i.e. not
-        # pixel-wise) parameters.
-        # Set None for a container that has not been filled,
-        # otherwise it will give trouble in the plotting stage.
+    if flatfield_mask.sum() > 1:
+        dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
+                                                    parameters,
+                                                    flatfield_mask,
+                                                    geom, bins)
+        dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
+                                                    flatfield_mask, bins,
+                                                    equivalent_focal_length,
+                                                    geom,
+                                                    'flatfield')
+    else:
+        dl1datacheck_flatfield = None
 
-        if pedestal_mask.sum() > 1:
-            dl1datacheck_pedestals.fill_event_wise_info(subrun_index,
-                                                        parameters,
-                                                        pedestal_mask,
-                                                        geom, bins)
-            dl1datacheck_pedestals.fill_pixel_wise_info(image_table,
-                                                        pedestal_mask, bins,
-                                                        equivalent_focal_length,
-                                                        geom,
-                                                        'pedestals')
-        else:
-            dl1datacheck_pedestals = None
+    if cosmics_mask.sum() > 1:
+        dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
+                                                  parameters,
+                                                  cosmics_mask,
+                                                  geom, bins)
+        dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
+                                                  cosmics_mask, bins,
+                                                  equivalent_focal_length,
+                                                  geom,
+                                                  'cosmics')
+    else:
+        dl1datacheck_cosmics = None
 
-        if flatfield_mask.sum() > 1:
-            dl1datacheck_flatfield.fill_event_wise_info(subrun_index,
-                                                        parameters,
-                                                        flatfield_mask,
-                                                        geom, bins)
-            dl1datacheck_flatfield.fill_pixel_wise_info(image_table,
-                                                        flatfield_mask, bins,
-                                                        equivalent_focal_length,
-                                                        geom,
-                                                        'flatfield')
-        else:
-            dl1datacheck_flatfield = None
-
-        if cosmics_mask.sum() > 1:
-            dl1datacheck_cosmics.fill_event_wise_info(subrun_index,
-                                                      parameters,
-                                                      cosmics_mask,
-                                                      geom, bins)
-            dl1datacheck_cosmics.fill_pixel_wise_info(image_table,
-                                                      cosmics_mask, bins,
-                                                      equivalent_focal_length,
-                                                      geom,
-                                                      'cosmics')
-        else:
-            dl1datacheck_cosmics = None
-
-        return dl1datacheck_pedestals, dl1datacheck_flatfield, \
-               dl1datacheck_cosmics
+    return dl1datacheck_pedestals, dl1datacheck_flatfield, \
+           dl1datacheck_cosmics
 
 
 def plot_datacheck(datacheck_filename, out_path=None, batch=False,
