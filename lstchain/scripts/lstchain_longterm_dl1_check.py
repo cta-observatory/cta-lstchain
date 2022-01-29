@@ -1169,7 +1169,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # of centroid positions on the camera
     # We set units of rate:
     cogs = pixwise_runsummary['cosmics_cog_within_pixel'] / \
-           runsummary['elapsed_time']
+           pixwise_runsummary['elapsed_time_per_pix']
     row1 = show_camera(cogs,
                        engineering_geom,
                        pad_width, pad_height,
