@@ -23,9 +23,13 @@ import logging
 import sys
 from pathlib import Path
 
-from lstchain.io import  standard_config
+from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from lstchain.paths import (
+    parse_r0_filename,
+    r0_to_dl1_filename,
+    run_to_dl1_filename,
+)
 from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
@@ -61,6 +65,11 @@ parser.add_argument(
 parser.add_argument(
     '--time-calibration-file', '-t', type=Path,
     help='Path to a calibration file for pulse time correction'
+)
+
+parser.add_argument(
+    '--systematic-correction-file', '--systematics', type=Path,
+    help='Path to the file with the calibration systematics corrections'
 )
 
 parser.add_argument(
@@ -185,6 +194,9 @@ def main():
     if args.time_calibration_file is not None:
         lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
 
+    calib_config = config[config['calibration_product']]
+    if args.systematic_correction_file is not None:
+        calib_config['systematic_correction_path'] = args.systematic_correction_file
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

@@ -1,23 +1,20 @@
-from matplotlib import pyplot as plt
+import logging
 
 import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe.io import EventSource
 from ctapipe.coordinates import EngineeringCameraFrame
-
+from ctapipe.io import EventSource
+from ctapipe.visualization import CameraDisplay
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from traitlets.config import Config
 
 from lstchain.calib.camera.pedestals import PedestalIntegrator
-from ctapipe.visualization import CameraDisplay
-import logging
-
 
 log = logging.getLogger(__name__)
 
 log.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 logging.getLogger().addHandler(handler)
-
 
 __all__ = ["plot_pedestals"]
 

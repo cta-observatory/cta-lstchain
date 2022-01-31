@@ -1,31 +1,32 @@
-
 import os
-import numpy as np
-import h5py
-from scipy.optimize import curve_fit
 from functools import partial
-from traitlets import List, Int, Dict,Float
 from pathlib import Path
-from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib import pyplot as plt
-from ctapipe.core import Tool, traits
-from matplotlib.ticker import MaxNLocator
+
+import h5py
+import numpy as np
 from ctapipe.containers import (
     FlatFieldContainer,
-    WaveformCalibrationContainer,
     PedestalContainer,
+    WaveformCalibrationContainer,
 )
+from ctapipe.coordinates import EngineeringCameraFrame
+from ctapipe.core import Tool, traits
 from ctapipe.io.hdf5tableio import HDF5TableReader
+from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import constants
 from ctapipe_io_lst import load_camera_geometry
-from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.visualization import CameraDisplay
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.ticker import MaxNLocator
+from scipy.optimize import curve_fit
+from traitlets import List, Int, Dict, Float
 
 __all__ = [
     'FitIntensityScan'
 ]
 
 MIN_N_RUNS = 5
+
 
 class FitIntensityScan(Tool):
     """
@@ -42,12 +43,12 @@ class FitIntensityScan(Tool):
     description = "Tool to fit an intensity scan"
 
     signal_range = List(
-        [[1500, 14000],[200, 14000]],
+        [[1500, 14000], [200, 14000]],
         help='Signal range to include in the fit for [HG,LG] (camera median in [ADC])'
     ).tag(config=True)
 
     gain_channels = List(
-        [0,1],
+        [0, 1],
         help='Gain channel to process (HG=0, LG=1)'
     ).tag(config=True)
 
@@ -118,45 +119,47 @@ class FitIntensityScan(Tool):
                 raise ValueError(f"Trailet signal_range {self.signal_range} inconsistent with"
                                  f"trailet {self.gain_channels}. \n")
 
-        self.unusable_pixels = [None,None]
-        self.signal = [None,None]
-        self.variance = [None,None]
+        self.unusable_pixels = [None, None]
+        self.signal = [None, None]
+        self.variance = [None, None]
         self.selected_runs = [[], []]
-        self.fit_parameters = np.zeros((constants.N_GAINS,constants.N_PIXELS,2))
-        self.fit_cov_matrix = np.zeros((constants.N_GAINS,constants.N_PIXELS,4))
-        self.fit_error = np.zeros((constants.N_GAINS,constants.N_PIXELS))
+        self.fit_parameters = np.zeros((constants.N_GAINS, constants.N_PIXELS, 2))
+        self.fit_cov_matrix = np.zeros((constants.N_GAINS, constants.N_PIXELS, 4))
+        self.fit_error = np.zeros((constants.N_GAINS, constants.N_PIXELS))
 
     def setup(self):
 
         ff_data = FlatFieldContainer()
         ped_data = PedestalContainer()
         calib_data = WaveformCalibrationContainer()
-        channel=["HG","LG"]
+        channel = ["HG", "LG"]
 
         # loop on runs and memorize data
         try:
             for i, run in enumerate(self.run_list):
 
-                file_list = sorted(Path(f"{self.input_dir}").rglob(f'{self.input_prefix}*.Run{run:05d}.{self.sub_run:04d}.h5'))
+                file_list = sorted(
+                    Path(f"{self.input_dir}").rglob(f'{self.input_prefix}*.Run{run:05d}.{self.sub_run:04d}.h5'))
 
-                if len(file_list) == 0 :
+                if len(file_list) == 0:
                     raise IOError(f"Input file for run {run} do not found. \n")
 
-                if len(file_list) > 1 :
+                if len(file_list) > 1:
                     raise IOError(f"Input file for run {run} is more than one: {file_list} \n")
 
                 inp_file = file_list[0]
                 if os.path.getsize(inp_file) < 100:
                     raise IOError(f"file size run {run} is too short \n")
 
-                if read_calibration_file(inp_file,ff_data,calib_data, ped_data):
+                if read_calibration_file(inp_file, ff_data, calib_data, ped_data):
                     self.log.debug(f"Read file {inp_file}")
                     for chan in self.gain_channels:
                         # verify that the median signal is inside the asked range
                         median_charge = np.median(ff_data.charge_median[chan])
 
                         if median_charge > self.signal_range[chan][1] or median_charge < self.signal_range[chan][0]:
-                            self.log.debug(f"{channel[chan]}: skip run {run}, signal out of range {median_charge:6.1f} ADC")
+                            self.log.debug(
+                                f"{channel[chan]}: skip run {run}, signal out of range {median_charge:6.1f} ADC")
                             continue
 
                         signal = ff_data.charge_median[chan] - ped_data.charge_median[chan]
@@ -170,7 +173,8 @@ class FitIntensityScan(Tool):
                         else:
                             self.signal[chan] = np.column_stack((self.signal[chan], signal))
                             self.variance[chan] = np.column_stack((self.variance[chan], variance))
-                            self.unusable_pixels[chan] = np.column_stack((self.unusable_pixels[chan],calib_data.unusable_pixels[chan]))
+                            self.unusable_pixels[chan] = np.column_stack(
+                                (self.unusable_pixels[chan], calib_data.unusable_pixels[chan]))
                         self.selected_runs[chan].append(run)
                         self.log.info(f"{channel[chan]}: select run {run}, median charge {median_charge:6.1f} ADC\n")
                 else:
@@ -181,12 +185,12 @@ class FitIntensityScan(Tool):
                 if self.signal[chan] is None:
                     raise IOError(f"--> Zero runs selected for channel {channel[chan]} \n")
 
-                if self.signal[chan].size < MIN_N_RUNS*constants.N_PIXELS:
-                    raise IOError(f"--> Not enough runs selected for channel {channel[chan]}: {int(self.signal[chan].size/constants.N_PIXELS)} runs \n")
+                if self.signal[chan].size < MIN_N_RUNS * constants.N_PIXELS:
+                    raise IOError(
+                        f"--> Not enough runs selected for channel {channel[chan]}: {int(self.signal[chan].size / constants.N_PIXELS)} runs \n")
 
         except ValueError as e:
             self.log.error(e)
-
 
     def start(self):
         '''loop to fit each pixel '''
@@ -198,7 +202,7 @@ class FitIntensityScan(Tool):
 
         for pix in np.arange(constants.N_PIXELS):
 
-            if pix % 100 == 0 :
+            if pix % 100 == 0:
                 self.log.debug(f"Pixel {pix}")
 
             # loop over channel
@@ -208,13 +212,14 @@ class FitIntensityScan(Tool):
                 p0 = np.array(self.fit_initialization[chan])
 
                 mask = self.unusable_pixels[chan][pix]
-                sig = np.ma.array(self.signal[chan][pix],mask=mask).compressed()
-                var = np.ma.array(self.variance[chan][pix],mask=mask).compressed()
+                sig = np.ma.array(self.signal[chan][pix], mask=mask).compressed()
+                var = np.ma.array(self.variance[chan][pix], mask=mask).compressed()
 
                 # skip the pixel if not enough data
                 if sig.shape[0] < MIN_N_RUNS:
-                    self.log.debug(f"Not enough data in pixel {pix} and channel {chan} for the fit ({sig.shape[0]} runs)\n")
-                    self.fit_error[chan,pix] = 1
+                    self.log.debug(
+                        f"Not enough data in pixel {pix} and channel {chan} for the fit ({sig.shape[0]} runs)\n")
+                    self.fit_error[chan, pix] = 1
                     continue
 
                 # we assume a constant fractional error
@@ -243,9 +248,9 @@ class FitIntensityScan(Tool):
         quadratic_term = np.ma.array(self.fit_parameters.T[1], mask=self.fit_error.T)
 
         # give to the badly fitted pixel a median value for the B term
-        median_quadratic_term = np.ma.median(quadratic_term,axis=0)
+        median_quadratic_term = np.ma.median(quadratic_term, axis=0)
 
-        fill_array = np.ones((constants.N_PIXELS,constants.N_GAINS)) * median_quadratic_term
+        fill_array = np.ones((constants.N_PIXELS, constants.N_GAINS)) * median_quadratic_term
 
         quadratic_term_corrected = np.ma.filled(quadratic_term, fill_array)
 
@@ -256,11 +261,11 @@ class FitIntensityScan(Tool):
             hf.create_dataset('bad_fit_mask', data=self.fit_error)
 
             # remember the camera median and the variance per run
-            channel=["HG","LG"]
-            for chan in [0,1]:
+            channel = ["HG", "LG"]
+            for chan in [0, 1]:
                 if self.signal[chan] is not None:
-                    hf.create_dataset(f'median_signal_{channel[chan]}', data=np.median(self.signal[chan],axis=0))
-                    hf.create_dataset(f'median_variance_{channel[chan]}', data=np.median(self.variance[chan],axis=0))
+                    hf.create_dataset(f'median_signal_{channel[chan]}', data=np.median(self.signal[chan], axis=0))
+                    hf.create_dataset(f'median_variance_{channel[chan]}', data=np.median(self.variance[chan], axis=0))
                     hf.create_dataset(f'runs_{channel[chan]}', data=self.selected_runs[chan])
 
             hf.create_dataset('runs', data=self.run_list)
@@ -272,15 +277,15 @@ class FitIntensityScan(Tool):
 
                 for chan in self.gain_channels:
                     # plot the used runs and their median camera charge
-                    fig = plt.figure((chan+1), figsize=(8, 20))
+                    fig = plt.figure((chan + 1), figsize=(8, 20))
                     fig.suptitle(f"{channel[chan]} channel", fontsize=25)
-                    ax=plt.subplot(2, 1, 1)
+                    ax = plt.subplot(2, 1, 1)
                     ax.grid(True)
                     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
                     ax.yaxis.set_major_locator(plt.MultipleLocator(1))
 
-                    plt.plot(np.median(self.signal[chan],axis=0),self.selected_runs[chan],"o")
+                    plt.plot(np.median(self.signal[chan], axis=0), self.selected_runs[chan], "o")
                     plt.xlabel(r'$\mathrm{\overline{Q}-\overline{ped}}$ [ADC]')
                     plt.ylabel(r'Runs used in the fit')
 
@@ -288,11 +293,11 @@ class FitIntensityScan(Tool):
                     camera = load_camera_geometry()
                     camera = camera.transform_to(EngineeringCameraFrame())
                     disp = CameraDisplay(camera)
-                    image = self.fit_parameters.T[1].T*100
+                    image = self.fit_parameters.T[1].T * 100
                     mymin = np.median(image[chan]) - 3 * np.std(image[chan])
                     mymax = np.median(image[chan]) + 3 * np.std(image[chan])
                     disp.set_limits_minmax(mymin, mymax)
-                    mask = np.where(self.fit_error[chan]==1)[0]
+                    mask = np.where(self.fit_error[chan] == 1)[0]
                     disp.highlight_pixels(mask, linewidth=2.5, color="green")
                     disp.image = image[chan]
                     disp.cmap = plt.cm.coolwarm
@@ -302,12 +307,12 @@ class FitIntensityScan(Tool):
                     pdf.savefig()
 
                     # plot the fit results and residuals for four arbitrary  pixels
-                    fig = plt.figure((chan+1)*10, figsize=(11, 22))
+                    fig = plt.figure((chan + 1) * 10, figsize=(11, 22))
                     fig.suptitle(f"{channel[chan]} channel", fontsize=25)
 
                     pad = 0
-                    for pix in [0,600,1200,1800]:
-                        pad+=1
+                    for pix in [0, 600, 1200, 1800]:
+                        pad += 1
                         plt.subplot(4, 2, pad)
                         plt.grid(which='minor')
 
@@ -320,9 +325,9 @@ class FitIntensityScan(Tool):
                         plt.plot(sig, var, 'o', color="C0")
 
                         # plot fit
-                        min_x=min(1000,np.min(sig)*0.9)
-                        max_x=max(10000,np.max(sig)*1.1)
-                        x = np.arange(np.min(sig),np.max(sig))
+                        min_x = min(1000, np.min(sig) * 0.9)
+                        max_x = max(10000, np.max(sig) * 1.1)
+                        x = np.arange(np.min(sig), np.max(sig))
 
                         plt.plot(x, quadratic_fit(x, *popt), '--', color="C1",
                                  label=f'Pixel {pix}:\ng={popt[0]:5.2f} [ADC/pe] , B={popt[1]:5.3f}')
@@ -335,12 +340,12 @@ class FitIntensityScan(Tool):
 
                         # plot residuals
                         pad += 1
-                        plt.subplot(4,2,pad)
-                        plt.grid(which='both',axis='both')
+                        plt.subplot(4, 2, pad)
+                        plt.grid(which='both', axis='both')
 
                         popt = self.fit_parameters[chan, pix]
                         plt.plot(sig, (quadratic_fit(sig, *popt) - var) / var * 100, 'o', color="C0")
-                        plt.xlim(min_x,max_x)
+                        plt.xlim(min_x, max_x)
                         plt.xscale('log')
                         plt.ylabel('fit residuals %')
                         plt.xlabel('Q-ped [ADC]')
@@ -350,10 +355,9 @@ class FitIntensityScan(Tool):
                     pdf.savefig()
 
 
-
 def quadratic_fit(t, b=1, c=1, f2=1.222):
-
     return b * f2 * t + c ** 2 * t ** 2
+
 
 def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
     """ read camera calibration file"""
@@ -362,8 +366,6 @@ def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
     with HDF5TableReader(file_name) as h5_table:
 
         try:
-            assert h5_table._h5file.isopen == True
-
             table = f"/tel_{tel_id}/flatfield"
             next(h5_table.read(table, ff_data))
 
@@ -379,6 +381,7 @@ def read_calibration_file(file_name, ff_data, calib_data, ped_data, tel_id=1):
 
     h5_table.close()
     return status
+
 
 def main():
     exe = FitIntensityScan()

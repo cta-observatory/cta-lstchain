@@ -7,34 +7,37 @@ Usage:
 "import dl1_to_dl2"
 """
 
+import os
+
+import astropy.units as u
+import joblib
 import numpy as np
 import pandas as pd
+from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
-import joblib
-import os
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
-from . import utils
+
 from . import disp
+from . import utils
 from ..io import standard_config, replace_config
-import astropy.units as u
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe_io_lst import OPTICS
 
 
 __all__ = [
-    'train_energy',
+    'apply_models',
+    'build_models',
+    'get_expected_source_pos',
+    'get_source_dependent_parameters',
     'train_disp_norm',
     'train_disp_sign',
     'train_disp_vector',
+    'train_energy',
     'train_reco',
     'train_sep',
-    'build_models',
-    'apply_models',
-    'get_source_dependent_parameters',
-    'get_expected_source_pos'
 ]
 
 
@@ -54,9 +57,9 @@ def train_energy(train, custom_config={}):
     """
 
     config = replace_config(standard_config, custom_config)
-    energy_regression_args = config['random_forest_energy_regressor_args'] 
+    energy_regression_args = config['random_forest_energy_regressor_args']
     features = config['energy_regression_features']
-    model = RandomForestRegressor    
+    model = RandomForestRegressor
 
     print("Given features: ", features)
     print("Number of events for training: ", train.shape[0])
@@ -200,7 +203,7 @@ def train_reco(train, custom_config={}):
 
     reg_energy = model(**energy_regression_args)
     reg_energy.fit(train[energy_features],
-                  train['log_mc_energy'])
+                   train['log_mc_energy'])
 
     print("Random Forest trained!")
     print("Given disp_features: ", disp_features)
@@ -208,7 +211,7 @@ def train_reco(train, custom_config={}):
 
     reg_disp = RandomForestRegressor(**disp_regression_args)
     reg_disp.fit(train[disp_features],
-                     train['disp_norm'])
+                 train['disp_norm'])
 
     print("Random Forest trained!")
     print("Done!")
@@ -314,27 +317,28 @@ def build_models(filegammas, fileprotons,
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
                                    finite_params=config['energy_regression_features']
-                                   + config['disp_regression_features']
-                                   + config['particle_classification_features']
-                                   + config['disp_classification_features'],
+                                                 + config['disp_regression_features']
+                                                 + config['particle_classification_features']
+                                                 + config['disp_classification_features'],
                                    )
 
     df_proton = utils.filter_events(df_proton,
                                     filters=events_filters,
                                     finite_params=config['energy_regression_features']
-                                    + config['disp_regression_features']
-                                    + config['particle_classification_features']
-                                    + config['disp_classification_features'],
+                                                  + config['disp_regression_features']
+                                                  + config['particle_classification_features']
+                                                  + config['disp_classification_features'],
                                     )
+
 
     #Training MC gammas in reduced viewcone 
     src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
     df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
-        src_r_deg <= config['train_gamma_src_r_deg'][1])]
+            src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
-    #Train regressors for energy and disp_norm reconstruction, only with gammas
+    # Train regressors for energy and disp_norm reconstruction, only with gammas
 
     reg_energy = train_energy(df_gamma, custom_config=config)
 
@@ -374,17 +378,17 @@ def build_models(filegammas, fileprotons,
 
     test['reco_disp_dx'] = disp_vector[:, 0]
     test['reco_disp_dy'] = disp_vector[:, 1]
-    
-    test['reco_src_x'], test['reco_src_y'] = disp.disp_to_pos(test['reco_disp_dx'], 
+
+    test['reco_src_x'], test['reco_src_y'] = disp.disp_to_pos(test['reco_disp_dx'],
                                                               test['reco_disp_dy'],
                                                               test['x'], test['y'])
-    
+
     # give skewness and time gradient a meaningful sign, i.e. referred to the reconstructed source position:
-    longi, _ = camera_to_shower_coordinates(test['reco_src_x'], test['reco_src_y'], 
+    longi, _ = camera_to_shower_coordinates(test['reco_src_x'], test['reco_src_y'],
                                             test['x'], test['y'], test['psi'])
-    test['signed_skewness']      = -1 * np.sign(longi) * test['skewness']
+    test['signed_skewness'] = -1 * np.sign(longi) * test['skewness']
     test['signed_time_gradient'] = -1 * np.sign(longi) * test['time_gradient']
-    
+
     # Apply cut in reconstructed energy. New train set is the previous
     # test with energy and disp_norm reconstructed.
 
@@ -409,12 +413,12 @@ def build_models(filegammas, fileprotons,
 
         if config['disp_method'] == 'disp_vector':
             file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-            joblib.dump(reg_disp_vector, file_reg_disp_vector)            
+            joblib.dump(reg_disp_vector, file_reg_disp_vector)
         elif config['disp_method'] == 'disp_norm_sign':
             file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
             file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
             joblib.dump(reg_disp_norm, file_reg_disp_norm)
-            joblib.dump(cls_disp_sign, file_cls_disp_sign)            
+            joblib.dump(cls_disp_sign, file_cls_disp_sign)
 
         file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(cls_gh, file_cls_gh)
@@ -426,14 +430,14 @@ def build_models(filegammas, fileprotons,
 
 
 def apply_models(
-    dl1,
-    classifier,
-    reg_energy,
-    reg_disp_vector={},
-    reg_disp_norm={},
-    cls_disp_sign={},
-    focal_length=28 * u.m,
-    custom_config={}
+        dl1,
+        classifier,
+        reg_energy,
+        reg_disp_vector={},
+        reg_disp_norm={},
+        cls_disp_sign={},
+        focal_length=28 * u.m,
+        custom_config={}
 ):
     """Apply previously trained Random Forests to a set of data
     depending on a set of features.
@@ -460,9 +464,9 @@ def apply_models(
     dl2 = utils.filter_events(dl1,
                               filters=events_filters,
                               finite_params=config['disp_regression_features']
-                              + config['energy_regression_features']
-                              + config['particle_classification_features']
-                              + config['disp_classification_features'],
+                                            + config['energy_regression_features']
+                                            + config['particle_classification_features']
+                                            + config['disp_classification_features'],
                               )
 
     # Reconstruction of Energy and disp_norm distance
@@ -491,18 +495,17 @@ def apply_models(
                                                             dl2.y,
                                                             )
 
-    longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'], 
+    longi, _ = camera_to_shower_coordinates(dl2['reco_src_x'], dl2['reco_src_y'],
                                             dl2['x'], dl2['y'], dl2['psi'])
 
     # Obtain the time gradient with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
     # Defined positive if light arrival times increase with distance to it. Negative otherwise:
     dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
-    
+
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
     # Defined on the major image axis; sign is such that it is typically positive for gammas:    
     dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
 
-    
     if 'mc_alt_tel' in dl2.columns:
         alt_tel = dl2['mc_alt_tel'].values
         az_tel = dl2['mc_az_tel'].values
@@ -666,4 +669,3 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
 
     return expected_src_pos_x_m, expected_src_pos_y_m
-

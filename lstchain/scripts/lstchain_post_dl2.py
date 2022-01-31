@@ -3,8 +3,15 @@
 Run post-DL2 analysis
 """
 import argparse
+
 import toml
-from lstchain.analysis.post_dl2 import analyze_on_off, analyze_wobble, LOGGER, setup_logging
+
+from lstchain.analysis.post_dl2 import (
+    LOGGER,
+    analyze_on_off,
+    analyze_wobble,
+    setup_logging,
+)
 
 
 def get_parser():
@@ -49,4 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

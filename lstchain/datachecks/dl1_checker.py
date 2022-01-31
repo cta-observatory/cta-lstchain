@@ -4,11 +4,12 @@ Functions to check the contents of LST DL1 files and associated muon ring files
 
 __all__ = [
     'check_dl1',
-    'process_dl1_file',
+    'merge_dl1datacheck_files',
     'plot_datacheck',
-    'plot_trigger_types',
     'plot_mean_and_stddev',
-    'merge_dl1datacheck_files'
+    'plot_trigger_types',
+    'process_dl1_file',
+    'write_error_page',
 ]
 
 import logging
@@ -32,19 +33,23 @@ from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.visualization import CameraDisplay
-
 from ctapipe_io_lst import TriggerBits
-
 # from lstchain.visualization.bokeh import plot_mean_and_stddev_bokeh
 # from bokeh.models.widgets import Panel
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import poisson, sem
 
-from lstchain.datachecks.containers import DL1DataCheckContainer
-from lstchain.datachecks.containers import DL1DataCheckHistogramBins
+from lstchain.datachecks.containers import (
+    DL1DataCheckContainer,
+    DL1DataCheckHistogramBins,
+)
 from lstchain.io.io import dl1_params_lstcam_key
-from lstchain.paths import parse_datacheck_dl1_filename, parse_dl1_filename, \
-    run_to_muon_filename, run_to_datacheck_dl1_filename
+from lstchain.paths import (
+    parse_datacheck_dl1_filename,
+    parse_dl1_filename,
+    run_to_muon_filename,
+    run_to_datacheck_dl1_filename,
+)
 
 
 def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False):
@@ -857,7 +862,7 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False, muons_dir=Non
                 num_rings = np.append(num_rings, 0)
                 num_contained_rings = np.append(num_contained_rings, 0)
 
-        if len(files_with_rings) == 0:
+        if len(good_files) == 0:
             write_error_page('Muons', pagesize)
             pdf.savefig()
             return

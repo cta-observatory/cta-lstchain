@@ -1,7 +1,7 @@
-import numpy as np
-
 import numba
+import numpy as np
 from numba.experimental import jitclass
+
 
 @jitclass(dict(
     n=numba.uint64,

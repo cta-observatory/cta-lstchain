@@ -56,7 +56,7 @@
     "n_jobs": 4,
     "n_estimators": 150,
     "bootstrap": true,
-    "criterion": "mse",
+    "criterion": "squared_error",
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
@@ -74,7 +74,7 @@
     "n_jobs": 4,
     "n_estimators": 150,
     "bootstrap": true,
-    "criterion": "mse",
+    "criterion": "squared_error",
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
@@ -191,13 +191,13 @@
     "threshold":  3500
   },
   "LocalPeakWindowSum":{
-     "window_shift": 4,
-     "window_width":8
-    },
+    "window_shift": 4,
+    "window_width":8
+  },
   "GlobalPeakWindowSum":{
-     "window_shift": 4,
-     "window_width":8
-    },
+    "window_shift": 4,
+    "window_width":8
+  },
   "timestamps_pointing":"ucts",
 
   "train_gamma_src_r_deg": [0, Infinity],
