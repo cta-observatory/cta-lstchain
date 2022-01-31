@@ -39,41 +39,41 @@ class DL1DataCheckContainer(Container):
     tel_dec = Field(np.nan*u.deg, 'Telescope pointing declination', unit=u.deg)
 
     # sampled quantities, stored every few events:
-    sampled_event_ids = Field([], 'sampled event ids')
-    ucts_time = Field([], 'ucts time', unit=u.s)
-    tib_time = Field([], 'tib_time', unit=u.s)
-    dragon_time = Field([], 'dragon_time', unit=u.s)
+    sampled_event_ids = Field(None, 'sampled event ids')
+    ucts_time = Field(None, 'ucts time', unit=u.s)
+    tib_time = Field(None, 'tib_time', unit=u.s)
+    dragon_time = Field(None, 'dragon_time', unit=u.s)
 
     # histograms; they store arrays of counts. Binning is defined in class
     # DL1DataCheckHistogramBins (see below)
-    hist_delta_t = Field([], 'Histogram of time difference between '
+    hist_delta_t = Field(None, 'Histogram of time difference between '
                              'consecutive events')
-    hist_npixels = Field([], 'Histogram of number of pixels in image')
-    hist_nislands = Field([], 'Histogram of number of islands in image')
-    hist_intensity = Field([], 'Histogram of image intensity')
-    hist_dist0 = Field([], 'Histogram of cog-camera center distance')
+    hist_npixels = Field(None, 'Histogram of number of pixels in image')
+    hist_nislands = Field(None, 'Histogram of number of islands in image')
+    hist_intensity = Field(None, 'Histogram of image intensity')
+    hist_dist0 = Field(None, 'Histogram of cog-camera center distance')
     hist_dist0_intensity_gt_200 = \
-        Field([], 'Histogram of cog-camera center distance')
-    hist_width = Field([], 'Histogram image width vs. intensity')
-    hist_length = Field([], 'Histogram image length vs. intensity')
-    hist_skewness = Field([], 'Histogram of image skewness')
+        Field(None, 'Histogram of cog-camera center distance')
+    hist_width = Field(None, 'Histogram image width vs. intensity')
+    hist_length = Field(None, 'Histogram image length vs. intensity')
+    hist_skewness = Field(None, 'Histogram of image skewness')
     # the histogram hist_pixelchargespectrum shows the pixel charge
     # distribution, filled from all pixels:
-    hist_pixelchargespectrum = Field([], 'Histogram of pixel charges')
+    hist_pixelchargespectrum = Field(None, 'Histogram of pixel charges')
 
-    hist_psi = Field([], 'Histogram of image axis orientation')
-    hist_intercept = Field([], 'Histogram of fitted pulse time for charge '
+    hist_psi = Field(None, 'Histogram of image axis orientation')
+    hist_intercept = Field(None, 'Histogram of fitted pulse time for charge '
                                'c.o.g.')
-    hist_tgrad_vs_length = Field([], 'Histogram of time gradient vs. length')
+    hist_tgrad_vs_length = Field(None, 'Histogram of time gradient vs. length')
     hist_tgrad_vs_length_intensity_gt_200 = \
-        Field([], 'Histogram of time gradient vs. length, intensity>200pe')
+        Field(None, 'Histogram of time gradient vs. length, intensity>200pe')
 
     # pixel-wise quantities, one entry per pixel. Used also for 2d
     # histogramming of cog position.
 
-    cog_within_pixel = Field([], 'Number of image cogs within pixel')
+    cog_within_pixel = Field(None, 'Number of image cogs within pixel')
     cog_within_pixel_intensity_gt_200 = \
-        Field([], 'Number of image within pixel, intensity>200pe')
+        Field(None, 'Number of image within pixel, intensity>200pe')
 
     num_nearby_stars = Field(-1, 'Number of nearby bright stars')
     charge_mean = Field(-1, 'Mean of pixel charge')
@@ -91,11 +91,11 @@ class DL1DataCheckContainer(Container):
     # keep number of events above a few thresholds, like a low-res histogram
     # of pulse charges (2 points per decade in charge in p.e.)
     # This could be done in a cleaner way with a 2d hist charge vs. pixel (TBD)
-    num_pulses_above_0010_pe = Field([], 'Number of >10 p.e. pulses')
-    num_pulses_above_0030_pe = Field([], 'Number of >30 p.e. pulses')
-    num_pulses_above_0100_pe = Field([], 'Number of >100 p.e. pulses')
-    num_pulses_above_0300_pe = Field([], 'Number of >300 p.e. pulses')
-    num_pulses_above_1000_pe = Field([], 'Number of >1000 p.e. pulses')
+    num_pulses_above_0010_pe = Field(None, 'Number of >10 p.e. pulses')
+    num_pulses_above_0030_pe = Field(None, 'Number of >30 p.e. pulses')
+    num_pulses_above_0100_pe = Field(None, 'Number of >100 p.e. pulses')
+    num_pulses_above_0300_pe = Field(None, 'Number of >300 p.e. pulses')
+    num_pulses_above_1000_pe = Field(None, 'Number of >1000 p.e. pulses')
 
     def fill_event_wise_info(self, subrun_index, table, mask, geom,
                              histogram_binnings):
