@@ -21,7 +21,7 @@ from astropy.table import QTable
 from ctapipe.core import Tool, traits, Provenance, ToolConfigurationError
 
 from lstchain.io import (
-    read_data_dl2_to_QTable, EventSelector, DL3Cuts, DataBinning
+    read_data_dl2_to_QTable, EventSelector, DL3Cuts
 )
 from lstchain.irf import create_event_list, add_icrs_position_params
 from lstchain.paths import run_info_from_filename, dl2_to_dl3_filename
@@ -132,7 +132,6 @@ class DataReductionFITSWriter(Tool):
 
         self.event_sel = EventSelector(parent=self)
         self.cuts = DL3Cuts(parent=self)
-        self.data_bin = DataBinning(parent=self)
 
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():

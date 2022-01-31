@@ -16,5 +16,5 @@
     "global_theta_cut": 0.2,
     "theta_containment": 0.68,
     "allowed_tels": [1]
-  },
+  }
 }
