@@ -1,4 +1,4 @@
-from lstchain.io import EventSelector, DL3FixedCuts, DataBinning
+from lstchain.io import EventSelector, DL3Cuts, DataBinning
 import numpy as np
 import pandas as pd
 from astropy.table import QTable
@@ -38,14 +38,33 @@ def test_event_selection():
     )
 
 
-def test_dl3_fixed_cuts():
-    temp_cuts = DL3FixedCuts()
+def test_dl3_global_cuts():
+    temp_cuts = DL3Cuts()
 
-    temp_cuts.fixed_gh_cut = 0.7
-    temp_cuts.fixed_theta_cut = 0.2
+    temp_cuts.global_gh_cut = 0.7
+    temp_cuts.global_theta_cut = 0.2
     temp_cuts.allowed_tels = [1, 2]
-    temp_cuts.fixed_gh_max_efficiency = 0.8
-    temp_cuts.fixed_theta_containment = 68
+    temp_cuts.gh_max_efficiency = 0.8
+    temp_cuts.theta_containment = 68
+
+    temp_data = QTable({
+        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
+        "reco_energy": u.Quantity(np.logspace(-2.301, 1.699, 30), unit=u.TeV),
+        "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
+        "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
+        "mc_type": u.Quantity(np.repeat([0], 30)),
+        })
+
+    assert len(temp_cuts.apply_global_gh_cut(temp_data)) == 6
+    assert len(temp_cuts.apply_global_theta_cut(temp_data)) == 15
+    assert len(temp_cuts.allowed_tels_filter(temp_data)) == 20
+
+
+def test_dl3_energy_dependent_cuts():
+    temp_cuts = DL3Cuts()
+
+    temp_cuts.gh_max_efficiency = 0.8
+    temp_cuts.theta_containment = 68
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
@@ -56,19 +75,21 @@ def test_dl3_fixed_cuts():
         })
     en_range = u.Quantity([0.01, 0.1, 1, 10, 100, np.inf], unit=u.TeV)
 
-    theta_cut = temp_cuts.optimize_theta_cuts(
+    theta_cut = temp_cuts.energy_dependent_theta_cuts(
         temp_data, en_range, min_events=2
-    )["cut"]
+    )
 
-    gh_cut = temp_cuts.optimize_gh_cuts(
+    gh_cut = temp_cuts.energy_dependent_gh_cuts(
         temp_data, en_range, min_events=2
-    )["cut"]
-    
-    assert len(temp_cuts.gh_cut(temp_data)) == 6
-    assert len(temp_cuts.theta_cut(temp_data)) == 15
-    assert len(temp_cuts.allowed_tels_filter(temp_data)) == 20
-    assert theta_cut[0] == 0.2624 * u.deg
-    assert gh_cut[1] == 0.365
+    )
+
+    data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
+    data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
+
+    assert theta_cut["cut"][0] == 0.2624 * u.deg
+    assert gh_cut["cut"][1] == 0.365
+    assert len(data_th) == 21
+    assert len(data_gh) == 25
 
 
 def test_data_binning():
@@ -76,10 +97,10 @@ def test_data_binning():
 
     tempbin.true_energy_min = 0.01
     tempbin.true_energy_max = 100
-    tempbin.true_energy_n_bins_per_decade = 5.5
+    tempbin.true_energy_n_bins_per_decade = 5
     tempbin.reco_energy_min = 0.01
     tempbin.reco_energy_max = 100
-    tempbin.reco_energy_n_bins_per_decade = 5.5
+    tempbin.reco_energy_n_bins_per_decade = 5
     tempbin.energy_migration_min = 0.2
     tempbin.energy_migration_max = 5
     tempbin.energy_migration_n_bins = 15
@@ -100,8 +121,8 @@ def test_data_binning():
     bkg_fov = tempbin.bkg_fov_offset_bins()
     src_off = tempbin.source_offset_bins()
 
-    assert len(e_true) == 22
-    assert len(e_reco) == 22
+    assert len(e_true) == 20
+    assert len(e_reco) == 20
     assert len(e_migra) == 15
     assert len(fov_off) == 9
     assert len(bkg_fov) == 11

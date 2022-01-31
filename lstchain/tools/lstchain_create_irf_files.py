@@ -7,29 +7,36 @@ IRFs can be point_like or Full Enclosure.
 Background HDU maybe added if proton and electron MC are provided.
 
 Change the selection parameters as need be using the aliases.
-The default values are written in the EventSelector, DL3FixedCuts and
+The default values are written in the EventSelector, DL3Cuts and
 DataBinning Component and also given in some example configs in docs/examples/
 
-For using energy-dependent gammaness cuts, use the flag fixed_gh_efficiency
-for passing the fixed gamma efficiency to calculate the gammaness cuts if
-each energy bin. Similarly, for energy-dependent theta cuts, use the flag
-fixed_theta_containment. The energy-dependent cuts are stored as HDUs -
-GH_CUTS and RAD_MAX, and saved with other IRFs.
+By default, the Tool uses global cuts for gammaness and theta.
+
+For using energy-dependent gammaness cuts, use the argument gh_efficiency
+for passing the gamma efficiency value to calculate the gammaness cuts for
+each reco energy bin and the flag energy-dependent-gh.
+Similarly, for energy-dependent theta cuts, use the argument
+theta_containment and the flag energy-dependent-theta.
+
+The energy-dependent cuts are stored as HDUs - GH_CUTS and RAD_MAX,
+and saved with other IRFs.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 """
 
-import astropy.units as u
-import numpy as np
 from astropy import table
 from astropy.io import fits
+import astropy.units as u
+import numpy as np
+
 from ctapipe.core import (
     Provenance,
     Tool,
     ToolConfigurationError,
     traits,
 )
+
 from pyirf.io.gadf import (
     create_aeff2d_hdu,
     create_background_2d_hdu,
@@ -57,7 +64,7 @@ from pyirf.utils import (
 )
 
 from lstchain.io import (
-    DL3FixedCuts,
+    DL3Cuts,
     DataBinning,
     EventSelector,
 )
@@ -97,19 +104,19 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --fixed-gh-cut 0.9
-        --fixed-theta-cut 0.2
+        --global-gh-cut 0.9
+        --global-theta-cut 0.2
         --irf-obs-time 50
 
-    Or use optimized cuts based on a fixed gamma efficiency:
+    Or use energy-dependent cuts based on a gamma efficiency:
     > lstchain_create_irf_files
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
-        --optimize-gh
-        --optimize-th
-        --fixed-gh-efficiency 95
-        --fixed-theta-containment 68
+        --energy-dependent-gh
+        --energy-dependent-theta
+        --gh-efficiency 95
+        --theta-containment 68
     """
 
     input_gamma_dl2 = traits.Path(
@@ -154,13 +161,13 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    optimize_gh = traits.Bool(
-        help="If true, use a fixed gamma efficiency for optimizing the gammaness cuts",
+    energy_dependent_gh = traits.Bool(
+        help="True for applying energy-dependent gammaness cuts",
         default_value=False,
     ).tag(config=True)
 
-    optimize_th = traits.Bool(
-        help="If true, use a fixed theta containment for optimizing the theta cuts",
+    energy_dependent_theta = traits.Bool(
+        help="True for applying energy-dependent theta cuts",
         default_value=False,
     ).tag(config=True)
 
@@ -169,7 +176,7 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    classes = [EventSelector, DL3FixedCuts, DataBinning]
+    classes = [EventSelector, DL3Cuts, DataBinning]
 
     aliases = {
         ("g", "input-gamma-dl2"): "IRFFITSWriter.input_gamma_dl2",
@@ -177,11 +184,11 @@ class IRFFITSWriter(Tool):
         ("e", "input-electron-dl2"): "IRFFITSWriter.input_electron_dl2",
         ("o", "output-irf-file"): "IRFFITSWriter.output_irf_file",
         "irf-obs-time": "IRFFITSWriter.irf_obs_time",
-        "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
-        "fixed-gh-efficiency": "DL3FixedCuts.fixed_gh_efficiency",
-        "fixed-theta-containment": "DL3FixedCuts.fixed_theta_containment",
-        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
-        "allowed-tels": "DL3FixedCuts.allowed_tels",
+        "global-gh-cut": "DL3Cuts.global_gh_cut",
+        "gh-efficiency": "DL3Cuts.gh_efficiency",
+        "theta-containment": "DL3Cuts.theta_containment",
+        "global-theta-cut": "DL3Cuts.global_theta_cut",
+        "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
     }
 
@@ -194,13 +201,13 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
         ),
-        "optimize-gh": (
-            {"IRFFITSWriter": {"optimize_gh": True}},
-            "Uses cuts optimization for gh cut",
+        "energy-dependent-gh": (
+            {"IRFFITSWriter": {"energy_dependent_gh": True}},
+            "Uses energy-dependent cuts for gammaness",
         ),
-        "optimize-th": (
-            {"IRFFITSWriter": {"optimize_th": True}},
-            "Uses cuts optimization for theta cut",
+        "energy-dependent-theta": (
+            {"IRFFITSWriter": {"energy_dependent_theta": True}},
+            "Uses energy-dependent cuts for theta",
         ),
     }
 
@@ -228,11 +235,8 @@ class IRFFITSWriter(Tool):
         else:
             self.only_gamma_irf = True
 
-        if self.optimize_gh or self.optimize_th:
-            self.optimize_gh = self.optimize_th = True
-
         self.event_sel = EventSelector(parent=self)
-        self.fixed_cuts = DL3FixedCuts(parent=self)
+        self.cuts = DL3Cuts(parent=self)
         self.data_bin = DataBinning(parent=self)
 
         self.mc_particle = {
@@ -275,7 +279,9 @@ class IRFFITSWriter(Tool):
             else:
                 p["mc_type"] = "diffuse"
 
-            self.log.debug(f"Simulated {p['mc_type']} {particle_type.title()} Events:")
+            self.log.debug(
+                f"Simulated {p['mc_type']} {particle_type.title()} Events:"
+            )
 
             # Calculating event weights for Background IRF
             if particle_type != "gamma":
@@ -291,7 +297,9 @@ class IRFFITSWriter(Tool):
 
             for prefix in ("true", "reco"):
                 k = f"{prefix}_source_fov_offset"
-                p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)
+                p["events"][k] = calculate_source_fov_offset(
+                    p["events"], prefix=prefix
+                )
             # calculate theta / distance between reco and assumed source position
             p["events"]["theta"] = calculate_theta(
                 p["events"],
@@ -309,42 +317,43 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         gammas = self.event_sel.filter_cut(gammas)
-        gammas = self.fixed_cuts.allowed_tels_filter(gammas)
+        gammas = self.cuts.allowed_tels_filter(gammas)
 
-        if self.optimize_gh:
-            self.gh_cuts_gamma = self.fixed_cuts.optimize_gh_cuts(
+        if self.energy_dependent_gh:
+            self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
                 gammas, reco_energy_bins, min_value=0.1, max_value=0.95
             )
-            gammas = self.fixed_cuts.apply_optimized_gh_cuts(gammas, self.gh_cuts_gamma)
+            gammas = self.cuts.apply_energy_dependent_gh_cuts(
+                gammas, self.gh_cuts_gamma
+            )
             self.log.info(
-                "Using fixed gamma efficiency of "
-                f"{self.fixed_cuts.fixed_gh_efficiency}"
+                f"Using gamma efficiency of {self.cuts.gh_efficiency}"
             )
         else:
-            gammas = self.fixed_cuts.gh_cut(gammas)
+            gammas = self.cuts.apply_global_gh_cut(gammas)
             self.log.info(
-                "Using fixed global gammaness cut of "
-                f"{self.fixed_cuts.fixed_gh_cut}"
+                "Using a global gammaness cut of "
+                f"{self.cuts.global_gh_cut}"
             )
 
         if self.point_like:
-            if self.optimize_th:
-                self.theta_cuts = self.fixed_cuts.optimize_theta_cuts(
+            if self.energy_dependent_theta:
+                self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
                     gammas, reco_energy_bins,
                     min_value=0.05 * u.deg, max_value=0.32 * u.deg,
                 )
-                gammas = self.fixed_cuts.apply_optimized_theta_cuts(
+                gammas = self.cuts.apply_energy_dependent_theta_cuts(
                     gammas, self.theta_cuts
                 )
                 self.log.info(
-                    "Using fixed containment region for theta of "
-                    f"{self.fixed_cuts.fixed_theta_containment} %"
+                    "Using a containment region for theta of "
+                    f"{self.cuts.theta_containment} %"
                 )
             else:
-                gammas = self.fixed_cuts.theta_cut(gammas)
+                gammas = self.cuts.apply_global_theta_cut(gammas)
                 self.log.info(
-                    "Using fixed global Theta cut of "
-                    f"{self.fixed_cuts.fixed_theta_cut} for point-like IRF"
+                    "Using a global Theta cut of "
+                    f"{self.cuts.global_theta_cut} for point-like IRF"
                 )
 
         if self.mc_particle["gamma"]["mc_type"] == "point_like":
@@ -367,24 +376,24 @@ class IRFFITSWriter(Tool):
                 ]
             )
 
-            if self.optimize_gh:
-                background = self.fixed_cuts.apply_optimized_gh_cuts(
+            if self.energy_dependent_gh:
+                background = self.cuts.apply_energy_dependent_gh_cuts(
                     background, self.gh_cuts_gamma
                 )
             else:
-                background = self.fixed_cuts.gh_cut(background)
+                background = self.cuts.apply_global_gh_cut(background)
 
             background = self.event_sel.filter_cut(background)
-            background = self.fixed_cuts.allowed_tels_filter(background)
+            background = self.cuts.allowed_tels_filter(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
-        # For a fixed gh/theta cut, only a header value is added.
-        # For energy dependent cuts, a new HDU are created
-        # GH_CUT is a temporary non-standard header data
+        # For a global gh/theta cut, only a header value is added.
+        # For energy-dependent cuts, along with GADF specified RAD_MAX HDU,
+        # a new HDU is created, GH_CUT which is based on RAD_MAX table
         extra_headers = {
             "TELESCOP": "CTA-N",
-            "INSTRUME": "LST-" + " ".join(map(str, self.fixed_cuts.allowed_tels)),
+            "INSTRUME": "LST-" + " ".join(map(str, self.cuts.allowed_tels)),
             "FOVALIGN": "RADEC",
         }
         if self.point_like:
@@ -393,22 +402,22 @@ class IRFFITSWriter(Tool):
             self.log.info("Generating Full-Enclosure IRF HDUs")
 
         # Updating the HDU headers with the gammaness and theta cuts/efficiency
-        if not self.optimize_gh:
-            extra_headers["GH_CUT"] = self.fixed_cuts.fixed_gh_cut
+        if not self.energy_dependent_gh:
+            extra_headers["GH_CUT"] = self.cuts.global_gh_cut
 
             if self.point_like:
                 extra_headers["RAD_MAX"] = (
-                    self.fixed_cuts.fixed_theta_cut,
+                    self.cuts.global_theta_cut,
                     'deg'
                 )
         else:
             extra_headers["GH_EFF"] = (
-                self.fixed_cuts.fixed_gh_efficiency,
-                "Fixed gamma/hadron efficiency"
+                self.cuts.gh_efficiency,
+                "gamma/hadron efficiency"
             )
-            if self.point_like and self.optimize_th:
+            if self.point_like and self.energy_dependent_theta:
                 extra_headers["TH_CONT"] = (
-                    self.fixed_cuts.fixed_theta_containment,
+                    self.cuts.theta_containment,
                     "Theta containment region in percentage"
                 )
 
@@ -508,7 +517,7 @@ class IRFFITSWriter(Tool):
             )
             self.log.info("PSF HDU created")
 
-        if self.optimize_gh:
+        if self.energy_dependent_gh:
             gh_header = self.hdus[1].header.copy()
             gh_header["HDUCLAS2"] = "GH_CUTS"
             gh_header["HDUCLAS4"] = "GH_CUTS_2D"
@@ -520,7 +529,7 @@ class IRFFITSWriter(Tool):
             )
             self.log.info("GH CUTS HDU added")
 
-        if self.optimize_th and self.point_like:
+        if self.energy_dependent_theta and self.point_like:
             self.hdus.append(
                 create_rad_max_hdu(
                     self.theta_cuts["cut"][:, np.newaxis],
@@ -532,7 +541,9 @@ class IRFFITSWriter(Tool):
 
     def finish(self):
 
-        fits.HDUList(self.hdus).writeto(self.output_irf_file, overwrite=self.overwrite)
+        fits.HDUList(self.hdus).writeto(
+            self.output_irf_file, overwrite=self.overwrite
+        )
         Provenance().add_output_file(self.output_irf_file)
 
 

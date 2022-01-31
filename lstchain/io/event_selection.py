@@ -10,7 +10,7 @@ from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 
-__all__ = ["EventSelector", "DL3FixedCuts", "DataBinning"]
+__all__ = ["EventSelector", "DL3Cuts", "DataBinning"]
 
 
 class EventSelector(Component):
@@ -46,28 +46,28 @@ class EventSelector(Component):
         return filter_events(events, self.filters, self.finite_params)
 
 
-class DL3FixedCuts(Component):
+class DL3Cuts(Component):
     """
-    Temporary fixed selection cuts for DL2 to DL3 conversion
+    Selection cuts for DL2 to DL3 conversion
     """
 
-    fixed_gh_cut = Float(
-        help="Fixed selection cut for gh_score (gammaness)",
+    global_gh_cut = Float(
+        help="Global selection cut for gh_score (gammaness)",
         default_value=0.6,
     ).tag(config=True)
 
-    fixed_gh_efficiency = Float(
-        help="Fixed gamma efficiency for optimized g/h cuts in %",
+    gh_efficiency = Float(
+        help="Gamma efficiency for optimized g/h cuts in %",
         default_value=95,
     ).tag(config=True)
 
-    fixed_theta_containment = Float(
-        help="Fixed % containment region for theta cuts",
+    theta_containment = Float(
+        help="Percentage containment region for theta cuts",
         default=68,
     ).tag(config=True)
 
-    fixed_theta_cut = Float(
-        help="Fixed selection cut for theta",
+    global_theta_cut = Float(
+        help="Global selection cut for theta",
         default_value=0.2,
     ).tag(config=True)
 
@@ -77,41 +77,41 @@ class DL3FixedCuts(Component):
         default_value=[1],
     ).tag(config=True)
 
-    def gh_cut(self, data):
+    def apply_global_gh_cut(self, data):
         """
-        Applying a fixed global gammaness cut on a given data
+        Applying a global gammaness cut on a given data
         """
-        return data[data["gh_score"] > self.fixed_gh_cut]
+        return data[data["gh_score"] > self.global_gh_cut]
 
-    def optimize_gh_cuts(
+    def energy_dependent_gh_cuts(
         self, data, energy_bins, min_value=0.1,
         max_value=0.99, smoothing=None, min_events=10
     ):
         """
-        Evaluating an optimized energy-dependent gammaness cuts, in a given
+        Evaluating energy-dependent gammaness cuts, in a given
         data, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function
         """
-        #To be sure to have the efficiency in between 0 and 100
-        if self.fixed_gh_efficiency < 1:
-            self.fixed_gh_efficiency *= 100
+        # To be sure to have the efficiency in between 0 and 100
+        if self.gh_efficiency < 1:
+            self.gh_efficiency *= 100
 
         gh_cuts = calculate_percentile_cut(
             data["gh_score"],
             data["reco_energy"],
-            bins = energy_bins,
-            min_value = min_value,
-            max_value = max_value,
-            fill_value = data["gh_score"].max(),
-            percentile = 100 - self.fixed_gh_efficiency,
-            smoothing = smoothing,
-            min_events = min_events,
+            bins=energy_bins,
+            min_value=min_value,
+            max_value=max_value,
+            fill_value=data["gh_score"].max(),
+            percentile=100 - self.gh_efficiency,
+            smoothing=smoothing,
+            min_events=min_events,
         )
         return gh_cuts
 
-    def apply_optimized_gh_cuts(self, data, gh_cuts):
+    def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
-        Apply a given energy-dependent gh cuts to a data file, along the reco
+        Applying a given energy-dependent gh cuts to a data file, along the reco
         energy bins provided.
         """
 
@@ -123,13 +123,13 @@ class DL3FixedCuts(Component):
         )
         return data[data["selected_gh"]]
 
-    def theta_cut(self, data):
+    def apply_global_theta_cut(self, data):
         """
-        Apply a fixed global theta cut on a given data
+        Applying a global theta cut on a given data
         """
-        return data[data["theta"].to_value(u.deg) < self.fixed_theta_cut]
+        return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
-    def optimize_theta_cuts(
+    def energy_dependent_theta_cuts(
         self, data, energy_bins, min_value=0.05 * u.deg,
         fill_value=0.32 * u.deg, max_value=0.32 * u.deg,
         smoothing=None, min_events=10
@@ -137,27 +137,30 @@ class DL3FixedCuts(Component):
         """
         Evaluating an optimized energy-dependent theta cuts, in a given
         data, with provided reco energy bins, and other parameters to
-        pass to the pyirf.cuts.calculate_percentile_cut function
+        pass to the pyirf.cuts.calculate_percentile_cut function.
+
+        Note: Using too fine binning will result in too un-smooth cuts.
         """
-        if self.fixed_theta_containment < 1:
-            self.fixed_theta_containment *= 100
+        # To be sure to have the efficiency in between 0 and 100
+        if self.theta_containment < 1:
+            self.theta_containment *= 100
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],
             data["reco_energy"],
-            bins = energy_bins,
-            min_value = min_value,
-            max_value = max_value,
-            fill_value = fill_value,
-            percentile = self.fixed_theta_containment,
-            smoothing = smoothing,
-            min_events = min_events,
+            bins=energy_bins,
+            min_value=min_value,
+            max_value=max_value,
+            fill_value=fill_value,
+            percentile=self.theta_containment,
+            smoothing=smoothing,
+            min_events=min_events,
         )
         return theta_cuts
 
-    def apply_optimized_theta_cuts(self, data, theta_cuts):
+    def apply_energy_dependent_theta_cuts(self, data, theta_cuts):
         """
-        Apply a given energy-dependent theta cuts to a data file, along the
+        Applying a given energy-dependent theta cuts to a data file, along the
         reco energy bins provided.
         """
 
@@ -171,7 +174,7 @@ class DL3FixedCuts(Component):
 
     def allowed_tels_filter(self, data):
         """
-        Apply a filter on telescopes used for observation.
+        Applying a filter on telescopes used for observation.
         """
         mask = np.zeros(len(data), dtype=bool)
         for tel_id in self.allowed_tels:
@@ -197,7 +200,7 @@ class DataBinning(Component):
 
     true_energy_n_bins_per_decade = Float(
         help="Number of edges per decade for True Energy bins",
-        default_value=5.5,
+        default_value=5,
     ).tag(config=True)
 
     reco_energy_min = Float(
@@ -212,7 +215,7 @@ class DataBinning(Component):
 
     reco_energy_n_bins_per_decade = Float(
         help="Number of edges per decade for Reco Energy bins",
-        default_value=5.5,
+        default_value=5,
     ).tag(config=True)
 
     energy_migration_min = Float(

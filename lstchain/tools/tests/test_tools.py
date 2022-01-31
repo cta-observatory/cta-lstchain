@@ -84,10 +84,12 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
     )
 
 
-def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated_dl2_file):
+def test_create_irf_point_like_energy_dependent_cuts(
+    temp_dir_observed_files, simulated_dl2_file
+):
     """
     Generating point-like IRF file from a test DL2 files, using
-    energy-dependent optimized cuts
+    energy-dependent cuts
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
@@ -102,9 +104,9 @@ def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated
                 f"--input-electron-dl2={simulated_dl2_file}",
                 f"--output-irf-file={irf_file}",
                 "--overwrite",
-                "--optimize-gh",
+                "--energy-dependent-gh",
                 "--point-like",
-                "--optimize-th"
+                "--energy-dependent-theta"
             ],
             cwd=temp_dir_observed_files,
         )
@@ -113,10 +115,12 @@ def test_create_irf_point_like_optimized_cuts(temp_dir_observed_files, simulated
 
 
 @pytest.mark.private_data
-def test_create_dl3_optimized_cuts(temp_dir_observed_files, observed_dl2_file):
+def test_create_dl3_energy_dependent_cuts(
+    temp_dir_observed_files, observed_dl2_file
+):
     """
     Generating an DL3 file from a test DL2 files and test IRF file, using
-    optimized cuts
+    energy dependent cuts. Here the previously created IRF is used.
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
@@ -133,7 +137,6 @@ def test_create_dl3_optimized_cuts(temp_dir_observed_files, observed_dl2_file):
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
                 "--overwrite",
-                "--optimize-gh",
             ],
             cwd=temp_dir_observed_files,
         )
