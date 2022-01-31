@@ -92,7 +92,6 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "-o",
         merged_dl1_file,
         "--no-image",
-        "True",
     )
     return merged_dl1_file
 
@@ -232,8 +231,6 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
         temp_dir_observed_files,
         "-o",
         merged_dl1_observed_file,
-        "--no-image",
-        "False",
         "--run-number",
         "2008",
         "--pattern",
@@ -348,7 +345,7 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
         "-f", simulated_dl1_file,
         "-o", output_file,
         "-c", config_path,
-        '--no-image=True',
+        '--no-image',
     )
 
     with tables.open_file(output_file, 'r') as output:
@@ -370,14 +367,22 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
     run_program(
-        "lstchain_dl1ab", "-f", observed_dl1_files["dl1_file1"], "-o", output_dl1ab
+        "lstchain_dl1ab",
+        "-f", observed_dl1_files["dl1_file1"],
+        "-o", output_dl1ab,
+        "--no-pedestal-cleaning"
     )
     assert output_dl1ab.is_file()
+
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1.to_numpy(dtype='float'),
-                               dl1ab.to_numpy(dtype='float'), rtol=1e-3,
-                               equal_nan=True)
+
+    np.testing.assert_allclose(
+        dl1.to_numpy(dtype='float'),
+        dl1ab.to_numpy(dtype='float'),
+        rtol=1e-3,
+        equal_nan=True,
+    )
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
@@ -395,8 +400,7 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
         mc_gamma_testfile,
         "--path-models",
         rf_models["path"],
-        "--store-dl1",
-        "False",
+        "--no-dl1",
         "--output-dir",
         tmp_path,
     )
