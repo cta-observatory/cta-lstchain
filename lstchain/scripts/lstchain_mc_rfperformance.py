@@ -54,12 +54,12 @@ parser.add_argument('--input-file-proton-test', '--p-test', type=str,
                     help='path to the dl1 file of proton events for test')
 
 # Optional arguments
-
-parser.add_argument('--store-rf', '-s', action='store', type=bool,
-                    dest='storerf',
-                    help='Boolean. True for storing trained RF in 3 files'
-                         'Default=False, any user input will be considered True',
-                    default=True)
+parser.add_argument(
+    '--no-save-models',
+    dest='save_models',
+    action='store_false',
+    help='Disable storing trained models',
+)
 
 parser.add_argument('--batch', '-b', action='store', type=bool,
                     dest='batch',
@@ -80,13 +80,10 @@ parser.add_argument('--config', '-c', action='store', type=str,
 
 def main():
     args = parser.parse_args()
-    
+
     custom_config = {}
     if args.config_file is not None:
-        try:
-            custom_config = read_configuration_file(args.config_file)
-        except("Custom configuration could not be loaded !!!"):
-            pass
+        custom_config = read_configuration_file(args.config_file)
 
     config = replace_config(standard_config, custom_config)
 
@@ -97,7 +94,7 @@ def main():
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
-        save_models=args.storerf,
+        save_models=args.save_models,
         path_models=args.path_models,
         custom_config=config,
     )
