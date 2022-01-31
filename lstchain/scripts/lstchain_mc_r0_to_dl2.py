@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Pipeline to calibrate and compute image parameters at single telescope 
 level for MC.
@@ -17,8 +16,8 @@ $> python lstchain_mc_r0_to_dl2.py
 
 import argparse
 import os
-from distutils.util import strtobool
 from pathlib import Path
+import subprocess as sp
 
 from ctapipe.utils import get_dataset_path
 
@@ -33,28 +32,30 @@ parser.add_argument(
     help='path to the file with simtelarray events',
 )
 
-parser.add_argument('--path-models', '-p', action='store', type=str,
-                    dest='path_models',
-                    help='Path where to find the trained RF',
-                    default='./trained_models')
+parser.add_argument(
+    '--path-models', '-p',
+    help='Path where to find the trained RF',
+    default='./trained_models'
+)
 
 # Optional argument
-parser.add_argument('--store-dl1', '-s1', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='store_dl1',
-                    help='Boolean. True for storing DL1 file'
-                         'Default=False, use True otherwise',
-                    default=True)
+parser.add_argument(
+    '--no-dl1',
+    action='store_true',
+    help='If given, the dl1 file is removed after creating the dl2 output',
+)
 
-parser.add_argument('--output-dir', '-o', type=Path,
-                    dest='outdir',
-                    help='Path where to store the reco dl2 events',
-                    default='./dl2_data')
+parser.add_argument(
+    '--output-dir', '-o', type=Path,
+    help='Path where to store the reco dl2 events',
+    default='./dl2_data'
+)
 
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    '--config', '-c',
+    dest='config_file',
+    help='Path to a configuration file. If none is given, a standard configuration is applied',
+)
 
 
 def main():
@@ -66,21 +67,30 @@ def main():
     if args.datafile is None:
         args.datafile = get_dataset_path('gamma_test_large.simtel.gz')
 
-    outdir = args.outdir.absolute()
-    dl1_file = outdir / r0_to_dl1_filename(args.datafile.name)
+    output_dir = args.output_dir.absolute()
+    dl1_file = output_dir / r0_to_dl1_filename(args.datafile.name)
 
-    cmd_r0_to_dl1 = f'lstchain_mc_r0_to_dl1 -f {args.datafile} -o {outdir}'
+    cmd_r0_to_dl1 = [
+        'lstchain_mc_r0_to_dl1',
+        '-f', str(args.datafile),
+        '-o', str(output_dir),
+    ]
     if args.config_file is not None:
-        cmd_r0_to_dl1 = cmd_r0_to_dl1 + f' -conf {args.config_file}'
+        cmd_r0_to_dl1.extend(['--config', str(args.config_file)])
 
-    cmd_dl1_to_dl2 = f'lstchain_dl1_to_dl2 -f {dl1_file} -p {args.path_models} -o {outdir}'
+    cmd_dl1_to_dl2 = [
+        'lstchain_dl1_to_dl2',
+        '-f', str(dl1_file),
+        '-p', str(args.path_models),
+        '-o', str(output_dir),
+    ]
     if args.config_file is not None:
-        cmd_dl1_to_dl2 = cmd_dl1_to_dl2 + f' -conf {args.config_file}'
+        cmd_dl1_to_dl2.extend(['--config', str(args.config_file)])
 
-    os.system(cmd_r0_to_dl1)
-    os.system(cmd_dl1_to_dl2)
+    sp.run(cmd_r0_to_dl1, check=True)
+    sp.run(cmd_dl1_to_dl2, check=True)
 
-    if not args.store_dl1:
+    if args.no_dl1:
         os.remove(dl1_file)
 
 

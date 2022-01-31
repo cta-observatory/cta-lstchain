@@ -88,7 +88,6 @@ class PedestalIntegrator(PedestalCalculator):
         else:
             self.time_sampling_corrector = None
 
-
         # fix for broken extractor setup in ctapipe baseclass
         self.extractor = ImageExtractor.from_name(
             self.charge_product, parent=self, subarray=subarray
