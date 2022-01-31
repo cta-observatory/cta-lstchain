@@ -30,6 +30,7 @@ from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
+
 from lstchain.io.config import (
     get_cleaning_parameters,
     get_standard_config,
@@ -39,7 +40,8 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
-    read_metadata,
+    global_metadata, 
+    write_metadata,
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
@@ -198,7 +200,7 @@ def main():
     if args.no_image:
         nodes_keys.remove(dl1_images_lstcam_key)
 
-    metadata = read_metadata(args.input_file)
+    metadata = global_metadata()
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
@@ -333,6 +335,8 @@ def main():
             outfile.root[dl1_params_lstcam_key][:] = params
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
+
+        write_metadata(metadata, args.output_file)
 
 
 if __name__ == '__main__':
