@@ -68,6 +68,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--systematic-correction-file', '--systematics', type=Path,
+    help='Path to the file with the calibration systematics corrections'
+)
+
+parser.add_argument(
     '--config', '-c', type=Path,
     dest='config_file',
     help='Path to a configuration file. If none is given, a standard configuration is applied',
@@ -188,6 +193,10 @@ def main():
         lst_r0_corrections['calibration_path'] = args.calibration_file
     if args.time_calibration_file is not None:
         lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
+
+    calib_config = config[config['calibration_product']]
+    if args.systematic_correction_file is not None:
+        calib_config['systematic_correction_path'] = args.systematic_correction_file
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

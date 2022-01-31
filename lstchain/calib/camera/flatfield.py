@@ -94,7 +94,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             self.charge_product, parent=self, subarray=subarray
         )
 
-
     def _extract_charge(self, event):
         """
         Extract the charge and the time from a calibration event
@@ -122,8 +121,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         peak_pos = 0
         if self.extractor:
             charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
-
-
 
         # shift the time if time shift is already defined
         # (e.g. drs4 waveform time shifts for LST)
@@ -286,9 +283,9 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (trigger_time - time_start).value / 2 *u.s,
-            'sample_time_min': time_start.value*u.s,
-            'sample_time_max': trigger_time.value*u.s,
+            'sample_time': (time_start +(trigger_time - time_start) / 2).unix*u.s,
+            'sample_time_min': time_start.unix*u.s,
+            'sample_time_max': trigger_time.unix*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,
             'time_median': np.ma.getdata(pixel_median)*u.ns,
             'time_std': np.ma.getdata(pixel_std)*u.ns,
