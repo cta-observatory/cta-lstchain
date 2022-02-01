@@ -26,7 +26,7 @@ from lstchain.io import (
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
 )
-from lstchain.irf import (
+from lstchain.high_level import (
     add_icrs_position_params,
     create_event_list,
     set_expected_pos_to_reco_altaz,

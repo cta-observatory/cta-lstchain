@@ -81,6 +81,10 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger(__name__)
 
+    # Avoid "lies outside the camera" warnings from Camera geometry:
+    geomlogger = logging.getLogger('ctapipe.instrument.camera')
+    geomlogger.setLevel(logging.ERROR)
+
     if len(unknown) > 0:
         ukn = ''
         for s in unknown:
@@ -100,11 +104,12 @@ def main():
     # same directory):
     filenames.sort()
 
-    # if input files are existing dl1 datacheck .h5 files, just create the
-    # output pdf with the check plots (since nothing else can be done with
-    # that input, the create_pdf argument is ignored in that case:
+    # if input files are existing dl1 datacheck .h5 files, just call the
+    # plotting function (whih also produces a merged .h5 file containing by
+    # merging the input (typically subrun-wise) files:
     if os.path.basename(filenames[0]).startswith("datacheck_dl1"):
-        plot_datacheck(filenames, args.output_dir, args.batch, args.muons_dir)
+        plot_datacheck(filenames, args.output_dir, args.batch, args.muons_dir,
+                       not args.omit_pdf)
         return
 
     # otherwise, do the full analysis to produce the dl1_datacheck h5 file

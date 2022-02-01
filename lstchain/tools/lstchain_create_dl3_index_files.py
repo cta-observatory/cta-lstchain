@@ -14,7 +14,7 @@ from ctapipe.core import (
     traits,
 )
 
-from lstchain.irf import (
+from lstchain.high_level import (
     create_hdu_index_hdu,
     create_obs_index_hdu,
 )
