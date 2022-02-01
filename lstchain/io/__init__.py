@@ -1,4 +1,9 @@
-from .config import get_standard_config, replace_config, read_configuration_file
+from .config import (
+    get_standard_config,
+    get_srcdep_config,
+    replace_config, 
+    read_configuration_file,
+)
 from .lstcontainers import (
     DL1ParametersContainer,
     DispContainer,
@@ -27,6 +32,7 @@ from .io import (
 )
 
 standard_config = get_standard_config()
+srcdep_config = get_srcdep_config()
 
 __all__ = [
     'replace_config',
