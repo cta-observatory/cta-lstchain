@@ -167,9 +167,8 @@ class DataReductionFITSWriter(Tool):
                 )
         except:
             raise ToolConfigurationError(
-                f"{self.input_irf} does not have GH CUTS HDU, "
-                "the energy-dependent gammaness cuts HDU, or "
-                " any global cut information in the Header value"
+                f"{self.input_irf} does not have EFFECTIVE AREA HDU, "
+                " to check for global cut information in the Header value"
             )
 
     def start(self):
