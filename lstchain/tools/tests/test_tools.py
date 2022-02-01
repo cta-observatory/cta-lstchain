@@ -84,6 +84,36 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
     )
 
 
+def test_create_irf_point_like_srcdep(temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file):
+    """
+    Generating point-like source-dependent IRF file from a test DL2 files
+    """
+    from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+
+    irf_file = temp_dir_observed_srcdep_files / "irf.fits.gz"
+
+    assert (
+        run_tool(
+            IRFFITSWriter(),
+            argv=[
+                f"--input-gamma-dl2={simulated_srcdep_dl2_file}",
+                f"--output-irf-file={irf_file}",
+                "--point-like",
+                "--source-dep",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_srcdep_files,
+        )
+        == 0
+    )
+
+    with fits.open(irf_file) as hdul:
+        for hdu in hdul[1:]:
+            assert 'RAD_MAX' in hdu.header
+            assert isinstance(hdu.header['RAD_MAX'], float)
+
+
+
 @pytest.mark.private_data
 def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_file):
     """
