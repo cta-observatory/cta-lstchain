@@ -13,6 +13,7 @@
   "DL3FixedCuts": {
     "fixed_gh_cut": 0.7,
     "fixed_theta_cut": 0.2,
+    "fixed_alpha_cut": 10,
     "allowed_tels": [1]
   },
   "DataBinning": {
