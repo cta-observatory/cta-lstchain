@@ -92,6 +92,7 @@ def test_create_irf_point_like_energy_dependent_cuts(
     energy-dependent cuts
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
+    from gammapy.irf import RadMax2D
 
     irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
 
@@ -112,6 +113,8 @@ def test_create_irf_point_like_energy_dependent_cuts(
         )
         == 0
     )
+
+    assert RadMax2D.read(irf_file, hdu="RAD_MAX")
 
 
 @pytest.mark.private_data
@@ -214,6 +217,7 @@ def test_index_dl3_files(temp_dir_observed_files):
     Generating Index files from a given path and glob pattern for DL3 files
     """
     from lstchain.tools.lstchain_create_dl3_index_files import FITSIndexWriter
+    from gammapy.data import DataStore
 
     assert (
         run_tool(
@@ -226,3 +230,6 @@ def test_index_dl3_files(temp_dir_observed_files):
         )
         == 0
     )
+    data = DataStore.from_dir(temp_dir_observed_files)
+
+    assert 2008 in data.obs_table["OBS_ID"]

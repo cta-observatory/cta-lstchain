@@ -194,9 +194,8 @@ class DataReductionFITSWriter(Tool):
                 f'{self.energy_dependent_gh_cuts.meta["GH_EFF"]}'
             )
         else:
-            self.cuts.global_gh_cut = QTable.read(
-                self.input_irf, hdu=1
-            ).meta["GH_CUT"]
+            with fits.open(self.input_irf) as hdul:
+                self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
             self.data = self.cuts.apply_global_gh_cut(self.data)
             self.data = add_icrs_position_params(self.data, self.source_pos)
             self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
