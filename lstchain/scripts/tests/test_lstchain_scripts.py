@@ -21,7 +21,6 @@ from lstchain.io.io import (
     dl1_params_tel_mon_ped_key,
     dl1_params_tel_mon_cal_key,
     dl1_params_tel_mon_flat_key,
-    dl1_params_src_dep_lstcam_key,
 )
 
 from lstchain.io.config import get_standard_config
