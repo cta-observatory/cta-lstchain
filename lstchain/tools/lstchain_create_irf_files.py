@@ -329,7 +329,7 @@ class IRFFITSWriter(Tool):
                 gammas, self.gh_cuts_gamma
             )
             self.log.info(
-                f"Using gamma efficiency of {self.cuts.gh_efficiency} %"
+                f"Using gamma efficiency of {self.cuts.gh_efficiency}"
             )
         else:
             gammas = self.cuts.apply_global_gh_cut(gammas)
@@ -349,7 +349,7 @@ class IRFFITSWriter(Tool):
                 )
                 self.log.info(
                     "Using a containment region for theta of "
-                    f"{self.cuts.theta_containment} %"
+                    f"{self.cuts.theta_containment}"
                 )
             else:
                 gammas = self.cuts.apply_global_theta_cut(gammas)
@@ -369,6 +369,18 @@ class IRFFITSWriter(Tool):
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info('Multiple offset for diffuse gamma MC')
+
+            if self.energy_dependent_theta:
+                fov_offset_bins = [
+                    round(
+                        gammas["true_source_fov_offset"].min().to_value(), 1
+                    ),
+                    round(
+                        gammas["true_source_fov_offset"].max().to_value(), 1
+                    )
+                ] * u.deg
+                self.log.info("For RAD MAX, the full FoV is used")
+
 
         if not self.only_gamma_irf:
             background = table.vstack(

@@ -10,7 +10,7 @@ def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
 
     assert (
         run_tool(
@@ -33,7 +33,7 @@ def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
 
     assert (
         run_tool(
@@ -64,7 +64,7 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "./docs/examples/irf_tool_config.json")
 
     assert (
@@ -93,7 +93,7 @@ def test_create_irf_point_like_energy_dependent_cuts(
     """
     from lstchain.tools.lstchain_create_irf_files import IRFFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
 
     assert (
         run_tool(
@@ -123,8 +123,13 @@ def test_create_dl3_energy_dependent_cuts(
     energy dependent cuts. Here the previously created IRF is used.
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+    from gammapy.data import Observation
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
+
+    dl2_name = observed_dl2_file.name
+    observed_dl3_file = temp_dir_observed_files / dl2_name.replace('dl2', 'dl3')
+    observed_dl3_file = observed_dl3_file.with_suffix(".fits.gz")
 
     assert (
         run_tool(
@@ -142,6 +147,10 @@ def test_create_dl3_energy_dependent_cuts(
         )
         == 0
     )
+
+    assert Observation.read(
+        event_file=observed_dl3_file, irf_file=irf_file
+    ).obs_id == 2008
 
 
 @pytest.mark.private_data
@@ -168,6 +177,7 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
         == 0
     )
 
+
 @pytest.mark.private_data
 def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
@@ -176,7 +186,7 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
 
-    irf_file = temp_dir_observed_files / "irf.fits.gz"
+    irf_file = temp_dir_observed_files / "fe_irf.fits.gz"
     config_file = os.path.join(os.getcwd(), "docs/examples/dl3_tool_config.json")
 
     assert (

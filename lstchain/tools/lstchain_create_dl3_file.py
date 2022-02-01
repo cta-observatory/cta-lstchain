@@ -165,7 +165,7 @@ class DataReductionFITSWriter(Tool):
                 self.use_energy_dependent_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
-        except KeyError:
+        except:
             raise ToolConfigurationError(
                 f"{self.input_irf} does not have GH CUTS HDU, "
                 "the energy-dependent gammaness cuts HDU, or "
@@ -194,6 +194,9 @@ class DataReductionFITSWriter(Tool):
                 f'{self.energy_dependent_gh_cuts.meta["GH_EFF"]}'
             )
         else:
+            self.cuts.global_gh_cut = QTable.read(
+                self.input_irf, hdu=1
+            ).meta["GH_CUT"]
             self.data = self.cuts.apply_global_gh_cut(self.data)
             self.data = add_icrs_position_params(self.data, self.source_pos)
             self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
