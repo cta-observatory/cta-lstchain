@@ -15,10 +15,11 @@ from .version import __version__
 
 __all__ = [
     "__version__",
+    "data",
+    "high_level",
     "calib",
     "image",
     "io",
-    "irf",
     "mc",
     "reco",
     "spectra",
