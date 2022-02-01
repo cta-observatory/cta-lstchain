@@ -1030,6 +1030,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0c.child = grid0c
     page0c.title = 'Pointing'
 
+    # Lists to store arrays containing the number of runs in which a pixel
+    # exceeds a limit in any of the checked quantities:
+    pixel_problems = []
+    check_name = []
+
     page1 = Panel()
     pad_width = 350
     pad_height = 370
@@ -1046,8 +1051,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        content_upplim=ped_max_charge_stddev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ped_pix_charge_stddev'])
-    pixel_report('Pedestal standard deviation', stddev_no_stars,
-                 0, ped_max_charge_stddev, run_fraction)
+    _, too_high = pixel_report('Pedestal standard deviation', stddev_no_stars,
+                               0, ped_max_charge_stddev, run_fraction)
+    pixel_problems.append(too_high)
+    check_name.append("Too high pedestal charge std dev")
 
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1069,10 +1076,13 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # those calculated excluding the subruns in which a given pixel was close
     # to any bright star:
     mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_charge_mean'])
-    pixel_report('Flat-Field mean charge', mean_no_stars,
-                 ff_charge * (1 - ff_charge_tolerance),
-                 ff_charge * (1 + ff_charge_tolerance),
-                 run_fraction)
+    too_low, too_high = pixel_report('Flat-Field mean charge', mean_no_stars,
+                                     ff_charge * (1 - ff_charge_tolerance),
+                                     ff_charge * (1 + ff_charge_tolerance),
+                                     run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low flatfield mean charge",
+                       "Too high flatfield mean charge"])
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field charge std dev (pe)',
@@ -1096,8 +1106,14 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        content_upplim=ff_max_rel_time)
 
     mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_rel_time_mean'])
-    pixel_report('Flat-Field mean relative time', mean_no_stars,
-                 ff_min_rel_time, ff_max_rel_time, run_fraction)
+    too_low, too_high = pixel_report('Flat-Field mean relative time',
+                                     mean_no_stars,
+                                     ff_min_rel_time, ff_max_rel_time,
+                                     run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low flatfield mean relative time",
+                       "Too high flatfield mean relative time"])
+
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
@@ -1106,8 +1122,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        content_upplim=ff_max_rel_time_stdev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ff_pix_rel_time_stddev'])
-    pixel_report('Flat-Field rel. time std dev', stddev_no_stars, 0,
-                 ff_max_rel_time_stdev, run_fraction)
+    _, too_high = pixel_report('Flat-Field rel. time std dev',
+                               stddev_no_stars, 0, ff_max_rel_time_stdev,
+                               run_fraction)
+    pixel_problems.append(too_high)
+    check_name.append("Too high flatfield relative time std dev")
 
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1152,8 +1171,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         pixwise_runsummary_no_stars['cosmics_pix_fraction_pulses_above30'] *
         pixwise_runsummary_no_stars['ncosmics_per_pix'] /
         pixwise_runsummary_no_stars['elapsed_time_per_pix'])
-    pixel_report('Cosmics, rate of >30pe pulses', pulse_rate_above_30_no_stars,
-                 r30_lowlim, r30_upplim, run_fraction)
+    too_low, too_high = pixel_report('Cosmics, rate of >30pe pulses',
+                                     pulse_rate_above_30_no_stars,
+                                     r30_lowlim, r30_upplim, run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low rate of >30 pe cosmics pulses",
+                       "Too high rate of >30 pe cosmics pulses"])
 
     grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1187,6 +1210,29 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                      plot_height=pad_height)
     page4b.child = grid4b
     page4b.title = 'Cosmics'
+
+    # Now we make a page with a summary of the pixel problems (in what
+    # fraction of the runs each pixel showed a given problem)
+    page4c = Panel()
+    fraction_of_runs = np.array(pixel_problems) / len(runsummary)
+
+    row = show_camera(fraction_of_runs, engineering_geom,
+                      pad_width, pad_height,
+                      'Fraction of runs', titles=check_name,
+                      showlog=False,
+                      display_range=(1e-6, 1.1))
+    # We set the minimum to non-zero so pixels without problems appear in grey
+
+    row[0].title = 'issue'
+    # show in red pixels with issues in more than half of the runs (for some
+    # reason this does not work until one clicks on the z-range slider of one
+    # of the plots):
+    row[2].value=(1e-6, 0.5)
+
+    grid4c = gridplot([row], sizing_mode=None, plot_width=pad_width,
+                      plot_height=pad_height)
+    page4c.child = grid4c
+    page4c.title = 'Pixel problems'
 
     page5 = Panel()
     pad_width = 550
@@ -1416,8 +1462,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page8.title = "Cosmics, averages"
 
     tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
-                      page3, page4, page4b, page5, page6,
-                      page7, page8])
+                      page3, page4, page4b, page4c, page5,
+                      page6, page7, page8])
 
     if batch:
         save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
@@ -1540,13 +1586,15 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     Returns
     -------
+    too_low_count, too_high_count: ndarrays [num_pixels]  Number of runs in
+    which each pixel was below low_limit and above upp_limit respectively
 
     '''
 
     npixels = value.shape[1]
 
     # maximum fraction of faulty pixels that will be reported individually.
-    # Beyomd that just a generic warning is displayed:
+    # Beyond that, just a generic warning is displayed:
     max_fraction_for_detailed_warning = 0.05
 
     too_low = value < low_limit
@@ -1580,7 +1628,7 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     log.info('')
 
-    return
+    return too_low_count, too_high_count
 
 def get_datacheck_table(filename, tablename, exclude_stars=False):
     """
