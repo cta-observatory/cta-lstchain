@@ -27,6 +27,7 @@ copy and append the relevant example config files, into a custom config file.
 
 from astropy import table
 from astropy.io import fits
+from astropy.time import Time
 import astropy.units as u
 import numpy as np
 
@@ -69,6 +70,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
+from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
 
@@ -390,7 +392,10 @@ class IRFFITSWriter(Tool):
 
         # For a global gh/theta cut, only a header value is added.
         # For energy-dependent cuts, along with GADF specified RAD_MAX HDU,
-        # a new HDU is created, GH_CUT which is based on RAD_MAX table
+        # a new HDU is created, GH_CUTS which is based on RAD_MAX table
+
+        # NOTE: The GH_CUTS HDU is just for provenance and is not supported
+        # by GADF or used by any Science Tools
         extra_headers = {
             "TELESCOP": "CTA-N",
             "INSTRUME": "LST-" + " ".join(map(str, self.cuts.allowed_tels)),
@@ -518,9 +523,13 @@ class IRFFITSWriter(Tool):
             self.log.info("PSF HDU created")
 
         if self.energy_dependent_gh:
-            gh_header = self.hdus[1].header.copy()
-            gh_header["HDUCLAS2"] = "GH_CUTS"
-            gh_header["HDUCLAS4"] = "GH_CUTS_2D"
+            # Create a separate temporary header
+            gh_header = fits.Header()
+            gh_header["CREATOR"] = f"lstchain v{__version__}"
+            gh_header["DATE"] = Time.now().utc.iso
+            
+            for k,v in extra_headers.items():
+                gh_header[k] = v
 
             self.hdus.append(
                 fits.BinTableHDU(

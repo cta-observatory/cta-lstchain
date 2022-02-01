@@ -155,18 +155,16 @@ class DataReductionFITSWriter(Tool):
         self.log.debug(f"Output DL3 file: {self.output_file}")
 
         try:
-            QTable.read(self.input_irf, hdu=1).meta["GH_CUT"]
-            self.energy_dependent_cuts = False
-        except KeyError:
-            try:
-                QTable.read(self.input_irf, hdu="GH_CUTS")
-                self.energy_dependent_cuts = True
-            except KeyError:
-                raise ToolConfigurationError(
-                    f"{self.input_irf} does not have GH CUTS HDU, "
-                    "the energy-dependent gammaness cuts HDU, or "
-                    " any global cut information in the Header value"
+            with fits.open(self.input_irf) as hdul:
+                self.use_energy_dependent_cuts = (
+                    "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
+        except KeyError:
+            raise ToolConfigurationError(
+                f"{self.input_irf} does not have GH CUTS HDU, "
+                "the energy-dependent gammaness cuts HDU, or "
+                " any global cut information in the Header value"
+            )
 
     def start(self):
 
@@ -176,7 +174,7 @@ class DataReductionFITSWriter(Tool):
 
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.energy_dependent_cuts:
+        if self.use_energy_dependent_cuts:
             self.energy_dependent_gh_cuts = QTable.read(
                 self.input_irf, hdu="GH_CUTS"
             )
