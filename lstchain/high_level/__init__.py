@@ -1,4 +1,4 @@
-from .post_dl2 import (
+from .significance_calculation import (
     analyze_on_off,
     analyze_wobble,
     setup_logging,
