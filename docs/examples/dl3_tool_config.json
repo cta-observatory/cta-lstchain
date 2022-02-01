@@ -7,7 +7,7 @@
       "r": [0, 1],
       "wl": [0.1, 1],
       "leakage_intensity_width_2": [0, 0.2],
-      "event_type": [32, 33]
+      "event_type": [32, 32]
     }
   },
   "DL3Cuts": {

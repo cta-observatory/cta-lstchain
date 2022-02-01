@@ -7,8 +7,8 @@ The default values are written in the EventSelector and DL3Cuts Component
 and also given in some example configs in docs/examples/
 
 For the cuts on gammaness, the Tool looks at the IRF provided, to either use
-global cuts, based on the header value of the global cut, present in each HDU,
-or energy-dependent cuts, based on the GH_CUTS HDU.
+global cuts, based on the header value of the global gammaness cut, GH_CUT,
+present in each HDU, or energy-dependent cuts, based on the GH_CUTS HDU.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.

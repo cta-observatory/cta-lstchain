@@ -117,8 +117,8 @@ class IRFFITSWriter(Tool):
         --point-like (Only for point_like IRFs)
         --energy-dependent-gh
         --energy-dependent-theta
-        --gh-efficiency 95
-        --theta-containment 68
+        --gh-efficiency 0.95
+        --theta-containment 0.68
     """
 
     input_gamma_dl2 = traits.Path(

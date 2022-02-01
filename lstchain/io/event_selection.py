@@ -20,10 +20,9 @@ class EventSelector(Component):
     taken as inputs and filter_events() is used on a table of events
     called in with the Component.
 
-    For event_type, we choose the sub-array trigger, EventType.SUBARRAY.value =
+    For event_type, we choose the sub-array trigger, EventType.SUBARRAY.value,
     32, which is for shower event candidate, as per the latest CTA R1 Event
     Data Model.
-    So we add a free max value - 33, to use in the filter_events function.
     """
 
     filters = Dict(

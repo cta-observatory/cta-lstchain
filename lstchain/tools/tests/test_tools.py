@@ -27,6 +27,7 @@ def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
         == 0
     )
 
+
 def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
     """
     Generating point-like IRF file from a test DL2 files
