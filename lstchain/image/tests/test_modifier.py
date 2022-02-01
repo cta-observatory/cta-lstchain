@@ -84,7 +84,7 @@ def test_tune_nsb_on_waveform():
     import astropy.units as u
     from scipy.interpolate import interp1d
     from lstchain.image.modifier import tune_nsb_on_waveform
-    from lstchain.analysis.normalised_pulse_template import NormalizedPulseTemplate
+    from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
     waveform = np.array(
         [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
          [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]]

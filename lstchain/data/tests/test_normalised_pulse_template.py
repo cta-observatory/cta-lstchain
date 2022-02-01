@@ -1,5 +1,5 @@
 import numpy as np
-from lstchain.analysis.normalised_pulse_template import NormalizedPulseTemplate
+from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
 
 def test_load_from_file_and_miscellaneous(tmp_path):
