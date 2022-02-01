@@ -20,9 +20,10 @@ from ctapipe.core import (
     traits,
 )
 
-from lstchain.io import EventSelector, DL3FixedCuts
 from lstchain.io import (
-    get_srcdep_index_keys,
+    EventSelector,
+    DL3FixedCuts
+    get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
 )
 from lstchain.irf import (
@@ -187,9 +188,9 @@ class DataReductionFITSWriter(Tool):
 
         else:
             # source-dependent analysis
-            srcdep_wobble_angles = get_srcdep_index_keys(self.input_dl2)
+            srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
 
-            for i, srcdep_pos in enumerate(srcdep_wobble_angles):
+            for i, srcdep_pos in enumerate(srcdep_assumed_positions):
                 data_temp = read_data_dl2_to_QTable(str(self.input_dl2), srcdep_pos=srcdep_pos)
 
                 if i==0:
