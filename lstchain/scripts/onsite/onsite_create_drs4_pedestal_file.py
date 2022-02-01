@@ -15,6 +15,7 @@ from pathlib import Path
 import lstchain
 import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
+from lstchain.onsite import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -79,14 +80,7 @@ def main():
 
     # update the default production directory
     if pro_symlink:
-        pro = "pro"
-        pro_dir = f"{output_dir}/../{pro}"
-        if os.path.exists(pro_dir):
-            os.remove(pro_dir)
-        os.symlink(prod_id, pro_dir)
-        print("\n--> Use symbolic link pro")
-    else:
-        pro = prod_id
+        create_pro_symlink(output_dir, prod_id)
 
     # make log dir
     log_dir = f"{output_dir}/log"
