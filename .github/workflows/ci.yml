@@ -46,7 +46,7 @@ jobs:
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov pyflakes 'coverage!=6.3.0'
+            pytest-cov pyflakes 'coverage!=6.3.0' pytest-xdist
 
           echo "pip install ."
           pip install .
@@ -70,7 +70,7 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest --cov --cov-report=xml -m 'private_data or not private_data' lstchain
+          pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v1
         with:
