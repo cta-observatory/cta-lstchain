@@ -13,7 +13,7 @@ import subprocess
 
 import lstchain
 from lstchain.io.data_management import query_yes_no
-from lstchain.scripts.onsite.paths import create_pro_symlink
+from lstchain.onsite import create_pro_symlink
 
 def none_or_str(value):
     if value == "None":
@@ -69,6 +69,7 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
 
     if pro_symlink:
+        pro = "pro"
         create_pro_symlink(output_dir, prod_id)
     else:
         pro = prod_id
