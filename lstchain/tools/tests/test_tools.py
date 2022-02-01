@@ -185,7 +185,6 @@ def test_create_srcdep_dl3(temp_dir_observed_srcdep_files, observed_srcdep_dl2_f
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",
-                "--point-like",
                 "--source-dep",
                 "--overwrite",
             ],
