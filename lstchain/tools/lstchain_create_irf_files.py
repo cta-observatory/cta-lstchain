@@ -317,10 +317,6 @@ class IRFFITSWriter(Tool):
             background = self.fixed_cuts.allowed_tels_filter(background)
             background = self.fixed_cuts.gh_cut(background)
 
-            if self.source_dep:
-                background = self.fixed_cuts.alpha_cut(background)
-                background['reco_source_fov_offset'] = gammas["true_source_fov_offset"].mean().to_value() * u.deg
-
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
 
         # For a fixed gh/theta cut, only a header value is added.
