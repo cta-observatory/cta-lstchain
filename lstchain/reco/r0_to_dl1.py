@@ -30,7 +30,7 @@ from traitlets.config import Config
 from . import disp
 from .utils import sky_to_camera
 from .volume_reducer import apply_volume_reduction
-from ..analysis import NormalizedPulseTemplate
+from ..data import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning

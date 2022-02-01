@@ -44,12 +44,10 @@ def test_dl3_global_cuts():
     temp_cuts.global_gh_cut = 0.7
     temp_cuts.global_theta_cut = 0.2
     temp_cuts.allowed_tels = [1, 2]
-    temp_cuts.gh_max_efficiency = 0.8
-    temp_cuts.theta_containment = 68
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
-        "reco_energy": u.Quantity(np.logspace(-2.301, 1.699, 30), unit=u.TeV),
+        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
         "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
         "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
         "mc_type": u.Quantity(np.repeat([0], 30)),
@@ -63,12 +61,12 @@ def test_dl3_global_cuts():
 def test_dl3_energy_dependent_cuts():
     temp_cuts = DL3Cuts()
 
-    temp_cuts.gh_max_efficiency = 0.8
+    temp_cuts.gh_max_efficiency = 80
     temp_cuts.theta_containment = 68
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
-        "reco_energy": u.Quantity(np.logspace(-2.301, 1.699, 30), unit=u.TeV),
+        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
         "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
         "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
         "mc_type": u.Quantity(np.repeat([0], 30)),
@@ -86,10 +84,10 @@ def test_dl3_energy_dependent_cuts():
     data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
     data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
 
-    assert theta_cut["cut"][0] == 0.2624 * u.deg
-    assert gh_cut["cut"][1] == 0.365
+    assert theta_cut["cut"][0] == 0.0908 * u.deg
+    assert gh_cut["cut"][1] == 0.3725
     assert len(data_th) == 21
-    assert len(data_gh) == 25
+    assert len(data_gh) == 26
 
 
 def test_data_binning():

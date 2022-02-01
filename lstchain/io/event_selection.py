@@ -2,6 +2,7 @@ import numpy as np
 import operator
 import astropy.units as u
 
+from ctapipe.containers import EventType
 from ctapipe.core import Component
 from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
@@ -19,8 +20,9 @@ class EventSelector(Component):
     taken as inputs and filter_events() is used on a table of events
     called in with the Component.
 
-    For event_type, we choose the sub-array trigger of 32, which is for
-    gamma-ray event candidate, as per the latest CTA R1 Event Data Model.
+    For event_type, we choose the sub-array trigger, EventType.SUBARRAY.value =
+    32, which is for shower event candidate, as per the latest CTA R1 Event
+    Data Model.
     So we add a free max value - 33, to use in the filter_events function.
     """
 
@@ -30,7 +32,7 @@ class EventSelector(Component):
             "r": [0, 1],
             "wl": [0.01, 1],
             "leakage_intensity_width_2": [0, 1],
-            "event_type": [32, 33],
+            "event_type": [EventType.SUBARRAY.value, EventType.SUBARRAY.value],
         },
     ).tag(config=True)
 
@@ -92,9 +94,6 @@ class DL3Cuts(Component):
         data, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function
         """
-        # To be sure to have the efficiency in between 0 and 100
-        if self.gh_efficiency < 1:
-            self.gh_efficiency *= 100
 
         gh_cuts = calculate_percentile_cut(
             data["gh_score"],
@@ -141,9 +140,6 @@ class DL3Cuts(Component):
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        # To be sure to have the efficiency in between 0 and 100
-        if self.theta_containment < 1:
-            self.theta_containment *= 100
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],

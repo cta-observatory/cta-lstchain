@@ -329,7 +329,7 @@ class IRFFITSWriter(Tool):
                 gammas, self.gh_cuts_gamma
             )
             self.log.info(
-                f"Using gamma efficiency of {self.cuts.gh_efficiency}"
+                f"Using gamma efficiency of {self.cuts.gh_efficiency} %"
             )
         else:
             gammas = self.cuts.apply_global_gh_cut(gammas)
@@ -527,8 +527,8 @@ class IRFFITSWriter(Tool):
             gh_header = fits.Header()
             gh_header["CREATOR"] = f"lstchain v{__version__}"
             gh_header["DATE"] = Time.now().utc.iso
-            
-            for k,v in extra_headers.items():
+
+            for k, v in extra_headers.items():
                 gh_header[k] = v
 
             self.hdus.append(
