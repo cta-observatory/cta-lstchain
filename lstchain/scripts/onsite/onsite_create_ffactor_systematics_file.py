@@ -13,7 +13,7 @@ import subprocess
 
 import lstchain
 from lstchain.io.data_management import query_yes_no
-import lstchain.scripts.onsite.paths import create_pro_symlink
+from lstchain.scripts.onsite.paths import create_pro_symlink
 
 def none_or_str(value):
     if value == "None":

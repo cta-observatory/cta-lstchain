@@ -15,7 +15,7 @@ from pathlib import Path
 import lstchain
 import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
-import lstchain.scripts.onsite.paths import create_pro_symlink
+from lstchain.scripts.onsite.paths import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',

@@ -14,7 +14,7 @@ import subprocess
 from pathlib import Path
 
 import lstchain
-import lstchain.scripts.onsite.paths import create_pro_symlink
+from lstchain.scripts.onsite.paths import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create time calibration files',

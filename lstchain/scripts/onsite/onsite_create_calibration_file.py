@@ -19,7 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
-import lstchain.scripts.onsite.paths import create_pro_symlink
+from lstchain.scripts.onsite.paths import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
