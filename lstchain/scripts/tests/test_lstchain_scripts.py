@@ -297,6 +297,23 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
+    assert simulated_srcdep_dl2_file.is_file()
+    dl2_srcdep_df = get_srcdep_params(simulated_srcdep_dl2_file)
+    assert "expected_src_x" in dl2_srcdep_df['on'].columns
+    assert "expected_src_y" in dl2_srcdep_df['on'].columns
+    assert "dist" in dl2_srcdep_df['on'].columns
+    assert "alpha" in dl2_srcdep_df['on'].columns
+    assert "time_gradient_from_source" in dl2_srcdep_df['on'].columns
+    assert "skewness_from_source" in dl2_srcdep_df['on'].columns
+    assert "gammaness" in dl2_srcdep_df['on'].columns
+    assert "reco_type" in dl2_srcdep_df['on'].columns
+    assert "reco_energy" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
+    assert "reco_src_x" in dl2_srcdep_df['on'].columns
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns
+
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
     run_program(

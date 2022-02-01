@@ -198,6 +198,27 @@ def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
 
 
 @pytest.fixture(scope="session")
+def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_file, rf_models_srcdep):
+    """
+    Produce the test source-dependent dl2 file from the simulated dl1 test file
+    using the random forest test models.
+    """
+    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_gamma_test_large.h5"
+    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    run_program(
+        "lstchain_dl1_to_dl2",
+        "--input-file",
+        simulated_dl1_file,
+        "--path-models",
+        rf_models_srcdep["path"],
+        "--output-dir",
+        temp_dir_simulated_srcdep_files,
+        "--config",
+        srcdep_config_file,
+    )
+    return srcdep_dl2_file
+
+@pytest.fixture(scope="session")
 def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     """
     Produce a fake dl1 proton file by copying the dl2 gamma test file
