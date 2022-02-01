@@ -211,7 +211,7 @@ def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_fil
     using the random forest test models.
     """
     srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_gamma_test_large.h5"
-    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
@@ -276,7 +276,7 @@ def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
     file_model_gh_sep_srcdep = models_srcdep_path / "cls_gh.sav"
     file_model_disp_norm_srcdep = models_srcdep_path / "reg_disp_norm.sav"
     file_model_disp_sign_srcdep = models_srcdep_path / "cls_disp_sign.sav"
-    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
 
     run_program(
         "lstchain_mc_trainpipe",
@@ -319,7 +319,7 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
 def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files, rf_models_srcdep):
     """Produce a source-dependent dl2 file from an observed dl1 file."""
     real_data_srcdep_dl2_file = temp_dir_observed_srcdep_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
-    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
