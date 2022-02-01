@@ -22,7 +22,7 @@ from ctapipe.core import (
 
 from lstchain.io import (
     EventSelector,
-    DL3FixedCuts
+    DL3FixedCuts,
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
 )

@@ -169,6 +169,34 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
 
 
 @pytest.mark.private_data
+def test_create_srcdep_dl3(temp_dir_observed_srcdep_files, observed_srcdep_dl2_file, simulated_srcdep_irf_file):
+    """
+    Generating a source-dependent DL3 file from a test DL2 files and test IRF file
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_srcdep_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_srcdep_files}",
+                f"--input-irf={simulated_srcdep_irf_file}",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                "--point-like",
+                "--source-dep",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_srcdep_files,
+        )
+        == 0
+    )
+
+
+
+@pytest.mark.private_data
 def test_index_dl3_files(temp_dir_observed_files):
     """
     Generating Index files from a given path and glob pattern for DL3 files
