@@ -54,6 +54,13 @@ def temp_dir_observed_files(tmp_path_factory):
     return tmp_path_factory.mktemp("observed_files")
 
 
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def temp_dir_observed_srcdep_files(tmp_path_factory):
+    """Temporal common directory for processing observed data."""
+    return tmp_path_factory.mktemp("observed_srcdep_files")
+
+
 @pytest.fixture(scope="session")
 def mc_gamma_testfile():
     """Get a simulated test file."""
@@ -305,6 +312,26 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
         temp_dir_observed_files
     )
     return real_data_dl2_file
+
+
+@pytest.fixture(scope="session")
+@pytest.mark.private_data
+def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files, rf_models_srcdep):
+    """Produce a source-dependent dl2 file from an observed dl1 file."""
+    real_data_srcdep_dl2_file = temp_dir_observed_srcdep_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
+    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    run_program(
+        "lstchain_dl1_to_dl2",
+        "--input-file",
+        observed_dl1_files["dl1_file1"],
+        "--path-models",
+        rf_models_srcdep["path"],
+        "--output-dir",
+        temp_dir_observed_srcdep_files,
+        "--config",
+        srcdep_config_file,
+    )
+    return real_data_srcdep_dl2_file
 
 
 @pytest.fixture(scope="session")

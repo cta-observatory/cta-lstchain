@@ -297,6 +297,7 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+
 def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert simulated_srcdep_dl2_file.is_file()
     dl2_srcdep_df = get_srcdep_params(simulated_srcdep_dl2_file)
@@ -312,7 +313,8 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+
 
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
@@ -341,6 +343,32 @@ def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
     assert "reco_src_y" in dl2_df.columns
     assert "reco_disp_dx" in dl2_df.columns
     assert "reco_disp_dy" in dl2_df.columns
+
+
+@pytest.mark.private_data
+def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
+    assert observed_srcdep_dl2_file.is_file()
+    dl2_srcdep_df = get_srcdep_params(observed_srcdep_dl2_file)
+    srcdep_assumed_positions = ['on', 'off_090', 'off_180', 'off_270']
+    srcdep_dl2_params = [
+        'expected_src_x',
+        'expected_src_y',
+        'dist',
+        'alpha',
+        'time_gradient_from_source',
+        'skewness_from_source',
+        'gammaness',
+        'reco_type',
+        'reco_energy',
+        'reco_disp_dx',
+        'reco_disp_dy',
+        'reco_src_x',
+        'reco_src_y'
+    ]
+
+    for srcdep_assumed_position in srcdep_assumed_positions:
+        for srcdep_dl2_param in srcdep_dl2_params:
+            assert srcdep_dl2_param in dl2_srcdep_df[srcdep_assumed_position].columns
 
 
 def test_dl1ab(simulated_dl1ab):
