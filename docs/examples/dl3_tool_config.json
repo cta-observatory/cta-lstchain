@@ -12,9 +12,9 @@
   },
   "DL3Cuts": {
     "global_gh_cut": 0.7,
-    "gh_efficiency": 90,
+    "gh_efficiency": 0.9,
     "global_theta_cut": 0.2,
-    "theta_containment": 68,
+    "theta_containment": 0.68,
     "allowed_tels": [1]
   }
 }

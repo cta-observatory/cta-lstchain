@@ -61,8 +61,8 @@ def test_dl3_global_cuts():
 def test_dl3_energy_dependent_cuts():
     temp_cuts = DL3Cuts()
 
-    temp_cuts.gh_max_efficiency = 80
-    temp_cuts.theta_containment = 68
+    temp_cuts.gh_max_efficiency = 0.8
+    temp_cuts.theta_containment = 0.68
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),

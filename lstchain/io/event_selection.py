@@ -60,12 +60,12 @@ class DL3Cuts(Component):
 
     gh_efficiency = Float(
         help="Gamma efficiency for optimized g/h cuts in %",
-        default_value=95,
+        default_value=0.95,
     ).tag(config=True)
 
     theta_containment = Float(
         help="Percentage containment region for theta cuts",
-        default=68,
+        default=0.68,
     ).tag(config=True)
 
     global_theta_cut = Float(
@@ -102,7 +102,7 @@ class DL3Cuts(Component):
             min_value=min_value,
             max_value=max_value,
             fill_value=data["gh_score"].max(),
-            percentile=100 - self.gh_efficiency,
+            percentile=100 * (1 - self.gh_efficiency),
             smoothing=smoothing,
             min_events=min_events,
         )
@@ -148,7 +148,7 @@ class DL3Cuts(Component):
             min_value=min_value,
             max_value=max_value,
             fill_value=fill_value,
-            percentile=self.theta_containment,
+            percentile=100 * self.theta_containment,
             smoothing=smoothing,
             min_events=min_events,
         )
