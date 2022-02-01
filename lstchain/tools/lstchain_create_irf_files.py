@@ -18,6 +18,7 @@ import astropy.units as u
 import numpy as np
 from astropy import table
 from astropy.io import fits
+from traitlets import Undefined
 from ctapipe.core import (
     Provenance,
     Tool,
@@ -192,7 +193,7 @@ class IRFFITSWriter(Tool):
         if not (filename.endswith('.fits') or filename.endswith('.fits.gz')):
             raise ValueError("f{filename} is not a correct compressed FITS file name (use .fits or .fits.gz).")
 
-        if self.input_proton_dl2 and self.input_electron_dl2 is not None:
+        if self.input_proton_dl2 and self.input_electron_dl2 is not Undefined:
             self.only_gamma_irf = False
         else:
             self.only_gamma_irf = True
