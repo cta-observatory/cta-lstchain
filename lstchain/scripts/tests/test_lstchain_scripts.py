@@ -184,6 +184,13 @@ def test_lstchain_mc_trainpipe(rf_models):
     assert rf_models["gh_sep"].is_file()
 
 
+def test_lstchain_mc_trainpipe_srcdep(rf_models_srcdep):
+    assert rf_models_srcdep["energy"].is_file()
+    assert rf_models_srcdep["disp_norm"].is_file()
+    assert rf_models_srcdep["disp_sign"].is_file()
+    assert rf_models_srcdep["gh_sep"].is_file()
+
+
 def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton_file):
     gamma_file = simulated_dl1_file
     proton_file = fake_dl1_proton_file

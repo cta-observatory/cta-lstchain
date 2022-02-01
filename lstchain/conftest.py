@@ -2,6 +2,7 @@ from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
 from ctapipe.utils import get_dataset_path
+import os
 
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.scripts.tests.test_lstchain_scripts import run_program
@@ -39,6 +40,11 @@ def lst1_subarray():
 def temp_dir_simulated_files(tmp_path_factory):
     """Temporal common directory for processing simulated data."""
     return tmp_path_factory.mktemp("simulated_files")
+
+@pytest.fixture(scope="session")
+def temp_dir_simulated_srcdep_files(tmp_path_factory):
+    """Temporal common directory for processing simulated data for source-dependent analysis."""
+    return tmp_path_factory.mktemp("simulated_srcdep_files")
 
 
 @pytest.mark.private_data
@@ -232,6 +238,36 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
         "disp_sign": file_model_disp_sign,
     }
 
+@pytest.fixture(scope="session")
+def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+    """Produce test random forest models for source-dependent analysis."""
+    gamma_file = simulated_dl1_file
+    proton_file = simulated_dl1_file
+    models_srcdep_path = temp_dir_simulated_srcdep_files
+    file_model_energy_srcdep = models_srcdep_path / "reg_energy.sav"
+    file_model_gh_sep_srcdep = models_srcdep_path / "cls_gh.sav"
+    file_model_disp_norm_srcdep = models_srcdep_path / "reg_disp_norm.sav"
+    file_model_disp_sign_srcdep = models_srcdep_path / "cls_disp_sign.sav"
+    srcdep_config_file = config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+
+    run_program(
+        "lstchain_mc_trainpipe",
+        "--fg",
+        gamma_file,
+        "--fp",
+        proton_file,
+        "-o",
+        models_srcdep_path,
+        "-c",
+        srcdep_config_file,
+    )
+    return {
+        "energy": file_model_energy_srcdep,
+        "gh_sep": file_model_gh_sep_srcdep,
+        "path": models_srcdep_path,
+        "disp_norm": file_model_disp_norm_srcdep,
+        "disp_sign": file_model_disp_sign_srcdep,
+    }
 
 @pytest.fixture(scope="session")
 @pytest.mark.private_data
