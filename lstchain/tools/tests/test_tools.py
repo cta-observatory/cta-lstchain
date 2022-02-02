@@ -2,7 +2,7 @@ import pytest
 from ctapipe.core import run_tool
 import os
 from astropy.io import fits
-
+import numpy as np
 
 def test_create_irf_full_enclosure(temp_dir_observed_files, simulated_dl2_file):
     """
@@ -262,7 +262,12 @@ def test_create_srcdep_dl3(temp_dir_observed_srcdep_files, observed_srcdep_dl2_f
         == 0
     )
 
+    hdulist = fits.open(temp_dir_observed_srcdep_files / "dl3_LST-1.Run02008.0000.fits.gz")
+    ra = hdulist[1].data['RA']
+    dec = hdulist[1].data['DEC']
 
+    np.testing.assert_allclose(ra, 83.63, atol=1e-2)
+    np.testing.assert_allclose(dec, 22.01, atol=1e-2)
 
 @pytest.mark.private_data
 def test_index_dl3_files(temp_dir_observed_files):
