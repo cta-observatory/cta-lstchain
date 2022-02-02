@@ -243,9 +243,11 @@ class DataReductionFITSWriter(Tool):
                 else:
                     with fits.open(self.input_irf) as hdul:
                         self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
-                        self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
                     data_temp = self.cuts.apply_global_gh_cut(data_temp)
-                    data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+                    
+                with fits.open(self.input_irf) as hdul:
+                        self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+                data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
                 data_temp = add_icrs_position_params(data_temp, self.source_pos)
 
