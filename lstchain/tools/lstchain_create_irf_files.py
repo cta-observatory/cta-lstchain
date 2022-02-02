@@ -450,26 +450,28 @@ class IRFFITSWriter(Tool):
         if not self.energy_dependent_gh:
             extra_headers["GH_CUT"] = self.cuts.global_gh_cut
 
-            if self.point_like:
-                if not self.source_dep:
-                    extra_headers["RAD_MAX"] = (
-                        self.cuts.global_theta_cut,
-                        'deg'
-                    )
-                else:
-                    extra_headers["AL_CUT"] = (
-                        self.cuts.global_alpha_cut,
-                        'deg'
-                    )
         else:
             extra_headers["GH_EFF"] = (
                 self.cuts.gh_efficiency,
                 "gamma/hadron efficiency"
             )
-            if self.point_like and self.energy_dependent_theta:
-                extra_headers["TH_CONT"] = (
-                    self.cuts.theta_containment,
-                    "Theta containment region in percentage"
+
+        if self.point_like:
+            if not self.source_dep:
+                if self.energy_dependent_theta:
+                    extra_headers["TH_CONT"] = (
+                        self.cuts.theta_containment,
+                        "Theta containment region in percentage"
+                    )               
+                else:
+                    extra_headers["RAD_MAX"] = (
+                        self.cuts.global_theta_cut,
+                        'deg'
+                    )
+            else:
+                extra_headers["AL_CUT"] = (
+                    self.cuts.global_alpha_cut,
+                    'deg'
                 )
 
         # Write HDUs
