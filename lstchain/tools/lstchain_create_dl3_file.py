@@ -196,7 +196,7 @@ class DataReductionFITSWriter(Tool):
             self.run_number = run_info_from_filename(self.input_dl2)[1]
 
             self.data = self.event_sel.filter_cut(self.data)
-            
+
             if self.use_energy_dependent_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
                     self.input_irf, hdu="GH_CUTS"
@@ -214,7 +214,7 @@ class DataReductionFITSWriter(Tool):
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 self.data = self.cuts.apply_global_gh_cut(self.data)
                 self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
-            
+
             self.data = add_icrs_position_params(self.data, self.source_pos)
 
         else:
@@ -222,14 +222,16 @@ class DataReductionFITSWriter(Tool):
             srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
 
             for i, srcdep_pos in enumerate(srcdep_assumed_positions):
-                data_temp = read_data_dl2_to_QTable(str(self.input_dl2), srcdep_pos=srcdep_pos)
+                data_temp = read_data_dl2_to_QTable(
+                    str(self.input_dl2), srcdep_pos=srcdep_pos
+                )
 
-                if i==0:
+                if i == 0:
                     self.effective_time, self.elapsed_time = get_effective_time(data_temp)
                     self.run_number = run_info_from_filename(self.input_dl2)[1]
 
                 data_temp = self.event_sel.filter_cut(data_temp)
-                
+
                 if self.use_energy_dependent_cuts:
                     self.energy_dependent_gh_cuts = QTable.read(
                         self.input_irf, hdu="GH_CUTS"
@@ -242,7 +244,7 @@ class DataReductionFITSWriter(Tool):
                     with fits.open(self.input_irf) as hdul:
                         self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                         self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-                    data_temp = self.cuts.apply_global_gh_cut(self.data)
+                    data_temp = self.cuts.apply_global_gh_cut(data_temp)
                     data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
                 data_temp = add_icrs_position_params(data_temp, self.source_pos)
@@ -250,7 +252,7 @@ class DataReductionFITSWriter(Tool):
                 # set expected source positions as reco positions
                 set_expected_pos_to_reco_altaz(data_temp)
 
-                if i==0:
+                if i == 0:
                     self.data = data_temp
                 else:
                     self.data = vstack([self.data, data_temp])

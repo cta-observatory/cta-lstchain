@@ -212,7 +212,7 @@ class IRFFITSWriter(Tool):
         "source-dep": (
             {"IRFFITSWriter": {"source_dep": True}},
             "Source-dependent analysis will be performed",
-        )
+        ),
         "energy-dependent-gh": (
             {"IRFFITSWriter": {"energy_dependent_gh": True}},
             "Uses energy-dependent cuts for gammaness",
@@ -310,7 +310,9 @@ class IRFFITSWriter(Tool):
             if not self.source_dep:
                 for prefix in ("true", "reco"):
                     k = f"{prefix}_source_fov_offset"
-                    p["events"][k] = calculate_source_fov_offset(p["events"], prefix=prefix)
+                    p["events"][k] = calculate_source_fov_offset(
+                        p["events"], prefix=prefix
+                    )
 
                 # calculate theta / distance between reco and assumed source position
                 p["events"]["theta"] = calculate_theta(
@@ -321,11 +323,14 @@ class IRFFITSWriter(Tool):
 
             else:
                 # Alpha cut is applied for source-dependent analysis.
-                # To adapt source-dependent analysis to pyirf codes, true position is set as reco position
-                # for survived events after alpha cut
-                p["events"]["true_source_fov_offset"] = calculate_source_fov_offset(p["events"], prefix="true")
+                # To adapt source-dependent analysis to pyirf codes,
+                # true position is set as reco position for survived events
+                # after alpha cut
+                p["events"]["true_source_fov_offset"] = calculate_source_fov_offset(
+                    p["events"], prefix="true"
+                )
                 p["events"]["reco_source_fov_offset"] = p["events"]["true_source_fov_offset"]
-        
+
         self.log.debug(p["simulation_info"])
         gammas = self.mc_particle["gamma"]["events"]
 
@@ -378,7 +383,7 @@ class IRFFITSWriter(Tool):
                 else:
                     gammas = self.cuts.apply_global_alpha_cut(gammas)
                     self.log.info(
-                      'Using a global Alpha cut of ' 
+                      'Using a global Alpha cut of '
                       f'{self.cuts.global_alpha_cut} for point like IRF'
                     )
 
@@ -404,7 +409,6 @@ class IRFFITSWriter(Tool):
                     )
                 ] * u.deg
                 self.log.info("For RAD MAX, the full FoV is used")
-
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -581,7 +585,7 @@ class IRFFITSWriter(Tool):
             self.log.info("GH CUTS HDU added")
 
         if self.energy_dependent_theta and self.point_like:
-            if not.self.source_dep:
+            if not self.source_dep:
                 self.hdus.append(
                     create_rad_max_hdu(
                         self.theta_cuts["cut"][:, np.newaxis],

@@ -72,8 +72,8 @@ class DL3Cuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
-    fixed_alpha_cut = Float(
-        help="Fixed selection cut for alpha",
+    global_alpha_cut = Float(
+        help="Global selection cut for alpha",
         default_value=20,
     ).tag(config=True)
 
