@@ -216,7 +216,7 @@ class DataReductionFITSWriter(Tool):
 
         for i, srcdep_pos in enumerate(srcdep_assumed_positions):
             data_temp = read_data_dl2_to_QTable(
-                str(self.input_dl2), srcdep_pos=srcdep_pos
+                self.input_dl2, srcdep_pos=srcdep_pos
             )
 
             data_temp = self.event_sel.filter_cut(data_temp)
@@ -250,9 +250,9 @@ class DataReductionFITSWriter(Tool):
     def start(self):
 
         if not self.source_dep:
-            self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+            self.data = read_data_dl2_to_QTable(self.input_dl2)
         else:
-            self.data = read_data_dl2_to_QTable(str(self.input_dl2), 'on')
+            self.data = read_data_dl2_to_QTable(self.input_dl2, 'on')
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 

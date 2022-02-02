@@ -253,7 +253,7 @@ class IRFFITSWriter(Tool):
 
         self.mc_particle = {
             "gamma": {
-                "file": str(self.input_gamma_dl2),
+                "file": self.input_gamma_dl2,
                 "target_spectrum": CRAB_MAGIC_JHEAP2015,
             },
         }
@@ -264,12 +264,12 @@ class IRFFITSWriter(Tool):
         # Read and update MC information
         if not self.only_gamma_irf:
             self.mc_particle["proton"] = {
-                "file": str(self.input_proton_dl2),
+                "file":  self.input_proton_dl2,
                 "target_spectrum": IRFDOC_PROTON_SPECTRUM,
             }
 
             self.mc_particle["electron"] = {
-                "file": str(self.input_electron_dl2),
+                "file": self.input_electron_dl2,
                 "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
             }
 

@@ -879,7 +879,8 @@ def read_mc_dl2_to_QTable(filename):
     }
 
     # add alpha for source-dependent analysis
-    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(str(filename))
+    
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
@@ -937,7 +938,7 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     }
 
     # add alpha for source-dependent analysis
-    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(str(filename))
     
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
