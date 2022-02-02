@@ -188,6 +188,65 @@ class DataReductionFITSWriter(Tool):
                 " to check for global cut information in the Header value"
             )
 
+    def apply_gh_cut(self):
+        ''' apply gammaness cut '''
+        self.data = self.event_sel.filter_cut(self.data)
+
+        if self.use_energy_dependent_cuts:
+            self.energy_dependent_gh_cuts = QTable.read(
+                self.input_irf, hdu="GH_CUTS"
+            )
+
+            self.data = self.cuts.apply_energy_dependent_gh_cuts(
+                self.data, self.energy_dependent_gh_cuts
+            )
+            self.log.info(
+                "Using gamma efficiency of "
+                f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+            )
+        else:
+            with fits.open(self.input_irf) as hdul:
+                self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+            self.data = self.cuts.apply_global_gh_cut(self.data)
+            self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
+
+    def apply_srcdep_gh_alpha_cut(self):
+        ''' apply gammaness and alpha cut for source-dependent analysis '''
+        srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
+
+        for i, srcdep_pos in enumerate(srcdep_assumed_positions):
+            data_temp = read_data_dl2_to_QTable(
+                str(self.input_dl2), srcdep_pos=srcdep_pos
+            )
+
+            data_temp = self.event_sel.filter_cut(data_temp)
+            
+            if self.use_energy_dependent_cuts:
+                self.energy_dependent_gh_cuts = QTable.read(
+                    self.input_irf, hdu="GH_CUTS"
+                )
+
+                data_temp = self.cuts.apply_energy_dependent_gh_cuts(
+                    data_temp, self.energy_dependent_gh_cuts
+                )
+            else:
+                with fits.open(self.input_irf) as hdul:
+                    self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+                data_temp = self.cuts.apply_global_gh_cut(data_temp)
+                    
+            with fits.open(self.input_irf) as hdul:
+                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+
+            # set expected source positions as reco positions
+            set_expected_pos_to_reco_altaz(data_temp)
+
+            if i == 0:
+                self.data = data_temp
+            else:
+                self.data = vstack([self.data, data_temp])
+
+
     def start(self):
 
         self.data = read_data_dl2_to_QTable(str(self.input_dl2))
@@ -195,67 +254,11 @@ class DataReductionFITSWriter(Tool):
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         if not self.source_dep:
-
-            self.data = self.event_sel.filter_cut(self.data)
-
-            if self.use_energy_dependent_cuts:
-                self.energy_dependent_gh_cuts = QTable.read(
-                    self.input_irf, hdu="GH_CUTS"
-                )
-
-                self.data = self.cuts.apply_energy_dependent_gh_cuts(
-                    self.data, self.energy_dependent_gh_cuts
-                )
-                self.log.info(
-                    "Using gamma efficiency of "
-                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
-                )
-            else:
-                with fits.open(self.input_irf) as hdul:
-                    self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
-                self.data = self.cuts.apply_global_gh_cut(self.data)
-                self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
-
-            self.data = add_icrs_position_params(self.data, self.source_pos)
-
+            self.apply_gh_cut()
         else:
-            # source-dependent analysis
-            srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
+            self.apply_srcdep_gh_alpha_cut()
 
-            for i, srcdep_pos in enumerate(srcdep_assumed_positions):
-                data_temp = read_data_dl2_to_QTable(
-                    str(self.input_dl2), srcdep_pos=srcdep_pos
-                )
-
-
-                data_temp = self.event_sel.filter_cut(data_temp)
-
-                if self.use_energy_dependent_cuts:
-                    self.energy_dependent_gh_cuts = QTable.read(
-                        self.input_irf, hdu="GH_CUTS"
-                    )
-
-                    data_temp = self.cuts.apply_energy_dependent_gh_cuts(
-                        data_temp, self.energy_dependent_gh_cuts
-                    )
-                else:
-                    with fits.open(self.input_irf) as hdul:
-                        self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
-                    data_temp = self.cuts.apply_global_gh_cut(data_temp)
-                    
-                with fits.open(self.input_irf) as hdul:
-                        self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-                data_temp = self.cuts.apply_global_alpha_cut(data_temp)
-
-                data_temp = add_icrs_position_params(data_temp, self.source_pos)
-
-                # set expected source positions as reco positions
-                set_expected_pos_to_reco_altaz(data_temp)
-
-                if i == 0:
-                    self.data = data_temp
-                else:
-                    self.data = vstack([self.data, data_temp])
+        self.data = add_icrs_position_params(self.data, self.source_pos)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
