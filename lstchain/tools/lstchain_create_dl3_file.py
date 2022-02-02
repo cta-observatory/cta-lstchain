@@ -249,7 +249,10 @@ class DataReductionFITSWriter(Tool):
 
     def start(self):
 
-        self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        if not self.source_dep:
+            self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        else:
+            self.data = read_data_dl2_to_QTable(str(self.input_dl2), 'on')
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
