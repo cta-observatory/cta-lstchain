@@ -92,9 +92,9 @@ class DL0Fitter(ABC):
                        't_cm': '$t_{CM}$ [ns]',
                        'x_cm': '$x_{CM}$ [m]',
                        'y_cm': '$y_{CM}$ [m]',
-                       'length': '$\sigma_l$ [m]',
-                       'wl': '$\sigma_w$ / $\sigma_l$',
-                       'psi': '$\psi$ [rad]',
+                       'length': r'$\sigma_l$ [m]',
+                       'wl': r'$\sigma_w$ / $\sigma_l$',
+                       'psi': r'$\psi$ [rad]',
                        'v': '$v$ [m/ns]',
                        'rl': 'length asymmetry'
                        }
@@ -186,37 +186,21 @@ class DL0Fitter(ABC):
                 Maximum number of call for migrad
         """
         if minuit:
-            fixed_params = {}
-            bounds_params = {}
-            start_params = self.start_parameters
-            if self.bound_parameters is not None:
-                for key, val in self.bound_parameters.items():
-                    bounds_params['limit_' + key] = val
-
-            for key in self.names_parameters:
-                if key in kwargs.keys():
-                    fixed_params['fix_' + key] = True
-                else:
-                    fixed_params['fix_' + key] = False
-            options = {**start_params, **bounds_params, **fixed_params}
-
             def f(*args): return -2 * self.log_likelihood(*args)
 
-            print_level = 2 if verbose else 0
-            m = Minuit(f, print_level=print_level,
-                       forced_parameters=self.names_parameters, errordef=0.5,
-                       **options)
-            m.migrad(ncall=ncall)
-            self.end_parameters = dict(m.values)
-            options = {**self.end_parameters, **bounds_params, **fixed_params}
-            m = Minuit(f, print_level=print_level,
-                       forced_parameters=self.names_parameters, errordef=0.5,
-                       **options)
-            m.migrad(ncall=ncall)
-            self.end_parameters = dict(m.values)
+            print_level = 2 if verbose in [1, 2, 3] else 0
+            m = Minuit(f,
+                       name=self.names_parameters,
+                       **self.start_parameters)
+            for key, val in self.bound_parameters.items():
+                m.limits[key] = val
+            m.print_level = print_level
+            m.errordef = 0.5
+            m.simplex().migrad()
+            self.end_parameters = m.values.to_dict()
             self.fcn = m.fval
             try:
-                self.error_parameters = dict(m.errors)
+                self.error_parameters = m.errors.to_dict()
 
             except (KeyError, AttributeError, RuntimeError):
                 self.error_parameters = {key: np.nan for key in self.names_parameters}
@@ -330,7 +314,7 @@ class DL0Fitter(ABC):
                          color='b', label='Starting value {:.2f}'.format(
                     self.start_parameters[key]
                 ))
-            axes.set_ylabel('-$\ln \mathcal{L}$')
+            axes.set_ylabel(r'-$\ln \mathcal{L}$')
             axes.set_xlabel(x_label)
 
         else:
@@ -347,7 +331,7 @@ class DL0Fitter(ABC):
             axes.axhspan(self.bound_parameters[key][0],
                          self.bound_parameters[key][1], label='bounds',
                          alpha=0.5, facecolor='k')
-            axes.set_xlabel('-$\ln \mathcal{L}$')
+            axes.set_xlabel(r'-$\ln \mathcal{L}$')
             axes.set_ylabel(x_label)
             axes.xaxis.set_label_position('top')
 
@@ -447,7 +431,7 @@ class DL0Fitter(ABC):
         axes.set_xlabel(x_label)
         axes.set_ylabel(y_label)
         axes.legend(loc='best')
-        plt.colorbar(mappable=im, ax=axes_y, label='-$\ln \mathcal{L}$')
+        plt.colorbar(mappable=im, ax=axes_y, label=r'-$\ln \mathcal{L}$')
         axes_x.set_xlim(x.min(), x.max())
         axes_y.set_ylim(y.min(), y.max())
 
@@ -455,7 +439,8 @@ class DL0Fitter(ABC):
 
     def plot_likelihood(self, parameter_1, parameter_2=None,
                         axes=None, size=100,
-                        x_label=None, y_label=None):
+                        x_label=None, y_label=None,
+                        save=False, ids=''):
         """
             Plot the 1D or 2D likelihood.
 
@@ -474,22 +459,31 @@ class DL0Fitter(ABC):
                 Label of the x axis
             y_label: string
                 Label of the y axis
+            save: bool
+                Save and close the figure if True, return it otherwise
+            ids: string
+                Can be used to modify the save location
 
             Returns
             -------
-            matplotlib.pyplot.axis object filled with the log-likelihood figure
+            None or matplotlib.pyplot.axis object filled with the log-likelihood figure
 
         """
         if parameter_2 is None:
-            return self.plot_1dlikelihood(parameter_name=parameter_1,
+            axes = self.plot_1dlikelihood(parameter_name=parameter_1,
                                           axes=axes, x_label=x_label,
                                           size=size)
         else:
-            return self.plot_2dlikelihood(parameter_1,
+            axes = self.plot_2dlikelihood(parameter_1,
                                           parameter_2=parameter_2,
                                           size=size,
                                           x_label=x_label,
                                           y_label=y_label)
+        if save:
+            axes.get_figure().savefig('event/' + ids + '_'
+                                      + parameter_1 + '_' + str(parameter_2) + '.png')
+            plt.close()
+        return None if save else axes
 
 
 class TimeWaveformFitter(DL0Fitter, Reconstructor):
@@ -563,7 +557,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             Compute quantities used at each iteration of the fitting procedure.
         """
         self.n_peaks = n_peaks
-        photoelectron_peak = np.arange(n_peaks, dtype=np.int)
+        photoelectron_peak = np.arange(n_peaks, dtype=int)
         photoelectron_peak[0] = 1
         log_factorial = np.log(photoelectron_peak)
         log_factorial = np.cumsum(log_factorial)
@@ -645,7 +639,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             kmax = int(self.n_peaks)
             logger.warning("kmax forced to %s", kmax)
 
-        photo_peaks = np.arange(kmin, kmax, dtype=np.int)
+        photo_peaks = np.arange(kmin, kmax, dtype=int)
         crosstalk_factor = photo_peaks[..., None]*self.crosstalk[mask_LL]
 
         # Compute the Poisson term in the pixel likelihood for
@@ -739,7 +733,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         container.lhfit_psi = self.end_parameters['psi'] * u.rad
         length_asy = 1+self.end_parameters['rl'] if self.end_parameters['rl'] >= 0 else 1/(1-self.end_parameters['rl'])
         container.lhfit_length = ((1.0+length_asy)
-                            * self.end_parameters['length'] / 2.0) * u.m
+                                  * self.end_parameters['length'] / 2.0) * u.m
         container.lhfit_width = self.end_parameters['wl'] * container.lhfit_length
 
         container.lhfit_time_gradient = self.end_parameters['v']
@@ -753,7 +747,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         return container
 
-    def plot_event(self, image, n_sigma=3, init=False, ellipsis=True):
+    def plot_event(self, image, n_sigma=3, init=False, show_ellipsis=True, save=False, ids=''):
         """
             Plot the image of the event in the camera along with the extracted
             ellipsis before or after the fitting procedure.
@@ -768,6 +762,12 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         init: boolean
             If True, use the starting parameters for the ellipsis
             If False, use the ending parameters for the ellipsis
+        show_ellipsis: boolean
+            If True, display the ellipsis
+        save: bool
+            Save and close the figure if True, return it otherwise
+        ids: string
+            Can be used to modify the save location
         Returns
         -------
         cam_display: ctapipe.visualization.CameraDisplay
@@ -793,21 +793,25 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         cam_display.axes.add_patch(direction_arrow)
         """
-        if ellipsis:
+        if show_ellipsis:
             cam_display.add_ellipse(centroid=(params['x_cm'],
                                               params['y_cm']),
                                     width=n_sigma * params['wl']*params['length'],
                                     length=length,
                                     angle=psi,
                                     linewidth=6, color='r', linestyle='--',
-                                    label='{} $\sigma$ contour'.format(n_sigma))
+                                    label=r'{} $\sigma$ contour'.format(n_sigma))
             cam_display.axes.legend(loc='best')
         if init:
             cam_display.highlight_pixels(self.mask_pixel, color='r')
 
-        return cam_display
+        if save:
+            cam_display.axes.get_figure().savefig('event/' + ids +
+                                                  '_init' + str(init) + '.png')
+            plt.close()
+        return None if save else cam_display
 
-    def plot_residual(self, image):
+    def plot_residual(self, image, save=False, ids=''):
         """
 
 
@@ -815,6 +819,10 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         ----------
         image:
             Distribution of signal for the event in number of p.e.
+        save: bool
+            Save and close the figure if True, return it otherwise
+        ids: string
+            Can be used to modify the save location
         Returns
         -------
         cam_display: ctapipe.visualization.CameraDisplay
@@ -840,18 +848,23 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         cam_display = display_array_camera(residual,
                                            camera_geometry=self.geometry)
+        if save:
+            cam_display.axes.get_figure().savefig('event/' + ids +
+                                                  '_residuals.png')
+            plt.close()
+        return None if save else cam_display
 
-        cam_display.axes.legend(loc='best')
-
-        return cam_display
-
-    def plot_model(self):
+    def plot_model(self, save=False, ids=''):
         """
+        Create a CameraDisplay object showing the spatial model fitted to
+        the current event
 
         Parameters
-        ----------
-        image:
-            Distribution of signal for the event in number of p.e.
+        -------
+        save: bool
+            Save and close the figure if True, return it otherwise
+        ids: string
+            Can be used to modify the save location
 
         Returns
         -------
@@ -876,12 +889,13 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         cam_display = display_array_camera(mu,
                                            camera_geometry=self.geometry)
+        if save:
+            cam_display.axes.get_figure().savefig('event/' + ids +
+                                                  '_model.png')
+            plt.close()
+        return None if save else cam_display
 
-        cam_display.axes.legend(loc='best')
-
-        return cam_display
-
-    def plot_waveforms(self, image, axes=None):
+    def plot_waveforms(self, image, axes=None, save=False, ids=''):
         """
             Plot the intensity of the signal in the camera as a function of
             time and of the position projected on the main axis of the fitted
@@ -894,6 +908,10 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         axes: matplotlib.pyplot.axis
             Axis used to store the figure
             If None, a new one is created
+        save: bool
+            Save and close the figure if True, return it otherwise
+        ids: string
+            Can be used to modify the save location
 
         Returns
         -------
@@ -935,7 +953,11 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         axes.legend(loc='best')
         axes.get_figure().colorbar(label='[p.e.]', ax=axes, mappable=M)
 
-        return axes
+        if save:
+            axes.get_figure().savefig('event/' + ids +
+                                      '_waveform.png')
+            plt.close()
+        return None if save else axes
 
 
 def asy_centroid(geom, image):

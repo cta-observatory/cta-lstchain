@@ -146,7 +146,7 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
 
     # convert ctapipe's width and length (in m) to deg:
 
-    for key  in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
+    for key in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
         value = getattr(dl1_container, key)
         setattr(dl1_container, key, _camera_distance_to_angle(value, focal_length))
 
@@ -284,11 +284,12 @@ def get_dl1(
                                            dl1_container=dl1_container,
                                            custom_config=config)
                             dl1_container.lhfit_call_status = 1
-                            for key in ['lhfit_width', 'lhfit_width_uncertainty',
-                                        'lhfit_length', 'lhfit_length_uncertainty']:
+                            for key in ['lhfit_width',
+                                        'lhfit_length']:
                                 value = getattr(dl1_container, key)
-                                setattr(dl1_container, key,
-                                        _camera_distance_to_angle(value, optics.equivalent_focal_length))
+                                if not np.isnan(value):
+                                    setattr(dl1_container, key,
+                                            _camera_distance_to_angle(value, optics.equivalent_focal_length))
                             dl1_container.lhfit_wl = dl1_container.lhfit_width / dl1_container.lhfit_length
                             dl1_container.lhfit_area = dl1_container.lhfit_width * dl1_container.lhfit_length
                         except Exception as err:
@@ -374,7 +375,7 @@ def get_dl1_lh_fit(
             psi = psi + np.pi
 
     focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
-    start_length = np.tan(dl1_container.length.to(u.rad).value) * focal_length
+    start_length = np.tan(dl1_container.length.to(u.rad).value) * focal_length.to(u.m).value
     start_parameters = {'x_cm': dl1_container.x.to(u.m).value,
                         'y_cm': dl1_container.y.to(u.m).value,
                         'charge': dl1_container.intensity,
@@ -442,32 +443,27 @@ def get_dl1_lh_fit(
                                     )
 
         fitter.predict(dl1_container, verbose=lh_fit_config['verbose'],
-                       ncall=lh_fit_config['ncall'])
-        if lh_fit_config['verbose'] == 2:
+                       ncall=lh_fit_config['ncall'], minuit=True)
+        if lh_fit_config['verbose'] >= 2:
             image = calibrated_event.dl1.tel[telescope_id].image
-            axes = fitter.plot_event(image, init=True)
-            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'start.png')
-            axes = fitter.plot_waveforms(image)
-            axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'waveforms.png')
-            axes = fitter.plot_event(image)
-            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'end.png')
-            axes = fitter.plot_event(image, ellipsis=False)
-            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'image.png')
-            axes = fitter.plot_residual(image)
-            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'residual.png')
-            axes = fitter.plot_model()
-            axes.axes.get_figure().savefig('event/'+str(dl1_container.event_id)+'model.png')
+            fitter.plot_event(image, init=True, save=True, ids=str(dl1_container.event_id))
+            fitter.plot_waveforms(image, save=True, ids=str(dl1_container.event_id))
+            fitter.plot_event(image, save=True, ids=str(dl1_container.event_id))
+            fitter.plot_residual(image, save=True, ids=str(dl1_container.event_id))
+            fitter.plot_model(save=True, ids=str(dl1_container.event_id))
 
             for params in fitter.start_parameters.keys():
-                axes = fitter.plot_likelihood(params)
-                axes.get_figure().savefig('event/'+str(dl1_container.event_id) + params + '.png')
-            print("event plot produced, press Enter to continue "
-                  "or Ctrl+C and Enter to stop")
-            input()
+                fitter.plot_likelihood(params, save=True, ids=str(dl1_container.event_id))
+
+            if lh_fit_config['verbose'] == 3:
+                print("event plot produced, press Enter to continue "
+                      "or Ctrl+C and Enter to stop")
+                input()
     except Exception as e:
 
         logger.exception('Could not fit : %s', e)
         logger.exception(e.__class__)
+        raise e
         return None
     return dl1_container
 
