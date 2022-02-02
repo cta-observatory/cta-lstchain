@@ -190,10 +190,11 @@ class DataReductionFITSWriter(Tool):
 
     def start(self):
 
+        self.data = read_data_dl2_to_QTable(str(self.input_dl2))
+        self.effective_time, self.elapsed_time = get_effective_time(self.data)
+        self.run_number = run_info_from_filename(self.input_dl2)[1]
+
         if not self.source_dep:
-            self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-            self.effective_time, self.elapsed_time = get_effective_time(self.data)
-            self.run_number = run_info_from_filename(self.input_dl2)[1]
 
             self.data = self.event_sel.filter_cut(self.data)
 
@@ -226,9 +227,6 @@ class DataReductionFITSWriter(Tool):
                     str(self.input_dl2), srcdep_pos=srcdep_pos
                 )
 
-                if i == 0:
-                    self.effective_time, self.elapsed_time = get_effective_time(data_temp)
-                    self.run_number = run_info_from_filename(self.input_dl2)[1]
 
                 data_temp = self.event_sel.filter_cut(data_temp)
 
