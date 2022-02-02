@@ -194,7 +194,7 @@ def create_hdu_index_hdu(
         hdu_index_tables.append(t_pnt)
         hdu_names = [
             "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
-            "PSF"  # , "GH CUTS", "RAD_MAX" For energy-dependent cuts
+            "PSF", "RAD_MAX"
         ]
 
         for irf in hdu_names:
