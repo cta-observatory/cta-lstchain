@@ -386,7 +386,7 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     added_nsb_fraction: fraction of the original NSB in simulation to be added
     original_nsb: original NSB rate (astropy unit Hz)
     dt: time between waveform samples (astropy unit s)
-    pulse_templates: `lstchain.reconstructor.NormalizedPulseTemplate` containing
+    pulse_templates: `lstchain.data.NormalizedPulseTemplate` containing
     the single p.e. pulse template used for the injection
     gain: gain channel identifier for each pixel
     charge_spe_cumulative_pdf: `scipy.interpolate.interp1d` Single p.e. gain
