@@ -304,12 +304,14 @@ def main():
 
             # Store and add up the number of unknown trigger tags of each type:
             unknown_mask = table['trigger_type'][:, :, 0] == 0 # TriggerBits.UNKNOWN
-            num_unknowns = table['trigger_type'][:, :, 1][unknown_mask]
+            num_unknowns = np.ma.array(table['trigger_type'][:, :, 1],
+                                       mask = ~unknown_mask).sum(axis=1).data
             d['unknown_tib_trig_type'].extend(num_unknowns)
             total_num_unknown_tib += num_unknowns.sum()
 
             unknown_mask = table['ucts_trigger_type'][:, :, 0] == 0
-            num_unknowns = table['ucts_trigger_type'][:, :, 1][unknown_mask]
+            num_unknowns = np.ma.array(table['ucts_trigger_type'][:, :, 1],
+                                       mask = ~unknown_mask).sum(axis=1).data
             d['unknown_ucts_trig_type'].extend(num_unknowns)
             total_num_unknown_ucts += num_unknowns.sum()
 
