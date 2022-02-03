@@ -116,6 +116,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
                               root_uep='/dl1/event/telescope/parameters') as f:
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
+
     num_pedestals = {'trigger_type':
                          (np.array(trig_tags['trigger_type']) ==
                           TriggerBits.PEDESTAL.value).sum(),

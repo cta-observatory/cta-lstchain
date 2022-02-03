@@ -109,6 +109,8 @@ def main():
                # number of events with wrong trigger type:
                'wrong_ucts_trig_type': [],
                'wrong_tib_trig_type': [],
+               'unknown_ucts_trig_type': [],
+               'unknown_tib_trig_type': [],
                'num_ucts_jumps': []}
 
     pedestals = copy.deepcopy(cosmics)
@@ -268,7 +270,9 @@ def main():
 
         # fill data which are common to all tables:
 
-        total_num_ucts_jumps = 0  # To add up all jumps, for any event type
+        total_num_ucts_jumps = 0   # To add up all jumps, for any event type
+        total_num_unknown_ucts = 0 # To add up events with unknown ucts
+        total_num_unknown_tib = 0  # The same for tib
 
         # The tables in each file correspond to a full run, and contain one
         # row per subrun, what we do below is
@@ -292,6 +296,17 @@ def main():
             num_wrong_tags = trigtag_mismatches(table, tag)
             d['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
+
+            # Store and add up the number of unknown trigger tags of each type:
+            unknown_mask = table['trigger_type'][:, :, 0] == 0 # TriggerBits.UNKNOWN
+            num_unknowns = table['trigger_type'][:, :, 1][unknown_mask]
+            d['unknown_tib_trig_type'].extend(num_unknowns)
+            total_num_unknown_tib += num_unknowns.sum()
+
+            unknown_mask = table['ucts_trigger_type'][:, :, 0] == 0
+            num_unknowns = table['ucts_trigger_type'][:, :, 1][unknown_mask]
+            d['unknown_ucts_trig_type'].extend(num_unknowns)
+            total_num_unknown_ucts += num_unknowns.sum()
 
             if 'num_ucts_jumps' in table.colnames:
                 d['num_ucts_jumps'].extend(table['num_ucts_jumps'])
@@ -397,6 +412,13 @@ def main():
         runsummary['num_wrong_ucts_tags_in_cosmics'].extend([nwucts])
         nwtib = np.sum(cosmics['wrong_tib_trig_type'][-len(table):])
         runsummary['num_wrong_tib_tags_in_cosmics'].extend([nwtib])
+
+        # Number of 'unknown' trigger tags for this whole run, for any kind
+        # of event type:
+        runsummary['num_unknown_tib_trigger_tags'].extend([
+            total_num_unknown_tib])
+        runsummary['num_unknown_ucts_trigger_tags'].extend([
+            total_num_unknown_ucts])
 
         # number of ucts jumps in the run, for any kind of event type:
         runsummary['num_ucts_jumps'].extend([total_num_ucts_jumps])
@@ -961,6 +983,34 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0.child = grid0
     page0.title = 'Event rates'
 
+
+    page0a = Panel()
+    fig_ucts1 = show_graph(x=runtime, y=runsummary['num_ucts_jumps'],
+                           xlabel='date',
+                           ylabel='Number of corrected UCTS jumps',
+                           size=4, xtype='datetime', ytype='linear',
+                           point_labels=run_titles)
+    fig_ucts2 = show_graph(x=runtime,
+                           y=runsummary['num_unknown_ucts_trigger_tags'],
+                           xlabel='date',
+                           ylabel='Number of UNKNOWN UCTS trigger tags',
+                           size=4, xtype='datetime', ytype='linear',
+                           point_labels=run_titles)
+    row1 = [fig_ucts1, fig_ucts2]
+    fig_tib = show_graph(x=runtime,
+                         y=runsummary['num_unknown_tib_trigger_tags'],
+                         xlabel='date',
+                         ylabel='Number of UNKNOWN TIB trigger tags',
+                         size=4, xtype='datetime', ytype='linear',
+                         point_labels=run_titles)
+    row2 = [fig_tib]
+    grid0a = gridplot([row1, row2], sizing_mode=None,
+                      plot_width=pad_width, plot_height=pad_height)
+    page0a.child = grid0a
+    page0a.title = 'Trigger tags'
+
+
+
     page0b = Panel()
     items = []
     for trigtype in ['ucts', 'tib']:
@@ -980,6 +1030,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pad_height = 350
     row1 = items[:3]
     row2 = items[3:]
+
     grid0b = gridplot([row1, row2], sizing_mode=None,
                       plot_width=pad_width, plot_height=pad_height)
     page0b.child = grid0b
@@ -1733,7 +1784,7 @@ def trigtag_mismatches(table, tag_value):
     Returns
     -------
     num_wrong_tags [ndarray, ndarray] each of the arrays with same
-    number of elements as number of rows in the tabke (i.e. = number of subruns)
+    number of elements as number of rows in the table (i.e. = number of subruns)
     The arrays contain the number of non-matching tags, for ucts and tib
     respectively
 
@@ -1748,7 +1799,13 @@ def trigtag_mismatches(table, tag_value):
                 # not =0) is the trigger type, and trigtype[1] the
                 # number of events in the subrun which have that
                 # trigger type.
-                if trigtype[0] == 0:
+
+                # skip the 'unknown' cases, we are counting here just the
+                # wrong tags:
+                if trigtype[0] == 0: # TriggerBits.UNKNOWN:
+                    continue
+
+                if trigtype[1] == 0:
                     # no more trigger types are stored for this subrun
                     break
                 elif (trigtype[0] & tag_value) == 0:

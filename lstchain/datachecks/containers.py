@@ -405,12 +405,12 @@ def count_trig_types(array):
     an ndarray of shape (10, 2) [i, j] means we found j events of type i
 
     """
-    ucts_trig_types, counts = np.unique(array, return_counts=True)
+    types, counts = np.unique(array, return_counts=True)
     # write the different trigger types, then the number of events of
     # each type. Pad to 10 entries (more than enough for trigger types):
-    ucts_trig_types = np.append(ucts_trig_types, (10 - len(ucts_trig_types)) * [0])
+    types = np.append(types, (10 - len(types)) * [0])
     counts = np.append(counts, (10 - len(counts)) * [0])
-    return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
+    return np.array([[t, n] for t, n in zip(types, counts)])
 
 
 
