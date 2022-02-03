@@ -998,22 +998,27 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
 
     page0a = Panel()
-    fig_ucts1 = show_graph(x=runtime, y=runsummary['num_ucts_jumps'],
+
+    num_events = runsummary['num_cosmics'] + runsummary['num_pedestals'] + \
+                 runsummary['num_flatfield']
+    fig_ucts1 = show_graph(x=runtime,
+                           y=runsummary['num_unknown_ucts_trigger_tags'] /
+                             num_events,
+                           xlabel='date',
+                           ylabel='Fraction of UNKNOWN UCTS trigger tags',
+                           size=4, xtype='datetime', ytype='linear',
+                           point_labels=run_titles)
+    fig_ucts2 = show_graph(x=runtime, y=runsummary['num_ucts_jumps'],
                            xlabel='date',
                            ylabel='Number of corrected UCTS jumps',
                            size=4, xtype='datetime', ytype='linear',
                            point_labels=run_titles)
-    fig_ucts2 = show_graph(x=runtime,
-                           y=runsummary['num_unknown_ucts_trigger_tags'],
-                           xlabel='date',
-                           ylabel='Number of UNKNOWN UCTS trigger tags',
-                           size=4, xtype='datetime', ytype='linear',
-                           point_labels=run_titles)
     row1 = [fig_ucts1, fig_ucts2]
     fig_tib = show_graph(x=runtime,
-                         y=runsummary['num_unknown_tib_trigger_tags'],
+                         y=runsummary['num_unknown_tib_trigger_tags'] /
+                           num_events,
                          xlabel='date',
-                         ylabel='Number of UNKNOWN TIB trigger tags',
+                         ylabel='Fraction of UNKNOWN TIB trigger tags',
                          size=4, xtype='datetime', ytype='linear',
                          point_labels=run_titles)
     row2 = [fig_tib]
