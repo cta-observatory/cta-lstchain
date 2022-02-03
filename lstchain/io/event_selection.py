@@ -72,6 +72,11 @@ class DL3Cuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
+    global_alpha_cut = Float(
+        help="Global selection cut for alpha",
+        default_value=20,
+    ).tag(config=True)
+
     allowed_tels = List(
         help="List of allowed LST telescope ids",
         trait=Int(),
@@ -106,6 +111,12 @@ class DL3Cuts(Component):
             min_events=min_events,
         )
         return gh_cuts
+
+    def apply_global_alpha_cut(self, data):
+        """
+        Applying a global alpha cut on a given data
+        """
+        return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """

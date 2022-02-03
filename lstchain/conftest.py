@@ -354,3 +354,22 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
         irf_file
     )
     return irf_file
+
+
+@pytest.fixture(scope="session")
+def simulated_srcdep_irf_file(temp_dir_simulated_srcdep_files, simulated_srcdep_dl2_file):
+    """
+    Produce test source-dependent irf file from the simulated dl2 test file.
+    """
+
+    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "irf.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_srcdep_dl2_file,
+        "--output-irf-file",
+        srcdep_irf_file,
+        "--point-like",
+        "--source-dep"
+    )
+    return srcdep_irf_file

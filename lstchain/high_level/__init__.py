@@ -11,6 +11,7 @@ from .hdu_table import (
     create_obs_index_hdu,
     get_pointing_params,
     get_timing_params,
+    set_expected_pos_to_reco_altaz,
 )
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "create_obs_index_hdu",
     "get_pointing_params",
     "get_timing_params",
+    "set_expected_pos_to_reco_altaz",
     'setup_logging',
 ]

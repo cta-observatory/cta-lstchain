@@ -856,7 +856,7 @@ def read_mc_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
     """
-
+    
     # mapping
     name_mapping = {
         "mc_energy": "true_energy",
@@ -878,6 +878,12 @@ def read_mc_dl2_to_QTable(filename):
         "reco_az": u.rad,
     }
 
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
     simu_info = read_simu_info_merged_hdf5(filename)
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
@@ -888,9 +894,14 @@ def read_mc_dl2_to_QTable(filename):
         viewcone=simu_info.max_viewcone_radius,
     )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
-        columns=name_mapping
-    )
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        events_srcdep = get_srcdep_params(filename, 'on')
+        events = pd.concat([events, events_srcdep], axis=1)
+
+    events = events.rename(columns=name_mapping)
+
     events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
@@ -899,12 +910,13 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
     Read data DL2 files from lstchain and return QTable format
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------
@@ -926,7 +938,19 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
 
     data = QTable.from_pandas(data)
 
