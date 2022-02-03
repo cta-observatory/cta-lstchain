@@ -453,6 +453,7 @@ def get_dl1_lh_fit(
 
             for params in fitter.start_parameters.keys():
                 fitter.plot_likelihood(params, save=True, ids=str(dl1_container.event_id))
+            fitter.plot_likelihood('x_cm', 'y_cm', save=True, ids=str(dl1_container.event_id))
 
             if lh_fit_config['verbose'] == 3:
                 print("event plot produced, press Enter to continue "

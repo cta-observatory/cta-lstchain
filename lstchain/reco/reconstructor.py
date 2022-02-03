@@ -223,7 +223,7 @@ class DL0Fitter(ABC):
         return np.sum(llh)
 
     def plot_1dlikelihood(self, parameter_name, axes=None, size=1000,
-                          x_label=None, invert=False):
+                          x_label=None, invert=False, loc='best'):
         """
             Plot the 1D evolution of the log-likelihood for a parameter
             when fixing the other parameters to their end value.
@@ -241,6 +241,8 @@ class DL0Fitter(ABC):
                 Label of the x axis
             invert: bool
                 If True, invert the x and y axis
+            loc: string
+                Legend position
 
             Returns
             -------
@@ -299,7 +301,7 @@ class DL0Fitter(ABC):
             axes.set_ylabel(x_label)
             axes.xaxis.set_label_position('top')
 
-        axes.legend(loc='best')
+        axes.legend(loc=loc)
         return axes
 
     def plot_2dlikelihood(self, parameter_1, parameter_2=None, size=100,
@@ -333,10 +335,10 @@ class DL0Fitter(ABC):
 
         key_x = parameter_1
         key_y = parameter_2
-        x = np.linspace(self.bound_parameters[key_x],
-                        self.bound_parameters[key_x], num=size[0])
-        y = np.linspace(self.bound_parameters[key_y],
-                        self.bound_parameters[key_y], num=size[1])
+        x = np.linspace(self.bound_parameters[key_x][0],
+                        self.bound_parameters[key_x][1], num=size[0])
+        y = np.linspace(self.bound_parameters[key_y][0],
+                        self.bound_parameters[key_y][1], num=size[1])
         dx = x[1] - x[0]
         dy = y[1] - y[0]
 
@@ -350,8 +352,8 @@ class DL0Fitter(ABC):
                 llh[i, j] = self.log_likelihood(**params)
 
         fig = plt.figure()
-        left, width = 0.1, 0.65
-        bottom, height = 0.1, 0.65
+        left, width = 0.1, 0.6
+        bottom, height = 0.1, 0.6
         spacing = 0.005
         rect_center = [left, bottom, width, height]
         rect_x = [left, bottom + height + spacing, width, 0.2]
@@ -360,9 +362,10 @@ class DL0Fitter(ABC):
         axes_x = fig.add_axes(rect_x)
         axes_y = fig.add_axes(rect_y)
         axes.tick_params(direction='in', top=True, right=True)
-        self.plot_1dlikelihood(parameter_name=parameter_1, axes=axes_x)
+        self.plot_1dlikelihood(parameter_name=parameter_1, axes=axes_x,
+                               loc='upper left')
         self.plot_1dlikelihood(parameter_name=parameter_2, axes=axes_y,
-                               invert=True)
+                               invert=True, loc='lower right')
         axes_x.tick_params(direction='in', labelbottom=False)
         axes_y.tick_params(direction='in', labelleft=False)
 
@@ -391,10 +394,10 @@ class DL0Fitter(ABC):
                          aspect='auto')
 
         axes.scatter(self.end_parameters[key_x], self.end_parameters[key_y],
-                     marker='x', color='w', label='Maximum Likelihood')
+                     marker='x', color='w', label='- log Likelihood')
         axes.set_xlabel(x_label)
         axes.set_ylabel(y_label)
-        axes.legend(loc='best')
+        axes.legend(loc='upper left')
         plt.colorbar(mappable=im, ax=axes_y, label=r'-$\ln \mathcal{L}$')
         axes_x.set_xlim(x.min(), x.max())
         axes_y.set_ylim(y.min(), y.max())
