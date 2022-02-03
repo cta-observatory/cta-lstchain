@@ -12,6 +12,12 @@ present in each HDU, or energy-dependent cuts, based on the GH_CUTS HDU.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
+
+For source-dependent analysis, a source-dep flag should be activated.
+The alpha cut is already applied on this step, and all survived events with each assumed 
+source position (on and off) are saved after the gammaness and alpha cut.
+To adapt to gammaness high-level analysis, assumed source position (on and off) is set
+as a reco source position just as a trick to glean survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
@@ -78,6 +84,15 @@ class DataReductionFITSWriter(Tool):
         --source-ra 83.633deg
         --source-dec 22.01deg
         --global-gh-cut 0.9
+        --overwrite
+
+    Or generate source-dependent DL3 files
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        --input-irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-dep
         --overwrite
     """
 

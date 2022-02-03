@@ -23,6 +23,11 @@ and saved with other IRFs.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
+
+For source-dependent analysis, alpha cut can be used instead of theta cut.
+If you want to generate source-dependent IRFs, source-dep flag should be activated.
+The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.
+
 """
 
 from astropy import table
@@ -120,6 +125,16 @@ class IRFFITSWriter(Tool):
         --energy-dependent-theta
         --gh-efficiency 0.95
         --theta-containment 0.68
+
+    Or generate source-dependent IRFs
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5 
+        -o /path/to/irf.fits.gz
+        --point-like 
+        --global-gh-cut 0.9
+        --global-alpha-cut 10
+        --source-dep
+
     """
 
     input_gamma_dl2 = traits.Path(
