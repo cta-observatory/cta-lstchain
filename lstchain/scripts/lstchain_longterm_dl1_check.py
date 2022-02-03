@@ -303,7 +303,13 @@ def main():
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
 
             # Store and add up the number of unknown trigger tags of each type:
-            unknown_mask = table['trigger_type'][:, :, 0] == 0 # TriggerBits.UNKNOWN
+            # in trigger_type and ucts_trigger_type the first index is for
+            # the subruns, the second goes over different trigger tags
+            # present in the data, and in the third [0] means the trigger
+            # tag value and [1] the number of events in the subrun with that
+            # value:
+            # TriggerBits.UNKNOWN (0)
+            unknown_mask = table['trigger_type'][:, :, 0] == 0
             num_unknowns = np.ma.array(table['trigger_type'][:, :, 1],
                                        mask = ~unknown_mask).sum(axis=1).data
             d['unknown_tib_trig_type'].extend(num_unknowns)
