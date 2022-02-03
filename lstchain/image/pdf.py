@@ -21,7 +21,8 @@ def log_gaussian(x, mean, sigma):
         Log of the evaluation of the normal law at x
 
     """
-    pi = np.pi # NOQA
+    pi = np.pi
+    assert pi
     return ne.evaluate("-(x - mean) ** 2 / (2 * sigma ** 2) - log((sqrt(2 * pi) * sigma))")
 
 

@@ -668,7 +668,8 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
                    * ((self.sigma_s[mask_LL][..., None]*templates[mask_LL])**2)[..., None])
         sigma_n = (self.error[mask_LL]**2)[..., None] + sigma_n
         sigma_n = ne.evaluate("sqrt(sigma_n)")
-        log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n) # NOQA
+        log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n)
+        assert log_gauss is not None
 
         # Compute the pixel likelihood using a Gaussian approximation for
         # high luminosity pixels
