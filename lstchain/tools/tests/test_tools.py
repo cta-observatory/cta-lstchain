@@ -86,7 +86,8 @@ def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulate
 
 
 def test_create_irf_point_like_srcdep(
-    temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file):
+    temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file
+):
     """
     Generating point-like source-dependent IRF file from a test DL2 files
     """
@@ -248,6 +249,7 @@ def test_create_srcdep_dl3(temp_dir_observed_srcdep_files, observed_srcdep_dl2_f
     Generating a source-dependent DL3 file from a test DL2 files and test IRF file
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+    from lstchain.paths import dl2_to_dl3_filename 
 
     assert (
         run_tool(
@@ -267,7 +269,9 @@ def test_create_srcdep_dl3(temp_dir_observed_srcdep_files, observed_srcdep_dl2_f
         == 0
     )
 
-    hdulist = fits.open(temp_dir_observed_srcdep_files / "dl3_LST-1.Run02008.0000.fits.gz")
+    hdulist = fits.open(
+        temp_dir_observed_srcdep_files / dl2_to_dl3_filename(observed_srcdep_dl2_file)
+    )
     ra = hdulist[1].data['RA']
     dec = hdulist[1].data['DEC']
 

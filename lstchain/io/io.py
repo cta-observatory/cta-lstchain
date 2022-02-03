@@ -916,6 +916,7 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------

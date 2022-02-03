@@ -14,10 +14,12 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 
 For source-dependent analysis, a source-dep flag should be activated.
-The alpha cut is already applied on this step, and all survived events with each assumed 
-source position (on and off) are saved after the gammaness and alpha cut.
-To adapt to gammaness high-level analysis, assumed source position (on and off) is set
-as a reco source position just as a trick to glean survived events easily.
+Similarly to the cuts on gammaness, the global alpha cut values are provided 
+from AL_CUT stored in the HDU header.
+The alpha cut is already applied on this step, and all survived events with each 
+assumed source position (on and off) are saved after the gammaness and alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position (on and off)
+is set as a reco source position just as a trick to obtain survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
@@ -203,7 +205,7 @@ class DataReductionFITSWriter(Tool):
                 " to check for global cut information in the Header value"
             )
 
-    def apply_gh_cut(self):
+    def apply_srcindep_gh_cut(self):
         ''' apply gammaness cut '''
         self.data = self.event_sel.filter_cut(self.data)
 
@@ -272,7 +274,7 @@ class DataReductionFITSWriter(Tool):
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
         if not self.source_dep:
-            self.apply_gh_cut()
+            self.apply_srcindep_gh_cut()
         else:
             self.apply_srcdep_gh_alpha_cut()
 
