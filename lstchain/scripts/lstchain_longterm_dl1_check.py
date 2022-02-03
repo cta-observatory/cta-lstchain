@@ -157,13 +157,18 @@ def main():
                   'num_cosmics': [],
                   'num_pedestals': [],
                   'num_flatfield': [],
+
+                  'num_unknown_ucts_trigger_tags': [],
                   'num_wrong_ucts_tags_in_cosmics': [],
                   'num_wrong_ucts_tags_in_pedestals': [],
                   'num_wrong_ucts_tags_in_flatfield': [],
                   'num_ucts_jumps': [],
+
+                  'num_unknown_tib_trigger_tags': [],
                   'num_wrong_tib_tags_in_cosmics': [],
                   'num_wrong_tib_tags_in_pedestals': [],
                   'num_wrong_tib_tags_in_flatfield': [],
+
                   'num_pedestals_after_cleaning': [],
                   'num_contained_mu_rings': [],
 
