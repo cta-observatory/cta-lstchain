@@ -3,7 +3,6 @@ import inspect
 import logging
 
 from iminuit import Minuit
-from scipy.optimize import minimize
 import numpy as np
 import numexpr as ne
 import matplotlib.pyplot as plt
