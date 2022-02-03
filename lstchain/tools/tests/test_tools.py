@@ -109,6 +109,11 @@ def test_create_irf_point_like_srcdep(
        == 0
     )
 
+    with fits.open(irf_file) as hdul:
+        for hdu in hdul[1:]:
+            assert 'AL_CUT' in hdu.header
+            assert isinstance(hdu.header['AL_CUT'], float)
+
 
 def test_create_irf_point_like_energy_dependent_cuts(
     temp_dir_observed_files, simulated_dl2_file
