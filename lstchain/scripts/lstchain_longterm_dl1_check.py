@@ -1525,9 +1525,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page8.child = grid8
     page8.title = "Cosmics, averages"
 
-    tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
-                      page3, page4, page4b, page4c, page5,
-                      page6, page7, page8])
+    tabs = Tabs(tabs=[page0, page0a, page0b, page0c, page1, page2,
+                      page3, page4, page4b, page4c, page5, page6,
+                      page7, page8])
 
     if batch:
         save(column(Div(text='<h1> Long-term DL1 data check </h1>'), tabs))
