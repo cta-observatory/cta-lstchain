@@ -23,7 +23,7 @@ def test_r0_to_dl1_nsb_tuning(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     from lstchain.io import standard_config
     import os
-    config = standard_config
+    config = copy(standard_config)
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['waveform_nsb_tuning']['nsb_tuning'] = True
     config['waveform_nsb_tuning']['spe_location'] = os.path.join(os.path.dirname(__file__),
@@ -35,13 +35,12 @@ def test_r0_to_dl1_lhfit(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     from lstchain.io import standard_config
     import os
-    config = standard_config
+    config = copy(standard_config)
     config['source_config']['EventSource']['max_events'] = 5
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config'] = {
                                "sigma_s": 0.3282,
                                "crosstalk": 0.0,
-                               "ncall": 2000,
                                "sigma_space": 3,
                                "sigma_time": 4,
                                "time_before_shower": 0,

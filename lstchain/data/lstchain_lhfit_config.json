@@ -264,13 +264,14 @@
   "lh_fit_config": {
     "sigma_s": 0.3282,
     "crosstalk": 0.0,
-    "ncall": 2000,
     "sigma_space": 3,
     "sigma_time": 4,
     "time_before_shower": 0,
     "time_after_shower": 20,
     "n_peaks": 50,
     "no_asymmetry": false,
+    "use_weight": false,
+    "use_interleaved": null,
     "verbose": 0
   }
 }

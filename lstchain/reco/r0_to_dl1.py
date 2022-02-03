@@ -442,8 +442,7 @@ def get_dl1_lh_fit(
                                     use_weight=lh_fit_config['use_weight']
                                     )
 
-        fitter.predict(dl1_container, verbose=lh_fit_config['verbose'],
-                       ncall=lh_fit_config['ncall'], minuit=True)
+        fitter.predict(dl1_container, verbose=lh_fit_config['verbose'])
         if lh_fit_config['verbose'] >= 2:
             image = calibrated_event.dl1.tel[telescope_id].image
             fitter.plot_event(image, init=True, save=True, ids=str(dl1_container.event_id))

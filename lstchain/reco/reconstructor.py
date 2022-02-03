@@ -172,70 +172,34 @@ class DL0Fitter(ABC):
 
         return s
 
-    def fit(self, verbose=True, minuit=True, ncall=None, **kwargs):
+    def fit(self, verbose=True, **kwargs):
         """
             Performs the fitting procedure.
 
             Parameters
             ----------
             verbose: boolean
-            minuit: boolean
-                If True, minuit is used to perform the fit.
-                Else, scipy optimize is used instead (untested)
-            ncall: int
-                Maximum number of call for migrad
+
         """
-        if minuit:
-            def f(*args): return -2 * self.log_likelihood(*args)
+        def f(*args): return -2 * self.log_likelihood(*args)
 
-            print_level = 2 if verbose in [1, 2, 3] else 0
-            m = Minuit(f,
-                       name=self.names_parameters,
-                       **self.start_parameters)
-            for key, val in self.bound_parameters.items():
-                m.limits[key] = val
-            m.print_level = print_level
-            m.errordef = 0.5
-            m.simplex().migrad()
-            self.end_parameters = m.values.to_dict()
-            self.fcn = m.fval
-            try:
-                self.error_parameters = m.errors.to_dict()
+        print_level = 2 if verbose in [1, 2, 3] else 0
+        m = Minuit(f,
+                   name=self.names_parameters,
+                   **self.start_parameters)
+        for key, val in self.bound_parameters.items():
+            m.limits[key] = val
+        m.print_level = print_level
+        m.errordef = 0.5
+        m.simplex().migrad()
+        self.end_parameters = m.values.to_dict()
+        self.fcn = m.fval
+        try:
+            self.error_parameters = m.errors.to_dict()
 
-            except (KeyError, AttributeError, RuntimeError):
-                self.error_parameters = {key: np.nan for key in self.names_parameters}
-                pass
-        else:
-            fixed_params = {}
-            for param in self.names_parameters:
-                if param in kwargs.keys():
-                    fixed_params[param] = kwargs[param]
-                    del kwargs[param]
-            start_parameters = []
-            bounds = []
-            name_parameters = []
-            for key in self.names_parameters:
-                if key not in fixed_params.keys():
-                    start_parameters.append(self.start_parameters[key])
-                    bounds.append(self.bound_parameters[key])
-                    name_parameters.append(key)
-
-            def llh(x):
-                params = dict(zip(name_parameters, x))
-                return -2 * self.log_likelihood(**params, **fixed_params)
-
-            result = minimize(llh, x0=np.asarray(start_parameters),
-                              bounds=bounds, **kwargs)
-            self.end_parameters = dict(zip(name_parameters, result.x))
-            self.end_parameters.update(fixed_params)
-            try:
-                self.correlation_matrix = result.hess_inv.todense()
-                self.error_parameters = dict(zip(name_parameters,
-                                             np.diagonal(np.sqrt(self.correlation_matrix))))
-            except (KeyError, AttributeError):
-                pass
-            if verbose:
-                print(result)
+        except (KeyError, AttributeError, RuntimeError):
+            self.error_parameters = {key: np.nan for key in self.names_parameters}
+            pass
 
     def pdf(self, *args, **kwargs):
         """Compute a probability density function."""
