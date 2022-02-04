@@ -44,7 +44,7 @@ def log_asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
     psi: float
         Orientation of the 2D Gaussian
     rl: float
-        asymmetry factor between the two lengths
+        Asymmetry factor between the two lengths
 
     Returns
     -------

@@ -120,10 +120,11 @@ def display_array_camera(image, camera_geometry, axes=None, **kwargs):
     Parameters
     ----------
     image: array_like
-    axes: matplotlib.pyplot.axes
+    camera_geometry: `ctapipe.instrument.CameraGeometry`
+    axes: `matplotlib.pyplot.axes`
     Returns
     -------
-    d1: ctapipe.visualization.CameraDisplay
+    d1: `ctapipe.visualization.CameraDisplay`
     """
 
     if axes is None:

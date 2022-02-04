@@ -86,7 +86,6 @@ def setup_writer(writer, subarray, is_simulation):
     writer.h5file.filters = HDF5_ZSTD_FILTERS
     logger.info(f"USING FILTERS: {writer.h5file.filters}")
 
-
     tel_names = {str(tel)[4:] for tel in subarray.telescope_types}
 
     for tel_name in tel_names:
@@ -248,7 +247,6 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
         dl1_container.n_pixels = n_pixels
@@ -265,8 +263,8 @@ def get_dl1(
 
             if 'lh_fit_config' in config.keys():
                 if dl1_container.mc_type > -1000 or (calibrated_event.trigger.event_type == EventType.SUBARRAY):
-                # Re-evaluate the DL1 parameters using a likelihood
-                # minimization method
+                    # Re-evaluate the DL1 parameters using a likelihood
+                    # minimization method
                     if dl1_container['n_pixels'] > 0:
                         try:
                             if not config['lh_fit_config']['no_asymmetry']:
@@ -320,11 +318,12 @@ def get_dl1_lh_fit(
     dl1_container,
     normalized_pulse_template,
     pedestal_std,
-    custom_config={}):
+    custom_config
+):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated
     event. The features are extracted by maximizing an image likelihood
-    function over pixels ands time samples. The model considers an asymmetric
+    function over pixels and time samples. The model considers an asymmetric
     2D Gaussian distribution of the charge and a linear temporal model. The
     spatio-temporal image model is then compared to the signal vs time in each
     pixel while taking into account the response of the instrument from
@@ -334,10 +333,16 @@ def get_dl1_lh_fit(
     Parameters
     ----------
     calibrated_event: ctapipe event container
-    geometry: camera geometry
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    geometry: `ctapipe.instrument.CameraGeometry`
     telescope_id: `int`
     dl1_container: DL1ParametersContainer
     normalized_pulse_template: NormalizedPulseTemplate
+    pedestal_std: array-like or None
+        Pedestal standard deviation from interleaved events (WIP) from DL1 file
+        or None to use event-wise signal-less pixels standard deviation
+    custom_config: path to a configuration file
+        configuration used for the likelihood fit
     Returns
     -------
     DL1ParametersContainer
@@ -359,7 +364,7 @@ def get_dl1_lh_fit(
     n_pixels, n_samples = waveform.shape
     selected_gains = calibrated_event.r1.tel[telescope_id].selected_gain_channel
     mask_high = (selected_gains == 0)
-    if pedestal_std is not None: #  test to include interleaved correction on pedestal, NOT FUNCTIONNAL
+    if pedestal_std is not None:  # test to include interleaved correction on pedestal, NOT FUNCTIONNAL
         error = pedestal_std[1][0] * mask_high + pedestal_std[1][1] * ~mask_high
     else:
         error = None
@@ -409,7 +414,7 @@ def get_dl1_lh_fit(
                                  dl1_container.x.to(u.m).value
                                  + 1.0 * start_parameters['length']),
                         'y_cm': (dl1_container.y.to(u.m).value
-                                 - 1.0 *start_parameters['length'],
+                                 - 1.0 * start_parameters['length'],
                                  dl1_container.y.to(u.m).value
                                  + 1.0 * start_parameters['length']),
                         'charge': (dl1_container.intensity * 0.25,
@@ -418,9 +423,9 @@ def get_dl1_lh_fit(
                         'v': (v_min, v_max),
                         'psi': (-np.pi*2.0, np.pi*2.0),
                         'length': (0.001,
-                                   min(2 * start_parameters['length']
-                                       , r_max)),
-                        'wl': (0.001,1.0),
+                                   min(2 * start_parameters['length'],
+                                       r_max)),
+                        'wl': (0.001, 1.0),
                         'rl': (rl_min, rl_max)
                         }
     try:
@@ -460,11 +465,9 @@ def get_dl1_lh_fit(
                       "or Ctrl+C and Enter to stop")
                 input()
     except Exception as e:
-
         logger.exception('Could not fit : %s', e)
         logger.exception(e.__class__)
         raise e
-        return None
     return dl1_container
 
 

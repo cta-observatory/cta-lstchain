@@ -14,6 +14,7 @@ dependencies:
   - jupyter
   - matplotlib=3.5
   - notebook
+  - iminuit>=2
   - joblib
   - toml
   - protozfits=2.0
@@ -24,11 +25,11 @@ dependencies:
   - sphinx_rtd_theme
   - sphinx-argparse
   - nbsphinx
+  - numexpr
   - numpydoc
   - pandas
   - pymongo
   - seaborn
-  - numexpr
   - pip:
       - ctapipe_io_lst~=0.14.0
       - ctaplot~=0.5.5

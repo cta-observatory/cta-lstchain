@@ -41,7 +41,7 @@ class DL0Fitter(ABC):
             sigma_s: float array
                 Standard deviation of the amplitude of
                 the single photo-electron pulse
-            geometry: ctapipe.instrument.camera.CameraGeometry
+            geometry: `ctapipe.instrument.camera.CameraGeometry`
                 Camera geometry
             dt: float
                 Duration of time samples
@@ -171,7 +171,7 @@ class DL0Fitter(ABC):
 
         return s
 
-    def fit(self, verbose=True, **kwargs):
+    def fit(self, verbose=True):
         """
             Performs the fitting procedure.
 
@@ -416,7 +416,7 @@ class DL0Fitter(ABC):
                 Parameter over which the function needs to be plotted
             parameter_2: string
                 Second parameter over which the function needs to be plotted
-            axes: matplotlib.pyplot.axis
+            axes: `matplotlib.pyplot.axis`
                 Axis used to store the figure
                 If None, a new one is created
             size: int
@@ -432,7 +432,7 @@ class DL0Fitter(ABC):
 
             Returns
             -------
-            None or matplotlib.pyplot.axis object filled with the log-likelihood figure
+            None or `matplotlib.pyplot.axis` object filled with the log-likelihood figure
 
         """
         if parameter_2 is None:
@@ -737,7 +737,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             Can be used to modify the save location
         Returns
         -------
-        cam_display: ctapipe.visualization.CameraDisplay
+        cam_display: `ctapipe.visualization.CameraDisplay`
             Camera image using matplotlib
 
         """
@@ -750,16 +750,6 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         length = n_sigma * params['length']
         psi = params['psi']
-        """
-        dx = length * np.cos(psi)
-        dy = length * np.sin(psi)
-        direction_arrow = Arrow(x=params['x_cm'],
-                                y=params['y_cm'],
-                                dx=dx, dy=dy, width=10, color='k',
-                                label='EAS direction')
-
-        cam_display.axes.add_patch(direction_arrow)
-        """
         if show_ellipsis:
             cam_display.add_ellipse(centroid=(params['x_cm'],
                                               params['y_cm']),
@@ -780,7 +770,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
     def plot_residual(self, image, save=False, ids=''):
         """
-
+            Plot the residuals image- spatial_model in the camera after fitting
 
         Parameters
         ----------
@@ -790,9 +780,10 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             Save and close the figure if True, return it otherwise
         ids: string
             Can be used to modify the save location
+
         Returns
         -------
-        cam_display: ctapipe.visualization.CameraDisplay
+        cam_display: `ctapipe.visualization.CameraDisplay`
             Camera image using matplotlib
 
         """
@@ -835,7 +826,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         Returns
         -------
-        cam_display: ctapipe.visualization.CameraDisplay
+        cam_display: `ctapipe.visualization.CameraDisplay`
             Camera image using matplotlib
 
         """
@@ -872,7 +863,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         ----------
         image:
             Distribution of signal for the event in number of p.e.
-        axes: matplotlib.pyplot.axis
+        axes: `matplotlib.pyplot.axis`
             Axis used to store the figure
             If None, a new one is created
         save: bool
@@ -882,7 +873,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         Returns
         -------
-        axes: matplotlib.pyplot.axis
+        axes: `matplotlib.pyplot.axis`
             Object filled with the figure
         """
         image = image[self.mask_pixel]
@@ -894,10 +885,8 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             self.end_parameters['psi'])
         fitted_times = np.polyval(
             [self.end_parameters['v'], self.end_parameters['t_cm']], long_pix)
-        # fitted_times = fitted_times[pixels]
         times_index = np.argsort(fitted_times)
 
-        # waveforms = self.data[times_index]
         waveforms = self.data[pixels]
         waveforms = waveforms[times_index]
         long_pix = long_pix[times_index]
@@ -928,20 +917,19 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
 
 def asy_centroid(geom, image):
-
     """
     Compute a centroid weighting as the signal squared for asymmetric models
 
     Parameters
     ----------
-    geom: ctapipe.instrument.CameraGeometry
+    geom: `ctapipe.instrument.CameraGeometry`
         Camera geometry
     image : array_like
         Charge in each pixel
 
     Returns
     -------
-    (x_cm, y_cm): astropy.units.Quantity
+    (x_cm, y_cm): `astropy.units.Quantity`
 
     """
     unit = geom.pix_x.unit

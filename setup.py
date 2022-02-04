@@ -47,9 +47,11 @@ setup(
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.19.0',
         'h5py',
+        'iminuit>=2',
         'joblib',
         'matplotlib~=3.5',
         'numba',
+        'numexpr',
         'numpy<1.22.0a0',
         'pandas',
         'pyirf~=0.5.0',
