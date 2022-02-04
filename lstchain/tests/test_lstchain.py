@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import tables
+from copy import copy
 
 from lstchain.io import standard_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
@@ -75,6 +76,53 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
+def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    config = copy(standard_config)
+    config['source_config']['EventSource']['max_events'] = 5
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['lh_fit_config'] = {
+                               "sigma_s": 0.3282,
+                               "crosstalk": 0.0,
+                               "sigma_space": 3,
+                               "sigma_time": 4,
+                               "time_before_shower": 0,
+                               "time_after_shower": 20,
+                               "n_peaks": 50,
+                               "no_asymmetry": False,
+                               "use_weight": False,
+                               "verbose": 4
+                              }
+    os.makedirs('./event', exist_ok=True)
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    assert len(os.listdir('./event')) > 1
+    for path in os.listdir('./event'):
+        os.remove('./event/'+path)
+    os.rmdir('./event')
+
+
+@pytest.mark.private_data
+def test_r0_to_dl1_lhfit_observed(tmp_path):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    config = copy(standard_config)
+    config['source_config']['EventSource']['max_events'] = 5
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['lh_fit_config'] = {
+                               "sigma_s": 0.3282,
+                               "crosstalk": 0.0,
+                               "sigma_space": 3,
+                               "sigma_time": 4,
+                               "time_before_shower": 0,
+                               "time_after_shower": 20,
+                               "n_peaks": 50,
+                               "no_asymmetry": True,
+                               "use_weight": True,
+                               "use_interleaved": None,
+                               "verbose": 0
+                              }
+    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+
+
 def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
     with tables.open_file(simulated_dl1_file, 'r') as f:
@@ -136,7 +184,7 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     reg_disp_norm = joblib.load(rf_models["disp_norm"])
     cls_disp_sign = joblib.load(rf_models["disp_sign"])
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm = reg_disp_norm,
                        cls_disp_sign = cls_disp_sign, custom_config=standard_config)
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
@@ -152,6 +200,7 @@ def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     events.mc_type = 101
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
+
 
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector
