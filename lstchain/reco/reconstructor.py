@@ -577,7 +577,7 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
                                    length=length,
                                    psi=psi,
                                    rl=rl)
-        mu = ne.evaluate("exp(log_mu)")
+        mu = ne.evaluate("exp(log_mu)", local_dict=dict(log_mu=log_mu))
         mu[mu <= 0] = 1e-320
 
         # We reduce the sum by limiting to the poisson term contributing for
@@ -611,7 +611,8 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         # Compute the Poisson term in the pixel likelihood for
         # low luminosity pixels
         mu_plus_crosstalk = mu[mask_LL] + crosstalk_factor
-        log_mu_plus_crosstalk = ne.evaluate("log(mu_plus_crosstalk)")
+        log_mu_plus_crosstalk = ne.evaluate("log(mu_plus_crosstalk)",
+                                            local_dict=dict(mu_plus_crosstalk=mu_plus_crosstalk))
         log_mu_plus_crosstalk = ((photo_peaks - 1)
                                  * log_mu_plus_crosstalk.T).T
         log_poisson = (log_mu[mask_LL]
@@ -633,9 +634,8 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         sigma_n = (photo_peaks
                    * ((self.sigma_s[mask_LL][..., None]*templates[mask_LL])**2)[..., None])
         sigma_n = (self.error[mask_LL]**2)[..., None] + sigma_n
-        sigma_n = ne.evaluate("sqrt(sigma_n)")
+        sigma_n = ne.evaluate("sqrt(sigma_n)", local_dict=dict(sigma_n=sigma_n))
         log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n)
-        assert log_gauss is not None
 
         # Compute the pixel likelihood using a Gaussian approximation for
         # high luminosity pixels
@@ -656,11 +656,13 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
             log_pixel_pdf_HL, n_points_HL = np.asarray([0]), 0
 
         log_poisson = np.expand_dims(log_poisson.T, axis=1)
-        log_pixel_pdf_LL = ne.evaluate("log_poisson + log_gauss")
+        log_pixel_pdf_LL = ne.evaluate("log_poisson + log_gauss",
+                                       local_dict=dict(log_poisson=log_poisson, log_gauss=log_gauss))
         if self.use_weight:
             pixel_pdf_LL = np.sum(np.exp(log_pixel_pdf_LL), axis=2)
         else:
-            pixel_pdf_LL = ne.evaluate("sum(exp(log_pixel_pdf_LL), axis=2)")
+            pixel_pdf_LL = ne.evaluate("sum(exp(log_pixel_pdf_LL), axis=2)",
+                                       local_dict=dict(log_pixel_pdf_LL=log_pixel_pdf_LL))
 
         mask = (pixel_pdf_LL <= 0)
         pixel_pdf_LL[mask] = 1e-320
