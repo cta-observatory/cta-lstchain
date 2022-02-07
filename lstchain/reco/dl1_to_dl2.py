@@ -20,10 +20,16 @@ from sklearn.model_selection import train_test_split
 
 from . import disp
 from . import utils
-from ..io import standard_config, replace_config
+from ..io import (
+    standard_config, 
+    replace_config, 
+    get_dataset_keys, 
+    get_srcdep_params,
+)
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
+from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
 
 
@@ -304,14 +310,30 @@ def build_models(filegammas, fileprotons,
     df_proton = pd.read_hdf(fileprotons, key=dl1_params_lstcam_key)
 
     if config['source_dependent']:
-        src_dep_df_gamma = pd.read_hdf(filegammas, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_gamma.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_gamma.columns])
+        # if source-dependent parameters are already in dl1 data, just read those data
+        # if not, source-dependent parameters are added here
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(filegammas):
+            src_dep_df_gamma = get_srcdep_params(filegammas)
+         
+        else:
+            subarray_info = SubarrayDescription.from_hdf(filegammas)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_gamma = get_source_dependent_parameters(df_gamma, config, focal_length=focal_length)
+
         df_gamma = pd.concat([df_gamma, src_dep_df_gamma['on']], axis=1)
 
-        src_dep_df_proton = pd.read_hdf(fileprotons, key=dl1_params_src_dep_lstcam_key)
-        src_dep_df_proton.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_proton.columns])
+        # if source-dependent parameters are already in dl1 data, just read those data
+        # if not, source-dependent parameters are added here
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(fileprotons):
+            src_dep_df_proton = get_srcdep_params(fileprotons)
+
+        else:
+            subarray_info = SubarrayDescription.from_hdf(fileprotons)
+            tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
+            focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+            src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
+
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,

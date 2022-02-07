@@ -9,20 +9,19 @@ from astropy.io import fits
 from astropy.table import Table, QTable
 from astropy.time import Time
 
-from lstchain.reco.utils import location, get_geomagnetic_delta
+from lstchain.reco.utils import location, camera_to_altaz
 from lstchain.__init__ import __version__
-from lstchain.reco.utils import location
 
 
 __all__ = [
     "add_icrs_position_params",
     "create_event_list",
-    "get_target_params",
     "get_timing_params",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
     "get_pointing_params",
     "get_timing_params",
+    "set_expected_pos_to_reco_altaz",
 ]
 
 log = logging.getLogger(__name__)
@@ -170,11 +169,11 @@ def create_hdu_index_hdu(
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
-            "HDU_TYPE": evt_hdr["HDUCLAS1"].lower(),
-            "HDU_CLASS": evt_hdr["HDUCLAS1"].lower(),
+            "HDU_TYPE": "events",
+            "HDU_CLASS": "events",
             "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
             "FILE_NAME": str(file),
-            "HDU_NAME": evt_hdr["HDUCLAS1"],
+            "HDU_NAME": "EVENTS",
             "SIZE": filepath.stat().st_size,
         }
         hdu_index_tables.append(t_events)
@@ -182,23 +181,23 @@ def create_hdu_index_hdu(
         # GTI
         t_gti = t_events.copy()
 
-        t_gti["HDU_TYPE"] = gti_hdr["HDUCLAS1"].lower()
-        t_gti["HDU_CLASS"] = gti_hdr["HDUCLAS1"].lower()
-        t_gti["HDU_NAME"] = gti_hdr["HDUCLAS1"]
+        t_gti["HDU_TYPE"] = "gti"
+        t_gti["HDU_CLASS"] = "gti"
+        t_gti["HDU_NAME"] = "GTI"
 
         hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
 
-        t_pnt["HDU_TYPE"] = pnt_hdr["HDUCLAS1"].lower()
-        t_pnt["HDU_CLASS"] = pnt_hdr["HDUCLAS1"].lower()
-        t_pnt["HDU_NAME"] = pnt_hdr["HDUCLAS1"]
+        t_pnt["HDU_TYPE"] = "pointing"
+        t_pnt["HDU_CLASS"] = "pointing"
+        t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
         hdu_names = [
             "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
-            "PSF"  # , "GH CUTS", "RAD_MAX" For energy-dependent cuts
+            "PSF", "RAD_MAX"
         ]
 
         for irf in hdu_names:
@@ -231,45 +230,6 @@ def create_hdu_index_hdu(
     )
     hdu_index_list = fits.HDUList([fits.PrimaryHDU(), hdu_index])
     hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
-
-
-def get_target_params(zen, az=None, b_delta=None):
-    """
-    Get the target parameters as a dict, by either providing all parameters,
-    or, get the B_delta or azimuth, by using the other values.
-
-    Parameters:
-    -----------
-        zen: Zenith pointing value in radians
-            Float
-        az: Azimuth pointing value in radians
-            Float
-        b_delta: Orthogonal angle of the geomagnetic field with shower
-            axis in radians
-            Float
-    Returns:
-    --------
-        data_params: Dict with pointing values in degrees
-            Dict
-    """
-    data_params = {}
-
-    if b_delta is None:
-        if az is not None:
-            b_delta = get_geomagnetic_delta(zen=zen, az=az) * 180/np.pi
-            az *= (180/np.pi)
-        else:
-            print("Not enough parameters to include in the dict")
-            return data_params
-    if az is None:
-        az = get_az_from_interp_params(zen=zen, b_delta=b_delta) * 180/np.pi
-        b_delta *= (180/np.pi)
-
-    data_params["ZEN_PNT"] = round((zen * 180/np.pi), 1) * u.deg
-    data_params["AZ_PNT"] = round(az, 1) * u.deg
-    data_params["B_DELTA"] = round(b_delta, 1) * u.deg
-
-    return data_params
 
 
 def get_timing_params(data):
@@ -379,9 +339,26 @@ def add_icrs_position_params(data, source_pos):
 
     return data
 
+def set_expected_pos_to_reco_altaz(data):
+    """
+    Set expected source positions to reconstructed alt, az positions for source-dependent analysis
+    This is just a trick to easily extract ON/OFF events in gammapy analysis.
+    """
+    # set expected source positions as reco positions
+    time = data['dragon_time']
+    obstime = Time(time, scale='utc', format='unix')
+    expected_src_x = data['expected_src_x'] * u.m
+    expected_src_y = data['expected_src_y'] * u.m
+    focal = 28 * u.m
+    pointing_alt = data['pointing_alt']
+    pointing_az  = data['pointing_az']
+    expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+    data["reco_alt"] = expected_src_altaz.alt
+    data["reco_az"]  = expected_src_altaz.az
 
 def create_event_list(
-        data, run_number, source_name, source_pos, effective_time, elapsed_time
+        data, run_number, source_name, source_pos,
+        effective_time, elapsed_time, data_pars
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -400,6 +377,7 @@ def create_event_list(
         Float
     elapsed_time: Total elapsed time of triggered events of the run
         Float
+    data_pars:
 
     Returns
     -------
@@ -535,4 +513,4 @@ def create_event_list(
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
     pointing = fits.BinTableHDU(pnt_table, header=pnt_header, name="POINTING")
 
-    return event, gti, pointing, data_pars
+    return event, gti, pointing

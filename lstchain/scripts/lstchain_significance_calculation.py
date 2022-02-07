@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Run post-DL2 analysis
+Run significance calculation
 """
 import argparse
 
 import toml
 
-from lstchain.analysis.post_dl2 import (
+from lstchain.high_level.significance_calculation import (
     LOGGER,
     analyze_on_off,
     analyze_wobble,

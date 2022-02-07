@@ -2,7 +2,7 @@ import pytest
 
 
 def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
-    from lstchain.irf.interpolate import compare_irfs
+    from lstchain.high_level.interpolate import compare_irfs
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
 
     # Creating a IRF with a different gammaness cut to check the comparison
@@ -17,7 +17,7 @@ def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
         simulated_dl2_file,
         "--output-irf-file",
         irf_file_2,
-        "--fixed-gh-cut=0.7",
+        "--global-gh-cut=0.7",
     )
 
     irfs_1 = [simulated_irf_file, irf_file_2]
@@ -28,15 +28,15 @@ def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
 
 
 def test_load_irf_grid(simulated_irf_file):
-    from lstchain.irf.interpolate import load_irf_grid
+    from lstchain.high_level.interpolate import load_irf_grid
 
     aeff_list = load_irf_grid([simulated_irf_file], "EFFECTIVE AREA", "EFFAREA")
 
-    assert aeff_list.shape == (1, 21, 8)
+    assert aeff_list.shape == (1, 19, 8)
 
 
 def test_interp_irf(simulated_irf_file):
-    from lstchain.irf.interpolate import interpolate_irf
+    from lstchain.high_level.interpolate import interpolate_irf
 
     import numpy as np
     from astropy.table import Table
@@ -115,7 +115,7 @@ def test_interp_irf(simulated_irf_file):
 
 
 def test_check_delaunay_triangles(simulated_irf_file):
-    from lstchain.irf.interpolate import check_in_delaunay_triangle
+    from lstchain.high_level.interpolate import check_in_delaunay_triangle
     import astropy.units as u
 
     irf_file_3 = simulated_irf_file.parent / "irf_interp_0.fits.gz"
@@ -136,9 +136,8 @@ def test_check_delaunay_triangles(simulated_irf_file):
         "B_DELTA": 90 * u.deg
     }
 
-    d_new_1, new_irfs = check_in_delaunay_triangle(irfs, data_pars)
-    d_new_2, new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
-    print(d_new_1, d_new_2)
+    new_irfs = check_in_delaunay_triangle(irfs, data_pars)
+    new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
+    print(new_irfs, new_irfs2)
 
     assert len(new_irfs) == 3
-    assert d_new_2["ZEN_PNT"] == 40 * u.deg

@@ -4,9 +4,6 @@ import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
 
-from lstchain.irf.hdu_table import get_target_params
-from lstchain.reco.utils import min_distance
-
 from pyirf.io.gadf import (
     create_aeff2d_hdu,
     create_energy_dispersion_hdu  # ,create_psf_table_hdu
@@ -15,7 +12,7 @@ from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion  # ,interpolate_psf_table
 )
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, distance
 
 log = logging.getLogger(__name__)
 
@@ -51,8 +48,7 @@ def check_in_delaunay_triangle(irfs, data_params):
     target points in data_params.
 
     If the target point does not exist inside the simplex, the IRF
-    corresponding to the nearest point in the simplex, closest to the
-    target value.
+    corresponding to the nearest grid point to the target value.
 
     If the list of given IRFs are not enough for calculating the Delaunay
     triangulation, an empty list is returned.
@@ -69,8 +65,6 @@ def check_in_delaunay_triangle(irfs, data_params):
     ----------
     irf_list: Revised list of IRFs after the checks.
         'List'
-    data_pars: Updated dict of target parameters for interpolation.
-        'Dict'
     """
     # Exclude AZ_PNT as target interpolation parameter
     d = data_params.copy()
@@ -86,64 +80,44 @@ def check_in_delaunay_triangle(irfs, data_params):
         mc_pars = interp_params(data_pars, f)
         mc_params[i, :] = np.array(mc_pars)
 
-    data_val = np.array(interp_params(data_pars, data_params))
+    data_val = interp_params(data_pars, data_params)
 
     try:
         tri = Delaunay(mc_params)
     except ValueError:
-        log.error('Not enough grid values for Delaunay triangulation')
-        return d, new_irfs
+        print('Not enough grid values for Delaunay triangulation')
+        return new_irfs
 
-    # Find the nearest simplex with the target data values
-    # by checking the maximum plane distance with all simplices
-    dist_pt = tri.plane_distance(data_val)
-    id_simp = np.where(dist_pt == dist_pt.max())
-    nearest_simplex = tri.simplices[id_simp]
-    nearest_pts = tri.points[nearest_simplex][0]
+    target_in_simplex = tri.find_simplex(data_val)
 
-    # Check if the target values are inside or outside this simplex
-    tri_near = Delaunay(nearest_pts)
-    target_check = tri_near.find_simplex(data_val)
-
-    if target_check == -1:
-        log.error(
-            "Target value is outside interpolation. Using the nearest grid"
-            " point to the closest Delaunay simplex for interpolation."
-        )
-        # Get the nearest point to the new simplex, ie. projection to the
-        # closest facet from the target point.
-        proj = []
-        dist = []
-        for i in range(len(data_pars)+1):
-            pt_1 = nearest_pts[i]
-            pt_2 = nearest_pts[
-                (i + 1) % (len(data_pars)+1)
-            ]
-            proj_pt, d = min_distance(pt_1, pt_2, data_val)
-            proj.append(proj_pt)
-            dist.append(d)
-
-        proj = np.array(proj)
-        data_val_new = proj[np.where(dist == np.min(dist))][0]
-
-        # get the new data_params for interpolation
-        data_params_new = get_target_params(
-            zen=np.arccos(data_val_new[0]),
-            b_delta=np.arcsin(data_val_new[1])
-        )
+    if target_in_simplex == -1:
+        # The target values are not contained in any Delaunay triangle formed
+        # by the paramters of the list of IRFs provided.
+        # So just include the IRF with the closest parameter values
+        # to the target values
+        index = distance.cdist([data_val], mc_params).argmin()
+        print("Target value is outside interpolation. Using the nearest IRF.")
+        new_irfs.append(irfs[index])
     else:
-        data_params_new = data_params
+        # Just select the IRFs that are needed for the Delaunay triangulation
+        for i in tri.simplices[target_in_simplex]:
+            new_irfs.append(irfs[i])
 
-    for i in nearest_simplex[0]:
-        new_irfs.append(irfs[i])
-
-    return data_params_new, new_irfs
+    return new_irfs
 
 
 def compare_irfs(irfs):
     """
     Compare the given list of IRFs with various selection cuts, data binning
     and relevant metadata values.
+
+    Parameters
+    ----------
+    irfs: List of IRFs to compare
+        'List'
+    Returns
+    -------
+    : Boolean indicating whether the given list of IRFs are comparable
     """
     bin_sim = False
     meta_sim = False
@@ -151,8 +125,31 @@ def compare_irfs(irfs):
     params = []
     meta = []
 
-    # For fixed gammaness/theta cuts
-    select_meta = ["HDUCLAS3", "INSTRUME", "GH_CUT", "RAD_MAX", "G_OFFSET"]
+    # For global/energy-dependent gammaness/theta and global alpha cuts
+    select_meta = ["HDUCLAS3", "INSTRUME", "G_OFFSET"]
+    try:
+        with fits.open(irfs[0]) as hdul:
+            h = hdul["EFFECTIVE AREA"].header
+            energy_dependent_gh = "GH_EFF" in h
+            point_like = h["HDUCLAS3"] == "POINT-LIKE"
+            energy_dependent_theta = "TH_CONT" in h
+            source_dep = "AL_CUT" in h
+    except:
+        print(f"Effective Area is not present in {irfs[0]}")
+
+    if energy_dependent_gh:
+        select_meta.append("GH_EFF")
+    else:
+        select_meta.append("GH_CUT")
+    if point_like:
+        if energy_dependent_theta:
+            select_meta.append("TH_CONT")
+        else:
+            if source_dep:
+                select_meta.append("AL_CUT")
+            else:
+                select_meta.append("RAD_MAX")
+
     cols = Table.read(irfs[0], hdu="ENERGY DISPERSION").columns[:-1]
 
     for i, irf in enumerate(irfs):

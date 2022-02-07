@@ -47,7 +47,7 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
-    'get_srcdep_index_keys',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
@@ -847,7 +847,8 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
-    - astropy.table.QTable
+    - astropy.table.QTable.
+    Also include simulation information necessary for some functions.
 
     Parameters
     ----------
@@ -855,7 +856,9 @@ def read_mc_dl2_to_QTable(filename):
 
     Returns
     -------
-    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    events: `astropy.table.QTable`
+    pyirf_simu_info: `pyirf.simulations.SimulatedEventsInfo`
+    extra_data: 'Dict'
     """
 
     # mapping
@@ -878,6 +881,12 @@ def read_mc_dl2_to_QTable(filename):
         "reco_alt": u.rad,
         "reco_az": u.rad,
     }
+
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
 
     simu_info = read_simu_info_merged_hdf5(filename)
 
@@ -904,9 +913,14 @@ def read_mc_dl2_to_QTable(filename):
         viewcone=simu_info.max_viewcone_radius
     )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
-        columns=name_mapping
-    )
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        events_srcdep = get_srcdep_params(filename, 'on')
+        events = pd.concat([events, events_srcdep], axis=1)
+
+    events = events.rename(columns=name_mapping)
+
     events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
@@ -915,16 +929,20 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info, extra_data
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
-    Read data DL2 files from lstchain and return QTable format
+    Read data DL2 files from lstchain and return QTable format, along with
+    a dict of target parameters for IRF interpolation
+
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------
-    `astropy.table.QTable`
+    data: `astropy.table.QTable`
+    data_params: 'Dict' of target interpolation parameters
     """
 
     # Mapping
@@ -942,15 +960,37 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
 
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
     data = QTable.from_pandas(data)
 
     # Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
 
-    return data
+    # Create dict of target parameters for IRF interpolation
+    data_params = {}
+
+    zen = np.pi / 2 * u.rad - data["pointing_alt"].mean().to(u.rad)
+    az = data["pointing_az"].mean().to(u.rad)
+    b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
+
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 1) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 1) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 1) * u.deg
+
+    return data, data_params
 
 
 def read_dl2_params(t_filename, columns_to_read=None):
@@ -1025,9 +1065,9 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     return observation_time, df
 
 
-def get_srcdep_index_keys(filename):
+def get_srcdep_assumed_positions(filename):
     """
-    get index column name of source-dependent multi index columns
+    get assumed positions of source-dependent multi index columns
 
     Parameters
     ----------
@@ -1035,7 +1075,7 @@ def get_srcdep_index_keys(filename):
 
     Returns
     -------
-    source-dependent index names
+    assumed positions for source-dependent parameters
     """
     dataset_keys = get_dataset_keys(filename)
 
@@ -1045,6 +1085,9 @@ def get_srcdep_index_keys(filename):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
@@ -1052,14 +1095,15 @@ def get_srcdep_index_keys(filename):
     return data.columns.levels[0]
 
 
-def get_srcdep_params(filename, key):
+def get_srcdep_params(filename, wobble_angles=None):
     """
     get srcdep parameter data frame
 
     Parameters
     ----------
     filename: str - path to the HDF5 file
-    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    wobble_angles: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    If it is not specified, source-dependent parameters with each assumed position are loaded
 
     Returns
     -------
@@ -1073,11 +1117,17 @@ def get_srcdep_params(filename, key):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
-    return data[key]
+    if wobble_angles is not None:
+        data = data[wobble_angles]
+
+    return data
 
 
 def parse_cfg_bytestring(bytestring):

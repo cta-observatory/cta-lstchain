@@ -17,13 +17,14 @@ from lstchain.io.io import (
     dl2_params_lstcam_key,
     dl1_images_lstcam_key,
     get_dataset_keys,
+    get_srcdep_params,
     dl1_params_tel_mon_ped_key,
     dl1_params_tel_mon_cal_key,
     dl1_params_tel_mon_flat_key,
-    dl1_params_src_dep_lstcam_key,
 )
 
 from lstchain.io.config import get_standard_config
+
 import json
 
 
@@ -65,20 +66,16 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
     run_program("lstchain_dl1ab", "-f", simulated_dl1_file, "-o", output_file)
     return output_file
 
+def test_add_source_dependent_parameters(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+    shutil.copy(simulated_dl1_file, temp_dir_simulated_srcdep_files / "dl1_copy.h5")
+    dl1_file = temp_dir_simulated_srcdep_files / "dl1_copy.h5"
+    run_program("lstchain_add_source_dependent_parameters", "-f", dl1_file)
+    dl1_params_src_dep = get_srcdep_params(dl1_file)
 
-def test_add_source_dependent_parameters(simulated_dl1_file):
-    run_program("lstchain_add_source_dependent_parameters", "-f", simulated_dl1_file)
-    dl1_params_src_dep = pd.read_hdf(
-        simulated_dl1_file, key=dl1_params_src_dep_lstcam_key
-    )
-    dl1_params_src_dep.columns = pd.MultiIndex.from_tuples(
-        [
-            tuple(col[1:-1].replace("'", "").replace(" ", "").split(","))
-            for col in dl1_params_src_dep.columns
-        ]
-    )
-    assert "alpha" in dl1_params_src_dep["on"].columns
-
+    assert 'alpha' in dl1_params_src_dep['on'].columns
+    assert 'dist' in dl1_params_src_dep['on'].columns
+    assert 'time_gradient_from_source' in dl1_params_src_dep['on'].columns
+    assert 'skewness_from_source' in dl1_params_src_dep['on'].columns
 
 @pytest.fixture(scope="session")
 def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
@@ -92,7 +89,6 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "-o",
         merged_dl1_file,
         "--no-image",
-        "True",
     )
     return merged_dl1_file
 
@@ -185,6 +181,13 @@ def test_lstchain_mc_trainpipe(rf_models):
     assert rf_models["gh_sep"].is_file()
 
 
+def test_lstchain_mc_trainpipe_srcdep(rf_models_srcdep):
+    assert rf_models_srcdep["energy"].is_file()
+    assert rf_models_srcdep["disp_norm"].is_file()
+    assert rf_models_srcdep["disp_sign"].is_file()
+    assert rf_models_srcdep["gh_sep"].is_file()
+
+
 def test_lstchain_mc_rfperformance(tmp_path, simulated_dl1_file, fake_dl1_proton_file):
     gamma_file = simulated_dl1_file
     proton_file = fake_dl1_proton_file
@@ -232,8 +235,6 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
         temp_dir_observed_files,
         "-o",
         merged_dl1_observed_file,
-        "--no-image",
-        "False",
         "--run-number",
         "2008",
         "--pattern",
@@ -295,6 +296,25 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
     assert "reco_src_x" in dl2_df.columns
     assert "reco_src_y" in dl2_df.columns
 
+
+def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
+    assert simulated_srcdep_dl2_file.is_file()
+    dl2_srcdep_df = get_srcdep_params(simulated_srcdep_dl2_file)
+    assert "expected_src_x" in dl2_srcdep_df['on'].columns
+    assert "expected_src_y" in dl2_srcdep_df['on'].columns
+    assert "dist" in dl2_srcdep_df['on'].columns
+    assert "alpha" in dl2_srcdep_df['on'].columns
+    assert "time_gradient_from_source" in dl2_srcdep_df['on'].columns
+    assert "skewness_from_source" in dl2_srcdep_df['on'].columns
+    assert "gammaness" in dl2_srcdep_df['on'].columns
+    assert "reco_type" in dl2_srcdep_df['on'].columns
+    assert "reco_energy" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
+    assert "reco_src_x" in dl2_srcdep_df['on'].columns
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+
+
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
     run_program(
@@ -324,6 +344,32 @@ def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
     assert "reco_disp_dy" in dl2_df.columns
 
 
+@pytest.mark.private_data
+def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
+    assert observed_srcdep_dl2_file.is_file()
+    dl2_srcdep_df = get_srcdep_params(observed_srcdep_dl2_file)
+    srcdep_assumed_positions = ['on', 'off_090', 'off_180', 'off_270']
+    srcdep_dl2_params = [
+        'expected_src_x',
+        'expected_src_y',
+        'dist',
+        'alpha',
+        'time_gradient_from_source',
+        'skewness_from_source',
+        'gammaness',
+        'reco_type',
+        'reco_energy',
+        'reco_disp_dx',
+        'reco_disp_dy',
+        'reco_src_x',
+        'reco_src_y'
+    ]
+
+    for srcdep_assumed_position in srcdep_assumed_positions:
+        for srcdep_dl2_param in srcdep_dl2_params:
+            assert srcdep_dl2_param in dl2_srcdep_df[srcdep_assumed_position].columns
+
+
 def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     with tables.open_file(simulated_dl1ab) as output:
@@ -348,7 +394,7 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
         "-f", simulated_dl1_file,
         "-o", output_file,
         "-c", config_path,
-        '--no-image=True',
+        '--no-image',
     )
 
     with tables.open_file(output_file, 'r') as output:
@@ -370,14 +416,22 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
 def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
     run_program(
-        "lstchain_dl1ab", "-f", observed_dl1_files["dl1_file1"], "-o", output_dl1ab
+        "lstchain_dl1ab",
+        "-f", observed_dl1_files["dl1_file1"],
+        "-o", output_dl1ab,
+        "--no-pedestal-cleaning"
     )
     assert output_dl1ab.is_file()
+
     dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1.to_numpy(dtype='float'),
-                               dl1ab.to_numpy(dtype='float'), rtol=1e-3,
-                               equal_nan=True)
+
+    np.testing.assert_allclose(
+        dl1.to_numpy(dtype='float'),
+        dl1ab.to_numpy(dtype='float'),
+        rtol=1e-3,
+        equal_nan=True,
+    )
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
@@ -395,8 +449,7 @@ def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
         mc_gamma_testfile,
         "--path-models",
         rf_models["path"],
-        "--store-dl1",
-        "False",
+        "--no-dl1",
         "--output-dir",
         tmp_path,
     )
