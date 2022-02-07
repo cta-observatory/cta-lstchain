@@ -9,10 +9,8 @@ from .hdu_table import (
     create_event_list,
     create_hdu_index_hdu,
     create_obs_index_hdu,
-    create_event_list,
     get_timing_params,
     get_pointing_params,
-    get_timing_params,
     set_expected_pos_to_reco_altaz,
 )
 from .interpolate import (
@@ -30,7 +28,6 @@ __all__ = [
     "create_event_list",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
-    "create_event_list",
     "get_timing_params",
     "get_pointing_params",
     "interp_params",
