@@ -61,7 +61,7 @@ templates_path = ['_templates']
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.6", None),
     "numpy": ("https://numpy.org/doc/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy-1.8.0/html-scipyorg", None),
     "astropy": ("https://docs.astropy.org/en/latest/", None),
     "pytables": ("https://www.pytables.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
