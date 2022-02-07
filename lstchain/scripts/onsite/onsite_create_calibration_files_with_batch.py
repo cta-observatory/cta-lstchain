@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 import lstchain
+from lstchain.onsite import find_r0_subrun
 
 # parse arguments
 parser = argparse.ArgumentParser(
@@ -107,6 +108,7 @@ def main():
     if filters_list is not None and len(filters_list) != len(run_list):
         sys.exit("Filter list length must be equal to run list length. Verify \n")
 
+    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
     # loops over runs and sub_runs and send jobs
     filters = None
     for i, run in enumerate(run_list):
@@ -114,21 +116,11 @@ def main():
             filters = filters_list[i]
 
         for sub_run in sub_run_list:
-            print(f"\n--> Runs {run} and sub-run {sub_run}")
-
-            # verify input file
-            r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
-            file_list = sorted(r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
-            if len(file_list) == 0:
-                raise IOError(f"Run {run} not found\n")
-            else:
-                input_file = file_list[0]
-
+            print(f"\n--> Run {run} and sub-run {sub_run}")
+            input_file = find_r0_subrun(run, sub_run, r0_dir)
             print(f"--> Input file: {input_file}")
 
-            # find date
-            input_dir, name = os.path.split(os.path.abspath(input_file))
-            path, date = input_dir.rsplit('/', 1)
+            date = input_file.parent.name
 
             # verify output dir
             output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"

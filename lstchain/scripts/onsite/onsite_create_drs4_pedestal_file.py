@@ -15,7 +15,7 @@ from pathlib import Path
 import lstchain
 import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink
+from lstchain.onsite import create_pro_symlink, find_r0_subrun
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -61,16 +61,8 @@ def main():
 
     # verify input file
     r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
-    file_list = sorted(r0_dir.rglob(f'*{run:05d}.0000*'))
-    if len(file_list) == 0:
-        print(f">>> Error: Run {run} not found under {base_dir}/R0 \n")
-        raise NameError()
-    else:
-        input_file = f"{file_list[0]}"
-
-    # find date
-    input_dir, name = os.path.split(os.path.abspath(input_file))
-    path, date = input_dir.rsplit('/', 1)
+    input_file = find_r0_subrun(run, sub_run=0, r0_dir=r0_dir)
+    date = input_file.parent.name
 
     # verify and make output dir
     output_dir = f"{calib_dir}/drs4_baseline/{date}/{prod_id}"

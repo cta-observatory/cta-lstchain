@@ -1,5 +1,4 @@
 #!/usr//bin/env python
-
 """
 
  Onsite script to create a F-factor systematic correction file by fitting an intensity scan
