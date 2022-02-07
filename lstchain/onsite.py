@@ -1,12 +1,14 @@
-import os
+from pathlib import Path
 
-def create_pro_symlink(output_dir, prod_id):
-    pro_dir = f"{output_dir}/../pro"
+def create_pro_symlink(output_dir):
+    '''Create or update the pro symlink to given ``output dir``'''
+    output_dir = Path(output_dir).expanduser().resolve()
+    pro_dir = output_dir.parent / "pro"
 
     # remove previous pro link, if it points to an older version
-    if os.path.exists(pro_dir) and os.readlink(pro_dir) is not output_dir:
-        os.remove(pro_dir)
+    if pro_dir.exists() and pro_dir.resolve() != output_dir.resolve():
+        pro_dir.unlink()
 
-    if not os.path.exists(pro_dir):
-        os.symlink(prod_id, pro_dir)
+    if not pro_dir.exists():
+        pro_dir.symlink_to(output_dir)
 

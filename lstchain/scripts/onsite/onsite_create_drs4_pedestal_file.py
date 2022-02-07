@@ -80,7 +80,7 @@ def main():
 
     # update the default production directory
     if pro_symlink:
-        create_pro_symlink(output_dir, prod_id)
+        create_pro_symlink(output_dir)
 
     # make log dir
     log_dir = f"{output_dir}/log"
