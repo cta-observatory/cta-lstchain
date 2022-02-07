@@ -312,7 +312,7 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns
 
 
 @pytest.mark.private_data
@@ -473,8 +473,10 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
     real_data_dl2_file = temp_dir_observed_files / (
         observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
-    events = read_data_dl2_to_QTable(real_data_dl2_file)
+    events, data_pars = read_data_dl2_to_QTable(real_data_dl2_file)
+
     assert "gh_score" in events.colnames
+    assert "B_DELTA" in data_pars
 
 
 @pytest.mark.private_data

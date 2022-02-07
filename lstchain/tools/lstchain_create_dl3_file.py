@@ -10,9 +10,10 @@ Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector and DL3Cuts Component
 and also given in some example configs in docs/examples/
 
-For the cuts on gammaness, the Tool looks at the IRF provided, to either use
-global cuts, based on the header value of the global gammaness cut, GH_CUT,
-present in each HDU, or energy-dependent cuts, based on the GH_CUTS HDU.
+For the cuts on gammaness, the Tool looks at the IRF provided or the final
+interpolated/selected IRF, to either use global cuts, based on the header
+value of the global gammaness cut, GH_CUT, present in each HDU, or
+energy-dependent cuts, based on the GH_CUTS HDU.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
@@ -20,10 +21,12 @@ copy and append the relevant example config files, into a custom config file.
 For source-dependent analysis, a source-dep flag should be activated.
 Similarly to the cuts on gammaness, the global alpha cut values are provided
 from AL_CUT stored in the HDU header.
-The alpha cut is already applied on this step, and all survived events with each
-assumed source position (on and off) are saved after the gammaness and alpha cut.
-To adapt to the high-level analysis used by gammapy, assumed source position (on and off)
-is set as a reco source position just as a trick to obtain survived events easily.
+The alpha cut is already applied on this step, and all survived events with
+each assumed source position (on and off) are saved after the gammaness and
+alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position
+(on and off) is set as a reco source position just as a trick to obtain
+survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
@@ -247,7 +250,6 @@ class DataReductionFITSWriter(Tool):
             if len(self.irf_list) > 1:
                 self.use_irf_interpolation = True
                 # Compare the IRFs for its metadata and cuts
-                ### Check for energy_dependent cuts?
                 if not compare_irfs(self.irf_list):
                     raise ToolConfigurationError(
                         f"IRF files in {self.input_irf_path} with pattern, "
@@ -314,6 +316,9 @@ class DataReductionFITSWriter(Tool):
             )
 
     def check_energy_dependent_cuts(self):
+        """
+        Check if the final IRF has energy-dependent gammaness cuts or not.
+        """
         try:
             with fits.open(self.final_irf_output) as hdul:
                 self.use_energy_dependent_cuts = (

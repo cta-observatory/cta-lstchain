@@ -45,7 +45,6 @@ __all__ = [
     "source_dx_dy",
     "source_side",
     "get_geomagnetic_delta",
-    "get_az_from_interp_params",
     "min_distance"
 ]
 
@@ -758,49 +757,6 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     delta = np.arccos(term)
 
     return delta
-
-
-def get_az_from_interp_params(
-    zen, b_delta, geomag_dec=None,
-    geomag_inc=None, time=None
-):
-    """
-    From a given zenith and orthogonal geomagnetic angle with the shower axis,
-    with them provided in radians
-
-    Parameters
-    ----------
-    zen: Zenith pointing angle. Better to use 'astropy.units.Quantities'
-        'radian'
-    b_delta: Orthogonal angle between geomagnetic field and the shower axis.
-        'radian'
-    geomag_dec: Geomagnetic declination measures the difference between the
-        measurement of true magnetic north and the geographical north,
-        eastwards. Hence we add to the azimuth measurement as it is measured
-        westwards.
-        'radian'
-    geomag_inc: Geomagnetic inclination, 'dip angle' is the angle between the
-        geomagnetic field and the horizontal plane.
-        'radian'
-    time: astropy.time.Time
-        If geomag_inc or geomag_dec are not give, use this time to
-        calculate them using `get_geomagnetic_field_orientation`.
-        If time is None, use the current time.
-    Returns
-    -------
-    az: Azimuth pointing angle.
-        'radian'
-    """
-    if geomag_dec is None or geomag_inc is None:
-        geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
-
-    num = np.cos(b_delta) - np.sin(geoma_inc) * np.cos(zen)
-    dem = np.cos(geomag_inc) * np.sin(zen)
-
-    if dem != 0:
-        return np.arccos(num/dem) - geomag_dec
-    else:
-        return np.inf
 
 
 def min_distance(line_pt_1, line_pt_2, target_point):

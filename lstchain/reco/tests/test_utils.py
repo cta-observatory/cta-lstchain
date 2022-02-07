@@ -213,32 +213,6 @@ def test_get_geomagnetic_delta():
     assert u.isclose(inc, 0.20785624 * u.rad)
 
 
-def test_get_az_from_interp_params():
-    from lstchain.reco.utils import get_az_from_interp_params
-
-    geomag_dec = -5.0674 * np.pi / 180
-    geomag_inc = 37.4531 * np.pi / 180
-
-    del_1 = 0.
-    zen_1 = np.pi/2 - geomag_inc
-    del_2 = np.pi/2.
-    zen_2 = - np.arctan(np.tan(geomag_inc))
-
-    phi_1 = get_az_from_interp_params(
-        zen=zen_1, b_delta=del_1,
-        geomag_dec=geomag_dec,
-        geomag_inc=geomag_inc
-    )
-    phi_2 = get_az_from_interp_params(
-        zen=zen_2, b_delta=del_2, 
-        geomag_dec=geomag_dec,
-        geomag_inc=geomag_inc
-    )
-
-    assert np.isclose(phi_1, -geomag_dec)
-    assert np.isclose(phi_2, -geomag_dec)
-
-
 def test_min_distance():
     from lstchain.reco.utils import min_distance
     pt_1 = np.array([2,2])
