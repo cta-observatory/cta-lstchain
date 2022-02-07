@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
     from lstchain.high_level.interpolate import compare_irfs
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
