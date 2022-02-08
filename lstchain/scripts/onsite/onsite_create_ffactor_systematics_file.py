@@ -5,14 +5,14 @@
 
 
 """
-
+from pathlib import Path
 import argparse
 import os
 import subprocess
 
 import lstchain
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink
+from lstchain.onsite import create_pro_symlink, DEFAULT_BASE_PATH
 
 def none_or_str(value):
     if value == "None":
@@ -29,13 +29,13 @@ optional = parser.add_argument_group('optional arguments')
 required.add_argument('-d', '--date', help="Date of the scan (YYYYMMDD)", required=True)
 
 # config file is mandatory because it contains the list of input runs
-required.add_argument('-c', '--config', help="Config file (json format) with the list of runs", required=True)
+required.add_argument('-c', '--config', type=Path, help="Config file (json format) with the list of runs", required=True)
 
 version = lstchain.__version__
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
-optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
-                      default='/fefs/aswg/data/real')
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
+                      default=DEFAULT_BASE_PATH)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--input_prefix', help="Prefix of the input file names", default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
@@ -51,18 +51,18 @@ config_file = args.config
 prefix = args.input_prefix
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
-calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
+calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
 
 
 def main():
     # verify config file
-    if not os.path.exists(config_file):
-        raise IOError(f"Config file {config_file} does not exists. \n")
+    if not config_file.exists():
+        raise IOError(f"Config file {config_file} does not exists.")
 
     print(f"\n--> Config file {config_file}")
 
     # verify output dir
-    output_dir = f"{calib_dir}/ffactor_systematics/{date}/{prod_id}"
+    output_dir = calib_dir / "ffactor_systematics" / date / prod_id
     if not os.path.exists(output_dir):
         print(f"--> Create directory {output_dir}")
         os.makedirs(output_dir, exist_ok=True)
@@ -74,24 +74,24 @@ def main():
         pro = prod_id
 
     # verify input dir
-    input_dir = f"{calib_dir}/calibration/{date}/{pro}"
-    if not os.path.exists(input_dir):
-        raise IOError(f"Input directory {input_dir} not found\n")
+    input_dir = calib_dir / "calibration" / date / pro
+    if not input_dir.exists():
+        raise IOError(f"Input directory {input_dir} not found")
 
     print(f"\n--> Input directory {input_dir}")
 
     # make log dir
-    log_dir = f"{output_dir}/log"
-    if not os.path.exists(log_dir):
+    log_dir = output_dir / "log"
+    if not log_dir.exists():
         print(f"--> Create directory {log_dir}")
-        os.makedirs(log_dir, exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     # define output file names
-    output_file = f"{output_dir}/{prefix}_scan_fit_{date}.{sub_run:04d}.h5"
-    log_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.log"
-    plot_file = f"{output_dir}/log/{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
+    output_file = output_dir / f"{prefix}_scan_fit_{date}.{sub_run:04d}.h5"
+    log_file = log_dir / f"{prefix}_scan_fit_{date}.{sub_run:04d}.log"
+    plot_file = log_dir / f"{prefix}_scan_fit_{date}.{sub_run:04d}.pdf"
 
-    if os.path.exists(output_file):
+    if output_file.exists():
         remove = False
 
         if not yes and os.getenv('SLURM_JOB_ID') is None:
