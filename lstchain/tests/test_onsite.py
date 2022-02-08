@@ -76,3 +76,16 @@ def test_find_run_summary():
         find_run_summary(date='20221120', base_dir=BASE_DIR)
 
 
+@pytest.mark.private_data
+def test_find_time_calibration_file():
+    from lstchain.onsite import find_time_calibration_file
+
+    path = find_time_calibration_file(pro=PRO, run=2008, base_dir=BASE_DIR)
+    assert path.name == 'time_calibration.Run01625.0000.h5'
+    assert PRO in str(path)
+    assert path.exists()
+
+    path = find_time_calibration_file(pro=PRO, run=1625, base_dir=BASE_DIR)
+    assert path.name == 'time_calibration.Run01625.0000.h5'
+    assert PRO in str(path)
+    assert path.exists()

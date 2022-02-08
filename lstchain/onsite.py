@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from .paths import parse_calibration_name
+
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
 
@@ -61,3 +63,39 @@ def find_run_summary(date, base_dir=DEFAULT_BASE_PATH):
     if not run_summary_path.exists():
         raise IOError(f"Night summary file {run_summary_path} does not exist\n")
     return run_summary_path
+
+
+def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PATH):
+    '''Find a time calibration file for given run
+    '''
+
+    # search for time calibration file
+    time_file = None
+
+    time_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF"
+
+    # search the last time run before or equal to the calibration run
+    if time_run is None:
+        file_list = sorted(time_dir.rglob(f'*/{pro}/time_calibration.Run*.0000.h5'))
+
+        if len(file_list) == 0:
+            raise IOError(f"No time calibration file found in the data tree for prod {pro}\n")
+
+        for path in file_list:
+            run_in_list = parse_calibration_name(path)
+            if run_in_list.run <= run:
+                time_file = path.resolve()
+            else:
+                break
+
+        if time_file is None:
+            raise IOError(f"No time calibration file found before run {run} for prod {pro}\n")
+
+        return time_file
+
+    # if given, search a specific time file
+    file_list = sorted(time_dir.rglob(f'*/{pro}/time_calibration.Run{time_run:05d}.0000.h5'))
+    if len(file_list) == 0:
+        raise IOError(f"Time calibration file from run {time_run} not found\n")
+
+    return file_list[0].resolve()

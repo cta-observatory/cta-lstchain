@@ -19,7 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink, find_r0_subrun, find_pedestal_file, find_run_summary
+from lstchain.onsite import create_pro_symlink, find_r0_subrun, find_pedestal_file, find_run_summary, find_time_calibration_file
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -148,37 +148,7 @@ def main():
     print(f"\n--> Pedestal file: {pedestal_file}")
 
     # search for time calibration file
-    time_file = None
-    time_dir = f"{calib_dir}/drs4_time_sampling_from_FF"
-
-    # search the last time run before or equal to the calibration run
-    if time_run is None:
-        file_list = sorted(Path(f"{time_dir}").rglob(f'*/{pro}/time_calibration.Run*.0000.h5'))
-
-        if len(file_list) == 0:
-            raise IOError(f"No time calibration file found in the data tree for prod {prod_id}\n")
-        else:
-            for file in file_list:
-                run_in_list = file.stem.rsplit("Run")[1].rsplit('.')[0]
-                if int(run_in_list) <= run:
-                    time_file = file.resolve()
-                else:
-                    break
-
-        if time_file is None:
-            raise IOError(f"No time calibration file found before run {run} for prod {pro}\n")
-
-    # if given, search a specific time file
-    else:
-        file_list = sorted(Path(f"{time_dir}").rglob(f'*/{pro}/time_calibration.Run{time_run:05d}.0000.h5'))
-        if len(file_list) == 0:
-            raise IOError(f"Time calibration file from run {time_run} not found\n")
-        else:
-            time_file = file_list[0].resolve()
-
-    if not os.path.exists(time_file):
-        raise IOError(f"Time calibration file {time_file} does not exist\n")
-
+    time_file = find_time_calibration_file(pro, run, time_run, args.base_dir)
     print(f"\n--> Time calibration file: {time_file}")
 
     sys_dir = f"{calib_dir}/ffactor_systematics/"
