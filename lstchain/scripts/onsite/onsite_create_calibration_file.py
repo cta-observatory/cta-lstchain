@@ -20,6 +20,8 @@ import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
 from lstchain.onsite import (
+    DEFAULT_BASE_PATH,
+    DEFAULT_CONFIG,
     create_pro_symlink,
     find_r0_subrun,
     find_pedestal_file,
@@ -46,8 +48,8 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
-optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
-                      default='/fefs/aswg/data/real')
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
+                      default=DEFAULT_BASE_PATH)
 optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 
@@ -73,36 +75,34 @@ optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=floa
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
 optional.add_argument('-f', '--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
-default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-optional.add_argument('--config', help="Config file", default=default_config)
+
+optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
+
 optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
-args = parser.parse_args()
-run = args.run_number
-ped_run = args.pedestal_run
-prod_id = args.prod_version
-stat_events = args.statistics
-base_dir = args.base_dir
-time_run = args.time_run
-sys_date = args.sys_date
-no_sys_correction = args.no_sys_correction
-output_base_name = args.output_base_name
-sub_run = args.sub_run
-tel_id = args.tel_id
-config_file = args.config
-mongodb = args.mongodb
-yes = args.yes
-pro_symlink = not args.no_pro_symlink
-calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 
 def main():
+    args = parser.parse_args()
+    run = args.run_number
+    prod_id = args.prod_version
+    stat_events = args.statistics
+    time_run = args.time_run
+    sys_date = args.sys_date
+    no_sys_correction = args.no_sys_correction
+    output_base_name = args.output_base_name
+    sub_run = args.sub_run
+    tel_id = args.tel_id
+    config_file = args.config
+    yes = args.yes
+    pro_symlink = not args.no_pro_symlink
+
     # looks for the filter values in the database if not given
     if args.filters is None:
-        filters = search_filter(run)
+        filters = search_filter(run, args.mongodb)
     else:
         filters = args.filters
 
@@ -118,22 +118,23 @@ def main():
     print(f"\n--> Start calculating calibration from run {run}, filters {filters}")
 
     # verify config file
-    if not os.path.exists(config_file):
+    if not config_file.exists():
         raise IOError(f"Config file {config_file} does not exists. \n")
 
     print(f"\n--> Config file {config_file}")
 
     # verify input file
-    r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
+    r0_dir = args.r0_dir or args.base_dir / 'R0'
     input_file = find_r0_subrun(run, sub_run, r0_dir)
     date = input_file.parent.name
     print(f"\n--> Input file: {input_file}")
 
     # verify output dir
-    output_dir = f"{calib_dir}/calibration/{date}/{prod_id}"
-    if not os.path.exists(output_dir):
+    calib_dir = args.base_dir / "monitoring/PixelCalibration/LevelA"
+    output_dir = calib_dir / "calibration" / date / prod_id
+    if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     if pro_symlink:
         pro = "pro"
@@ -142,16 +143,16 @@ def main():
         pro = prod_id
 
     # make log dir
-    log_dir = f"{output_dir}/log"
-    if not os.path.exists(log_dir):
+    log_dir = output_dir / "log"
+    if not log_dir.exists():
         print(f"--> Create directory {log_dir}")
-        os.makedirs(log_dir, exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     # search the summary file info
     run_summary_path = find_run_summary(date, args.base_dir)
     print(f"\n--> Use run summary {run_summary_path}")
 
-    pedestal_file = find_pedestal_file(pro, args.ped_run, date=date, base_dir=args.base_dir)
+    pedestal_file = find_pedestal_file(pro, args.pedestal_run, date=date, base_dir=args.base_dir)
     print(f"\n--> Pedestal file: {pedestal_file}")
 
     # search for time calibration file
@@ -180,13 +181,13 @@ def main():
 
     output_name = f"{prefix}{output_base_name}{filter_info}.Run{run:05d}.{sub_run:04d}"
 
-    output_file = f"{output_dir}/{output_name}.h5"
+    output_file = output_dir / f'{output_name}.h5'
     print(f"\n--> Output file {output_file}")
 
-    log_file = f"{output_dir}/log/{output_name}.log"
+    log_file = log_dir / f"{output_name}.log"
     print(f"\n--> Log file {log_file}")
 
-    if os.path.exists(output_file):
+    if output_file.exists():
         remove = False
 
         if not yes and os.getenv('SLURM_JOB_ID') is None:
@@ -234,12 +235,12 @@ def main():
     print("\n--> END")
 
 
-def search_filter(run):
+def search_filter(run, database_url):
     """read the employed filters form mongodb"""
     filters = None
     try:
 
-        myclient = pymongo.MongoClient(mongodb)
+        myclient = pymongo.MongoClient(database_url)
 
         mydb = myclient["CACO"]
         mycol = mydb["RUN_INFORMATION"]

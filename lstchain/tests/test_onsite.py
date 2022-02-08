@@ -1,6 +1,7 @@
 import pytest
 import os
 from pathlib import Path
+import json
 
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
@@ -8,6 +9,16 @@ test_r0_path = test_data / 'real/R0/'
 test_subrun = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 PRO = 'v0.8.2.post2.dev48+gb1343281'
 BASE_DIR = test_data / 'real'
+
+
+def test_default_config():
+    from lstchain.onsite import DEFAULT_CONFIG
+
+    assert DEFAULT_CONFIG.is_file()
+
+    # test it's valid json
+    with DEFAULT_CONFIG.open('rb') as f:
+        json.load(f)
 
 
 def test_create_pro_link(tmp_path: Path):

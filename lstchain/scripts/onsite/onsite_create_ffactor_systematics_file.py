@@ -42,19 +42,20 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
-args = parser.parse_args()
-date = args.date
-prod_id = args.prod_version
-base_dir = args.base_dir
-sub_run = args.sub_run
-config_file = args.config
-prefix = args.input_prefix
-yes = args.yes
-pro_symlink = not args.no_pro_symlink
-calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
 
 
 def main():
+    args = parser.parse_args()
+    date = args.date
+    prod_id = args.prod_version
+    base_dir = args.base_dir
+    sub_run = args.sub_run
+    config_file = args.config
+    prefix = args.input_prefix
+    yes = args.yes
+    pro_symlink = not args.no_pro_symlink
+    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+
     # verify config file
     if not config_file.exists():
         raise IOError(f"Config file {config_file} does not exists.")
@@ -63,9 +64,9 @@ def main():
 
     # verify output dir
     output_dir = calib_dir / "ffactor_systematics" / date / prod_id
-    if not os.path.exists(output_dir):
+    if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     if pro_symlink:
         pro = "pro"

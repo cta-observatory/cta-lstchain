@@ -15,7 +15,7 @@ from pathlib import Path
 import lstchain
 import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink, find_r0_subrun
+from lstchain.onsite import DEFAULT_BASE_PATH, create_pro_symlink, find_r0_subrun
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -31,7 +31,7 @@ optional.add_argument('-v', '--prod_version', help="Version of the production",
 optional.add_argument('-m', '--max_events', help="Number of events to be processed",
                       type=int, default=20000)
 optional.add_argument('-b', '--base_dir', help="Base dir for the output directory tree",
-                      type=str, default='/fefs/aswg/data/real')
+                      type=Path, default=DEFAULT_BASE_PATH)
 optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 optional.add_argument('--tel_id', help="telescope id. Default = 1",
@@ -45,18 +45,18 @@ parser.add_argument(
     help='Do not display a progress bar during event processing'
 )
 
-args = parser.parse_args()
-run = args.run_number
-prod_id = args.prod_version
-max_events = args.max_events
-base_dir = args.base_dir
-tel_id = args.tel_id
-yes = args.yes
-pro_symlink = not args.no_pro_symlink
-calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 
 def main():
+    args = parser.parse_args()
+    run = args.run_number
+    prod_id = args.prod_version
+    max_events = args.max_events
+    base_dir = args.base_dir
+    tel_id = args.tel_id
+    yes = args.yes
+    pro_symlink = not args.no_pro_symlink
+
     print(f"\n--> Start calculating DRS4 pedestals from run {run}\n")
 
     # verify input file
@@ -65,25 +65,26 @@ def main():
     date = input_file.parent.name
 
     # verify and make output dir
-    output_dir = f"{calib_dir}/drs4_baseline/{date}/{prod_id}"
-    if not os.path.exists(output_dir):
+    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    output_dir = calib_dir / "drs4_baseline" / date / prod_id
+    if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # update the default production directory
     if pro_symlink:
         create_pro_symlink(output_dir)
 
     # make log dir
-    log_dir = f"{output_dir}/log"
-    if not os.path.exists(log_dir):
+    log_dir = output_dir / "log"
+    if not log_dir.exists():
         print(f"--> Create directory {log_dir}")
         os.makedirs(log_dir, exist_ok=True)
 
     # define output file
-    output_file = f"{output_dir}/drs4_pedestal.Run{run:05d}.0000.h5"
+    output_file = output_dir / f"drs4_pedestal.Run{run:05d}.0000.h5"
 
-    if os.path.exists(output_file):
+    if output_file.exists():
         remove = False
 
         if not yes and os.getenv('SLURM_JOB_ID') is None:

@@ -9,12 +9,18 @@
 """
 
 import argparse
-import os
 import subprocess
 from pathlib import Path
 
 import lstchain
-from lstchain.onsite import create_pro_symlink, find_r0_subrun, find_pedestal_file, find_run_summary
+from lstchain.onsite import (
+    DEFAULT_BASE_PATH,
+    DEFAULT_CONFIG,
+    create_pro_symlink,
+    find_r0_subrun,
+    find_pedestal_file,
+    find_run_summary,
+)
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create time calibration files',
@@ -33,13 +39,14 @@ optional.add_argument('-p', '--pedestal_run',
 
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=20000)
-optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
-                      default='/fefs/aswg/data/real')
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=Path,
+                      default=DEFAULT_BASE_PATH)
 optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
                       type=Path)
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
-default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-optional.add_argument('--config', help="Config file", default=default_config)
+
+optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
+
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 parser.add_argument(
@@ -48,28 +55,21 @@ parser.add_argument(
     help='Do not display a progress bar during event processing'
 )
 
-args = parser.parse_args()
-run = args.run_number
-ped_run = args.pedestal_run
-prod_id = args.prod_version
-stat_events = args.statistics
-base_dir = args.base_dir
-sub_run = args.sub_run
-config_file = args.config
-pro_symlink = not args.no_pro_symlink
-
-if config_file is None:
-    config_file = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
-
-max_events = 1000000
-calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
-
-
 def main():
+    args = parser.parse_args()
+    run = args.run_number
+    prod_id = args.prod_version
+    stat_events = args.statistics
+    base_dir = args.base_dir
+    sub_run = args.sub_run
+    config_file = args.config
+    pro_symlink = not args.no_pro_symlink
+
+
     print(f"\n--> Start calculating drs4 time corrections from run {run}")
 
     # verify config file
-    if not os.path.exists(config_file):
+    if not config_file.exists():
         raise IOError(f"Config file {config_file} does not exists. \n")
 
     print(f"\n--> Config file {config_file}")
@@ -81,11 +81,12 @@ def main():
     print(f"\n--> Input file: {input_file}")
 
     # verify output dir
-    output_dir = f"{calib_dir}/drs4_time_sampling_from_FF/{date}/{prod_id}"
+    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    output_dir = calib_dir / "drs4_time_sampling_from_FF" / date / prod_id
 
-    if not os.path.exists(output_dir):
+    if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # update the default production directory
     if pro_symlink:
@@ -97,11 +98,10 @@ def main():
     run_summary_path = find_run_summary(date, args.base_dir)
     print(f"\n--> Use run summary {run_summary_path}")
 
-    pedestal_file = find_pedestal_file(pro, args.ped_run, date=date, base_dir=args.base_dir)
+    pedestal_file = find_pedestal_file(pro, args.pedestal_run, date=date, base_dir=args.base_dir)
     print(f"\n--> Pedestal file: {pedestal_file}")
 
-    
-    time_file = f"{output_dir}/time_calibration.Run{run:05d}.0000.h5"
+    time_file = output_dir / f"time_calibration.Run{run:05d}.0000.h5"
     print(f"\n--> PRODUCING TIME CALIBRATION in {time_file} ...")
     cmd = [
         "lstchain_data_create_time_calibration_file",
@@ -118,7 +118,6 @@ def main():
 
     print("\n--> RUNNING...")
     subprocess.run(cmd, check=True)
-
     print("\n--> END")
 
 

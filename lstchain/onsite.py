@@ -1,9 +1,15 @@
 from pathlib import Path
+from pkg_resources import resource_filename
 
 from .paths import parse_calibration_name
 
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
+
+DEFAULT_CONFIG = Path(resource_filename(
+    'lstchain',
+    "data/onsite_camera_calibration_param.json",
+))
 
 
 def create_pro_symlink(output_dir):
