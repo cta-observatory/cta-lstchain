@@ -6,6 +6,8 @@ from pathlib import Path
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/'
 test_subrun = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
+PRO = 'v0.8.2.post2.dev48+gb1343281'
+BASE_DIR = test_data / 'real'
 
 
 def test_create_pro_link(tmp_path: Path):
@@ -32,6 +34,45 @@ def test_create_pro_link(tmp_path: Path):
 @pytest.mark.private_data
 def test_find_r0_subrun():
     from lstchain.onsite import find_r0_subrun
-    
+
     path = find_r0_subrun(2008, 0, test_r0_path)
     assert path.resolve() == test_subrun.resolve()
+
+
+@pytest.mark.private_data
+def test_find_pedestal_path():
+    from lstchain.onsite import find_pedestal_file
+
+    # find by run_id
+    path = find_pedestal_file(pro=PRO, pedestal_run=2005, base_dir=BASE_DIR)
+    assert path.name == 'drs4_pedestal.Run02005.0000.h5'
+
+    # find by night
+    path = find_pedestal_file(pro=PRO, date='20191124', base_dir=BASE_DIR)
+    assert path.name == 'drs4_pedestal.Run01623.0000.h5'
+
+    # if both are given, run takes precedence
+    path = find_pedestal_file(pro=PRO, pedestal_run=2005, date='20191124', base_dir=BASE_DIR)
+    assert path.name == 'drs4_pedestal.Run02005.0000.h5'
+
+
+    with pytest.raises(IOError):
+        # wrong run
+        find_pedestal_file(pro=PRO, pedestal_run=2010, base_dir=BASE_DIR)
+
+
+@pytest.mark.private_data
+def test_find_run_summary():
+    from lstchain.onsite import find_run_summary
+
+    # find by run_id
+    path = find_run_summary(date='20200218', base_dir=BASE_DIR)
+    assert path.name == 'RunSummary_20200218.ecsv'
+
+    path = find_run_summary(date='20201120', base_dir=BASE_DIR)
+    assert path.name == 'RunSummary_20201120.ecsv'
+
+    with pytest.raises(IOError):
+        find_run_summary(date='20221120', base_dir=BASE_DIR)
+
+

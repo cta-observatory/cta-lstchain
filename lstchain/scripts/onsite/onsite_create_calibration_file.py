@@ -19,7 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink, find_r0_subrun
+from lstchain.onsite import create_pro_symlink, find_r0_subrun, find_pedestal_file, find_run_summary
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -141,33 +141,10 @@ def main():
         os.makedirs(log_dir, exist_ok=True)
 
     # search the summary file info
-    run_summary_path = f"{base_dir}/monitoring/RunSummary/RunSummary_{date}.ecsv"
-    if not os.path.exists(run_summary_path):
-        raise IOError(f"Night summary file {run_summary_path} does not exist\n")
-
+    run_summary_path = find_run_summary(date, args.base_dir)
     print(f"\n--> Use run summary {run_summary_path}")
-    # pedestal base dir
-    ped_dir = f"{calib_dir}/drs4_baseline/"
 
-    # search the pedestal file of the same date
-    if ped_run is None:
-        # else search the pedestal file of the same date
-        file_list = sorted(Path(f"{ped_dir}/{date}/{pro}/").rglob('drs4_pedestal*.0000.h5'))
-        if len(file_list) == 0:
-            raise IOError(f"No pedestal file found for date {date}\n")
-        if len(file_list) > 1:
-            raise IOError(f"Too many pedestal files found for date {date}: {file_list}, choose one run\n")
-        else:
-            pedestal_file = file_list[0].resolve()
-
-    # else, if given, search a specific pedestal run
-    else:
-        file_list = sorted(Path(f"{ped_dir}").rglob(f'*/{pro}/drs4_pedestal.Run{ped_run:05d}.0000.h5'))
-        if len(file_list) == 0:
-            raise IOError(f"Pedestal file from run {ped_run} not found\n")
-        else:
-            pedestal_file = file_list[0].resolve()
-
+    pedestal_file = find_pedestal_file(pro, args.ped_run, date=date, base_dir=args.base_dir)
     print(f"\n--> Pedestal file: {pedestal_file}")
 
     # search for time calibration file
