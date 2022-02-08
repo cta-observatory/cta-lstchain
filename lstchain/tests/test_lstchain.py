@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import tables
 
-from lstchain.io import standard_config
+from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 
@@ -16,17 +16,21 @@ test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
-test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.7.6.dev606+g6e697f2d/calibration_filters_52.Run02006.0000.h5'
-test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.7.6.dev606+g6e697f2d/drs4_pedestal.Run02005.0000.h5'
-test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.7.6.dev606+g6e697f2d/time_calibration.Run01625.0000.h5'
+test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.8.2.post2.dev48+gb1343281/calibration_filters_52.Run02006.0000.h5'
+test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.8.2.post2.dev48+gb1343281/drs4_pedestal.Run02005.0000.h5'
+test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.8.2.post2.dev48+gb1343281/time_calibration.Run01625.0000.h5'
 test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
 
 
-@pytest.mark.run(order=1)
 def test_r0_to_dl1(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
+
     infile = mc_gamma_testfile
-    r0_to_dl1(infile, custom_config=standard_config, output_filename=tmp_path / "dl1_gamma.h5")
+    r0_to_dl1(
+        infile,
+        custom_config=standard_config,
+        output_filename=tmp_path / "dl1_gamma.h5"
+    )
 
 
 @pytest.mark.private_data
@@ -71,7 +75,6 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
-@pytest.mark.run(after='test_r0_to_dl1')
 def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
     with tables.open_file(simulated_dl1_file, 'r') as f:
@@ -87,15 +90,66 @@ def test_content_dl1(simulated_dl1_file):
         assert 'obs_id' in params_table.colnames
 
 
-def test_get_source_dependent_parameters(simulated_dl1_file):
+def test_get_source_dependent_parameters_mc(simulated_dl1_file):
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
 
+    # for gamma MC
     dl1_params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, standard_config)
-    assert "alpha" in src_dep_df['on'].columns
+    src_dep_df_gamma = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    # for proton MC
+    dl1_params.mc_type = 101
+    src_dep_df_proton = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    assert 'alpha' in src_dep_df_gamma['on'].columns
+    assert 'dist' in src_dep_df_gamma['on'].columns
+    assert 'time_gradient_from_source' in src_dep_df_gamma['on'].columns
+    assert 'skewness_from_source' in src_dep_df_gamma['on'].columns
+    assert (src_dep_df_gamma['on']['expected_src_x'] == dl1_params['src_x']).all()
+    assert (src_dep_df_gamma['on']['expected_src_y'] == dl1_params['src_y']).all()
+
+    np.testing.assert_allclose(
+        src_dep_df_proton['on']['expected_src_x'], 0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_proton['on']['expected_src_y'], 0., atol=1e-2
+    )
+
+@pytest.mark.private_data
+def test_get_source_dependent_parameters_observed(observed_dl1_files):
+    from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
+
+    # on observation data
+    srcdep_config['observation_mode']='on'
+    dl1_params = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
+    src_dep_df_on = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    # wobble observation data
+    srcdep_config['observation_mode']='wobble'
+    dl1_params['alt_tel'] += np.deg2rad(0.4) 
+    src_dep_df_wobble = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    assert 'alpha' in src_dep_df_on['on'].columns
+    assert 'dist' in src_dep_df_on['on'].columns
+    assert 'time_gradient_from_source' in src_dep_df_on['on'].columns
+    assert 'skewness_from_source' in src_dep_df_on['on'].columns
+    assert (src_dep_df_on['on']['expected_src_x'] == 0).all()
+    assert (src_dep_df_on['on']['expected_src_y'] == 0).all()
+
+    np.testing.assert_allclose(
+        src_dep_df_wobble['on']['expected_src_x'], -0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['on']['expected_src_y'], 0., atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['off_180']['expected_src_x'], 0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['off_180']['expected_src_y'], 0., atol=1e-2
+    )
 
 
-@pytest.mark.run(order=2)
 def test_build_models(simulated_dl1_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
@@ -115,7 +169,6 @@ def test_build_models(simulated_dl1_file, rf_models):
     joblib.dump(cls_disp_sign, rf_models["disp_sign"])
 
 
-@pytest.mark.run(order=3)
 def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import apply_models
     import joblib

@@ -3,10 +3,11 @@ import os
 from copy import copy
 
 __all__ = [
-    'read_configuration_file',
+    'get_cleaning_parameters',
     'get_standard_config',
+    'get_srcdep_config',
+    'read_configuration_file',
     'replace_config',
-    'get_cleaning_parameters'
 ]
 
 
@@ -41,6 +42,16 @@ def get_standard_config():
     standard_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_standard_config.json")
     return read_configuration_file(standard_config_file)
 
+def get_srcdep_config():
+    """
+    Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'
+
+    Returns
+    -------
+    dict
+    """
+    srcdep_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_src_dep_config.json")
+    return read_configuration_file(srcdep_config_file)
 
 def replace_config(base_config, new_config):
     """
@@ -61,6 +72,7 @@ def replace_config(base_config, new_config):
         config[k] = new_config[k]
 
     return config
+
 
 def get_cleaning_parameters(config, clean_method_name):
     """

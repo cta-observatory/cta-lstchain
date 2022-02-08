@@ -38,6 +38,8 @@ class CalibrationCalculator(Component):
     """
 
     systematic_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         exists=True, directory_ok=False,
         help='Path to systematic correction file ',
     ).tag(config=True)
@@ -123,7 +125,6 @@ class CalibrationCalculator(Component):
 
             except:
                 raise IOError(f"Problem in reading quadratic term file {self.systematic_correction_path}")
-
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
 

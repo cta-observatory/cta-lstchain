@@ -183,7 +183,6 @@ def test_get_obstime_real():
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
 
-
 def test_get_geomagnetic_field_orientation():
     from lstchain.reco.utils import (
         get_geomagnetic_field_orientation,
@@ -212,3 +211,15 @@ def test_get_geomagnetic_delta():
 
     inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
     assert u.isclose(inc, 0.20785624 * u.rad)
+
+
+def test_min_distance():
+    from lstchain.reco.utils import min_distance
+    pt_1 = np.array([2,2])
+    pt_2 = np.array([1,1])
+    target_pt = np.array([1, 2])
+
+    proj, dist = min_distance(pt_1, pt_2, target_pt)
+
+    assert np.isclose(dist, 0.7071)
+    assert np.allclose(proj, [1.5, 1.5])

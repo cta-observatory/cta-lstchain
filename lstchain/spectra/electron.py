@@ -1,8 +1,8 @@
 import astropy.units as u
 import numpy as np
 
-
 __all__ = ['electron_HESS']
+
 
 def electron_HESS(E):
     """From https://indico.in2p3.fr/event/15018/
@@ -19,7 +19,7 @@ def electron_HESS(E):
           astropy.units.quantity.Quantity units: 1/u.TeV / u.cm**2 / u.s / u.sr
     """
 
-    f0 = 104.9e-13 / u.GeV / u.cm**2 / u.s / u.sr
+    f0 = 104.9e-13 / u.GeV / u.cm ** 2 / u.s / u.sr
     Gamma1 = -3.04
     Gamma2 = -3.78
     Eb = 0.94 * u.TeV
@@ -31,6 +31,6 @@ def electron_HESS(E):
     par = dict(zip(par_dic, par_var))
 
     dFdEdO = f0 * np.power(E / E0, Gamma1) * \
-        np.power(1 + np.power(E / Eb, 1 / alpha), (Gamma2-Gamma1) * alpha)
+             np.power(1 + np.power(E / Eb, 1 / alpha), (Gamma2 - Gamma1) * alpha)
 
-    return dFdEdO.to(1 / u.TeV / u.cm**2 / u.s / u.sr), par 
+    return dFdEdO.to(1 / u.TeV / u.cm ** 2 / u.s / u.sr), par

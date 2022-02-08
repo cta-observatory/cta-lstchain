@@ -1,10 +1,4 @@
-from matplotlib import pyplot as plt
-from ctapipe.visualization import CameraDisplay
 import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages
-from ctapipe_io_lst import load_camera_geometry
-from ctapipe.coordinates import EngineeringCameraFrame
-
 # read back the monitoring containers written with the tool calc_camera_calibration.py
 from ctapipe.containers import (
     FlatFieldContainer,
@@ -12,10 +6,17 @@ from ctapipe.containers import (
     PedestalContainer,
     PixelStatusContainer,
 )
-
+from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.io.hdf5tableio import HDF5TableReader
+from ctapipe.visualization import CameraDisplay
+from ctapipe_io_lst import load_camera_geometry
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
-__all__ = ["read_file", "plot_all"]
+__all__ = [
+    "plot_all",
+    "read_file",
+]
 
 ff_data = FlatFieldContainer()
 ped_data = PedestalContainer()
@@ -38,8 +39,6 @@ def read_file(file_name, tel_id=1):
     tel_id:      telescope id
     """
     with HDF5TableReader(file_name) as h5_table:
-        assert h5_table._h5file.isopen == True
-
         table = f"/tel_{tel_id}/flatfield"
         next(h5_table.read(table, ff_data))
         table = f"/tel_{tel_id}/calibration"
@@ -376,7 +375,6 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 plt.hist(gain, bins=50, label=label)
                 plt.legend()
                 plt.subplots_adjust(top=0.92)
-
 
                 pdf.savefig(plt.gcf())
                 plt.close()

@@ -15,8 +15,13 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
-                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
+from ctapipe_io_lst import (
+    CDTS_AFTER_37201_DTYPE,
+    CDTS_BEFORE_37201_DTYPE,
+    DRAGON_COUNTERS_DTYPE,
+    LSTEventSource,
+    MultiFiles,
+)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 

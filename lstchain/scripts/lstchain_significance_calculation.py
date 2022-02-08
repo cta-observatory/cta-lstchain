@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """
-Run post-DL2 analysis
+Run significance calculation
 """
 import argparse
+
 import toml
-from lstchain.analysis.post_dl2 import analyze_on_off, analyze_wobble, LOGGER, setup_logging
+
+from lstchain.high_level.significance_calculation import (
+    LOGGER,
+    analyze_on_off,
+    analyze_wobble,
+    setup_logging,
+)
 
 
 def get_parser():
@@ -49,4 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

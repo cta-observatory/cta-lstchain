@@ -1,12 +1,3 @@
-__all__ = [
-    '_generate_polygon_vertices',
-    '_generate_bokeh_multi_polygon_arrays',
-    'CameraDisplay',
-    'show_camera',
-    'plot_mean_and_stddev_bokeh',
-    'get_pixel_location'
-]
-
 import copy
 import logging
 from bokeh.layouts import gridplot
@@ -21,9 +12,23 @@ from pkg_resources import resource_filename
 
 import numpy as np
 import bokeh
-from bokeh.io import output_notebook, push_notebook, show
+from bokeh.io import (
+    output_notebook,
+    push_notebook,
+    show,
+)
+
+__all__ = [
+    'CameraDisplay',
+    '_generate_bokeh_multi_polygon_arrays',
+    '_generate_polygon_vertices',
+    'get_pixel_location',
+    'plot_mean_and_stddev_bokeh',
+    'show_camera',
+]
 
 pixel_hardware_info = []
+
 
 def _generate_polygon_vertices(order=6, x=0, y=0, size=1.0, theta0=0.0):
     """
@@ -38,7 +43,7 @@ def _generate_bokeh_multi_polygon_arrays(geom, order=6):
     pixel_polys_x = []
     pixel_polys_y = []
     for pix_x, pix_y, pix_area in zip(
-        geom.pix_x.value, geom.pix_y.value, geom.pix_area.value
+            geom.pix_x.value, geom.pix_y.value, geom.pix_area.value
     ):
         vx, vy = _generate_polygon_vertices(
             order=order,
@@ -61,7 +66,7 @@ class CameraDisplay:
     as soon as it is released!
     '''
 
-    def __init__(self, geom: CameraGeometry, zlow = 0., zhigh = 1.,
+    def __init__(self, geom: CameraGeometry, zlow=0., zhigh=1.,
                  label='Camera display', title='', use_notebook=True,
                  autoshow=True):
 
@@ -81,9 +86,9 @@ class CameraDisplay:
         )
 
         self._color_mapper = bokeh.models.mappers.LinearColorMapper(
-                palette=bokeh.palettes.Viridis256, low=zlow, high=zhigh,
-                low_color='grey', high_color='red',
-                nan_color='white'
+            palette=bokeh.palettes.Viridis256, low=zlow, high=zhigh,
+            low_color='grey', high_color='red',
+            nan_color='white'
         )
 
         self.figure = figure(title=title, match_aspect=True, aspect_scale=1)
@@ -139,13 +144,14 @@ class CameraDisplay:
         self._geom = new_geom
 
     @property
-    def image(self,):
+    def image(self, ):
         return self.datasource.data["image"]
 
     @image.setter
     def image(self, new_image):
         self.datasource.data["image"] = new_image
         self.update()
+
 
 def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 showlog=True, display_range=None,
@@ -176,7 +182,10 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     Returns
     -------
-    [p1, p2, p3]: three bokeh figures, intended for showing them on the same row
+    [slider, p1, range_slider, p2, p3]: three bokeh figures, intended for
+    showing them on the same row, and two sliders, one for the run numbers (
+    or whatever "sets" of data we are displaying) and the other for the
+    z-range of the plots.
     p1 is the camera display (with "content" in linear & logarithmic scale)
     p2: content vs. pixel
     p3: histogram of content (with one entry per pixel)
@@ -195,15 +204,15 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     if np.ndim(content) == 1:
         allimages.append(content)
     else:
-        for i in range(1,numsets+1):
-            allimages.append(content[i-1])
+        for i in range(1, numsets + 1):
+            allimages.append(content[i - 1])
 
     if titles is None:
-        titles = ['']*numsets
+        titles = [''] * numsets
 
     # By default we plot the range which contains 99.8 of all events, so that
     # outliers do not prevent us from seing the bulk of the data:
-    display_min = np.nanquantile(allimages,0.001)
+    display_min = np.nanquantile(allimages, 0.001)
     display_max = np.nanquantile(allimages, 0.999)
 
     if display_range is not None:
@@ -214,7 +223,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                         label, titles[0], use_notebook=False, autoshow=False)
     cam.image = allimages[0]
     cam.figure.title.text = titles[0]
-
 
     allimageslog = []
     camlog = None
@@ -233,7 +241,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                     logcontent[i] = np.log10(image[i])
             allimageslog.append(logcontent)
 
-        camlog = CameraDisplay(camgeom, np.nanquantile(allimageslog,0.001),
+        camlog = CameraDisplay(camgeom, np.nanquantile(allimageslog, 0.001),
                                np.nanquantile(allimageslog, 0.999),
                                label, titles[0], use_notebook=False,
                                autoshow=False)
@@ -274,7 +282,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                                 ('pix # in cluster', '@pix_id_in_cluster')],
                       mode='mouse', point_policy='snap_to_data'))
 
-
     tab1 = Panel(child=cam.figure, title='linear')
     if showlog:
         tab2 = Panel(child=camlog.figure, title='logarithmic')
@@ -294,22 +301,24 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                                          value=cam.image))
     pixel_data = p2.circle(x='pix_id', y='value', size=2, source=source2)
 
-    source2_lowlim = None
-    if content_lowlim is not None:
-        if np.isscalar(content_lowlim):
-            content_lowlim = content_lowlim* np.ones_like(content)
-        source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
-                                          value=content_lowlim[0]))
-        p2.line(x='pix_id', y='value', source=source2_lowlim,
-                line_dash='dashed', color='orange', line_width=2)
-    source2_upplim = None
-    if content_upplim is not None:
-        if np.isscalar(content_upplim):
-            content_upplim = content_upplim* np.ones_like(content)
-        source2_upplim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
-                                                     value=content_upplim[0]))
-        p2.line(x='pix_id', y='value', source=source2_upplim,
-                line_dash='dashed', color='red')
+    if content_lowlim is None:
+        content_lowlim = np.nan * np.ones_like(content)
+    if content_upplim is None:
+        content_upplim = np.nan * np.ones_like(content)
+
+    if np.isscalar(content_lowlim):
+        content_lowlim = content_lowlim* np.ones_like(content)
+    source2_lowlim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                      value=content_lowlim[0]))
+    p2.line(x='pix_id', y='value', source=source2_lowlim,
+            line_dash='dashed', color='orange', line_width=2)
+
+    if np.isscalar(content_upplim):
+        content_upplim = content_upplim* np.ones_like(content)
+    source2_upplim = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
+                                                value=content_upplim[0]))
+    p2.line(x='pix_id', y='value', source=source2_upplim,
+            line_dash='dashed', color='red')
 
     p2.add_tools(
         HoverTool(tooltips=[('(pix_id, value)', '(@pix_id, @value)')],
@@ -332,7 +341,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         alledges.append(edges)
 
     source3 = ColumnDataSource(data=dict(top=allhists[0],
-                                         bottom=0.7*np.ones_like(allhists[0]),
+                                         bottom=0.7 * np.ones_like(allhists[0]),
                                          left=alledges[0][:-1],
                                          right=alledges[0][1:]))
 
@@ -345,21 +354,20 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
             source=source3)
 
     if titles is None:
-        titles = [None]*len(allimages)
+        titles = [None] * len(allimages)
 
     cdsdata = dict(z=allimages, hist=allhists, edges=alledges, titles=titles)
-    if content_lowlim is not None:
-        # BEWARE!! these have to be lists of arrays. Not 2D numpy arrays!!
-        cdsdata['lowlim'] = [x for x in content_lowlim]
-    if content_upplim is not None:
-        cdsdata['upplim'] = [x for x in content_upplim]
+    # BEWARE!! these have to be lists of arrays. Not 2D numpy arrays!!
+    cdsdata['lowlim'] = [x for x in content_lowlim]
+    cdsdata['upplim'] = [x for x in content_upplim]
+
     if showlog:
         cdsdata['zlog'] = allimageslog
 
     cds_allimages = ColumnDataSource(data=cdsdata)
     # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
-                                  source1log = source1log,
+                                  source1log=source1log,
                                   source2=source2,
                                   source2_lowlim=source2_lowlim,
                                   source2_upplim=source2_upplim,
@@ -368,7 +376,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                                   title=cam.figure.title,
                                   titlelog=titlelog,
                                   showlog=showlog),
-    code="""
+                        code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
         varzlow = zz.data['lowlim']
@@ -382,17 +390,15 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                  source1log.data['image'][i] = zlog[slider_value-1][i]
              }
              source2.data['value'][i] = source1.data['image'][i]
-             
-             if (source2_lowlim != null)
-                 source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
-             if (source2_upplim != null)
-                 source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
+             source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
+             source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
         }
-        for (var i = 0; i < source3.data['top'].length; i++) {
-            source3.data['top'][i] = hist[slider_value-1][i]
-            source3.data['left'][i] = edges[slider_value-1][i]
-            source3.data['right'][i] = edges[slider_value-1][i+1]
+        for (var j = 0; j < source3.data['top'].length; j++) {
+            source3.data['top'][j] = hist[slider_value-1][j]
+            source3.data['left'][j] = edges[slider_value-1][j]
+            source3.data['right'][j] = edges[slider_value-1][j+1]
         }
+
         title.text = zz.data['titles'][slider_value-1]
         source1.change.emit()
         if (showlog) {
@@ -407,15 +413,22 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     slider = None
     if numsets > 1:
+        slider_height = 300
+        # WARNING: the html won't look nice for number of sets much larger
+        # than 300! But in this way we avoid that the slider skips elements:
+        if numsets > 299:
+            slider_height = numsets+1
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical', show_value=False, height=300)
+                        orientation='vertical', show_value=False,
+                        height=slider_height)
+
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
 
     callback2 = CustomJS(args=dict(color_mapper=cam._color_mapper,
                                    color_mapper_log=color_mapper_log,
                                    showlog=showlog),
-    code="""
+                         code="""
         var range = cb_obj.value
         color_mapper.low = range[0]
         color_mapper.high = range[1]
@@ -427,7 +440,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
             color_mapper_log.change.emit()
         }
     """)
-    step = (display_max - display_min)/100.
+    step = (display_max - display_min) / 100.
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
                                title="z_range", orientation='vertical',
@@ -439,7 +452,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
 
 def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
-
     """
     Parameters
     ----------
@@ -482,7 +494,7 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
 
     row1 = show_camera(mean, camgeom, pad_width, pad_height, labels[0])
     row2 = show_camera(stddev, camgeom, pad_width, pad_height,
-                                labels[1])
+                       labels[1])
 
     grid = gridplot([row1, row2], sizing_mode=None,
                     plot_width=pad_width, plot_height=pad_height)
@@ -490,7 +502,6 @@ def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
 
 
 def get_pixel_location(pix_id):
-
     """
 
     Parameters
@@ -512,9 +523,9 @@ def get_pixel_location(pix_id):
     # The first time we read in the data stored in the resources directory:
     infilename = resource_filename('lstchain',
                                    'resources/LST_pixid_to_cluster.txt')
-    data = np.genfromtxt(infilename, comments='#',dtype='int')
+    data = np.genfromtxt(infilename, comments='#', dtype='int')
 
-    pixel_hardware_info.extend([None]*(1 + data[:,0].max()))
+    pixel_hardware_info.extend([None] * (1 + data[:, 0].max()))
     for d in data:
         pixel_hardware_info[d[0]] = [d[1], d[2], d[3]]
 

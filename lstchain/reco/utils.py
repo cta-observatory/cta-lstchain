@@ -33,6 +33,7 @@ __all__ = [
     "filter_events",
     "get_effective_time",
     "get_event_pos_in_camera",
+    "get_geomagnetic_delta",
     "impute_pointing",
     "linear_imputer",
     "polar_to_cartesian",
@@ -44,6 +45,7 @@ __all__ = [
     "source_dx_dy",
     "source_side",
     "get_geomagnetic_delta",
+    "min_distance"
 ]
 
 # position of the LST1
@@ -690,7 +692,6 @@ def get_effective_time(events):
     return t_eff, t_elapsed
 
 
-
 def get_geomagnetic_field_orientation(time=None):
     '''
     Linearly extrapolate the geomagnetic field parameters from the
@@ -756,3 +757,39 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     delta = np.arccos(term)
 
     return delta
+
+
+def min_distance(line_pt_1, line_pt_2, target_point):
+    """
+    Return the projection of target point on the closest edge formed
+    by the 2 line points and the minimum distance between it and
+    the target point
+
+    Assuming line_1_2 = pt_1 + t*(pt_2 - pt_1)
+    For projection of target point on the line_1_2, it falls when,
+    t = [(target-pt_1).(pt_2-pt_1)] /  |pt_2-pt_1|**2
+    we also clamp t between 0, 1 to keep the projection inside line_1_2
+    """
+    # compute the squared distance between the 2 vertices
+    line_sq_dist = np.sum((line_pt_2 - line_pt_1)**2)
+
+    t = np.max([
+        0., np.min(
+            [
+                1., np.dot(
+                    target_point - line_pt_1,
+                    line_pt_2 - line_pt_1
+                )/line_sq_dist
+            ]
+        )
+    ])
+    # Coordinates of projected point
+    proj_pt = line_pt_1 + t * (line_pt_2 - line_pt_1)
+    # Distance between the target and projected point
+    min_dist = np.sqrt(
+        np.sum(
+            (proj_pt - target_point)**2
+        )
+    )
+
+    return proj_pt, min_dist

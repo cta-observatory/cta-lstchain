@@ -13,23 +13,26 @@ $> python lstchain_mc_r0_to_dl1.py
 """
 
 import argparse
-from ctapipe.utils import get_dataset_path
-from lstchain.reco import r0_to_dl1
-from lstchain.io.config import read_configuration_file
-from lstchain.paths import r0_to_dl1_filename
-from pathlib import Path
 import logging
 import sys
+from pathlib import Path
+
+from ctapipe.utils import get_dataset_path
+
+from lstchain.io.config import read_configuration_file
+from lstchain.paths import r0_to_dl1_filename
+from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="R0 to DL1")
 
 # Required arguments
-parser.add_argument('--input-file', '-f', type=Path,
-                    dest='input_file',
-                    help='Path to the simtelarray file',
-                    default=get_dataset_path('gamma_test_large.simtel.gz'))
+parser.add_argument(
+    '--input-file', '-f', type=Path,
+    dest='input_file',
+    help='Path to the simtelarray file',
+)
 
 # Optional arguments
 parser.add_argument('--output-dir', '-o', action='store', type=Path,
@@ -45,10 +48,17 @@ parser.add_argument('--config', '-c', action='store', type=Path,
 
 
 def main():
+
     args = parser.parse_args()
-    
+
+    # using a default of None and only using get_dataset_path here
+    # prevents downloading gamma_test_large when an input file is actually given
+    # or just --help is called.
+    if args.input_file is None:
+        args.input_file = get_dataset_path('gamma_test_large.simtel.gz')
+
     output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
     output_file = output_dir / r0_to_dl1_filename(args.input_file.name)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}

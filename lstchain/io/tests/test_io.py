@@ -90,7 +90,6 @@ def test_write_dataframe_index():
             np.testing.assert_array_equal(table["event_id"], df.index)
 
 
-@pytest.mark.run(after="test_apply_models")
 def test_write_dl2_dataframe(tmp_path, simulated_dl2_file):
     from lstchain.io.io import dl2_params_lstcam_key
     from lstchain.io import write_dl2_dataframe
@@ -99,7 +98,6 @@ def test_write_dl2_dataframe(tmp_path, simulated_dl2_file):
     write_dl2_dataframe(dl2, tmp_path / "dl2_test.h5")
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_merging_check(simulated_dl1_file):
     from lstchain.io.io import merging_check
 
@@ -109,7 +107,6 @@ def test_merging_check(simulated_dl1_file):
     assert merging_check([dl1_file, dl1_file]) == [dl1_file, dl1_file]
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
 
@@ -118,7 +115,6 @@ def test_merge_h5files(merged_h5file):
         assert len(file.root.source_filenames.filenames) == 2
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_read_simu_info_hdf5(simulated_dl1_file):
     from lstchain.io.io import read_simu_info_hdf5
 
@@ -128,7 +124,6 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
     assert mcheader.num_showers == 20000
 
 
-@pytest.mark.run(after="test_merge_h5files")
 def test_read_simu_info_merged_hdf5(merged_h5file):
     from lstchain.io.io import read_simu_info_merged_hdf5
 
@@ -138,7 +133,6 @@ def test_read_simu_info_merged_hdf5(merged_h5file):
     assert mcheader.num_showers == 40000
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_trigger_type_in_dl1_params(simulated_dl1_file):
     from lstchain.io.io import dl1_params_lstcam_key
 
@@ -146,14 +140,8 @@ def test_trigger_type_in_dl1_params(simulated_dl1_file):
     assert "trigger_type" in params.columns
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
-def test_read_subarray_description(mc_gamma_testfile, simulated_dl1_file):
-    from lstchain.io.io import read_subarray_description
-    from ctapipe.io import EventSource
-
-    source = EventSource(mc_gamma_testfile, allowed_tels={1, 2, 3, 4})
-    dl1_subarray = read_subarray_description(simulated_dl1_file)
-    dl1_subarray.peek()
-    dl1_subarray.info()
-    assert len(dl1_subarray.tels) == len(source.subarray.tels)
-    assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
+def test_extract_simulation_nsb(mc_gamma_testfile):
+    from lstchain.io.io import extract_simulation_nsb
+    nsb = extract_simulation_nsb(mc_gamma_testfile)
+    assert np.isclose(nsb[0], 0.317, rtol=0.1)
+    assert np.isclose(nsb[1], 0.276, rtol=0.1)

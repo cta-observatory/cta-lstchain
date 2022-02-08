@@ -1,24 +1,27 @@
-import numpy as np
 import logging
 import os
 
 import astropy.units as u
-from astropy.table import Table, QTable
-from astropy.io import fits
+import numpy as np
 from astropy.coordinates import SkyCoord, AltAz
 from astropy.coordinates.erfa_astrom import ErfaAstromInterpolator, erfa_astrom
+from astropy.io import fits
+from astropy.table import Table, QTable
 from astropy.time import Time
 
-from lstchain.reco.utils import location
+from lstchain.reco.utils import location, camera_to_altaz
 from lstchain.__init__ import __version__
 
+
 __all__ = [
-    "create_obs_index_hdu",
-    "create_hdu_index_hdu",
+    "add_icrs_position_params",
     "create_event_list",
     "get_timing_params",
+    "create_hdu_index_hdu",
+    "create_obs_index_hdu",
     "get_pointing_params",
-    "add_icrs_position_params"
+    "get_timing_params",
+    "set_expected_pos_to_reco_altaz",
 ]
 
 log = logging.getLogger(__name__)
@@ -113,10 +116,10 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
 
 
 def create_hdu_index_hdu(
-    filename_list,
-    fits_dir,
-    hdu_index_file,
-    overwrite=False
+        filename_list,
+        fits_dir,
+        hdu_index_file,
+        overwrite=False
 ):
     """
     Create the hdu index table and write it to the given file.
@@ -166,11 +169,11 @@ def create_hdu_index_hdu(
         # Event list
         t_events = {
             "OBS_ID": evt_hdr["OBS_ID"],
-            "HDU_TYPE": evt_hdr["HDUCLAS1"].lower(),
-            "HDU_CLASS": evt_hdr["HDUCLAS1"].lower(),
+            "HDU_TYPE": "events",
+            "HDU_CLASS": "events",
             "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
-            "FILE_NAME": file,
-            "HDU_NAME": evt_hdr["HDUCLAS1"],
+            "FILE_NAME": str(file),
+            "HDU_NAME": "EVENTS",
             "SIZE": filepath.stat().st_size,
         }
         hdu_index_tables.append(t_events)
@@ -178,23 +181,23 @@ def create_hdu_index_hdu(
         # GTI
         t_gti = t_events.copy()
 
-        t_gti["HDU_TYPE"] = gti_hdr["HDUCLAS1"].lower()
-        t_gti["HDU_CLASS"] = gti_hdr["HDUCLAS1"].lower()
-        t_gti["HDU_NAME"] = gti_hdr["HDUCLAS1"]
+        t_gti["HDU_TYPE"] = "gti"
+        t_gti["HDU_CLASS"] = "gti"
+        t_gti["HDU_NAME"] = "GTI"
 
         hdu_index_tables.append(t_gti)
 
         # POINTING
         t_pnt = t_events.copy()
 
-        t_pnt["HDU_TYPE"] = pnt_hdr["HDUCLAS1"].lower()
-        t_pnt["HDU_CLASS"] = pnt_hdr["HDUCLAS1"].lower()
-        t_pnt["HDU_NAME"] = pnt_hdr["HDUCLAS1"]
+        t_pnt["HDU_TYPE"] = "pointing"
+        t_pnt["HDU_CLASS"] = "pointing"
+        t_pnt["HDU_NAME"] = "POINTING"
 
         hdu_index_tables.append(t_pnt)
         hdu_names = [
             "EFFECTIVE AREA", "ENERGY DISPERSION", "BACKGROUND",
-            "PSF" # , "GH CUTS", "RAD_MAX" For energy-dependent cuts
+            "PSF", "RAD_MAX"
         ]
 
         for irf in hdu_names:
@@ -231,9 +234,8 @@ def create_hdu_index_hdu(
 
 def get_timing_params(data):
     """
-    Get event lists and retrieve some timing parameters for the DL3 event list
-    as a dict
-
+    Retrieve some timing parameters for the DL3 event list
+    as a dict.
     """
     time_utc = Time(data["dragon_time"], format="unix", scale="utc")
     t_start_iso = time_utc[0].to_value("iso", "date_hms")
@@ -317,9 +319,26 @@ def add_icrs_position_params(data, source_pos):
 
     return data
 
+def set_expected_pos_to_reco_altaz(data):
+    """
+    Set expected source positions to reconstructed alt, az positions for source-dependent analysis
+    This is just a trick to easily extract ON/OFF events in gammapy analysis.
+    """
+    # set expected source positions as reco positions
+    time = data['dragon_time']
+    obstime = Time(time, scale='utc', format='unix')
+    expected_src_x = data['expected_src_x'] * u.m
+    expected_src_y = data['expected_src_y'] * u.m
+    focal = 28 * u.m
+    pointing_alt = data['pointing_alt']
+    pointing_az  = data['pointing_az']
+    expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+    data["reco_alt"] = expected_src_altaz.alt
+    data["reco_az"]  = expected_src_altaz.az
 
 def create_event_list(
-    data, run_number, source_name, source_pos, effective_time, elapsed_time
+        data, run_number, source_name, source_pos,
+        effective_time, elapsed_time, data_pars
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -338,6 +357,7 @@ def create_event_list(
         Float
     elapsed_time: Total elapsed time of triggered events of the run
         Float
+    data_pars:
 
     Returns
     -------
@@ -464,13 +484,13 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
-    pnt_header["MEAN_ZEN"] = str(zen_mean * u.deg)
-    pnt_header["MEAN_AZ"] = str(az_mean * u.deg)
-    pnt_header["B_DELTA"] = str(b_delta * u.deg)
+    pnt_header["MEAN_ZEN"] = str(data_pars["ZEN_PNT"])
+    pnt_header["MEAN_AZ"] = str(data_pars["AZ_PNT"])
+    pnt_header["B_DELTA"] = str(data_pars["B_DELTA"])
 
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
     gti = fits.BinTableHDU(gti_table, header=gti_header, name="GTI")
     pointing = fits.BinTableHDU(pnt_table, header=pnt_header, name="POINTING")
 
-    return event, gti, pointing, data_pars
+    return event, gti, pointing

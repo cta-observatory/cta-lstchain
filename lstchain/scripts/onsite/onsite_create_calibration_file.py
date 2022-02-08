@@ -10,35 +10,43 @@
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
-from lstchain.io.data_management import query_yes_no
-import lstchain.visualization.plot_calib as calib
-import lstchain
-import subprocess
+
 import pymongo
+
+import lstchain
+import lstchain.visualization.plot_calib as calib
+from lstchain.io.data_management import query_yes_no
+from lstchain.onsite import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
-                                 formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-r', '--run_number', help="Run number if the flat-field data",
                       type=int, required=True)
-optional.add_argument('-p', '--pedestal_run', help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
+optional.add_argument('-p', '--pedestal_run',
+                      help="Pedestal run to be used. If None, it looks for the pedestal run of the date of the FF data.",
                       type=int)
 
-version=lstchain.__version__
+version = lstchain.__version__
 
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
 optional.add_argument('-s', '--statistics', help="Number of events for the flat-field and pedestal statistics",
                       type=int, default=10000)
-optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
-optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used", type=Path)
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
+                      default='/fefs/aswg/data/real')
+optional.add_argument('--r0-dir', help="Root dir for the input r0 tree. By default, <base_dir>/R0 will be used",
+                      type=Path)
 
-optional.add_argument('--time_run', help="Run for time calibration. If None, search the last time run before or equal the FF run", type=int)
+optional.add_argument('--time_run',
+                      help="Run for time calibration. If None, search the last time run before or equal the FF run",
+                      type=int)
 optional.add_argument(
     '--sys_date',
     help=(
@@ -50,18 +58,20 @@ optional.add_argument('--no_sys_correction',
                       help="Systematic corrections are not applied. \n",
                       action='store_true',
                       default=False)
-optional.add_argument('--output_base_name', help="Base of output file name (change only for debugging)", default="calibration")
+optional.add_argument('--output_base_name', help="Base of output file name (change only for debugging)",
+                      default="calibration")
 
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--min_ff', help="Min FF intensity cut in ADC.", type=float)
 optional.add_argument('--max_ff', help="Max FF intensity cut in ADC.", type=float)
-optional.add_argument('-f','--filters', help="Calibox filters")
+optional.add_argument('-f', '--filters', help="Calibox filters")
 optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
-default_config=os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
+default_config = os.path.join(os.path.dirname(__file__), "../../data/onsite_camera_calibration_param.json")
 optional.add_argument('--config', help="Config file", default=default_config)
 optional.add_argument('--mongodb', help="Mongo data-base connection", default="mongodb://10.200.10.101:27017/")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true",
+                      help='Do not update the pro dir symbolic link, assume true')
 
 args = parser.parse_args()
 run = args.run_number
@@ -79,10 +89,10 @@ config_file = args.config
 mongodb = args.mongodb
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
-calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
+
 
 def main():
-
     # looks for the filter values in the database if not given
     if args.filters is None:
         filters = search_filter(run)
@@ -108,7 +118,7 @@ def main():
 
     # verify input file
     r0_dir = args.r0_dir or Path(args.base_dir) / 'R0'
-    file_list=sorted(r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
+    file_list = sorted(r0_dir.rglob(f'*{run}.{sub_run:04d}*'))
     if len(file_list) == 0:
         raise IOError(f"Run {run} not found\n")
     else:
@@ -127,14 +137,9 @@ def main():
 
     if pro_symlink:
         pro = "pro"
-        pro_dir = f"{output_dir}/../{pro}"
-        if os.path.exists(pro_dir):
-            os.remove(pro_dir)
-        os.symlink(prod_id, pro_dir)
-        print("\n--> Use symbolic link pro")
+        create_pro_symlink(output_dir, prod_id)
     else:
         pro = prod_id
-
 
     # make log dir
     log_dir = f"{output_dir}/log"
@@ -200,7 +205,7 @@ def main():
             raise IOError(f"Time calibration file from run {time_run} not found\n")
         else:
             time_file = file_list[0].resolve()
-            
+
     if not os.path.exists(time_file):
         raise IOError(f"Time calibration file {time_file} does not exist\n")
 
@@ -224,21 +229,22 @@ def main():
             if len(dir_list) == 0:
                 raise IOError(f"No systematic correction file found for production {pro} in {sys_dir}\n")
             else:
-                sys_date_list = sorted([file.parts[-3] for file in dir_list],reverse=True)
+                sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
                 selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
 
-                systematics_file = Path(f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5").resolve()
-        
+                systematics_file = Path(
+                    f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5").resolve()
+
         if not os.path.exists(systematics_file):
             raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
 
     print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
-# define charge file names
+    # define charge file names
     print("\n***** PRODUCE CHARGE CALIBRATION FILE ***** ")
 
     if filters is not None:
-        filter_info=f"_filters_{filters}"
+        filter_info = f"_filters_{filters}"
     else:
         filter_info = ""
 
@@ -294,10 +300,10 @@ def main():
     subprocess.run(cmd, check=True)
 
     # plot and save some results
-    plot_file=f"{output_dir}/log/{output_name}.pdf"
+    plot_file = f"{output_dir}/log/{output_name}.pdf"
 
     print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-    calib.read_file(output_file,tel_id)
+    calib.read_file(output_file, tel_id)
     calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
 
     print("\n--> END")
@@ -316,7 +322,7 @@ def search_filter(run):
         for x in mydoc:
             w1 = int(x["cbox"]["wheel1 position"])
             w2 = int(x["cbox"]["wheel2 position"])
-            filters=f"{w1:1d}{w2:1d}"
+            filters = f"{w1:1d}{w2:1d}"
 
     except Exception as e:
         print(f"\n >>> Exception: {e}")
@@ -326,6 +332,7 @@ def search_filter(run):
         )
 
     return filters
+
 
 def define_FF_selection_range(filters):
     """ return the range of charges to select the FF events """
@@ -367,6 +374,7 @@ def define_FF_selection_range(filters):
         raise IOError("--> No FF selection range information")
 
     return min_ff, max_ff
+
 
 if __name__ == '__main__':
     main()

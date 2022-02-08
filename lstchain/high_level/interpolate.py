@@ -1,27 +1,26 @@
 import numpy as np
-
+import logging
 import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
 
-from ..reco.utils import get_geomagnetic_delta, geomag_dec, geomag_inc
-
 from pyirf.io.gadf import (
     create_aeff2d_hdu,
-    create_energy_dispersion_hdu,
+    create_energy_dispersion_hdu  # ,create_psf_table_hdu
 )
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
-    interpolate_energy_dispersion
+    interpolate_energy_dispersion  # ,interpolate_psf_table
 )
 from scipy.spatial import Delaunay, distance
 
+log = logging.getLogger(__name__)
 
-def interp_params(params_list, data, B_dec=None, B_inc=None):
+
+def interp_params(params_list, data):
     """
     From a given list of angular parameters, to be used for interpolation,
     take values from a given data table/dict.
-    If AZ_PNT is provided, it has to be replaced by B_DELTA value.
 
     Returns the neccessary values with applied functions as need be for the
     interpolation, for each parameter as a list.
@@ -31,29 +30,16 @@ def interp_params(params_list, data, B_dec=None, B_inc=None):
         mc_pars.append(
             np.cos(u.Quantity(data["ZEN_PNT"]).to_value(u.rad))
         )
-    if "AZ_PNT" in params_list:
-        if B_dec is None:
-            B_dec = geomag_dec.to_value(u.rad)
-        if B_inc is None:
-            B_inc = geomag_inc.to_value(u.rad)
 
-        b_delta = get_geomagnetic_delta(
-            B_dec, B_inc,
-            data["ZEN_PNT"].to_value(u.rad),
-            data["AZ_PNT"].to_value(u.rad)
-        )
-        mc_pars.append(np.sin(b_delta))
     if "B_DELTA" in params_list:
         mc_pars.append(
             np.sin(
                 u.Quantity(data["B_DELTA"]).to_value(u.rad)
             )
         )
+
     return mc_pars
 
-
-## Use another function to check whether the target point is inside
-## a grid triangle or not.
 
 def check_in_delaunay_triangle(irfs, data_params):
     """
@@ -124,6 +110,14 @@ def compare_irfs(irfs):
     """
     Compare the given list of IRFs with various selection cuts, data binning
     and relevant metadata values.
+
+    Parameters
+    ----------
+    irfs: List of IRFs to compare
+        'List'
+    Returns
+    -------
+    : Boolean indicating whether the given list of IRFs are comparable
     """
     bin_sim = False
     meta_sim = False
@@ -131,8 +125,31 @@ def compare_irfs(irfs):
     params = []
     meta = []
 
-    # For fixed gammaness/theta cuts
-    select_meta = ["HDUCLAS3", "INSTRUME", "GH_CUT", "RAD_MAX", "G_OFFSET"]
+    # For global/energy-dependent gammaness/theta and global alpha cuts
+    select_meta = ["HDUCLAS3", "INSTRUME", "G_OFFSET"]
+    try:
+        with fits.open(irfs[0]) as hdul:
+            h = hdul["EFFECTIVE AREA"].header
+            energy_dependent_gh = "GH_EFF" in h
+            point_like = h["HDUCLAS3"] == "POINT-LIKE"
+            energy_dependent_theta = "TH_CONT" in h
+            source_dep = "AL_CUT" in h
+    except:
+        print(f"Effective Area is not present in {irfs[0]}")
+
+    if energy_dependent_gh:
+        select_meta.append("GH_EFF")
+    else:
+        select_meta.append("GH_CUT")
+    if point_like:
+        if energy_dependent_theta:
+            select_meta.append("TH_CONT")
+        else:
+            if source_dep:
+                select_meta.append("AL_CUT")
+            else:
+                select_meta.append("RAD_MAX")
+
     cols = Table.read(irfs[0], hdu="ENERGY DISPERSION").columns[:-1]
 
     for i, irf in enumerate(irfs):
@@ -220,7 +237,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     params = [*d.keys()]
     n_grid = len(irfs)
     irf_pars = np.empty((n_grid, len(params)))
-
     interp_pars = list()
 
     extra_keys = [
@@ -234,67 +250,115 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     else:
         point_like = False
 
+    # Update headers to be added to the final IRFs
     extra_headers = dict(
         (k, main_headers[k]) for k in extra_keys if k in main_headers
     )
-
-    interp_pars = interp_params(params, data_pars)
-    # Keep interp_pars as a tuple to keep the right dimensions in interpolation
-    interp_pars = tuple(interp_pars)
-
-    # Read the IRFs into lists and extract the necessary columns
-    effarea_list = load_irf_grid(
-        irfs, extname="EFFECTIVE AREA", interp_col="EFFAREA"
-    )
-    edisp_list = load_irf_grid(
-        irfs, extname="ENERGY DISPERSION", interp_col="MATRIX"
-    )
-    temp_e = QTable.read(irfs[0], hdu="ENERGY DISPERSION")
-
-    # Check the units as well
-    e_true = np.append(temp_e["ENERG_LO"][0], temp_e["ENERG_HI"][0][-1])
-    e_migra = np.append(temp_e["MIGRA_LO"][0], temp_e["MIGRA_HI"][0][-1])
-    fov_off = np.append(temp_e["THETA_LO"][0], temp_e["THETA_HI"][0][-1])
+    for par in data_pars.keys():
+        extra_headers[par] = str(data_pars[par].to(u.deg))
 
     for i in np.arange(n_grid):
         f = fits.open(irfs[i])[1].header
         mc_pars = interp_params(params, f)
         irf_pars[i, :] = np.array(mc_pars)
 
-        i += 1
-
-    for par in data_pars.keys():
-        extra_headers[par] = str(data_pars[par].to(u.deg))
-
-    aeff_interp = interpolate_effective_area_per_energy_and_fov(
-        effarea_list, irf_pars, interp_pars, method=interp_method
-    )
-
-    aeff_hdu_interp = create_aeff2d_hdu(
-        aeff_interp.T,
-        true_energy_bins=e_true,
-        fov_offset_bins=fov_off,
-        point_like=point_like,
-        extname="EFFECTIVE AREA",
-        **extra_headers,
-    )
-
-    edisp_interp = interpolate_energy_dispersion(
-        edisp_list, irf_pars, interp_pars, method=interp_method
-    )
-
-    edisp_hdu_interp = create_energy_dispersion_hdu(
-        edisp_interp,
-        true_energy_bins=e_true,
-        migration_bins=e_migra,
-        fov_offset_bins=fov_off,
-        point_like=point_like,
-        extname="ENERGY DISPERSION",
-        **extra_headers,
-    )
-
+    interp_pars = interp_params(params, data_pars)
+    # Keep interp_pars as a tuple to keep the right dimensions in interpolation
+    interp_pars = tuple(interp_pars)
     irf_interp = fits.HDUList([fits.PrimaryHDU(), ])
-    irf_interp.append(aeff_hdu_interp)
-    irf_interp.append(edisp_hdu_interp)
 
+    # Read select IRFs into lists and extract the necessary columns
+    hdus_interp = fits.open(irfs[0])
+
+    try:
+        hdus_interp["EFFECTIVE AREA"]
+        effarea_list = load_irf_grid(
+            irfs, extname="EFFECTIVE AREA", interp_col="EFFAREA"
+        )
+
+        temp_irf = QTable.read(irfs[0], hdu="EFFECTIVE AREA")
+        e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
+        fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
+
+        aeff_interp = interpolate_effective_area_per_energy_and_fov(
+            effarea_list, irf_pars, interp_pars, method=interp_method
+        )
+
+        aeff_hdu_interp = create_aeff2d_hdu(
+            aeff_interp.T,
+            true_energy_bins=e_true,
+            fov_offset_bins=fov_off,
+            point_like=point_like,
+            extname="EFFECTIVE AREA",
+            **extra_headers,
+        )
+
+        irf_interp.append(aeff_hdu_interp)
+
+    except KeyError:
+        log.error("Effective Area not present for IRF interpolation")
+
+    try:
+        hdus_interp["ENERGY DISPERSION"]
+        edisp_list = load_irf_grid(
+            irfs, extname="ENERGY DISPERSION", interp_col="MATRIX"
+        )
+        temp_irf = QTable.read(irfs[0], hdu="ENERGY DISPERSION")
+
+        # Check the units as well
+        e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
+        e_migra = np.append(temp_irf["MIGRA_LO"][0], temp_irf["MIGRA_HI"][0][-1])
+        fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
+
+        edisp_interp = interpolate_energy_dispersion(
+            edisp_list, irf_pars, interp_pars, method=interp_method
+        )
+
+        edisp_hdu_interp = create_energy_dispersion_hdu(
+            edisp_interp,
+            true_energy_bins=e_true,
+            migration_bins=e_migra,
+            fov_offset_bins=fov_off,
+            point_like=point_like,
+            extname="ENERGY DISPERSION",
+            **extra_headers,
+        )
+
+        irf_interp.append(edisp_hdu_interp)
+
+    except KeyError:
+        log.error("Energy Dispersion not present for IRF interpolation")
+
+    """
+    if not point_like:
+        try:
+            hdus_interp["PSF"]
+            psf_list = load_irf_grid(
+                irfs, extname="PSF", interp_col="RPSF"
+            )
+            tem_irf = QTable.read(irfs[0], hdu="PSF")
+
+            e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
+            src_bins = np.append(temp_irf["RAD_LO"][0], temp_irf["RAD_HI"][0][-1])
+            fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
+
+            psf_interp = interpolate_psf_table(
+                psf_list, irf_pars,
+                interp_pars, src_bins,
+                cumulative=cumulative
+                method=interp_method
+            )
+            psf_hdu_interp = create_psf_table_hdu(
+                psf_interp,
+                true_energy=e_true,
+                source_offset_bins=src_bins,
+                fov_offset_bins=fov_off,
+                extname="PSF",
+                **extra_headers
+            )
+
+            irf_interp.append(psf_hdu_interp)
+        except KeyError:
+            log.error("PSF HDU not present for IRF interpolation")
+    """
     return irf_interp

@@ -25,7 +25,7 @@ tools_list = find_scripts("lstchain/tools", "lstchain_")
 entry_points = {}
 entry_points["console_scripts"] = lstchain_list + onsite_list + tools_list
 
-tests_require = ["pytest", "pytest-ordering"]
+tests_require = ["pytest"]
 docs_require = [
     "sphinx~=4.2",
     "sphinx-automodapi",
@@ -41,25 +41,23 @@ setup(
     install_requires=[
         'astropy~=4.2',
         'bokeh~=1.0',
-        'ctapipe~=0.11.0',
-        'ctapipe_io_lst~=0.13.2',
+        'ctapipe~=0.12.0',
+        'ctapipe_io_lst~=0.15.0',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
-        'gammapy~=0.18.2',
+        'gammapy~=0.19.0',
         'h5py',
         'joblib',
-        'matplotlib>=3.5',
+        'matplotlib~=3.5',
         'numba',
-        'numpy',
+        'numpy<1.22.0a0',
         'pandas',
-        'pyirf~=0.5.0',
+        'pyirf~=0.6.0',
         'scipy',
         'seaborn',
-        'scikit-learn',
+        'scikit-learn~=1.0',
         'tables',
         'toml',
-        'traitlets~=5.0.5',
-        'iminuit~=1.5',
         'pymongo',
         'pyparsing',
         'setuptools_scm',

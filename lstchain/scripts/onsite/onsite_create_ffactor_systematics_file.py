@@ -10,34 +10,38 @@
 import argparse
 import os
 import subprocess
-from lstchain.io.data_management import query_yes_no
-import lstchain
 
+import lstchain
+from lstchain.io.data_management import query_yes_no
+from lstchain.onsite import create_pro_symlink
 
 def none_or_str(value):
     if value == "None":
         return None
     return value
 
+
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
-                                 formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-d', '--date', help="Date of the scan (YYYYMMDD)", required=True)
 
 # config file is mandatory because it contains the list of input runs
-required.add_argument('-c','--config', help="Config file (json format) with the list of runs", required=True)
+required.add_argument('-c', '--config', help="Config file (json format) with the list of runs", required=True)
 
-version=lstchain.__version__
+version = lstchain.__version__
 optional.add_argument('-v', '--prod_version', help="Version of the production",
                       default=f"v{version}")
-optional.add_argument('-b','--base_dir', help="Root dir for the output directory tree", type=str, default='/fefs/aswg/data/real')
+optional.add_argument('-b', '--base_dir', help="Root dir for the output directory tree", type=str,
+                      default='/fefs/aswg/data/real')
 optional.add_argument('--sub_run', help="sub-run to be processed.", type=int, default=0)
 optional.add_argument('--input_prefix', help="Prefix of the input file names", default="calibration")
 optional.add_argument('-y', '--yes', action="store_true", help='Do not ask interactively for permissions, assume true')
-optional.add_argument('--no_pro_symlink', action="store_true", help='Do not update the pro dir symbolic link, assume true')
+optional.add_argument('--no_pro_symlink', action="store_true",
+                      help='Do not update the pro dir symbolic link, assume true')
 
 args = parser.parse_args()
 date = args.date
@@ -48,11 +52,10 @@ config_file = args.config
 prefix = args.input_prefix
 yes = args.yes
 pro_symlink = not args.no_pro_symlink
-calib_dir=f"{base_dir}/monitoring/PixelCalibration/LevelA"
+calib_dir = f"{base_dir}/monitoring/PixelCalibration/LevelA"
 
 
 def main():
-
     # verify config file
     if not os.path.exists(config_file):
         raise IOError(f"Config file {config_file} does not exists. \n")
@@ -67,16 +70,12 @@ def main():
 
     if pro_symlink:
         pro = "pro"
-        pro_dir = f"{output_dir}/../{pro}"
-        if os.path.exists(pro_dir):
-            os.remove(pro_dir)
-        os.symlink(prod_id, pro_dir)
-        print("\n--> Use symbolic link pro")
+        create_pro_symlink(output_dir, prod_id)
     else:
         pro = prod_id
 
     # verify input dir
-    input_dir=f"{calib_dir}/calibration/{date}/{pro}"
+    input_dir = f"{calib_dir}/calibration/{date}/{pro}"
     if not os.path.exists(input_dir):
         raise IOError(f"Input directory {input_dir} not found\n")
 

@@ -1,8 +1,5 @@
-import pytest
-
-
 def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
-    from lstchain.irf.interpolate import compare_irfs
+    from lstchain.high_level.interpolate import compare_irfs
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
 
     # Creating a IRF with a different gammaness cut to check the comparison
@@ -17,7 +14,7 @@ def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
         simulated_dl2_file,
         "--output-irf-file",
         irf_file_2,
-        "--fixed-gh-cut=0.7",
+        "--global-gh-cut=0.7",
     )
 
     irfs_1 = [simulated_irf_file, irf_file_2]
@@ -28,15 +25,15 @@ def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
 
 
 def test_load_irf_grid(simulated_irf_file):
-    from lstchain.irf.interpolate import load_irf_grid
+    from lstchain.high_level.interpolate import load_irf_grid
 
     aeff_list = load_irf_grid([simulated_irf_file], "EFFECTIVE AREA", "EFFAREA")
 
-    assert aeff_list.shape == (1, 21, 8)
+    assert aeff_list.shape == (1, 19, 8)
 
 
 def test_interp_irf(simulated_irf_file):
-    from lstchain.irf.interpolate import interpolate_irf
+    from lstchain.high_level.interpolate import interpolate_irf
 
     import numpy as np
     from astropy.table import Table
@@ -104,7 +101,7 @@ def test_interp_irf(simulated_irf_file):
     ).writeto(irf_file_4, overwrite=True)
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
-    data_pars = {"ZEN_PNT": 30 * u.deg, "B_DELTA": 70 * u.deg}
+    data_pars = {"ZEN_PNT": 30 * u.deg, "AZ_PNT": 60 * u.deg, "B_DELTA": 70 * u.deg}
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
 
@@ -115,7 +112,7 @@ def test_interp_irf(simulated_irf_file):
 
 
 def test_check_delaunay_triangles(simulated_irf_file):
-    from lstchain.irf.interpolate import check_in_delaunay_triangle
+    from lstchain.high_level.interpolate import check_in_delaunay_triangle
     import astropy.units as u
 
     irf_file_3 = simulated_irf_file.parent / "irf_interp_0.fits.gz"
@@ -125,11 +122,19 @@ def test_check_delaunay_triangles(simulated_irf_file):
     irfs = [simulated_irf_file, irf_file_3, irf_file_4, irf_file_5]
 
     # Check on target being inside or outside Delaunay simplex
-    data_pars = {"ZEN_PNT": 35 * u.deg, "B_DELTA": 80 * u.deg}
-    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 90 * u.deg}
+    data_pars = {
+        "ZEN_PNT": 35 * u.deg,
+        "AZ_PNT": 60 * u.deg,
+        "B_DELTA": 80 * u.deg
+    }
+    data_pars2 = {
+        "ZEN_PNT": 58 * u.deg,
+        "AZ_PNT": 120 * u.deg,
+        "B_DELTA": 90 * u.deg
+    }
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
+    print(new_irfs, new_irfs2)
 
     assert len(new_irfs) == 3
-    assert len(new_irfs2) == 1
