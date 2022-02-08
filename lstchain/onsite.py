@@ -68,11 +68,8 @@ def find_run_summary(date, base_dir=DEFAULT_BASE_PATH):
 def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PATH):
     '''Find a time calibration file for given run
     '''
-
-    # search for time calibration file
-    time_file = None
-
     time_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF"
+
 
     # search the last time run before or equal to the calibration run
     if time_run is None:
@@ -81,6 +78,7 @@ def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PA
         if len(file_list) == 0:
             raise IOError(f"No time calibration file found in the data tree for prod {pro}\n")
 
+        time_file = None
         for path in file_list:
             run_in_list = parse_calibration_name(path)
             if run_in_list.run <= run:
@@ -99,3 +97,22 @@ def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PA
         raise IOError(f"Time calibration file from run {time_run} not found\n")
 
     return file_list[0].resolve()
+
+
+def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_BASE_PATH):
+    sys_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/ffactor_systematics"
+
+    if sys_date is not None:
+        path =  (sys_dir / sys_date / pro / f"ffactor_systematics_{sys_date}.h5").resolve()
+        if not path.exists():
+            raise IOError(f"F-factor systematics correction file {path} does not exist")
+        return path
+
+    dir_list = sorted(sys_dir.rglob(f"*/{pro}/ffactor_systematics*"))
+    if len(dir_list) == 0:
+        raise IOError(f"No systematic correction file found for production {pro} in {sys_dir}\n")
+
+    sys_date_list = sorted([path.parts[-3] for path in dir_list], reverse=True)
+    selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
+
+    return (sys_dir / selected_date / pro / f"ffactor_systematics_{selected_date}.h5").resolve()

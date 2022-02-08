@@ -89,3 +89,19 @@ def test_find_time_calibration_file():
     assert path.name == 'time_calibration.Run01625.0000.h5'
     assert PRO in str(path)
     assert path.exists()
+
+
+@pytest.mark.private_data
+def test_find_systematics_correction_file():
+    from lstchain.onsite import find_systematics_correction_file
+
+    # no sys date
+    path = find_systematics_correction_file(pro=PRO, date='20200218', base_dir=BASE_DIR)
+    assert path.name == 'ffactor_systematics_20200725.h5'
+
+    path = find_systematics_correction_file(pro=PRO, date='20200218', sys_date='20200725', base_dir=BASE_DIR)
+    assert path.name == 'ffactor_systematics_20200725.h5'
+
+    with pytest.raises(IOError):
+        # nonexistent sys date
+        path = find_systematics_correction_file(pro=PRO, date='20200218', sys_date='20190101', base_dir=BASE_DIR)

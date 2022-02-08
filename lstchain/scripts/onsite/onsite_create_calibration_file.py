@@ -19,7 +19,14 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink, find_r0_subrun, find_pedestal_file, find_run_summary, find_time_calibration_file
+from lstchain.onsite import (
+    create_pro_symlink,
+    find_r0_subrun,
+    find_pedestal_file,
+    find_run_summary,
+    find_systematics_correction_file,
+    find_time_calibration_file,
+)
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -151,32 +158,12 @@ def main():
     time_file = find_time_calibration_file(pro, run, time_run, args.base_dir)
     print(f"\n--> Time calibration file: {time_file}")
 
-    sys_dir = f"{calib_dir}/ffactor_systematics/"
 
     # define systematic correction file
     if no_sys_correction:
         systematics_file = None
-
     else:
-        # use specific sys corrections
-        if sys_date is not None:
-            systematics_file = Path(f"{sys_dir}/{sys_date}/{pro}/ffactor_systematics_{sys_date}.h5").resolve()
-
-        # search the first sys correction file before the run,
-        # if nothing before, use the first found
-        else:
-            dir_list = sorted(Path(sys_dir).rglob(f"*/{pro}/ffactor_systematics*"))
-            if len(dir_list) == 0:
-                raise IOError(f"No systematic correction file found for production {pro} in {sys_dir}\n")
-            else:
-                sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
-                selected_date = next((day for day in sys_date_list if day <= date), sys_date_list[-1])
-
-                systematics_file = Path(
-                    f"{sys_dir}/{selected_date}/{pro}/ffactor_systematics_{selected_date}.h5").resolve()
-
-        if not os.path.exists(systematics_file):
-            raise IOError(f"F-factor systematics correction file {systematics_file} does not exist\n")
+        systematics_file = find_systematics_correction_file(pro, date, sys_date, args.base_dir)
 
     print(f"\n--> F-factor systematics correction file: {systematics_file}")
 
@@ -189,9 +176,7 @@ def main():
         filter_info = ""
 
     # remember there are no systematic corrections
-    prefix = ""
-    if no_sys_correction:
-        prefix = "no_sys_corrected_"
+    prefix = "no_sys_corrected_" if no_sys_correction else ""
 
     output_name = f"{prefix}{output_base_name}{filter_info}.Run{run:05d}.{sub_run:04d}"
 
