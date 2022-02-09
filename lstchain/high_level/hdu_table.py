@@ -236,26 +236,6 @@ def get_timing_params(data):
     """
     Retrieve some timing parameters for the DL3 event list
     as a dict.
-
-    Parameters
-    ----------
-        Data: DL2 data file
-                'astropy.table.QTable'
-        Run: Run number
-                Int
-        Source_name: Name of the source
-                Str
-        Source_pos: Ra/Dec position of the source
-                'astropy.coordinates.SkyCoord'
-        Effective_time: Effective time of triggered events of the run
-                Float
-        Elapsed_time: Total elapsed time of triggered events of the run
-                Float
-    Returns
-    -------
-        Events HDU:  `astropy.io.fits.BinTableHDU`
-        GTI HDU:  `astropy.io.fits.BinTableHDU`
-        Pointing HDU:  `astropy.io.fits.BinTableHDU`
     """
     time_utc = Time(data["dragon_time"], format="unix", scale="utc")
     t_start_iso = time_utc[0].to_value("iso", "date_hms")
