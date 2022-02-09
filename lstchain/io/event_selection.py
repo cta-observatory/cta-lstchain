@@ -64,7 +64,7 @@ class DL3Cuts(Component):
 
     theta_containment = Float(
         help="Percentage containment region for theta cuts",
-        default=0.68,
+        default_value=0.68,
     ).tag(config=True)
 
     global_theta_cut = Float(
