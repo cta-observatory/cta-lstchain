@@ -44,8 +44,7 @@ __all__ = [
     "sky_to_camera",
     "source_dx_dy",
     "source_side",
-    "get_geomagnetic_delta",
-    "min_distance"
+    "get_geomagnetic_delta"
 ]
 
 # position of the LST1
