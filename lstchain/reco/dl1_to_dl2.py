@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 from . import disp
 from . import utils
 from ..io import standard_config, replace_config
-from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_likelihood_params_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe_io_lst import OPTICS
@@ -314,6 +314,13 @@ def build_models(filegammas, fileprotons,
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in src_dep_df_proton.columns])
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
+
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
                                    finite_params=config['energy_regression_features']
@@ -331,7 +338,7 @@ def build_models(filegammas, fileprotons,
                                     )
 
 
-    #Training MC gammas in reduced viewcone 
+    #Training MC gammas in reduced viewcone
     src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
@@ -503,7 +510,7 @@ def apply_models(
     dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
 
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined on the major image axis; sign is such that it is typically positive for gammas:    
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:
     dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
 
     if 'mc_alt_tel' in dl2.columns:

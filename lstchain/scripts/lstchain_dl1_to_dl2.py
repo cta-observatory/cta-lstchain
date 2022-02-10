@@ -9,7 +9,7 @@ separation of events stored in a DL1 file.
 
 Usage:
 
-$> python lstchain_dl1_to_dl2.py 
+$> python lstchain_dl1_to_dl2.py
 --input-file dl1_LST-1.Run02033.0137.h5
 --path-models ./trained_models
 
@@ -39,6 +39,7 @@ from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
+    dl1_likelihood_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )
@@ -83,6 +84,10 @@ def main():
     config = replace_config(standard_config, custom_config)
 
     data = pd.read_hdf(args.input_file, key=dl1_params_lstcam_key)
+
+    if 'lh_fit_config' in config.keys():
+        lhfit_data = pd.read_hdf(args.input_file, key=dl1_likelihood_params_lstcam_key)
+        data = pd.concat([data, lhfit_data], axis=1)
 
     # if real data, add deltat t to dataframe keys
     data = add_delta_t_key(data)
