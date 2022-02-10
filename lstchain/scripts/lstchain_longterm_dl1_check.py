@@ -826,7 +826,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Flat field pixel charges (just for the mean; the std dev may be strongly
     # affected by stars), in pe.
-    ff_charge = 75
+    ff_charge = 73.5
     ff_charge_tolerance = 0.1  # relative tolerance
 
     # Limits of FF mean pixel time (ns) w.r.t. camera average:
@@ -848,7 +848,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # lower rates just due to geometrical reasons)
     
     # Minimum muon ring intensity (pe)
-    min_muon_intensity = 2000
+    min_muon_intensity = 1960
 
     # global peak HG sample id range in muon ring events:
     muon_peak_hg_sample_range = (8, 18)
