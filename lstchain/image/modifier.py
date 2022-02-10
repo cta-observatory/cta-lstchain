@@ -276,16 +276,20 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     ped_config = config['LSTCalibrationCalculator']['PedestalIntegrator']
     tel_id = ped_config['tel_id']
     # Obtain the (unbiased) extractor used for pedestal calculations:
+    pedestal_extractor_type = ped_config['charge_product']
     pedestal_calibrator = CameraCalibrator(
-        image_extractor_type=ped_config['charge_product'],
-        config=Config(config['LSTCalibrationCalculator']),
-        subarray=mc_reader.subarray)
+        image_extractor_type=pedestal_extractor_type,
+        config=Config(ped_config),
+        subarray=mc_reader.subarray
+    )
 
     # Obtain the (usually biased) extractor used for shower images:
     shower_extractor_type = config['image_extractor']
     shower_calibrator = CameraCalibrator(
-        image_extractor_type=shower_extractor_type, config=Config(config),
-        subarray=mc_reader.subarray)
+        image_extractor_type=shower_extractor_type,
+        config=Config(config),
+        subarray=mc_reader.subarray
+    )
 
     # Since these extractors are now for use on MC, we have to apply the pulse
     # integration correction (in data that is currently, as of
@@ -301,8 +305,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     shower_extractor_window_width = config[config['image_extractor']]['window_width']
 
     # Pulse integration window width for the pedestal estimation:
-    pedestal_extractor_window_width = config['LSTCalibrationCalculator']\
-        ['FixedWindowSum']['window_width']
+    pedestal_extractor_config = ped_config[pedestal_extractor_type]
+    pedestal_extractor_window_width = pedestal_extractor_config['window_width']
 
     # MC pedestals integrated with the unbiased pedestal extractor
     mc_ped_charges = []
@@ -382,7 +386,7 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     added_nsb_fraction: fraction of the original NSB in simulation to be added
     original_nsb: original NSB rate (astropy unit Hz)
     dt: time between waveform samples (astropy unit s)
-    pulse_templates: `lstchain.reconstructor.NormalizedPulseTemplate` containing
+    pulse_templates: `lstchain.data.NormalizedPulseTemplate` containing
     the single p.e. pulse template used for the injection
     gain: gain channel identifier for each pixel
     charge_spe_cumulative_pdf: `scipy.interpolate.interp1d` Single p.e. gain

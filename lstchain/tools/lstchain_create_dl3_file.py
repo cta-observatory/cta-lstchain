@@ -1,17 +1,30 @@
 """
 Create DL3 FITS file from given data DL2 file,
-selection cuts and/or IRF FITS files.
+selection cuts and IRF FITS files.
 
 Change the selection parameters as need be using the aliases.
-The default values are written in the EventSelector and DL3FixedCuts Component
+The default values are written in the EventSelector and DL3Cuts Component
 and also given in some example configs in docs/examples/
+
+For the cuts on gammaness, the Tool looks at the IRF provided, to either use
+global cuts, based on the header value of the global gammaness cut, GH_CUT,
+present in each HDU, or energy-dependent cuts, based on the GH_CUTS HDU.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
+
+For source-dependent analysis, a source-dep flag should be activated.
+Similarly to the cuts on gammaness, the global alpha cut values are provided 
+from AL_CUT stored in the HDU header.
+The alpha cut is already applied on this step, and all survived events with each 
+assumed source position (on and off) are saved after the gammaness and alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position (on and off)
+is set as a reco source position just as a trick to obtain survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
+from astropy.table import vstack, QTable
 from ctapipe.core import (
     Provenance,
     Tool,
@@ -19,17 +32,23 @@ from ctapipe.core import (
     traits,
 )
 
-from lstchain.io import EventSelector, DL3FixedCuts
-from lstchain.io import read_data_dl2_to_QTable
-from lstchain.irf import (
+from lstchain.io import (
+    EventSelector,
+    DL3Cuts,
+    get_srcdep_assumed_positions,
+    read_data_dl2_to_QTable,
+)
+from lstchain.high_level import (
     add_icrs_position_params,
     create_event_list,
+    set_expected_pos_to_reco_altaz,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
     run_info_from_filename,
 )
 from lstchain.reco.utils import get_effective_time
+
 
 __all__ = ["DataReductionFITSWriter"]
 
@@ -66,8 +85,16 @@ class DataReductionFITSWriter(Tool):
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
-        --fixed-gh-cut 0.9
-        --fixed-theta-cut 0.2
+        --global-gh-cut 0.9
+        --overwrite
+
+    Or generate source-dependent DL3 files
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        --input-irf /path/to/irf.fits.gz
+        --source-name Crab
+        --source-dep
         --overwrite
     """
 
@@ -108,14 +135,18 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    classes = [EventSelector, DL3FixedCuts]
+    source_dep = traits.Bool(
+        help="If True, source-dependent analysis will be performed.",
+        default_value=False,
+    ).tag(config=True)
+
+    classes = [EventSelector, DL3Cuts]
 
     aliases = {
         ("d", "input-dl2"): "DataReductionFITSWriter.input_dl2",
         ("o", "output-dl3-path"): "DataReductionFITSWriter.output_dl3_path",
         "input-irf": "DataReductionFITSWriter.input_irf",
-        "fixed-gh-cut": "DL3FixedCuts.fixed_gh_cut",
-        "fixed-theta-cut": "DL3FixedCuts.fixed_theta_cut",
+        "global-gh-cut": "DL3Cuts.global_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -125,6 +156,10 @@ class DataReductionFITSWriter(Tool):
         "overwrite": (
             {"DataReductionFITSWriter": {"overwrite": True}},
             "overwrite output file if True",
+        ),
+        "source-dep": (
+            {"DataReductionFITSWriter": {"source_dep": True}},
+            "source-dependent analysis if True",
         ),
     }
 
@@ -136,7 +171,7 @@ class DataReductionFITSWriter(Tool):
         Provenance().add_input_file(self.input_dl2)
 
         self.event_sel = EventSelector(parent=self)
-        self.fixed_cuts = DL3FixedCuts(parent=self)
+        self.cuts = DL3Cuts(parent=self)
 
         self.output_file = self.output_dl3_path.absolute() / self.filename_dl3
         if self.output_file.exists():
@@ -159,15 +194,90 @@ class DataReductionFITSWriter(Tool):
 
         self.log.debug(f"Output DL3 file: {self.output_file}")
 
+        try:
+            with fits.open(self.input_irf) as hdul:
+                self.use_energy_dependent_cuts = (
+                    "GH_CUT" not in hdul["EFFECTIVE AREA"].header
+                )
+        except:
+            raise ToolConfigurationError(
+                f"{self.input_irf} does not have EFFECTIVE AREA HDU, "
+                " to check for global cut information in the Header value"
+            )
+
+    def apply_srcindep_gh_cut(self):
+        ''' apply gammaness cut '''
+        self.data = self.event_sel.filter_cut(self.data)
+
+        if self.use_energy_dependent_cuts:
+            self.energy_dependent_gh_cuts = QTable.read(
+                self.input_irf, hdu="GH_CUTS"
+            )
+
+            self.data = self.cuts.apply_energy_dependent_gh_cuts(
+                self.data, self.energy_dependent_gh_cuts
+            )
+            self.log.info(
+                "Using gamma efficiency of "
+                f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+            )
+        else:
+            with fits.open(self.input_irf) as hdul:
+                self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+            self.data = self.cuts.apply_global_gh_cut(self.data)
+            self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
+
+    def apply_srcdep_gh_alpha_cut(self):
+        ''' apply gammaness and alpha cut for source-dependent analysis '''
+        srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
+
+        for i, srcdep_pos in enumerate(srcdep_assumed_positions):
+            data_temp = read_data_dl2_to_QTable(
+                self.input_dl2, srcdep_pos=srcdep_pos
+            )
+
+            data_temp = self.event_sel.filter_cut(data_temp)
+            
+            if self.use_energy_dependent_cuts:
+                self.energy_dependent_gh_cuts = QTable.read(
+                    self.input_irf, hdu="GH_CUTS"
+                )
+
+                data_temp = self.cuts.apply_energy_dependent_gh_cuts(
+                    data_temp, self.energy_dependent_gh_cuts
+                )
+            else:
+                with fits.open(self.input_irf) as hdul:
+                    self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
+                data_temp = self.cuts.apply_global_gh_cut(data_temp)
+                    
+            with fits.open(self.input_irf) as hdul:
+                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+
+            # set expected source positions as reco positions
+            set_expected_pos_to_reco_altaz(data_temp)
+
+            if i == 0:
+                self.data = data_temp
+            else:
+                self.data = vstack([self.data, data_temp])
+
+
     def start(self):
 
-        self.data = read_data_dl2_to_QTable(str(self.input_dl2))
-        ## To reduce the table columns further, add a selection of columns to be read and used.
+        if not self.source_dep:
+            self.data = read_data_dl2_to_QTable(self.input_dl2)
+        else:
+            self.data = read_data_dl2_to_QTable(self.input_dl2, 'on')
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
         self.run_number = run_info_from_filename(self.input_dl2)[1]
 
-        self.data = self.event_sel.filter_cut(self.data)
-        self.data = self.fixed_cuts.gh_cut(self.data)
+        if not self.source_dep:
+            self.apply_srcindep_gh_cut()
+        else:
+            self.apply_srcdep_gh_alpha_cut()
+
         self.data = add_icrs_position_params(self.data, self.source_pos)
 
         self.log.info("Generating event list")
@@ -183,12 +293,12 @@ class DataReductionFITSWriter(Tool):
         self.hdulist = fits.HDUList(
             [fits.PrimaryHDU(), self.events, self.gti, self.pointing]
         )
-        if self.input_irf:
-            irf = fits.open(self.input_irf)
-            self.log.info("Adding IRF HDUs")
 
-            for irf_hdu in irf[1:]:
-                self.hdulist.append(irf_hdu)
+        irf = fits.open(self.input_irf)
+        self.log.info("Adding IRF HDUs")
+
+        for irf_hdu in irf[1:]:
+            self.hdulist.append(irf_hdu)
 
     def finish(self):
         self.hdulist.writeto(self.output_file, overwrite=self.overwrite)

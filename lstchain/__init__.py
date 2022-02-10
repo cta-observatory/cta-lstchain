@@ -2,9 +2,10 @@ import astropy
 from astropy.time import TimeUnixTai, TimeFromEpoch
 
 from . import calib
+from . import data
+from . import high_level
 from . import image
 from . import io
-from . import irf
 from . import mc
 from . import reco
 from . import spectra
@@ -14,10 +15,11 @@ from .version import __version__
 
 __all__ = [
     "__version__",
+    "data",
+    "high_level",
     "calib",
     "image",
     "io",
-    "irf",
     "mc",
     "reco",
     "spectra",

@@ -19,6 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
+from lstchain.onsite import create_pro_symlink
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create flat-field calibration files',
@@ -136,11 +137,7 @@ def main():
 
     if pro_symlink:
         pro = "pro"
-        pro_dir = f"{output_dir}/../{pro}"
-        if os.path.exists(pro_dir):
-            os.remove(pro_dir)
-        os.symlink(prod_id, pro_dir)
-        print("\n--> Use symbolic link pro")
+        create_pro_symlink(output_dir, prod_id)
     else:
         pro = prod_id
 

@@ -8,7 +8,7 @@ import pytest
 import tables
 from copy import copy
 
-from lstchain.io import standard_config
+from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 
@@ -138,12 +138,64 @@ def test_content_dl1(simulated_dl1_file):
         assert 'obs_id' in params_table.colnames
 
 
-def test_get_source_dependent_parameters(simulated_dl1_file):
+def test_get_source_dependent_parameters_mc(simulated_dl1_file):
     from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
 
+    # for gamma MC
     dl1_params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
-    src_dep_df = get_source_dependent_parameters(dl1_params, standard_config)
-    assert "alpha" in src_dep_df['on'].columns
+    src_dep_df_gamma = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    # for proton MC
+    dl1_params.mc_type = 101
+    src_dep_df_proton = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    assert 'alpha' in src_dep_df_gamma['on'].columns
+    assert 'dist' in src_dep_df_gamma['on'].columns
+    assert 'time_gradient_from_source' in src_dep_df_gamma['on'].columns
+    assert 'skewness_from_source' in src_dep_df_gamma['on'].columns
+    assert (src_dep_df_gamma['on']['expected_src_x'] == dl1_params['src_x']).all()
+    assert (src_dep_df_gamma['on']['expected_src_y'] == dl1_params['src_y']).all()
+
+    np.testing.assert_allclose(
+        src_dep_df_proton['on']['expected_src_x'], 0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_proton['on']['expected_src_y'], 0., atol=1e-2
+    )
+
+@pytest.mark.private_data
+def test_get_source_dependent_parameters_observed(observed_dl1_files):
+    from lstchain.reco.dl1_to_dl2 import get_source_dependent_parameters
+
+    # on observation data
+    srcdep_config['observation_mode']='on'
+    dl1_params = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
+    src_dep_df_on = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    # wobble observation data
+    srcdep_config['observation_mode']='wobble'
+    dl1_params['alt_tel'] += np.deg2rad(0.4) 
+    src_dep_df_wobble = get_source_dependent_parameters(dl1_params, srcdep_config)
+
+    assert 'alpha' in src_dep_df_on['on'].columns
+    assert 'dist' in src_dep_df_on['on'].columns
+    assert 'time_gradient_from_source' in src_dep_df_on['on'].columns
+    assert 'skewness_from_source' in src_dep_df_on['on'].columns
+    assert (src_dep_df_on['on']['expected_src_x'] == 0).all()
+    assert (src_dep_df_on['on']['expected_src_y'] == 0).all()
+
+    np.testing.assert_allclose(
+        src_dep_df_wobble['on']['expected_src_x'], -0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['on']['expected_src_y'], 0., atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['off_180']['expected_src_x'], 0.195, atol=1e-2
+    )
+    np.testing.assert_allclose(
+        src_dep_df_wobble['off_180']['expected_src_y'], 0., atol=1e-2
+    )
 
 
 def test_build_models(simulated_dl1_file, rf_models):

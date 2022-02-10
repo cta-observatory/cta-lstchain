@@ -46,7 +46,7 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
-    'get_srcdep_index_keys',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
     'global_metadata',
@@ -857,7 +857,7 @@ def read_mc_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
     """
-
+    
     # mapping
     name_mapping = {
         "mc_energy": "true_energy",
@@ -879,6 +879,12 @@ def read_mc_dl2_to_QTable(filename):
         "reco_az": u.rad,
     }
 
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
     simu_info = read_simu_info_merged_hdf5(filename)
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
@@ -889,9 +895,14 @@ def read_mc_dl2_to_QTable(filename):
         viewcone=simu_info.max_viewcone_radius,
     )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
-        columns=name_mapping
-    )
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        events_srcdep = get_srcdep_params(filename, 'on')
+        events = pd.concat([events, events_srcdep], axis=1)
+
+    events = events.rename(columns=name_mapping)
+
     events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
@@ -900,12 +911,13 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
     Read data DL2 files from lstchain and return QTable format
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------
@@ -927,7 +939,19 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+    
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
 
     data = QTable.from_pandas(data)
 
@@ -1010,9 +1034,9 @@ def merge_dl2_runs(data_tag, runs, columns_to_read=None, n_process=4):
     return observation_time, df
 
 
-def get_srcdep_index_keys(filename):
+def get_srcdep_assumed_positions(filename):
     """
-    get index column name of source-dependent multi index columns
+    get assumed positions of source-dependent multi index columns
 
     Parameters
     ----------
@@ -1020,7 +1044,7 @@ def get_srcdep_index_keys(filename):
 
     Returns
     -------
-    source-dependent index names
+    assumed positions for source-dependent parameters
     """
     dataset_keys = get_dataset_keys(filename)
 
@@ -1030,6 +1054,9 @@ def get_srcdep_index_keys(filename):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
@@ -1037,14 +1064,15 @@ def get_srcdep_index_keys(filename):
     return data.columns.levels[0]
 
 
-def get_srcdep_params(filename, key):
+def get_srcdep_params(filename, wobble_angles=None):
     """
     get srcdep parameter data frame
 
     Parameters
     ----------
     filename: str - path to the HDF5 file
-    key: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    wobble_angles: `str` - multi index key corresponding to an expected source position (e.g. 'on', 'off_180')
+    If it is not specified, source-dependent parameters with each assumed position are loaded
 
     Returns
     -------
@@ -1058,11 +1086,17 @@ def get_srcdep_params(filename, key):
     elif dl1_params_src_dep_lstcam_key in dataset_keys:
         data = pd.read_hdf(filename, key=dl1_params_src_dep_lstcam_key)
 
+    else:
+        raise IOError('File does not contain source-dependent parameters')
+
     if not isinstance(data.columns, pd.MultiIndex):
         data.columns = pd.MultiIndex.from_tuples(
             [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data.columns])
 
-    return data[key]
+    if wobble_angles is not None:
+        data = data[wobble_angles]
+
+    return data
 
 
 def parse_cfg_bytestring(bytestring):
