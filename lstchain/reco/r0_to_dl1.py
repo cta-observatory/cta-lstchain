@@ -381,7 +381,7 @@ def get_dl1_lh_fit(
     waveform = calibrated_event.r1.tel[telescope_id].waveform
 
     time_shift = None
-    if dl1_container.mc_type == -9999:  # Find time shift correction for data
+    if calibrated_event.simulation is None:  # Find time shift correction for data
         dl1_calib = calibrated_event.calibration.tel[telescope_id].dl1
         time_shift = dl1_calib.time_shift
         if dl1_calib.pedestal_offset is not None:
