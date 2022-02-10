@@ -918,11 +918,30 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
         return None if save else axes
 
 
-def init_centroid(dl1_container, geom, image, config):
+def init_centroid(dl1_container, lhfit_container, geom, image, config):
+    """
+    Initialise the centroid position for the likelihood fit to the Hillas
+    parameter centroid or using a centroid weighting as the signal squared
+    for asymmetric models
+
+    Parameters
+    ----------
+    dl1_container: DL1ParametersContainer
+        Hillas parameter container
+    lhfit_container: DL1LikelihoodParametersContainer
+        Container for the fitted parameters filled here with the seed centroid
+    geom: `ctapipe.instrument.CameraGeometry`
+        Camera geometry
+    image : array_like
+        Charge in each pixel
+    config: `dict`
+        Configuration used for the likelihood fit
+
+    """
     if config['lh_fit_config']['no_asymmetry']:
-        return dl1_container.x, dl1_container.y
+        lhfit_container.lhfit_x, lhfit_container.lhfit_y = dl1_container.x, dl1_container.y
     else:
-        return asy_centroid(geom, image)
+        lhfit_container.lhfit_x, lhfit_container.lhfit_y = asy_centroid(geom, image)
 
 
 def asy_centroid(geom, image):

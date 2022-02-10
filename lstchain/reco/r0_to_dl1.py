@@ -168,8 +168,7 @@ def get_dl1(
     subarray,
     telescope_id,
     dl1_container=None,
-    custom_config={},
-    lhfit_args={}
+    custom_config={}
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -185,9 +184,6 @@ def get_dl1(
     custom_config: path to a configuration file
         configuration used for tailcut cleaning
         supersedes the standard configuration
-    lhfit_args: Dictionary
-        Set of optional parameters needed for the DL1 extraction using the
-        likelihood fit method
 
     Returns
     -------
@@ -262,47 +258,6 @@ def get_dl1(
                 dl1_container=dl1_container,
             )
 
-            if 'lh_fit_config' in config.keys():
-                if dl1_container.mc_type > -1000 or (calibrated_event.trigger.event_type == EventType.SUBARRAY):
-                    # Re-evaluate the DL1 parameters using a likelihood
-                    # minimization method
-                    lhfit_container = lhfit_args["container"]
-                    lhfit_container.reset()
-                    if dl1_container['n_pixels'] > 0:
-                        try:
-                            init_center = init_centroid(
-                                dl1_container,
-                                camera_geometry[signal_pixels],
-                                image[signal_pixels],
-                                config)
-                            lhfit_container.lhfit_x = init_center[0]
-                            lhfit_container.lhfit_y = init_center[1]
-                            get_dl1_lh_fit(calibrated_event,
-                                           subarray,
-                                           camera_geometry,
-                                           telescope_id,
-                                           normalized_pulse_template=lhfit_args["pulse_template"],
-                                           pedestal_std=lhfit_args["pedestal_std"],
-                                           dl1_container=dl1_container,
-                                           lhfit_container=lhfit_container,
-                                           custom_config=config)
-                            lhfit_container.lhfit_call_status = 1
-                            for key in ['lhfit_width',
-                                        'lhfit_length']:
-                                value = getattr(lhfit_container, key)
-                                if not np.isnan(value):
-                                    setattr(lhfit_container, key,
-                                            _camera_distance_to_angle(value, optics.equivalent_focal_length))
-                            lhfit_container.lhfit_wl = lhfit_container.lhfit_width / lhfit_container.lhfit_length
-                            lhfit_container.lhfit_area = lhfit_container.lhfit_width * lhfit_container.lhfit_length
-                        except Exception as err:
-                            lhfit_container.lhfit_call_status = -1
-                            logger.exception("Unexpected error encountered in : get_dl1_lh_fit()")
-                            logger.exception(err.__class__)
-                            logger.exception(err)
-                            raise
-                    else:
-                        lhfit_container.lhfit_call_status = 0
     # We set other fields which still make sense for a non-parametrized
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
@@ -311,6 +266,72 @@ def get_dl1(
     calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
 
     return dl1_container
+
+
+def apply_lh_fit(
+    calibrated_event,
+    subarray,
+    telescope_id,
+    dl1_container,
+    lhfit_container,
+    normalized_pulse_template,
+    pedestal_std,
+    custom_config
+):
+    """
+    Prepare and performs the extraction of DL1 parameters using a likelihood
+    based reconstruction method.
+
+    Parameters
+    ----------
+    calibrated_event: ctapipe event container
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+    telescope_id: `int`
+    dl1_container: DL1ParametersContainer
+    lhfit_container: DL1LikelihoodParametersContainer
+    normalized_pulse_template: NormalizedPulseTemplate
+    pedestal_std: array-like or None
+        Pedestal standard deviation from interleaved events (WIP) from DL1 file
+        or None to use event-wise signal-less pixels standard deviation
+    custom_config: `dict`
+        Configuration used for the likelihood fit
+
+    Returns
+    -------
+    DL1LikelihoodParametersContainer
+
+    """
+    lhfit_container.reset()
+    if dl1_container.mc_type > -1000 or (calibrated_event.trigger.event_type == EventType.SUBARRAY):
+        if dl1_container.n_pixels <= 0:
+            lhfit_container.lhfit_call_status = 0
+        else:
+            geometry = subarray.tel[telescope_id].camera.geometry
+            image = calibrated_event.dl1.tel[telescope_id].image
+            hillas_signal_pixels = calibrated_event.dl1.tel[telescope_id].image_mask
+            init_centroid(dl1_container,
+                          lhfit_container,
+                          geometry[hillas_signal_pixels],
+                          image[hillas_signal_pixels],
+                          custom_config
+                          )
+            try:
+                get_dl1_lh_fit(calibrated_event,
+                               subarray,
+                               geometry,
+                               telescope_id,
+                               normalized_pulse_template=normalized_pulse_template,
+                               pedestal_std=pedestal_std,
+                               dl1_container=dl1_container,
+                               lhfit_container=lhfit_container,
+                               custom_config=custom_config)
+            except Exception as err:
+                lhfit_container.lhfit_call_status = -1
+                logger.exception("Unexpected error encountered in : get_dl1_lh_fit()")
+                logger.exception(err.__class__)
+                logger.exception(err)
+                raise
+    return lhfit_container
 
 
 def get_dl1_lh_fit(
@@ -325,15 +346,16 @@ def get_dl1_lh_fit(
     custom_config
 ):
     """
-    Return a DL1ParametersContainer of extracted features from a calibrated
-    event. The features are extracted by maximizing an image likelihood
-    function over pixels and time samples. The model considers an asymmetric
-    2D Gaussian distribution of the charge and a linear temporal model. The
-    spatio-temporal image model is then compared to the signal vs time in each
-    pixel while taking into account the response of the instrument from
-    calibration.
-    The DL1ParametersContainer needs to contain a first features estimation
+    Return a DL1LikelihoodParametersContainer of extracted features from a
+    calibrated event. The features are extracted by maximizing an image
+    likelihood function over pixels and time samples. The model considers an
+    asymmetric 2D Gaussian distribution of the charge and a linear temporal
+    model. The spatio-temporal image model is then compared to the signal vs
+    time in each pixel while taking into account the response of the instrument
+    from calibration.
+    A DL1ParametersContainer needs to contain a first features estimation
     as seed for the likelihood fit.
+
     Parameters
     ----------
     calibrated_event: ctapipe event container
@@ -346,11 +368,13 @@ def get_dl1_lh_fit(
     pedestal_std: array-like or None
         Pedestal standard deviation from interleaved events (WIP) from DL1 file
         or None to use event-wise signal-less pixels standard deviation
-    custom_config: path to a configuration file
-        configuration used for the likelihood fit
+    custom_config: `dict`
+        Configuration used for the likelihood fit
+
     Returns
     -------
     DL1LikelihoodParametersContainer
+
     """
     lh_fit_config = custom_config['lh_fit_config']
 
@@ -369,7 +393,7 @@ def get_dl1_lh_fit(
     n_pixels, n_samples = waveform.shape
     selected_gains = calibrated_event.r1.tel[telescope_id].selected_gain_channel
     mask_high = (selected_gains == 0)
-    if pedestal_std is not None:  # test to include interleaved correction on pedestal, NOT FUNCTIONNAL
+    if pedestal_std is not None:  # test to include interleaved correction on pedestal, NOT FUNCTIONAL
         error = pedestal_std[1][0] * mask_high + pedestal_std[1][1] * ~mask_high
     else:
         error = None
@@ -473,6 +497,16 @@ def get_dl1_lh_fit(
         logger.exception('Could not fit : %s', e)
         logger.exception(e.__class__)
         raise e
+    optics = subarray.tel[telescope_id].optics
+    for key in ['lhfit_width',
+                'lhfit_length']:
+        value = getattr(lhfit_container, key)
+        if not np.isnan(value):
+            setattr(lhfit_container, key,
+                    _camera_distance_to_angle(value, optics.equivalent_focal_length))
+    lhfit_container.lhfit_wl = lhfit_container.lhfit_width / lhfit_container.lhfit_length
+    lhfit_container.lhfit_area = lhfit_container.lhfit_width * lhfit_container.lhfit_length
+
     return lhfit_container
 
 
@@ -594,7 +628,7 @@ def r0_to_dl1(
                                                                          config=config)[0]
                 spe = np.loadtxt(config['waveform_nsb_tuning']['spe_location']).T
                 spe_integral = np.cumsum(spe[1])
-                charge_spe_cumulative_pdf = interp1d(spe_integral,spe[0], kind='cubic',
+                charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
                 allowed_tel = np.zeros(len(nsb_original), dtype=bool)
@@ -753,13 +787,22 @@ def r0_to_dl1(
                         telescope_id,
                         dl1_container=dl1_container,
                         custom_config=config,
-                        lhfit_args=lhfit_args,
                     )
 
                 except HillasParameterizationError:
                     logging.exception(
                         'HillasParameterizationError in get_dl1()'
                     )
+
+                if 'lh_fit_config' in config.keys():
+                    apply_lh_fit(event,
+                                 subarray,
+                                 telescope_id,
+                                 normalized_pulse_template=lhfit_args["pulse_template"],
+                                 pedestal_std=lhfit_args["pedestal_std"],
+                                 dl1_container=dl1_container,
+                                 lhfit_container=lhfit_args["container"],
+                                 custom_config=config)
 
                 if not is_simu:
                     dl1_container.ucts_time = 0
