@@ -10,7 +10,7 @@ from copy import copy
 import astropy.units as u
 
 from ctapipe.reco.reco_algorithms import Reconstructor
-from lstchain.io.lstcontainers import DL1ParametersContainer
+from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.image.pdf import log_gaussian, log_asygaussian2d
 from lstchain.visualization.camera import display_array_camera
 
@@ -676,14 +676,14 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
 
         return log_pdf
 
-    def predict(self, container=DL1ParametersContainer(), **kwargs):
+    def predict(self, container=DL1LikelihoodParametersContainer(), **kwargs):
         """
             Call the fitting procedure and fill the results.
 
         Parameters
         ----------
-        container: DL1ParametersContainer
-            Location to fill with updated DL1 parameters
+        container: DL1LikelihoodParametersContainer
+            Location to fill with likelihood DL1 parameters
         """
 
         self.fit(**kwargs)
@@ -916,6 +916,13 @@ class TimeWaveformFitter(DL0Fitter, Reconstructor):
                                       '_waveform.png')
             plt.close()
         return None if save else axes
+
+
+def init_centroid(dl1_container, geom, image, config):
+    if config['lh_fit_config']['no_asymmetry']:
+        return dl1_container.x, dl1_container.y
+    else:
+        return asy_centroid(geom, image)
 
 
 def asy_centroid(geom, image):

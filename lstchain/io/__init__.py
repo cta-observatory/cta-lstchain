@@ -1,6 +1,7 @@
 from .config import get_standard_config, replace_config, read_configuration_file
 from .lstcontainers import (
     DL1ParametersContainer,
+    DL1LikelihoodParametersContainer,
     DispContainer,
 )
 from .event_selection import EventSelector, DL3FixedCuts, DataBinning
@@ -32,6 +33,7 @@ __all__ = [
     'replace_config',
     'read_configuration_file',
     'DL1ParametersContainer',
+    'DL1LikelihoodParametersContainer',
     'DispContainer',
     'EventSelector',
     'DL3FixedCuts',
