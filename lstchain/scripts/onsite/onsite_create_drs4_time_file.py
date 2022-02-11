@@ -98,7 +98,7 @@ def main():
     # update the default production directory
     if pro_symlink:
         pro = "pro"
-        create_pro_symlink(output_dir, prod_id)
+        create_pro_symlink(output_dir)
     else:
         pro = prod_id
 

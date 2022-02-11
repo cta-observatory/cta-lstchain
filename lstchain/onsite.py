@@ -1,12 +1,27 @@
-import os
+from pathlib import Path
+import tempfile
 
-def create_pro_symlink(output_dir, prod_id):
-    pro_dir = f"{output_dir}/../pro"
 
-    # remove previous pro link, if it points to an older version
-    if os.path.exists(pro_dir) and os.readlink(pro_dir) is not output_dir:
-        os.remove(pro_dir)
+def create_symlink_overwrite(link, target):
+    '''
+    Create a symlink from link to target, replacing an existing link atomically.
+    '''
+    if not link.exists():
+        link.symlink_to(target)
+        return
 
-    if not os.path.exists(pro_dir):
-        os.symlink(prod_id, pro_dir)
+    if link.resolve() == target.resolve():
+        # nothing to do
+        return
 
+    # create the symlink in a tempfile, then replace the original one
+    # in one step to avoid race conditions
+    tmp = Path(tempfile.mktemp(prefix='tmp_symlink'))
+    tmp.symlink_to(target)
+    tmp.replace(link)
+
+
+def create_pro_symlink(output_dir):
+    output_dir = Path(output_dir)
+    pro_dir = output_dir / '../pro'
+    create_symlink_overwrite(pro_dir, output_dir)
