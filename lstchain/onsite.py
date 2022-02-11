@@ -1,6 +1,7 @@
 from pathlib import Path
 from pkg_resources import resource_filename
 from datetime import datetime
+import tempfile
 
 from .paths import parse_calibration_name
 
@@ -21,17 +22,33 @@ def is_date(s):
         return False
 
 
+def create_symlink_overwrite(link, target):
+    '''
+    Create a symlink from link to target, replacing an existing link atomically.
+    '''
+    target = target.resolve()
+
+    if not link.exists():
+        link.symlink_to(target)
+        return
+
+    if link.resolve() == target:
+        # nothing to do
+        return
+
+    # create the symlink in a tempfile, then replace the original one
+    # in one step to avoid race conditions
+    tmp = tempfile.NamedTemporaryFile(prefix='tmp_symlink_', delete=True)
+    tmp.close()
+    tmp = Path(tmp.name)
+    tmp.symlink_to(target)
+    tmp.replace(link)
+
+
 def create_pro_symlink(output_dir):
-    '''Create or update the pro symlink to given ``output dir``'''
-    output_dir = Path(output_dir).expanduser().resolve()
-    pro_dir = output_dir.parent / "pro"
-
-    # remove previous pro link, if it points to an older version
-    if pro_dir.exists() and pro_dir.resolve() != output_dir.resolve():
-        pro_dir.unlink()
-
-    if not pro_dir.exists():
-        pro_dir.symlink_to(output_dir)
+    output_dir = Path(output_dir)
+    pro_dir = output_dir / '../pro'
+    create_symlink_overwrite(pro_dir, output_dir)
 
 
 def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
