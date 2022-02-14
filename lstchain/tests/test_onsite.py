@@ -2,11 +2,14 @@ import pytest
 import os
 from pathlib import Path
 import json
+import shutil
 
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/'
-test_subrun = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
+test_subrun1 = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
+test_subrun2 = test_r0_path / '20210215/LST-1.1.Run03669.0000_first50.fits.fz'
+
 PRO = 'v0.8.2.post2.dev48+gb1343281'
 BASE_DIR = test_data / 'real'
 
@@ -43,11 +46,40 @@ def test_create_pro_link(tmp_path: Path):
 
 
 @pytest.mark.private_data
-def test_find_r0_subrun():
+def test_find_r0_subrun(tmp_path):
     from lstchain.onsite import find_r0_subrun
 
-    path = find_r0_subrun(2008, 0, test_r0_path)
-    assert path.resolve() == test_subrun.resolve()
+    tmp_r0 = tmp_path / 'R0'
+    correct = tmp_r0 / test_subrun1.parent.name
+    correct.mkdir(parents=True)
+    shutil.copy2(test_subrun1, correct / test_subrun1.name)
+
+    # copy another run so we can make sure we really find the right one
+    other = tmp_r0 / test_subrun2.parent.name
+    other.mkdir(parents=True)
+    shutil.copy2(test_subrun2, other / test_subrun2.name)
+
+    path = find_r0_subrun(2008, 0, tmp_r0)
+    assert path.resolve().parent == correct
+
+
+@pytest.mark.private_data
+def test_find_r0_subrun_trash(tmp_path):
+    from lstchain.onsite import find_r0_subrun
+
+    # test we ignore everything not looking like a date
+    tmp_r0 = tmp_path / 'R0'
+    trash = tmp_r0 / 'Trash'
+    correct = tmp_r0 / '20200218'
+    trash.mkdir(parents=True)
+    correct.mkdir(parents=True)
+
+    shutil.copy2(test_subrun1, trash / test_subrun1.name)
+    shutil.copy2(test_subrun1, correct / test_subrun1.name)
+
+    path = find_r0_subrun(2008, 0, tmp_r0)
+    assert path.resolve().parent == correct
+
 
 
 @pytest.mark.private_data

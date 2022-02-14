@@ -1,5 +1,6 @@
 from pathlib import Path
 from pkg_resources import resource_filename
+from datetime import datetime
 
 from .paths import parse_calibration_name
 
@@ -10,6 +11,14 @@ DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
     "data/onsite_camera_calibration_param.json",
 ))
+
+
+def is_date(s):
+    try:
+        datetime.strptime(s, '%Y%m%d')
+        return True
+    except ValueError:
+        return False
 
 
 def create_pro_symlink(output_dir):
@@ -29,12 +38,18 @@ def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
     '''
     Find the given subrun R0 file (i.e. globbing for the date part)
     '''
-    file_list = sorted(r0_dir.rglob(f'LST-1.1.Run{run:05d}.{sub_run:04d}*.fits.fz'))
+    file_list = r0_dir.rglob(f'LST-1.1.Run{run:05d}.{sub_run:04d}*.fits.fz')
+    # ignore directories that are not a date, e.g. "Trash"
+    file_list = [p for p in file_list if is_date(p.parent.name)]
+
 
     if len(file_list) == 0:
         raise IOError(f"Run {run} not found\n")
-    else:
-        return file_list[0]
+
+    if len(file_list) > 1:
+        raise IOError(f"Found more than one file for run {run}.{sub_run}: {file_list}")
+
+    return file_list[0]
 
 
 def find_pedestal_file(pro, pedestal_run=None, date=None, base_dir=DEFAULT_BASE_PATH):
