@@ -35,7 +35,7 @@ from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
-from .reconstructor import TimeWaveformFitter, init_centroid
+from .reconstructor import TimeWaveformFitter
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (

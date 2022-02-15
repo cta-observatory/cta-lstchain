@@ -1,4 +1,3 @@
-from abc import abstractmethod, ABC
 import inspect
 import logging
 
@@ -9,7 +8,7 @@ import matplotlib.pyplot as plt
 from copy import copy
 import astropy.units as u
 
-from lstchain.analysis.normalised_pulse_template import NormalizedPulseTemplate
+from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
 from ctapipe.core import Component
 from ctapipe.core.traits import Bool, Float, Int, Path
