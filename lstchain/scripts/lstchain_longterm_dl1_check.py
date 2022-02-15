@@ -577,7 +577,6 @@ def main():
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([np.nan])
-            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
