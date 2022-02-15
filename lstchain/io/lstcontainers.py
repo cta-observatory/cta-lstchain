@@ -231,10 +231,10 @@ class DL1LikelihoodParametersContainer(Container):
     """
     Parameters obtained with the likelihood reconstruction method
     """
-    lhfit_call_status = Field(-10, "Status of the processing of the event "
-                                   "by the LH fit method. -10: inactive,"
-                                   " 0: event with no pixels, -1: error"
-                                   " 1: success")
+    lhfit_call_status = Field(-1, "Status of the processing of the event "
+                                  "by the LH fit method. -10: inactive,"
+                                  " 0: event with no pixels, -1: error"
+                                  " 1: success")
     lhfit_intensity = Field(np.float64(np.nan), 'fitted intensity')
     lhfit_log_intensity = Field(np.float64(np.nan), 'log of fitted intensity')
     lhfit_intensity_uncertainty = Field(np.float64(np.nan), '')
