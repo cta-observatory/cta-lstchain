@@ -59,8 +59,8 @@ jobs:
 
       - name: Download test data
         env:
-          TEST_DATA_USER: ${{ secrets.test_data_user }}
-          TEST_DATA_PASSWORD: ${{ secrets.test_data_password }}
+          TEST_DATA_USER: ${{ secrets.TEST_DATA_USER }}
+          TEST_DATA_PASSWORD: ${{ secrets.TEST_DATA_PASSWORD }}
         run: |
           ./download_test_data.sh
 
