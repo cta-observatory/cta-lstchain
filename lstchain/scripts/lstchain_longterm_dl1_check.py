@@ -406,12 +406,16 @@ def main():
         runsummary['min_azimuth'].extend([table['mean_az_tel'].min()])
         az = table['mean_az_tel']
         mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
+        if mean_az < 0:
+            mean_az += 2 * np.pi
         runsummary['mean_azimuth'].extend([mean_az])
         runsummary['max_azimuth'].extend([table['mean_az_tel'].max()])
 
         ra = np.deg2rad(table['tel_ra'])
         mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
                 ra))))
+        if mean_ra < 0:
+            mean_ra += 360
         runsummary['mean_ra'].extend([mean_ra])
 
         runsummary['mean_dec'].extend([table['tel_dec'].mean()])
