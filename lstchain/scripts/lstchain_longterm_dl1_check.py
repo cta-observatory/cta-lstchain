@@ -30,6 +30,9 @@ import tables
 import warnings
 
 from astropy.table import Table
+from astropy.coordinates import Angle
+import astropy.units as u
+
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show, save
 from bokeh.layouts import gridplot, column
@@ -406,16 +409,16 @@ def main():
         runsummary['min_azimuth'].extend([table['mean_az_tel'].min()])
         az = table['mean_az_tel']
         mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
-        if mean_az < 0:
-            mean_az += 2 * np.pi
+        mean_az = Angle(mean_az, u.rad).wrap_at('360d').rad
+        
         runsummary['mean_azimuth'].extend([mean_az])
         runsummary['max_azimuth'].extend([table['mean_az_tel'].max()])
 
         ra = np.deg2rad(table['tel_ra'])
-        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
-                ra))))
-        if mean_ra < 0:
-            mean_ra += 360
+        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), 
+                                        np.mean(np.cos(ra))))
+        mean_ra = Angle(mean_ra, u.deg).wrap_at('360d').deg
+        
         runsummary['mean_ra'].extend([mean_ra])
 
         runsummary['mean_dec'].extend([table['tel_dec'].mean()])
