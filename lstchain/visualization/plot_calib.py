@@ -270,9 +270,12 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 charge_median = ff_data.charge_median[chan]
                 #charge_mean = ff_data.charge_mean[chan]
                 charge_std = ff_data.charge_std[chan]
+                n_ff = ff_data.n_events
                 median_ped = ped_data.charge_median[chan]
                 #mean_ped = ped_data.charge_mean[chan]
                 ped_std = ped_data.charge_std[chan]
+                n_ped = ped_data.n_events
+
                 dc_to_pe = calib_data.dc_to_pe[chan]
                 time_correction = calib_data.time_correction[chan]
 
@@ -285,6 +288,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
 
                 # charge
                 plt.subplot(421)
+                plt.title(f"FF sample of {n_ff} events")
                 plt.tight_layout()
                 median = int(np.median(charge_median[select]))
                 rms = np.std(charge_median[select])
@@ -307,6 +311,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 # pedestal charge
                 plt.subplot(423)
                 plt.tight_layout()
+                plt.title(f"pedestal sample of {n_ped} events")
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("pedestal", fontsize=20)
                 median = np.median(median_ped[select])
