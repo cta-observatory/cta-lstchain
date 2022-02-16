@@ -12,7 +12,7 @@ import subprocess
 
 import lstchain
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import create_pro_symlink, DEFAULT_BASE_PATH
+from lstchain.onsite import LEVEL_A_PIXEL_DIR, create_pro_symlink, DEFAULT_BASE_PATH
 
 def none_or_str(value):
     if value == "None":
@@ -54,7 +54,7 @@ def main():
     prefix = args.input_prefix
     yes = args.yes
     pro_symlink = not args.no_pro_symlink
-    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
 
     # verify config file
     if not config_file.exists():

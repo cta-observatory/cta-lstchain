@@ -16,6 +16,7 @@ import lstchain
 from lstchain.onsite import (
     DEFAULT_BASE_PATH,
     DEFAULT_CONFIG,
+    LEVEL_A_PIXEL_DIR,
     create_pro_symlink,
     find_r0_subrun,
     find_pedestal_file,
@@ -81,7 +82,7 @@ def main():
     print(f"\n--> Input file: {input_file}")
 
     # verify output dir
-    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
     output_dir = calib_dir / "drs4_time_sampling_from_FF" / date / prod_id
 
     if not output_dir.exists():

@@ -7,6 +7,7 @@ from .paths import parse_calibration_name
 
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
+LEVEL_A_PIXEL_DIR = 'monitoring/PixelCalibration/LevelA'
 
 DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
@@ -71,7 +72,7 @@ def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):
 
 def find_pedestal_file(pro, pedestal_run=None, date=None, base_dir=DEFAULT_BASE_PATH):
     # pedestal base dir
-    ped_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/drs4_baseline"
+    ped_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "drs4_baseline"
 
     if pedestal_run is None and date is None:
         raise ValueError('Must give at least `date` or `run`')
@@ -106,7 +107,7 @@ def find_run_summary(date, base_dir=DEFAULT_BASE_PATH):
 def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PATH):
     '''Find a time calibration file for given run
     '''
-    time_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF"
+    time_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "drs4_time_sampling_from_FF"
 
 
     # search the last time run before or equal to the calibration run
@@ -138,7 +139,7 @@ def find_time_calibration_file(pro, run, time_run=None, base_dir=DEFAULT_BASE_PA
 
 
 def find_systematics_correction_file(pro, date, sys_date=None, base_dir=DEFAULT_BASE_PATH):
-    sys_dir = Path(base_dir) / "monitoring/PixelCalibration/LevelA/ffactor_systematics"
+    sys_dir = Path(base_dir) / LEVEL_A_PIXEL_DIR / "ffactor_systematics"
 
     if sys_date is not None:
         path =  (sys_dir / sys_date / pro / f"ffactor_systematics_{sys_date}.h5").resolve()

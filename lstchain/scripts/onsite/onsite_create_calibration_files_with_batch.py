@@ -16,7 +16,12 @@ from datetime import datetime
 from pathlib import Path
 
 import lstchain
-from lstchain.onsite import DEFAULT_BASE_PATH, find_r0_subrun, DEFAULT_CONFIG
+from lstchain.onsite import (
+    DEFAULT_BASE_PATH,
+    LEVEL_A_PIXEL_DIR,
+    find_r0_subrun,
+    DEFAULT_CONFIG,
+)
 
 # parse arguments
 parser = argparse.ArgumentParser(
@@ -88,7 +93,7 @@ def main():
 
     output_base_name = args.output_base_name
 
-    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
 
     if shutil.which('srun') is None:
         sys.exit(">>> This script needs a slurm batch system. Stop")

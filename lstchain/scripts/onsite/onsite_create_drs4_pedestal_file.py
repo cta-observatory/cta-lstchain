@@ -15,7 +15,12 @@ from pathlib import Path
 import lstchain
 import lstchain.visualization.plot_drs4 as drs4
 from lstchain.io.data_management import query_yes_no
-from lstchain.onsite import DEFAULT_BASE_PATH, create_pro_symlink, find_r0_subrun
+from lstchain.onsite import (
+    DEFAULT_BASE_PATH,
+    LEVEL_A_PIXEL_DIR,
+    create_pro_symlink,
+    find_r0_subrun,
+)
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Create DRS4 pedestal file',
@@ -65,7 +70,7 @@ def main():
     date = input_file.parent.name
 
     # verify and make output dir
-    calib_dir = base_dir / "monitoring/PixelCalibration/LevelA"
+    calib_dir = base_dir / LEVEL_A_PIXEL_DIR
     output_dir = calib_dir / "drs4_baseline" / date / prod_id
     if not output_dir.exists():
         print(f"--> Create directory {output_dir}")
