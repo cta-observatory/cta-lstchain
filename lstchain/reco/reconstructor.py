@@ -21,19 +21,32 @@ logger = logging.getLogger(__name__)
 
 
 class TimeWaveformFitter(Component):
-    sigma_s = Float(1, help='', allow_none=False).tag(config=True)
-    crosstalk = Float(0, help='', allow_none=False).tag(config=True)
-    sigma_space = Float(4, help='', allow_none=False).tag(config=True)
-    sigma_time = Float(3, help='', allow_none=False).tag(config=True)
-    time_before_shower = Float(10, help='', allow_none=False).tag(config=True)
-    time_after_shower = Float(20, help='', allow_none=False).tag(config=True)
-    use_weight = Bool(False, help='', allow_none=False).tag(config=True)
-    no_asymmetry = Bool(False, help='', allow_none=False).tag(config=True)
-    use_interleaved = Path(None, help='', allow_none=True).tag(config=True)
-    telescope_id = Int(1, help='', allow_none=False).tag(config=True)
+    sigma_s = Float(1, help='Width of the single photo-electron peak distribution.', allow_none=False).tag(config=True)
+    crosstalk = Float(0, help='Average pixel crosstalk.', allow_none=False).tag(config=True)
+    sigma_space = Float(4, help='Size of the region on which the fit is performed relative to the image extension.',
+                        allow_none=False).tag(config=True)
+    sigma_time = Float(3, help='Time window on which the fit is performed relative to the image temporal extension.',
+                       allow_none=False).tag(config=True)
+    time_before_shower = Float(10, help='Additional time at the start of the fit temporal window.',
+                               allow_none=False).tag(config=True)
+    time_after_shower = Float(20, help='Additional time at the end of the fit temporal window.',
+                              allow_none=False).tag(config=True)
+    use_weight = Bool(False, help='If True, the brightest sample is twice as important as the dimmest pixel in the '
+                                  'likelihood. If false all samples are equivalent.', allow_none=False).tag(config=True)
+    no_asymmetry = Bool(False, help='If true, the asymmetry of the spatial model is fixed to 0.',
+                        allow_none=False).tag(config=True)
+    use_interleaved = Path(None, help='Location of the dl1 file used to estimate the pedestal exploiting interleaved'
+                                      ' events.', allow_none=True).tag(config=True)
+    telescope_id = Int(1, help='Id of the telescope in use.', allow_none=False).tag(config=True)
     # Allows only one telescope for now, need to use telescope-wise information later
-    n_peaks = Int(50, help='', allow_none=False).tag(config=True)
-    verbose = Int(0, help='', allow_none=False).tag(config=True)
+    n_peaks = Int(50, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
+                           'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
+                  allow_none=False).tag(config=True)
+    verbose = Int(0, help='4 - used for tests: create debug plots\n'
+                          '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
+                          '2 - create debug plots, increase minuit verbose level\n'
+                          '1 - increase minuit verbose level\n'
+                          '0 - silent', allow_none=False).tag(config=True)
 
     def __init__(self, subarray, config=None, parent=None, **kwargs):
         super().__init__(config=config, parent=parent, **kwargs)
@@ -85,12 +98,10 @@ class TimeWaveformFitter(Component):
 
         waveform = event.r1.tel[self.telescope_id].waveform
 
-        time_shift = None
-        if event.simulation is None:  # Find time shift correction for data
-            dl1_calib = event.calibration.tel[self.telescope_id].dl1
-            time_shift = dl1_calib.time_shift
-            if dl1_calib.pedestal_offset is not None:
-                waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
+        dl1_calib = event.calibration.tel[self.telescope_id].dl1
+        time_shift = dl1_calib.time_shift
+        if dl1_calib.pedestal_offset is not None:
+            waveform = waveform - dl1_calib.pedestal_offset[:, np.newaxis]
 
         self.n_pixels, self.n_samples = waveform.shape
         self.times = np.arange(0, self.n_samples) * self.dt
@@ -98,47 +109,43 @@ class TimeWaveformFitter(Component):
         self.is_high_gain = (selected_gains == 0)
 
         v = dl1_container.time_gradient
-        psi = dl1_container.psi.to(u.rad).value
+        psi = dl1_container.psi.to_value(u.rad)
         if v < 0:
             if psi >= 0:
                 psi = psi - np.pi
             else:
                 psi = psi + np.pi
 
-        start_length = np.tan(dl1_container.length.to(u.rad).value) * self.focal_length.to(u.m).value
-        self.start_parameters = {'x_cm': start_x_cm.to(u.m).value,
-                                 'y_cm': start_y_cm.to(u.m).value,
+        start_length = max(np.tan(dl1_container.length.to_value(u.rad)) * self.focal_length.to_value(u.m), 0.02)
+        self.start_parameters = {'x_cm': start_x_cm.to_value(u.m),
+                                 'y_cm': start_y_cm.to_value(u.m),
                                  'charge': dl1_container.intensity,
                                  't_cm': dl1_container.intercept - self.template_time_of_max,
                                  'v': np.abs(v),
                                  'psi': psi,
                                  'length': start_length,
-                                 'wl': dl1_container.wl,
+                                 'wl': max(dl1_container.wl, 0.01),
                                  'rl': 0.0
                                  }
 
-        if self.start_parameters['length'] <= 0.02:
-            self.start_parameters['length'] = 0.02
-        if self.start_parameters['wl'] == 0:
-            self.start_parameters['wl'] = 0.01
         if np.isnan(self.start_parameters['t_cm']):
             self.start_parameters['t_cm'] = 0.
         if np.isnan(self.start_parameters['v']):
             self.start_parameters['v'] = 40
 
-        t_max = self.n_samples * 1
+        t_max = self.n_samples * self.dt
         v_min, v_max = 0, max(2 * self.start_parameters['v'], 50)
         rl_min, rl_max = -9, 9
         if self.no_asymmetry:
             rl_min, rl_max = 0.0, 0.0
 
-        self.bound_parameters = {'x_cm': (start_x_cm.to(u.m).value
+        self.bound_parameters = {'x_cm': (start_x_cm.to_value(u.m)
                                           - 1.0 * start_length,
-                                          start_x_cm.to(u.m).value
+                                          start_x_cm.to_value(u.m)
                                           + 1.0 * start_length),
-                                 'y_cm': (start_y_cm.to(u.m).value
+                                 'y_cm': (start_y_cm.to_value(u.m)
                                           - 1.0 * start_length,
-                                          start_y_cm.to(u.m).value
+                                          start_y_cm.to_value(u.m)
                                           + 1.0 * start_length),
                                  'charge': (dl1_container.intensity * 0.25,
                                             dl1_container.intensity * 4.0),
@@ -157,21 +164,17 @@ class TimeWaveformFitter(Component):
 
         self.mask_pixel, self.mask_time = self.clean_data()
         spatial_ones = np.ones(np.sum(self.mask_pixel))
-        spatial_zeros = np.zeros(np.sum(self.mask_pixel))
 
         self.is_high_gain = self.is_high_gain[self.mask_pixel]
         self.sig_s = spatial_ones * self.sigma_s
         self.crosstalks = spatial_ones * self.crosstalk
 
         self.times = (np.arange(0, self.n_samples) * self.dt)[self.mask_time]
-        if time_shift is None:
-            self.time_shift = spatial_zeros
-        else:
-            self.time_shift = time_shift[self.mask_pixel]
+        self.time_shift = time_shift[self.mask_pixel]
 
         self.p_x = self.pix_x[self.mask_pixel]
         self.p_y = self.pix_y[self.mask_pixel]
-        self.pix_area = self.geometry.pix_area.to(u.m ** 2).value[self.mask_pixel]
+        self.pix_area = self.geometry.pix_area[self.mask_pixel].to_value(u.m **2)
 
         self.data = waveform
         self.error = copy(self.pedestal_std)
@@ -191,6 +194,8 @@ class TimeWaveformFitter(Component):
         self.data = np.delete(self.data, filter_times, axis=1)
         self.error = np.delete(self.error, filter_pixels, axis=0)
         self.error = np.delete(self.error, filter_times, axis=1)
+
+        return self.predict()
 
     def clean_data(self):
         """
@@ -236,10 +241,6 @@ class TimeWaveformFitter(Component):
     def fit(self):
         """
             Performs the fitting procedure.
-
-            Parameters
-            ----------
-            verbose: boolean
 
         """
 

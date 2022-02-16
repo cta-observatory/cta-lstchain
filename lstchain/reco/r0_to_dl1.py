@@ -66,6 +66,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     'add_disp_to_parameters_table',
     'get_dl1',
+    'apply_lh_fit',
     'r0_to_dl1',
 ]
 
@@ -294,8 +295,7 @@ def apply_lh_fit(
             lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=0)
         else:
             try:
-                fitter(event=event, dl1_container=dl1_container)
-                lhfit_container = fitter.predict()
+                lhfit_container = fitter(event=event, dl1_container=dl1_container)
             except Exception as err:
                 logger.exception("Unexpected error encountered in likelihood reconstruction")
                 logger.exception(err.__class__)
