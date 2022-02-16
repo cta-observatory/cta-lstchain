@@ -577,7 +577,6 @@ def main():
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([np.nan])
-            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
@@ -890,7 +889,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                           format(run,
                                  date=date.strftime("%b %d %Y %H:%M:%S")))
 
-    runsummary = read_table(filename, '/runsummary/table')
+    runsummary = read_table(filename, '/runsummary/table').to_pandas()
+    # avoid issues with nans in bokeh (fill 0's instead):
+    runsummary.fillna(0, inplace=True)
 
     if np.sum(runsummary['num_ucts_jumps']) > 0:
         log.info('Attention: UCTS jumps were detected and corrected:')
@@ -1553,6 +1554,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     x: ndarray, x coordinates
     y: ndarray, y coordinates
     ey: ndarray, size of y error bars
+    eylow, eyhigh: ndarrays, size of lower- and upper-side y-error bars (if
+                   provided, they are used instead of ey)
     xlabel: x-axis label
     ylabel: y-axis label
     xtype: 'log', 'linear', 'datetime'
