@@ -7,7 +7,7 @@ from .paths import parse_calibration_name
 
 DEFAULT_BASE_PATH = Path('/fefs/aswg/data/real')
 DEFAULT_R0_PATH = DEFAULT_BASE_PATH / 'R0'
-LEVEL_A_PIXEL_DIR = 'monitoring/PixelCalibration/LevelA'
+LEVEL_A_PIXEL_DIR = 'monitoring/PixelCalibration/Cat-A'
 
 DEFAULT_CONFIG = Path(resource_filename(
     'lstchain',
