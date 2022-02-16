@@ -39,7 +39,13 @@ def create_symlink_overwrite(link, target):
 
     # create the symlink in a tempfile, then replace the original one
     # in one step to avoid race conditions
-    tmp = tempfile.NamedTemporaryFile(prefix='tmp_symlink_', delete=True)
+    tmp = tempfile.NamedTemporaryFile(
+        prefix='tmp_symlink_',
+        delete=True,
+        # use same directory as final link to assure they are on the same device
+        # avoids "Invalid cross-device link error"
+        dir=link.parent,
+    )
     tmp.close()
     tmp = Path(tmp.name)
     tmp.symlink_to(target)
