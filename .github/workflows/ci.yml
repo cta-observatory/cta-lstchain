@@ -1,6 +1,12 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '**'
+  pull_request:
 
 env:
   NUMBA_NUM_THREADS: 1
@@ -8,7 +14,23 @@ env:
   PYTEST_ADDOPTS: --color=yes
 
 jobs:
+  pyflakes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: pyflakes
+        run: |
+          pip install pyflakes
+          pyflakes lstchain
+
   tests:
+    needs: pyflakes
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,16 +68,10 @@ jobs:
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov pyflakes 'coverage!=6.3.0' pytest-xdist
+            pytest-cov 'coverage!=6.3.0' pytest-xdist
 
           echo "pip install ."
           pip install .
-
-      - name: pyflakes
-        run: |
-          . $CONDA/etc/profile.d/conda.sh
-          conda activate ci
-          pyflakes lstchain
 
       - name: Download test data
         env:
@@ -78,6 +94,7 @@ jobs:
           functionalities: gcov
 
   docs:
+    needs: pyflakes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
