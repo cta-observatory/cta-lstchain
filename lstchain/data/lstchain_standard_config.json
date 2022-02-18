@@ -1,7 +1,7 @@
 {
   "source_config" : {
     "EventSource": {
-      "allowed_tels": [1, 2, 3, 4],
+      "allowed_tels": [1],
       "max_events": null
     },
     "LSTEventSource": {
