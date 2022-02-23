@@ -27,8 +27,6 @@ def create_symlink_overwrite(link, target):
     '''
     Create a symlink from link to target, replacing an existing link atomically.
     '''
-    target = target.resolve()
-
     if not link.exists():
         link.symlink_to(target)
         return
@@ -53,9 +51,12 @@ def create_symlink_overwrite(link, target):
 
 
 def create_pro_symlink(output_dir):
+    '''Create a "pro" symlink to the dir in the same directory'''
     output_dir = Path(output_dir)
-    pro_dir = output_dir / '../pro'
-    create_symlink_overwrite(pro_dir, output_dir)
+    pro_link = output_dir.parent / 'pro'
+
+    # the pro-link should be relative to make moving / copying a tree easy
+    create_symlink_overwrite(pro_link, output_dir.relative_to(pro_link.parent))
 
 
 def find_r0_subrun(run, sub_run, r0_dir=DEFAULT_R0_PATH):

@@ -62,6 +62,9 @@ def test_create_pro_link(tmp_path: Path):
     assert pro.exists()
     assert pro.resolve() == v1
 
+    # test that prolink is relative, not absolute
+    assert os.readlink(pro) == 'v1'
+
     # test pro exists and points to older version
     create_pro_symlink(v2)
     assert pro.exists()
