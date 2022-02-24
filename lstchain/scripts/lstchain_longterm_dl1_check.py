@@ -498,8 +498,8 @@ def main():
             nstars = table['num_nearby_stars']
             mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
                                                                       axis=1))
-            runsummary['mean_number_of_pixels_nearby_stars'] = \
-                mean_number_of_pixels_nearby_stars
+            runsummary['mean_number_of_pixels_nearby_stars'].extend(
+                [mean_number_of_pixels_nearby_stars])
 
             # charge_stddev is [pixels], containing pixwise means in the full
             # run:
