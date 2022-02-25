@@ -180,7 +180,7 @@ def main():
                 dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2', 1))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')

@@ -30,6 +30,9 @@ import tables
 import warnings
 
 from astropy.table import Table
+from astropy.coordinates import Angle
+import astropy.units as u
+
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show, save
 from bokeh.layouts import gridplot, column
@@ -406,12 +409,16 @@ def main():
         runsummary['min_azimuth'].extend([table['mean_az_tel'].min()])
         az = table['mean_az_tel']
         mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
+        mean_az = Angle(mean_az, u.rad).wrap_at('360d').rad
+        
         runsummary['mean_azimuth'].extend([mean_az])
         runsummary['max_azimuth'].extend([table['mean_az_tel'].max()])
 
         ra = np.deg2rad(table['tel_ra'])
-        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
-                ra))))
+        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), 
+                                        np.mean(np.cos(ra))))
+        mean_ra = Angle(mean_ra, u.deg).wrap_at('360d').deg
+        
         runsummary['mean_ra'].extend([mean_ra])
 
         runsummary['mean_dec'].extend([table['tel_dec'].mean()])
@@ -491,8 +498,8 @@ def main():
             nstars = table['num_nearby_stars']
             mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
                                                                       axis=1))
-            runsummary['mean_number_of_pixels_nearby_stars'] = \
-                mean_number_of_pixels_nearby_stars
+            runsummary['mean_number_of_pixels_nearby_stars'].extend(
+                [mean_number_of_pixels_nearby_stars])
 
             # charge_stddev is [pixels], containing pixwise means in the full
             # run:
@@ -577,7 +584,6 @@ def main():
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([np.nan])
-            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
@@ -826,7 +832,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Flat field pixel charges (just for the mean; the std dev may be strongly
     # affected by stars), in pe.
-    ff_charge = 75
+    ff_charge = 73.5
     ff_charge_tolerance = 0.1  # relative tolerance
 
     # Limits of FF mean pixel time (ns) w.r.t. camera average:
@@ -848,7 +854,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # lower rates just due to geometrical reasons)
     
     # Minimum muon ring intensity (pe)
-    min_muon_intensity = 2000
+    min_muon_intensity = 1960
 
     # global peak HG sample id range in muon ring events:
     muon_peak_hg_sample_range = (8, 18)
@@ -890,7 +896,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                           format(run,
                                  date=date.strftime("%b %d %Y %H:%M:%S")))
 
-    runsummary = read_table(filename, '/runsummary/table')
+    runsummary = read_table(filename, '/runsummary/table').to_pandas()
+    # avoid issues with nans in bokeh (fill 0's instead):
+    runsummary.fillna(0, inplace=True)
 
     if np.sum(runsummary['num_ucts_jumps']) > 0:
         log.info('Attention: UCTS jumps were detected and corrected:')
@@ -1553,6 +1561,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     x: ndarray, x coordinates
     y: ndarray, y coordinates
     ey: ndarray, size of y error bars
+    eylow, eyhigh: ndarrays, size of lower- and upper-side y-error bars (if
+                   provided, they are used instead of ey)
     xlabel: x-axis label
     ylabel: y-axis label
     xtype: 'log', 'linear', 'datetime'

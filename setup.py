@@ -37,7 +37,7 @@ docs_require = [
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
-    packages=find_packages(),
+    packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
         'astropy~=4.2',
         'bokeh~=1.0',

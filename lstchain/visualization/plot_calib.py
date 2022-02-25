@@ -267,12 +267,15 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 n_pe = calib_data.n_pe[chan]
 
                 gain_median = ff_data.relative_gain_median[chan]
-                # charge_median = ff_data.charge_median[chan]
-                charge_mean = ff_data.charge_mean[chan]
+                charge_median = ff_data.charge_median[chan]
+                #charge_mean = ff_data.charge_mean[chan]
                 charge_std = ff_data.charge_std[chan]
-                # median_ped = ped_data.charge_median[chan]
-                mean_ped = ped_data.charge_mean[chan]
+                n_ff = ff_data.n_events
+                median_ped = ped_data.charge_median[chan]
+                #mean_ped = ped_data.charge_mean[chan]
                 ped_std = ped_data.charge_std[chan]
+                n_ped = ped_data.n_events
+
                 dc_to_pe = calib_data.dc_to_pe[chan]
                 time_correction = calib_data.time_correction[chan]
 
@@ -285,13 +288,14 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
 
                 # charge
                 plt.subplot(421)
+                plt.title(f"FF sample of {n_ff} events")
                 plt.tight_layout()
-                median = int(np.median(charge_mean[select]))
-                rms = np.std(charge_mean[select])
+                median = int(np.median(charge_median[select]))
+                rms = np.std(charge_median[select])
                 label = f"Median {median:3.2f}, std {rms:5.0f}"
                 plt.xlabel("charge (ADC)", fontsize=20)
                 plt.ylabel("pixels", fontsize=20)
-                plt.hist(charge_mean[select], bins=50, label=label)
+                plt.hist(charge_median[select], bins=50, label=label)
                 plt.legend()
 
                 plt.subplot(422)
@@ -307,12 +311,13 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 # pedestal charge
                 plt.subplot(423)
                 plt.tight_layout()
+                plt.title(f"pedestal sample of {n_ped} events")
                 plt.ylabel("pixels", fontsize=20)
                 plt.xlabel("pedestal", fontsize=20)
-                median = np.median(mean_ped[select])
-                rms = np.std(mean_ped[select])
+                median = np.median(median_ped[select])
+                rms = np.std(median_ped[select])
                 label = f"Median {median:3.2f}, std {rms:3.2f}"
-                plt.hist(mean_ped[select], bins=50, label=label)
+                plt.hist(median_ped[select], bins=50, label=label)
                 plt.legend()
 
                 # pedestal std
