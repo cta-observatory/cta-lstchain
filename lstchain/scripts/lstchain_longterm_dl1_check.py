@@ -262,7 +262,7 @@ def main():
             try:
                 a.get_node('/dl1datacheck/' + tablename)
             except Exception:
-                log.warning(f'Table {tablename} is missing!')
+                log.warning(f'Run {runnumber}: Table {tablename} is missing!')
                 datatables.append(None)
                 datatables_no_stars.append(None)
                 continue

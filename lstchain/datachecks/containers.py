@@ -137,8 +137,10 @@ class DL1DataCheckContainer(Container):
             # not be counted.
             uj = table['ucts_jump'].data.copy()
             # find the first False value, and set to False also all the earlier ones:
-            first_non_jump = np.where(uj==False)[0][0]
-            uj[:first_non_jump] = False
+            if np.sum(uj == False) > 0:
+                first_non_jump = np.where(uj==False)[0][0]
+                uj[:first_non_jump] = False
+
             # count only the jumps occurring in events of the type we are
             # processing:
             self.num_ucts_jumps = np.sum(uj[mask])
