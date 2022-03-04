@@ -1191,11 +1191,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     check_name.extend(["Too low flatfield mean relative time",
                        "Too high flatfield mean relative time"])
 
-
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
                        run_titles, showlog=False,
-                       display_range=[0.2, max(0.7, 1.1 * np.nanmax(stddev))],
+                       display_range=[0.2, np.nanmax(np.append(1.1*stddev,
+                                                               0.7))],
                        content_upplim=ff_max_rel_time_stdev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ff_pix_rel_time_stddev'])
