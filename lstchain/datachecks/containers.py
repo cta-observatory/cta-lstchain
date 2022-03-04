@@ -254,10 +254,16 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        x = table['x'].quantity[mask]
-        y = table['y'].quantity[mask]
         # event-wise, id of camera pixel which contains the image's cog:
-        cog_pixid = geom.position_to_pix_index(x, y)
+        # we skip nan coordinates to avoid a lot of ctapipe warnings
+        cog_pixid = np.zeros(mask.sum(), dtype='int')
+        for k, x, y in zip(range(mask.sum()),
+                           table['x'].quantity[mask],
+                           table['y'].quantity[mask]):
+            if np.isfinite(x) & np.isfinite(y):
+                cog_pixid[k] = geom.position_to_pix_index(x, y)
+            else:
+                cog_pixid[k] = -1
 
         self.cog_within_pixel = np.zeros(geom.n_pixels)
         # explicitly skip -1 values, lest they end in the highest pixel id...
