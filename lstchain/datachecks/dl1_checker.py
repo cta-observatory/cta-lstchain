@@ -1227,7 +1227,7 @@ def merge_dl1datacheck_files(file_list):
 
         for table, tablename in zip([pedestals, flatfield, cosmics],
                                     ['pedestals', 'flatfield', 'cosmics']):
-            if '/dl1datacheck/'+tablename in file.root.datacheck:
+            if tablename in file.root.dl1datacheck:
                 if table is None:
                     table = file.copy_node('/dl1datacheck', name=tablename,
                                            newparent=merged_file.root.dl1datacheck)
