@@ -1234,8 +1234,7 @@ def merge_dl1datacheck_files(file_list):
                 else:
                     table.append(file.root.dl1datacheck['tablename'][:])
             else:
-                logger.warning('Table', tablename, 'is missing in file ' +
-                               str(filename))
+                logger.warning(f'Table {tablename} is missing in file {filename}')
         file.close()
 
     merged_file.close()
