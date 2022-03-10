@@ -1221,18 +1221,20 @@ def merge_dl1datacheck_files(file_list):
     first_file.close()
 
     # Now merge the rest of the other tables for all files:
-    pedestals = flatfield = cosmics = None
+    newtables = {}
+
     for filename in file_list:
         file = tables.open_file(filename)
-
-        for table, tablename in zip([pedestals, flatfield, cosmics],
-                                    ['pedestals', 'flatfield', 'cosmics']):
+        for tablename in ['pedestals', 'flatfield', 'cosmics']:
             if tablename in file.root.dl1datacheck:
-                if table is None:
-                    table = file.copy_node('/dl1datacheck', name=tablename,
-                                           newparent=merged_file.root.dl1datacheck)
+                if tablename in newtables:
+                    newtables[tablename].append(file.root.dl1datacheck[
+                                              tablename][:])
                 else:
-                    table.append(file.root.dl1datacheck['tablename'][:])
+                    newtables[tablename] = file.copy_node(
+                            '/dl1datacheck',
+                            name=tablename,
+                            newparent=merged_file.root.dl1datacheck)
             else:
                 logger.warning(f'Table {tablename} is missing in file {filename}')
         file.close()
