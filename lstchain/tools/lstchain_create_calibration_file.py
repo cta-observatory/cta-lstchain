@@ -153,7 +153,7 @@ class CalibrationHDF5Writer(Tool):
                 if self.simulation:
                     event.r1.tel[tel_id].waveform = (
                             event.r0.tel[tel_id].waveform.astype(float)
-                            - event.mon.tel[tel_id].calibration.pedestal_per_sample[..., np.newaxis]
+                            -np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1)[...,np.newaxis, np.newaxis]
                     )
 
                 if count % 1000 == 0 and count> self.events_to_skip:
