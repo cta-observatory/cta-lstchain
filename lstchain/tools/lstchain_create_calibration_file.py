@@ -151,10 +151,10 @@ class CalibrationHDF5Writer(Tool):
 
                 # if simulation use not calibrated and not gain selected R0 waveform
                 if self.simulation:
-                    event.r1.tel[tel_id].waveform = (
-                            event.r0.tel[tel_id].waveform.astype(np.float32)
-                            -np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1)[...,np.newaxis, np.newaxis]
-                    )
+                    # estimate offset of each channel from the camera median pedestal value
+                    offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
+                    event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
+                    
 
                 if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
