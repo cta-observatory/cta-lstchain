@@ -54,7 +54,7 @@ def check_in_delaunay_triangle(irfs, data_params):
     triangulation, an empty list is returned.
 
     Parameters
-    ------------
+    ----------
     irfs: List of IRFs to check for Delaunay triangulation.
         'List'
     data_pars: Dict of arrays of range of parameters of the observed data
@@ -62,7 +62,7 @@ def check_in_delaunay_triangle(irfs, data_params):
         'Dict'
 
     Returns
-    ----------
+    -------
     irf_list: Revised list of IRFs after the checks.
         'List'
     """
@@ -184,7 +184,7 @@ def load_irf_grid(irfs, extname, interp_col):
     interpolated (Effective Area and Energy Dispersion for now)
 
     Parameters
-    ------------
+    ----------
     irfs: List of IRFs to use to interpolate
         List
     extname: Name of the IRF to be extracted
@@ -193,7 +193,7 @@ def load_irf_grid(irfs, extname, interp_col):
         Str
 
     Returns
-    ----------
+    -------
     irf_list: List of columns of the IRF from each file
         'numpy.stack'
     """
@@ -213,7 +213,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     For now only Effective Area and Energy Dispersion is interpolated over.
 
     Parameters
-    ------------
+    ----------
     irfs: List of IRFs to use to interpolate
         List
     data_pars: Dict of arrays of range of parameters of the observed data
@@ -224,7 +224,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         'Str'
 
     Returns
-    ------------
+    -------
     irf_interp: Final interpolated IRF
         'astropy.io.fits'
     """
