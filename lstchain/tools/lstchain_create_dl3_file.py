@@ -196,7 +196,7 @@ class DataReductionFITSWriter(Tool):
 
         try:
             with fits.open(self.input_irf) as hdul:
-                self.use_energy_dependent_cuts = (
+                self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
         except:
@@ -205,11 +205,17 @@ class DataReductionFITSWriter(Tool):
                 " to check for global cut information in the Header value"
             )
 
+        if self.source_dep:
+            with fits.open(self.input_irf) as hdul:
+                self.use_energy_dependent_alpha_cuts = (
+                    "ALPHA_CUT" not in hdul["EFFECTIVE AREA"].header
+                )
+            
     def apply_srcindep_gh_cut(self):
         ''' apply gammaness cut '''
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.use_energy_dependent_cuts:
+        if self.use_energy_dependent_gh_cuts:
             self.energy_dependent_gh_cuts = QTable.read(
                 self.input_irf, hdu="GH_CUTS"
             )
@@ -238,7 +244,7 @@ class DataReductionFITSWriter(Tool):
 
             data_temp = self.event_sel.filter_cut(data_temp)
             
-            if self.use_energy_dependent_cuts:
+            if self.use_energy_dependent_gh_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
                     self.input_irf, hdu="GH_CUTS"
                 )
@@ -246,14 +252,30 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_energy_dependent_gh_cuts(
                     data_temp, self.energy_dependent_gh_cuts
                 )
+                self.log.info(
+                    "Using gamma efficiency of "
+                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+                )
             else:
                 with fits.open(self.input_irf) as hdul:
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
                     
-            with fits.open(self.input_irf) as hdul:
-                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+            if self.use_energy_dependent_alpha_cuts:
+                self.energy_dependent_alpha_cuts = QTable.read(
+                    self.input_irf, hdu="ALPHA_CUTS"
+                )
+                data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
+                    data_temp, self.energy_dependent_alpha_cuts
+                )
+                self.log.info(
+                    "Using alpha containment region of "
+                    f'{self.energy_dependent_alpha_cuts.meta["ALPHA_CONT"]}'
+                )
+            else:
+                with fits.open(self.input_irf) as hdul:
+                    self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+                data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
             # set expected source positions as reco positions
             set_expected_pos_to_reco_altaz(data_temp)
