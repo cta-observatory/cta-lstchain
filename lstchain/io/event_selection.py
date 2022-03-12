@@ -72,6 +72,11 @@ class DL3Cuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
+    alpha_containment = Float(
+        help="Percentage containment region for alpha cuts",
+        default=0.68,
+    ).tag(config=True)
+
     global_alpha_cut = Float(
         help="Global selection cut for alpha",
         default_value=20,
@@ -112,11 +117,6 @@ class DL3Cuts(Component):
         )
         return gh_cuts
 
-    def apply_global_alpha_cut(self, data):
-        """
-        Applying a global alpha cut on a given data
-        """
-        return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
@@ -178,6 +178,50 @@ class DL3Cuts(Component):
         )
         return data[data["selected_theta"]]
 
+    def apply_global_alpha_cut(self, data):
+        """
+        Applying a global alpha cut on a given data
+        """
+        return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
+
+    def energy_dependent_alpha_cuts(
+            self, data, energy_bins, min_value=1 * u.deg,
+            max_value=90 * u.deg, smoothing=None, min_events=10
+    ):
+        """
+        Evaluating an optimized energy-dependent alpha cuts, in a given
+        data, with provided reco energy bins, and other parameters to
+        pass to the pyirf.cuts.calculate_percentile_cut function.
+        Note: Using too fine binning will result in too un-smooth cuts.
+        """
+        
+        alpha_cuts = calculate_percentile_cut(
+            data["alpha"],
+            data["reco_energy"],
+            bins=energy_bins,
+            min_value=min_value,
+            max_value=max_value,
+            fill_value=data["alpha"].max(),
+            percentile=100 * self.alpha_containment,
+            smoothing=smoothing,
+            min_events=min_events,
+        )
+        return alpha_cuts
+        
+    def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
+        """
+        Applying a given energy-dependent alpha cuts to a data file, along the
+        reco energy bins provided.
+        """
+        
+        data["selected_alpha"] = evaluate_binned_cut(
+            data["alpha"],
+            data["reco_energy"],
+            alpha_cuts,
+            operator.le,
+        )
+        return data[data["selected_alpha"]]
+            
     def allowed_tels_filter(self, data):
         """
         Applying a filter on telescopes used for observation.
