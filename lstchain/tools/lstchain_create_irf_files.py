@@ -243,6 +243,10 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"energy_dependent_theta": True}},
             "Uses energy-dependent cuts for theta",
         ),
+        "energy-dependent-alpha": (
+            {"IRFFITSWriter": {"energy_dependent_alpha": True}},
+            "Uses energy-dependent cuts for alpha",
+        ),
     }
 
     def setup(self):
