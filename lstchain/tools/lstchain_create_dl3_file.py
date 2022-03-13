@@ -208,7 +208,7 @@ class DataReductionFITSWriter(Tool):
         if self.source_dep:
             with fits.open(self.input_irf) as hdul:
                 self.use_energy_dependent_alpha_cuts = (
-                    "ALPHA_CUT" not in hdul["EFFECTIVE AREA"].header
+                    "AL_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
             
     def apply_srcindep_gh_cut(self):
@@ -263,7 +263,7 @@ class DataReductionFITSWriter(Tool):
                     
             if self.use_energy_dependent_alpha_cuts:
                 self.energy_dependent_alpha_cuts = QTable.read(
-                    self.input_irf, hdu="ALPHA_CUTS"
+                    self.input_irf, hdu="AL_CUTS"
                 )
                 data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
                     data_temp, self.energy_dependent_alpha_cuts

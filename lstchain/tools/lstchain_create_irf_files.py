@@ -653,7 +653,7 @@ class IRFFITSWriter(Tool):
                 
             self.hdus.append(
                 fits.BinTableHDU(
-                    self.alpha_cuts, header=gh_header, name="ALPHA_CUTS"
+                    self.alpha_cuts, header=gh_header, name="AL_CUTS"
                 )
             )
             self.log.info("ALPHA CUTS HDU added")
