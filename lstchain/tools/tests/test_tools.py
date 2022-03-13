@@ -323,7 +323,6 @@ def test_create_srcdep_dl3_energy_dependent_cuts(
     using energy-dependent cuts
     """
     from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
-    from lstchain.paths import dl2_to_dl3_filename 
 
     irf_file = temp_dir_observed_srcdep_files / "irf_edep.fits.gz"
 
