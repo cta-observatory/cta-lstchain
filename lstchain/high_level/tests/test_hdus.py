@@ -59,13 +59,11 @@ def test_create_obs_hdu_index(tmp_path, dl3_file):
 
     create_hdu_index_hdu(
         [dl3_file],
-        tmp_path,
         hdu_index,
         overwrite=True,
     )
     create_obs_index_hdu(
         [dl3_file],
-        tmp_path,
         obs_index,
         overwrite=True,
     )

@@ -14,12 +14,14 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 
 For source-dependent analysis, a source-dep flag should be activated.
-Similarly to the cuts on gammaness, the global alpha cut values are provided 
+Similarly to the cuts on gammaness, the global alpha cut values are provided
 from AL_CUT stored in the HDU header.
-The alpha cut is already applied on this step, and all survived events with each 
-assumed source position (on and off) are saved after the gammaness and alpha cut.
-To adapt to the high-level analysis used by gammapy, assumed source position (on and off)
-is set as a reco source position just as a trick to obtain survived events easily.
+The alpha cut is already applied on this step, and all survived events with
+each assumed source position (on and off) are saved after the gammaness and
+alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position
+(on and off) is set as a reco source position just as a trick to obtain
+survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
@@ -140,6 +142,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    no_gzip = traits.Bool(
+        help="If True, the DL3 file will not be gzipped",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3Cuts]
 
     aliases = {
@@ -161,11 +168,15 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
+        "no-gzip": (
+            {"DataReductionFITSWriter": {"no_gzip": True}},
+            "Do not gzip the DL3 files if True",
+        ),
     }
 
     def setup(self):
 
-        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
+        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2, no_compress=self.no_gzip)
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)
@@ -237,7 +248,7 @@ class DataReductionFITSWriter(Tool):
             )
 
             data_temp = self.event_sel.filter_cut(data_temp)
-            
+
             if self.use_energy_dependent_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
                     self.input_irf, hdu="GH_CUTS"
@@ -250,7 +261,7 @@ class DataReductionFITSWriter(Tool):
                 with fits.open(self.input_irf) as hdul:
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
-                    
+
             with fits.open(self.input_irf) as hdul:
                 self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
             data_temp = self.cuts.apply_global_alpha_cut(data_temp)
@@ -262,7 +273,6 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-
 
     def start(self):
 

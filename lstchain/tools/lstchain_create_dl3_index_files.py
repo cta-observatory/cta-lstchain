@@ -80,18 +80,18 @@ class FITSIndexWriter(Tool):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file_list = []
         self.hdu_index_filename = "hdu-index.fits.gz"
         self.obs_index_filename = "obs-index.fits.gz"
 
     def setup(self):
 
-        list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
-        if len(list_files) == 0:
-            raise ToolConfigurationError(f"No files found with pattern {self.file_pattern} in {self.input_dl3_dir}")
+        self.list_files = sorted(self.input_dl3_dir.glob(self.file_pattern))
+        if len(self.list_files) == 0:
+            raise ToolConfigurationError(
+                f"No files found with pattern {self.file_pattern} in {self.input_dl3_dir}"
+            )
 
-        for f in list_files:
-            self.file_list.append(f.name)
+        for f in self.list_files:
             Provenance().add_input_file(f)
 
         if not self.output_index_path:
@@ -128,14 +128,12 @@ class FITSIndexWriter(Tool):
     def start(self):
 
         create_hdu_index_hdu(
-            self.file_list,
-            self.input_dl3_dir,
+            self.list_files,
             self.hdu_index_file,
             self.overwrite,
         )
         create_obs_index_hdu(
-            self.file_list,
-            self.input_dl3_dir,
+            self.list_files,
             self.obs_index_file,
             self.overwrite
         )
