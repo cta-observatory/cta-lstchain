@@ -610,10 +610,10 @@ def r0_to_dl1(
                             mean_pixel_charge_around_ring,\
                             muonpars = \
                                 analyze_muon_event(subarray,
-                                                   event.index.event_id,
+                                                   tel_id, event.index.event_id,
                                                    image, geom, focal_length,
-                                                   mirror_area, False, '')
-                            #                      mirror_area, True, './')
+                                                   mirror_area, None, False, '')
+                            #                      mirror_area, None, True, './')
                             #           (test) plot muon rings as png files
 
                             # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:
