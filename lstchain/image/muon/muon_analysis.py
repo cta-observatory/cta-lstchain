@@ -63,6 +63,7 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
 def update_parameters(config, n_pixels):
     """
     Create the parameters used to select good muon rings and perform the muon analysis.
+
     Parameters
     ----------
     config: `dict` or None
@@ -72,10 +73,8 @@ def update_parameters(config, n_pixels):
 
     Returns
     -------
-    tailcuts, min_pix, min_pix_fraction_after_cleaning, min_ring_radius,
-    max_ring_radius, max_radial_stdev, max_radial_excess_kurtosis,
-    min_impact_parameter, max_impact_parameter, ring_integration_width,
-    outer_ring_width
+    params: `dict`
+        Dictionary of parameters used for the muon analysis
 
     """
     params = {
@@ -99,7 +98,7 @@ def update_parameters(config, n_pixels):
             params[key] = config[key]
     params['min_pix'] = int(n_pixels * params['min_pix'])
 
-    return (elt for elt in params.values())
+    return params
 
 
 def fit_muon(x, y, image, geom, tailcuts):
@@ -212,17 +211,15 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
               ) * u.rad
 
     # some parameters for analysis and cuts for good ring selection:
-    tailcuts, min_pix, min_pix_fraction_after_cleaning, min_ring_radius, max_ring_radius, max_radial_stdev,\
-        max_radial_excess_kurtosis, min_impact_parameter, max_impact_parameter, ring_integration_width,\
-        outer_ring_width, ring_completeness_threshold = update_parameters(good_ring_config, geom.n_pixels)
+    params = update_parameters(good_ring_config, geom.n_pixels)
 
     x, y = pixel_coords_to_telescope(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom,
-                                                            tailcuts)
+                                                            params['tailcuts'])
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
     dist_mask = np.abs(dist - muonringparam.radius
-                       ) < muonringparam.radius * ring_integration_width
+                       ) < muonringparam.radius * params['ring_integration_width']
     pix_ring = image * dist_mask
     pix_outside_ring = image * ~dist_mask
 
@@ -230,7 +227,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
     dist_mask_2 = np.logical_and(~dist_mask,
                                  np.abs(dist - muonringparam.radius) <
                                  muonringparam.radius *
-                                 (ring_integration_width + outer_ring_width))
+                                 (params['ring_integration_width'] + params['outer_ring_width']))
     pix_ring_2 = image[dist_mask_2]
 
     #    nom_dist = np.sqrt(np.power(muonringparam.center_x,2)
@@ -249,13 +246,13 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
 
     # Do complicated calculations (minuit-based max likelihood ring fit) only for selected rings:
     candidate_clean_ring = all(
-        [radial_distribution['standard_dev'] < max_radial_stdev,
-         radial_distribution['excess_kurtosis'] < max_radial_excess_kurtosis,
-         (pix_ring > tailcuts[0]).sum() >
-         min_pix_fraction_after_cleaning * min_pix,
-         np.count_nonzero(pix_ring) > min_pix,
-         muonringparam.radius < max_ring_radius,
-         muonringparam.radius > min_ring_radius
+        [radial_distribution['standard_dev'] < params['max_radial_stdev'],
+         radial_distribution['excess_kurtosis'] < params['max_radial_excess_kurtosis'],
+         (pix_ring > params['tailcuts'][0]).sum() >
+         params['min_pix_fraction_after_cleaning'] * params['min_pix'],
+         np.count_nonzero(pix_ring) > params['min_pix'],
+         muonringparam.radius < params['max_ring_radius'],
+         muonringparam.radius > params['min_ring_radius']
          ])
 
     if candidate_clean_ring:
@@ -285,7 +282,7 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
             muonringparam.radius,
             muonringparam.center_x,
             muonringparam.center_y,
-            threshold=ring_completeness_threshold,
+            threshold=params['ring_completeness_threshold'],
             bins=30)
 
         # No longer existing in ctapipe 0.8:
@@ -319,8 +316,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
     # Now add the conditions based on the detailed muon ring fit:
     conditions = [
         candidate_clean_ring,
-        muonintensityoutput.impact < max_impact_parameter * mirror_radius,
-        muonintensityoutput.impact > min_impact_parameter * mirror_radius,
+        muonintensityoutput.impact < params['max_impact_parameter'] * mirror_radius,
+        muonintensityoutput.impact > params['min_impact_parameter'] * mirror_radius,
 
         # TODO: To be applied when we have decent optics.
         # muonintensityoutput.width
