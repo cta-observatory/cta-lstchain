@@ -110,6 +110,7 @@ class TimeWaveformFitter(Component):
 
         v = dl1_container.time_gradient
         psi = dl1_container.psi.to_value(u.rad)
+        # We use only positive time gradients and psi is projected in [-pi,pi] from [-pi/2,pi/2]
         if v < 0:
             if psi >= 0:
                 psi = psi - np.pi
