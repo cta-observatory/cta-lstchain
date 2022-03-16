@@ -62,7 +62,7 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
 
 def update_parameters(config, n_pixels):
     """
-    Create the parameters used to select good muon ring and perfor the image cleaning.
+    Create the parameters used to select good muon rings and perform the muon analysis.
     Parameters
     ----------
     config: `dict` or None
