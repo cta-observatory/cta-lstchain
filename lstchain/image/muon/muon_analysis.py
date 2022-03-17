@@ -156,8 +156,7 @@ def fit_muon(x, y, image, geom, tailcuts):
     return ring, clean_mask, dist, image_clean
 
 
-def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal_length,
-                       mirror_area, good_ring_config, plot_rings, plots_path):
+def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot_rings, plots_path):
     """
     Analyze an event to fit a muon ring
 
@@ -171,12 +170,6 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
         Id of the analyzed event
     image : `np.ndarray`
         Number of photoelectrons in each pixel
-    geom :  `ctapipe.instrument.CameraGeometry`
-        Camera geometry
-    equivalent_focal_length : `float`
-        Focal length of the telescope
-    mirror_area : `float`
-        Mirror area of the telescope in square meters
     good_ring_config : `dict` or None
         Set of parameters used to identify good muon rings to update LST-1 defaults
     plot_rings : `bool`
@@ -209,6 +202,9 @@ def analyze_muon_event(subarray, tel_id, event_id, image, geom, equivalent_focal
     cam_rad = (
                       tel_description.camera.geometry.guess_radius() / tel_description.optics.equivalent_focal_length
               ) * u.rad
+    geom = tel_description.camera.geometry
+    equivalent_focal_length = tel_description.optics.equivalent_focal_length
+    mirror_area = tel_description.optics.mirror_area
 
     # some parameters for analysis and cuts for good ring selection:
     params = update_parameters(good_ring_config, geom.n_pixels)
