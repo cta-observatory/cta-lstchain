@@ -606,8 +606,9 @@ def r0_to_dl1(
                             muonpars = \
                                 analyze_muon_event(subarray,
                                                    tel_id, event.index.event_id,
-                                                   image, None, False, '')
-                            #                      image, None, True, './')
+                                                   image, good_ring_config=None,
+                                                   plot_rings=False, plots_path='')
+                            #                      plot_rings=True, plots_path='./')
                             #           (test) plot muon rings as png files
 
                             # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:

@@ -151,9 +151,9 @@ def main():
                 muonintensityparam, dist_mask, size, size_outside_ring,
                 muonringparam, good_ring, radial_distribution,
                 mean_pixel_charge_around_ring, muonparameters
-            ) = analyze_muon_event(subarray,
-                                   lst1_tel_id, event_id, image,
-                                   None, args.plot_rings, args.plots_path
+            ) = analyze_muon_event(subarray, lst1_tel_id, event_id,
+                                   image, good_ring_config=None,
+                                   plot_rings=args.plot_rings, plots_path=args.plots_path
                                    )
 
             if good_ring:
