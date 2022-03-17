@@ -502,7 +502,6 @@ def r0_to_dl1(
                 add_config_metadata(extra_im, config)
 
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
                 dl1_container.reset()
 
@@ -600,10 +599,6 @@ def r0_to_dl1(
                         if not tag_pix_thr(image):
                             good_ring = False
                         else:
-                            # read geometry from event.inst. But not needed for every event. FIXME?
-                            geom = subarray.tel[telescope_id].\
-                                camera.geometry
-
                             muonintensityparam, dist_mask, \
                             ring_size, size_outside_ring, muonringparam, \
                             good_ring, radial_distribution, \
