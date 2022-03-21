@@ -544,7 +544,6 @@ def filter_events(
 
     # if pandas DataFrame or Series, transforms to numpy
     filter = filter.to_numpy() if hasattr(filter, 'to_numpy') else filter
-
     events = events[filter]
 
     if n_events is not None and n_events < len(events):
@@ -555,8 +554,6 @@ def filter_events(
             raise ValueError(f"n_events={n_events} is not a valid value, check the provided config\n{e}")
 
     return events
-
-
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
