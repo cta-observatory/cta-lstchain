@@ -16,6 +16,7 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from sklearn.model_selection import train_test_split
 
 from . import disp
 
@@ -543,16 +544,18 @@ def filter_events(
 
     filter = filter.to_numpy() if isinstance(filter, pd.DataFrame) else filter
 
-    events_df = events_df[filter]
-    if n_events is not None:
-        if n_events < 0:
-            raise ValueError("The number of events to keep cannot be < 0")
-        if 0 <= n_events <= 1:
-            n_events = int(n_events * len(events_df))
-        elif not isinstance(n_events, int):
-            raise ValueError(f"n_events={n_events} > 1 is not a valid value, an integer is expected")
+    events = events[filter]
 
-    return events[filter][:n_events]
+    if n_events is not None and n_events < len(events):
+        # sample n_events random events
+        try:
+            events = train_test_split(events, train_size=n_events)[0]
+        except ValueError as e:
+            raise ValueError(f"n_events={n_events} is not a valid value, check the provided config\n{e}")
+
+    return events
+
+
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):

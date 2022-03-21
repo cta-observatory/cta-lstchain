@@ -130,7 +130,7 @@ def test_filter_events():
         filter_events(df, filters=dict(e=[0, np.inf]))
 
     assert len(filter_events(df, n_events=2)) == 2
-    assert len(filter_events(df, n_events=0.1)) == 0
+    assert len(filter_events(df, n_events=0.99)) == 2
     assert len(filter_events(df, n_events=10)) == len(df)  # asking for a max > len(df)
 
 
