@@ -163,10 +163,10 @@ def test_build_models(simulated_dl1_file, rf_models):
 
     import joblib
 
-    joblib.dump(reg_energy, rf_models["energy"])
-    joblib.dump(cls_gh, rf_models["gh_sep"])
-    joblib.dump(reg_disp_norm, rf_models["disp_norm"])
-    joblib.dump(cls_disp_sign, rf_models["disp_sign"])
+    joblib.dump(reg_energy, rf_models["energy"], compress=3)
+    joblib.dump(cls_gh, rf_models["gh_sep"], compress=3)
+    joblib.dump(reg_disp_norm, rf_models["disp_norm"], compress=3)
+    joblib.dump(cls_disp_sign, rf_models["disp_sign"], compress=3)
 
 
 def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):

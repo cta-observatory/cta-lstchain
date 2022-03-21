@@ -431,19 +431,19 @@ def build_models(filegammas, fileprotons,
         os.makedirs(path_models, exist_ok=True)
 
         file_reg_energy = path_models + "/reg_energy.sav"
-        joblib.dump(reg_energy, file_reg_energy)
+        joblib.dump(reg_energy, file_reg_energy, compress=3)
 
         if config['disp_method'] == 'disp_vector':
             file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-            joblib.dump(reg_disp_vector, file_reg_disp_vector)
+            joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
         elif config['disp_method'] == 'disp_norm_sign':
             file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
             file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
-            joblib.dump(reg_disp_norm, file_reg_disp_norm)
-            joblib.dump(cls_disp_sign, file_cls_disp_sign)
+            joblib.dump(reg_disp_norm, file_reg_disp_norm, compress=3)
+            joblib.dump(cls_disp_sign, file_cls_disp_sign, compress=3)
 
         file_cls_gh = path_models + "/cls_gh.sav"
-        joblib.dump(cls_gh, file_cls_gh)
+        joblib.dump(cls_gh, file_cls_gh, compress=3)
 
     if config['disp_method'] == 'disp_vector':
         return reg_energy, reg_disp_vector, cls_gh
