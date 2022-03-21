@@ -174,7 +174,7 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 
     # wobble observation data
     srcdep_config['observation_mode']='wobble'
-    dl1_params['alt_tel'] += np.deg2rad(0.4) 
+    dl1_params['alt_tel'] += np.deg2rad(0.4)
     src_dep_df_wobble = get_source_dependent_parameters(dl1_params, srcdep_config)
 
     assert 'alpha' in src_dep_df_on['on'].columns

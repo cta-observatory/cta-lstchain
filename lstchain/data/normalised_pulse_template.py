@@ -205,10 +205,10 @@ class NormalizedPulseTemplate:
         self.amplitude_LG, self.amplitude_LG_err = self._normalize(self.time,
                                                                    self.amplitude_LG,
                                                                    self.amplitude_LG_err)
-        return {"HG": interp1d(self.time, self.amplitude_HG, kind='cubic',
+        return {"HG": interp1d(self.time, self.amplitude_HG, kind='linear',
                                bounds_error=False, fill_value=0.,
                                assume_sorted=True),
-                "LG": interp1d(self.time, self.amplitude_LG, kind='cubic',
+                "LG": interp1d(self.time, self.amplitude_LG, kind='linear',
                                bounds_error=False, fill_value=0.,
                                assume_sorted=True)}
 

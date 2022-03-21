@@ -3,7 +3,6 @@ import logging
 
 from iminuit import Minuit
 import numpy as np
-import numexpr as ne
 import matplotlib.pyplot as plt
 from copy import copy
 import astropy.units as u
@@ -14,8 +13,11 @@ from ctapipe.core import Component
 from ctapipe.core.traits import Bool, Float, Int, Path
 from lstchain.calib.camera.pixel_threshold_estimation import get_bias_and_std
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
-from lstchain.image.pdf import log_gaussian, log_asygaussian2d
 from lstchain.visualization.camera import display_array_camera
+
+from lstchain.reco.log_pdf_CC import log_pdf_ll as log_pdf_ll
+from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
+from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +85,7 @@ class TimeWaveformFitter(Component):
 
         poisson_peaks = np.arange(self.n_peaks, dtype=int)
         poisson_peaks[0] = 1
-        log_factorial = np.log(poisson_peaks)
-        self.log_factorial = np.cumsum(log_factorial)
+        self.factorial = np.cumprod(poisson_peaks)
 
     def __call__(self, event, dl1_container):
         self.event_id = event.index.event_id
@@ -185,16 +186,14 @@ class TimeWaveformFitter(Component):
 
         if self.error is None:
             std = np.std(self.data[~self.mask_pixel])
-            self.error = np.ones(self.data.shape) * std
+            self.error = np.ones(self.data.shape[0]) * std
         else:
             std = np.std(self.data[~self.mask_pixel])
             self.error[self.error <= std / 2] = std
-            self.error = self.error[..., None] * np.ones(self.data.shape)
 
         self.data = np.delete(self.data, filter_pixels, axis=0)
         self.data = np.delete(self.data, filter_times, axis=1)
         self.error = np.delete(self.error, filter_pixels, axis=0)
-        self.error = np.delete(self.error, filter_times, axis=1)
 
         return self.predict()
 
@@ -266,6 +265,19 @@ class TimeWaveformFitter(Component):
             self.error_parameters = {key: np.nan for key in self.names_parameters}
             pass
 
+    @staticmethod
+    def log_pdf_l(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
+        """Calls the compiled function for low luminosity pixels log_pdf."""
+        return log_pdf_ll(np.float32(mu), np.float64(waveform), np.float64(error), np.float64(crosstalk),
+                          np.float64(sig_s), np.float64(templates), np.float32(factorial), np.int32(kmin),
+                          np.int32(kmax), np.float32(weight))
+
+    @staticmethod
+    def log_pdf_h(mu, waveform, error, crosstalk, templates, weight):
+        """Calls the compiled function for high luminosity pixels log_pdf."""
+        return log_pdf_hl(np.float32(mu), np.float64(waveform), np.float64(error), np.float64(crosstalk),
+                          np.float64(templates), np.float32(weight))
+
     def log_pdf(self, charge, t_cm, x_cm, y_cm,
                 length, wl, psi, v, rl):
         """
@@ -305,23 +317,22 @@ class TimeWaveformFitter(Component):
 
         rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
 
-        log_mu = log_asygaussian2d(size=charge * self.pix_area,
-                                   x=self.p_x,
-                                   y=self.p_y,
-                                   x_cm=x_cm,
-                                   y_cm=y_cm,
-                                   width=wl * length,
-                                   length=length,
-                                   psi=psi,
-                                   rl=rl)
-        mu = ne.evaluate("exp(log_mu)", local_dict=dict(log_mu=log_mu))
-        mu[mu <= 0] = 1e-320
+        mu = asygaussian2d(np.float32(charge * self.pix_area),
+                           np.float32(self.p_x),
+                           np.float32(self.p_y),
+                           np.float32(x_cm),
+                           np.float32(y_cm),
+                           np.float32(wl * length),
+                           np.float32(length),
+                           np.float32(psi),
+                           np.float32(rl))
 
         # We reduce the sum by limiting to the poisson term contributing for
         # more than 10^-6. The limits are approximated by 2 broken linear
         # function obtained for 0 crosstalk.
         # The choice of kmin and kmax is currently not done on a pixel basis
-        mask_LL = (mu <= self.n_peaks / 1.096 - 47.8)
+        mask_LL = (mu <= self.n_peaks / 1.096 - 47.8) & (mu > 0)
+        mask_HL = ~mask_LL
 
         if len(mu[mask_LL]) == 0:
             kmin, kmax = 0, self.n_peaks
@@ -342,74 +353,31 @@ class TimeWaveformFitter(Component):
             kmax = int(self.n_peaks)
             logger.warning("kmax forced to %s", kmax)
 
-        photo_peaks = np.arange(kmin, kmax, dtype=int)
-        crosstalk_factor = photo_peaks[..., None] * self.crosstalks[mask_LL]
-
-        # Compute the Poisson term in the pixel likelihood for
-        # low luminosity pixels
-        mu_plus_crosstalk = mu[mask_LL] + crosstalk_factor
-        log_mu_plus_crosstalk = ne.evaluate("log(mu_plus_crosstalk)",
-                                            local_dict=dict(mu_plus_crosstalk=mu_plus_crosstalk))
-        log_mu_plus_crosstalk = ((photo_peaks - 1)
-                                 * log_mu_plus_crosstalk.T).T
-        log_poisson = (log_mu[mask_LL]
-                       - self.log_factorial[kmin:kmax][..., None]
-                       - mu_plus_crosstalk
-                       + log_mu_plus_crosstalk)
-
-        # Compute the Gaussian term in the pixel likelihood for
-        # low luminosity pixels
-        signal = self.data
-
         if self.use_weight:
-            weight = 1.0 + (signal / np.max(signal))
+            weight = 1.0 + (self.data / np.max(self.data))
         else:
-            weight = np.ones(signal.shape)
+            weight = np.ones(self.data.shape)
 
-        mean = (photo_peaks
-                * templates[mask_LL][..., None])
-        sigma_n = (photo_peaks
-                   * ((self.sig_s[mask_LL][..., None] * templates[mask_LL]) ** 2)[..., None])
-        sigma_n = (self.error[mask_LL] ** 2)[..., None] + sigma_n
-        sigma_n = ne.evaluate("sqrt(sigma_n)", local_dict=dict(sigma_n=sigma_n))
-        log_gauss = log_gaussian(signal[mask_LL][..., None], mean, sigma_n)
+        mask_k = (np.arange(self.n_peaks) >= kmin) & (np.arange(self.n_peaks) < kmax)
 
-        # Compute the pixel likelihood using a Gaussian approximation for
-        # high luminosity pixels
-        if np.any(~mask_LL):
-            mu_hat = ((mu[~mask_LL] / (1 - self.crosstalks[~mask_LL]))[..., None]
-                      * templates[~mask_LL])
-            sigma_hat = (((mu[~mask_LL]
-                           / np.power(1 - self.crosstalks[~mask_LL], 3))[..., None]
-                          * templates[~mask_LL] ** 2))
-            sigma_hat = np.sqrt((self.error[~mask_LL] ** 2) + sigma_hat)
+        log_pdf_l = self.log_pdf_l(mu[mask_LL],
+                                   self.data[mask_LL],
+                                   self.error[mask_LL],
+                                   self.crosstalks[mask_LL],
+                                   self.sig_s[mask_LL],
+                                   templates[mask_LL],
+                                   self.factorial[mask_k],
+                                   kmin, kmax,
+                                   weight[mask_LL])
 
-            if self.use_weight:
-                log_pixel_pdf_HL = weight[~mask_LL] * log_gaussian(signal[~mask_LL], mu_hat, sigma_hat)
-            else:
-                log_pixel_pdf_HL = log_gaussian(signal[~mask_LL], mu_hat, sigma_hat)
-            n_points_HL = np.sum(weight[~mask_LL])
-        else:
-            log_pixel_pdf_HL, n_points_HL = np.asarray([0]), 0
+        log_pdf_h = self.log_pdf_h(mu[mask_HL],
+                                   self.data[mask_HL],
+                                   self.error[mask_HL],
+                                   self.crosstalks[mask_HL],
+                                   templates[mask_HL],
+                                   weight[mask_HL])
 
-        log_poisson = np.expand_dims(log_poisson.T, axis=1)
-        log_pixel_pdf_LL = ne.evaluate("log_poisson + log_gauss",
-                                       local_dict=dict(log_poisson=log_poisson, log_gauss=log_gauss))
-        if self.use_weight:
-            pixel_pdf_LL = np.sum(np.exp(log_pixel_pdf_LL), axis=2)
-        else:
-            pixel_pdf_LL = ne.evaluate("sum(exp(log_pixel_pdf_LL), axis=2)",
-                                       local_dict=dict(log_pixel_pdf_LL=log_pixel_pdf_LL))
-
-        mask = (pixel_pdf_LL <= 0)
-        pixel_pdf_LL[mask] = 1e-320
-        n_points_LL = np.sum(weight[mask_LL])
-        if self.use_weight:
-            log_pixel_pdf_LL = weight[mask_LL] * np.log(pixel_pdf_LL)
-        else:
-            log_pixel_pdf_LL = np.log(pixel_pdf_LL)
-        log_pdf = ((log_pixel_pdf_LL.sum() + log_pixel_pdf_HL.sum())
-                   / (n_points_LL + n_points_HL))
+        log_pdf = (log_pdf_l + log_pdf_h) / np.sum(weight)
 
         return log_pdf
 
@@ -462,6 +430,7 @@ class TimeWaveformFitter(Component):
                 Contains the starting and bound parameters used for the fit,
                 and the end results with errors and associated log-likelihood
                 in readable format.
+
         """
         s =  'Event {}\n'.format(self.event_id)
         s += 'Start parameters :\n\t{}\n'.format(self.start_parameters)
@@ -804,17 +773,16 @@ class TimeWaveformFitter(Component):
         params = self.end_parameters
 
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-        log_mu = log_asygaussian2d(size=params['charge']
-                                        * self.geometry.pix_area.to(u.m ** 2).value,
-                                   x=self.geometry.pix_x.value,
-                                   y=self.geometry.pix_y.value,
-                                   x_cm=params['x_cm'],
-                                   y_cm=params['y_cm'],
-                                   width=params['wl'] * params['length'],
-                                   length=params['length'],
-                                   psi=params['psi'],
-                                   rl=rl)
-        mu = np.exp(log_mu)
+        mu = asygaussian2d(np.float32(params['charge']
+                                      * self.geometry.pix_area.to(u.m ** 2).value),
+                           np.float32(self.geometry.pix_x.value),
+                           np.float32(self.geometry.pix_y.value),
+                           np.float32(params['x_cm']),
+                           np.float32(params['y_cm']),
+                           np.float32(params['wl'] * params['length']),
+                           np.float32(params['length']),
+                           np.float32(params['psi']),
+                           np.float32(rl))
         residual = image - mu
 
         cam_display = display_array_camera(residual,
@@ -846,17 +814,16 @@ class TimeWaveformFitter(Component):
 
         params = self.end_parameters
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-        log_mu = log_asygaussian2d(size=params['charge']
-                                        * self.geometry.pix_area.to(u.m ** 2).value,
-                                   x=self.geometry.pix_x.value,
-                                   y=self.geometry.pix_y.value,
-                                   x_cm=params['x_cm'],
-                                   y_cm=params['y_cm'],
-                                   width=params['wl'] * params['length'],
-                                   length=params['length'],
-                                   psi=params['psi'],
-                                   rl=rl)
-        mu = np.exp(log_mu)
+        mu = asygaussian2d(np.float32(params['charge']
+                                      * self.geometry.pix_area.to(u.m ** 2).value),
+                           np.float32(self.geometry.pix_x.value),
+                           np.float32(self.geometry.pix_y.value),
+                           np.float32(params['x_cm']),
+                           np.float32(params['y_cm']),
+                           np.float32(params['wl'] * params['length']),
+                           np.float32(params['length']),
+                           np.float32(params['psi']),
+                           np.float32(rl))
 
         cam_display = display_array_camera(mu,
                                            camera_geometry=self.geometry)
