@@ -103,6 +103,9 @@ def test_filter_events():
     from lstchain.reco.utils import filter_events
 
     df = pd.DataFrame({"a": [1, 2, 3], "b": [np.nan, 2.2, 3.2], "c": [1, 2, np.inf]})
+
+    np.testing.assert_array_equal(filter_events(df), df)
+
     np.testing.assert_array_equal(
         filter_events(
             df,
@@ -126,8 +129,9 @@ def test_filter_events():
     with np.testing.assert_raises(KeyError):
         filter_events(df, filters=dict(e=[0, np.inf]))
 
-    assert len(filter_events(df, n_events=7)) == 7
-    assert len(filter_events(df, n_events=1000000)) == len(df)  # asking for a max > len(df)
+    assert len(filter_events(df, n_events=2)) == 2
+    assert len(filter_events(df, n_events=0.1)) == 0
+    assert len(filter_events(df, n_events=10)) == len(df)  # asking for a max > len(df)
 
 
 def test_get_obstime_real():

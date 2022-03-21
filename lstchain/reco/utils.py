@@ -487,14 +487,7 @@ def expand_tel_list(tel_list, max_tels):
 
 def filter_events(
         events,
-        filters=dict(
-            intensity=[0, np.inf],
-            width=[0, np.inf],
-            length=[0, np.inf],
-            wl=[0, np.inf],
-            r=[0, np.inf],
-            leakage_intensity_width_2=[0, 1],
-        ),
+        filters=None,
         finite_params=None,
         n_events=None,
 ):
@@ -529,6 +522,7 @@ def filter_events(
         events_df = events
 
     filter = np.ones(len(events_df), dtype=bool)
+    filters = {} if filters is None else filters
 
     for col, (lower_limit, upper_limit) in filters.items():
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
@@ -547,6 +541,9 @@ def filter_events(
                 if v > 0:
                     log.warning(f"{k} : {v}")
 
+    filter = filter.to_numpy() if isinstance(filter, pd.DataFrame) else filter
+
+    events_df = events_df[filter]
     if n_events is not None:
         if n_events < 0:
             raise ValueError("The number of events to keep cannot be < 0")
@@ -555,7 +552,7 @@ def filter_events(
         elif not isinstance(n_events, int):
             raise ValueError(f"n_events={n_events} > 1 is not a valid value, an integer is expected")
 
-    return events[filter.to_numpy()][:n_events]
+    return events[filter][:n_events]
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
