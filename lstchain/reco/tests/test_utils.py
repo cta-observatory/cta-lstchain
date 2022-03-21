@@ -126,6 +126,9 @@ def test_filter_events():
     with np.testing.assert_raises(KeyError):
         filter_events(df, filters=dict(e=[0, np.inf]))
 
+    assert len(filter_events(df, n_events=7)) == 7
+    assert len(filter_events(df, n_events=1000000)) == len(df)  # asking for a max > len(df)
+
 
 def test_get_obstime_real():
     # times in seconds, rates in s^-1
@@ -181,7 +184,6 @@ def test_get_obstime_real():
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
-
 
 
 def test_get_geomagnetic_field_orientation():

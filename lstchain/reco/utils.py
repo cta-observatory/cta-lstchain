@@ -486,16 +486,17 @@ def expand_tel_list(tel_list, max_tels):
 
 
 def filter_events(
-    events,
-    filters=dict(
-        intensity=[0, np.inf],
-        width=[0, np.inf],
-        length=[0, np.inf],
-        wl=[0, np.inf],
-        r=[0, np.inf],
-        leakage_intensity_width_2=[0, 1],
-    ),
-    finite_params=None,
+        events,
+        filters=dict(
+            intensity=[0, np.inf],
+            width=[0, np.inf],
+            length=[0, np.inf],
+            wl=[0, np.inf],
+            r=[0, np.inf],
+            leakage_intensity_width_2=[0, 1],
+        ),
+        finite_params=None,
+        n_events=None,
 ):
     """
     Apply data filtering to a pandas dataframe or astropy Table.
@@ -511,6 +512,10 @@ def filter_events(
     filters: dict containing events features names and their filtering range
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
+    n_events: int or float
+        Number of events to keep.
+        If an integer > 1 is passed this will be the maximum number of events to keep.
+        If a float < 1, this is the ratio of events to keep.
 
     Returns
     -------
@@ -542,7 +547,15 @@ def filter_events(
                 if v > 0:
                     log.warning(f"{k} : {v}")
 
-    return events[filter.to_numpy()]
+    if n_events is not None:
+        if n_events < 0:
+            raise ValueError("The number of events to keep cannot be < 0")
+        if 0 <= n_events <= 1:
+            n_events = int(n_events * len(events_df))
+        elif not isinstance(n_events, int):
+            raise ValueError(f"n_events={n_events} > 1 is not a valid value, an integer is expected")
+
+    return events[filter.to_numpy()][:n_events]
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
