@@ -35,6 +35,7 @@
     "r": [0, Infinity],
     "leakage_intensity_width_2": [0, Infinity]
   },
+  "n_events": null,
 
   "tailcut": {
     "picture_thresh":8,
