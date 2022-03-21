@@ -12,6 +12,11 @@ from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
 
+try:
+    import lstchain.reco.log_pdf_CC
+except ImportError:
+    from lstchain.scripts import numba_compil_lhfit
+    numba_compil_lhfit.compile_reconstructor_cc()
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
