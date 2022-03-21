@@ -21,9 +21,9 @@ from sklearn.model_selection import train_test_split
 from . import disp
 from . import utils
 from ..io import (
-    standard_config, 
-    replace_config, 
-    get_dataset_keys, 
+    standard_config,
+    replace_config,
+    get_dataset_keys,
     get_srcdep_params,
 )
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
@@ -31,7 +31,6 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
-
 
 __all__ = [
     'apply_models',
@@ -314,7 +313,7 @@ def build_models(filegammas, fileprotons,
         # if not, source-dependent parameters are added here
         if dl1_params_src_dep_lstcam_key in get_dataset_keys(filegammas):
             src_dep_df_gamma = get_srcdep_params(filegammas)
-         
+
         else:
             subarray_info = SubarrayDescription.from_hdf(filegammas)
             tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -342,6 +341,7 @@ def build_models(filegammas, fileprotons,
                                                  + config['disp_regression_features']
                                                  + config['particle_classification_features']
                                                  + config['disp_classification_features'],
+                                   n_events=config['n_events'],
                                    )
 
     df_proton = utils.filter_events(df_proton,
@@ -350,11 +350,11 @@ def build_models(filegammas, fileprotons,
                                                   + config['disp_regression_features']
                                                   + config['particle_classification_features']
                                                   + config['disp_classification_features'],
+                                    n_events=config['n_events'],
                                     )
 
-
-    #Training MC gammas in reduced viewcone 
-    src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
+    # Training MC gammas in reduced viewcone
+    src_r_m = np.sqrt(df_gamma['src_x'] ** 2 + df_gamma['src_y'] ** 2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
     df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
@@ -489,6 +489,7 @@ def apply_models(
                                             + config['energy_regression_features']
                                             + config['particle_classification_features']
                                             + config['disp_classification_features'],
+                              n_events=config['n_events'],
                               )
 
     # Reconstruction of Energy and disp_norm distance
