@@ -496,13 +496,13 @@ def filter_events(
     The Table object will be converted to pandas dataframe and used.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
-    Returning filter is converted to a numpy object so that it can be used by both dataframe
-    and table inputs
+    The returned object is of the same type as passed `events`
 
     Parameters
     ----------
     events: `pandas.DataFrame` or 'astropy.table.Table'
     filters: dict containing events features names and their filtering range
+        example : dict(intensity=[0, np.inf], width=[0, np.inf], r=[0, np.inf])
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
     n_events: int or float
