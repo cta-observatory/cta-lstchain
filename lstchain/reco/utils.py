@@ -542,7 +542,8 @@ def filter_events(
                 if v > 0:
                     log.warning(f"{k} : {v}")
 
-    filter = filter.to_numpy() if isinstance(filter, pd.DataFrame) else filter
+    # if pandas DataFrame or Series, transforms to numpy
+    filter = filter.to_numpy() if hasattr(filter, 'to_numpy') else filter
 
     events = events[filter]
 
