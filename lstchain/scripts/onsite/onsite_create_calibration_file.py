@@ -84,6 +84,14 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_false', dest="use_flatfield_heuristic",
+    help=(
+        "If given, rely fully on UCTS/TIB trigger type and do not try to guess flatfield events."
+        " Should be used for data from 2022 onwards (new TIB firmware fixed UCTS info jumps)"
+    )
+)
+
 
 
 def main():
@@ -216,6 +224,7 @@ def main():
         f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path}",
         f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
         f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
+        f"--LSTEventSource.use_flatfield_heuristic={args.use_flatfield_heuristic}",
         f"--FlatFieldCalculator.sample_size={stat_events}",
         f"--PedestalCalculator.sample_size={stat_events}",
         f"--config={config_file}",

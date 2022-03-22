@@ -56,6 +56,14 @@ parser.add_argument('--no-progress',
                     action='store_true',
                     help='Do not display a progress bar during event processing')
 
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_false', dest="use_flatfield_heuristic",
+    help=(
+        "If given, rely fully on UCTS/TIB trigger type and do not try to guess flatfield events."
+        " Should be used for data from 2022 onwards (new TIB firmware fixed UCTS info jumps)"
+    )
+)
+
 
 def main():
     args = parser.parse_args()
@@ -80,6 +88,7 @@ def main():
             "max_events": args.max_events,
             "pointing_information": False,
             "default_trigger_type": 'tib',
+            "use_flatfield_heuristic": args.use_flatfield_heuristic,
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
             },

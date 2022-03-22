@@ -128,6 +128,14 @@ parser.add_argument(
     help='Path to the file containing the event ids of interleaved pedestals',
 )
 
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_false', dest="use_flatfield_heuristic",
+    help=(
+        "If given, rely fully on UCTS/TIB trigger type and do not try to guess flatfield events."
+        " Should be used for data from 2022 onwards (new TIB firmware fixed UCTS info jumps)"
+    )
+)
+
 
 def main():
     args = parser.parse_args()
@@ -197,6 +205,8 @@ def main():
     calib_config = config[config['calibration_product']]
     if args.systematic_correction_file is not None:
         calib_config['systematic_correction_path'] = args.systematic_correction_file
+
+    lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,
