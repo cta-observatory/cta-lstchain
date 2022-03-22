@@ -15,12 +15,16 @@ from lstchain.calib.camera.pixel_threshold_estimation import get_bias_and_std
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 from lstchain.visualization.camera import display_array_camera
 
-from lstchain.reco.log_pdf_CC import log_pdf_ll as log_pdf_ll
-from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
-from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
-
 logger = logging.getLogger(__name__)
 
+try:
+    from lstchain.reco.log_pdf_CC import log_pdf_ll as log_pdf_ll
+    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
+    from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
+except ImportError:
+    logger.warning('WARNING: Compiled likelihood reconstruction numbaCC functions missing.'
+                   ' If you plan to use the likelihood reconstruction you should run:\n'
+                   'lstchain/scripts/numba_compil_lhfit.py')
 
 class TimeWaveformFitter(Component):
     sigma_s = Float(1, help='Width of the single photo-electron peak distribution.', allow_none=False).tag(config=True)
