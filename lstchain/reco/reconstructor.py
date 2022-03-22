@@ -26,6 +26,7 @@ except ImportError:
                    ' If you plan to use the likelihood reconstruction you should run:\n'
                    'lstchain/scripts/numba_compil_lhfit.py')
 
+
 class TimeWaveformFitter(Component):
     sigma_s = Float(1, help='Width of the single photo-electron peak distribution.', allow_none=False).tag(config=True)
     crosstalk = Float(0, help='Average pixel crosstalk.', allow_none=False).tag(config=True)
@@ -60,7 +61,7 @@ class TimeWaveformFitter(Component):
         self.geometry = self.subarray.tel[self.telescope_id].camera.geometry
         self.pix_x = self.geometry.pix_x.to_value(u.m)
         self.pix_y = self.geometry.pix_y.to_value(u.m)
-        self.pix_area = self.geometry.pix_area.to(u.m ** 2).value
+        self.pix_area = self.geometry.pix_area.to_value(u.m ** 2)
         self.r_max = np.sqrt(self.pix_x ** 2 + self.pix_y ** 2).max()
         self.focal_length = subarray.tel[self.telescope_id].optics.equivalent_focal_length
         readout = self.subarray.tel[self.telescope_id].camera.readout
@@ -180,7 +181,7 @@ class TimeWaveformFitter(Component):
 
         self.p_x = self.pix_x[self.mask_pixel]
         self.p_y = self.pix_y[self.mask_pixel]
-        self.pix_area = self.geometry.pix_area[self.mask_pixel].to_value(u.m **2)
+        self.pix_area = self.geometry.pix_area[self.mask_pixel].to_value(u.m ** 2)
 
         self.data = waveform
         self.error = copy(self.pedestal_std)
@@ -778,7 +779,7 @@ class TimeWaveformFitter(Component):
 
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
         mu = asygaussian2d(np.float32(params['charge']
-                                      * self.geometry.pix_area.to(u.m ** 2).value),
+                                      * self.geometry.pix_area.to_value(u.m ** 2)),
                            np.float32(self.geometry.pix_x.value),
                            np.float32(self.geometry.pix_y.value),
                            np.float32(params['x_cm']),
@@ -819,7 +820,7 @@ class TimeWaveformFitter(Component):
         params = self.end_parameters
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
         mu = asygaussian2d(np.float32(params['charge']
-                                      * self.geometry.pix_area.to(u.m ** 2).value),
+                                      * self.geometry.pix_area.to_value(u.m ** 2)),
                            np.float32(self.geometry.pix_x.value),
                            np.float32(self.geometry.pix_y.value),
                            np.float32(params['x_cm']),
