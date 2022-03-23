@@ -360,7 +360,6 @@ def build_models(filegammas, fileprotons,
                                                  + config['disp_regression_features']
                                                  + config['particle_classification_features']
                                                  + config['disp_classification_features'],
-                                   n_events=config['n_events'],
                                    )
 
     df_proton = utils.filter_events(df_proton,
@@ -369,7 +368,6 @@ def build_models(filegammas, fileprotons,
                                                   + config['disp_regression_features']
                                                   + config['particle_classification_features']
                                                   + config['disp_classification_features'],
-                                    n_events=config['n_events'],
                                     )
 
     # Training MC gammas in reduced viewcone
@@ -539,7 +537,6 @@ def apply_models(dl1,
                                             + config['energy_regression_features']
                                             + config['particle_classification_features']
                                             + config['disp_classification_features'],
-                              n_events=config['n_events'],
                               )
 
     # Reconstruction of Energy and disp_norm distance
