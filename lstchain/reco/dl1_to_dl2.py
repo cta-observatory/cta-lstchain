@@ -266,12 +266,28 @@ def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
                  energy_min=-np.inf,
                  custom_config=None,
-                 test_size=0.2,
                  ):
     """
     Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
     The config in config_file superseeds the one passed in argument.
+    Here is the complete workflow:
+    ```mermaid
+        graph LR
+        GAMMA[gammas] -->|reg training| REG(regressors) --> |dump| DISK
+        GAMMA --> S(split)
+        S --> |80%| g_train
+        S --> |20%| g_test
+        g_train --> |reg training| tmp_reg(tmp regressors)
+        tmp_reg --- A[ ]:::empty
+        g_test --- A
+        A --> g_test_dl2
+        g_test_dl2 --- D[ ]:::empty
+        protons -------- D
+        D --> cls(classifier)
+        cls--> |dump| DISK
+        classDef empty width:0px,height:0px;
+    ```
 
     Parameters
     ----------
@@ -364,8 +380,17 @@ def build_models(filegammas, fileprotons,
             src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
+    n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
+    if n_gamma_regressors is not None:
+        try:
+            df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors)
+        except ValueError as e:
+            raise ValueError(f"The requested number of gammas {n_gamma_regressors} "
+                             f"for the regressors training is not valid:\n{e}")
+    else:
+        df_gamma_reg = df_gamma
 
-    reg_energy = train_energy(df_gamma, custom_config=config)
+    reg_energy = train_energy(df_gamma_reg, custom_config=config)
 
     if config['disp_method'] == 'disp_vector':
         reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
@@ -374,8 +399,18 @@ def build_models(filegammas, fileprotons,
         cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
 
     # Train classifier for gamma/hadron separation.
+    test_size = config['n_training_events']['gamma_classifier_test']
+    train_size = config['n_training_events']['gamma_classifier_train']
+    try:
+        train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size)
+    except ValueError as e:
+        raise ValueError(f"The requested number of gammas for the classifier training is not valid:\n{e}")
 
-    train, testg = train_test_split(df_gamma, test_size=test_size)
+    try:
+        df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
+    except ValueError as e:
+        raise ValueError(f"The requested number of protons for the classifier training is not valid:\n{e}")
+
     test = testg.append(df_proton, ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
