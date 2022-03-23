@@ -273,19 +273,19 @@ def build_models(filegammas, fileprotons,
     The config in config_file superseeds the one passed in argument.
     Here is the complete workflow:
     ```mermaid
-        graph LR
-        GAMMA[gammas] -->|reg training| REG(regressors) --> |dump| DISK
+    graph LR
+        GAMMA[gammas] -->|`gamma_regressors`| REG(regressors) --> DISK
         GAMMA --> S(split)
-        S --> |80%| g_train
-        S --> |20%| g_test
+        S --> |`gamma_classifier_train`| g_train
+        S --> |`gamma_classifier_test`| g_test
         g_train --> |reg training| tmp_reg(tmp regressors)
         tmp_reg --- A[ ]:::empty
         g_test --- A
         A --> g_test_dl2
         g_test_dl2 --- D[ ]:::empty
-        protons -------- D
+        protons -------- |`proton_classifier`| D
         D --> cls(classifier)
-        cls--> |dump| DISK
+        cls--> DISK
         classDef empty width:0px,height:0px;
     ```
 
