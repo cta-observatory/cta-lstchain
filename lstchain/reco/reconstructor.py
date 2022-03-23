@@ -416,7 +416,7 @@ class TimeWaveformFitter(Component):
         container.lhfit_time_gradient = self.end_parameters['v']
         container.lhfit_ref_time = self.end_parameters['t_cm']
 
-        container.lhfit_wl = self.end_parameters['wl']
+        container.lhfit_wl = u.Quantity(self.end_parameters['wl'])
         container.lhfit_intensity = self.end_parameters['charge']
         container.lhfit_log_intensity = np.log10(container.lhfit_intensity)
         container.lhfit_t_68 = container.lhfit_length.value * container.lhfit_time_gradient
