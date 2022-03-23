@@ -271,7 +271,7 @@ def build_models(filegammas, fileprotons,
     Uses MC data to train Random Forests for Energy and disp_norm
     reconstruction and G/H separation. Returns 3 trained RF.
     The config in config_file superseeds the one passed in argument.
-    Here is the complete workflow:
+    Here is the complete workflow with the number of events selected from the config:
     ```mermaid
     graph LR
         GAMMA[gammas] -->|`gamma_regressors`| REG(regressors) --> DISK
