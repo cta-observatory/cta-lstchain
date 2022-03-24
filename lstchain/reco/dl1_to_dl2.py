@@ -280,16 +280,16 @@ def build_models(filegammas, fileprotons,
     .. mermaid::
 
         graph LR
-            GAMMA[gammas] -->|`gamma_regressors`| REG(regressors) --> DISK
+            GAMMA[gammas] -->|#`gamma_regressors`| REG(regressors) --> DISK
             GAMMA --> S(split)
-            S --> |`gamma_classifier_train`| g_train
-            S --> |`gamma_classifier_test`| g_test
-            g_train --> |reg training| tmp_reg(tmp regressors)
+            S --> |#`gamma_classifier_train`| g_train
+            S --> |#`gamma_classifier_test`| g_test
+            g_train --> tmp_reg(tmp regressors)
             tmp_reg --- A[ ]:::empty
             g_test --- A
             A --> g_test_dl2
             g_test_dl2 --- D[ ]:::empty
-            protons -------- |`proton_classifier`| D
+            protons -------- |#`proton_classifier`| D
             D --> cls(classifier)
             cls--> DISK
             classDef empty width:0px,height:0px;
