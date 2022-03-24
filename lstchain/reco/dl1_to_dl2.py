@@ -321,6 +321,12 @@ def build_models(filegammas, fileprotons,
         return reg_energy, reg_disp_vector, cls_gh
     elif config['disp_method'] == 'disp_norm_sign':
         return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
+
+    Raises
+    ------
+    ValueError
+        If the requested number of gamma events in the config for the training of the classifier is not valid.
+        See config["n_training_events"]
     """
 
     custom_config = {} if custom_config is None else custom_config
