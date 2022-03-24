@@ -50,15 +50,16 @@ optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, ty
 
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
+
 optional.add_argument(
-    '--no-flatfield-heuristic', action='store_false', dest="use_flatfield_heuristic",
+    '--flatfield-heuristic', action='store_true', dest="use_flatfield_heuristic",
     help=(
-        "If given, rely fully on UCTS/TIB trigger type and do not try to guess flatfield events."
-        " Should be used for data from 2022 onwards (new TIB firmware fixed UCTS info jumps)"
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
     )
 )
 
-parser.add_argument(
+optional.add_argument(
     '--no-progress',
     action='store_true',
     help='Do not display a progress bar during event processing'
@@ -122,8 +123,8 @@ def main():
         f"--max-events={stat_events}",
     ]
 
-    if not args.use_flatfield_heuristic:
-        cmd.append("--no-flatfield-heuristic")
+    if args.use_flatfield_heuristic:
+        cmd.append("--flatfield-heuristic")
 
     if args.no_progress:
         cmd.append("--no-progress")
