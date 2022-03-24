@@ -612,7 +612,7 @@ def check_metadata(metadata1, metadata2):
         v1 = metadata1[k]
         v2 = metadata2[k]
         if v1 != v2:
-            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():
