@@ -79,7 +79,7 @@ def train_energy(train, custom_config=None):
     return reg
 
 
-def train_disp_vector(train, custom_config=None, predict_features=['disp_dx', 'disp_dy']):
+def train_disp_vector(train, custom_config=None, predict_features=None):
     """
     Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
@@ -89,12 +89,16 @@ def train_disp_vector(train, custom_config=None, predict_features=['disp_dx', 'd
     ----------
     train: `pandas.DataFrame`
     custom_config: dictionnary
-        Modified configuration to update the standard one
+        Modified configuration to update the standard one. Default=None
+    predict_features: list
+        list of predict features names. Default=['disp_dx', 'disp_dy']
 
     Returns
     -------
     The trained model
     """
+    if predict_features is None:
+        predict_features = ['disp_dx', 'disp_dy']
     custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     disp_regression_args = config['random_forest_disp_regressor_args']
@@ -272,22 +276,24 @@ def build_models(filegammas, fileprotons,
     reconstruction and G/H separation. Returns 3 trained RF.
     The config in config_file superseeds the one passed in argument.
     Here is the complete workflow with the number of events selected from the config:
-    ```mermaid
-    graph LR
-        GAMMA[gammas] -->|`gamma_regressors`| REG(regressors) --> DISK
-        GAMMA --> S(split)
-        S --> |`gamma_classifier_train`| g_train
-        S --> |`gamma_classifier_test`| g_test
-        g_train --> |reg training| tmp_reg(tmp regressors)
-        tmp_reg --- A[ ]:::empty
-        g_test --- A
-        A --> g_test_dl2
-        g_test_dl2 --- D[ ]:::empty
-        protons -------- |`proton_classifier`| D
-        D --> cls(classifier)
-        cls--> DISK
-        classDef empty width:0px,height:0px;
-    ```
+
+    .. mermaid::
+
+        graph LR
+            GAMMA[gammas] -->|`gamma_regressors`| REG(regressors) --> DISK
+            GAMMA --> S(split)
+            S --> |`gamma_classifier_train`| g_train
+            S --> |`gamma_classifier_test`| g_test
+            g_train --> |reg training| tmp_reg(tmp regressors)
+            tmp_reg --- A[ ]:::empty
+            g_test --- A
+            A --> g_test_dl2
+            g_test_dl2 --- D[ ]:::empty
+            protons -------- |`proton_classifier`| D
+            D --> cls(classifier)
+            cls--> DISK
+            classDef empty width:0px,height:0px;
+
 
     Parameters
     ----------
@@ -384,7 +390,7 @@ def build_models(filegammas, fileprotons,
             df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors)
         except ValueError as e:
             raise ValueError(f"The requested number of gammas {n_gamma_regressors} "
-                             f"for the regressors training is not valid:\n{e}")
+                             f"for the regressors training is not valid.") from e
     else:
         df_gamma_reg = df_gamma
 
@@ -402,12 +408,16 @@ def build_models(filegammas, fileprotons,
     try:
         train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size)
     except ValueError as e:
-        raise ValueError(f"The requested number of gammas for the classifier training is not valid:\n{e}")
+        raise ValueError(
+            "The requested number of gammas for the classifier training is not valid."
+        ) from e
 
     try:
         df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
     except ValueError as e:
-        raise ValueError(f"The requested number of protons for the classifier training is not valid:\n{e}")
+        raise ValueError(
+            "The requested number of protons for the classifier training is not valid."
+        ) from e
 
     test = testg.append(df_proton, ignore_index=True)
 
@@ -466,11 +476,11 @@ def build_models(filegammas, fileprotons,
     if save_models:
         os.makedirs(path_models, exist_ok=True)
 
-        file_reg_energy = path_models + "/reg_energy.sav"
+        file_reg_energy = f'{path_models}/reg_energy.sav'
         joblib.dump(reg_energy, file_reg_energy)
 
         if config['disp_method'] == 'disp_vector':
-            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
+            file_reg_disp_vector = f'{path_models}/reg_disp_vector.sav'
             joblib.dump(reg_disp_vector, file_reg_disp_vector)
         elif config['disp_method'] == 'disp_norm_sign':
             file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
@@ -478,7 +488,7 @@ def build_models(filegammas, fileprotons,
             joblib.dump(reg_disp_norm, file_reg_disp_norm)
             joblib.dump(cls_disp_sign, file_cls_disp_sign)
 
-        file_cls_gh = path_models + "/cls_gh.sav"
+        file_cls_gh = f'{path_models}/cls_gh.sav'
         joblib.dump(cls_gh, file_cls_gh)
 
     if config['disp_method'] == 'disp_vector':
@@ -624,34 +634,27 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
 
     if is_simu:
-        if (data['mc_type'] == 0).all():
-            data_type = 'mc_gamma'
-        else:
-            data_type = 'mc_proton'
+        data_type = 'mc_gamma' if (data['mc_type'] == 0).all() else 'mc_proton'
     else:
         data_type = 'real_data'
 
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config,
                                                                          focal_length=focal_length)
 
-    # ON position
-    src_dep_params_dict = {}
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
-    src_dep_params_dict['on'] = src_dep_params
+    src_dep_params_dict = {'on': src_dep_params}
+    if not is_simu and config.get('observation_mode') == 'wobble':
+        for ioff in range(config.get('n_off_wobble')):
+            off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
 
-    if not is_simu:
-        if config.get('observation_mode') == 'wobble':
-            for ioff in range(config.get('n_off_wobble')):
-                off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
-
-                rotated_expected_src_pos_x_m = expected_src_pos_x_m * np.cos(off_angle) - expected_src_pos_y_m * np.sin(
-                    off_angle)
-                rotated_expected_src_pos_y_m = expected_src_pos_x_m * np.sin(off_angle) + expected_src_pos_y_m * np.cos(
-                    off_angle)
-                src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m,
-                                                                  rotated_expected_src_pos_y_m)
-                src_dep_params['off_angle'] = np.rad2deg(off_angle)
-                src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
+            rotated_expected_src_pos_x_m = expected_src_pos_x_m * np.cos(off_angle) - expected_src_pos_y_m * np.sin(
+                off_angle)
+            rotated_expected_src_pos_y_m = expected_src_pos_x_m * np.sin(off_angle) + expected_src_pos_y_m * np.cos(
+                off_angle)
+            src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m,
+                                                              rotated_expected_src_pos_y_m)
+            src_dep_params['off_angle'] = np.rad2deg(off_angle)
+            src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
 
     return src_dep_params_dict
 
