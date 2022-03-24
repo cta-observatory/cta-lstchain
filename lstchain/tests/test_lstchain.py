@@ -153,12 +153,19 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 def test_build_models(simulated_dl1_file, rf_models):
     from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
-
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_classifier_train": 0.78,
+            "gamma_classifier_test": 0.21,
+            "proton_classifier": 0.98
+        }
+    }
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = build_models(
         infile,
         infile,
-        custom_config=standard_config,
-        save_models=False
+        save_models=False,
+        custom_config=custom_config
     )
 
     import joblib
