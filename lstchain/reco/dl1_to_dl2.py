@@ -272,9 +272,9 @@ def build_models(filegammas, fileprotons,
                  custom_config=None,
                  ):
     """
-    Uses MC data to train Random Forests for Energy and disp_norm
-    reconstruction and G/H separation. Returns 3 trained RF.
-    The config in config_file superseeds the one passed in argument.
+    Uses MC data to train Random Forests for Energy and DISP
+    reconstruction and G/H separation and returns the trained RFs.
+    The passed config superseeds the standard configuration.
     Here is the complete workflow with the number of events selected from the config:
 
     .. mermaid::
