@@ -16,7 +16,6 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
-from sklearn.model_selection import train_test_split
 
 from . import disp
 
