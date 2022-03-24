@@ -129,10 +129,6 @@ def test_filter_events():
     with np.testing.assert_raises(KeyError):
         filter_events(df, filters=dict(e=[0, np.inf]))
 
-    assert len(filter_events(df, n_events=2)) == 2
-    assert len(filter_events(df, n_events=0.99)) == 2
-    assert len(filter_events(df, n_events=10)) == len(df)  # asking for a max > len(df)
-
 
 def test_get_obstime_real():
     # times in seconds, rates in s^-1
