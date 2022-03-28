@@ -327,10 +327,10 @@ class IRFFITSWriter(Tool):
                 )
 
             p["ZEN_PNT"] = round(
-                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2
+                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 4
             )
             p["AZ_PNT"] = round(
-                p["events"]["pointing_az"][0].to_value(u.deg), 2
+                p["events"]["pointing_az"][0].to_value(u.deg), 4
             )
 
             if not self.source_dep:
@@ -435,13 +435,13 @@ class IRFFITSWriter(Tool):
             if self.energy_dependent_theta:
                 fov_offset_bins = [
                     round(
-                        gammas["true_source_fov_offset"].min().to_value(), 1
+                        gammas["reco_source_fov_offset"].min().to_value(), 4
                     ),
                     round(
-                        gammas["true_source_fov_offset"].max().to_value(), 1
+                        gammas["reco_source_fov_offset"].max().to_value(), 4
                     )
                 ] * u.deg
-                self.log.info("For RAD MAX, the full FoV is used")
+                self.log.info(f"For RAD MAX, FoV where we have all of the reconstructed events, is used, {fov_offset_bins}")
 
         if not self.only_gamma_irf:
             background = table.vstack(
