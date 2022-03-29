@@ -128,7 +128,7 @@ class DL3Cuts(Component):
             data["gh_score"],
             data["reco_energy"],
             gh_cuts,
-            operator.ge,
+            operator.gt,
         )
         return data[data["selected_gh"]]
 
@@ -174,7 +174,7 @@ class DL3Cuts(Component):
             data["theta"],
             data["reco_energy"],
             theta_cuts,
-            operator.le,
+            operator.lt,
         )
         return data[data["selected_theta"]]
 
