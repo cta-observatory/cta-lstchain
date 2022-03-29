@@ -81,6 +81,7 @@ dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -857,7 +858,7 @@ def read_mc_dl2_to_QTable(filename):
     -------
     `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
     """
-    
+
     # mapping
     name_mapping = {
         "mc_energy": "true_energy",
@@ -881,7 +882,7 @@ def read_mc_dl2_to_QTable(filename):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
@@ -941,7 +942,7 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
