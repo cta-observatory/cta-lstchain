@@ -52,9 +52,16 @@ optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
 optional.add_argument(
-    '--flatfield-heuristic', action='store_true', dest="use_flatfield_heuristic",
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
     help=(
         "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
         " Should be used only for data from before 2022"
     )
 )

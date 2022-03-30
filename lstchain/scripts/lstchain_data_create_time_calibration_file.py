@@ -57,9 +57,16 @@ parser.add_argument('--no-progress',
                     help='Do not display a progress bar during event processing')
 
 parser.add_argument(
-    '--flatfield-heuristic', action='store_true', dest="use_flatfield_heuristic",
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
     help=(
         "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
         " Should be used only for data from before 2022"
     )
 )
