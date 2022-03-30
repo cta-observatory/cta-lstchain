@@ -61,6 +61,7 @@ setup(
         'pymongo',
         'pyparsing',
         'setuptools_scm',
+        'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
         "all": tests_require + docs_require,
