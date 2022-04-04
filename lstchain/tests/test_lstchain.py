@@ -156,8 +156,8 @@ def test_build_models(simulated_dl1_file, rf_models):
     custom_config = {
         "n_training_events": {
             "gamma_regressors": 0.99,
-            "gamma_classifier_train": 0.78,
-            "gamma_classifier_test": 0.21,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.21,
             "proton_classifier": 0.98
         }
     }
@@ -181,8 +181,8 @@ def test_fail_build_models(simulated_dl1_file):
     custom_config = {
         "n_training_events": {
             "gamma_regressors": 0.99,
-            "gamma_classifier_train": 0.78,
-            "gamma_classifier_test": 0.31,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.31,
             "proton_classifier": 0.98
         }
     }
