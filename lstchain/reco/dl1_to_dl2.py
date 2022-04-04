@@ -282,8 +282,8 @@ def build_models(filegammas, fileprotons,
         graph LR
             GAMMA[gammas] -->|#`gamma_regressors`| REG(regressors) --> DISK
             GAMMA --> S(split)
-            S --> |#`gamma_classifier_train`| g_train
-            S --> |#`gamma_classifier_test`| g_test
+            S --> |#`gamma_tmp_regressors`| g_train
+            S --> |#`gamma_classifier`| g_test
             g_train --> tmp_reg(tmp regressors)
             tmp_reg --- A[ ]:::empty
             g_test --- A
@@ -409,8 +409,8 @@ def build_models(filegammas, fileprotons,
         cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
 
     # Train classifier for gamma/hadron separation.
-    test_size = config['n_training_events']['gamma_classifier_test']
-    train_size = config['n_training_events']['gamma_classifier_train']
+    test_size = config['n_training_events']['gamma_classifier']
+    train_size = config['n_training_events']['gamma_tmp_regressors']
     try:
         train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size)
     except ValueError as e:

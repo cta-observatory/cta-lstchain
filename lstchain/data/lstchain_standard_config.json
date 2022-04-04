@@ -37,8 +37,8 @@
   },
   "n_training_events": {
     "gamma_regressors": null,
-    "gamma_classifier_train": null,
-    "gamma_classifier_test": 0.2,
+    "gamma_tmp_regressors": null,
+    "gamma_classifier": 0.2,
     "proton_classifier": null
   },
 
