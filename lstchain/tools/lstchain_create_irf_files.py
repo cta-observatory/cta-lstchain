@@ -509,7 +509,7 @@ class IRFFITSWriter(Tool):
                     )
             else:
                 if self.energy_dependent_alpha:
-                    extra_headers["ALPHA_CONT"] = (
+                    extra_headers["AL_CONT"] = (
                         self.cuts.alpha_containment,
                         "Alpha containment region in percentage"
                     )

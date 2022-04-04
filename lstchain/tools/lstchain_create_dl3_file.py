@@ -270,7 +270,7 @@ class DataReductionFITSWriter(Tool):
                 )
                 self.log.info(
                     "Using alpha containment region of "
-                    f'{self.energy_dependent_alpha_cuts.meta["ALPHA_CONT"]}'
+                    f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
                 )
             else:
                 with fits.open(self.input_irf) as hdul:

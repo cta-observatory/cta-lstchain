@@ -181,7 +181,7 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
     assert isinstance(gh_cuts.meta["GH_EFF"], float)
     
     al_cuts = QTable.read(irf_file, hdu="AL_CUTS")
-    assert isinstance(al_cuts.meta["ALPHA_CONT"], float)
+    assert isinstance(al_cuts.meta["AL_CONT"], float)
     
 @pytest.mark.private_data
 def test_create_dl3_energy_dependent_cuts(
