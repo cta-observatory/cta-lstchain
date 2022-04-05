@@ -36,10 +36,10 @@
     "leakage_intensity_width_2": [0, Infinity]
   },
   "n_training_events": {
-    "gamma_regressors": null,
-    "gamma_tmp_regressors": null,
+    "gamma_regressors": 1.0,
+    "gamma_tmp_regressors": 0.8,
     "gamma_classifier": 0.2,
-    "proton_classifier": null
+    "proton_classifier": 1.0
   },
 
   "tailcut": {
