@@ -391,7 +391,7 @@ def build_models(filegammas, fileprotons,
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
-    if n_gamma_regressors is not None:
+    if n_gamma_regressors not in [1.0, None]:
         try:
             df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors)
         except ValueError as e:
@@ -418,12 +418,14 @@ def build_models(filegammas, fileprotons,
             "The requested number of gammas for the classifier training is not valid."
         ) from e
 
-    try:
-        df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
-    except ValueError as e:
-        raise ValueError(
-            "The requested number of protons for the classifier training is not valid."
-        ) from e
+    n_proton_classifier = config["n_training_events"]["proton_classifier"]
+    if n_proton_classifier not in [1.0, None]:
+        try:
+            df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
+        except ValueError as e:
+            raise ValueError(
+                "The requested number of protons for the classifier training is not valid."
+            ) from e
 
     test = testg.append(df_proton, ignore_index=True)
 
