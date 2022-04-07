@@ -301,7 +301,7 @@ class IRFFITSWriter(Tool):
             self.log.info(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
 
-            if p["simulation_info"].viewcone.value == 0.0:
+            if len(set(p["events"]["mc_alt"].value))==1 and len(set(p["events"]["mc_az"].value))==1:
                 p["mc_type"] = "point_like"
             else:
                 p["mc_type"] = "diffuse"
