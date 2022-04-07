@@ -30,6 +30,7 @@ from .lstcontainers import (
     ThrownEventsHistogram,
 )
 
+from ctapipe_io_lst import OPTICS
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ __all__ = [
     'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
+    'check_mc_type'
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
@@ -1130,4 +1132,50 @@ def extract_simulation_nsb(filename):
                 except Exception as e:
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
+
+def check_mc_type(filename):
+    """
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') using DL1/DL2 MC file
+    Parameters
+    ----------
+    filename: path
+    Returns
+    -------
+    string
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+    
+    min_viewcone = simu_info.min_viewcone_radius.value
+    max_viewcone = simu_info.max_viewcone_radius.value
+
+    if max_viewcone == 0.0:
+        mc_type = 'point_like'
+
+    elif min_viewcone == 0.0:
+        mc_type = 'diffuse'
+        
+    else:
+        # check if mc_type is 'ring_wobble' or not
+        dataset_keys = get_dataset_keys(filename)
+
+        if dl1_params_lstcam_key in dataset_keys:
+            df = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+        if dl2_params_lstcam_key in dataset_keys:
+            df = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+        
+        src_r_m = np.sqrt(df['src_x']**2 + df['src_y']**2)
+        foclen = OPTICS.equivalent_focal_length.value
+        src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+
+        if  np.allclose(src_r_deg, min_viewcone, atol=0.1
+        ) and np.allclose(src_r_deg, max_viewcone, atol=0.1):
+            mc_type = 'ring_wobble'
+
+        else:
+            raise ValueError('mc type cannot be identified')
+
+    return mc_type
+            
 
