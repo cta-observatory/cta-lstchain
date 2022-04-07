@@ -42,7 +42,7 @@ __all__ = [
     'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
-    'check_mc_type'
+    'check_mc_type',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
