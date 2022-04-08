@@ -146,3 +146,9 @@ def test_extract_simulation_nsb(mc_gamma_testfile):
     assert np.isclose(nsb[0], 0.317, rtol=0.1)
     assert np.isclose(nsb[1], 0.276, rtol=0.1)
 
+
+def test_check_mc_type(simulated_dl1_file):
+    from lstchain.io.io import check_mc_type
+
+    mc_type = check_mc_type(simulated_dl1_file)
+    assert mc_type == 'diffuse'
