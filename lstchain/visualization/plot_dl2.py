@@ -16,7 +16,7 @@ from astropy.io.misc.hdf5 import (
     read_table_hdf5,
     write_table_hdf5,
 )
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 from matplotlib.cm import get_cmap
 from scipy.stats import norm
@@ -52,9 +52,7 @@ def plot_features(data, true_hadroness=False):
         True: True gammas and proton events are plotted (they are separated using true hadroness).
         False: Gammas and protons are separated using reconstructed hadroness (hadro_rec).
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     # Energy distribution
     plt.subplot(331)
@@ -296,9 +294,7 @@ def plot_disp(data, true_hadroness=False):
         False: Gammas and protons are separated using reconstructed
         hadroness (hadro_rec)
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     gammas = data[data[hadro] == 0]
 
@@ -373,9 +369,7 @@ def plot_pos(data, true_hadroness=False):
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     # True position
 
@@ -457,13 +451,10 @@ def plot_importances(model, features_names, ax=None, **kwargs):
     std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
     indices = np.argsort(importances)
 
-    ordered_features = []
-    for index in indices:
-        ordered_features = ordered_features + [features_names[index]]
-
+    ordered_features = [features_names[index] for index in indices]
     ax.set_title("Feature importances (gini index)")
 
-    ax.barh(range(len(features_names)),
+    ax.barh(ordered_features,
             importances[indices],
             xerr=std[indices],
             align="center",
@@ -471,7 +462,7 @@ def plot_importances(model, features_names, ax=None, **kwargs):
             )
 
     ax.set_yticks(range(len(features_names)))
-    ax.set_yticklabels(np.array(features_names)[indices])
+    ax.set_yticklabels(ordered_features)
     ax.grid()
 
     return ax
