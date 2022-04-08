@@ -103,6 +103,9 @@ def test_filter_events():
     from lstchain.reco.utils import filter_events
 
     df = pd.DataFrame({"a": [1, 2, 3], "b": [np.nan, 2.2, 3.2], "c": [1, 2, np.inf]})
+
+    np.testing.assert_array_equal(filter_events(df), df)
+
     np.testing.assert_array_equal(
         filter_events(
             df,
@@ -181,7 +184,6 @@ def test_get_obstime_real():
     print(t_obs, t_elapsed, true_t_eff, t_eff)
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
-
 
 
 def test_get_geomagnetic_field_orientation():

@@ -35,6 +35,12 @@
     "r": [0, Infinity],
     "leakage_intensity_width_2": [0, Infinity]
   },
+  "n_training_events": {
+    "gamma_regressors": 1.0,
+    "gamma_tmp_regressors": 0.8,
+    "gamma_classifier": 0.2,
+    "proton_classifier": 1.0
+  },
 
   "tailcut": {
     "picture_thresh":8,
