@@ -30,8 +30,6 @@ from .lstcontainers import (
     ThrownEventsHistogram,
 )
 
-from ctapipe_io_lst import OPTICS
-
 log = logging.getLogger(__name__)
 
 __all__ = [
