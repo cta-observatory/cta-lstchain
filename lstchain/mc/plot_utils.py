@@ -1,24 +1,25 @@
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-from lstchain.spectra.crab import crab_hegra
-from lstchain.visualization.plot_dl2 import plot_pos
-import numpy as np
 import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from ctaplot.plots import plot_sensitivity_magic_performance
+from matplotlib.colors import LogNorm
 from pyirf.spectral import CRAB_MAGIC_JHEAP2015
 from astropy.visualization import quantity_support
 
+from lstchain.spectra.crab import crab_hegra
+from lstchain.visualization.plot_dl2 import plot_pos
+
 __all__ = [
     'fill_bin_content',
-    'format_axes_ebin',
     'format_axes_array',
+    'format_axes_ebin',
     'format_axes_sensitivity',
     'plot_Crab_SED',
+    'plot_positions_survived_events',
     'plot_sensitivity',
     'sensitivity_minimization_plot',
     'sensitivity_plot_comparison',
-    'plot_positions_survived_events',
 ]
 
 

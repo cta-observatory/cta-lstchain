@@ -11,16 +11,25 @@ import joblib
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
-from astropy.table import Table, QTable
+
+from astropy.io.misc.hdf5 import (
+    read_table_hdf5,
+    write_table_hdf5,
+)
+from astropy.table import Table
+
 from matplotlib.cm import get_cmap
 from scipy.stats import norm
 
-from ..io.config import get_standard_config, read_configuration_file
+from ..io.config import (
+    get_standard_config,
+    read_configuration_file,
+)
 
 __all__ = [
     'direction_results',
     'energy_results',
+    'plot_1d_excess',
     'plot_disp',
     'plot_disp_vector',
     'plot_energy_resolution',
@@ -28,7 +37,6 @@ __all__ = [
     'plot_importances',
     'plot_pos',
     'plot_roc_gamma',
-    'plot_1d_excess',
     'plot_wobble',
 ]
 

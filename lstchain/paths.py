@@ -29,6 +29,12 @@ GENERAL_RE = re.compile(
     r"(?:.(\d+))?"  # subrun number
 )
 
+CALIBRATION_RE = re.compile(
+    r"(?:.*)"  # prefix
+    r".Run(\d+)"  # run number
+    r"(?:.(\d+))?"  # subrun number
+)
+
 EXTENSIONS_TO_REMOVE = {
     ".fits",
     ".fits.fz",
@@ -57,6 +63,15 @@ def run_info_from_filename(filename):
         raise ValueError(f"Filename {filename} does not include pattern {GENERAL_RE}")
 
     return _parse_match(m)
+
+
+def parse_calibration_name(filename):
+    m = CALIBRATION_RE.match(os.path.basename(filename))
+    if m is None:
+        raise ValueError(f'Filename {filename} does not match patter {CALIBRATION_RE}')
+
+    run, subrun = m.groups()
+    return Run(tel_id=None, run=parse_int(run), subrun=parse_int(subrun), stream=None)
 
 
 def parse_r0_filename(filename):

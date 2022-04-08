@@ -2,10 +2,14 @@ import pytest
 from astropy.table import Table
 
 
-@pytest.mark.run(after="test_write_dl2_dataframe")
-@pytest.mark.private_data
-def test_create_event_list(observed_dl2_file, simulated_irf_file):
-    from lstchain.irf.hdu_table import create_event_list, add_icrs_position_params
+@pytest.fixture(scope='session')
+def tmp_dl3_path(tmp_path_factory):
+    return tmp_path_factory.mktemp('dl3')
+
+
+@pytest.fixture
+def dl3_file(tmp_dl3_path, observed_dl2_file, simulated_irf_file):
+    from lstchain.high_level.hdu_table import create_event_list, add_icrs_position_params
     from lstchain.io.io import read_data_dl2_to_QTable
     from lstchain.reco.utils import get_effective_time
     from astropy.coordinates import SkyCoord
@@ -26,14 +30,10 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
         elapsed_time=t_tot.value,
     )
 
-    assert "TIME" in Table.read(evts).columns
-    assert "START" in Table.read(gti).columns
-    assert "RA_PNT" in Table.read(pnt).columns
+    name = observed_dl2_file.name
+    observed_dl3_file = tmp_dl3_path / name.replace('dl2', 'dl3')
+    observed_dl3_file = observed_dl3_file.with_suffix(".fits")
 
-    observed_dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
-    observed_dl3_file = (
-        observed_dl2_file.parent / observed_dl3_file.replace(".h5", ".fits")
-    )
     # create a temp dl3 file to test indexing function
 
     temp_hdulist = fits.HDUList([fits.PrimaryHDU(), evts, gti, pnt])
@@ -42,29 +42,30 @@ def test_create_event_list(observed_dl2_file, simulated_irf_file):
 
     temp_hdulist.writeto(observed_dl3_file, overwrite=True)
 
-    assert observed_dl3_file.is_file()
+    return observed_dl3_file
 
 
-@pytest.mark.run(after="test_create_event_list")
 @pytest.mark.private_data
-def test_create_obs_hdu_index(observed_dl2_file):
-    from lstchain.irf.hdu_table import create_hdu_index_hdu, create_obs_index_hdu
+def test_create_event_list(dl3_file):
+    assert dl3_file.is_file()
 
-    dl3_file = observed_dl2_file.name.replace("dl2", "dl3")
-    dl3_file = dl3_file.replace(".h5", ".fits")
 
-    hdu_index = observed_dl2_file.parent / "hdu-index.fits.gz"
-    obs_index = observed_dl2_file.parent / "obs-index.fits.gz"
+@pytest.mark.private_data
+def test_create_obs_hdu_index(tmp_path, dl3_file):
+    from lstchain.high_level.hdu_table import create_hdu_index_hdu, create_obs_index_hdu
+
+    hdu_index = tmp_path / "hdu-index.fits.gz"
+    obs_index = tmp_path / "obs-index.fits.gz"
 
     create_hdu_index_hdu(
         [dl3_file],
-        observed_dl2_file.parent,
+        tmp_path,
         hdu_index,
         overwrite=True,
     )
     create_obs_index_hdu(
         [dl3_file],
-        observed_dl2_file.parent,
+        tmp_path,
         obs_index,
         overwrite=True,
     )

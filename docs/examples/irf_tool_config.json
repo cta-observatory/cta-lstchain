@@ -7,21 +7,24 @@
       "r": [0, 1],
       "wl": [0.1, 1],
       "leakage_intensity_width_2": [0, 0.2],
-      "event_type": [32, 33]
+      "event_type": [32, 32]
     }
   },
-  "DL3FixedCuts": {
-    "fixed_gh_cut": 0.7,
-    "fixed_theta_cut": 0.2,
+  "DL3Cuts": {
+    "global_gh_cut": 0.7,
+    "gh_efficiency": 0.9,
+    "global_alpha_cut": 10,
+    "global_theta_cut": 0.2,
+    "theta_containment": 0.68,
     "allowed_tels": [1]
   },
   "DataBinning": {
     "true_energy_min": 0.01,
     "true_energy_max": 100,
-    "true_energy_n_bins_per_decade": 5.5,
+    "true_energy_n_bins_per_decade": 5,
     "reco_energy_min": 0.01,
     "reco_energy_max": 100,
-    "reco_energy_n_bins_per_decade": 5.5,
+    "reco_energy_n_bins_per_decade": 5,
     "energy_migration_min": 0.2,
     "energy_migration_max": 5,
     "energy_migration_n_bins": 31,

@@ -14,6 +14,18 @@
             "console"
           ]
         },
+        "ctapipe.core.provenance":{
+          "level": "INFO",
+          "handlers": [
+            "console"
+          ]
+        },
+        "ctapipe.core.traits":{
+          "level": "INFO",
+          "handlers": [
+            "console"
+          ]
+        },
         "ctapipe.io.hdf5tableio.HDF5TableWriter": {
           "level": "INFO",
           "handlers": [

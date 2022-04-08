@@ -23,9 +23,13 @@ import logging
 import sys
 from pathlib import Path
 
-from lstchain.io import  standard_config
+from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from lstchain.paths import (
+    parse_r0_filename,
+    r0_to_dl1_filename,
+    run_to_dl1_filename,
+)
 from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
@@ -61,6 +65,11 @@ parser.add_argument(
 parser.add_argument(
     '--time-calibration-file', '-t', type=Path,
     help='Path to a calibration file for pulse time correction'
+)
+
+parser.add_argument(
+    '--systematic-correction-file', '--systematics', type=Path,
+    help='Path to the file with the calibration systematics corrections'
 )
 
 parser.add_argument(
@@ -117,6 +126,21 @@ parser.add_argument(
 parser.add_argument(
     '--pedestal-ids-path', type=Path,
     help='Path to the file containing the event ids of interleaved pedestals',
+)
+
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
 )
 
 
@@ -185,6 +209,11 @@ def main():
     if args.time_calibration_file is not None:
         lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
 
+    calib_config = config[config['calibration_product']]
+    if args.systematic_correction_file is not None:
+        calib_config['systematic_correction_path'] = args.systematic_correction_file
+
+    lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

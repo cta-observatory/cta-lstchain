@@ -1,9 +1,14 @@
-from .config import get_standard_config, replace_config, read_configuration_file
+from .config import (
+    get_standard_config,
+    get_srcdep_config,
+    replace_config, 
+    read_configuration_file,
+)
 from .lstcontainers import (
     DL1ParametersContainer,
     DispContainer,
 )
-from .event_selection import EventSelector, DL3FixedCuts, DataBinning
+from .event_selection import EventSelector, DL3Cuts, DataBinning
 from .io import (
     get_dataset_keys,
     auto_merge_h5files,
@@ -21,12 +26,13 @@ from .io import (
     read_mc_dl2_to_QTable,
     read_data_dl2_to_QTable,
     HDF5_ZSTD_FILTERS,
-    get_srcdep_index_keys,
+    get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
 )
 
 standard_config = get_standard_config()
+srcdep_config = get_srcdep_config()
 
 __all__ = [
     'replace_config',
@@ -34,7 +40,7 @@ __all__ = [
     'DL1ParametersContainer',
     'DispContainer',
     'EventSelector',
-    'DL3FixedCuts',
+    'DL3Cuts',
     'DataBinning',
     'get_dataset_keys',
     'auto_merge_h5files',
@@ -52,7 +58,7 @@ __all__ = [
     'HDF5_ZSTD_FILTERS',
     'read_mc_dl2_to_QTable',
     'read_data_dl2_to_QTable',
-    'get_srcdep_index_keys',
+    'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'add_source_filenames'
 ]

@@ -16,32 +16,33 @@ $> python lstchain_dl1_to_dl2.py
 """
 
 import argparse
-import numpy as np
 import os
-import pandas as pd
-from tables import open_file
+
 import joblib
+import numpy as np
+import pandas as pd
 from ctapipe.instrument import SubarrayDescription
-from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
-from lstchain.reco import dl1_to_dl2
+from tables import open_file
+
 from lstchain.io import (
-    read_configuration_file,
-    standard_config,
-    replace_config,
-    write_dl2_dataframe,
     get_dataset_keys,
+    get_srcdep_params,
     global_metadata,
+    read_configuration_file,
+    replace_config,
+    standard_config,
+    write_dl2_dataframe,
     write_metadata,
-    get_srcdep_index_keys,
-    get_srcdep_params
 )
 from lstchain.io.io import (
+    dl1_images_lstcam_key,
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
-    dl1_images_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )
+from lstchain.reco import dl1_to_dl2
+from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
 
@@ -122,42 +123,55 @@ def main():
         data = filter_events(data,
                              filters=config["events_filters"],
                              finite_params=config['energy_regression_features']
-                             + config['disp_regression_features']
-                             + config['particle_classification_features']
-                             + config['disp_classification_features'],
+                                           + config['disp_regression_features']
+                                           + config['particle_classification_features']
+                                           + config['disp_classification_features'],
                              )
 
         if config['disp_method'] == 'disp_vector':
-            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector = reg_disp_vector, focal_length=focal_length,
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector=reg_disp_vector,
+                                          focal_length=focal_length,
                                           custom_config=config)
         elif config['disp_method'] == 'disp_norm_sign':
-            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, cls_disp_sign = cls_disp_sign, 
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
+                                          cls_disp_sign=cls_disp_sign,
                                           focal_length=focal_length, custom_config=config)
 
     # Source-dependent analysis
     if config['source_dependent']:
 
+        # if source-dependent parameters are already in dl1 data, just read those data.
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(args.input_file):
+            data_srcdep = get_srcdep_params(args.input_file)
+
+        # if not, source-dependent parameters are added now
+        else:
+            data_srcdep = pd.concat(dl1_to_dl2.get_source_dependent_parameters(
+                data, config, focal_length=focal_length), axis=1)
+
         dl2_srcdep_dict = {}
         srcindep_keys = data.keys()
-        srcdep_index_keys = get_srcdep_index_keys(args.input_file)
+        srcdep_assumed_positions = data_srcdep.columns.levels[0]
 
-        for i, k in enumerate(srcdep_index_keys):
-            data_srcdep = get_srcdep_params(args.input_file, k)
-            data_with_srcdep_param = pd.concat([data, data_srcdep], axis=1)
+        for i, k in enumerate(srcdep_assumed_positions):
+            data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
                                                    finite_params=config['energy_regression_features']
-                                                   + config['disp_regression_features']
-                                                   + config['particle_classification_features']
-                                                   + config['disp_classification_features'],
+                                                                 + config['disp_regression_features']
+                                                                 + config['particle_classification_features']
+                                                                 + config['disp_classification_features'],
                                                    )
 
             if config['disp_method'] == 'disp_vector':
-                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector = reg_disp_vector,
-                                                 focal_length = focal_length, custom_config = config)
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                 reg_disp_vector=reg_disp_vector,
+                                                 focal_length=focal_length, custom_config=config)
             elif config['disp_method'] == 'disp_norm_sign':
-                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
-                                                 cls_disp_sign = cls_disp_sign, focal_length = focal_length, custom_config = config)
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                 reg_disp_norm=reg_disp_norm,
+                                                 cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                                 custom_config=config)
 
             dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
@@ -166,7 +180,7 @@ def main():
                 dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2', 1))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
@@ -210,7 +224,8 @@ def main():
 
     else:
         write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
-        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config, meta=metadata)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
+                        meta=metadata)
 
 
 if __name__ == '__main__':

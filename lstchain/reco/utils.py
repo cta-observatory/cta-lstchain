@@ -33,6 +33,7 @@ __all__ = [
     "filter_events",
     "get_effective_time",
     "get_event_pos_in_camera",
+    "get_geomagnetic_delta",
     "impute_pointing",
     "linear_imputer",
     "polar_to_cartesian",
@@ -43,7 +44,6 @@ __all__ = [
     "sky_to_camera",
     "source_dx_dy",
     "source_side",
-    "get_geomagnetic_delta",
 ]
 
 # position of the LST1

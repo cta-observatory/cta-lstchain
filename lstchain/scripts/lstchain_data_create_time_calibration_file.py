@@ -16,11 +16,13 @@ $> python lstchain_data_create_time_calibration_file.py
 import argparse
 import glob
 import logging
-from traitlets.config.loader import Config
+
 from ctapipe.io import EventSource
-from lstchain.io.config import read_configuration_file
-from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
 from tqdm.auto import tqdm
+from traitlets.config.loader import Config
+
+from lstchain.calib.camera.time_correction_calculate import TimeCorrectionCalculate
+from lstchain.io.config import read_configuration_file
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +56,21 @@ parser.add_argument('--no-progress',
                     action='store_true',
                     help='Do not display a progress bar during event processing')
 
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
 
 def main():
     args = parser.parse_args()
@@ -75,9 +92,10 @@ def main():
 
     source_config = Config({
         "LSTEventSource": {
-            "max_events" : args.max_events,
+            "max_events": args.max_events,
             "pointing_information": False,
-            "default_trigger_type" : 'tib',
+            "default_trigger_type": 'tib',
+            "use_flatfield_heuristic": args.use_flatfield_heuristic,
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
             },
@@ -99,7 +117,7 @@ def main():
     )
 
     for i, path in enumerate(path_list):
-        log.info(f'File {i+1} out of {len(path_list)}')
+        log.info(f'File {i + 1} out of {len(path_list)}')
         log.info(f'Processing: {path}')
 
         reader = EventSource(input_url=path, config=config)
