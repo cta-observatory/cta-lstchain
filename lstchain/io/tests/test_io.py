@@ -145,3 +145,4 @@ def test_extract_simulation_nsb(mc_gamma_testfile):
     nsb = extract_simulation_nsb(mc_gamma_testfile)
     assert np.isclose(nsb[0], 0.317, rtol=0.1)
     assert np.isclose(nsb[1], 0.276, rtol=0.1)
+

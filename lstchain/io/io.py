@@ -1135,10 +1135,10 @@ def extract_simulation_nsb(filename):
 
 def check_mc_type(filename):
     """
-    Check MC type ('point_like', 'diffuse', 'ring_wobble') using DL1/DL2 MC file
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
     Parameters
     ----------
-    filename: path
+    filename:path (DL1/DL2 hdf file)
     Returns
     -------
     string
@@ -1155,26 +1155,11 @@ def check_mc_type(filename):
     elif min_viewcone == 0.0:
         mc_type = 'diffuse'
         
+    elif (max_viewcone - min_viewcone) < 0.1:
+        mc_type = 'ring_wobble'
+
     else:
-        # check if mc_type is 'ring_wobble' or not
-        dataset_keys = get_dataset_keys(filename)
-
-        if dl1_params_lstcam_key in dataset_keys:
-            df = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-        if dl2_params_lstcam_key in dataset_keys:
-            df = pd.read_hdf(filename, key=dl2_params_lstcam_key)
-
-        
-        src_r_m = np.sqrt(df['src_x']**2 + df['src_y']**2)
-        foclen = OPTICS.equivalent_focal_length.value
-        src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-
-        if  np.allclose(src_r_deg, min_viewcone, atol=0.1
-        ) and np.allclose(src_r_deg, max_viewcone, atol=0.1):
-            mc_type = 'ring_wobble'
-
-        else:
-            raise ValueError('mc type cannot be identified')
+        raise ValueError('mc type cannot be identified')
 
     return mc_type
             
