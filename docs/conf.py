@@ -47,6 +47,7 @@ extensions = [
     "nbsphinx",
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
+    "sphinxcontrib.mermaid",
 ]
 
 numpydoc_show_class_members = False

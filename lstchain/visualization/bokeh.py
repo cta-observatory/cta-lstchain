@@ -192,6 +192,10 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     """
 
+    if np.isfinite(content).sum() == 0:
+        # Nothing to plot...
+        return [None]
+
     # patch to reduce gaps between bokeh's cam circular pixels:
     camgeom = copy.deepcopy(geom)
 

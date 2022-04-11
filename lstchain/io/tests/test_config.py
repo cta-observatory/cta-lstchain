@@ -9,7 +9,7 @@ def test_get_srcdep_config():
     assert srcdep_config['source_dependent'] == True
     assert srcdep_config['mc_nominal_source_x_deg'] == 0.4
     assert srcdep_config['observation_mode'] == 'wobble'
-    assert srcdep_config['n_off_wobble'] == 3
+    assert srcdep_config['n_off_wobble'] == 1
 
 def test_replace_config():
     a = dict(toto=1, tata=2)

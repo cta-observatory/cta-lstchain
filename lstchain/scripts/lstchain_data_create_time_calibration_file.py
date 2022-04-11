@@ -56,6 +56,21 @@ parser.add_argument('--no-progress',
                     action='store_true',
                     help='Do not display a progress bar during event processing')
 
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
 
 def main():
     args = parser.parse_args()
@@ -80,6 +95,7 @@ def main():
             "max_events": args.max_events,
             "pointing_information": False,
             "default_trigger_type": 'tib',
+            "use_flatfield_heuristic": args.use_flatfield_heuristic,
             "EventTimeCalculator": {
                 "run_summary_path": args.run_summary_path,
             },
