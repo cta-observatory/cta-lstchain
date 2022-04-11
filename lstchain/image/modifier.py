@@ -103,7 +103,7 @@ def random_psf_smearer(image, fraction, indices, indptr):
     fraction: `float`
         Fraction of the light in a pixel that will be distributed among its
         immediate surroundings, i.e. immediate neighboring pixels, according
-        to Poisson statistics. Some light is lost for pixels  which are at
+        to binomial statistics. Some light is lost for pixels  which are at
         the camera edge and hence don't have all possible neighbors
 
     Returns
@@ -119,7 +119,7 @@ def random_psf_smearer(image, fraction, indices, indptr):
         if image[pixel] <= 0:
             continue
 
-        to_smear = np.random.poisson(image[pixel] * fraction)
+        to_smear = np.random.binomial(image[pixel], fraction)
 
         if to_smear == 0:
             continue
