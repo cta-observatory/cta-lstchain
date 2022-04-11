@@ -555,7 +555,6 @@ def r0_to_dl1(
                 add_config_metadata(extra_im, config)
 
                 focal_length = subarray.tel[telescope_id].optics.equivalent_focal_length
-                mirror_area = subarray.tel[telescope_id].optics.mirror_area
 
                 dl1_container.reset()
 
@@ -664,20 +663,16 @@ def r0_to_dl1(
                         if not tag_pix_thr(image):
                             good_ring = False
                         else:
-                            # read geometry from event.inst. But not needed for every event. FIXME?
-                            geom = subarray.tel[telescope_id].\
-                                camera.geometry
-
                             muonintensityparam, dist_mask, \
                             ring_size, size_outside_ring, muonringparam, \
                             good_ring, radial_distribution, \
                             mean_pixel_charge_around_ring,\
                             muonpars = \
                                 analyze_muon_event(subarray,
-                                                   event.index.event_id,
-                                                   image, geom, focal_length,
-                                                   mirror_area, False, '')
-                            #                      mirror_area, True, './')
+                                                   tel_id, event.index.event_id,
+                                                   image, good_ring_config=None,
+                                                   plot_rings=False, plots_path='')
+                            #                      plot_rings=True, plots_path='./')
                             #           (test) plot muon rings as png files
 
                             # Now we want to obtain the waveform sample (in HG & LG) at which the ring light peaks:

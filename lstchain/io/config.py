@@ -42,6 +42,7 @@ def get_standard_config():
     standard_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_standard_config.json")
     return read_configuration_file(standard_config_file)
 
+
 def get_srcdep_config():
     """
     Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'
@@ -52,6 +53,7 @@ def get_srcdep_config():
     """
     srcdep_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_src_dep_config.json")
     return read_configuration_file(srcdep_config_file)
+
 
 def replace_config(base_config, new_config):
     """
@@ -92,3 +94,4 @@ def get_cleaning_parameters(config, clean_method_name):
     isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
     min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
+

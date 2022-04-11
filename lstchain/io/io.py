@@ -529,7 +529,7 @@ def check_mcheader(mcheader1, mcheader2):
         v1 = mcheader1[k]
         v2 = mcheader2[k]
         if v1 != v2:
-            raise ValueError('MC headers do not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'MC headers do not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -614,7 +614,7 @@ def check_metadata(metadata1, metadata2):
         v1 = metadata1[k]
         v2 = metadata2[k]
         if v1 != v2:
-            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():

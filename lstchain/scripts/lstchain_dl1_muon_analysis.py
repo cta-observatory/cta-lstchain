@@ -114,10 +114,6 @@ def main():
         print('Opening file', filename)
 
         subarray = SubarrayDescription.from_hdf(filename)
-        telescope_description = subarray.tel[lst1_tel_id]
-        geom = telescope_description.camera.geometry
-        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
-        mirror_area = telescope_description.optics.mirror_area
 
         images = Table.read(filename, path=dl1_images_lstcam_key)['image']
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
@@ -155,9 +151,9 @@ def main():
                 muonintensityparam, dist_mask, size, size_outside_ring,
                 muonringparam, good_ring, radial_distribution,
                 mean_pixel_charge_around_ring, muonparameters
-            ) = analyze_muon_event(subarray,
-                                   event_id, image, geom, equivalent_focal_length,
-                                   mirror_area, args.plot_rings, args.plots_path
+            ) = analyze_muon_event(subarray, lst1_tel_id, event_id,
+                                   image, good_ring_config=None,
+                                   plot_rings=args.plot_rings, plots_path=args.plots_path
                                    )
 
             if good_ring:
