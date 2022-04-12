@@ -52,6 +52,11 @@ class DL3Cuts(Component):
     Selection cuts for DL2 to DL3 conversion
     """
 
+    min_event_p_en_bin = Float(
+        help="Minimum events per energy bin, to evaluate percentile cuts",
+        default_value=100,
+    ).tag(config=True)
+
     global_gh_cut = Float(
         help="Global selection cut for gh_score (gammaness)",
         default_value=0.6,
@@ -62,18 +67,44 @@ class DL3Cuts(Component):
         default_value=0.95,
     ).tag(config=True)
 
+    min_gh_cut = Float(
+        help="Minimum gh_score (gammaness) cut in an energy bin",
+        default_value=0.1,
+    ).tag(config=True)
+
+    max_gh_cut = Float(
+        help="Maximum gh_score (gammaness) cut in an energy bin",
+        default_value=0.95,
+    ).tag(config=True)
+
+    min_theta_cut = Float(
+        help="Minimum theta cut (deg) in an energy bin",
+        default_value=0.05,
+    ).tag(config=True)
+
+    max_theta_cut = Float(
+        help="Maximum theta cut (deg) in an energy bin",
+        default_value=0.32,
+    ).tag(config=True)
+
+    fill_theta_cut = Float(
+        help="Fill value of theta cut (deg) in an energy bin with fewer " +
+            "than minimum number of events present",
+        default_value=0.32,
+    ).tag(config=True)
+
     theta_containment = Float(
         help="Percentage containment region for theta cuts",
         default_value=0.68,
     ).tag(config=True)
 
     global_theta_cut = Float(
-        help="Global selection cut for theta",
+        help="Global selection cut (deg) for theta",
         default_value=0.2,
     ).tag(config=True)
 
     global_alpha_cut = Float(
-        help="Global selection cut for alpha",
+        help="Global selection cut (deg) for alpha",
         default_value=20,
     ).tag(config=True)
 
@@ -90,8 +121,7 @@ class DL3Cuts(Component):
         return data[data["gh_score"] > self.global_gh_cut]
 
     def energy_dependent_gh_cuts(
-        self, data, energy_bins, min_value=0.1,
-        max_value=0.99, smoothing=None, min_events=10
+        self, data, energy_bins, smoothing=None
     ):
         """
         Evaluating energy-dependent gammaness cuts, in a given
@@ -103,12 +133,12 @@ class DL3Cuts(Component):
             data["gh_score"],
             data["reco_energy"],
             bins=energy_bins,
-            min_value=min_value,
-            max_value=max_value,
+            min_value=self.min_gh_cut,
+            max_value=self.max_gh_cut,
             fill_value=data["gh_score"].max(),
             percentile=100 * (1 - self.gh_efficiency),
             smoothing=smoothing,
-            min_events=min_events,
+            min_events=self.min_event_p_en_bin,
         )
         return gh_cuts
 
@@ -128,7 +158,7 @@ class DL3Cuts(Component):
             data["gh_score"],
             data["reco_energy"],
             gh_cuts,
-            operator.ge,
+            operator.gt,
         )
         return data[data["selected_gh"]]
 
@@ -139,9 +169,7 @@ class DL3Cuts(Component):
         return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
     def energy_dependent_theta_cuts(
-        self, data, energy_bins, min_value=0.05 * u.deg,
-        fill_value=0.32 * u.deg, max_value=0.32 * u.deg,
-        smoothing=None, min_events=10
+        self, data, energy_bins, smoothing=None,
     ):
         """
         Evaluating an optimized energy-dependent theta cuts, in a given
@@ -155,12 +183,12 @@ class DL3Cuts(Component):
             data["theta"],
             data["reco_energy"],
             bins=energy_bins,
-            min_value=min_value,
-            max_value=max_value,
-            fill_value=fill_value,
+            min_value=self.min_theta_cut * u.deg,
+            max_value=self.max_theta_cut * u.deg,
+            fill_value=self.fill_theta_cut * u.deg,
             percentile=100 * self.theta_containment,
             smoothing=smoothing,
-            min_events=min_events,
+            min_events=self.min_event_p_en_bin,
         )
         return theta_cuts
 
@@ -174,7 +202,7 @@ class DL3Cuts(Component):
             data["theta"],
             data["reco_energy"],
             theta_cuts,
-            operator.le,
+            operator.lt,
         )
         return data[data["selected_theta"]]
 
