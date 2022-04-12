@@ -32,6 +32,11 @@ jobs:
   tests:
     needs: pyflakes
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
     strategy:
       matrix:
         # we currently only support python 3.7 since traitlets 5 requires 3.7
@@ -86,10 +91,6 @@ jobs:
 
       - name: Tests
         run: |
-          # github actions starts a new shell for each "step", so we need to
-          # activate our env again
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate ci
           pytest -n auto --dist loadscope --cov --cov-report=xml -m 'private_data or not private_data' lstchain
 
       - uses: codecov/codecov-action@v1
