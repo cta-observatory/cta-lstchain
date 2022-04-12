@@ -32,7 +32,8 @@ docs_require = [
     "sphinx_argparse",
     "sphinx_rtd_theme",
     "numpydoc",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinxcontrib-mermaid"
 ]
 
 setup(

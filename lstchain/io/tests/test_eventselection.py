@@ -63,6 +63,7 @@ def test_dl3_energy_dependent_cuts():
 
     temp_cuts.gh_max_efficiency = 0.8
     temp_cuts.theta_containment = 0.68
+    temp_cuts.min_event_p_en_bin = 2
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
@@ -74,11 +75,11 @@ def test_dl3_energy_dependent_cuts():
     en_range = u.Quantity([0.01, 0.1, 1, 10, 100, np.inf], unit=u.TeV)
 
     theta_cut = temp_cuts.energy_dependent_theta_cuts(
-        temp_data, en_range, min_events=2
+        temp_data, en_range,
     )
 
     gh_cut = temp_cuts.energy_dependent_gh_cuts(
-        temp_data, en_range, min_events=2
+        temp_data, en_range,
     )
 
     data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
