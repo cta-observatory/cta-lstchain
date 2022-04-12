@@ -44,10 +44,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Prepare conda installation
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          # fix mamba error that the directory does not exist
+          mkdir -p ~/conda_pkgs_dir/cache
+          # setup correct python version
+          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
+
+      - name: Conda setup
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          mamba-version: "*"
+          auto-update-conda: true
+          activate-environment: "lst-dev"
+          environment-file: environment.yml
 
       - name: Install dependencies
         env:
@@ -55,15 +67,7 @@ jobs:
           CTAPIPE_VERSION: ${{ matrix.ctapipe-version }}
 
         run: |
-          . $CONDA/etc/profile.d/conda.sh
-          conda config --set always_yes yes --set changeps1 no
-          sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
-
-          echo "Creating conda env"
-          conda install -c conda-forge mamba
-          mamba env create -n ci -f environment.yml
-          conda activate ci
-
+          python --version
           echo "Installing additional pip packages"
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
