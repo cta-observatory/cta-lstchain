@@ -409,7 +409,6 @@ class IRFFITSWriter(Tool):
                 if self.energy_dependent_alpha:
                     self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
                         gammas, reco_energy_bins,
-                        min_value=1 * u.deg, max_value=90 * u.deg,
                     )
                     gammas = self.cuts.apply_energy_dependent_alpha_cuts(
                         gammas, self.alpha_cuts

@@ -103,6 +103,22 @@ class DL3Cuts(Component):
         default_value=0.2,
     ).tag(config=True)
 
+    min_alpha_cut = Float(
+        help="Minimum alpha cut (deg) in an energy bin",
+        default_value=1,
+    ).tag(config=True)
+
+    max_alpha_cut = Float(
+        help="Maximum alpha cut (deg) in an energy bin",
+        default_value=45,
+    ).tag(config=True)
+
+    fill_alpha_cut = Float(
+        help="Fill value of alpha cut (deg) in an energy bin with fewer " +
+            "than minimum number of events present",
+        default_value=45,
+    ).tag(config=True)
+
     alpha_containment = Float(
         help="Percentage containment region for alpha cuts",
         default=0.68,
@@ -213,8 +229,7 @@ class DL3Cuts(Component):
         return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
     def energy_dependent_alpha_cuts(
-            self, data, energy_bins, min_value=1 * u.deg,
-            max_value=90 * u.deg, smoothing=None, min_events=10
+            self, data, energy_bins, smoothing=None
     ):
         """
         Evaluating an optimized energy-dependent alpha cuts, in a given
@@ -227,12 +242,12 @@ class DL3Cuts(Component):
             data["alpha"],
             data["reco_energy"],
             bins=energy_bins,
-            min_value=min_value,
-            max_value=max_value,
-            fill_value=data["alpha"].max(),
+            min_value=self.min_alpha_cut * u.deg,
+            max_value=self.max_alpha_cut * u.deg,
+            fill_value=self.fill_alpha_cut * u.deg,
             percentile=100 * self.alpha_containment,
             smoothing=smoothing,
-            min_events=min_events,
+            min_events=self.min_event_p_en_bin,
         )
         return alpha_cuts
         
@@ -246,7 +261,7 @@ class DL3Cuts(Component):
             data["alpha"],
             data["reco_energy"],
             alpha_cuts,
-            operator.le,
+            operator.lt,
         )
         return data[data["selected_alpha"]]
             
