@@ -73,6 +73,21 @@ optional.add_argument('--no_pro_symlink', action="store_true",
 
 optional.add_argument('--config', help="Config file", default=DEFAULT_CONFIG, type=Path)
 
+optional.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
 
 
 def main():
@@ -180,6 +195,12 @@ def main():
 
                 if no_sys_correction:
                     cmd.append("--no_sys_correction")
+
+                if args.use_flatfield_heuristic is True:
+                    cmd.append("--flatfield-heuristic")
+
+                if args.use_flatfield_heuristic is False:
+                    cmd.append("--no-flatfield-heuristic")
 
                 # join command together with newline, line continuation and indentation
                 fh.write(" \\\n  ".join(cmd))
