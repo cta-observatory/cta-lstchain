@@ -7,8 +7,10 @@ import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
 from ctapipe.core.traits import List, Path
-from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from ctapipe.image.extractor import ImageExtractor
+
+from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from lstchain.statistics import sigma_clipped_mean_std
 
 
 __all__ = [
@@ -265,11 +267,8 @@ def calculate_pedestal_results(self,
     # median over the sample per pixel
     pixel_median = np.ma.median(masked_trace_integral, axis=0)
 
-    # mean over the sample per pixel
-    pixel_mean = np.ma.mean(masked_trace_integral, axis=0)
-
-    # std over the sample per pixel
-    pixel_std = np.ma.std(masked_trace_integral, axis=0)
+    # mean and std over the sample per pixel
+    pixel_mean, pixel_std, _ = sigma_clipped_mean_std(masked_trace_integral, axis=0)
 
     # median over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -285,15 +284,17 @@ def calculate_pedestal_results(self,
 
     # outliers from standard deviation
     deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
-    charge_std_outliers = (
-        np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
-                      deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis]))
+    charge_std_outliers = np.logical_or(
+        deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
+        deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis],
+    )
 
     # outliers from median
     deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-    charge_median_outliers = (
-        np.logical_or(deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
-                      deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis]))
+    charge_median_outliers = np.logical_or(
+        deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
+        deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
+    )
 
     return {
         'charge_median': np.ma.getdata(pixel_median),

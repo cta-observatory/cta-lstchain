@@ -66,3 +66,24 @@ class OnlineStats:
     def std(self):
         '''Get the current sample std. dev. of all tracked statistics'''
         return np.sqrt(self.var)
+
+
+
+def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
+    '''
+    Compute robust estimates of mean and std via sigma clipping
+
+    Values outside max_sigma * std are removed from the sample and then
+    mean and std are computed again.
+    '''
+
+    mean = np.mean(values, axis=axis)
+    std = np.std(values, axis=axis)
+    mask = np.ones(values.shape, dtype=bool)
+    
+    for _ in range(n_iterations):
+        mask = np.abs(values - mean) < (max_sigma * std)
+        mean = np.mean(values, where=mask, axis=axis)
+        std = np.std(values, where=mask, axis=axis)
+
+    return mean, std, mask

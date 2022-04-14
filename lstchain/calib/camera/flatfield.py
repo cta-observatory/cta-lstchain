@@ -8,6 +8,7 @@ from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 from ctapipe.core.traits import  List, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from ctapipe.image.extractor import ImageExtractor
+from lstchain.statistics import sigma_clipped_mean_std
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -305,14 +306,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             mask=masked_pixels_of_sample
         )
 
+        pixel_mean, pixel_std, mask = sigma_clipped_mean_std(masked_trace_integral)
+
         # median over the sample per pixel
         pixel_median = np.ma.median(masked_trace_integral, axis=0)
-
-        # mean over the sample per pixel
-        pixel_mean = np.ma.mean(masked_trace_integral, axis=0)
-
-        # std over the sample per pixel
-        pixel_std = np.ma.std(masked_trace_integral, axis=0)
 
         # median of the median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
