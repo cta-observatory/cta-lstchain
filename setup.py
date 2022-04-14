@@ -32,17 +32,18 @@ docs_require = [
     "sphinx_argparse",
     "sphinx_rtd_theme",
     "numpydoc",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinxcontrib-mermaid"
 ]
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
-    packages=find_packages(),
+    packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
         'astropy~=4.2',
         'bokeh~=1.0',
         'ctapipe~=0.12.0',
-        'ctapipe_io_lst~=0.15.0',
+        'ctapipe_io_lst~=0.18.1',
         'ctaplot~=0.5.5',
         'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.19.0',
@@ -61,6 +62,7 @@ setup(
         'pymongo',
         'pyparsing',
         'setuptools_scm',
+        'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
         "all": tests_require + docs_require,

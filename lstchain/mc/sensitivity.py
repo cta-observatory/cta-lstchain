@@ -210,7 +210,7 @@ def diff_events_after_cut(events, rates, obstime, feature, cut, gamma_efficiency
     gamma_efficiency: `float` target gamma efficiency for the cut
 
     Returns
-    ---------
+    -------
     midpoint: `float` cut in feature
 
     """

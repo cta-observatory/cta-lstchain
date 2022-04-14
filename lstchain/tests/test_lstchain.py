@@ -10,6 +10,7 @@ import tables
 from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
+from lstchain.reco.dl1_to_dl2 import build_models
 
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
@@ -151,22 +152,46 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 
 
 def test_build_models(simulated_dl1_file, rf_models):
-    from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
-
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.21,
+            "proton_classifier": 0.98
+        }
+    }
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = build_models(
         infile,
         infile,
-        custom_config=standard_config,
-        save_models=False
+        save_models=False,
+        custom_config=custom_config
     )
 
     import joblib
 
-    joblib.dump(reg_energy, rf_models["energy"])
-    joblib.dump(cls_gh, rf_models["gh_sep"])
-    joblib.dump(reg_disp_norm, rf_models["disp_norm"])
-    joblib.dump(cls_disp_sign, rf_models["disp_sign"])
+    joblib.dump(reg_energy, rf_models["energy"], compress=3)
+    joblib.dump(cls_gh, rf_models["gh_sep"], compress=3)
+    joblib.dump(reg_disp_norm, rf_models["disp_norm"], compress=3)
+    joblib.dump(cls_disp_sign, rf_models["disp_sign"], compress=3)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_fail_build_models(simulated_dl1_file):
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.31,
+            "proton_classifier": 0.98
+        }
+    }
+    _, _, _, _ = build_models(
+        simulated_dl1_file,
+        simulated_dl1_file,
+        save_models=False,
+        custom_config=custom_config
+    )
 
 
 def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):

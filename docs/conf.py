@@ -47,6 +47,7 @@ extensions = [
     "nbsphinx",
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
+    "sphinxcontrib.mermaid",
 ]
 
 numpydoc_show_class_members = False
@@ -61,7 +62,7 @@ templates_path = ['_templates']
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.6", None),
     "numpy": ("https://numpy.org/doc/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "astropy": ("https://docs.astropy.org/en/latest/", None),
     "pytables": ("https://www.pytables.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
