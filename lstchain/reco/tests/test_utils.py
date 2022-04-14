@@ -103,6 +103,9 @@ def test_filter_events():
     from lstchain.reco.utils import filter_events
 
     df = pd.DataFrame({"a": [1, 2, 3], "b": [np.nan, 2.2, 3.2], "c": [1, 2, np.inf]})
+
+    np.testing.assert_array_equal(filter_events(df), df)
+
     np.testing.assert_array_equal(
         filter_events(
             df,

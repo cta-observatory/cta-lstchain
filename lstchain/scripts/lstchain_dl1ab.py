@@ -74,7 +74,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--no-image', action='store_true',
-    help='Boolean. True to remove the images in output file',
+    help='Pass this argument to avoid writing the images in the new DL1 files. Beware, if `increase_nsb` or `increase_psf` are True in the config, the images will not be written.',
 )
 
 parser.add_argument(
@@ -118,7 +118,7 @@ def main():
         transition_charge = imconfig["transition_charge"]
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-        if (increase_nsb or increase_psf) and args.no_image is False:
+        if (increase_nsb or increase_psf):
             log.info("NOTE: Using the image_modifier options means images will "
                      "not be saved.")
             args.no_image = True

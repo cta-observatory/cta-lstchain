@@ -1,7 +1,7 @@
 {
   "source_config" : {
     "EventSource": {
-      "allowed_tels": [1, 2, 3, 4],
+      "allowed_tels": [1],
       "max_events": null
     },
     "LSTEventSource": {
@@ -35,18 +35,24 @@
     "r": [0, Infinity],
     "leakage_intensity_width_2": [0, Infinity]
   },
+  "n_training_events": {
+    "gamma_regressors": 1.0,
+    "gamma_tmp_regressors": 0.8,
+    "gamma_classifier": 0.2,
+    "proton_classifier": 1.0
+  },
 
   "tailcut": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
+    "picture_thresh":8,
+    "boundary_thresh":4,
     "keep_isolated_pixels":false,
     "min_number_picture_neighbors":2,
     "use_only_main_island":false,
     "delta_time": 2
   },
   "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
+    "picture_thresh":8,
+    "boundary_thresh":4,
     "sigma":2.5,
     "keep_isolated_pixels":false,
     "min_number_picture_neighbors":2,
@@ -60,7 +66,7 @@
   },
 
   "random_forest_energy_regressor_args": {
-    "max_depth": 50,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 150,
@@ -69,7 +75,7 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
@@ -78,7 +84,7 @@
   },
 
   "random_forest_disp_regressor_args": {
-    "max_depth": 50,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 150,
@@ -87,7 +93,7 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
@@ -96,12 +102,12 @@
   },
 
   "random_forest_disp_classifier_args": {
-    "max_depth": 100,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 100,
     "criterion": "gini",
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "max_features": "auto",
     "max_leaf_nodes": null,
@@ -115,12 +121,12 @@
   },
 
   "random_forest_particle_classifier_args": {
-    "max_depth": 100,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 100,
     "criterion": "gini",
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "max_features": "auto",
     "max_leaf_nodes": null,

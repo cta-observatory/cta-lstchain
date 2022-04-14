@@ -1,21 +1,27 @@
 {
   "EventSelector": {
     "filters": {
-      "intensity": [100, Infinity],
+      "intensity": [0, Infinity],
       "width": [0, Infinity],
       "length": [0, Infinity],
       "r": [0, 1],
-      "wl": [0.1, 1],
-      "leakage_intensity_width_2": [0, 0.2],
+      "wl": [0.01, 1],
+      "leakage_intensity_width_2": [0, 1],
       "event_type": [32, 32]
     }
   },
   "DL3Cuts": {
+    "min_event_p_en_bin": 100,
     "global_gh_cut": 0.7,
     "gh_efficiency": 0.9,
+    "min_gh_cut": 0.1,
+    "max_gh_cut": 0.95,
     "global_alpha_cut": 10,
     "global_theta_cut": 0.2,
     "theta_containment": 0.68,
+    "min_theta_cut": 0.05,
+    "max_theta_cut": 0.32,
+    "fill_theta_cut": 0.32,
     "allowed_tels": [1]
   },
   "DataBinning": {

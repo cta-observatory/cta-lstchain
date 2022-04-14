@@ -375,7 +375,7 @@ class IRFFITSWriter(Tool):
 
         if self.energy_dependent_gh:
             self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
-                gammas, reco_energy_bins, min_value=0.1, max_value=0.95
+                gammas, reco_energy_bins
             )
             gammas = self.cuts.apply_energy_dependent_gh_cuts(
                 gammas, self.gh_cuts_gamma
@@ -394,7 +394,6 @@ class IRFFITSWriter(Tool):
             if self.energy_dependent_theta:
                 self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
                     gammas, reco_energy_bins,
-                    min_value=0.05 * u.deg, max_value=0.32 * u.deg,
                 )
                 gammas = self.cuts.apply_energy_dependent_theta_cuts(
                     gammas, self.theta_cuts
