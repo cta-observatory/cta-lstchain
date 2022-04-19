@@ -5,10 +5,12 @@ Factory for the estimation of the flat field coefficients
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Path
+from ctapipe.core.traits import  List, Float, Path
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from ctapipe.image.extractor import ImageExtractor
-
+from ctapipe_io_lst.constants import (
+    HIGH_GAIN, LOW_GAIN
+)
 __all__ = [
     'FlasherFlatFieldCalculator'
 ]
@@ -42,6 +44,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     time_cut_outliers = List(
         [0, 60], help="Interval (in waveform samples) of accepted time values"
     ).tag(config=True)
+
+    time_std_cut_outliers = Float(
+        3,
+        help='Maximum pulse time standard deviation per event over the camera (in ns)'
+    ).tag(config=True)
+
 
     time_sampling_correction_path = Path(
         default_value=None,
@@ -166,7 +174,14 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # the peak position (assumed as time for the moment)
         charge, arrival_time = self._extract_charge(event)
 
-        self.collect_sample(charge, pixel_mask, arrival_time)
+        # false, if the event is rejected as FF event
+        if not self.collect_sample(charge, pixel_mask, arrival_time):
+            self.log.info(f"Event {event.index.event_id} is rejected, "
+                          f"trigger type {event.trigger.event_type}, "
+                          f"trigger bits : "
+                          f"ucst = {event.lst.tel[1].evt.ucts_trigger_type}, "
+                          f"tib {event.lst.tel[1].evt.tib_masked_trigger}")
+            return False
 
         sample_age = self.trigger_time - self.time_start
 
@@ -240,17 +255,30 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     def collect_sample(self, charge, pixel_mask, arrival_time):
         """Collect the sample data"""
 
-        # extract the charge of the event and
-        # the peak position (assumed as time for the moment)
+        # verify the time std to reject False FF events
+        # time std of FF events is ~ 1.5 ns for the correct gain channel
 
-        good_charge = np.ma.array(charge, mask=pixel_mask)
-        charge_median = np.ma.median(good_charge, axis=1)
+        good_time = np.ma.array(arrival_time, mask=pixel_mask)
+        std_arrival_time = np.ma.std(good_time, axis=1)
+        good_FF = (std_arrival_time[HIGH_GAIN] and std_arrival_time[LOW_GAIN]) < self.time_std_cut_outliers
 
-        self.charges[self.num_events_seen] = charge
-        self.arrival_times[self.num_events_seen] = arrival_time
-        self.sample_masked_pixels[self.num_events_seen] = pixel_mask
-        self.charge_medians[self.num_events_seen] = charge_median
-        self.num_events_seen += 1
+        if good_FF:
+            # extract the charge of the event and
+            # the peak position (assumed as time for the moment)
+            good_charge = np.ma.array(charge, mask=pixel_mask)
+            charge_median = np.ma.median(good_charge, axis=1)
+
+            self.charges[self.num_events_seen] = charge
+            self.arrival_times[self.num_events_seen] = arrival_time
+            self.charge_medians[self.num_events_seen] = charge_median
+            self.sample_masked_pixels[self.num_events_seen] = pixel_mask
+            self.num_events_seen += 1
+
+        else:
+            self.log.info(f"Event with high time std (HG, LG) = {std_arrival_time} in ns")
+
+        return good_FF
+
 
     def calculate_time_results(
         self,
