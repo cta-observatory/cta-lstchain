@@ -59,14 +59,11 @@ class CalibrationCalculator(Component):
         default_value='FlasherFlatFieldCalculator'
     )
 
-    classes = List([
-                    FlatFieldCalculator,
-                    PedestalCalculator
-                    ]
-                   + traits.classes_with_traits(FlatFieldCalculator)
-                   + traits.classes_with_traits(PedestalCalculator)
-
-                   )
+    classes = (
+        [FlatFieldCalculator, PedestalCalculator]
+        + traits.classes_with_traits(FlatFieldCalculator)
+        + traits.classes_with_traits(PedestalCalculator)
+    )
 
     def __init__(
         self,

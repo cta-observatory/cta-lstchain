@@ -65,20 +65,22 @@ class CalibrationHDF5Writer(Tool):
         help='Maximum high-gain camera median charge per pixel (ADC) for pedestal MC events'
     ).tag(config=True)
 
-    aliases = Dict(dict(
-        input_file='EventSource.input_url',
-        max_events='EventSource.max_events',
-        output_file='CalibrationHDF5Writer.output_file',
-        calibration_product='CalibrationHDF5Writer.calibration_product',
-        events_to_skip='CalibrationHDF5Writer.events_to_skip'
-    ))
+    aliases = {
+        ("i", "input_file"): 'EventSource.input_url',
+        ("m", "max_events"): 'EventSource.max_events',
+        ("o", "output_file"): 'CalibrationHDF5Writer.output_file',
+        ("p", "pedestal_file"): "LSTEventSource.LSTR0Corrections.drs4_pedestal_path",
+        ("s", "systematics_file"): "LSTCalibrationCalculator.systematic_correction_path",
+        ("r", "run_summary_file"): "LSTEventSource.EventTimeCalculator.run_summary_path",
+        ("t", "time_calibration_file"): "LSTEventSource.LSTR0Corrections.drs4_time_calibration_path",
+        "events_to_skip": 'CalibrationHDF5Writer.events_to_skip',
+    }
 
-    classes = List([EventSource,
-                    CalibrationCalculator
-                    ]
-                   + traits.classes_with_traits(CalibrationCalculator)
-                   + traits.classes_with_traits(EventSource)
-                   )
+    classes = (
+        [EventSource, CalibrationCalculator]
+        + traits.classes_with_traits(CalibrationCalculator)
+        + traits.classes_with_traits(EventSource)
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
