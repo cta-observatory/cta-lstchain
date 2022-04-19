@@ -44,6 +44,7 @@ __all__ = [
     "sky_to_camera",
     "source_dx_dy",
     "source_side",
+    "get_geomagnetic_delta"
 ]
 
 # position of the LST1
@@ -690,7 +691,6 @@ def get_effective_time(events):
     t_eff = t_elapsed / (1 + rate * dead_time)
 
     return t_eff, t_elapsed
-
 
 
 def get_geomagnetic_field_orientation(time=None):

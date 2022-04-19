@@ -9,9 +9,16 @@ from .hdu_table import (
     create_event_list,
     create_hdu_index_hdu,
     create_obs_index_hdu,
-    get_pointing_params,
     get_timing_params,
+    get_pointing_params,
     set_expected_pos_to_reco_altaz,
+)
+from .interpolate import (
+    interp_params,
+    check_in_delaunay_triangle,
+    compare_irfs,
+    load_irf_grid,
+    interpolate_irf,
 )
 
 __all__ = [
@@ -21,8 +28,13 @@ __all__ = [
     "create_event_list",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
-    "get_pointing_params",
     "get_timing_params",
+    "get_pointing_params",
+    "interp_params",
+    "check_in_delaunay_triangle",
+    "compare_irfs",
+    "load_irf_grid",
+    "interpolate_irf",
     "set_expected_pos_to_reco_altaz",
     'setup_logging',
 ]

@@ -24,6 +24,7 @@ from eventio.simtel.objects import History, HistoryConfig
 
 from pyirf.simulations import SimulatedEventsInfo
 
+from lstchain.reco.utils import get_geomagnetic_delta
 from .lstcontainers import (
     ExtraMCInfo,
     MetaData,
@@ -846,7 +847,8 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
-    - astropy.table.QTable
+    - astropy.table.QTable.
+    Also include simulation information necessary for some functions.
 
     Parameters
     ----------
@@ -854,9 +856,11 @@ def read_mc_dl2_to_QTable(filename):
 
     Returns
     -------
-    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    events: `astropy.table.QTable`
+    pyirf_simu_info: `pyirf.simulations.SimulatedEventsInfo`
+    extra_data: 'Dict'
     """
-    
+
     # mapping
     name_mapping = {
         "mc_energy": "true_energy",
@@ -880,18 +884,33 @@ def read_mc_dl2_to_QTable(filename):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
     simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Temporary addition here, but can be included in the pyirf.simulations
+    # class of SimulatedEventsInfo
+    extra_data = {}
+    extra_data["GEOMAG_TOTAL"] = simu_info.prod_site_B_total
+    extra_data["GEOMAG_DEC"] = simu_info.prod_site_B_declination
+    extra_data["GEOMAG_INC"] = simu_info.prod_site_B_inclination
+
+    extra_data["GEOMAG_DELTA"] = get_geomagnetic_delta(
+        zen = np.pi/2 - simu_info.min_alt.to_value(u.rad),
+        az = simu_info.min_az.to_value(u.rad),
+        geomag_dec = simu_info.prod_site_B_declination.to_value(u.rad),
+        geomag_inc = simu_info.prod_site_B_inclination.to_value(u.rad)
+    ) * u.rad
+
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius,
+        viewcone=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
@@ -907,12 +926,14 @@ def read_mc_dl2_to_QTable(filename):
     for k, v in unit_mapping.items():
         events[k] *= v
 
-    return events, pyirf_simu_info
+    return events, pyirf_simu_info, extra_data
 
 
 def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
-    Read data DL2 files from lstchain and return QTable format
+    Read data DL2 files from lstchain and return QTable format, along with
+    a dict of target parameters for IRF interpolation
+
     Parameters
     ----------
     filename: path to the lstchain DL2 file
@@ -920,7 +941,8 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     Returns
     -------
-    `astropy.table.QTable`
+    data: `astropy.table.QTable`
+    data_params: 'Dict' of target interpolation parameters
     """
 
     # Mapping
@@ -940,7 +962,7 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
@@ -951,14 +973,24 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
         data = pd.concat([data, data_srcdep], axis=1)
 
     data = data.rename(columns=name_mapping)
-
     data = QTable.from_pandas(data)
 
     # Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
 
-    return data
+    # Create dict of target parameters for IRF interpolation
+    data_params = {}
+
+    zen = np.pi / 2 * u.rad - data["pointing_alt"].mean().to(u.rad)
+    az = data["pointing_az"].mean().to(u.rad)
+    b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
+
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 1) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 1) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 1) * u.deg
+
+    return data, data_params
 
 
 def read_dl2_params(t_filename, columns_to_read=None):
@@ -1130,4 +1162,3 @@ def extract_simulation_nsb(filename):
                 except Exception as e:
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
-

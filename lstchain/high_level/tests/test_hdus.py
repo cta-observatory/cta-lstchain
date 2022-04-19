@@ -15,7 +15,7 @@ def dl3_file(tmp_dl3_path, observed_dl2_file, simulated_irf_file):
     from astropy.coordinates import SkyCoord
     from astropy.io import fits
 
-    events = read_data_dl2_to_QTable(observed_dl2_file)
+    events, data_pars = read_data_dl2_to_QTable(observed_dl2_file)
     t_eff, t_tot = get_effective_time(events)
     events = events[events["intensity"] > 200]
     source_pos = SkyCoord(ra=83.633, dec=22.01, unit="deg")
@@ -28,6 +28,7 @@ def dl3_file(tmp_dl3_path, observed_dl2_file, simulated_irf_file):
         source_pos=source_pos,
         effective_time=t_eff.value,
         elapsed_time=t_tot.value,
+        data_pars=data_pars
     )
 
     name = observed_dl2_file.name

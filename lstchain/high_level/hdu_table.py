@@ -9,12 +9,14 @@ from astropy.io import fits
 from astropy.table import Table, QTable
 from astropy.time import Time
 
-from lstchain.__init__ import __version__
 from lstchain.reco.utils import location, camera_to_altaz
+from lstchain.__init__ import __version__
+
 
 __all__ = [
     "add_icrs_position_params",
     "create_event_list",
+    "get_timing_params",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
     "get_pointing_params",
@@ -232,9 +234,8 @@ def create_hdu_index_hdu(
 
 def get_timing_params(data):
     """
-    Get event lists and retrieve some timing parameters for the DL3 event list
-    as a dict
-
+    Retrieve some timing parameters for the DL3 event list
+    as a dict.
     """
     time_utc = Time(data["dragon_time"], format="unix", scale="utc")
     t_start_iso = time_utc[0].to_value("iso", "date_hms")
@@ -321,7 +322,7 @@ def add_icrs_position_params(data, source_pos):
 def set_expected_pos_to_reco_altaz(data):
     """
     Set expected source positions to reconstructed alt, az positions for source-dependent analysis
-    This is just a trick to easily extract ON/OFF events in gammapy analysis. 
+    This is just a trick to easily extract ON/OFF events in gammapy analysis.
     """
     # set expected source positions as reco positions
     time = data['dragon_time']
@@ -334,9 +335,10 @@ def set_expected_pos_to_reco_altaz(data):
     expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
     data["reco_alt"] = expected_src_altaz.alt
     data["reco_az"]  = expected_src_altaz.az
-    
+
 def create_event_list(
-        data, run_number, source_name, source_pos, effective_time, elapsed_time
+        data, run_number, source_name, source_pos,
+        effective_time, elapsed_time, data_pars
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -355,6 +357,7 @@ def create_event_list(
         Float
     elapsed_time: Total elapsed time of triggered events of the run
         Float
+    data_pars:
 
     Returns
     -------
@@ -481,6 +484,9 @@ def create_event_list(
     )
 
     pnt_header["TIMEREF"] = ev_header["TIMEREF"]
+    pnt_header["MEAN_ZEN"] = str(data_pars["ZEN_PNT"])
+    pnt_header["MEAN_AZ"] = str(data_pars["AZ_PNT"])
+    pnt_header["B_DELTA"] = str(data_pars["B_DELTA"])
 
     # Create HDUs
     event = fits.BinTableHDU(event_table, header=ev_header, name="EVENTS")
