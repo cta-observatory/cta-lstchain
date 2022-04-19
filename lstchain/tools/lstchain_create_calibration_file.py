@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Int, Bool, Float
+from traitlets import Unicode, Int, Bool, Float
 
 
 from ctapipe.core import Provenance, traits

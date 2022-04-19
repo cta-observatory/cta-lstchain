@@ -6,7 +6,7 @@ import numpy as np
 import h5py
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List, Path
+from ctapipe.core.traits import  Float, Path
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
