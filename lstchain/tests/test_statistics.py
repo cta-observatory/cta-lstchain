@@ -49,3 +49,60 @@ def test_online_statistics_at_indices():
     for i in range(N):
         assert np.isclose(mean[i], np.mean(data[indices == i]))
         assert np.isclose(std[i], np.std(data[indices == i], ddof=1))
+
+
+
+def test_sigma_clipping():
+    from lstchain.statistics import sigma_clipped_mean_std
+
+    rng = np.random.default_rng()
+
+    n_pixels = 10
+    n_events = 10000
+    true_mean = np.linspace(45, 55, n_pixels)
+    true_std = np.linspace(5, 10, n_pixels)
+    values = rng.normal(true_mean, true_std, (n_events, n_pixels))
+
+    outliers = rng.binomial(2, 0.01, values.shape).astype(bool)
+    values[outliers] = rng.normal(5, 1, np.count_nonzero(outliers))
+
+    assert not np.allclose(values.mean(axis=0), true_mean, rtol=0.01)
+    assert not np.allclose(values.std(axis=0), true_std, rtol=0.01)
+
+    with np.printoptions(precision=3):
+        mean, std, mask = sigma_clipped_mean_std(values, axis=0, max_sigma=3)
+
+
+    assert np.allclose(mean, true_mean, rtol=0.01)
+    assert np.allclose(std, true_std, rtol=0.1)
+    assert (mask[outliers] == False).all()
+
+
+
+def test_sigma_clipping_masked():
+    from lstchain.statistics import sigma_clipped_mean_std
+
+    rng = np.random.default_rng()
+
+    n_pixels = 10
+    n_events = 10000
+    true_mean = np.linspace(45, 55, n_pixels)
+    true_std = np.linspace(5, 10, n_pixels)
+    values = rng.normal(true_mean, true_std, (n_events, n_pixels))
+
+    outliers = rng.binomial(2, 0.01, values.shape).astype(bool)
+    values[outliers] = rng.normal(5, 1, np.count_nonzero(outliers))
+
+    broken = np.zeros((n_events, n_pixels), dtype=bool)
+    broken[:, 5] = True
+    values[broken] = 0
+
+    values = np.ma.array(values, mask=broken)
+
+    with np.printoptions(precision=3):
+        mean, std, mask = sigma_clipped_mean_std(values, axis=0, max_sigma=3)
+
+
+    assert np.allclose(mean, true_mean, rtol=0.01)
+    assert np.allclose(std, true_std, rtol=0.1)
+    assert (mask[outliers] == False).all()

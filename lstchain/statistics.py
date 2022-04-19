@@ -77,13 +77,21 @@ def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
     mean and std are computed again.
     '''
 
-    mean = np.mean(values, axis=axis)
-    std = np.std(values, axis=axis)
-    mask = np.ones(values.shape, dtype=bool)
+
+    # support masked array
+    if hasattr(values, 'mask'):
+        values = values.copy()
+    else:
+        mask = np.zeros(values.shape, dtype=bool)
+        values = np.ma.array(values, mask=mask, copy=True)
+
+    original_mask = values.mask.copy()
+    mean = values.mean(axis=axis)
+    std = values.std(axis=axis)
     
     for _ in range(n_iterations):
-        mask = np.abs(values - mean) < (max_sigma * std)
-        mean = np.mean(values, where=mask, axis=axis)
-        std = np.std(values, where=mask, axis=axis)
+        values.mask = original_mask | (np.abs(values - mean) >= (max_sigma * std))
+        mean = values.mean(axis=axis)
+        std = values.std(axis=axis)
 
-    return mean, std, mask
+    return mean, std, ~values.mask
