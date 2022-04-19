@@ -76,6 +76,15 @@ class CalibrationHDF5Writer(Tool):
         "events_to_skip": 'CalibrationHDF5Writer.events_to_skip',
     }
 
+    flags = {
+        **traits.flag(
+            "flatfield-heuristic",
+            "LSTEventSource.use_flatfield_heuristic",
+            "Use flatfield heuristic",
+            "Do not use flatfield heuristic",
+        )
+    }
+
     classes = (
         [EventSource, CalibrationCalculator]
         + traits.classes_with_traits(CalibrationCalculator)
@@ -85,12 +94,11 @@ class CalibrationHDF5Writer(Tool):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         """
-         Tool that generates a HDF5 file with camera calibration coefficients.
-         Input file must contain interleaved pedestal and flat-field events  
+        Tool that generates a HDF5 file with camera calibration coefficients.
+        Input file must contain interleaved pedestal and flat-field events
 
-         For getting help run:
-         python calc_camera_calibration.py --help
-         
+        For getting help run:
+            lstchain_create_calibration_file --help
         """
         self.eventsource = None
         self.processor = None
@@ -156,7 +164,7 @@ class CalibrationHDF5Writer(Tool):
                     # estimate offset of each channel from the camera median pedestal value
                     offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
                     event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
-                    
+
 
                 if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
