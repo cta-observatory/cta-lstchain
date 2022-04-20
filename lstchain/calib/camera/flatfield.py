@@ -260,7 +260,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         good_time = np.ma.array(arrival_time, mask=pixel_mask)
         std_arrival_time = np.ma.std(good_time, axis=1)
-        good_FF = (std_arrival_time[HIGH_GAIN] and std_arrival_time[LOW_GAIN]) < self.time_std_cut_outliers
+        good_FF = (
+                std_arrival_time[HIGH_GAIN] < self.time_std_cut_outliers or
+                std_arrival_time[LOW_GAIN] < self.time_std_cut_outliers
+        )
 
         if good_FF:
             # extract the charge of the event and
