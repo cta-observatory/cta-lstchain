@@ -7,6 +7,13 @@
     "log_level": "DEBUG",
     "log_config": {
       "loggers": {
+        "lstchain": {
+          "propagate": false,
+          "level": "INFO",
+          "handlers": [
+            "console","ctapipe-file"
+          ]
+        },
         "ctapipe.CalibrationHDF5Writer.LSTEventSource": {
           "propagate": false,
           "level": "INFO",
