@@ -61,7 +61,7 @@ __all__ = [
     'read_simu_info_hdf5',
     'read_simu_info_merged_hdf5',
     'recursive_copy_node',
-    'remove_duplicate_events'
+    'remove_duplicate_events',
     'stack_tables_h5files',
     'write_calibration_data',
     'write_dataframe',
