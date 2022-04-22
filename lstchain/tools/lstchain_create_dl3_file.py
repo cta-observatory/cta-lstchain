@@ -37,6 +37,7 @@ from lstchain.io import (
     DL3Cuts,
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
+    remove_duplicate_events,
 )
 from lstchain.high_level import (
     add_icrs_position_params,
@@ -262,7 +263,8 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-
+        
+        self.data = remove_duplicate_events(self.data)
 
     def start(self):
 
