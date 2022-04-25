@@ -311,7 +311,11 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         edisp_interp = interpolate_energy_dispersion(
-            edisp_list, irf_pars, interp_pars, method=interp_method
+            e_migra,
+            edisp_list,
+            irf_pars,
+            interp_pars,
+            quantile_resolution=1e-3
         )
 
         edisp_hdu_interp = create_energy_dispersion_hdu(
