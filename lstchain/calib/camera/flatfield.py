@@ -46,7 +46,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
     ).tag(config=True)
 
     time_std_cut_outliers = Float(
-        3,
+        5,
         help='Maximum pulse time standard deviation per event over the camera (in ns)'
     ).tag(config=True)
 
