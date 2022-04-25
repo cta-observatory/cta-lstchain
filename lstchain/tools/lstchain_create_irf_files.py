@@ -325,10 +325,10 @@ class IRFFITSWriter(Tool):
                 )
 
             p["ZEN_PNT"] = round(
-                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 2
+                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 3
             )
             p["AZ_PNT"] = round(
-                p["events"]["pointing_az"][0].to_value(u.deg), 2
+                p["events"]["pointing_az"][0].to_value(u.deg), 3
             )
 
             if not self.source_dep:
@@ -365,7 +365,7 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
         mean_fov_offset = round(
-            gammas["true_source_fov_offset"].mean().to_value(), 1
+            gammas["true_source_fov_offset"].mean().to_value(), 3
         )
 
         gammas = self.event_sel.filter_cut(gammas)
@@ -416,7 +416,7 @@ class IRFFITSWriter(Tool):
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 1
+                gammas["true_source_fov_offset"].mean().to_value(), 3
             )
             fov_offset_bins = [
                 mean_fov_offset - 0.1, mean_fov_offset + 0.1
@@ -432,10 +432,10 @@ class IRFFITSWriter(Tool):
             if self.energy_dependent_theta:
                 fov_offset_bins = [
                     round(
-                        gammas["true_source_fov_offset"].min().to_value(), 1
+                        gammas["true_source_fov_offset"].min().to_value(), 3
                     ),
                     round(
-                        gammas["true_source_fov_offset"].max().to_value(), 1
+                        gammas["true_source_fov_offset"].max().to_value(), 3
                     )
                 ] * u.deg
                 self.log.info("For RAD MAX, the full FoV is used")

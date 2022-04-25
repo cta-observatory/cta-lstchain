@@ -986,9 +986,9 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     az = data["pointing_az"].mean().to(u.rad)
     b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
 
-    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 1) * u.deg
-    data_params["AZ_PNT"] = round(az.to_value(u.deg), 1) * u.deg
-    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 1) * u.deg
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 3) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 3) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 3) * u.deg
 
     return data, data_params
 

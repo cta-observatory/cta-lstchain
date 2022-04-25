@@ -98,7 +98,6 @@ class DataReductionFITSWriter(Tool):
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
-        --global-gh-cut 0.9
         --overwrite
 
     Or generate source-dependent DL3 files
@@ -192,7 +191,6 @@ class DataReductionFITSWriter(Tool):
         ("p", "irf-file-pattern"): "DataReductionFITSWriter.irf_file_pattern",
         ("f", "final-irf-file"): "DataReductionFITSWriter.final_irf_file",
         "interp-method": "DataReductionFITSWriter.interp_method",
-        "global-gh-cut": "DL3Cuts.global_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
