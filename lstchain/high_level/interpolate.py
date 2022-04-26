@@ -3,9 +3,10 @@ import logging
 import astropy.units as u
 from astropy.table import Table, QTable
 from astropy.io import fits
-# from astropy.time import Time
+from astropy.time import Time
 
-# from lstchain.__init__ import __version__
+from lstchain.__init__ import __version__
+
 from pyirf.io.gadf import (
     create_aeff2d_hdu,
     create_energy_dispersion_hdu,
@@ -14,10 +15,10 @@ from pyirf.io.gadf import (
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion,
-    interpolate_psf_table,
-    # interpolate_rad_max_table
+    interpolate_psf_table, # interpolate_rad_max_table
 )
 from scipy.spatial import Delaunay, distance
+from scipy.interpolate import griddata
 
 log = logging.getLogger(__name__)
 
