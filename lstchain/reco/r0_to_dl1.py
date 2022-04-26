@@ -297,8 +297,8 @@ def apply_lh_fit(
             try:
                 lhfit_container = fitter(event=event, dl1_container=dl1_container)
             except Exception:
-                logger.exception("Unexpected error encountered in likelihood reconstruction "
-                                 "Compiled likelihood reconstruction numbaCC functions may be missing."
+                logger.exception("Unexpected error encountered in likelihood reconstruction.\n"
+                                 "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
                                  "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
                 raise
     else:
@@ -625,7 +625,7 @@ def r0_to_dl1(
                     lhfit_container = apply_lh_fit(event, dl1_container, lhfit_fitter)
                     # Plotting code for development purpose only, will disappear in final realise
                     if lhfit_fitter.verbose >= 2:
-                        lhfit_fitter.plot_debug()
+                        lhfit_fitter.plot_debug(str(event.index.event_id))
                     lhfit_container.prefix = dl1_tel.prefix
                     add_global_metadata(lhfit_container, metadata)
                     add_config_metadata(lhfit_container, config)

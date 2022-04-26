@@ -87,8 +87,8 @@ def test_r0_available():
 def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
     # Call log_pdf_hl to justify the import
-    log_pdf_hl(np.float32([0]), np.float64([[0]]), np.float64([1]),
-               np.float64([0]), np.float64([[1]]), np.float32([[1]]))
+    log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
+               np.float64([0]), np.float64([[1]]), np.float64([[1]]))
     config = copy(standard_config)
     config['source_config']['EventSource']['max_events'] = 5
     config['source_config']['EventSource']['allowed_tels'] = [1]

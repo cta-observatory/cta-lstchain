@@ -10,12 +10,17 @@ def compile_reconstructor_cc():
     -log_pdf_ll
     -log_pdf_hl
     -asygaussian2d
+
+    Decorator @cc.export take the name to be used for the compiled function and the function signature.
+    Meaning of the symbols is defined here https://numba.pydata.org/numba-doc/dev/reference/types.html#numba-types
+
     """
 
     cc = CC('log_pdf_CC')
     cc.verbose = True
 
-    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f8[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
+    #
+    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
         """Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.log_pdf"""
         n_pixels, n_samples = waveform.shape
@@ -31,7 +36,7 @@ def compile_reconstructor_cc():
                     mean = (kmin + k) * templates[i, j]
                     sigma = (kmin + k) * ((sig_s[i] * templates[i, j]) ** 2)
                     sigma = np.sqrt(error[i] * error[i] + sigma)
-                    gauss = 1 / (np.sqrt(2 * 3.141592653589793) * sigma) * np.exp(
+                    gauss = 1 / (np.sqrt(2 * np.pi) * sigma) * np.exp(
                         -(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma)
                     sum_k += poisson + gauss
                 if sum_k <= 0:
@@ -39,7 +44,7 @@ def compile_reconstructor_cc():
                 sum += weight[i, j] * np.log(sum_k)
         return sum
 
-    @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f8[:],f8[:],f8[:,:],f8[:,:])')
+    @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:,:],f8[:,:])')
     def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
         """Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf"""
         n_pixels, n_samples = waveform.shape
@@ -51,7 +56,7 @@ def compile_reconstructor_cc():
                          * templates[i, j] * templates[i, j])
                 sigma = np.sqrt((error[i] ** 2) + sigma)
                 log_pixel_pdf_hl = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
-                                    - np.log(np.sqrt(2 * 3.141592653589793) * sigma))
+                                    - np.log(np.sqrt(2 * np.pi) * sigma))
                 sum += weight[i,j] * log_pixel_pdf_hl
         return sum
 

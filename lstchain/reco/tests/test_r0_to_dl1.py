@@ -1,7 +1,7 @@
 import os
 from ctapipe.containers import ArrayEventContainer
 import numpy as np
-from lstchain.reco.r0_to_dl1 import rescale_dl1_charge
+from lstchain.reco.r0_to_dl1 import r0_to_dl1, rescale_dl1_charge
 from lstchain.io import standard_config
 from copy import copy
 
@@ -22,7 +22,6 @@ def test_rescale_dl1_charge():
 
 
 def test_r0_to_dl1_nsb_tuning(tmp_path, mc_gamma_testfile):
-    from lstchain.reco.r0_to_dl1 import r0_to_dl1
     config = copy(standard_config)
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['waveform_nsb_tuning']['nsb_tuning'] = True

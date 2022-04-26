@@ -24,6 +24,16 @@ try:
 except ImportError:
     pass
 
+labels = {'charge': 'Charge [p.e.]',
+          't_cm': '$t_{CM}$ [ns]',
+          'x_cm': '$x_{CM}$ [m]',
+          'y_cm': '$y_{CM}$ [m]',
+          'length': r'$\sigma_l$ [m]',
+          'wl': r'$\sigma_w$ / $\sigma_l$',
+          'psi': r'$\psi$ [rad]',
+          'v': '$v$ [m/ns]',
+          'rl': 'length asymmetry'
+          }
 
 class TimeWaveformFitter(Component):
     sigma_s = Float(1, help='Width of the single photo-electron peak distribution.', allow_none=False).tag(config=True)
@@ -60,21 +70,11 @@ class TimeWaveformFitter(Component):
         self.pix_x = self.geometry.pix_x.to_value(u.m)
         self.pix_y = self.geometry.pix_y.to_value(u.m)
         self.pix_area = self.geometry.pix_area.to_value(u.m ** 2)
-        self.r_max = np.sqrt(self.pix_x ** 2 + self.pix_y ** 2).max()
+        self.r_max = self.geometry.guess_radius().to_value(u.m)
         self.focal_length = subarray.tel[self.telescope_id].optics.equivalent_focal_length
         readout = self.subarray.tel[self.telescope_id].camera.readout
         sampling_rate = readout.sampling_rate.to_value(u.GHz)
         self.dt = (1.0 / sampling_rate)
-        self.labels = {'charge': 'Charge [p.e.]',
-                       't_cm': '$t_{CM}$ [ns]',
-                       'x_cm': '$x_{CM}$ [m]',
-                       'y_cm': '$y_{CM}$ [m]',
-                       'length': r'$\sigma_l$ [m]',
-                       'wl': r'$\sigma_w$ / $\sigma_l$',
-                       'psi': r'$\psi$ [rad]',
-                       'v': '$v$ [m/ns]',
-                       'rl': 'length asymmetry'
-                       }
         self.names_parameters = list(inspect.signature(self.log_pdf).parameters)
         self.template = NormalizedPulseTemplate.load_from_eventsource(subarray.tel[self.telescope_id].camera.readout)
         self.template_time_of_max = self.template.compute_time_of_max()
@@ -91,7 +91,6 @@ class TimeWaveformFitter(Component):
         self.factorial = np.cumprod(poisson_peaks)
 
     def __call__(self, event, dl1_container):
-        self.event_id = event.index.event_id
         self.image = event.dl1.tel[self.telescope_id].image
         hillas_signal_pixels = event.dl1.tel[self.telescope_id].image_mask
         start_x_cm, start_y_cm = init_centroid(dl1_container,
@@ -184,12 +183,12 @@ class TimeWaveformFitter(Component):
         self.data = waveform
         self.error = copy(self.pedestal_std)
 
-        filter_pixels = np.arange(self.n_pixels)[~self.mask_pixel]
-        filter_times = np.arange(self.n_samples)[~self.mask_time]
+        filter_pixels = np.nonzero(~self.mask_pixel)
+        filter_times = np.nonzero(~self.mask_time)
 
         if self.error is None:
             std = np.std(self.data[~self.mask_pixel])
-            self.error = np.ones(self.data.shape[0]) * std
+            self.error = np.full(self.data.shape[0], std)
         else:
             std = np.std(self.data[~self.mask_pixel])
             self.error[self.error <= std / 2] = std
@@ -263,10 +262,8 @@ class TimeWaveformFitter(Component):
         self.fcn = m.fval
         try:
             self.error_parameters = m.errors.to_dict()
-
         except (KeyError, AttributeError, RuntimeError):
             self.error_parameters = {key: np.nan for key in self.names_parameters}
-            pass
 
     def log_pdf(self, charge, t_cm, x_cm, y_cm,
                 length, wl, psi, v, rl):
@@ -307,15 +304,15 @@ class TimeWaveformFitter(Component):
 
         rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
 
-        mu = asygaussian2d(np.float32(charge * self.pix_area),
-                           np.float32(self.p_x),
-                           np.float32(self.p_y),
-                           np.float32(x_cm),
-                           np.float32(y_cm),
-                           np.float32(wl * length),
-                           np.float32(length),
-                           np.float32(psi),
-                           np.float32(rl))
+        mu = asygaussian2d(charge * self.pix_area,
+                           self.p_x,
+                           self.p_y,
+                           x_cm,
+                           y_cm,
+                           wl * length,
+                           length,
+                           psi,
+                           rl)
 
         # We reduce the sum by limiting to the poisson term contributing for
         # more than 10^-6. The limits are approximated by 2 broken linear
@@ -350,34 +347,34 @@ class TimeWaveformFitter(Component):
 
         mask_k = (np.arange(self.n_peaks) >= kmin) & (np.arange(self.n_peaks) < kmax)
 
-        log_pdf_ll = self.log_pdf_l(mu[mask_LL],
-                                    self.data[mask_LL],
-                                    self.error[mask_LL],
-                                    self.crosstalks[mask_LL],
-                                    self.sig_s[mask_LL],
-                                    templates[mask_LL],
-                                    self.factorial[mask_k],
-                                    kmin, kmax,
-                                    weight[mask_LL])
+        log_pdf_faint = log_pdf_ll(mu[mask_LL],
+                                   self.data[mask_LL],
+                                   self.error[mask_LL],
+                                   self.crosstalks[mask_LL],
+                                   self.sig_s[mask_LL],
+                                   templates[mask_LL],
+                                   self.factorial[mask_k],
+                                   kmin, kmax,
+                                   weight[mask_LL])
 
-        log_pdf_hl = self.log_pdf_h(mu[mask_HL],
-                                    self.data[mask_HL],
-                                    self.error[mask_HL],
-                                    self.crosstalks[mask_HL],
-                                    templates[mask_HL],
-                                    weight[mask_HL])
+        log_pdf_bright = log_pdf_hl(mu[mask_HL],
+                                   self.data[mask_HL],
+                                   self.error[mask_HL],
+                                   self.crosstalks[mask_HL],
+                                   templates[mask_HL],
+                                   weight[mask_HL])
 
-        log_pdf = (log_pdf_ll + log_pdf_hl) / np.sum(weight)
+        log_pdf = (log_pdf_faint + log_pdf_bright) / np.sum(weight)
 
         return log_pdf
 
-    def predict(self, **kwargs):
+    def predict(self):
         """
             Call the fitting procedure and fill the results.
 
         """
         container = DL1LikelihoodParametersContainer(lhfit_call_status=1)
-        self.fit(**kwargs)
+        self.fit()
         GoF = 0.0  # removing the goodness of fit as it is not accurate for now
         container.lhfit_goodness_of_fit = GoF
         container.lhfit_TS = self.fcn
@@ -422,7 +419,7 @@ class TimeWaveformFitter(Component):
                 in readable format.
 
         """
-        s =  'Event {}\n'.format(self.event_id)
+        s =  'Event processed\n'
         s += 'Start parameters :\n\t{}\n'.format(self.start_parameters)
         s += 'Bound parameters :\n\t{}\n'.format(self.bound_parameters)
         s += 'End parameters :\n\t{}\n'.format(self.end_parameters)
@@ -436,21 +433,21 @@ class TimeWaveformFitter(Component):
         llh = self.log_pdf(*args, **kwargs)
         return np.sum(llh)
 
-    def plot_debug(self):
+    def plot_debug(self, identifier):
         """
         Create a set of plots for one event
 
         """
         image = self.image
-        self.plot_event(image, init=True, save=True, ids=str(self.event_id))
-        self.plot_waveforms(image, save=True, ids=str(self.event_id))
-        self.plot_event(image, save=True, ids=str(self.event_id))
-        self.plot_residual(image, save=True, ids=str(self.event_id))
-        self.plot_model(save=True, ids=str(self.event_id))
+        self.plot_event(image, init=True, save=True, ids=identifier)
+        self.plot_waveforms(image, save=True, ids=identifier)
+        self.plot_event(image, save=True, ids=identifier)
+        self.plot_residual(image, save=True, ids=identifier)
+        self.plot_model(save=True, ids=identifier)
 
         for params in self.start_parameters.keys():
-            self.plot_likelihood(params, save=True, ids=str(self.event_id))
-        self.plot_likelihood('x_cm', 'y_cm', save=True, ids=str(self.event_id))
+            self.plot_likelihood(params, save=True, ids=identifier)
+        self.plot_likelihood('x_cm', 'y_cm', save=True, ids=identifier)
 
         if self.verbose == 3:
             print("event plot produced, press Enter to continue or Ctrl+C and Enter to stop")
@@ -503,7 +500,7 @@ class TimeWaveformFitter(Component):
             params[key] = xx
             llh[i] = self.log_likelihood(**params)
 
-        x_label = self.labels[key] if x_label is None else x_label
+        x_label = labels[key] if x_label is None else x_label
 
         if not invert:
             axes.plot(x, -llh, color='r')
@@ -618,8 +615,8 @@ class TimeWaveformFitter(Component):
             top=False,  # ticks along the top edge are off
             labelbottom=False)
 
-        x_label = self.labels[key_x] if x_label is None else x_label
-        y_label = self.labels[key_y] if y_label is None else y_label
+        x_label = labels[key_x] if x_label is None else x_label
+        y_label = labels[key_y] if y_label is None else y_label
 
         im = axes.imshow(-llh.T, origin='lower', extent=[x.min() - dx / 2.,
                                                          x.max() - dx / 2.,
@@ -763,16 +760,15 @@ class TimeWaveformFitter(Component):
         params = self.end_parameters
 
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-        mu = asygaussian2d(np.float32(params['charge']
-                                      * self.geometry.pix_area.to_value(u.m ** 2)),
-                           np.float32(self.geometry.pix_x.value),
-                           np.float32(self.geometry.pix_y.value),
-                           np.float32(params['x_cm']),
-                           np.float32(params['y_cm']),
-                           np.float32(params['wl'] * params['length']),
-                           np.float32(params['length']),
-                           np.float32(params['psi']),
-                           np.float32(rl))
+        mu = asygaussian2d(params['charge'] * self.geometry.pix_area.to_value(u.m ** 2),
+                           self.geometry.pix_x.value,
+                           self.geometry.pix_y.value,
+                           params['x_cm'],
+                           params['y_cm'],
+                           params['wl'] * params['length'],
+                           params['length'],
+                           params['psi'],
+                           rl)
         residual = image - mu
 
         cam_display = display_array_camera(residual,
@@ -804,16 +800,15 @@ class TimeWaveformFitter(Component):
 
         params = self.end_parameters
         rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-        mu = asygaussian2d(np.float32(params['charge']
-                                      * self.geometry.pix_area.to_value(u.m ** 2)),
-                           np.float32(self.geometry.pix_x.value),
-                           np.float32(self.geometry.pix_y.value),
-                           np.float32(params['x_cm']),
-                           np.float32(params['y_cm']),
-                           np.float32(params['wl'] * params['length']),
-                           np.float32(params['length']),
-                           np.float32(params['psi']),
-                           np.float32(rl))
+        mu = asygaussian2d(params['charge'] * self.geometry.pix_area.to_value(u.m ** 2),
+                           self.geometry.pix_x.value,
+                           self.geometry.pix_y.value,
+                           params['x_cm'],
+                           params['y_cm'],
+                           params['wl'] * params['length'],
+                           params['length'],
+                           params['psi'],
+                           rl)
 
         cam_display = display_array_camera(mu,
                                            camera_geometry=self.geometry)
@@ -870,9 +865,9 @@ class TimeWaveformFitter(Component):
         M = axes.pcolormesh(X, Y, waveforms)
         axes.set_xlabel('time [ns]')
         axes.set_ylabel('Longitude [m]')
-        label = (self.labels['t_cm']
+        label = (labels['t_cm']
                  + ' : {:.2f} [ns]'.format(self.end_parameters['t_cm']))
-        label += ('\n' + self.labels['v']
+        label += ('\n' + labels['v']
                   + ' : {:.2f} [m/ns]'.format(self.end_parameters['v']))
         axes.plot(fitted_times, long_pix, color='r',
                   label=label)

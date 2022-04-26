@@ -52,7 +52,6 @@ setup(
         'joblib',
         'matplotlib~=3.5',
         'numba',
-        'numexpr',
         'numpy<1.22.0a0',
         'pandas',
         'pyirf~=0.6.0',
