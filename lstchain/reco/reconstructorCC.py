@@ -15,7 +15,7 @@ def compile_reconstructor_cc():
     cc = CC('log_pdf_CC')
     cc.verbose = True
 
-    @cc.export('log_pdf_ll', 'f8(f4[:],f8[:,:],f8[:],f8[:],f8[:],f8[:,:],f4[:],i4,i4,f4[:,:])')
+    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f8[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
         """Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.log_pdf"""
         n_pixels, n_samples = waveform.shape
@@ -39,22 +39,23 @@ def compile_reconstructor_cc():
                 sum += weight[i, j] * np.log(sum_k)
         return sum
 
-    @cc.export('log_pdf_hl', 'f8(f4[:],f8[:,:],f8[:],f8[:],f8[:,:],f4[:,:])')
+    @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f8[:],f8[:],f8[:,:],f8[:,:])')
     def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
         """Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf"""
         n_pixels, n_samples = waveform.shape
-        log_pixel_pdf_hl = np.empty((n_pixels, n_samples))
+        sum = 0
         for i in range(n_pixels):
             for j in range(n_samples):
                 mean = mu[i] / (1 - crosstalk[i]) * templates[i, j]
                 sigma = (mu[i] / (1 - crosstalk[i]) / (1 - crosstalk[i]) / (1 - crosstalk[i])
                          * templates[i, j] * templates[i, j])
                 sigma = np.sqrt((error[i] ** 2) + sigma)
-                log_pixel_pdf_hl[i, j] = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
-                                          - np.log(np.sqrt(2 * 3.141592653589793) * sigma))
-        return np.sum(weight * log_pixel_pdf_hl)
+                log_pixel_pdf_hl = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
+                                    - np.log(np.sqrt(2 * 3.141592653589793) * sigma))
+                sum += weight[i,j] * log_pixel_pdf_hl
+        return sum
 
-    @cc.export('asygaussian2d', 'f4[:](f4[:],f4[:],f4[:],f4,f4,f4,f4,f4,f4)')
+    @cc.export('asygaussian2d', 'f8[:](f8[:],f8[:],f8[:],f8,f8,f8,f8,f8,f8)')
     def asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
         """
         Evaluate the bi-dimensional gaussian law with asymmetry along the
@@ -81,7 +82,7 @@ def compile_reconstructor_cc():
             Evaluation of the 2D gaussian law at (x,y)
 
         """
-        gauss2d = np.empty(len(x), dtype=np.float32)
+        gauss2d = np.empty(len(x), dtype=np.float64)
         norm = 1 / ((rl + 1.0) * np.pi * width * length)
         for i in range(len(x)):
             le = (x[i] - x_cm) * np.cos(psi) + (y[i] - y_cm) * np.sin(psi)

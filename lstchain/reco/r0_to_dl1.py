@@ -288,18 +288,18 @@ def apply_lh_fit(
     DL1LikelihoodParametersContainer
 
     """
-    # Applied to all simulated event and all physic events
-    if dl1_container.mc_type > -1000 or (event.trigger.event_type == EventType.SUBARRAY):
+    # Applied to all physic events
+    if event.trigger.event_type == EventType.SUBARRAY:
         # Don't fit if the cleaning used in the seed parametrisation didn't select any pixels
         if dl1_container.n_pixels <= 0:
             lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=0)
         else:
             try:
                 lhfit_container = fitter(event=event, dl1_container=dl1_container)
-            except Exception as err:
-                logger.exception("Unexpected error encountered in likelihood reconstruction")
-                logger.exception(err.__class__)
-                logger.exception(err)
+            except Exception:
+                logger.exception("Unexpected error encountered in likelihood reconstruction "
+                                 "Compiled likelihood reconstruction numbaCC functions may be missing."
+                                 "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
                 raise
     else:
         lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=-10)

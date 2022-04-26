@@ -22,9 +22,7 @@ try:
     from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
     from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
 except ImportError:
-    logger.warning('WARNING: Compiled likelihood reconstruction numbaCC functions missing.'
-                   ' If you plan to use the likelihood reconstruction you should run:\n'
-                   'lstchain/scripts/numba_compil_lhfit.py')
+    pass
 
 
 class TimeWaveformFitter(Component):
@@ -78,7 +76,7 @@ class TimeWaveformFitter(Component):
                        'rl': 'length asymmetry'
                        }
         self.names_parameters = list(inspect.signature(self.log_pdf).parameters)
-        self.template = NormalizedPulseTemplate.load_from_eventsource(subarray.tel[1].camera.readout)
+        self.template = NormalizedPulseTemplate.load_from_eventsource(subarray.tel[self.telescope_id].camera.readout)
         self.template_time_of_max = self.template.compute_time_of_max()
         if self.use_interleaved is None:  # test to include interleaved correction on pedestal, NOT FUNCTIONAL
             self.pedestal_std = None
@@ -270,19 +268,6 @@ class TimeWaveformFitter(Component):
             self.error_parameters = {key: np.nan for key in self.names_parameters}
             pass
 
-    @staticmethod
-    def log_pdf_l(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
-        """Calls the compiled function for low luminosity pixels log_pdf."""
-        return log_pdf_ll(np.float32(mu), np.float64(waveform), np.float64(error), np.float64(crosstalk),
-                          np.float64(sig_s), np.float64(templates), np.float32(factorial), np.int32(kmin),
-                          np.int32(kmax), np.float32(weight))
-
-    @staticmethod
-    def log_pdf_h(mu, waveform, error, crosstalk, templates, weight):
-        """Calls the compiled function for high luminosity pixels log_pdf."""
-        return log_pdf_hl(np.float32(mu), np.float64(waveform), np.float64(error), np.float64(crosstalk),
-                          np.float64(templates), np.float32(weight))
-
     def log_pdf(self, charge, t_cm, x_cm, y_cm,
                 length, wl, psi, v, rl):
         """
@@ -365,24 +350,24 @@ class TimeWaveformFitter(Component):
 
         mask_k = (np.arange(self.n_peaks) >= kmin) & (np.arange(self.n_peaks) < kmax)
 
-        log_pdf_l = self.log_pdf_l(mu[mask_LL],
-                                   self.data[mask_LL],
-                                   self.error[mask_LL],
-                                   self.crosstalks[mask_LL],
-                                   self.sig_s[mask_LL],
-                                   templates[mask_LL],
-                                   self.factorial[mask_k],
-                                   kmin, kmax,
-                                   weight[mask_LL])
+        log_pdf_ll = self.log_pdf_l(mu[mask_LL],
+                                    self.data[mask_LL],
+                                    self.error[mask_LL],
+                                    self.crosstalks[mask_LL],
+                                    self.sig_s[mask_LL],
+                                    templates[mask_LL],
+                                    self.factorial[mask_k],
+                                    kmin, kmax,
+                                    weight[mask_LL])
 
-        log_pdf_h = self.log_pdf_h(mu[mask_HL],
-                                   self.data[mask_HL],
-                                   self.error[mask_HL],
-                                   self.crosstalks[mask_HL],
-                                   templates[mask_HL],
-                                   weight[mask_HL])
+        log_pdf_hl = self.log_pdf_h(mu[mask_HL],
+                                    self.data[mask_HL],
+                                    self.error[mask_HL],
+                                    self.crosstalks[mask_HL],
+                                    templates[mask_HL],
+                                    weight[mask_HL])
 
-        log_pdf = (log_pdf_l + log_pdf_h) / np.sum(weight)
+        log_pdf = (log_pdf_ll + log_pdf_hl) / np.sum(weight)
 
         return log_pdf
 
