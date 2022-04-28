@@ -413,7 +413,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
 
     Parameters
     ----------
-    n_on_events:   `numpy.ndarray` number of ON events in the signal region
+    n_on_events:   `numpy.ndarray` number of ON events in the signal region, from Crab
     n_background: `numpy.ndarray` number of events in the background region
     alpha:        `float` inverse of the number of off positions
     n_bins_energy:`int` number of bins in energy
@@ -445,7 +445,7 @@ def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_ene
         if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
             n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
 
-    sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
+    sensitivity = n_excesses_5sigma / (n_on_events - n_background*alpha) * 100  # percentage of Crab
 
     return n_excesses_5sigma, sensitivity
 
