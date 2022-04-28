@@ -19,17 +19,21 @@ def compile_reconstructor_cc():
     cc = CC('log_pdf_CC')
     cc.verbose = True
 
-    #
     @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
-        """Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.log_pdf"""
+        """
+        Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.log_pdf
+        The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
+        The single sample likelihood is the sum(possible number of pe) of a Poisson term times a gaussian term.
+
+        """
         n_pixels, n_samples = waveform.shape
         n_k = kmax - kmin
 
         sum = 0.0
         for i in range(n_pixels):
             for j in range(n_samples):
-                sum_k = 0
+                sum_k = 0.0
                 for k in range(n_k):
                     poisson = (mu[i] * pow(mu[i] + (kmin + k) * crosstalk[i], (kmin + k - 1)) / factorial[k]
                                * np.exp(-mu[i] - (kmin + k) * crosstalk[i]))
@@ -38,7 +42,7 @@ def compile_reconstructor_cc():
                     sigma = np.sqrt(error[i] * error[i] + sigma)
                     gauss = 1 / (np.sqrt(2 * np.pi) * sigma) * np.exp(
                         -(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma)
-                    sum_k += poisson + gauss
+                    sum_k += poisson * gauss
                 if sum_k <= 0:
                     return -np.inf
                 sum += weight[i, j] * np.log(sum_k)
@@ -46,7 +50,12 @@ def compile_reconstructor_cc():
 
     @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:,:],f8[:,:])')
     def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
-        """Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf"""
+        """
+        Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf
+        The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
+        The single sample likelihood is a gaussian term.
+
+        """
         n_pixels, n_samples = waveform.shape
         sum = 0
         for i in range(n_pixels):
@@ -55,9 +64,9 @@ def compile_reconstructor_cc():
                 sigma = (mu[i] / (1 - crosstalk[i]) / (1 - crosstalk[i]) / (1 - crosstalk[i])
                          * templates[i, j] * templates[i, j])
                 sigma = np.sqrt((error[i] ** 2) + sigma)
-                log_pixel_pdf_hl = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
-                                    - np.log(np.sqrt(2 * np.pi) * sigma))
-                sum += weight[i,j] * log_pixel_pdf_hl
+                log_gauss = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
+                             - np.log(np.sqrt(2 * np.pi) * sigma))
+                sum += weight[i, j] * log_gauss
         return sum
 
     @cc.export('asygaussian2d', 'f8[:](f8[:],f8[:],f8[:],f8,f8,f8,f8,f8,f8)')
