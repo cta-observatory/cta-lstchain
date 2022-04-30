@@ -21,9 +21,9 @@ from sklearn.model_selection import train_test_split
 from . import disp
 from . import utils
 from ..io import (
-    standard_config, 
-    replace_config, 
-    get_dataset_keys, 
+    standard_config,
+    replace_config,
+    get_dataset_keys,
     get_srcdep_params,
 )
 from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
@@ -31,7 +31,6 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import OPTICS
-
 
 __all__ = [
     'apply_models',
@@ -47,7 +46,7 @@ __all__ = [
 ]
 
 
-def train_energy(train, custom_config={}):
+def train_energy(train, custom_config=None):
     """
     Train a Random Forest Regressor for the regression of the energy
     TODO: introduce the possibility to use another model
@@ -55,13 +54,14 @@ def train_energy(train, custom_config={}):
     Parameters
     ----------
     train: `pandas.DataFrame`
-    config: dictionnary containing configuration
+    custom_config: dictionnary
+        Modified configuration to update the standard one
 
     Returns
     -------
     The trained model
     """
-
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     energy_regression_args = config['random_forest_energy_regressor_args']
     features = config['energy_regression_features']
@@ -79,7 +79,7 @@ def train_energy(train, custom_config={}):
     return reg
 
 
-def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'disp_dy']):
+def train_disp_vector(train, custom_config=None, predict_features=None):
     """
     Train a model (Random Forest Regressor) for the regression of the disp_norm vector coordinates dx,dy.
     Therefore, the model must be able to be applied on a vector of features.
@@ -88,13 +88,18 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     Parameters
     ----------
     train: `pandas.DataFrame`
-    config: dictionnary containing configuration
+    custom_config: dictionnary
+        Modified configuration to update the standard one. Default=None
+    predict_features: list
+        list of predict features names. Default=['disp_dx', 'disp_dy']
 
     Returns
     -------
     The trained model
     """
-
+    if predict_features is None:
+        predict_features = ['disp_dx', 'disp_dy']
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     disp_regression_args = config['random_forest_disp_regressor_args']
     features = config['disp_regression_features']
@@ -114,20 +119,21 @@ def train_disp_vector(train, custom_config={}, predict_features=['disp_dx', 'dis
     return reg
 
 
-def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
+def train_disp_norm(train, custom_config=None, predict_feature='disp_norm'):
     """
     Train a model for the regression of the disp_norm norm
 
     Parameters
     ----------
     train: `pandas.DataFrame`
-    config: dictionnary containing configuration
+    custom_config: dictionnary
+        Modified configuration to update the standard one
 
     Returns
     -------
     The trained model
     """
-
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     disp_regression_args = config['random_forest_disp_regressor_args']
     features = config['disp_regression_features']
@@ -147,20 +153,21 @@ def train_disp_norm(train, custom_config={}, predict_feature='disp_norm'):
     return reg
 
 
-def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
+def train_disp_sign(train, custom_config=None, predict_feature='disp_sign'):
     """
     Train a model for the classification of the disp_norm sign
 
     Parameters
     ----------
     train: `pandas.DataFrame`
-    config: dictionnary containing configuration
+    custom_config: dictionnary
+        Modified configuration to update the standard one
 
     Returns
     -------
     The trained model
     """
-
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     classification_args = config['random_forest_disp_classifier_args']
     features = config["disp_classification_features"]
@@ -180,7 +187,7 @@ def train_disp_sign(train, custom_config={}, predict_feature='disp_sign'):
     return clf
 
 
-def train_reco(train, custom_config={}):
+def train_reco(train, custom_config=None):
     """
     Trains two Random Forest regressors for Energy and disp_norm
     reconstruction respectively. Returns the trained RF.
@@ -188,14 +195,15 @@ def train_reco(train, custom_config={}):
     Parameters
     ----------
     train: `pandas.DataFrame`
-    config: dictionnary containing configuration
+    custom_config: dictionnary
+        Modified configuration to update the standard one
 
     Returns
     -------
     RandomForestRegressor: reg_energy
     RandomForestRegressor: reg_disp
     """
-
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     energy_regression_args = config['random_forest_energy_regressor_args']
     disp_regression_args = config['random_forest_disp_regressor_args']
@@ -224,24 +232,22 @@ def train_reco(train, custom_config={}):
     return reg_energy, reg_disp
 
 
-def train_sep(train, custom_config={}):
+def train_sep(train, custom_config=None):
     """Trains a Random Forest classifier for Gamma/Hadron separation.
     Returns the trained RF.
 
     Parameters
     ----------
     train: `pandas.DataFrame`
-    data set for training the RF
-    features: list of strings
-    List of features to train the RF
-    classification_args: dictionnary
-    config_file: str - path to a configuration file. If given, overwrite `classification_args`.
+        data set for training the RF
+    custom_config: dict
+        Modified configuration to update the standard one
 
     Returns
     -------
     `RandomForestClassifier`
     """
-
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     classification_args = config['random_forest_particle_classifier_args']
     features = config["particle_classification_features"]
@@ -263,43 +269,67 @@ def train_sep(train, custom_config={}):
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
                  energy_min=-np.inf,
-                 custom_config={},
-                 test_size=0.2,
+                 custom_config=None,
                  ):
-    """Uses MC data to train Random Forests for Energy and disp_norm
-    reconstruction and G/H separation. Returns 3 trained RF.
-    The config in config_file superseeds the one passed in argument.
+    """
+    Uses MC data to train Random Forests for Energy and DISP
+    reconstruction and G/H separation and returns the trained RFs.
+    The passed config superseeds the standard configuration.
+    Here is the complete workflow with the number of events selected from the config:
+
+    .. mermaid::
+
+        graph LR
+            GAMMA[gammas] -->|#`gamma_regressors`| REG(regressors) --> DISK
+            GAMMA --> S(split)
+            S --> |#`gamma_tmp_regressors`| g_train
+            S --> |#`gamma_classifier`| g_test
+            g_train --> tmp_reg(tmp regressors)
+            tmp_reg --- A[ ]:::empty
+            g_test --- A
+            A --> g_test_dl2
+            g_test_dl2 --- D[ ]:::empty
+            protons -------- |#`proton_classifier`| D
+            D --> cls(classifier)
+            cls--> DISK
+            classDef empty width:0px,height:0px;
+
 
     Parameters
     ----------
     filegammas: string
-        Name of the file with MC gamma events
+        path to the file with MC gamma events
     fileprotons: string
-        Name of the file with MC proton events
-    energy_min: float
-        Cut in energy for gamma/hadron separation
-    intensity_min: float
-        Cut in intensity of the showers for training RF. Default is 60 phe
-    r_min: float
-        Cut in distance from c.o.g of hillas ellipse to camera center, to avoid images truncated
-        in the border. Default is 80% of camera radius.
-    save_models: boolean
-        Save the trained RF in a file to use them anytime.
+        path to the file with MC proton events
+    save_models: bool
+        True to save the trained models on disk
     path_models: string
-        path to store the trained RF
-    regression_args: dictionnary
-    classification_args: dictionnary
-    config_file: str
-        Path to a configuration file. If given, overwrite `regression_args`.
+        path of a directory where to save the models.
+        if it does exist, the directory is created
+    energy_min: float
+        Cut in intensity of the showers for training RF
+    custom_config: dictionnary
+       Modified configuration to update the standard one
+    test_size: float or int
+        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split.
+        If int, represents the absolute number of test samples.
+        If None, it will be set to 0.25.
 
     Returns
     -------
-    (regressor_energy, regressor_disp, classifier_gh)
-    regressor_energy: `RandomForestRegressor`
-    regressor_disp: `RandomForestRegressor`
-    classifier_gh: `RandomForestClassifier`
+    if config['disp_method'] == 'disp_vector':
+        return reg_energy, reg_disp_vector, cls_gh
+    elif config['disp_method'] == 'disp_norm_sign':
+        return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
+
+    Raises
+    ------
+    ValueError
+        If the requested number of gamma events in the config for the training of the classifier is not valid.
+        See config["n_training_events"]
     """
 
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     events_filters = config["events_filters"]
 
@@ -314,7 +344,7 @@ def build_models(filegammas, fileprotons,
         # if not, source-dependent parameters are added here
         if dl1_params_src_dep_lstcam_key in get_dataset_keys(filegammas):
             src_dep_df_gamma = get_srcdep_params(filegammas)
-         
+
         else:
             subarray_info = SubarrayDescription.from_hdf(filegammas)
             tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -352,17 +382,25 @@ def build_models(filegammas, fileprotons,
                                                   + config['disp_classification_features'],
                                     )
 
-
-    #Training MC gammas in reduced viewcone 
-    src_r_m = np.sqrt(df_gamma['src_x']**2 + df_gamma['src_y']**2)
+    # Training MC gammas in reduced viewcone
+    src_r_m = np.sqrt(df_gamma['src_x'] ** 2 + df_gamma['src_y'] ** 2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
     df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
             src_r_deg <= config['train_gamma_src_r_deg'][1])]
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
+    n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
+    if n_gamma_regressors not in [1.0, None]:
+        try:
+            df_gamma_reg, _ = train_test_split(df_gamma, train_size=n_gamma_regressors)
+        except ValueError as e:
+            raise ValueError(f"The requested number of gammas {n_gamma_regressors} "
+                             f"for the regressors training is not valid.") from e
+    else:
+        df_gamma_reg = df_gamma
 
-    reg_energy = train_energy(df_gamma, custom_config=config)
+    reg_energy = train_energy(df_gamma_reg, custom_config=config)
 
     if config['disp_method'] == 'disp_vector':
         reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
@@ -371,8 +409,24 @@ def build_models(filegammas, fileprotons,
         cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
 
     # Train classifier for gamma/hadron separation.
+    test_size = config['n_training_events']['gamma_classifier']
+    train_size = config['n_training_events']['gamma_tmp_regressors']
+    try:
+        train, testg = train_test_split(df_gamma, test_size=test_size, train_size=train_size)
+    except ValueError as e:
+        raise ValueError(
+            "The requested number of gammas for the classifier training is not valid."
+        ) from e
 
-    train, testg = train_test_split(df_gamma, test_size=test_size)
+    n_proton_classifier = config["n_training_events"]["proton_classifier"]
+    if n_proton_classifier not in [1.0, None]:
+        try:
+            df_proton, _ = train_test_split(df_proton, train_size=config['n_training_events']['proton_classifier'])
+        except ValueError as e:
+            raise ValueError(
+                "The requested number of protons for the classifier training is not valid."
+            ) from e
+
     test = testg.append(df_proton, ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
@@ -436,6 +490,7 @@ def build_models(filegammas, fileprotons,
         if config['disp_method'] == 'disp_vector':
             file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
             joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
+
         elif config['disp_method'] == 'disp_norm_sign':
             file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
             file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
@@ -451,31 +506,43 @@ def build_models(filegammas, fileprotons,
         return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
-def apply_models(
-        dl1,
-        classifier,
-        reg_energy,
-        reg_disp_vector={},
-        reg_disp_norm={},
-        cls_disp_sign={},
-        focal_length=28 * u.m,
-        custom_config={}
-):
-    """Apply previously trained Random Forests to a set of data
+def apply_models(dl1,
+                 classifier,
+                 reg_energy,
+                 reg_disp_vector=None,
+                 reg_disp_norm=None,
+                 cls_disp_sign=None,
+                 focal_length=28 * u.m,
+                 custom_config=None
+                 ):
+    """
+    Apply previously trained Random Forests to a set of data
     depending on a set of features.
+    The right set of disp models must be passed depending on the config.
 
     Parameters
     ----------
-    data: Pandas DataFrame
-    features: list
+    dl1: `pandas.DataFrame`
     classifier: Random Forest Classifier
         RF for Gamma/Hadron separation
     reg_energy: Random Forest Regressor
         RF for Energy reconstruction
-    reg_disp: Random Forest Regressor
-        RF for disp_norm reconstruction
-    """
+    reg_disp_vector: Random Forest Regressor
+        RF for disp vector reconstruction
+    reg_disp_norm: Random Forest Regressor
+        RF for disp norm reconstruction
+    cls_disp_sign: Random Forest Classifier
+        RF for disp sign reconstruction
+    focal_length: `astropy.unit`
+    custom_config: dictionnary
+        Modified configuration to update the standard one
 
+    Returns
+    -------
+    `pandas.DataFrame`
+        dataframe including reconstructed dl2 features
+    """
+    custom_config = {} if custom_config is None else custom_config
     config = replace_config(standard_config, custom_config)
     energy_regression_features = config["energy_regression_features"]
     disp_regression_features = config["disp_regression_features"]
@@ -576,34 +643,27 @@ def get_source_dependent_parameters(data, config, focal_length=28 * u.m):
     is_simu = (data['mc_type'] >= 0).all() if 'mc_type' in data.columns else False
 
     if is_simu:
-        if (data['mc_type'] == 0).all():
-            data_type = 'mc_gamma'
-        else:
-            data_type = 'mc_proton'
+        data_type = 'mc_gamma' if (data['mc_type'] == 0).all() else 'mc_proton'
     else:
         data_type = 'real_data'
 
     expected_src_pos_x_m, expected_src_pos_y_m = get_expected_source_pos(data, data_type, config,
                                                                          focal_length=focal_length)
 
-    # ON position
-    src_dep_params_dict = {}
     src_dep_params = calc_source_dependent_parameters(data, expected_src_pos_x_m, expected_src_pos_y_m)
-    src_dep_params_dict['on'] = src_dep_params
+    src_dep_params_dict = {'on': src_dep_params}
+    if not is_simu and config.get('observation_mode') == 'wobble':
+        for ioff in range(config.get('n_off_wobble')):
+            off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
 
-    if not is_simu:
-        if config.get('observation_mode') == 'wobble':
-            for ioff in range(config.get('n_off_wobble')):
-                off_angle = 2 * np.pi / (config['n_off_wobble'] + 1) * (ioff + 1)
-
-                rotated_expected_src_pos_x_m = expected_src_pos_x_m * np.cos(off_angle) - expected_src_pos_y_m * np.sin(
-                    off_angle)
-                rotated_expected_src_pos_y_m = expected_src_pos_x_m * np.sin(off_angle) + expected_src_pos_y_m * np.cos(
-                    off_angle)
-                src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m,
-                                                                  rotated_expected_src_pos_y_m)
-                src_dep_params['off_angle'] = np.rad2deg(off_angle)
-                src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
+            rotated_expected_src_pos_x_m = expected_src_pos_x_m * np.cos(off_angle) - expected_src_pos_y_m * np.sin(
+                off_angle)
+            rotated_expected_src_pos_y_m = expected_src_pos_x_m * np.sin(off_angle) + expected_src_pos_y_m * np.cos(
+                off_angle)
+            src_dep_params = calc_source_dependent_parameters(data, rotated_expected_src_pos_x_m,
+                                                              rotated_expected_src_pos_y_m)
+            src_dep_params['off_angle'] = np.rad2deg(off_angle)
+            src_dep_params_dict['off_{:03}'.format(round(np.rad2deg(off_angle)))] = src_dep_params
 
     return src_dep_params_dict
 

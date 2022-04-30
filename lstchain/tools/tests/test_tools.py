@@ -139,7 +139,9 @@ def test_create_irf_point_like_energy_dependent_cuts(
                 "--overwrite",
                 "--energy-dependent-gh",
                 "--point-like",
-                "--energy-dependent-theta"
+                "--energy-dependent-theta",
+                "--DL3Cuts.max_theta_cut=1",
+                "--DL3Cuts.fill_theta_cut=1"
             ],
             cwd=temp_dir_observed_files,
         )

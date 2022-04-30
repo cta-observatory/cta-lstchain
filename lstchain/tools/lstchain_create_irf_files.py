@@ -76,6 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
+from lstchain.io.io import check_mc_type
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -128,9 +129,9 @@ class IRFFITSWriter(Tool):
 
     Or generate source-dependent IRFs
     > lstchain_create_irf_files
-        -g /path/to/DL2_MC_gamma_file.h5 
+        -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
-        --point-like 
+        --point-like
         --global-gh-cut 0.9
         --global-alpha-cut 10
         --source-dep
@@ -301,10 +302,7 @@ class IRFFITSWriter(Tool):
             self.log.info(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
 
-            if p["simulation_info"].viewcone.value == 0.0:
-                p["mc_type"] = "point_like"
-            else:
-                p["mc_type"] = "diffuse"
+            p["mc_type"] = check_mc_type(p["file"])
 
             self.log.debug(
                 f"Simulated {p['mc_type']} {particle_type.title()} Events:"
@@ -360,7 +358,7 @@ class IRFFITSWriter(Tool):
 
         if self.energy_dependent_gh:
             self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
-                gammas, reco_energy_bins, min_value=0.1, max_value=0.95
+                gammas, reco_energy_bins
             )
             gammas = self.cuts.apply_energy_dependent_gh_cuts(
                 gammas, self.gh_cuts_gamma
@@ -379,7 +377,6 @@ class IRFFITSWriter(Tool):
             if self.energy_dependent_theta:
                 self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
                     gammas, reco_energy_bins,
-                    min_value=0.05 * u.deg, max_value=0.32 * u.deg,
                 )
                 gammas = self.cuts.apply_energy_dependent_theta_cuts(
                     gammas, self.theta_cuts
@@ -402,7 +399,7 @@ class IRFFITSWriter(Tool):
                       f'{self.cuts.global_alpha_cut} for point like IRF'
                     )
 
-        if self.mc_particle["gamma"]["mc_type"] == "point_like":
+        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             mean_fov_offset = round(
                 gammas["true_source_fov_offset"].mean().to_value(), 1
             )
@@ -477,7 +474,7 @@ class IRFFITSWriter(Tool):
                     extra_headers["TH_CONT"] = (
                         self.cuts.theta_containment,
                         "Theta containment region in percentage"
-                    )               
+                    )
                 else:
                     extra_headers["RAD_MAX"] = (
                         self.cuts.global_theta_cut,
@@ -493,7 +490,7 @@ class IRFFITSWriter(Tool):
         self.hdus = [fits.PrimaryHDU(), ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
-            if self.mc_particle["gamma"]["mc_type"] == "point_like":
+            if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
