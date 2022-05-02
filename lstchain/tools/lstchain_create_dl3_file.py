@@ -319,7 +319,7 @@ class DataReductionFITSWriter(Tool):
         """
         try:
             with fits.open(self.final_irf_output) as hdul:
-                self.use_energy_dependent_cuts = (
+                self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
         except:
