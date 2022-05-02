@@ -299,12 +299,12 @@ class DataBinning(Component):
 
     source_offset_min = Float(
         help="Minimum value for Source offset for PSF IRF",
-        default_value=0.0001,
+        default_value=0.001,
     ).tag(config=True)
 
     source_offset_max = Float(
         help="Maximum value for Source offset for PSF IRF",
-        default_value=1.0001,
+        default_value=1.001,
     ).tag(config=True)
 
     source_offset_n_edges = Int(

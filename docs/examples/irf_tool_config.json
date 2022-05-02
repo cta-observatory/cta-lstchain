@@ -40,8 +40,8 @@
     "bkg_fov_offset_min": 0,
     "bkg_fov_offset_max": 10,
     "bkg_fov_offset_n_edges": 21,
-    "source_offset_min": 0.0001,
-    "source_offset_max": 1.0001,
+    "source_offset_min": 0.001,
+    "source_offset_max": 1.001,
     "source_offset_n_edges": 100
   }
 }
