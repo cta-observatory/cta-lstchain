@@ -19,9 +19,13 @@
     "global_alpha_cut": 10,
     "global_theta_cut": 0.2,
     "theta_containment": 0.68,
+    "alpha_containment": 0.68,
     "min_theta_cut": 0.05,
     "max_theta_cut": 0.32,
     "fill_theta_cut": 0.32,
+    "min_alpha_cut": 1,
+    "max_alpha_cut": 45,
+    "fill_alpha_cut": 45,
     "allowed_tels": [1]
   },
   "DataBinning": {
