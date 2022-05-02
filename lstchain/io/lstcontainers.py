@@ -259,7 +259,6 @@ class DL1LikelihoodParametersContainer(Container):
     lhfit_ref_time_uncertainty = Field(np.nan, '')
     lhfit_length_asymmetry = Field(np.nan, "major-axis asymmetry factor", type=float)
     lhfit_length_asymmetry_uncertainty = Field(np.nan, "", type=float)
-    lhfit_goodness_of_fit = Field(np.nan, "", type=float)
     lhfit_TS = Field(np.float64(np.nan), "")
     lhfit_wl = Field(u.Quantity(np.nan), "width/length")
     lhfit_wl_uncertainty = Field(u.Quantity(np.nan), "")

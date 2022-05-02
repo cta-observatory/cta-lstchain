@@ -271,6 +271,7 @@ def get_dl1(
 
 def apply_lh_fit(
         event,
+        telescope_id,
         dl1_container,
         fitter
 ):
@@ -281,6 +282,7 @@ def apply_lh_fit(
     Parameters
     ----------
     event: ctapipe event container
+    telescope_id: int
     dl1_container: DL1ParametersContainer
     fitter: TimeWaveformFitter
 
@@ -296,11 +298,11 @@ def apply_lh_fit(
             lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=0)
         else:
             try:
-                lhfit_container = fitter(event=event, dl1_container=dl1_container)
+                lhfit_container = fitter(event=event, telescope_id=telescope_id, dl1_container=dl1_container)
             except Exception:
-                logger.exception("Unexpected error encountered in likelihood reconstruction.\n"
-                                 "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
-                                 "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
+                logger.error("Unexpected error encountered in likelihood reconstruction.\n"
+                             "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
+                             "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
                 raise
     else:
         lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=-10)
@@ -439,17 +441,12 @@ def r0_to_dl1(
 
     lhfit_fitter = None
     if 'lh_fit_config' in config.keys():
-        allowed_tel = config['source_config']['LSTEventSource']['allowed_tels']
-        if len(allowed_tel) == 1:
-            lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
-            lhfit_fitter_config['TimeWaveformFitter']['telescope_id'] = allowed_tel[0]
-            if not is_simu and config['lh_fit_config']['use_interleaved'] is not None:
-                run = parse_r0_filename(input_filename)
-                lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] = \
-                    (config['lh_fit_config']['use_interleaved'] + run_to_dl1_filename(run.tel_id, run.run, run.subrun))
-            lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
-        else:
-            raise ValueError('likelihood reconstruction currently only supports single telescope analysis')
+        lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
+        if not is_simu and config['lh_fit_config']['use_interleaved'] is not None:
+            run = parse_r0_filename(input_filename)
+            lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] = \
+                (config['lh_fit_config']['use_interleaved'] + run_to_dl1_filename(run.tel_id, run.run, run.subrun))
+        lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -623,10 +620,10 @@ def r0_to_dl1(
                 )
 
                 if lhfit_fitter is not None:
-                    lhfit_container = apply_lh_fit(event, dl1_container, lhfit_fitter)
+                    lhfit_container = apply_lh_fit(event, telescope_id, dl1_container, lhfit_fitter)
                     # Plotting code for development purpose only, will disappear in final realise
                     if lhfit_fitter.verbose >= 2:
-                        plot_debug(lhfit_fitter, event, str(event.index.event_id))
+                        plot_debug(lhfit_fitter, event, telescope_id, dl1_container, str(event.index.event_id))
                     lhfit_container.prefix = dl1_tel.prefix
                     add_global_metadata(lhfit_container, metadata)
                     add_config_metadata(lhfit_container, config)

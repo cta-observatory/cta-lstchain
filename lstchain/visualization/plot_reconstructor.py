@@ -31,7 +31,7 @@ labels = {'charge': 'Charge [p.e.]',
           }
 
 
-def plot_debug(fitter, event, identifier):
+def plot_debug(fitter, event, telescope_id, dl1_container, identifier):
     """
     Create a set of plots for one event
 
@@ -42,9 +42,9 @@ def plot_debug(fitter, event, identifier):
     plot_event(fitter, image, save=True, ids=identifier)
     plot_residual(fitter, image, save=True, ids=identifier)
     plot_model(fitter, save=True, ids=identifier)
-
+    _, _, _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
     for params in fitter.start_parameters.keys():
-        plot_likelihood(fitter, params, save=True, ids=identifier)
+        plot_likelihood(fitter, fit_params, params, save=True, ids=identifier)
     plot_likelihood('x_cm', 'y_cm', save=True, ids=identifier)
 
     if fitter.verbose == 3:
@@ -52,7 +52,7 @@ def plot_debug(fitter, event, identifier):
         input()
 
 
-def plot_1dlikelihood(fitter, parameter_name, axes=None, size=1000,
+def plot_1dlikelihood(fitter, fit_params, parameter_name, axes=None, size=1000,
                       x_label=None, invert=False, loc='best'):
     """
         Plot the 1D evolution of the log-likelihood for a parameter
@@ -97,7 +97,7 @@ def plot_1dlikelihood(fitter, parameter_name, axes=None, size=1000,
 
     for i, xx in enumerate(x):
         params[key] = xx
-        llh[i] = fitter.log_likelihood(**params)
+        llh[i] = fitter.log_likelihood(**params, **fit_params)
 
     x_label = labels[key] if x_label is None else x_label
 
@@ -135,7 +135,7 @@ def plot_1dlikelihood(fitter, parameter_name, axes=None, size=1000,
     return axes
 
 
-def plot_2dlikelihood(fitter, parameter_1, parameter_2=None, size=100,
+def plot_2dlikelihood(fitter, fit_params, parameter_1, parameter_2=None, size=100,
                       x_label=None, y_label=None):
     """
         Plot the 2D evolution of the log-likelihood for a pair of
@@ -180,7 +180,7 @@ def plot_2dlikelihood(fitter, parameter_1, parameter_2=None, size=100,
         params[key_x] = xx
         for j, yy in enumerate(y):
             params[key_y] = yy
-            llh[i, j] = fitter.log_likelihood(**params)
+            llh[i, j] = fitter.log_likelihood(**params, **fit_params)
 
     fig = plt.figure()
     left, width = 0.1, 0.6
@@ -236,7 +236,7 @@ def plot_2dlikelihood(fitter, parameter_1, parameter_2=None, size=100,
     return axes
 
 
-def plot_likelihood(fitter, parameter_1, parameter_2=None,
+def plot_likelihood(fitter, fit_params, parameter_1, parameter_2=None,
                     axes=None, size=100,
                     x_label=None, y_label=None,
                     save=False, ids=''):
@@ -269,11 +269,11 @@ def plot_likelihood(fitter, parameter_1, parameter_2=None,
 
     """
     if parameter_2 is None:
-        axes = plot_1dlikelihood(fitter, parameter_name=parameter_1,
+        axes = plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_1,
                                       axes=axes, x_label=x_label,
                                       size=size)
     else:
-        axes = plot_2dlikelihood(fitter, parameter_1,
+        axes = plot_2dlikelihood(fitter, fit_params, parameter_1,
                                       parameter_2=parameter_2,
                                       size=size,
                                       x_label=x_label,

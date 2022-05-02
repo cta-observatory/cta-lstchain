@@ -270,12 +270,24 @@
     "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
   },
   "lh_fit_config": {
-    "sigma_s": 0.3282,
-    "crosstalk": 0.0,
+    "sigma_s": [
+                ["type", "*", 1.0],
+                ["type", "LST_LST_LSTCam", 0.3282]
+            ],
+    "crosstalk": [
+                ["type", "*", 0.0],
+                ["type", "LST_LST_LSTCam", 0.0]
+            ],
     "sigma_space": 3,
     "sigma_time": 4,
-    "time_before_shower": 0,
-    "time_after_shower": 20,
+    "time_before_shower": [
+                ["type", "*", 0.0],
+                ["type", "LST_LST_LSTCam", 0.0],
+            ],
+    "time_after_shower": [
+                ["type", "*", 20.0],
+                ["type", "LST_LST_LSTCam", 20.0],
+            ],
     "n_peaks": 50,
     "no_asymmetry": false,
     "use_weight": false,

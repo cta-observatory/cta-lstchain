@@ -10,7 +10,7 @@ class NormalizedPulseTemplate:
     """
 
     def __init__(self, amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
-                 amplitude_LG_err=None):
+                 amplitude_LG_err=None, resample=False, dt=None):
         """
         Save the pulse template and optional error
         and create an interpolation.
@@ -28,6 +28,8 @@ class NormalizedPulseTemplate:
         """
 
         self.time = np.array(time)
+        self.t0 = time[0]
+        self.dt = np.mean(time[1:]-time[:-1])
         self.amplitude_HG = np.array(amplitude_HG)
         self.amplitude_LG = np.array(amplitude_LG)
         if amplitude_HG_err is not None:
@@ -42,6 +44,10 @@ class NormalizedPulseTemplate:
             self.amplitude_LG_err = self.amplitude_LG * 0
         self._template = self._interpolate()
         self._template_err = self._interpolate_err()
+        if resample:
+            if dt is not None:
+                self.dt = dt
+            self.resample_template()
 
     def __call__(self, time, gain, amplitude=1, t_0=0, baseline=0):
         """
@@ -72,6 +78,19 @@ class NormalizedPulseTemplate:
 
         y = amplitude * self._template[gain](time - t_0) + baseline
         return np.array(y)
+
+    def resample_template(self):
+        """
+        Use scipy interpolate to resample the pulse template table.
+        Override the times, amplitude and errors to be able to exploit the uniform binning.
+
+        """
+        times = np.arange(self.t0, self.time[-1], self.dt)
+        self.time = times
+        self.amplitude_HG = self._template['HG'](times)
+        self.amplitude_LG = self._template['LG'](times)
+        self.amplitude_HG_err = self._template_err['HG'](times)
+        self.amplitude_LG_err = self._template_err['LG'](times)
 
     def get_error(self, time, gain, amplitude=1, t_0=0):
         """

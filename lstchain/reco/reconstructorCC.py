@@ -1,5 +1,6 @@
 import numpy as np
 from numba.pycc import CC
+from numba import njit
 
 
 def compile_reconstructor_cc():
@@ -19,6 +20,7 @@ def compile_reconstructor_cc():
     cc = CC('log_pdf_CC')
     cc.verbose = True
 
+    @njit()
     @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
         """
@@ -54,6 +56,7 @@ def compile_reconstructor_cc():
                 sum += weight[i, j] * np.log(sum_k)
         return sum
 
+    @njit()
     @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:,:],f8[:,:])')
     def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
         """
@@ -78,6 +81,7 @@ def compile_reconstructor_cc():
                 sum += weight[i, j] * log_gauss
         return sum
 
+    @njit()
     @cc.export('asygaussian2d', 'f8[:](f8[:],f8[:],f8[:],f8,f8,f8,f8,f8,f8)')
     def asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
         """
@@ -115,5 +119,137 @@ def compile_reconstructor_cc():
             b = 2 * width ** 2
             gauss2d[i] = norm * size[i] * np.exp(-(le ** 2 / a + wi ** 2 / b))
         return gauss2d
+
+    @njit()
+    @cc.export('linval', 'f8[:](f8,f8,f8[:])')
+    def linval(a, b, x):
+        y = np.empty(x.shape)
+        for i in range(len(x)):
+            y[i] = b + a * x[i]
+        return y
+
+    @njit()
+    @cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:],i8)')
+    def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
+        n, m = times.shape
+        out = np.empty((n, m))
+        for i in range(n):
+            for j in range(m):
+                a = (times[i, j]-t0)/dt
+                t = int(a)
+                if a < size:
+                    out[i, j] = a_hg[t] * (1. - a + t) + a_hg[t+1] * (a-t) if gain[i] else \
+                        a_lg[t] * (1. - a + t) + a_lg[t+1] * (a-t)
+                else:
+                    out[i, j] = 0.0
+        return out
+
+    @cc.export('log_pdf', 'f8(f8,f8,f8,f8,f8,f8,f8,f8,f8,'
+                          'f4[:,:],f4[:],b1[:],f8[:],f8[:],f8[:],f4[:],'
+                          'f8[:],f8[:],f8[:],f8,f8,f8[:],'
+                          'f8[:],i8,b1,i8[:])')
+    def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
+                data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
+                p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
+                template_hg, n_peaks, use_weight, factorial):
+        """
+            Compute the log likelihood of the model used for a set of input
+            parameters.
+
+        Parameters
+        ----------
+        charge: float
+            Charge of the peak of the spatial model
+        t_cm: float
+            Time of the middle of the energy deposit in the camera
+            for the temporal model
+        x_cm, y_cm: float
+            Position of the center of the spatial model
+        length, wl: float
+            Spatial dispersion of the model along the main and
+            fraction of this dispersion along the minor axis
+        psi: float
+            Orientation of the main axis of the spatial model and of the
+            propagation of the temporal model
+        v: float
+            Velocity of the evolution of the signal over the camera
+        rl: float
+            Asymmetry of the spatial model along the main axis
+        """
+        n_pixels, n_samples = data.shape
+        dx = (p_x - x_cm)
+        dy = (p_y - y_cm)
+        long = dx * np.cos(psi) + dy * np.sin(psi)
+        t_model = linval(v, t_cm, long)
+        t = np.empty(data.shape, dtype=np.float64)
+        for i in range(n_pixels):
+            for j in range(n_samples):
+                t[i, j] = times[j] - t_model[i] - time_shift[i]
+        size_template = template_hg.shape[0]
+        templates = template_interpolation(is_high_gain, t, template_t0, template_dt,
+                                           template_hg, template_lg, size_template)
+        rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
+        mu = asygaussian2d(charge * pix_area,
+                           p_x,
+                           p_y,
+                           x_cm,
+                           y_cm,
+                           wl * length,
+                           length,
+                           psi,
+                           rl)
+
+        # We reduce the sum by limiting to the poisson term contributing for
+        # more than 10^-6. The limits are approximated by 2 broken linear
+        # function obtained for 0 crosstalk.
+        # The choice of kmin and kmax is currently not done on a pixel basis
+        mask_LL = (mu <= n_peaks / 1.096 - 47.8) & (mu > 0)
+        mask_HL = ~mask_LL
+
+        if len(mu[mask_LL]) == 0:
+            kmin, kmax = 0, n_peaks
+        else:
+            min_mu = min(mu[mask_LL])
+            max_mu = max(mu[mask_LL])
+            if min_mu < 120:
+                kmin = int(0.66 * (min_mu - 20))
+            else:
+                kmin = int(0.904 * min_mu - 42.8)
+            if max_mu < 120:
+                kmax = int(np.ceil(1.34 * (max_mu - 20) + 45))
+            else:
+                kmax = int(np.ceil(1.096 * max_mu + 47.8))
+        if kmin < 0:
+            kmin = 0
+        if kmax > n_peaks:
+            kmax = n_peaks
+
+        if use_weight:
+            weight = 1.0 + (data / np.max(data))
+        else:
+            weight = np.ones(data.shape)
+
+        mask_k = (np.arange(n_peaks) >= kmin) & (np.arange(n_peaks) < kmax)
+
+        log_pdf_faint = log_pdf_ll(mu[mask_LL],
+                                   data[mask_LL],
+                                   error[mask_LL],
+                                   crosstalks[mask_LL],
+                                   sig_s[mask_LL],
+                                   templates[mask_LL],
+                                   factorial[mask_k],
+                                   kmin, kmax,
+                                   weight[mask_LL])
+
+        log_pdf_bright = log_pdf_hl(mu[mask_HL],
+                                   data[mask_HL],
+                                   error[mask_HL],
+                                   crosstalks[mask_HL],
+                                   templates[mask_HL],
+                                   weight[mask_HL])
+
+        log_pdf = (log_pdf_faint + log_pdf_bright) / np.sum(weight)
+
+        return log_pdf
 
     cc.compile()
