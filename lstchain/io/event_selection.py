@@ -283,12 +283,12 @@ class DataBinning(Component):
 
     true_energy_min = Float(
         help="Minimum value for True Energy bins in TeV units",
-        default_value=0.01,
+        default_value=0.005,
     ).tag(config=True)
 
     true_energy_max = Float(
         help="Maximum value for True Energy bins in TeV units",
-        default_value=100,
+        default_value=200,
     ).tag(config=True)
 
     true_energy_n_bins_per_decade = Float(
@@ -298,12 +298,12 @@ class DataBinning(Component):
 
     reco_energy_min = Float(
         help="Minimum value for Reco Energy bins in TeV units",
-        default_value=0.01,
+        default_value=0.005,
     ).tag(config=True)
 
     reco_energy_max = Float(
         help="Maximum value for Reco Energy bins in TeV units",
-        default_value=100,
+        default_value=200,
     ).tag(config=True)
 
     reco_energy_n_bins_per_decade = Float(
@@ -358,17 +358,17 @@ class DataBinning(Component):
 
     source_offset_min = Float(
         help="Minimum value for Source offset for PSF IRF",
-        default_value=0.0001,
+        default_value=0,
     ).tag(config=True)
 
     source_offset_max = Float(
         help="Maximum value for Source offset for PSF IRF",
-        default_value=1.0001,
+        default_value=1,
     ).tag(config=True)
 
     source_offset_n_edges = Int(
         help="Number of edges for Source offset for PSF IRF",
-        default_value=1000,
+        default_value=101,
     ).tag(config=True)
 
     def true_energy_bins(self):
