@@ -485,20 +485,33 @@ class IRFFITSWriter(Tool):
             "FOVALIGN": "RADEC",
         }
 
-        extra_headers["ZEN_PNT"] = str(self.mc_particle["gamma"]["ZEN_PNT"] * u.deg)
-        extra_headers["AZ_PNT"] = str(self.mc_particle["gamma"]["AZ_PNT"] * u.deg)
-        extra_headers["G_OFFSET"] = str(mean_fov_offset * u.deg)
-        extra_headers["B_TOTAL"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].to(u.uT)
+        extra_headers["ZEN_PNT"] = (
+            self.mc_particle["gamma"]["ZEN_PNT"],
+            "deg"
         )
-        extra_headers["B_INC"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].to(u.rad)
+        extra_headers["AZ_PNT"] = (
+            self.mc_particle["gamma"]["AZ_PNT"],
+            "deg"
         )
-        extra_headers["B_DEC"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].to(u.rad)
+        extra_headers["G_OFFSET"] = (
+            mean_fov_offset,
+            "deg"
         )
-        extra_headers["B_DELTA"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].to(u.deg)
+        extra_headers["B_TOTAL"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"],
+            "uT"
+        )
+        extra_headers["B_INC"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"],
+            "rad"
+        )
+        extra_headers["B_DEC"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"],
+            "rad"
+        )
+        extra_headers["B_DELTA"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"],
+            "deg"
         )
 
         if self.point_like:

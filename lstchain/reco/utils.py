@@ -43,8 +43,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side",
-    "get_geomagnetic_delta"
+    "source_side"
 ]
 
 # position of the LST1
