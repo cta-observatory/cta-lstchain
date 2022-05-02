@@ -299,17 +299,17 @@ class DataBinning(Component):
 
     source_offset_min = Float(
         help="Minimum value for Source offset for PSF IRF",
-        default_value=0.001,
+        default_value=0,
     ).tag(config=True)
 
     source_offset_max = Float(
         help="Maximum value for Source offset for PSF IRF",
-        default_value=1.001,
+        default_value=1,
     ).tag(config=True)
 
     source_offset_n_edges = Int(
         help="Number of edges for Source offset for PSF IRF",
-        default_value=100,
+        default_value=101,
     ).tag(config=True)
 
     def true_energy_bins(self):
