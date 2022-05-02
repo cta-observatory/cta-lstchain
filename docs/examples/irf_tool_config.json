@@ -19,17 +19,21 @@
     "global_alpha_cut": 10,
     "global_theta_cut": 0.2,
     "theta_containment": 0.68,
+    "alpha_containment": 0.68,
     "min_theta_cut": 0.05,
     "max_theta_cut": 0.32,
     "fill_theta_cut": 0.32,
+    "min_alpha_cut": 1,
+    "max_alpha_cut": 45,
+    "fill_alpha_cut": 45,
     "allowed_tels": [1]
   },
   "DataBinning": {
-    "true_energy_min": 0.01,
-    "true_energy_max": 100,
+    "true_energy_min": 0.005,
+    "true_energy_max": 200,
     "true_energy_n_bins_per_decade": 5,
-    "reco_energy_min": 0.01,
-    "reco_energy_max": 100,
+    "reco_energy_min": 0.005,
+    "reco_energy_max": 200,
     "reco_energy_n_bins_per_decade": 5,
     "energy_migration_min": 0.2,
     "energy_migration_max": 5,
@@ -40,8 +44,8 @@
     "bkg_fov_offset_min": 0,
     "bkg_fov_offset_max": 10,
     "bkg_fov_offset_n_edges": 21,
-    "source_offset_min": 0.0001,
-    "source_offset_max": 1.0001,
-    "source_offset_n_edges": 1000
+    "source_offset_min": 0,
+    "source_offset_max": 1,
+    "source_offset_n_edges": 101
   }
 }

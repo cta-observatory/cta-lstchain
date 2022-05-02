@@ -31,7 +31,6 @@ from .lstcontainers import (
     ThrownEventsHistogram,
 )
 
-
 log = logging.getLogger(__name__)
 
 __all__ = [
@@ -42,6 +41,7 @@ __all__ = [
     'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
+    'check_mc_type',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
@@ -1162,3 +1162,33 @@ def extract_simulation_nsb(filename):
                 except Exception as e:
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
+
+def check_mc_type(filename):
+    """
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+    Returns
+    -------
+    string
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    min_viewcone = simu_info.min_viewcone_radius.value
+    max_viewcone = simu_info.max_viewcone_radius.value
+
+    if max_viewcone == 0.0:
+        mc_type = 'point_like'
+
+    elif min_viewcone == 0.0:
+        mc_type = 'diffuse'
+
+    elif (max_viewcone - min_viewcone) < 0.1:
+        mc_type = 'ring_wobble'
+
+    else:
+        raise ValueError('mc type cannot be identified')
+
+    return mc_type
