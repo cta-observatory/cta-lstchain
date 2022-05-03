@@ -73,6 +73,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_x = geometry.pix_x.to_value(u.m)
         pix_y = geometry.pix_y.to_value(u.m)
         r_max = geometry.guess_radius().to_value(u.m)
+        pix_radius = np.sqrt(geometry.pix_area[0].to_value(u.m ** 2)/np.pi)  # find linear size of a pixel
         focal_length = self.subarray.tel[telescope_id].optics.equivalent_focal_length
         readout = self.subarray.tel[telescope_id].camera.readout
         sampling_rate = readout.sampling_rate.to_value(u.GHz)
@@ -109,6 +110,7 @@ class TimeWaveformFitter(TelescopeComponent):
                 psi = psi + np.pi
 
         start_length = max(np.tan(dl1_container.length.to_value(u.rad)) * focal_length.to_value(u.m), 0.02)
+        # With current likelihood computation, order and type of the parameters are important
         start_parameters = {'charge': dl1_container.intensity,
                             't_cm': dl1_container.intercept
                             - self.template_time_of_max_dict[telescope_id],
@@ -136,14 +138,14 @@ class TimeWaveformFitter(TelescopeComponent):
                                        dl1_container.intensity * 4.0),
                             't_cm': (-10, t_max + 10),
                             'x_cm': (start_x_cm.to_value(u.m)
-                                     - 1.0 * start_length,
+                                     - start_length,
                                      start_x_cm.to_value(u.m)
-                                     + 1.0 * start_length),
+                                     + start_length),
                             'y_cm': (start_y_cm.to_value(u.m)
-                                     - 1.0 * start_length,
+                                     - start_length,
                                      start_y_cm.to_value(u.m)
-                                     + 1.0 * start_length),
-                            'length': (0.001,
+                                     + start_length),
+                            'length': (pix_radius,
                                        min(2 * start_length, r_max)),
                             'wl': (0.001, 1.0),
                             'psi': (-np.pi * 2.0, np.pi * 2.0),
@@ -151,7 +153,7 @@ class TimeWaveformFitter(TelescopeComponent):
                             'rl': (rl_min, rl_max)
                             }
 
-        mask_pixel, mask_time = self.clean_data(pix_x, pix_y, times, start_parameters, telescope_id)
+        mask_pixel, mask_time = self.clean_data(pix_x, pix_y, pix_radius, times, start_parameters, telescope_id)
         spatial_ones = np.ones(np.sum(mask_pixel))
 
         is_high_gain = is_high_gain[mask_pixel]
@@ -166,7 +168,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_area = geometry.pix_area[mask_pixel].to_value(u.m ** 2)
 
         data = waveform
-        error = None  # TODO include interleaved correction on pedestal
+        error = None  # TODO include option to use calibration data
 
         filter_pixels = np.nonzero(~mask_pixel)
         filter_times = np.nonzero(~mask_time)
@@ -179,6 +181,7 @@ class TimeWaveformFitter(TelescopeComponent):
         data = np.delete(data, filter_times, axis=1)
         error = np.delete(error, filter_pixels, axis=0)
 
+        # Fill the set of non-fitted parameters needed to compute the likelihood. Order and type sensitive.
         fit_params = [data, error, is_high_gain,
                       sig_s, crosstalks, times,
                       time_shift, p_x, p_y,
@@ -203,7 +206,7 @@ class TimeWaveformFitter(TelescopeComponent):
 
         return self.predict(focal_length, fit_params)
 
-    def clean_data(self, pix_x, pix_y, times, start_parameters, telescope_id):
+    def clean_data(self, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
         """
             Method used to select pixels and time samples used in the
             fitting procedure. The spatial selection takes pixels in an
@@ -229,8 +232,8 @@ class TimeWaveformFitter(TelescopeComponent):
         lon = dx * np.cos(psi) + dy * np.sin(psi)
         lat = dx * np.sin(psi) - dy * np.cos(psi)
 
-        mask_pixel = ((lon / (length + 0.0228)) ** 2 + (
-                lat / (width + 0.0228)) ** 2) < self.sigma_space ** 2
+        mask_pixel = ((lon / (length + pix_radius)) ** 2 + (
+                lat / (width + pix_radius)) ** 2) < self.sigma_space ** 2
 
         v = start_parameters['v']
         t_start = (start_parameters['t_cm']
