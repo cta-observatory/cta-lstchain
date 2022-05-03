@@ -36,16 +36,17 @@ def plot_debug(fitter, event, telescope_id, dl1_container, identifier):
     Create a set of plots for one event
 
     """
-    image = event.image
-    plot_event(fitter, image, init=True, save=True, ids=identifier)
-    plot_waveforms(fitter, image, save=True, ids=identifier)
-    plot_event(fitter, image, save=True, ids=identifier)
-    plot_residual(fitter, image, save=True, ids=identifier)
-    plot_model(fitter, save=True, ids=identifier)
+    image = event.dl1.tel[telescope_id].image
+    geometry = fitter.subarray.tel[telescope_id].camera.geometry
+    plot_event(fitter, image, geometry, init=True, save=True, ids=identifier)
+    plot_waveforms(fitter, event, telescope_id, save=True, ids=identifier)
+    plot_event(fitter, image, geometry, save=True, ids=identifier)
+    plot_residual(fitter, image, geometry, save=True, ids=identifier)
+    plot_model(fitter, geometry, save=True, ids=identifier)
     _, _, _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
     for params in fitter.start_parameters.keys():
         plot_likelihood(fitter, fit_params, params, save=True, ids=identifier)
-    plot_likelihood('x_cm', 'y_cm', save=True, ids=identifier)
+    plot_likelihood(fitter, fit_params, 'x_cm', 'y_cm', save=True, ids=identifier)
 
     if fitter.verbose == 3:
         print("event plot produced, press Enter to continue or Ctrl+C and Enter to stop")
@@ -97,7 +98,12 @@ def plot_1dlikelihood(fitter, fit_params, parameter_name, axes=None, size=1000,
 
     for i, xx in enumerate(x):
         params[key] = xx
-        llh[i] = fitter.log_likelihood(**params, **fit_params)
+        try:
+            y = fitter.log_likelihood(*params.values(), fit_params=fit_params)
+        except ZeroDivisionError:
+            pass
+        else:
+            llh[i] = y
 
     x_label = labels[key] if x_label is None else x_label
 
@@ -180,7 +186,7 @@ def plot_2dlikelihood(fitter, fit_params, parameter_1, parameter_2=None, size=10
         params[key_x] = xx
         for j, yy in enumerate(y):
             params[key_y] = yy
-            llh[i, j] = fitter.log_likelihood(**params, **fit_params)
+            llh[i, j] = fitter.log_likelihood(*params.values(), fit_params=fit_params)
 
     fig = plt.figure()
     left, width = 0.1, 0.6
@@ -193,9 +199,9 @@ def plot_2dlikelihood(fitter, fit_params, parameter_1, parameter_2=None, size=10
     axes_x = fig.add_axes(rect_x)
     axes_y = fig.add_axes(rect_y)
     axes.tick_params(direction='in', top=True, right=True)
-    plot_1dlikelihood(fitter, parameter_name=parameter_1, axes=axes_x,
+    plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_1, axes=axes_x,
                            loc='upper left')
-    plot_1dlikelihood(fitter, parameter_name=parameter_2, axes=axes_y,
+    plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_2, axes=axes_y,
                            invert=True, loc='lower right')
     axes_x.tick_params(direction='in', labelbottom=False)
     axes_y.tick_params(direction='in', labelleft=False)
@@ -285,7 +291,7 @@ def plot_likelihood(fitter, fit_params, parameter_1, parameter_2=None,
     return None if save else axes
 
 
-def plot_event(fitter, image, n_sigma=3, init=False, show_ellipsis=True, save=False, ids=''):
+def plot_event(fitter, image, geometry, n_sigma=3, init=False, show_ellipsis=True, save=False, ids=''):
     """
         Plot the image of the event in the camera along with the extracted
         ellipsis before or after the fitting procedure.
@@ -314,7 +320,7 @@ def plot_event(fitter, image, n_sigma=3, init=False, show_ellipsis=True, save=Fa
     """
 
     fig, axes = plt.subplots(figsize=(10, 8))
-    cam_display = CameraDisplay(fitter.geometry, image, ax=axes)
+    cam_display = CameraDisplay(geometry, image, ax=axes)
     cam_display.add_colorbar(ax=axes)
     if init:
         params = fitter.start_parameters
@@ -332,8 +338,8 @@ def plot_event(fitter, image, n_sigma=3, init=False, show_ellipsis=True, save=Fa
                                 linewidth=6, color='r', linestyle='--',
                                 label=r'{} $\sigma$ contour'.format(n_sigma))
         cam_display.axes.legend(loc='best')
-    if init:
-        cam_display.highlight_pixels(fitter.mask_pixel, color='r')
+    #if init:
+    #    cam_display.highlight_pixels(fitter.mask_pixel, color='r')
 
     if save:
         cam_display.axes.get_figure().savefig('event/' + ids +
@@ -342,7 +348,7 @@ def plot_event(fitter, image, n_sigma=3, init=False, show_ellipsis=True, save=Fa
     return None if save else cam_display
 
 
-def plot_residual(fitter, image, save=False, ids=''):
+def plot_residual(fitter, image, geometry, save=False, ids=''):
     """
         Plot the residuals image- spatial_model in the camera after fitting
 
@@ -365,9 +371,9 @@ def plot_residual(fitter, image, save=False, ids=''):
     params = fitter.end_parameters
 
     rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-    mu = asygaussian2d(params['charge'] * fitter.geometry.pix_area.to_value(u.m ** 2),
-                       fitter.geometry.pix_x.value,
-                       fitter.geometry.pix_y.value,
+    mu = asygaussian2d(params['charge'] * geometry.pix_area.to_value(u.m ** 2),
+                       geometry.pix_x.value,
+                       geometry.pix_y.value,
                        params['x_cm'],
                        params['y_cm'],
                        params['wl'] * params['length'],
@@ -377,7 +383,7 @@ def plot_residual(fitter, image, save=False, ids=''):
     residual = image - mu
 
     fig, axes = plt.subplots(figsize=(10, 8))
-    cam_display = CameraDisplay(fitter.geometry, residual, ax=axes)
+    cam_display = CameraDisplay(geometry, residual, ax=axes)
     cam_display.add_colorbar(ax=axes)
     if save:
         cam_display.axes.get_figure().savefig('event/' + ids +
@@ -386,7 +392,7 @@ def plot_residual(fitter, image, save=False, ids=''):
     return None if save else cam_display
 
 
-def plot_model(fitter, save=False, ids=''):
+def plot_model(fitter, geometry, save=False, ids=''):
     """
     Create a CameraDisplay object showing the spatial model fitted to
     the current event
@@ -407,9 +413,9 @@ def plot_model(fitter, save=False, ids=''):
 
     params = fitter.end_parameters
     rl = 1 + params['rl'] if params['rl'] >= 0 else 1 / (1 - params['rl'])
-    mu = asygaussian2d(params['charge'] * fitter.geometry.pix_area.to_value(u.m ** 2),
-                       fitter.geometry.pix_x.value,
-                       fitter.geometry.pix_y.value,
+    mu = asygaussian2d(params['charge'] * geometry.pix_area.to_value(u.m ** 2),
+                       geometry.pix_x.value,
+                       geometry.pix_y.value,
                        params['x_cm'],
                        params['y_cm'],
                        params['wl'] * params['length'],
@@ -418,7 +424,7 @@ def plot_model(fitter, save=False, ids=''):
                        rl)
 
     fig, axes = plt.subplots(figsize=(10, 8))
-    cam_display = CameraDisplay(fitter.geometry, mu, ax=axes)
+    cam_display = CameraDisplay(geometry, mu, ax=axes)
     cam_display.add_colorbar(ax=axes)
 
     if save:
@@ -428,7 +434,7 @@ def plot_model(fitter, save=False, ids=''):
     return None if save else cam_display
 
 
-def plot_waveforms(fitter, image, axes=None, save=False, ids=''):
+def plot_waveforms(fitter, event, telescope_id, axes=None, save=False, ids=''):
     """
         Plot the intensity of the signal in the camera as a function of
         time and of the position projected on the main axis of the fitted
@@ -451,23 +457,27 @@ def plot_waveforms(fitter, image, axes=None, save=False, ids=''):
     axes: `matplotlib.pyplot.axis`
         Object filled with the figure
     """
-    image = image[fitter.mask_pixel]
+    #image = image[fitter.mask_pixel]
+    image = event.dl1.tel[telescope_id].image
+    geometry = fitter.subarray.tel[telescope_id].camera.geometry
+    data = event.r1.tel[telescope_id].waveform
     n_pixels = min(20, len(image))
     pixels = np.argsort(image)[-n_pixels:]
-    dx = (fitter.pix_x[pixels] - fitter.end_parameters['x_cm'])
-    dy = (fitter.pix_y[pixels] - fitter.end_parameters['y_cm'])
+    dx = (geometry.pix_x[pixels].to_value() - fitter.end_parameters['x_cm'])
+    dy = (geometry.pix_y[pixels].to_value() - fitter.end_parameters['y_cm'])
     long_pix = dx * np.cos(fitter.end_parameters['psi']) + dy * np.sin(
         fitter.end_parameters['psi'])
     fitted_times = np.polyval(
         [fitter.end_parameters['v'], fitter.end_parameters['t_cm']], long_pix)
     times_index = np.argsort(fitted_times)
 
-    waveforms = fitter.data[pixels]
+    waveforms = data[pixels]
     waveforms = waveforms[times_index]
     long_pix = long_pix[times_index]
     fitted_times = fitted_times[times_index]
-
-    X, Y = np.meshgrid(fitter.times, long_pix)
+    n_pixels, n_samples = waveforms.shape
+    times = np.arange(0, n_samples)
+    X, Y = np.meshgrid(times, long_pix)
 
     if axes is None:
         fig = plt.figure()

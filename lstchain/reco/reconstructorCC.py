@@ -32,10 +32,10 @@ def compile_reconstructor_cc():
         """
         n_pixels, n_samples = waveform.shape
         n_k = kmax - kmin
-        sum = 0.0
+        sumlh = 0.0
         for i in range(n_pixels):
             for j in range(n_samples):
-                sum_k = 0.0
+                sumlh_k = 0.0
                 for k in range(n_k):
                     # Generalised Poisson term
                     poisson = (mu[i] * pow(mu[i] + (kmin + k) * crosstalk[i], (kmin + k - 1)) / factorial[k]
@@ -47,14 +47,14 @@ def compile_reconstructor_cc():
                     gauss = 1 / (np.sqrt(2 * np.pi) * sigma) * np.exp(
                         -(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma)
                     # Add the contribution for the k+kmin number of p.e. to the single sample likelihood
-                    sum_k += poisson * gauss
+                    sumlh_k += poisson * gauss
                 # Security to deal with negatively rounded values
-                if sum_k <= 0:
+                if sumlh_k <= 0:
                     return -np.inf
                 # Add the log single sample likelihood to the full log likelihood
                 # An optional weight increasing high signal ample importance is supported
-                sum += weight[i, j] * np.log(sum_k)
-        return sum
+                sumlh += weight[i, j] * np.log(sumlh_k)
+        return sumlh
 
     @njit()
     @cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:,:],f8[:,:])')
@@ -66,7 +66,7 @@ def compile_reconstructor_cc():
 
         """
         n_pixels, n_samples = waveform.shape
-        sum = 0
+        sumlh = 0
         for i in range(n_pixels):
             for j in range(n_samples):
                 # Log Gaussian term
@@ -78,8 +78,8 @@ def compile_reconstructor_cc():
                              - np.log(np.sqrt(2 * np.pi) * sigma))
                 # Add the log single sample likelihood to the full log likelihood
                 # An optional weight increasing high signal ample importance is supported
-                sum += weight[i, j] * log_gauss
-        return sum
+                sumlh += weight[i, j] * log_gauss
+        return sumlh
 
     @njit()
     @cc.export('asygaussian2d', 'f8[:](f8[:],f8[:],f8[:],f8,f8,f8,f8,f8,f8)')
@@ -105,7 +105,7 @@ def compile_reconstructor_cc():
 
         Returns
         -------
-        pdf: float or array-like
+        gauss2d: array-like
             Evaluation of the 2D gaussian law at (x,y)
 
         """
@@ -147,7 +147,7 @@ def compile_reconstructor_cc():
     @cc.export('log_pdf', 'f8(f8,f8,f8,f8,f8,f8,f8,f8,f8,'
                           'f4[:,:],f4[:],b1[:],f8[:],f8[:],f8[:],f4[:],'
                           'f8[:],f8[:],f8[:],f8,f8,f8[:],'
-                          'f8[:],i8,b1,i8[:])')
+                          'f8[:],i8,b1,u8[:])')
     def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
                 data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
                 p_x, p_y, pix_area,  template_dt, template_t0, template_lg,

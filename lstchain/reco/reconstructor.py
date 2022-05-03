@@ -2,22 +2,17 @@ import logging
 
 from iminuit import Minuit
 import numpy as np
-from copy import copy
 import astropy.units as u
 
 from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 
 from ctapipe.core import TelescopeComponent
 from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Path
-from lstchain.calib.camera.pixel_threshold_estimation import get_bias_and_std
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
 
 logger = logging.getLogger(__name__)
 
 try:
-    from lstchain.reco.log_pdf_CC import log_pdf_ll as log_pdf_ll
-    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
-    from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
     from lstchain.reco.log_pdf_CC import log_pdf as log_pdf
 except ImportError:
     pass
@@ -64,11 +59,13 @@ class TimeWaveformFitter(TelescopeComponent):
             self.template_time_of_max_dict[tel_id] = self.template_dict[tel_id].compute_time_of_max()
         poisson_peaks = np.arange(self.n_peaks, dtype=int)
         poisson_peaks[0] = 1
-        self.factorial = np.cumprod(poisson_peaks)
+        self.factorial = np.cumprod(poisson_peaks, dtype='u8')
         self.start_parameters = None
+        self.names_parameters = None
         self.end_parameters = None
         self.error_parameters = None
         self.bound_parameters = None
+        self.fcn = None
 
     def call_setup(self, event, telescope_id, dl1_container):
 
@@ -81,10 +78,6 @@ class TimeWaveformFitter(TelescopeComponent):
         sampling_rate = readout.sampling_rate.to_value(u.GHz)
         dt = (1.0 / sampling_rate)
         template = self.template_dict[telescope_id]
-        if self.use_interleaved is None:  # test to include interleaved correction on pedestal, NOT FUNCTIONAL
-            self.pedestal_std = None
-        else:
-            _, self.pedestal_std = get_bias_and_std(self.use_interleaved)
         image = event.dl1.tel[telescope_id].image
         hillas_signal_pixels = event.dl1.tel[telescope_id].image_mask
         start_x_cm, start_y_cm = init_centroid(dl1_container,
@@ -116,15 +109,15 @@ class TimeWaveformFitter(TelescopeComponent):
                 psi = psi + np.pi
 
         start_length = max(np.tan(dl1_container.length.to_value(u.rad)) * focal_length.to_value(u.m), 0.02)
-        start_parameters = {'x_cm': start_x_cm.to_value(u.m),
-                            'y_cm': start_y_cm.to_value(u.m),
-                            'charge': dl1_container.intensity,
+        start_parameters = {'charge': dl1_container.intensity,
                             't_cm': dl1_container.intercept
-                                    - self.template_time_of_max_dict[telescope_id],
-                            'v': np.abs(v),
-                            'psi': psi,
+                            - self.template_time_of_max_dict[telescope_id],
+                            'x_cm': start_x_cm.to_value(u.m),
+                            'y_cm': start_y_cm.to_value(u.m),
                             'length': start_length,
                             'wl': max(dl1_container.wl, 0.01),
+                            'psi': psi,
+                            'v': np.abs(v),
                             'rl': 0.0
                             }
 
@@ -139,24 +132,24 @@ class TimeWaveformFitter(TelescopeComponent):
         if self.no_asymmetry:
             rl_min, rl_max = 0.0, 0.0
 
-        bound_parameters = {'x_cm': (start_x_cm.to_value(u.m)
-                                      - 1.0 * start_length,
-                                      start_x_cm.to_value(u.m)
-                                      + 1.0 * start_length),
-                             'y_cm': (start_y_cm.to_value(u.m)
-                                      - 1.0 * start_length,
-                                      start_y_cm.to_value(u.m)
-                                      + 1.0 * start_length),
-                             'charge': (dl1_container.intensity * 0.25,
-                                        dl1_container.intensity * 4.0),
-                             't_cm': (-10, t_max + 10),
-                             'v': (v_min, v_max),
-                             'psi': (-np.pi * 2.0, np.pi * 2.0),
-                             'length': (0.001,
-                                        min(2 * start_length, r_max)),
-                             'wl': (0.001, 1.0),
-                             'rl': (rl_min, rl_max)
-                             }
+        bound_parameters = {'charge': (dl1_container.intensity * 0.25,
+                                       dl1_container.intensity * 4.0),
+                            't_cm': (-10, t_max + 10),
+                            'x_cm': (start_x_cm.to_value(u.m)
+                                     - 1.0 * start_length,
+                                     start_x_cm.to_value(u.m)
+                                     + 1.0 * start_length),
+                            'y_cm': (start_y_cm.to_value(u.m)
+                                     - 1.0 * start_length,
+                                     start_y_cm.to_value(u.m)
+                                     + 1.0 * start_length),
+                            'length': (0.001,
+                                       min(2 * start_length, r_max)),
+                            'wl': (0.001, 1.0),
+                            'psi': (-np.pi * 2.0, np.pi * 2.0),
+                            'v': (v_min, v_max),
+                            'rl': (rl_min, rl_max)
+                            }
 
         mask_pixel, mask_time = self.clean_data(pix_x, pix_y, times, start_parameters, telescope_id)
         spatial_ones = np.ones(np.sum(mask_pixel))
@@ -173,7 +166,7 @@ class TimeWaveformFitter(TelescopeComponent):
         pix_area = geometry.pix_area[mask_pixel].to_value(u.m ** 2)
 
         data = waveform
-        error = copy(self.pedestal_std)
+        error = None  # TODO include interleaved correction on pedestal
 
         filter_pixels = np.nonzero(~mask_pixel)
         filter_times = np.nonzero(~mask_time)
@@ -181,9 +174,6 @@ class TimeWaveformFitter(TelescopeComponent):
         if error is None:
             std = np.std(data[~mask_pixel])
             error = np.full(data.shape[0], std)
-        else:
-            std = np.std(data[~mask_pixel])
-            error[error <= std / 2] = std
 
         data = np.delete(data, filter_pixels, axis=0)
         data = np.delete(data, filter_times, axis=1)
@@ -193,17 +183,20 @@ class TimeWaveformFitter(TelescopeComponent):
                       sig_s, crosstalks, times,
                       time_shift, p_x, p_y,
                       pix_area, template.dt,
-                      template.t0,template.amplitude_LG,
+                      template.t0, template.amplitude_LG,
                       template.amplitude_HG, np.int64(self.n_peaks),
                       np.bool(self.use_weight), self.factorial]
-        return start_parameters, bound_parameters, focal_length, fit_params
 
-    def __call__(self, event, telescope_id, dl1_container):
-
-        start_parameters, bound_parameters, focal_length, fit_params = self.call_setup(event, telescope_id, dl1_container)
         self.start_parameters = start_parameters
         self.names_parameters = start_parameters.keys()
         self.bound_parameters = bound_parameters
+
+        return focal_length, fit_params
+
+    def __call__(self, event, telescope_id, dl1_container):
+        self.start_parameters = None
+        self.names_parameters = None
+        focal_length, fit_params = self.call_setup(event, telescope_id, dl1_container)
         self.end_parameters = None
         self.error_parameters = None
         self.fcn = None
@@ -256,14 +249,13 @@ class TimeWaveformFitter(TelescopeComponent):
             Performs the fitting procedure.
 
         """
-
         def f(*args):
             return -2 * self.log_likelihood(*args, fit_params=fit_params)
 
         print_level = 2 if self.verbose in [1, 2, 3] else 0
         m = Minuit(f,
                    name=self.names_parameters,
-                   **self.start_parameters)
+                   *self.start_parameters.values())
         for key, val in self.bound_parameters.items():
             m.limits[key] = val
         m.print_level = print_level
@@ -325,7 +317,7 @@ class TimeWaveformFitter(TelescopeComponent):
                 in readable format.
 
         """
-        s =  'Event processed\n'
+        s = 'Event processed\n'
         s += 'Start parameters :\n\t{}\n'.format(self.start_parameters)
         s += 'Bound parameters :\n\t{}\n'.format(self.bound_parameters)
         s += 'End parameters :\n\t{}\n'.format(self.end_parameters)
@@ -334,7 +326,8 @@ class TimeWaveformFitter(TelescopeComponent):
 
         return s
 
-    def log_likelihood(self, *args, fit_params, **kwargs):
+    @staticmethod
+    def log_likelihood(*args, fit_params, **kwargs):
         """Compute the log-likelihood used in the fitting procedure."""
         llh = log_pdf(*args, *fit_params, **kwargs)
         return np.sum(llh)

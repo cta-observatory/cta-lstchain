@@ -442,10 +442,6 @@ def r0_to_dl1(
     lhfit_fitter = None
     if 'lh_fit_config' in config.keys():
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
-        if not is_simu and config['lh_fit_config']['use_interleaved'] is not None:
-            run = parse_r0_filename(input_filename)
-            lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] = \
-                (config['lh_fit_config']['use_interleaved'] + run_to_dl1_filename(run.tel_id, run.run, run.subrun))
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
 
     with HDF5TableWriter(
