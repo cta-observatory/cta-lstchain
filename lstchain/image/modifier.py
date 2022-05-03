@@ -532,7 +532,7 @@ def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config
     mc_unbiased_std_ped_pe = np.std(mc_ped_charges)
 
     # Find the additional noise (in data w.r.t. MC) for the unbiased extractor
-    # The idea is that pedestal std scales with NSB (But better correction with sqrt(variance ratio-1) observed)
+    # The idea is that pedestal variance scales with NSB
 
     data_ped_variance = data_median_std_ped_pe ** 2
     mc_ped_variance = mc_unbiased_std_ped_pe ** 2
