@@ -263,8 +263,14 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-        
-        self.data = remove_duplicated_events(self.data)
+         
+        data_without_duplicated_events = remove_duplicated_events(self.data)
+        duplicated_events_ratio = (
+            len(self.data) - len(data_without_duplicated_events))/len(data_without_duplicated_events)
+        self.log.info(
+            f"{duplicated_events_ratio}% of events are duplicated after alpha and gammaness cut"
+        )
+        self.data = data_without_duplicated_events
 
     def start(self):
 
