@@ -123,6 +123,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
         os.remove('./event/'+path)
     os.rmdir('./event')
     os.remove(tmp_path / "tmp.h5")
+    config['source_config']['EventSource']['allowed_tels'] = [1, 2]
     config['lh_fit_config']["no_asymmetry"] = True
     config['lh_fit_config']["use_weight"] = True
     config['lh_fit_config']["verbose"] = 0
