@@ -190,6 +190,11 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    energy_dependent_alpha = traits.Bool(
+        help="True for applying energy-dependent alpha cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=False,
@@ -212,6 +217,8 @@ class IRFFITSWriter(Tool):
         "gh-efficiency": "DL3Cuts.gh_efficiency",
         "theta-containment": "DL3Cuts.theta_containment",
         "global-theta-cut": "DL3Cuts.global_theta_cut",
+        "alpha-containment": "DL3Cuts.alpha_containment",
+        "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
     }
@@ -236,6 +243,10 @@ class IRFFITSWriter(Tool):
         "energy-dependent-theta": (
             {"IRFFITSWriter": {"energy_dependent_theta": True}},
             "Uses energy-dependent cuts for theta",
+        ),
+        "energy-dependent-alpha": (
+            {"IRFFITSWriter": {"energy_dependent_alpha": True}},
+            "Uses energy-dependent cuts for alpha",
         ),
     }
 
@@ -374,29 +385,41 @@ class IRFFITSWriter(Tool):
             )
 
         if self.point_like:
-            if self.energy_dependent_theta:
-                self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
-                    gammas, reco_energy_bins,
-                )
-                gammas = self.cuts.apply_energy_dependent_theta_cuts(
-                    gammas, self.theta_cuts
-                )
-                self.log.info(
-                    "Using a containment region for theta of "
-                    f"{self.cuts.theta_containment}"
-                )
-            else:
-                if not self.source_dep:
+            if not self.source_dep:
+                if self.energy_dependent_theta:
+                    self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_theta_cuts(
+                        gammas, self.theta_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for theta of "
+                        f"{self.cuts.theta_containment}"
+                    )
+                else:
                     gammas = self.cuts.apply_global_theta_cut(gammas)
                     self.log.info(
                         "Using a global Theta cut of "
                         f"{self.cuts.global_theta_cut} for point-like IRF"
                     )
+            else:
+                if self.energy_dependent_alpha:
+                    self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_alpha_cuts(
+                        gammas, self.alpha_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for alpha of "
+                        f"{self.cuts.alpha_containment} %"
+                    )
                 else:
                     gammas = self.cuts.apply_global_alpha_cut(gammas)
                     self.log.info(
-                      'Using a global Alpha cut of '
-                      f'{self.cuts.global_alpha_cut} for point like IRF'
+                        'Using a global Alpha cut of '
+                        f'{self.cuts.global_alpha_cut} for point like IRF'
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
@@ -481,11 +504,17 @@ class IRFFITSWriter(Tool):
                         'deg'
                     )
             else:
-                extra_headers["AL_CUT"] = (
-                    self.cuts.global_alpha_cut,
-                    'deg'
-                )
-
+                if self.energy_dependent_alpha:
+                    extra_headers["AL_CONT"] = (
+                        self.cuts.alpha_containment,
+                        "Alpha containment region in percentage"
+                    )
+                else:
+                    extra_headers["AL_CUT"] = (
+                        self.cuts.global_alpha_cut,
+                        'deg'
+                    )
+                    
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
@@ -608,6 +637,22 @@ class IRFFITSWriter(Tool):
                     )
                 )
                 self.log.info("RAD MAX HDU added")
+
+        if self.energy_dependent_alpha and self.source_dep:
+            # Create a separate temporary header
+            alpha_header = fits.Header()
+            alpha_header["CREATOR"] = f"lstchain v{__version__}"
+            alpha_header["DATE"] = Time.now().utc.iso
+            
+            for k, v in extra_headers.items():
+                alpha_header[k] = v
+                
+            self.hdus.append(
+                fits.BinTableHDU(
+                    self.alpha_cuts, header=gh_header, name="AL_CUTS"
+                )
+            )
+            self.log.info("ALPHA CUTS HDU added")
 
     def finish(self):
 
