@@ -282,11 +282,11 @@
     "sigma_time": 4,
     "time_before_shower": [
                 ["type", "*", 0.0],
-                ["type", "LST_LST_LSTCam", 0.0],
+                ["type", "LST_LST_LSTCam", 0.0]
             ],
     "time_after_shower": [
                 ["type", "*", 20.0],
-                ["type", "LST_LST_LSTCam", 20.0],
+                ["type", "LST_LST_LSTCam", 20.0]
             ],
     "n_peaks": 20,
     "no_asymmetry": false,
