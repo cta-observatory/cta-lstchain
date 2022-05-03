@@ -159,8 +159,8 @@ def test_remove_duplicated_events():
          'alpha': range(9) 
      }
     df = pd.DataFrame(data=d)
-    data= QTable.from_pandas(df)
-    data1 = remove_duplicated_events(data)
+    data1 = QTable.from_pandas(df)
+    remove_duplicated_events(data1)
 
     d2 = {'event_id': [3, 2, 4, 1], 
           'gh_score': [0.7, 0.8, 0.1, 0.9],

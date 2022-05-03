@@ -1131,8 +1131,6 @@ def remove_duplicated_events(data):
         remove_row_list.extend(dup_ev_lower_gh_index)
         
     data.remove_rows(remove_row_list)
-    
-    return data
 
 
 def parse_cfg_bytestring(bytestring):

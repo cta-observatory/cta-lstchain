@@ -141,9 +141,9 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    rm_duplicated_events = traits.Bool(
-        help="If True, duplicated events after alpha and gammaness cut are removed.",
-        default_value=True,
+    keep_duplicated_events = traits.Bool(
+        help="If True, duplicated events after alpha and gammaness cut are not removed.",
+        default_value=False,
     ).tag(config=True)
 
     classes = [EventSelector, DL3Cuts]
@@ -167,9 +167,9 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
-        "rm-duplicated-events": (
-            {"DataReductionFITSWriter": {"rm_duplicated_events": True}},
-            "duplicated events are removed if True",
+        "keep-duplicated-events": (
+            {"DataReductionFITSWriter": {"keep_duplicated_events": True}},
+            "duplicated events are not removed if True",
         ),
     }
 
@@ -295,18 +295,20 @@ class DataReductionFITSWriter(Tool):
             else:
                 self.data = vstack([self.data, data_temp])
          
-        if self.rm_duplicated_events:
+        if not self.keep_duplicated_events:
             if len(srcdep_assumed_positions) > 2:
                 self.log.warning(
                     "If multiple off positions are assumed, the process to remove duplicated events can introduce a bias"
                 )
-            data_without_duplicated_events = remove_duplicated_events(self.data)
-            duplicated_events_ratio = (
-                len(self.data) - len(data_without_duplicated_events))/len(data_without_duplicated_events)
+            n_events_before = len(self.data)
+            
+            remove_duplicated_events(self.data)
+            n_events_after = len(self.data)
+            
+            duplicated_events_ratio = (n_events_before - n_events_after)/n_events_after
             self.log.info(
-                f"Remove duplicated events: a ratio of duplicated events is {duplicated_events_ratio} %}"
+                f"Remove duplicated events: a ratio of duplicated events is {duplicated_events_ratio}"
             )
-            self.data = data_without_duplicated_events
 
     def start(self):
 
