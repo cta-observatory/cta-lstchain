@@ -93,45 +93,40 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     config['source_config']['EventSource']['max_events'] = 5
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config'] = {
-                               "sigma_s": 0.3282,
-                               "crosstalk": 0.0,
-                               "sigma_space": 3,
-                               "sigma_time": 4,
-                               "time_before_shower": 0,
-                               "time_after_shower": 20,
-                               "n_peaks": 50,
-                               "no_asymmetry": False,
-                               "use_weight": False,
-                               "verbose": 4
-                              }
+        "sigma_s": [
+            ["type", "*", 1.0],
+            ["type", "LST_LST_LSTCam", 0.3282]
+        ],
+        "crosstalk": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "sigma_space": 3,
+        "sigma_time": 4,
+        "time_before_shower": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "time_after_shower": [
+            ["type", "*", 20.0],
+            ["type", "LST_LST_LSTCam", 20.0]
+        ],
+        "n_peaks": 20,
+        "no_asymmetry": False,
+        "use_weight": False,
+        "verbose": 4
+    }
     os.makedirs('./event', exist_ok=True)
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
     assert len(os.listdir('./event')) > 1
     for path in os.listdir('./event'):
         os.remove('./event/'+path)
     os.rmdir('./event')
-
-
-@pytest.mark.private_data
-def test_r0_to_dl1_lhfit_observed(tmp_path):
-    from lstchain.reco.r0_to_dl1 import r0_to_dl1
-    config = copy(standard_config)
-    config['source_config']['EventSource']['max_events'] = 5
-    config['source_config']['EventSource']['allowed_tels'] = [1]
-    config['lh_fit_config'] = {
-                               "sigma_s": 0.3282,
-                               "crosstalk": 0.0,
-                               "sigma_space": 3,
-                               "sigma_time": 4,
-                               "time_before_shower": 0,
-                               "time_after_shower": 20,
-                               "n_peaks": 50,
-                               "no_asymmetry": True,
-                               "use_weight": True,
-                               "use_interleaved": None,
-                               "verbose": 0
-                              }
-    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+    os.remove(tmp_path / "tmp.h5")
+    config['lh_fit_config']["no_asymmetry"] = True
+    config['lh_fit_config']["use_weight"] = True
+    config['lh_fit_config']["verbose"] = 0
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
 def test_content_dl1(simulated_dl1_file):

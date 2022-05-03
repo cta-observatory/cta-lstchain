@@ -617,8 +617,8 @@ def r0_to_dl1(
 
                 if lhfit_fitter is not None:
                     lhfit_container = apply_lh_fit(event, telescope_id, dl1_container, lhfit_fitter)
-                    # Plotting code for development purpose only, will disappear in final realise
-                    if lhfit_fitter.verbose >= 2:
+                    # Plotting code for development purpose only, will disappear in final release
+                    if lhfit_fitter.verbose >= 2 and lhfit_container["lhfit_call_status"] == 1:
                         plot_debug(lhfit_fitter, event, telescope_id, dl1_container, str(event.index.event_id))
                     lhfit_container.prefix = dl1_tel.prefix
                     add_global_metadata(lhfit_container, metadata)

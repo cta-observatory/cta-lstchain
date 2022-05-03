@@ -184,8 +184,8 @@ class TimeWaveformFitter(TelescopeComponent):
                       time_shift, p_x, p_y,
                       pix_area, template.dt,
                       template.t0, template.amplitude_LG,
-                      template.amplitude_HG, np.int64(self.n_peaks),
-                      np.bool(self.use_weight), self.factorial]
+                      template.amplitude_HG, self.n_peaks,
+                      self.use_weight, self.factorial]
 
         self.start_parameters = start_parameters
         self.names_parameters = start_parameters.keys()

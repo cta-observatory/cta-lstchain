@@ -43,7 +43,7 @@ def plot_debug(fitter, event, telescope_id, dl1_container, identifier):
     plot_event(fitter, image, geometry, save=True, ids=identifier)
     plot_residual(fitter, image, geometry, save=True, ids=identifier)
     plot_model(fitter, geometry, save=True, ids=identifier)
-    _, _, _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
+    _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
     for params in fitter.start_parameters.keys():
         plot_likelihood(fitter, fit_params, params, save=True, ids=identifier)
     plot_likelihood(fitter, fit_params, 'x_cm', 'y_cm', save=True, ids=identifier)
@@ -200,9 +200,9 @@ def plot_2dlikelihood(fitter, fit_params, parameter_1, parameter_2=None, size=10
     axes_y = fig.add_axes(rect_y)
     axes.tick_params(direction='in', top=True, right=True)
     plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_1, axes=axes_x,
-                           loc='upper left')
+                      loc='upper left')
     plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_2, axes=axes_y,
-                           invert=True, loc='lower right')
+                      invert=True, loc='lower right')
     axes_x.tick_params(direction='in', labelbottom=False)
     axes_y.tick_params(direction='in', labelleft=False)
 
@@ -276,14 +276,10 @@ def plot_likelihood(fitter, fit_params, parameter_1, parameter_2=None,
     """
     if parameter_2 is None:
         axes = plot_1dlikelihood(fitter, fit_params, parameter_name=parameter_1,
-                                      axes=axes, x_label=x_label,
-                                      size=size)
+                                 axes=axes, x_label=x_label, size=size)
     else:
-        axes = plot_2dlikelihood(fitter, fit_params, parameter_1,
-                                      parameter_2=parameter_2,
-                                      size=size,
-                                      x_label=x_label,
-                                      y_label=y_label)
+        axes = plot_2dlikelihood(fitter, fit_params, parameter_1, parameter_2=parameter_2,
+                                 size=size, x_label=x_label, y_label=y_label)
     if save:
         axes.get_figure().savefig('event/' + ids + '_'
                                   + parameter_1 + '_' + str(parameter_2) + '.png')
@@ -338,8 +334,6 @@ def plot_event(fitter, image, geometry, n_sigma=3, init=False, show_ellipsis=Tru
                                 linewidth=6, color='r', linestyle='--',
                                 label=r'{} $\sigma$ contour'.format(n_sigma))
         cam_display.axes.legend(loc='best')
-    #if init:
-    #    cam_display.highlight_pixels(fitter.mask_pixel, color='r')
 
     if save:
         cam_display.axes.get_figure().savefig('event/' + ids +
@@ -442,8 +436,6 @@ def plot_waveforms(fitter, event, telescope_id, axes=None, save=False, ids=''):
 
     Parameters
     ----------
-    image:
-        Distribution of signal for the event in number of p.e.
     axes: `matplotlib.pyplot.axis`
         Axis used to store the figure
         If None, a new one is created
@@ -457,7 +449,6 @@ def plot_waveforms(fitter, event, telescope_id, axes=None, save=False, ids=''):
     axes: `matplotlib.pyplot.axis`
         Object filled with the figure
     """
-    #image = image[fitter.mask_pixel]
     image = event.dl1.tel[telescope_id].image
     geometry = fitter.subarray.tel[telescope_id].camera.geometry
     data = event.r1.tel[telescope_id].waveform

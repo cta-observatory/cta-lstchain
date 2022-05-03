@@ -90,7 +90,7 @@ def compile_reconstructor_cc():
 
         Parameters
         ----------
-        size: float
+        size: array-like
             Integral of the 2D Gaussian
         x, y: array-like
             Position at which the log gaussian is evaluated
@@ -242,14 +242,14 @@ def compile_reconstructor_cc():
                                    weight[mask_LL])
 
         log_pdf_bright = log_pdf_hl(mu[mask_HL],
-                                   data[mask_HL],
-                                   error[mask_HL],
-                                   crosstalks[mask_HL],
-                                   templates[mask_HL],
-                                   weight[mask_HL])
+                                    data[mask_HL],
+                                    error[mask_HL],
+                                    crosstalks[mask_HL],
+                                    templates[mask_HL],
+                                    weight[mask_HL])
 
-        log_pdf = (log_pdf_faint + log_pdf_bright) / np.sum(weight)
+        log_lh = (log_pdf_faint + log_pdf_bright) / np.sum(weight)
 
-        return log_pdf
+        return log_lh
 
     cc.compile()
