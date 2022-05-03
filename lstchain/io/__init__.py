@@ -29,7 +29,7 @@ from .io import (
     get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
-    remove_duplicate_events,
+    remove_duplicated_events,
 )
 
 standard_config = get_standard_config()
@@ -62,5 +62,5 @@ __all__ = [
     'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'add_source_filenames',
-    'remove_duplicate_events'
+    'remove_duplicated_events'
 ]

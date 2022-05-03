@@ -147,8 +147,8 @@ def test_extract_simulation_nsb(mc_gamma_testfile):
     assert np.isclose(nsb[1], 0.276, rtol=0.1)
 
 
-def test_remove_duplicate_events():
-    from lstchain.io.io import remove_duplicate_events
+def test_remove_duplicated_events():
+    from lstchain.io.io import remove_duplicated_events
     
     d = {'event_id': [1, 2, 3,
                       1, 2, 4,
@@ -160,7 +160,7 @@ def test_remove_duplicate_events():
      }
     df = pd.DataFrame(data=d)
     data= QTable.from_pandas(df)
-    data1 = remove_duplicate_events(data)
+    data1 = remove_duplicated_events(data)
 
     d2 = {'event_id': [3, 2, 4, 1], 
           'gh_score': [0.7, 0.8, 0.1, 0.9],
