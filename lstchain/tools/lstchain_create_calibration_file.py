@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from traitlets import Dict, List, Unicode, Int, Bool, Float
+from traitlets import Unicode, Int, Bool, Float
 
 
 from ctapipe.core import Provenance, traits
@@ -65,30 +65,40 @@ class CalibrationHDF5Writer(Tool):
         help='Maximum high-gain camera median charge per pixel (ADC) for pedestal MC events'
     ).tag(config=True)
 
-    aliases = Dict(dict(
-        input_file='EventSource.input_url',
-        max_events='EventSource.max_events',
-        output_file='CalibrationHDF5Writer.output_file',
-        calibration_product='CalibrationHDF5Writer.calibration_product',
-        events_to_skip='CalibrationHDF5Writer.events_to_skip'
-    ))
+    aliases = {
+        ("i", "input_file"): 'EventSource.input_url',
+        ("m", "max_events"): 'EventSource.max_events',
+        ("o", "output_file"): 'CalibrationHDF5Writer.output_file',
+        ("p", "pedestal_file"): "LSTEventSource.LSTR0Corrections.drs4_pedestal_path",
+        ("s", "systematics_file"): "LSTCalibrationCalculator.systematic_correction_path",
+        ("r", "run_summary_file"): "LSTEventSource.EventTimeCalculator.run_summary_path",
+        ("t", "time_calibration_file"): "LSTEventSource.LSTR0Corrections.drs4_time_calibration_path",
+        "events_to_skip": 'CalibrationHDF5Writer.events_to_skip',
+    }
 
-    classes = List([EventSource,
-                    CalibrationCalculator
-                    ]
-                   + traits.classes_with_traits(CalibrationCalculator)
-                   + traits.classes_with_traits(EventSource)
-                   )
+    flags = {
+        **traits.flag(
+            "flatfield-heuristic",
+            "LSTEventSource.use_flatfield_heuristic",
+            "Use flatfield heuristic",
+            "Do not use flatfield heuristic",
+        )
+    }
+
+    classes = (
+        [EventSource, CalibrationCalculator]
+        + traits.classes_with_traits(CalibrationCalculator)
+        + traits.classes_with_traits(EventSource)
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         """
-         Tool that generates a HDF5 file with camera calibration coefficients.
-         Input file must contain interleaved pedestal and flat-field events  
+        Tool that generates a HDF5 file with camera calibration coefficients.
+        Input file must contain interleaved pedestal and flat-field events
 
-         For getting help run:
-         python calc_camera_calibration.py --help
-         
+        For getting help run:
+            lstchain_create_calibration_file --help
         """
         self.eventsource = None
         self.processor = None
@@ -154,7 +164,7 @@ class CalibrationHDF5Writer(Tool):
                     # estimate offset of each channel from the camera median pedestal value
                     offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
                     event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
-                    
+
 
                 if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")

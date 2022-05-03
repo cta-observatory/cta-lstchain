@@ -66,7 +66,7 @@
   },
 
   "random_forest_energy_regressor_args": {
-    "max_depth": 50,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 150,
@@ -75,7 +75,7 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
@@ -84,7 +84,7 @@
   },
 
   "random_forest_disp_regressor_args": {
-    "max_depth": 50,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 150,
@@ -93,7 +93,7 @@
     "max_features": "auto",
     "max_leaf_nodes": null,
     "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
@@ -102,12 +102,12 @@
   },
 
   "random_forest_disp_classifier_args": {
-    "max_depth": 100,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 100,
     "criterion": "gini",
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "max_features": "auto",
     "max_leaf_nodes": null,
@@ -121,12 +121,12 @@
   },
 
   "random_forest_particle_classifier_args": {
-    "max_depth": 100,
+    "max_depth": 30,
     "min_samples_leaf": 2,
     "n_jobs": 4,
     "n_estimators": 100,
     "criterion": "gini",
-    "min_samples_split": 2,
+    "min_samples_split": 10,
     "min_weight_fraction_leaf": 0.0,
     "max_features": "auto",
     "max_leaf_nodes": null,
