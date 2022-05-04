@@ -80,6 +80,11 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     # Compile the likelihood reconstruction functions
     from lstchain.scripts import numba_compil_lhfit
     numba_compil_lhfit.compile_reconstructor_cc()
+    # Import r0_to_dl1 (again) after compilation
+    from importlib import reload
+    if 'r0_to_dl1' in dir():
+        import lstchain.reco.r0_to_dl1
+        reload(lstchain.reco.r0_to_dl1)
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
     config = deepcopy(standard_config)
