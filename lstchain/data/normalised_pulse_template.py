@@ -137,7 +137,7 @@ class NormalizedPulseTemplate:
         np.savetxt(filename, data.T)
 
     @classmethod
-    def load_from_file(cls, filename):
+    def load_from_file(cls, filename, **kwargs):
         """
         Load a pulse template from a text file.
         Allows for only one gain channel and no errors,
@@ -160,17 +160,17 @@ class NormalizedPulseTemplate:
         assert len(data) in [2, 3, 5]
         if len(data) == 2:  # one shape in file
             t, x = data
-            return cls(amplitude_HG=x, amplitude_LG=x, time=t)
+            return cls(amplitude_HG=x, amplitude_LG=x, time=t, **kwargs)
         if len(data) == 3:  # no error in file
             t, hg, lg = data
-            return cls(amplitude_HG=hg, amplitude_LG=lg, time=t)
+            return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)
         elif len(data) == 5:  # two gains and errors
             t, hg, lg, dhg, dlg = data
             return cls(amplitude_HG=hg, amplitude_LG=lg, time=t,
-                       amplitude_HG_err=dhg, amplitude_LG_err=dlg)
+                       amplitude_HG_err=dhg, amplitude_LG_err=dlg, **kwargs)
 
     @classmethod
-    def load_from_eventsource(cls, eventsource_camera_readout):
+    def load_from_eventsource(cls, eventsource_camera_readout, **kwargs):
         """
         Load a pulse template from an event source camera readout.
         Read the sampling rate to create a time variable reaching
@@ -193,7 +193,7 @@ class NormalizedPulseTemplate:
         hg, lg = eventsource_camera_readout.reference_pulse_shape
         i = np.argmax(hg)
         t = t - t[i] + 9.0
-        return cls(amplitude_HG=hg, amplitude_LG=lg, time=t)
+        return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)
 
     @staticmethod
     def _normalize(time, amplitude, error):
