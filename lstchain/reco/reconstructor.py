@@ -184,7 +184,7 @@ class TimeWaveformFitter(TelescopeComponent):
         # Fill the set of non-fitted parameters needed to compute the likelihood. Order and type sensitive.
         fit_params = [data, error, is_high_gain,
                       sig_s, crosstalks, times,
-                      time_shift, p_x, p_y,
+                      np.float32(time_shift), p_x, p_y,
                       pix_area, template.dt,
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
