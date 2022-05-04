@@ -38,7 +38,8 @@ def plot_debug(fitter, event, telescope_id, dl1_container, identifier):
     """
     image = event.dl1.tel[telescope_id].image
     geometry = fitter.subarray.tel[telescope_id].camera.geometry
-    plot_event(fitter, image, geometry, init=True, save=True, ids=identifier)
+    clean_mask = event.dl1.tel[telescope_id].image_mask
+    plot_event(fitter, image, geometry, init=True, clean_mask=clean_mask, save=True, ids=identifier)
     plot_waveforms(fitter, event, telescope_id, save=True, ids=identifier)
     plot_event(fitter, image, geometry, save=True, ids=identifier)
     plot_residual(fitter, image, geometry, save=True, ids=identifier)
@@ -287,7 +288,7 @@ def plot_likelihood(fitter, fit_params, parameter_1, parameter_2=None,
     return None if save else axes
 
 
-def plot_event(fitter, image, geometry, n_sigma=3, init=False, show_ellipsis=True, save=False, ids=''):
+def plot_event(fitter, image, geometry, n_sigma=3, init=False, clean_mask=None, show_ellipsis=True, save=False, ids=''):
     """
         Plot the image of the event in the camera along with the extracted
         ellipsis before or after the fitting procedure.
@@ -302,6 +303,8 @@ def plot_event(fitter, image, geometry, n_sigma=3, init=False, show_ellipsis=Tru
     init: boolean
         If True, use the starting parameters for the ellipsis
         If False, use the ending parameters for the ellipsis
+    clean_mask: boolean array
+        cleaning selected pixels for the Hillas parameters extraction
     show_ellipsis: boolean
         If True, display the ellipsis
     save: bool
@@ -334,6 +337,9 @@ def plot_event(fitter, image, geometry, n_sigma=3, init=False, show_ellipsis=Tru
                                 linewidth=6, color='r', linestyle='--',
                                 label=r'{} $\sigma$ contour'.format(n_sigma))
         cam_display.axes.legend(loc='best')
+
+    if init and clean_mask is not None:
+        cam_display.highlight_pixels(clean_mask, color='r')
 
     if save:
         cam_display.axes.get_figure().savefig('event/' + ids +
