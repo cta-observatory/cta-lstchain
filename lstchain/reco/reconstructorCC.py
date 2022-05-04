@@ -11,9 +11,13 @@ def compile_reconstructor_cc():
     -log_pdf_ll
     -log_pdf_hl
     -asygaussian2d
+    -linval
+    -template_interpolation
+    -log_pdf
 
     Decorator @cc.export take the name to be used for the compiled function and the function signature.
     Meaning of the symbols is defined here https://numba.pydata.org/numba-doc/dev/reference/types.html#numba-types
+    @njit decorator makes function available to other function compiled here.
 
     """
 
@@ -24,10 +28,17 @@ def compile_reconstructor_cc():
     @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
         """
-        Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.log_pdf
+        Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.
         The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
         The single sample likelihood is the sum(possible number of pe) of a generalised
         Poisson term times a Gaussian term.
+
+        Parameters:
+        ----------
+        mu: float64 1D array
+            Expected charge per pixel
+        waveform: float32 2D array
+            Measured
 
         """
         n_pixels, n_samples = waveform.shape

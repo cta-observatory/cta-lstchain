@@ -77,10 +77,10 @@ def test_r0_available():
 
 
 def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
-    from lstchain.reco.r0_to_dl1 import r0_to_dl1
     # Compile the likelihood reconstruction functions
     from lstchain.scripts import numba_compil_lhfit
     numba_compil_lhfit.compile_reconstructor_cc()
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
 
     config = deepcopy(standard_config)
     config['source_config']['EventSource']['max_events'] = 5
