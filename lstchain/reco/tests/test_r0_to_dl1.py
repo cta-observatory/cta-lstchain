@@ -3,7 +3,7 @@ from ctapipe.containers import ArrayEventContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import r0_to_dl1, rescale_dl1_charge
 from lstchain.io import standard_config
-from copy import deepcopy
+from copy import copy, deepcopy
 
 
 def test_rescale_dl1_charge():
