@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import tables
-from copy import copy
+from copy import deepcopy
 
 from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
@@ -89,7 +89,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     # Call log_pdf_hl to justify the import
     log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
                np.float64([0]), np.float64([[1]]), np.float64([[1]]))
-    config = copy(standard_config)
+    config = deepcopy(standard_config)
     config['source_config']['EventSource']['max_events'] = 5
     config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config'] = {
