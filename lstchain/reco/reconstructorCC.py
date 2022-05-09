@@ -25,7 +25,7 @@ def compile_reconstructor_cc():
     cc.verbose = True
 
     @njit()
-    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],i8[:],i8,i8,f8[:,:])')
+    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],u8[:],i8,i8,f8[:,:])')
     def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
         """
         Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.
@@ -38,7 +38,26 @@ def compile_reconstructor_cc():
         mu: float64 1D array
             Expected charge per pixel
         waveform: float32 2D array
-            Measured
+            Measured signal in p.e. per ns
+        error: float32 1D array
+            Pedestal standard deviation per pixel
+        crosstalk: float64 1D array
+            Crosstalk factor for each pixel
+        sig_s: float64 1D array
+            Single p.e. intensity distribution standard deviation for each pixel
+        templates: float64 2D array
+            Value of the pulse template evaluated in each pixel at each observed time
+        factorial: unsigned int64
+            Pre-computed table of factorials
+        kmin, kmax: int64
+            Range of possible number of photo-electron in a pixel with relevant Poisson probability
+        weight : float 64 2D array
+            Weight to use in the likelihood for each sample
+
+        Returns
+        ----------
+        sumlh : float64
+            Sum log likelihood
 
         """
         n_pixels, n_samples = waveform.shape
@@ -74,6 +93,26 @@ def compile_reconstructor_cc():
         Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf
         The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
         The single sample likelihood is a Gaussian term.
+
+        Parameters:
+        ----------
+        mu: float64 1D array
+            Expected charge per pixel
+        waveform: float32 2D array
+            Measured signal in p.e. per ns
+        error: float32 1D array
+            Pedestal standard deviation per pixel
+        crosstalk: float64 1D array
+            Crosstalk factor for each pixel
+        templates: float64 2D array
+            Value of the pulse template evaluated in each pixel at each observed time
+        weight : float 64 2D array
+            Weight to use in the likelihood for each sample
+
+        Returns
+        ----------
+        sumlh : float64
+            Sum log likelihood
 
         """
         n_pixels, n_samples = waveform.shape
@@ -123,17 +162,38 @@ def compile_reconstructor_cc():
         gauss2d = np.empty(len(x), dtype=np.float64)
         norm = 1 / ((rl + 1.0) * np.pi * width * length)
         for i in range(len(x)):
+            # Compute the x and y coordinates projection in the 2D gaussian length and width coordinates
             le = (x[i] - x_cm) * np.cos(psi) + (y[i] - y_cm) * np.sin(psi)
             wi = -(x[i] - x_cm) * np.sin(psi) + (y[i] - y_cm) * np.cos(psi)
+            # Check which side of the maximum the current point is for asymetry purpose
             rl_pos = rl if (le < 0.0) else 1.0
             a = 2 * (rl_pos * length) ** 2
             b = 2 * width ** 2
+            # Evaluate the 2D gaussian term
             gauss2d[i] = norm * size[i] * np.exp(-(le ** 2 / a + wi ** 2 / b))
         return gauss2d
 
     @njit()
     @cc.export('linval', 'f8[:](f8,f8,f8[:])')
     def linval(a, b, x):
+        """
+        Linear law function
+
+        Parameters
+        ----------
+        a: float64
+            Slope
+        b: float64
+            Intercept
+        x: float64 1D array
+            Values at which the function is evaluated
+
+        Returns
+        -------
+        y: float64 1D array
+            Linear law evaluated at x
+
+        """
         y = np.empty(x.shape)
         for i in range(len(x)):
             y[i] = b + a * x[i]
@@ -142,16 +202,46 @@ def compile_reconstructor_cc():
     @njit()
     @cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:],i8)')
     def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
+        """
+        Fast template interpolator using uniformly sampled base with known origin and step.
+        The algorithm finds the indexes between which the template is needed and performs a linear interpolation.
+
+        Parameters
+        ----------
+        gain: boolean 1D array
+            Gain channel used per pixel
+        times: float64 1D array
+            Times of each waveform samples
+        t0: float64
+            Time of the first value of the pulse templates
+        dt: float 64
+            Time step between templates values
+        a_hg: float64 1D array
+            Template values for the high gain channel
+        a_lg: float64 1D array
+            Template values for the low gain channel
+        size: int64
+            Number of element in a_hg and a_lg
+
+        Returns
+        -------
+        out: float64 2D array
+            Pulse template gain selected and interpolated at each sample times
+
+        """
         n, m = times.shape
         out = np.empty((n, m))
         for i in range(n):
             for j in range(m):
+                # Find the index before the requested time
                 a = (times[i, j]-t0)/dt
                 t = int(a)
                 if a < size:
+                    # Select the gain and interpolate the pulse template at the requested time
                     out[i, j] = a_hg[t] * (1. - a + t) + a_hg[t+1] * (a-t) if gain[i] else \
                         a_lg[t] * (1. - a + t) + a_lg[t+1] * (a-t)
                 else:
+                    # Assume 0 if outside of the recorded range
                     out[i, j] = 0.0
         return out
 
@@ -164,28 +254,58 @@ def compile_reconstructor_cc():
                 p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
                 template_hg, n_peaks, use_weight, factorial):
         """
-            Compute the log likelihood of the model used for a set of input
-            parameters.
+        Compute the log likelihood of the model used for a set of input parameters.
 
-        Parameters
+        Fitted Parameters
         ----------
-        charge: float
+        charge: float64
             Charge of the peak of the spatial model
-        t_cm: float
+        t_cm: float64
             Time of the middle of the energy deposit in the camera
             for the temporal model
-        x_cm, y_cm: float
+        x_cm, y_cm: float64
             Position of the center of the spatial model
-        length, wl: float
+        length, wl: float64
             Spatial dispersion of the model along the main and
             fraction of this dispersion along the minor axis
-        psi: float
+        psi: float64
             Orientation of the main axis of the spatial model and of the
             propagation of the temporal model
-        v: float
+        v: float64
             Velocity of the evolution of the signal over the camera
-        rl: float
+        rl: float64
             Asymmetry of the spatial model along the main axis
+
+        Other Parameters:
+        ----------
+        data : float32 2D array
+            Waveform
+        error : float32 1D array
+            Pedestal standard deviation per pixel
+        is_high_gain : boolean 1D array
+        sig_s :  float64 1D array
+            Single p.e. intensity distribution standard deviation for each pixel
+        crosstalks: float64 1D array
+            Crosstalk factor for each pixel
+        times : float64 1D array
+            Relative time of successive waveform samples
+        time_shift : float64 1D array
+            Time shift correction to be applied per pixel
+        p_x, p_y, pix_area: float64 1D array
+            Pixels position and surface area
+        template_dt, template_t0, template_lg, template_hg : float64, float64, float64 1D array, float64 1D array
+            Pulse template properties used in the interpolation of the model
+        n_peaks: int64
+            Maximum number of p.e. term used in the low luminosity likelihood
+        use_weight: bool
+            If True, the brightest sample are made more important in the likelihood computation
+        factorial unsigned int64
+            Pre-computed table of factorials
+
+        Returns
+        ----------
+        log_lh: float64
+            Reduced log likelihood of the model
         """
         n_pixels, n_samples = data.shape
         dx = (p_x - x_cm)
@@ -214,6 +334,7 @@ def compile_reconstructor_cc():
         # more than 10^-6. The limits are approximated by 2 broken linear
         # function obtained for 0 crosstalk.
         # The choice of kmin and kmax is currently not done on a pixel basis
+        # TODO correct for crosstalk>0 or remove since kmax limited to 21 by int precision with factorials
         mask_LL = (mu <= n_peaks / 1.096 - 47.8) & (mu > 0)
         mask_HL = ~mask_LL
 

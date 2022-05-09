@@ -146,7 +146,7 @@ class NormalizedPulseTemplate:
         Parameters
         ----------
         cls: This class
-        filename: string
+        filename: Path or string
             Location of the template file
 
         Return

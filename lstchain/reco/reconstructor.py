@@ -19,6 +19,9 @@ except ImportError:
 
 
 class TimeWaveformFitter(TelescopeComponent):
+    """
+    Class used to perform event reconstruction by fitting of a model on waveforms.
+    """
     sigma_s = FloatTelescopeParameter(default_value=1, help='Width of the single photo-electron peak distribution.',
                                       allow_none=False).tag(config=True)
     crosstalk = FloatTelescopeParameter(default_value=0, help='Average pixel crosstalk.',
@@ -68,6 +71,26 @@ class TimeWaveformFitter(TelescopeComponent):
         self.fcn = None
 
     def call_setup(self, event, telescope_id, dl1_container):
+        """
+        Extract all event dependent quantities used for the fit.
+
+        Parameters
+        ----------
+        event: ctapipe event container
+            Current event container.
+        telescope_id: int
+            Id of the telescope
+        dl1_container: DL1ParametersContainer
+            Contains the Hillas parameters used as seed for the fit
+
+        Returns
+        -------
+        focal_length: astropy.units.Quantity
+            Focal length of the telescope
+        fit_params: array
+            Array containing all the variable needed to compute the likelihood
+            during the fir excluding the model parameters
+        """
 
         geometry = self.subarray.tel[telescope_id].camera.geometry
         pix_x = geometry.pix_x.to_value(u.m)
@@ -208,16 +231,29 @@ class TimeWaveformFitter(TelescopeComponent):
 
     def clean_data(self, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
         """
-            Method used to select pixels and time samples used in the
-            fitting procedure. The spatial selection takes pixels in an
-            ellipsis obtained from the seed Hillas parameters extraction.
-            An additional factor sigma_space is added to the length and width
-            to extend the selected region. The temporal selection takes a time
-            window centered on the seed time of center of mass and of duration
-            equal to the time of propagation of the signal along the length
-            of the ellipsis times a factor sigma_time. An additional fixed
-            duration is also added before and after this time window through
-            the time_before_shower and time_after_shower arguments.
+        Method used to select pixels and time samples used in the fitting procedure.
+        The spatial selection takes pixels in an ellipsis obtained from the seed Hillas parameters extended by one pixel
+        size and multiplied by a factor sigma_space.
+        The temporal selection takes a time window centered on the seed time of center of mass and of duration equal to
+        the time of propagation of the signal along the length of the ellipsis times a factor sigma_time.
+        An additional fixed duration is also added before and after this time window through the time_before_shower and
+        time_after_shower arguments.
+
+        Parameters
+        ----------
+        pix_x, pix_y: array-like
+            Pixels positions
+        pix_radius: float
+        times: array-like
+            Sampling times before timeshift corrections
+        start_parameters: dict
+            Seed parameters derived from the Hillas parameters
+        telescope_id: int
+
+        Returns
+        ----------
+        mask_pixel, mask_time: array-like
+            Mask used to select pixels and times for the fit
 
         """
         x_cm = start_parameters['x_cm']
@@ -249,7 +285,12 @@ class TimeWaveformFitter(TelescopeComponent):
 
     def fit(self, fit_params):
         """
-            Performs the fitting procedure.
+        Performs the fitting procedure.
+
+        Parameters
+        ----------
+        fit_params: array
+            Parameters used to compute the likelihood but not fitted
 
         """
         def f(*args):
@@ -274,6 +315,18 @@ class TimeWaveformFitter(TelescopeComponent):
     def predict(self, focal_length, fit_params):
         """
             Call the fitting procedure and fill the results.
+
+        Parameters
+        ----------
+        focal_length: float
+            Telescope focal length used to convert meters in the camera frame to degrees in the sky
+        fit_params: array
+            Parameters used to compute the likelihood but not fitted
+
+        Returns
+        ----------
+        container: DL1LikelihoodParametersContainer
+            Filled parameter container
 
         """
         container = DL1LikelihoodParametersContainer(lhfit_call_status=1)
@@ -310,7 +363,7 @@ class TimeWaveformFitter(TelescopeComponent):
 
     def __str__(self):
         """
-            Define the print format of DL0Fitter objects.
+            Define the print format of TimeWaveformFitter objects.
 
             Returns
             -------
