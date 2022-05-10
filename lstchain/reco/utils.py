@@ -751,7 +751,7 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
 
     term = (
         (np.sin(geomag_inc) * np.cos(zen)) +
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(geomag_dec - az))
     )
 
     delta = np.arccos(term)
