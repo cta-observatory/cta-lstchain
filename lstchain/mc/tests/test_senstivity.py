@@ -8,7 +8,6 @@ from lstchain.mc.sensitivity import (
     read_sim_par,
     calculate_sensitivity,
     calculate_sensitivity_lima,
-    calculate_sensitivity_lima_ebin,
     bin_definition,
     ring_containment,
     diff_events_after_cut_real,
@@ -79,18 +78,6 @@ def test_calculate_sensitivity_lima():
     np.testing.assert_allclose(calculate_sensitivity_lima(
             np.array([10, 100]), np.array([50,100]), np.array([1, 1])),
                                (np.array([63.00, 83.57]), np.array([630.07,  83.57])), rtol = 1.e-3)
-
-def test_calculate_sensitivity_lima_ebin():
-    np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
-        np.array([50]), np.array([10]), np.array([0.2]), 1), ([13.49], [26.97]),
-        rtol=1.e-3)
-
-    np.testing.assert_allclose(calculate_sensitivity_lima_ebin(
-        np.array([50, 30, 20]), np.array([10, 10, 10]), np.array([0.2, 0.2, 0.2]), 3),
-        (([13.49, 13.49, 13.49]),
-         [26.97, 44.95, 67.43]),
-        rtol=1.e-3)
-
 
 def test_bin_definition():
     gammaness_bins, theta2_bins = bin_definition(10,10)
