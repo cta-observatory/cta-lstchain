@@ -33,14 +33,32 @@ def interp_params(params_list, data):
     """
     mc_pars = []
     if "ZEN_PNT" in params_list:
+        if isinstance(data["ZEN_PNT"], u.Quantity):
+            unit = data["ZEN_PNT"].unit
+        else:
+            unit = data.comments["ZEN_PNT"]
+
         mc_pars.append(
-            np.cos(u.Quantity(data["ZEN_PNT"]).to_value(u.rad))
+            np.cos(
+                u.Quantity(
+                    value=data["ZEN_PNT"],
+                    unit=unit
+                ).to_value(u.rad)
+            )
         )
 
     if "B_DELTA" in params_list:
+        if isinstance(data["B_DELTA"], u.Quantity):
+            unit = data["B_DELTA"].unit
+        else:
+            unit = data.comments["B_DELTA"]
+
         mc_pars.append(
             np.sin(
-                u.Quantity(data["B_DELTA"]).to_value(u.rad)
+                u.Quantity(
+                    value=data["B_DELTA"],
+                    unit=unit
+                ).to_value(u.rad)
             )
         )
 
@@ -273,7 +291,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     """
 
     # Gather the parameters to use for interpolation
-
     # Exclude AZ_PNT as target interpolation parameter - Hard-coded
     d = data_pars.copy()
     d.pop("AZ_PNT", None)
@@ -294,11 +311,20 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         point_like = False
 
     # Update headers to be added to the final IRFs
-    extra_headers = dict(
-        (k, main_headers[k]) for k in extra_keys if k in main_headers
-    )
+    extra_headers = dict()
+
+    for k in extra_keys:
+        if k in main_headers:
+            if main_headers.comments[k]:
+                extra_headers[k] = (main_headers[k], main_headers.comments[k])
+            else:
+                extra_headers[k] = main_headers[k]
+
     for par in data_pars.keys():
-        extra_headers[par] = str(data_pars[par].to(u.deg))
+        extra_headers[par] = (
+            data_pars[par].value,
+            data_pars[par].unit
+        )
 
     for i in np.arange(n_grid):
         f = fits.open(irfs[i])[1].header
@@ -306,6 +332,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         irf_pars[i, :] = np.array(mc_pars)
 
     interp_pars = interp_params(params, data_pars)
+
     # Keep interp_pars as a tuple to keep the right dimensions in interpolation
     interp_pars = tuple(interp_pars)
     irf_interp = fits.HDUList([fits.PrimaryHDU(), ])

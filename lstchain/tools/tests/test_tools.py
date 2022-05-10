@@ -162,7 +162,7 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
     from astropy.table import QTable
 
     irf_file = temp_dir_observed_srcdep_files / "irf_edep.fits.gz"
-    
+
     assert (
         run_tool(
             IRFFITSWriter(),
@@ -179,13 +179,13 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
        )
        == 0
     )
-    
+
     gh_cuts = QTable.read(irf_file, hdu="GH_CUTS")
     assert isinstance(gh_cuts.meta["GH_EFF"], float)
-    
+
     al_cuts = QTable.read(irf_file, hdu="AL_CUTS")
     assert isinstance(al_cuts.meta["AL_CONT"], float)
-    
+
 @pytest.mark.private_data
 def test_create_dl3_energy_dependent_cuts(
     temp_dir_observed_files, observed_dl2_file
@@ -342,7 +342,8 @@ def test_create_srcdep_dl3_energy_dependent_cuts(
             argv=[
                 f"--input-dl2={observed_srcdep_dl2_file}",
                 f"--output-dl3-path={temp_dir_observed_srcdep_files}",
-                f"--input-irf={irf_file}",
+                f"--input-irf-path={irf_file.parent}",
+                f"--irf-file-pattern={irf_file.name}",
                 "--source-name=Crab",
                 "--source-ra=83.633deg",
                 "--source-dec=22.01deg",

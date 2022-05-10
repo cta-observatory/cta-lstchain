@@ -29,7 +29,7 @@ def test_load_irf_grid(simulated_irf_file):
 
     aeff_list = load_irf_grid([simulated_irf_file], "EFFECTIVE AREA", "EFFAREA")
 
-    assert aeff_list.shape == (1, 19, 8)
+    assert aeff_list.shape == (1, 23, 8)
 
 
 def test_interp_irf(simulated_irf_file):
@@ -47,30 +47,38 @@ def test_interp_irf(simulated_irf_file):
 
     # Change the effective area for different angular pointings
     aeff_1 = Table.read(simulated_irf_file, hdu="EFFECTIVE AREA")
+    aeff_1_meta = fits.open(simulated_irf_file)["EFFECTIVE AREA"].header
     aeff_2 = aeff_1.copy()
+    aeff_2_meta = aeff_1_meta.copy()
 
-    zen_1 = u.Quantity(aeff_1.meta["ZEN_PNT"]).to_value(u.deg)
-    del_1 = u.Quantity(aeff_1.meta["B_DELTA"]).to_value(u.deg)
+    zen_1 = u.Quantity(
+        aeff_1_meta["ZEN_PNT"],
+        aeff_1_meta.comments["ZEN_PNT"]
+    ).to_value(u.rad)
+    del_1 = u.Quantity(
+        aeff_1_meta["B_DELTA"],
+        aeff_1_meta.comments["B_DELTA"]
+    ).to_value(u.rad)
 
-    factor_zd = (np.cos(2 * zen_1 * np.pi / 180))/np.cos(zen_1 * np.pi / 180)
-    factor_del = (np.sin(2 * del_1 * np.pi / 180))/np.sin(del_1 * np.pi / 180)
+    zen_2 = 2 * zen_1
+    del_2 = 1.5 * del_1
+
+    factor_zd = (np.cos(zen_2))/np.cos(zen_1)
+    factor_del = (np.sin(del_2))/np.sin(del_1)
 
     aeff_1["EFFAREA"][0] *= factor_zd
     aeff_2["EFFAREA"][0] *= factor_zd * factor_del
 
-    zen_2 = 2 * zen_1
-    del_2 = 2 * del_1
-
-    aeff_1.meta["ZEN_PNT"] = str(zen_2) + " deg"
-    aeff_1.meta["B_DELTA"] = str(del_1) + " deg"
-    aeff_2.meta["ZEN_PNT"] = str(zen_2) + " deg"
-    aeff_2.meta["B_DELTA"] = str(del_2) + " deg"
+    aeff_1_meta["ZEN_PNT"] = (zen_2, "rad")
+    aeff_1_meta["B_DELTA"] = (del_1, "rad")
+    aeff_2_meta["ZEN_PNT"] = (zen_2, "rad")
+    aeff_2_meta["B_DELTA"] = (del_2, "rad")
 
     aeff_hdu_1 = fits.BinTableHDU(
-        aeff_1, header=aeff_1.meta, name="EFFECTIVE AREA"
+        aeff_1, header=aeff_1_meta, name="EFFECTIVE AREA"
     )
     aeff_hdu_2 = fits.BinTableHDU(
-        aeff_2, header=aeff_2.meta, name="EFFECTIVE AREA"
+        aeff_2, header=aeff_2_meta, name="EFFECTIVE AREA"
     )
 
     # Change the energy migration for different angular pointings
@@ -80,16 +88,11 @@ def test_interp_irf(simulated_irf_file):
     edisp_1["MATRIX"][0] *= factor_zd
     edisp_2["MATRIX"][0] *= factor_zd * factor_del
 
-    edisp_1.meta["ZEN_PNT"] = str(zen_2) + " deg"
-    edisp_1.meta["B_DELTA"] = str(del_1) + " deg"
-    edisp_2.meta["ZEN_PNT"] = str(zen_2) + " deg"
-    edisp_2.meta["B_DELTA"] = str(del_2) + " deg"
-
     edisp_hdu_1 = fits.BinTableHDU(
-        edisp_1, header=edisp_1.meta, name="ENERGY DISPERSION"
+        edisp_1, header=aeff_1_meta, name="ENERGY DISPERSION"
     )
     edisp_hdu_2 = fits.BinTableHDU(
-        edisp_2, header=edisp_2.meta, name="ENERGY DISPERSION"
+        edisp_2, header=aeff_2_meta, name="ENERGY DISPERSION"
     )
 
     fits.HDUList(
@@ -101,11 +104,14 @@ def test_interp_irf(simulated_irf_file):
     ).writeto(irf_file_4, overwrite=True)
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
-    data_pars = {"ZEN_PNT": 30 * u.deg, "AZ_PNT": 60 * u.deg, "B_DELTA": 70 * u.deg}
+    data_pars = {
+        "ZEN_PNT": 30 * u.deg,
+        "B_DELTA": del_1 * 1.1 * u.rad
+    }
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
 
-    assert hdu[1].header["ZEN_PNT"] == "30.0 deg"
+    assert hdu[1].header["ZEN_PNT"] == 30
     assert irf_file_3.exists()
     assert irf_file_4.exists()
     assert irf_file_5.exists()
@@ -124,17 +130,15 @@ def test_check_delaunay_triangles(simulated_irf_file):
     # Check on target being inside or outside Delaunay simplex
     data_pars = {
         "ZEN_PNT": 35 * u.deg,
-        "AZ_PNT": 60 * u.deg,
-        "B_DELTA": 80 * u.deg
+        "B_DELTA": 95 * u.deg
     }
     data_pars2 = {
         "ZEN_PNT": 58 * u.deg,
-        "AZ_PNT": 120 * u.deg,
-        "B_DELTA": 90 * u.deg
+        "B_DELTA": 95 * u.deg
     }
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
-    print(new_irfs, new_irfs2)
 
     assert len(new_irfs) == 3
+    assert len(new_irfs2) == 1

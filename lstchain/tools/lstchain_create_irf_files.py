@@ -433,8 +433,8 @@ class IRFFITSWriter(Tool):
                 else:
                     gammas = self.cuts.apply_global_alpha_cut(gammas)
                     self.log.info(
-                        'Using a global Alpha cut of '
-                        f'{self.cuts.global_alpha_cut} for point like IRF'
+                        "Using a global Alpha cut of "
+                        f"{self.cuts.global_alpha_cut} for point like IRF"
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
@@ -446,8 +446,7 @@ class IRFFITSWriter(Tool):
             ] * u.deg
 
             self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
-            self.mc_particle["gamma"]["ZEN_PNT"] -= self.mc_particle["gamma"]["G_OFFSET"]
-            self.log.info('Single offset for point like gamma MC')
+            self.log.info("Single offset for point like gamma MC")
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")
@@ -467,7 +466,7 @@ class IRFFITSWriter(Tool):
             background = table.vstack(
                 [
                     self.mc_particle["proton"]["events"],
-                    self.mc_particle["electron"]["events"]
+                    self.mc_particle["electron"]["events"],
                 ]
             )
 
@@ -521,20 +520,20 @@ class IRFFITSWriter(Tool):
             "deg"
         )
         extra_headers["B_TOTAL"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"],
-            "uT"
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].unit,
         )
         extra_headers["B_INC"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"],
-            "rad"
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].unit,
         )
         extra_headers["B_DEC"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"],
-            "rad"
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].unit,
         )
         extra_headers["B_DELTA"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"],
-            "deg"
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].unit,
         )
 
         if self.point_like:
@@ -549,7 +548,7 @@ class IRFFITSWriter(Tool):
         else:
             extra_headers["GH_EFF"] = (
                 self.cuts.gh_efficiency,
-                "gamma/hadron efficiency"
+                "gamma/hadron efficiency",
             )
 
         if self.point_like:
@@ -557,7 +556,7 @@ class IRFFITSWriter(Tool):
                 if self.energy_dependent_theta:
                     extra_headers["TH_CONT"] = (
                         self.cuts.theta_containment,
-                        "Theta containment region in percentage"
+                        "Theta containment region in percentage",
                     )
                 else:
                     extra_headers["RAD_MAX"] = (
@@ -568,14 +567,14 @@ class IRFFITSWriter(Tool):
                 if self.energy_dependent_alpha:
                     extra_headers["AL_CONT"] = (
                         self.cuts.alpha_containment,
-                        "Alpha containment region in percentage"
+                        "Alpha containment region in percentage",
                     )
                 else:
                     extra_headers["AL_CUT"] = (
                         self.cuts.global_alpha_cut,
                         'deg'
                     )
-                    
+
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
@@ -704,10 +703,10 @@ class IRFFITSWriter(Tool):
             alpha_header = fits.Header()
             alpha_header["CREATOR"] = f"lstchain v{__version__}"
             alpha_header["DATE"] = Time.now().utc.iso
-            
+
             for k, v in extra_headers.items():
                 alpha_header[k] = v
-                
+
             self.hdus.append(
                 fits.BinTableHDU(
                     self.alpha_cuts, header=gh_header, name="AL_CUTS"

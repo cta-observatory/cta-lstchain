@@ -52,7 +52,9 @@ from lstchain.high_level.hdu_table import (
     set_expected_pos_to_reco_altaz,
 )
 from lstchain.high_level.interpolate import (
-    check_in_delaunay_triangle, compare_irfs, interpolate_irf
+    check_in_delaunay_triangle,
+    compare_irfs,
+    interpolate_irf,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
@@ -282,7 +284,6 @@ class DataReductionFITSWriter(Tool):
 
         self.log.debug(f"Output DL3 file: {self.output_file}")
 
-
     def interp_irfs(self):
         """
         Get the optimal number of IRFs necessary for interpolation
@@ -329,13 +330,15 @@ class DataReductionFITSWriter(Tool):
             )
 
         if self.source_dep:
-            with fits.open(self.input_irf) as hdul:
+            with fits.open(self.final_irf_output) as hdul:
                 self.use_energy_dependent_alpha_cuts = (
                     "AL_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
 
     def apply_srcindep_gh_cut(self):
-        ''' apply gammaness cut '''
+        """
+        Apply gammaness cut.
+        """
         self.data = self.event_sel.filter_cut(self.data)
 
         if self.use_energy_dependent_gh_cuts:
@@ -357,7 +360,9 @@ class DataReductionFITSWriter(Tool):
             self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
 
     def apply_srcdep_gh_alpha_cut(self):
-        ''' apply gammaness and alpha cut for source-dependent analysis '''
+        """
+        Apply gammaness and alpha cut for source-dependent analysis.
+        """
         srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
 
         for i, srcdep_pos in enumerate(srcdep_assumed_positions):
@@ -408,13 +413,12 @@ class DataReductionFITSWriter(Tool):
             else:
                 self.data = vstack([self.data, data_temp])
 
-
     def start(self):
 
         if not self.source_dep:
             self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2)
         else:
-            self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2, 'on')
+            self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2, "on")
 
         if self.use_irf_interpolation:
             self.interp_irfs()
@@ -438,7 +442,7 @@ class DataReductionFITSWriter(Tool):
             source_pos=self.source_pos,
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
-            data_pars = self.data_params,
+            data_pars=self.data_params,
         )
         self.log.info(f"Target parameters for interpolation: {self.data_params}")
 
@@ -452,10 +456,17 @@ class DataReductionFITSWriter(Tool):
         self.mc_params = dict()
 
         h = self.irf_final_hdu[1].header
-        for p in self.data_params.keys():
-            self.mc_params[p] = u.Quantity(h[p]).to(u.deg)
 
-        mc_gamma_offset = u.Quantity(h["G_OFFSET"]).to(u.deg)
+        for p in self.data_params.keys():
+            self.mc_params[p] = u.Quantity(
+                h[p],
+                h.comments[p]
+            ).to(u.deg)
+
+        mc_gamma_offset = u.Quantity(
+            h["G_OFFSET"],
+            "deg"
+        )
 
         self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.2f}")
         self.log.info(
