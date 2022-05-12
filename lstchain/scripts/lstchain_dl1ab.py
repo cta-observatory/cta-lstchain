@@ -29,6 +29,7 @@ from ctapipe.instrument import SubarrayDescription
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
+from lstchain.image.interpolation import get_bad_pixel_and_neighbors_by_island, interpolate_bad_pixels
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 
 from lstchain.io.config import (
@@ -38,6 +39,7 @@ from lstchain.io.config import (
     replace_config,
 )
 from lstchain.io.io import (
+    dl1_params_tel_mon_cal_key,
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
     global_metadata, 
@@ -83,6 +85,12 @@ parser.add_argument(
     help='Disable pedestal cleaning. This is also done automatically for simulations.',
 )
 
+parser.add_argument(
+    '--no-bad-pixel-interpolation', action='store_false',
+    dest='bad_pixel_interpolation',
+    help='Disable bad pixel interpolation. This is also done automatically for simulations.',
+)
+
 
 def main():
     args = parser.parse_args()
@@ -125,6 +133,7 @@ def main():
 
     if is_simulation:
         args.pedestal_cleaning = False
+        args.bad_pixel_interpolation = False
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
@@ -221,6 +230,12 @@ def main():
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
+        if not args.bad_pixel_interpolation:
+            monitoring_table = infile.root[dl1_params_tel_mon_cal_key]
+            bad_pixel_by_island, bad_pixel_neighbors_by_island = get_bad_pixel_and_neighbors_by_island(
+                camera_geom, monitoring_table
+            )
+
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
@@ -242,6 +257,11 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
+                if not args.bad_pixel_interpolation:
+                    interpolate_bad_pixels(
+                        image, peak_time, bad_pixel_by_island, bad_pixel_neighbors_by_island
+                    )
+                    
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
