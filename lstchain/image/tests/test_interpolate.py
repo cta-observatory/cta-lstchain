@@ -12,13 +12,13 @@ def test_interpolation():
     peak_time = np.arange(npixels)
     
     unusable_pixels = np.zeros([2, ngains, npixels], dtype=bool)
-    unusable_pixels[0, 0][100] = True
+    unusable_pixels[0, 0, 100] = True
     unusable_pixels[1, 0, 1000] = True
     unusable_pixels[1, 0, 1001] = True
     unusable_pixels[1, 0, 1854] = True
 
-    image[[100, 1000, 1001, 1854]] = 0
-    peak_time[[100, 1000, 1001, 1854]] = 20
+    image[[100, 1000, 1001, 1854]] = -10
+    peak_time[[100, 1000, 1001, 1854]] = -10
 
     monitoring_table = Table([unusable_pixels], names=({'unusable_pixels'}))
     camera_geom = CameraGeometry.from_name('LSTCam-003')
