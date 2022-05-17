@@ -208,7 +208,7 @@ class TimeWaveformFitter(TelescopeComponent):
         fit_params = [data, error, is_high_gain,
                       sig_s, crosstalks, times,
                       np.float32(time_shift), p_x, p_y,
-                      pix_area, template.dt,
+                      np.float64(pix_area), template.dt,
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
                       self.use_weight, self.factorial]
