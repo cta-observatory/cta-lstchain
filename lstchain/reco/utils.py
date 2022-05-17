@@ -43,8 +43,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side",
-    "get_geomagnetic_delta"
+    "source_side"
 ]
 
 # position of the LST1
@@ -752,7 +751,7 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
 
     term = (
         (np.sin(geomag_inc) * np.cos(zen)) +
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(geomag_dec - az))
     )
 
     delta = np.arccos(term)

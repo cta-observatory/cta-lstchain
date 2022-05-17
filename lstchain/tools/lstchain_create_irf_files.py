@@ -76,6 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
+from lstchain.io.io import check_mc_type
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -189,6 +190,11 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    energy_dependent_alpha = traits.Bool(
+        help="True for applying energy-dependent alpha cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
         default_value=False,
@@ -211,6 +217,8 @@ class IRFFITSWriter(Tool):
         "gh-efficiency": "DL3Cuts.gh_efficiency",
         "theta-containment": "DL3Cuts.theta_containment",
         "global-theta-cut": "DL3Cuts.global_theta_cut",
+        "alpha-containment": "DL3Cuts.alpha_containment",
+        "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
     }
@@ -235,6 +243,10 @@ class IRFFITSWriter(Tool):
         "energy-dependent-theta": (
             {"IRFFITSWriter": {"energy_dependent_theta": True}},
             "Uses energy-dependent cuts for theta",
+        ),
+        "energy-dependent-alpha": (
+            {"IRFFITSWriter": {"energy_dependent_alpha": True}},
+            "Uses energy-dependent cuts for alpha",
         ),
     }
 
@@ -305,10 +317,7 @@ class IRFFITSWriter(Tool):
                 p["geomag_params"],
             ) = read_mc_dl2_to_QTable(p["file"])
 
-            if p["simulation_info"].viewcone.value == 0.0:
-                p["mc_type"] = "point_like"
-            else:
-                p["mc_type"] = "diffuse"
+            p["mc_type"] = check_mc_type(p["file"])
 
             self.log.debug(
                 f"Simulated {p['mc_type']} {particle_type.title()} Events:"
@@ -327,10 +336,10 @@ class IRFFITSWriter(Tool):
                 )
 
             p["ZEN_PNT"] = round(
-                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 4
+                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 3
             )
             p["AZ_PNT"] = round(
-                p["events"]["pointing_az"][0].to_value(u.deg), 4
+                p["events"]["pointing_az"][0].to_value(u.deg), 3
             )
 
             if not self.source_dep:
@@ -367,7 +376,7 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
         mean_fov_offset = round(
-            gammas["true_source_fov_offset"].mean().to_value(), 1
+            gammas["true_source_fov_offset"].mean().to_value(), 3
         )
 
         gammas = self.event_sel.filter_cut(gammas)
@@ -391,42 +400,53 @@ class IRFFITSWriter(Tool):
             )
 
         if self.point_like:
-            if self.energy_dependent_theta:
-                self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
-                    gammas, reco_energy_bins,
-                )
-                gammas = self.cuts.apply_energy_dependent_theta_cuts(
-                    gammas, self.theta_cuts
-                )
-                self.log.info(
-                    "Using a containment region for theta of "
-                    f"{self.cuts.theta_containment}"
-                )
-            else:
-                if not self.source_dep:
+            if not self.source_dep:
+                if self.energy_dependent_theta:
+                    self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_theta_cuts(
+                        gammas, self.theta_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for theta of "
+                        f"{self.cuts.theta_containment}"
+                    )
+                else:
                     gammas = self.cuts.apply_global_theta_cut(gammas)
                     self.log.info(
                         "Using a global Theta cut of "
                         f"{self.cuts.global_theta_cut} for point-like IRF"
                     )
+            else:
+                if self.energy_dependent_alpha:
+                    self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_alpha_cuts(
+                        gammas, self.alpha_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for alpha of "
+                        f"{self.cuts.alpha_containment} %"
+                    )
                 else:
                     gammas = self.cuts.apply_global_alpha_cut(gammas)
                     self.log.info(
-                      'Using a global Alpha cut of '
-                      f'{self.cuts.global_alpha_cut} for point like IRF'
+                        "Using a global Alpha cut of "
+                        f"{self.cuts.global_alpha_cut} for point like IRF"
                     )
 
-        if self.mc_particle["gamma"]["mc_type"] == "point_like":
+        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 1
+                gammas["true_source_fov_offset"].mean().to_value(), 3
             )
             fov_offset_bins = [
                 mean_fov_offset - 0.1, mean_fov_offset + 0.1
             ] * u.deg
 
             self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
-            self.mc_particle["gamma"]["ZEN_PNT"] -= self.mc_particle["gamma"]["G_OFFSET"]
-            self.log.info('Single offset for point like gamma MC')
+            self.log.info("Single offset for point like gamma MC")
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")
@@ -434,10 +454,10 @@ class IRFFITSWriter(Tool):
             if self.energy_dependent_theta:
                 fov_offset_bins = [
                     round(
-                        gammas["reco_source_fov_offset"].min().to_value(), 4
+                        gammas["true_source_fov_offset"].min().to_value(), 3
                     ),
                     round(
-                        gammas["reco_source_fov_offset"].max().to_value(), 4
+                        gammas["true_source_fov_offset"].max().to_value(), 3
                     )
                 ] * u.deg
                 self.log.info(f"For RAD MAX, FoV where we have all of the reconstructed events, is used, {fov_offset_bins}")
@@ -446,7 +466,7 @@ class IRFFITSWriter(Tool):
             background = table.vstack(
                 [
                     self.mc_particle["proton"]["events"],
-                    self.mc_particle["electron"]["events"]
+                    self.mc_particle["electron"]["events"],
                 ]
             )
 
@@ -487,20 +507,33 @@ class IRFFITSWriter(Tool):
             "FOVALIGN": "RADEC",
         }
 
-        extra_headers["ZEN_PNT"] = str(self.mc_particle["gamma"]["ZEN_PNT"] * u.deg)
-        extra_headers["AZ_PNT"] = str(self.mc_particle["gamma"]["AZ_PNT"] * u.deg)
-        extra_headers["G_OFFSET"] = str(mean_fov_offset * u.deg)
-        extra_headers["B_TOTAL"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].to(u.uT)
+        extra_headers["ZEN_PNT"] = (
+            self.mc_particle["gamma"]["ZEN_PNT"],
+            "deg"
         )
-        extra_headers["B_INC"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].to(u.rad)
+        extra_headers["AZ_PNT"] = (
+            self.mc_particle["gamma"]["AZ_PNT"],
+            "deg"
         )
-        extra_headers["B_DEC"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].to(u.rad)
+        extra_headers["G_OFFSET"] = (
+            mean_fov_offset,
+            "deg"
         )
-        extra_headers["B_DELTA"] = str(
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].to(u.deg)
+        extra_headers["B_TOTAL"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].unit,
+        )
+        extra_headers["B_INC"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].unit,
+        )
+        extra_headers["B_DEC"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].unit,
+        )
+        extra_headers["B_DELTA"] = (
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].value,
+            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].unit,
         )
 
         if self.point_like:
@@ -515,7 +548,7 @@ class IRFFITSWriter(Tool):
         else:
             extra_headers["GH_EFF"] = (
                 self.cuts.gh_efficiency,
-                "gamma/hadron efficiency"
+                "gamma/hadron efficiency",
             )
 
         if self.point_like:
@@ -523,7 +556,7 @@ class IRFFITSWriter(Tool):
                 if self.energy_dependent_theta:
                     extra_headers["TH_CONT"] = (
                         self.cuts.theta_containment,
-                        "Theta containment region in percentage"
+                        "Theta containment region in percentage",
                     )
                 else:
                     extra_headers["RAD_MAX"] = (
@@ -531,16 +564,22 @@ class IRFFITSWriter(Tool):
                         'deg'
                     )
             else:
-                extra_headers["AL_CUT"] = (
-                    self.cuts.global_alpha_cut,
-                    'deg'
-                )
+                if self.energy_dependent_alpha:
+                    extra_headers["AL_CONT"] = (
+                        self.cuts.alpha_containment,
+                        "Alpha containment region in percentage",
+                    )
+                else:
+                    extra_headers["AL_CUT"] = (
+                        self.cuts.global_alpha_cut,
+                        'deg'
+                    )
 
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
-            if self.mc_particle["gamma"]["mc_type"] == "point_like":
+            if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
@@ -658,6 +697,22 @@ class IRFFITSWriter(Tool):
                     )
                 )
                 self.log.info("RAD MAX HDU added")
+
+        if self.energy_dependent_alpha and self.source_dep:
+            # Create a separate temporary header
+            alpha_header = fits.Header()
+            alpha_header["CREATOR"] = f"lstchain v{__version__}"
+            alpha_header["DATE"] = Time.now().utc.iso
+
+            for k, v in extra_headers.items():
+                alpha_header[k] = v
+
+            self.hdus.append(
+                fits.BinTableHDU(
+                    self.alpha_cuts, header=gh_header, name="AL_CUTS"
+                )
+            )
+            self.log.info("ALPHA CUTS HDU added")
 
     def finish(self):
 

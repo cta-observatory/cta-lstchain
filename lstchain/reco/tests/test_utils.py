@@ -213,4 +213,4 @@ def test_get_geomagnetic_delta():
     assert u.isclose(inc, 0.57002008 * u.rad)
 
     inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
-    assert u.isclose(inc, 0.20785624 * u.rad)
+    assert u.isclose(inc, 0.34305087 * u.rad)

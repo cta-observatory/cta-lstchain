@@ -224,7 +224,7 @@ def main():
         "lstchain_create_calibration_file",
         f"--input_file={input_file}",
         f"--output_file={output_file}",
-        "--EventSource.default_trigger_type=tib",
+        "--LSTEventSource.default_trigger_type=tib",
         f"--EventSource.min_flatfield_adc={min_ff}",
         f"--EventSource.max_flatfield_adc={max_ff}",
         f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",

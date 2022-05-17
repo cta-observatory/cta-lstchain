@@ -52,7 +52,9 @@ from lstchain.high_level.hdu_table import (
     set_expected_pos_to_reco_altaz,
 )
 from lstchain.high_level.interpolate import (
-    check_in_delaunay_triangle, compare_irfs, interpolate_irf
+    check_in_delaunay_triangle,
+    compare_irfs,
+    interpolate_irf,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
@@ -98,7 +100,6 @@ class DataReductionFITSWriter(Tool):
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
-        --global-gh-cut 0.9
         --overwrite
 
     Or generate source-dependent DL3 files
@@ -192,7 +193,6 @@ class DataReductionFITSWriter(Tool):
         ("p", "irf-file-pattern"): "DataReductionFITSWriter.irf_file_pattern",
         ("f", "final-irf-file"): "DataReductionFITSWriter.final_irf_file",
         "interp-method": "DataReductionFITSWriter.interp_method",
-        "global-gh-cut": "DL3Cuts.global_gh_cut",
         "source-name": "DataReductionFITSWriter.source_name",
         "source-ra": "DataReductionFITSWriter.source_ra",
         "source-dec": "DataReductionFITSWriter.source_dec",
@@ -284,7 +284,6 @@ class DataReductionFITSWriter(Tool):
 
         self.log.debug(f"Output DL3 file: {self.output_file}")
 
-
     def interp_irfs(self):
         """
         Get the optimal number of IRFs necessary for interpolation
@@ -321,7 +320,7 @@ class DataReductionFITSWriter(Tool):
         """
         try:
             with fits.open(self.final_irf_output) as hdul:
-                self.use_energy_dependent_cuts = (
+                self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
         except:
@@ -330,11 +329,19 @@ class DataReductionFITSWriter(Tool):
                 " to check for global cut information in the Header value"
             )
 
+        if self.source_dep:
+            with fits.open(self.final_irf_output) as hdul:
+                self.use_energy_dependent_alpha_cuts = (
+                    "AL_CUT" not in hdul["EFFECTIVE AREA"].header
+                )
+
     def apply_srcindep_gh_cut(self):
-        ''' apply gammaness cut '''
+        """
+        Apply gammaness cut.
+        """
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.use_energy_dependent_cuts:
+        if self.use_energy_dependent_gh_cuts:
             self.energy_dependent_gh_cuts = QTable.read(
                 self.final_irf_output, hdu="GH_CUTS"
             )
@@ -353,7 +360,9 @@ class DataReductionFITSWriter(Tool):
             self.log.info(f"Using global G/H cut of {self.cuts.global_gh_cut}")
 
     def apply_srcdep_gh_alpha_cut(self):
-        ''' apply gammaness and alpha cut for source-dependent analysis '''
+        """
+        Apply gammaness and alpha cut for source-dependent analysis.
+        """
         srcdep_assumed_positions = get_srcdep_assumed_positions(self.input_dl2)
 
         for i, srcdep_pos in enumerate(srcdep_assumed_positions):
@@ -363,7 +372,7 @@ class DataReductionFITSWriter(Tool):
 
             data_temp = self.event_sel.filter_cut(data_temp)
 
-            if self.use_energy_dependent_cuts:
+            if self.use_energy_dependent_gh_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
                     self.final_irf_output, hdu="GH_CUTS"
                 )
@@ -371,14 +380,30 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_energy_dependent_gh_cuts(
                     data_temp, self.energy_dependent_gh_cuts
                 )
+                self.log.info(
+                    "Using gamma efficiency of "
+                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+                )
             else:
                 with fits.open(self.final_irf_output) as hdul:
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
 
-            with fits.open(self.final_irf_output) as hdul:
-                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+            if self.use_energy_dependent_alpha_cuts:
+                self.energy_dependent_alpha_cuts = QTable.read(
+                    self.final_irf_output, hdu="AL_CUTS"
+                )
+                data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
+                    data_temp, self.energy_dependent_alpha_cuts
+                )
+                self.log.info(
+                    "Using alpha containment region of "
+                    f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
+                )
+            else:
+                with fits.open(self.final_irf_output) as hdul:
+                    self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+                data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
             # set expected source positions as reco positions
             set_expected_pos_to_reco_altaz(data_temp)
@@ -388,13 +413,12 @@ class DataReductionFITSWriter(Tool):
             else:
                 self.data = vstack([self.data, data_temp])
 
-
     def start(self):
 
         if not self.source_dep:
             self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2)
         else:
-            self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2, 'on')
+            self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2, "on")
 
         if self.use_irf_interpolation:
             self.interp_irfs()
@@ -418,7 +442,7 @@ class DataReductionFITSWriter(Tool):
             source_pos=self.source_pos,
             effective_time=self.effective_time.value,
             elapsed_time=self.elapsed_time.value,
-            data_pars = self.data_params,
+            data_pars=self.data_params,
         )
         self.log.info(f"Target parameters for interpolation: {self.data_params}")
 
@@ -432,10 +456,17 @@ class DataReductionFITSWriter(Tool):
         self.mc_params = dict()
 
         h = self.irf_final_hdu[1].header
-        for p in self.data_params.keys():
-            self.mc_params[p] = u.Quantity(h[p]).to(u.deg)
 
-        mc_gamma_offset = u.Quantity(h["G_OFFSET"]).to(u.deg)
+        for p in self.data_params.keys():
+            self.mc_params[p] = u.Quantity(
+                h[p],
+                h.comments[p]
+            ).to(u.deg)
+
+        mc_gamma_offset = u.Quantity(
+            h["G_OFFSET"],
+            "deg"
+        )
 
         self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.2f}")
         self.log.info(
