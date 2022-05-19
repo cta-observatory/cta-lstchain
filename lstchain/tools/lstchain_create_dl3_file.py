@@ -468,15 +468,15 @@ class DataReductionFITSWriter(Tool):
             "deg"
         )
 
-        self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.2f}")
+        self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.3f}")
         self.log.info(
-            f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']:.2f}"
+            f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']:.3f}"
         )
         self.log.info(
-            f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']:.2f}"
+            f"Azimuth pointing of MC at {self.mc_params['AZ_PNT']:.3f}"
         )
         self.log.info(
-            f"Geomagnetic delta for the MC is {self.mc_params['B_DELTA']:.2f}"
+            f"Geomagnetic delta for the MC is {self.mc_params['B_DELTA']:.3f}"
         )
 
         for irf_hdu in self.irf_final_hdu[1:]:

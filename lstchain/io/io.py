@@ -986,9 +986,9 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     az = data["pointing_az"].mean().to(u.rad)
     b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
 
-    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 3) * u.deg
-    data_params["AZ_PNT"] = round(az.to_value(u.deg), 3) * u.deg
-    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 3) * u.deg
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 5) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 5) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 5) * u.deg
 
     return data, data_params
 
@@ -1176,7 +1176,7 @@ def check_mc_type(filename):
     """
 
     simu_info = read_simu_info_merged_hdf5(filename)
-    
+
     min_viewcone = simu_info.min_viewcone_radius.value
     max_viewcone = simu_info.max_viewcone_radius.value
 
@@ -1185,7 +1185,7 @@ def check_mc_type(filename):
 
     elif min_viewcone == 0.0:
         mc_type = 'diffuse'
-        
+
     elif (max_viewcone - min_viewcone) < 0.1:
         mc_type = 'ring_wobble'
 
@@ -1193,5 +1193,3 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
-            
-
