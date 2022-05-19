@@ -61,7 +61,7 @@ def test_interp_irf(simulated_irf_file):
     ).to_value(u.rad)
 
     zen_2 = 2 * zen_1
-    del_2 = 1.5 * del_1
+    del_2 = 1.2 * del_1
 
     factor_zd = (np.cos(zen_2))/np.cos(zen_1)
     factor_del = (np.sin(del_2))/np.sin(del_1)
@@ -129,12 +129,12 @@ def test_check_delaunay_triangles(simulated_irf_file):
 
     # Check on target being inside or outside Delaunay simplex
     data_pars = {
-        "ZEN_PNT": 35 * u.deg,
-        "B_DELTA": 95 * u.deg
+        "ZEN_PNT": 25 * u.deg,
+        "B_DELTA": 45 * u.deg
     }
     data_pars2 = {
         "ZEN_PNT": 58 * u.deg,
-        "B_DELTA": 95 * u.deg
+        "B_DELTA": 70 * u.deg
     }
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)

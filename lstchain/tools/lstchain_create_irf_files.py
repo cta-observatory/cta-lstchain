@@ -336,10 +336,10 @@ class IRFFITSWriter(Tool):
                 )
 
             p["ZEN_PNT"] = round(
-                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 3
+                90 - p["events"]["pointing_alt"][0].to_value(u.deg), 5
             )
             p["AZ_PNT"] = round(
-                p["events"]["pointing_az"][0].to_value(u.deg), 3
+                p["events"]["pointing_az"][0].to_value(u.deg), 5
             )
 
             if not self.source_dep:
@@ -376,7 +376,7 @@ class IRFFITSWriter(Tool):
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
         mean_fov_offset = round(
-            gammas["true_source_fov_offset"].mean().to_value(), 3
+            gammas["true_source_fov_offset"].mean().to_value(), 4
         )
 
         gammas = self.event_sel.filter_cut(gammas)
@@ -439,7 +439,7 @@ class IRFFITSWriter(Tool):
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 3
+                gammas["true_source_fov_offset"].mean().to_value(), 4
             )
             fov_offset_bins = [
                 mean_fov_offset - 0.1, mean_fov_offset + 0.1

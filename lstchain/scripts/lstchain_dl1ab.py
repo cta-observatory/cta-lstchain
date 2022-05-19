@@ -92,7 +92,7 @@ def main():
     logging.getLogger().addHandler(handler)
 
     if Path(args.output_file).exists():
-        log.critical('Outputfile already exists')
+        log.critical(f'Output file {args.output_file} already exists')
         sys.exit(1)
 
     std_config = get_standard_config()
