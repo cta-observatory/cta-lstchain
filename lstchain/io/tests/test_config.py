@@ -1,7 +1,7 @@
 from lstchain.io import config
 from lstchain.io.config import get_cleaning_parameters
 import tempfile
-from pathlib import Path
+
 
 def test_get_standard_config():
     std_cfg = config.get_standard_config()
@@ -43,10 +43,10 @@ def test_get_cleaning_parameters():
     assert std_config['tailcut']['keep_isolated_pixels'] == isolated_pixels
     assert std_config['tailcut']['min_number_picture_neighbors'] == min_n_neighbors
 
+
 def test_dump_config():
     cfg = {'myconf': 1}
     with tempfile.NamedTemporaryFile() as file:
-        config.dump_config(cfg, file.name)
-        assert Path(file.name).exists()
+        config.dump_config(cfg, file.name, overwrite=True)
         read_cfg = config.read_configuration_file(file.name)
         assert read_cfg['myconf'] == 1
