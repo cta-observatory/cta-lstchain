@@ -55,7 +55,7 @@ def build_parser():
 
 def main():
 
-    args = build_parser.parse_args()
+    args = build_parser().parse_args()
 
     if args.mc and args.src_dep:
         raise ValueError("--mc and --src-dep can't be used at the same time")
