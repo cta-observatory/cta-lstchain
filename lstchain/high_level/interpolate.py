@@ -266,6 +266,32 @@ def interpolate_gh_table(
     return griddata(grid_points, gh_cuts, target_point, method=method)
 
 
+def interpolate_rad_max(
+    rad_max, grid_points, target_point, method="linear",
+):
+    """
+    Interpolates a grid of RAD_MAX tables for point-like IRFs to a target-point.
+    Wrapper around scipy.interpolate.griddata [1].
+    Parameters
+    ----------
+    rad_max: numpy.ndarray, shape=(N, M, ...)
+        Theta-cuts for all combinations of grid-points, energy and fov_offset.
+        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
+    grid_points: numpy.ndarray, shape=(N, O)
+        Array of the N O-dimensional morphing parameter values corresponding to the N input templates.
+    target_point: numpy.ndarray, shape=(O)
+        Value for which the interpolation is performed (target point)
+    method: 'linear’, ‘nearest’, ‘cubic’
+        Interpolation method for scipy.interpolate.griddata [1]. Defaults to 'linear'.
+    Returns
+    -------
+    rad_max_interp: numpy.ndarray, shape=(1, M, ...)
+        Theta-cuts for the target grid-point, shape (1, M:n_energy_bins, n_fov_offset_bins)
+    """
+
+    return griddata(grid_points, rad_max, target_point, method=method)
+
+
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
     """
     Using pyirf functions with a list of IRFs and parameters to compare with
@@ -433,7 +459,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     except KeyError:
         log.error("GH CUTS not present for IRF interpolation")
 
-    """
     try:
         hdus_interp["RAD_MAX"]
         radmax_list = load_irf_grid(
@@ -461,7 +486,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     except KeyError:
         log.error("RAD_MAX not present for IRF interpolation")
-    """
 
     if not point_like:
         try:
