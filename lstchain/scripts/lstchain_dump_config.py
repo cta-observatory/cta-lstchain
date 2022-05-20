@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 from lstchain.io.config import (read_configuration_file, dump_config,
-                                get_standard_config, get_mc_config, get_src_dep_config
+                                get_standard_config, get_mc_config, get_srcdep_config
                                 )
 
 
@@ -22,7 +22,7 @@ def update_std_config(new_config):
     return std_config
 
 
-def main():
+def build_parser():
     parser = argparse.ArgumentParser(description="Dump lstchain config in a file.")
 
     # Required arguments
@@ -50,7 +50,12 @@ def main():
                         help='Overwrite existing output file',
                         )
 
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+
+    args = build_parser.parse_args()
 
     if args.mc and args.src_dep:
         raise ValueError("--mc and --src-dep can't be used at the same time")
@@ -58,7 +63,7 @@ def main():
     if args.mc:
         config = get_mc_config()
     elif args.src_dep:
-        config = get_src_dep_config()
+        config = get_srcdep_config()
     else:
         config = get_standard_config()
 
@@ -67,7 +72,6 @@ def main():
             raise FileNotFoundError(f"Config file {args.update_with} does not exist")
         extra_config = read_configuration_file(args.update_with)
         config.update(extra_config)
-
 
     dump_config(config, args.output_file, overwrite=args.overwrite)
 
