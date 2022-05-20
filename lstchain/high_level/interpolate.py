@@ -15,7 +15,7 @@ from pyirf.io.gadf import (
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion,
-    interpolate_psf_table, # interpolate_rad_max_table
+    interpolate_psf_table, # interpolate_rad_max
 )
 from scipy.spatial import Delaunay, distance
 from scipy.interpolate import griddata
@@ -466,7 +466,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         )
         temp_irf = QTable.read(irfs[0], hdu="RAD_MAX")
 
-        rad_max_interp = interpolate_rad_max_table(
+        rad_max_interp = interpolate_rad_max(
             radmax_list, irf_pars, interp_pars, method=interp_method
         )
 
