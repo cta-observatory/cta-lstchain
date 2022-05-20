@@ -58,9 +58,9 @@ def get_mc_config():
     return std_cfg
 
 
-def get_src_dep_config():
+def get_srcdep_config():
     """
-    Load the config from the file 'data/lstchain_src_dep_config.json'
+    Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'
 
     Returns
     -------
@@ -70,18 +70,6 @@ def get_src_dep_config():
     src_dep_cfg = read_configuration_file(Path(__file__).parent.joinpath("../data/lstchain_src_dep_config.json"))
     std_cfg.update(src_dep_cfg)
     return std_cfg
-
-
-def get_src_dep_config():
-    """
-    Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'
-
-    Returns
-    -------
-    dict
-    """
-    src_dep_config_file = Path(__file__).parent.joinpath("../data/lstchain_src_dep_config.json")
-    return read_configuration_file(src_dep_config_file)
 
 
 def replace_config(base_config, new_config):
