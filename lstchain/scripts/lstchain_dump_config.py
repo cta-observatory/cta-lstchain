@@ -63,7 +63,7 @@ def main():
         config = get_standard_config()
 
     if args.update_with:
-        if not args.update_with.exists():
+        if not args.update_with.is_file():
             raise FileNotFoundError(f"Config file {args.update_with} does not exist")
         extra_config = read_configuration_file(args.update_with)
         config.update(extra_config)
