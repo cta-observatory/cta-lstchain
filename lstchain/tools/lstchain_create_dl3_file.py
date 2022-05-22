@@ -111,6 +111,7 @@ class DataReductionFITSWriter(Tool):
         --source-name Crab
         --source-dep
         --overwrite
+
     Or use a list of IRFs for including interpolated IRF:
     > lstchain_create_dl3_file
         -d /path/to/DL2_data_file.h5
@@ -118,11 +119,25 @@ class DataReductionFITSWriter(Tool):
         -i /path/to/irf/
         -p irf*.fits.gz
         -f final_interp_irf.fits.gz
+        --interp-method linear
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
         --overwrite
-        --config /path/to/config.json
+
+    Or use a list of IRFs for including only the nearest IRF:
+    > lstchain_create_dl3_file
+        -d /path/to/DL2_data_file.h5
+        -o /path/to/DL3/file/
+        -i /path/to/irf/
+        -p irf*.fits.gz
+        -f final_interp_irf.fits.gz
+        --use-nearest-irf-node True
+        --source-name Crab
+        --source-ra 83.633deg
+        --source-dec 22.01deg
+        --overwrite
+
     """
 
     input_dl2 = traits.Path(
@@ -184,6 +199,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    use_nearest_irf_node = traits.Bool(
+        help="If True, only look for the nearest IRF node to the data. No interpolation",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3Cuts]
 
     aliases = {
@@ -206,6 +226,10 @@ class DataReductionFITSWriter(Tool):
         "source-dep": (
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
+        ),
+        "use-nearest-irf-node": (
+            {"DataReductionFITSWriter": {"use_nearest_irf_node": True}},
+            "Only use the closest IRF, if True",
         ),
     }
 
@@ -421,7 +445,12 @@ class DataReductionFITSWriter(Tool):
             self.data, self.data_params = read_data_dl2_to_QTable(self.input_dl2, "on")
 
         if self.use_irf_interpolation:
-            self.interp_irfs()
+            if not self.use_nearest_irf_node:
+                self.interp_irfs()
+            else:
+                self.final_irf_output = check_in_delaunay_triangle(
+                    self.irf_list, self.data_params, self.use_nearest_irf_node
+                )
         self.check_energy_dependent_cuts()
 
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
