@@ -330,34 +330,39 @@ class TimeWaveformFitter(TelescopeComponent):
 
         """
         container = DL1LikelihoodParametersContainer(lhfit_call_status=1)
-        self.fit(fit_params)
-        container.lhfit_TS = self.fcn
+        try:
+            self.fit(fit_params)
+            container.lhfit_TS = self.fcn
 
-        container.lhfit_x = self.end_parameters['x_cm'] * u.m
-        container.lhfit_y = self.end_parameters['y_cm'] * u.m
-        container.lhfit_r = np.sqrt(container.lhfit_x ** 2 + container.lhfit_y ** 2)
-        container.lhfit_phi = np.arctan2(container.lhfit_y, container.lhfit_x)
-        if self.end_parameters['psi'] > np.pi:
-            self.end_parameters['psi'] -= 2 * np.pi
-        if self.end_parameters['psi'] < -np.pi:
-            self.end_parameters['psi'] += 2 * np.pi
-        container.lhfit_psi = self.end_parameters['psi'] * u.rad
-        length_asy = 1 + self.end_parameters['rl'] if self.end_parameters['rl'] >= 0 else 1 / (
-                1 - self.end_parameters['rl'])
-        lhfit_length_m = ((1.0 + length_asy)
-                          * self.end_parameters['length'] / 2.0) * u.m
-        container.lhfit_length = np.rad2deg(np.arctan(lhfit_length_m/focal_length))
-        container.lhfit_width = self.end_parameters['wl'] * container.lhfit_length
+            container.lhfit_x = self.end_parameters['x_cm'] * u.m
+            container.lhfit_y = self.end_parameters['y_cm'] * u.m
+            container.lhfit_r = np.sqrt(container.lhfit_x ** 2 + container.lhfit_y ** 2)
+            container.lhfit_phi = np.arctan2(container.lhfit_y, container.lhfit_x)
+            if self.end_parameters['psi'] > np.pi:
+                self.end_parameters['psi'] -= 2 * np.pi
+            if self.end_parameters['psi'] < -np.pi:
+                self.end_parameters['psi'] += 2 * np.pi
+            container.lhfit_psi = self.end_parameters['psi'] * u.rad
+            length_asy = 1 + self.end_parameters['rl'] if self.end_parameters['rl'] >= 0 else 1 / (
+                    1 - self.end_parameters['rl'])
+            lhfit_length_m = ((1.0 + length_asy)
+                              * self.end_parameters['length'] / 2.0) * u.m
+            container.lhfit_length = np.rad2deg(np.arctan(lhfit_length_m/focal_length))
+            container.lhfit_width = self.end_parameters['wl'] * container.lhfit_length
 
-        container.lhfit_time_gradient = self.end_parameters['v']
-        container.lhfit_ref_time = self.end_parameters['t_cm']
+            container.lhfit_time_gradient = self.end_parameters['v']
+            container.lhfit_ref_time = self.end_parameters['t_cm']
 
-        container.lhfit_wl = u.Quantity(self.end_parameters['wl'])
-        container.lhfit_intensity = self.end_parameters['charge']
-        container.lhfit_log_intensity = np.log10(container.lhfit_intensity)
-        container.lhfit_t_68 = container.lhfit_length.value * container.lhfit_time_gradient
-        container.lhfit_area = container.lhfit_length * container.lhfit_width
-        container.lhfit_length_asymmetry = self.end_parameters['rl']
+            container.lhfit_wl = u.Quantity(self.end_parameters['wl'])
+            container.lhfit_intensity = self.end_parameters['charge']
+            container.lhfit_log_intensity = np.log10(container.lhfit_intensity)
+            container.lhfit_t_68 = container.lhfit_length.value * container.lhfit_time_gradient
+            container.lhfit_area = container.lhfit_length * container.lhfit_width
+            container.lhfit_length_asymmetry = self.end_parameters['rl']
+        except ZeroDivisionError:
+            # TODO Check occurrence rate and solve
+            container = DL1LikelihoodParametersContainer(lhfit_call_status=-1)
+            logger.error('ZeroDivisionError encounter during the fitting procedure, skipping event.')
 
         return container
 
