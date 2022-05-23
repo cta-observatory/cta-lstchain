@@ -18,7 +18,6 @@ $> python lstchain_dl1_to_dl2.py
 import argparse
 import os
 
-import joblib
 import numpy as np
 import pandas as pd
 from ctapipe.instrument import SubarrayDescription
