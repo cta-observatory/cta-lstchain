@@ -65,7 +65,7 @@ def interp_params(params_list, data):
     return mc_pars
 
 
-def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node):
+def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
     """
     From a given list of IRFs as grid points used for interpolation, retrieve
     the Delaunay triangulation list of IRFs, where the simplex includes the
