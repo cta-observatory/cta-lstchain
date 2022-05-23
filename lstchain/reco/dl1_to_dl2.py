@@ -268,6 +268,7 @@ def train_sep(train, custom_config=None):
 
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
+                 free_model_memory=True,
                  energy_min=-np.inf,
                  custom_config=None,
                  ):
@@ -402,11 +403,33 @@ def build_models(filegammas, fileprotons,
 
     reg_energy = train_energy(df_gamma_reg, custom_config=config)
 
+    if save_models:
+        os.makedirs(path_models, exist_ok=True)
+
+        file_reg_energy = path_models + "/reg_energy.sav"
+        joblib.dump(reg_energy, file_reg_energy, compress=3)
+    if free_model_memory:
+        del reg_energy
+
+
     if config['disp_method'] == 'disp_vector':
         reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+        if save_models:
+            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
+            joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
+        if free_model_memory:
+            del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
         reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
         cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
+        if save_models:
+            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
+            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
+            joblib.dump(reg_disp_norm, file_reg_disp_norm, compress=3)
+            joblib.dump(cls_disp_sign, file_cls_disp_sign, compress=3)
+        if free_model_memory:
+            del reg_disp_norm
+            del cls_disp_sign
 
     # Train classifier for gamma/hadron separation.
     test_size = config['n_training_events']['gamma_classifier']
@@ -430,25 +453,25 @@ def build_models(filegammas, fileprotons,
     test = testg.append(df_proton, ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
+    # Apply the temporary energy regressors to the test set
+    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
+    del temp_reg_energy
 
     if config['disp_method'] == 'disp_vector':
         temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+        # Apply the temporary disp vector regressors to the test set
+        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
+        del temp_reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
         tmp_reg_disp_norm = train_disp_norm(train, custom_config=config)
         tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
-
-    # Apply the regressors to the test set
-
-    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
-
-    if config['disp_method'] == 'disp_vector':
-        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
-    elif config['disp_method'] == 'disp_norm_sign':
+        # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
         disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        del tmp_reg_disp_norm
+        del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
         test['reco_disp_sign'] = disp_sign
-
         disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -470,40 +493,21 @@ def build_models(filegammas, fileprotons,
 
     train = test[test['log_reco_energy'] > energy_min]
 
-    del temp_reg_energy
-
-    if config['disp_method'] == 'disp_vector':
-        del temp_reg_disp_vector
-    elif config['disp_method'] == 'disp_norm_sign':
-        del tmp_reg_disp_norm, tmp_cls_disp_sign
-
     # Train the Classifier
 
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
-        os.makedirs(path_models, exist_ok=True)
-
-        file_reg_energy = path_models + "/reg_energy.sav"
-        joblib.dump(reg_energy, file_reg_energy, compress=3)
-
-        if config['disp_method'] == 'disp_vector':
-            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-            joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
-
-        elif config['disp_method'] == 'disp_norm_sign':
-            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
-            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
-            joblib.dump(reg_disp_norm, file_reg_disp_norm, compress=3)
-            joblib.dump(cls_disp_sign, file_cls_disp_sign, compress=3)
-
         file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(cls_gh, file_cls_gh, compress=3)
+    if free_model_memory:
+        del cls_gh
 
-    if config['disp_method'] == 'disp_vector':
-        return reg_energy, reg_disp_vector, cls_gh
-    elif config['disp_method'] == 'disp_norm_sign':
-        return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
+    if not free_model_memory:
+        if config['disp_method'] == 'disp_vector':
+            return reg_energy, reg_disp_vector, cls_gh
+        elif config['disp_method'] == 'disp_norm_sign':
+            return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
 def apply_models(dl1,
@@ -592,7 +596,7 @@ def apply_models(dl1,
     dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
 
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined on the major image axis; sign is such that it is typically positive for gammas:    
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:
     dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
 
     if 'mc_alt_tel' in dl2.columns:
