@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
+from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
@@ -307,6 +308,8 @@ def build_models(filegammas, fileprotons,
     path_models: string
         path of a directory where to save the models.
         if it does exist, the directory is created
+    free_model_memory: bool
+        If True RF models are freed after use and not returned
     energy_min: float
         Cut in intensity of the showers for training RF
     custom_config: dictionnary
@@ -511,14 +514,13 @@ def build_models(filegammas, fileprotons,
 
 
 def apply_models(dl1,
-                 file_classifier,
-                 file_reg_energy,
-                 file_reg_disp_vector=None,
-                 file_reg_disp_norm=None,
-                 file_cls_disp_sign=None,
+                 classifier,
+                 reg_energy,
+                 reg_disp_vector=None,
+                 reg_disp_norm=None,
+                 cls_disp_sign=None,
                  focal_length=28 * u.m,
                  custom_config=None,
-                 pre_loaded=False
                  ):
     """
     Apply previously trained Random Forests to a set of data
@@ -528,22 +530,19 @@ def apply_models(dl1,
     Parameters
     ----------
     dl1: `pandas.DataFrame`
-    file_classifier: string or Random Forest Classifier
+    classifier: string or Random Forest Classifier
         Location of the, or pre-loaded, RF for Gamma/Hadron separation
-    file_reg_energy: string or Random Forest Regressor
+    reg_energy: string or Random Forest Regressor
         Location of the, or pre-loaded, RF for Energy reconstruction
-    file_reg_disp_vector: string or Random Forest Regressor
+    reg_disp_vector: string or Random Forest Regressor
         Location of the, or pre-loaded, RF for disp vector reconstruction
-    file_reg_disp_norm: string or Random Forest Regressor
+    reg_disp_norm: string or Random Forest Regressor
         Location of the, or pre-loaded, RF for disp norm reconstruction
-    file_cls_disp_sign: string or Random Forest Classifier
+    cls_disp_sign: string or Random Forest Classifier
         Location of the, or pre-loaded, RF for disp sign reconstruction
     focal_length: `astropy.unit`
-    custom_config: dictionnary
+    custom_config: dictionary
         Modified configuration to update the standard one
-    pre_loaded: bool
-        If True the "file" parameters contain the loaded RF instead of the
-        location and are not freed after usage
 
     Returns
     -------
@@ -567,25 +566,26 @@ def apply_models(dl1,
                               )
 
     # Reconstruction of Energy and disp_norm distance
-    reg_energy = file_reg_energy if pre_loaded else joblib.load(file_reg_energy)
+    if isinstance(reg_energy, (str, bytes, Path)):
+        reg_energy = joblib.load(reg_energy)
     dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
-    if not pre_loaded:
-        del reg_energy
+    del reg_energy
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
 
     if config['disp_method'] == 'disp_vector':
-        reg_disp_vector = file_reg_disp_vector if pre_loaded else joblib.load(file_reg_disp_vector)
+        if isinstance(reg_disp_vector, (str, bytes, Path)):
+            reg_disp_vector = joblib.load(reg_disp_vector)
         disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
-        if not pre_loaded:
-            del reg_disp_vector
+        del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
-        reg_disp_norm = file_reg_disp_norm if pre_loaded else joblib.load(file_reg_disp_norm)
-        cls_disp_sign = file_cls_disp_sign if pre_loaded else joblib.load(file_cls_disp_sign)
+        if isinstance(reg_disp_norm, (str, bytes, Path)):
+            reg_disp_norm = joblib.load(reg_disp_norm)
+        if isinstance(cls_disp_sign, (str, bytes, Path)):
+            cls_disp_sign = joblib.load(cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
-        if not pre_loaded:
-            del reg_disp_norm
-            del cls_disp_sign
+        del reg_disp_norm
+        del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
 
@@ -635,11 +635,11 @@ def apply_models(dl1,
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
 
-    classifier = file_classifier if pre_loaded else joblib.load(file_classifier)
+    if isinstance(classifier, (str, bytes, Path)):
+        classifier = joblib.load(classifier)
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
-    if not pre_loaded:
-        del classifier
+    del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
