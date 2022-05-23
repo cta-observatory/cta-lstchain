@@ -542,7 +542,8 @@ def apply_models(dl1,
     custom_config: dictionnary
         Modified configuration to update the standard one
     pre_loaded: bool
-        If True the file_ contain the loaded RF instead and are not freed after usage
+        If True the "file" parameters contain the loaded RF instead of the
+        location and are not freed after usage
 
     Returns
     -------
