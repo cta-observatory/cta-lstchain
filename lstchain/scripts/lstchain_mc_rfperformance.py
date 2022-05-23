@@ -109,8 +109,9 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm, cls_disp_sign=cls_disp_sign,
-                                  focal_length=focal_length, custom_config=config)
+    dl2 = dl1_to_dl2.apply_models_in_memory(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
+                                            cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                            custom_config=config, pre_loaded=True)
 
     ####PLOT SOME RESULTS#####
 
@@ -144,9 +145,10 @@ def main():
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
-    if not args.batch:
-        plt.show()
+    if args.save_models:
+        plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
+        if not args.batch:
+            plt.show()
 
     plt.hist(dl2[dl2['mc_type'] == 101]['gammaness'], bins=100)
     plt.hist(dl2[dl2['mc_type'] == 0]['gammaness'], bins=100)

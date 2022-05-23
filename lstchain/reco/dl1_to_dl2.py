@@ -511,13 +511,14 @@ def build_models(filegammas, fileprotons,
 
 
 def apply_models(dl1,
-                 classifier,
-                 reg_energy,
-                 reg_disp_vector=None,
-                 reg_disp_norm=None,
-                 cls_disp_sign=None,
+                 file_classifier,
+                 file_reg_energy,
+                 file_reg_disp_vector=None,
+                 file_reg_disp_norm=None,
+                 file_cls_disp_sign=None,
                  focal_length=28 * u.m,
-                 custom_config=None
+                 custom_config=None,
+                 pre_loaded=False
                  ):
     """
     Apply previously trained Random Forests to a set of data
@@ -527,19 +528,21 @@ def apply_models(dl1,
     Parameters
     ----------
     dl1: `pandas.DataFrame`
-    classifier: Random Forest Classifier
-        RF for Gamma/Hadron separation
-    reg_energy: Random Forest Regressor
-        RF for Energy reconstruction
-    reg_disp_vector: Random Forest Regressor
-        RF for disp vector reconstruction
-    reg_disp_norm: Random Forest Regressor
-        RF for disp norm reconstruction
-    cls_disp_sign: Random Forest Classifier
-        RF for disp sign reconstruction
+    file_classifier: string or Random Forest Classifier
+        Location of the, or pre-loaded, RF for Gamma/Hadron separation
+    file_reg_energy: string or Random Forest Regressor
+        Location of the, or pre-loaded, RF for Energy reconstruction
+    file_reg_disp_vector: string or Random Forest Regressor
+        Location of the, or pre-loaded, RF for disp vector reconstruction
+    file_reg_disp_norm: string or Random Forest Regressor
+        Location of the, or pre-loaded, RF for disp norm reconstruction
+    file_cls_disp_sign: string or Random Forest Classifier
+        Location of the, or pre-loaded, RF for disp sign reconstruction
     focal_length: `astropy.unit`
     custom_config: dictionnary
         Modified configuration to update the standard one
+    pre_loaded: bool
+        If True the file_ contain the loaded RF instead and are not freed after usage
 
     Returns
     -------
@@ -563,14 +566,25 @@ def apply_models(dl1,
                               )
 
     # Reconstruction of Energy and disp_norm distance
+    reg_energy = file_reg_energy if pre_loaded else joblib.load(file_reg_energy)
     dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
+    if not pre_loaded:
+        del reg_energy
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
 
     if config['disp_method'] == 'disp_vector':
+        reg_disp_vector = file_reg_disp_vector if pre_loaded else joblib.load(file_reg_disp_vector)
         disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
+        if not pre_loaded:
+            del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
+        reg_disp_norm = file_reg_disp_norm if pre_loaded else joblib.load(file_reg_disp_norm)
+        cls_disp_sign = file_cls_disp_sign if pre_loaded else joblib.load(file_cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
+        if not pre_loaded:
+            del reg_disp_norm
+            del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
 
@@ -620,8 +634,11 @@ def apply_models(dl1,
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
 
+    classifier = file_classifier if pre_loaded else joblib.load(file_classifier)
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
+    if not pre_loaded:
+        del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
