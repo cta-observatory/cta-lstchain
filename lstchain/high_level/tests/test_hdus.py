@@ -88,7 +88,7 @@ def test_get_timing_params():
 
     params = get_timing_params(data)
 
-    # Converting to a single mjd number looses precision but should be better than 0.1 us
+    # Converting to a single mjd number loses precision but should be better than 0.1 us
     epoch = Time(params["MJDREFI"], params["MJDREFF"], format="mjd")
     assert (epoch + params['t_start']).isclose(t[0], atol=0.1 * u.us)
     assert (epoch + params['t_stop']).isclose(t[-1], atol=0.1 * u.us)

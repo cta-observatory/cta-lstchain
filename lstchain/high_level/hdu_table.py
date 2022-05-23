@@ -432,15 +432,18 @@ def create_event_list(
     ev_header["TIME-OBS"] = time_params["time_obs"]
     ev_header["DATE-END"] = time_params["date_end"]
     ev_header["TIME-END"] = time_params["time_end"]
-    ev_header["TSTART"] = time_params["t_start"]
-    ev_header["TSTOP"] = time_params["t_stop"]
+    ev_header["TSTART"] = (time_params["t_start"].value, time_params["t_start"].unit)
+    ev_header["TSTOP"] = (time_params["t_stop"].value, time_params["t_stop"].unit)
     ev_header["MJDREFI"] = time_params["MJDREFI"]
     ev_header["MJDREFF"] = time_params["MJDREFF"]
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
     ev_header["TIMEREF"] = "TOPOCENTER"
     ev_header["ONTIME"] = elapsed_time
-    ev_header["TELAPSE"] = (time_params["t_stop"] - time_params["t_start"]).to(u.s)
+    ev_header["TELAPSE"] = (
+        (time_params["t_stop"] - time_params["t_start"]).to_value(u.s),
+        u.s
+    )
     ev_header["DEADC"] = effective_time / elapsed_time
     ev_header["LIVETIME"] = effective_time
 
