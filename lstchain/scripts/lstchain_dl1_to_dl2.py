@@ -121,12 +121,12 @@ def main():
                              )
 
         if config['disp_method'] == 'disp_vector':
-            dl2 = dl1_to_dl2.apply_models(data, file_cls_gh, file_reg_energy, file_reg_disp_vector=file_disp_vector,
+            dl2 = dl1_to_dl2.apply_models(data, file_cls_gh, file_reg_energy, reg_disp_vector=file_disp_vector,
                                           focal_length=focal_length,
                                           custom_config=config)
         elif config['disp_method'] == 'disp_norm_sign':
-            dl2 = dl1_to_dl2.apply_models(data, file_cls_gh, file_reg_energy, file_reg_disp_norm=file_disp_norm,
-                                          file_cls_disp_sign=file_disp_sign,
+            dl2 = dl1_to_dl2.apply_models(data, file_cls_gh, file_reg_energy, reg_disp_norm=file_disp_norm,
+                                          cls_disp_sign=file_disp_sign,
                                           focal_length=focal_length, custom_config=config)
 
     # Source-dependent analysis
@@ -157,11 +157,11 @@ def main():
 
             if config['disp_method'] == 'disp_vector':
                 dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, file_cls_gh, file_reg_energy,
-                                                 file_reg_disp_vector=file_disp_vector,
+                                                 reg_disp_vector=file_disp_vector,
                                                  focal_length=focal_length, custom_config=config)
             elif config['disp_method'] == 'disp_norm_sign':
                 dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, file_cls_gh, file_reg_energy,
-                                                 file_reg_disp_norm=file_disp_norm, file_cls_disp_sign=file_disp_sign,
+                                                 reg_disp_norm=file_disp_norm, cls_disp_sign=file_disp_sign,
                                                  focal_length=focal_length, custom_config=config)
 
             dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
