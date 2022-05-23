@@ -109,9 +109,9 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models_in_memory(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
-                                            cls_disp_sign=cls_disp_sign, focal_length=focal_length,
-                                            custom_config=config, pre_loaded=True)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, file_reg_disp_norm=reg_disp_norm,
+                                  file_cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                  custom_config=config, pre_loaded=True)
 
     ####PLOT SOME RESULTS#####
 
