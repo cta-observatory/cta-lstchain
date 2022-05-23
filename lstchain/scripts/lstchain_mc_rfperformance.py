@@ -2,7 +2,7 @@
 
 """
 Pipeline to test train three Random Forests destinated to Energy, disp
-reconstruction and Gamma/Hadron separation and test the performance 
+reconstruction and Gamma/Hadron separation and test the performance
 of Random Forests.
 
 Inputs are DL1 files
@@ -96,6 +96,7 @@ def main():
         args.protonfile,
         save_models=args.save_models,
         path_models=args.path_models,
+        free_model_memory=False,
         custom_config=config,
     )
 

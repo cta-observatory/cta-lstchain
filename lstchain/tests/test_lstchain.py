@@ -127,7 +127,7 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 
     # wobble observation data
     srcdep_config['observation_mode']='wobble'
-    dl1_params['alt_tel'] += np.deg2rad(0.4) 
+    dl1_params['alt_tel'] += np.deg2rad(0.4)
     src_dep_df_wobble = get_source_dependent_parameters(dl1_params, srcdep_config)
 
     assert 'alpha' in src_dep_df_on['on'].columns
@@ -165,6 +165,7 @@ def test_build_models(simulated_dl1_file, rf_models):
         infile,
         infile,
         save_models=False,
+        free_model_memory=False,
         custom_config=custom_config
     )
 
@@ -213,7 +214,7 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     reg_disp_norm = joblib.load(rf_models["disp_norm"])
     cls_disp_sign = joblib.load(rf_models["disp_sign"])
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm = reg_disp_norm,
                        cls_disp_sign = cls_disp_sign, custom_config=standard_config)
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
