@@ -487,10 +487,7 @@ class DataReductionFITSWriter(Tool):
         h = self.irf_final_hdu[1].header
 
         for p in self.data_params.keys():
-            self.mc_params[p] = u.Quantity(
-                h[p],
-                h.comments[p]
-            ).to(u.deg)
+            self.mc_params[p] = u.Quantity(h[p], "deg")
 
         mc_gamma_offset = u.Quantity(
             h["G_OFFSET"],

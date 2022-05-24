@@ -368,7 +368,8 @@ class IRFFITSWriter(Tool):
 
         self.log.debug(p["simulation_info"])
         gammas = self.mc_particle["gamma"]["events"]
-        self.log.info(self.mc_particle["gamma"]["geomag_params"])
+        geomag_params = self.mc_particle["gamma"]["geomag_params"]
+        self.log.info(geomag_params)
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -520,20 +521,20 @@ class IRFFITSWriter(Tool):
             "deg"
         )
         extra_headers["B_TOTAL"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].value,
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_TOTAL"].unit,
+            geomag_params["GEOMAG_TOTAL"].to_value(u.uT),
+            "uT",
         )
         extra_headers["B_INC"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].value,
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_INC"].unit,
+            geomag_params["GEOMAG_INC"].to_value(u.rad),
+            "rad",
         )
         extra_headers["B_DEC"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].value,
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DEC"].unit,
+            geomag_params["GEOMAG_DEC"].to_value(u.rad),
+            "rad",
         )
         extra_headers["B_DELTA"] = (
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].value,
-            self.mc_particle["gamma"]["geomag_params"]["GEOMAG_DELTA"].unit,
+            geomag_params["GEOMAG_DELTA"].to_value(u.deg),
+            "deg",
         )
 
         if self.point_like:

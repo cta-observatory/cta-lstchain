@@ -33,32 +33,16 @@ def interp_params(params_list, data):
     """
     mc_pars = []
     if "ZEN_PNT" in params_list:
-        if isinstance(data["ZEN_PNT"], u.Quantity):
-            unit = data["ZEN_PNT"].unit
-        else:
-            unit = data.comments["ZEN_PNT"]
-
         mc_pars.append(
             np.cos(
-                u.Quantity(
-                    value=data["ZEN_PNT"],
-                    unit=unit
-                ).to_value(u.rad)
+                u.Quantity(data["ZEN_PNT"], "deg").to_value(u.rad)
             )
         )
 
     if "B_DELTA" in params_list:
-        if isinstance(data["B_DELTA"], u.Quantity):
-            unit = data["B_DELTA"].unit
-        else:
-            unit = data.comments["B_DELTA"]
-
         mc_pars.append(
             np.sin(
-                u.Quantity(
-                    value=data["B_DELTA"],
-                    unit=unit
-                ).to_value(u.rad)
+                u.Quantity(data["B_DELTA"], "deg").to_value(u.rad)
             )
         )
 
@@ -361,10 +345,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                 extra_headers[k] = main_headers[k]
 
     for par in data_pars.keys():
-        extra_headers[par] = (
-            data_pars[par].value,
-            data_pars[par].unit
-        )
+        extra_headers[par] = (data_pars[par].to_value(u.deg), "deg")
 
     for i in np.arange(n_grid):
         f = fits.open(irfs[i])[1].header

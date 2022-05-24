@@ -51,14 +51,8 @@ def test_interp_irf(simulated_irf_file):
     aeff_2 = aeff_1.copy()
     aeff_2_meta = aeff_1_meta.copy()
 
-    zen_1 = u.Quantity(
-        aeff_1_meta["ZEN_PNT"],
-        aeff_1_meta.comments["ZEN_PNT"]
-    ).to_value(u.rad)
-    del_1 = u.Quantity(
-        aeff_1_meta["B_DELTA"],
-        aeff_1_meta.comments["B_DELTA"]
-    ).to_value(u.rad)
+    zen_1 = u.Quantity(aeff_1_meta["ZEN_PNT"], "deg").to_value(u.rad)
+    del_1 = u.Quantity(aeff_1_meta["B_DELTA"], "deg").to_value(u.rad)
 
     zen_2 = 2 * zen_1
     del_2 = 1.2 * del_1
@@ -106,7 +100,7 @@ def test_interp_irf(simulated_irf_file):
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
     data_pars = {
         "ZEN_PNT": 30 * u.deg,
-        "B_DELTA": del_1 * 1.1 * u.rad
+        "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg)
     }
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
