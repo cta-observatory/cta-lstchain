@@ -60,9 +60,21 @@ class TimeWaveformFitter(TelescopeComponent):
             self.template_dict[tel_id] = NormalizedPulseTemplate.load_from_eventsource(
                 subarray.tel[tel_id].camera.readout)
             self.template_time_of_max_dict[tel_id] = self.template_dict[tel_id].compute_time_of_max()
-        poisson_peaks = np.arange(self.n_peaks, dtype=int)
+        poisson_peaks = np.arange(self.n_peaks+1, dtype=int)
         poisson_peaks[0] = 1
         self.factorial = np.cumprod(poisson_peaks, dtype='u8')
+        # Find the transition charge between full likelihood computation and Gaussian approximation
+        # The maximum charge is selected such that each Poisson terms in the full likelihood computation
+        # above the n_peaks limit account for less than (1/n_peaks)%
+        transition_charges = {}
+        for config_crosstalk in self.crosstalk:
+            # if n_peaks is set to 0, only the Gaussian approximation is used
+            transition_charges[config_crosstalk[2]] = 0.0 if self.n_peaks == 0\
+                else self.find_transition_charge(config_crosstalk[2], 1e-2/self.n_peaks)
+        self.transition_charges = {}
+        for tel_id in subarray.tel:
+            self.transition_charges[tel_id] = transition_charges[self.crosstalk.tel[tel_id]]
+
         self.start_parameters = None
         self.names_parameters = None
         self.end_parameters = None
@@ -211,6 +223,7 @@ class TimeWaveformFitter(TelescopeComponent):
                       np.float64(pix_area), template.dt,
                       template.t0, template.amplitude_LG,
                       template.amplitude_HG, self.n_peaks,
+                      self.transition_charges[telescope_id],
                       self.use_weight, self.factorial]
 
         self.start_parameters = start_parameters
@@ -282,6 +295,20 @@ class TimeWaveformFitter(TelescopeComponent):
         mask_time = (times < t_end) * (times > t_start)
 
         return mask_pixel, mask_time
+
+    def find_transition_charge(self, crosstalk, poisson_proba_min=1e-2):
+        transition_charge = self.n_peaks / (1 + crosstalk)
+        step = transition_charge / 100
+
+        def poisson(mu, cross_talk):
+            return (mu * pow(mu + self.n_peaks * cross_talk, (self.n_peaks - 1)) / self.factorial[self.n_peaks] *
+                    np.exp(-mu - self.n_peaks * cross_talk))
+
+        while poisson(transition_charge, crosstalk) > poisson_proba_min:
+            transition_charge -= step
+        logger.info(f'Transition charge between full and approximated likelihood for camera '
+                    f'with crosstalk = {crosstalk:.4f} is,  {transition_charge:.4f}, p.e.')
+        return np.float32(transition_charge)
 
     def fit(self, fit_params):
         """

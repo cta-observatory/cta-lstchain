@@ -25,8 +25,8 @@ def compile_reconstructor_cc():
     cc.verbose = True
 
     @njit()
-    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],u8[:],i8,i8,f8[:,:])')
-    def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, kmin, kmax, weight):
+    @cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],u8[:],i8,f8[:,:])')
+    def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_peaks, weight):
         """
         Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.
         The log likelihood is sum(pixels) sum(times) of the log single sample likelihood.
@@ -49,8 +49,9 @@ def compile_reconstructor_cc():
             Value of the pulse template evaluated in each pixel at each observed time
         factorial: unsigned int64
             Pre-computed table of factorials
-        kmin, kmax: int64
-            Range of possible number of photo-electron in a pixel with relevant Poisson probability
+        n_peaks: int64
+            Size of the factorial array and possible number of photo-electron
+            in a pixel with relevant Poisson probability
         weight : float 64 2D array
             Weight to use in the likelihood for each sample
 
@@ -61,22 +62,21 @@ def compile_reconstructor_cc():
 
         """
         n_pixels, n_samples = waveform.shape
-        n_k = kmax - kmin
         sumlh = 0.0
         for i in range(n_pixels):
             for j in range(n_samples):
                 sumlh_k = 0.0
-                for k in range(n_k):
+                for k in range(n_peaks):
                     # Generalised Poisson term
-                    poisson = (mu[i] * pow(mu[i] + (kmin + k) * crosstalk[i], (kmin + k - 1)) / factorial[k]
-                               * np.exp(-mu[i] - (kmin + k) * crosstalk[i]))
+                    poisson = (mu[i] * pow(mu[i] + k * crosstalk[i], (k - 1)) / factorial[k]
+                               * np.exp(-mu[i] - k * crosstalk[i]))
                     # Gaussian term
-                    mean = (kmin + k) * templates[i, j]
-                    sigma = (kmin + k) * ((sig_s[i] * templates[i, j]) ** 2)
+                    mean = k * templates[i, j]
+                    sigma = k * ((sig_s[i] * templates[i, j]) ** 2)
                     sigma = np.sqrt(error[i] * error[i] + sigma)
                     gauss = 1 / (np.sqrt(2 * np.pi) * sigma) * np.exp(
                         -(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma)
-                    # Add the contribution for the k+kmin number of p.e. to the single sample likelihood
+                    # Add the contribution for the k number of p.e. to the single sample likelihood
                     sumlh_k += poisson * gauss
                 # Security to deal with negatively rounded values
                 if sumlh_k <= 0:
@@ -248,11 +248,11 @@ def compile_reconstructor_cc():
     @cc.export('log_pdf', 'f8(f8,f8,f8,f8,f8,f8,f8,f8,f8,'
                           'f4[:,:],f4[:],b1[:],f8[:],f8[:],f8[:],f4[:],'
                           'f8[:],f8[:],f8[:],f8,f8,f8[:],'
-                          'f8[:],i8,b1,u8[:])')
+                          'f8[:],i8,f4,b1,u8[:])')
     def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
                 data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
                 p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
-                template_hg, n_peaks, use_weight, factorial):
+                template_hg, n_peaks, transition_charge, use_weight, factorial):
         """
         Compute the log likelihood of the model used for a set of input parameters.
 
@@ -330,38 +330,18 @@ def compile_reconstructor_cc():
                            psi,
                            rl)
 
-        # We reduce the sum by limiting to the poisson term contributing for
-        # more than 10^-6. The limits are approximated by 2 broken linear
-        # function obtained for 0 crosstalk.
-        # The choice of kmin and kmax is currently not done on a pixel basis
-        # TODO correct for crosstalk>0 or remove since kmax limited to 21 by int precision with factorials
-        mask_LL = (mu <= n_peaks / 1.096 - 47.8) & (mu > 0)
-        mask_HL = ~mask_LL
+        # We split pixels between high and low luminosity pixels.
+        # The transition is dependent on the camera crosstalk and maximum
+        # number of p.e. allowed in the config (n_peak) for the sum in the
+        # faint pixels likelihood computation
 
-        if len(mu[mask_LL]) == 0:
-            kmin, kmax = 0, n_peaks
-        else:
-            min_mu = min(mu[mask_LL])
-            max_mu = max(mu[mask_LL])
-            if min_mu < 120:
-                kmin = int(0.66 * (min_mu - 20))
-            else:
-                kmin = int(0.904 * min_mu - 42.8)
-            if max_mu < 120:
-                kmax = int(np.ceil(1.34 * (max_mu - 20) + 45))
-            else:
-                kmax = int(np.ceil(1.096 * max_mu + 47.8))
-        if kmin < 0:
-            kmin = 0
-        if kmax > n_peaks:
-            kmax = n_peaks
+        mask_LL = (mu <= transition_charge) & (mu > 0)
+        mask_HL = ~mask_LL
 
         if use_weight:
             weight = 1.0 + (data / np.max(data))
         else:
             weight = np.ones(data.shape)
-
-        mask_k = (np.arange(n_peaks) >= kmin) & (np.arange(n_peaks) < kmax)
 
         log_pdf_faint = log_pdf_ll(mu[mask_LL],
                                    data[mask_LL],
@@ -369,8 +349,8 @@ def compile_reconstructor_cc():
                                    crosstalks[mask_LL],
                                    sig_s[mask_LL],
                                    templates[mask_LL],
-                                   factorial[mask_k],
-                                   kmin, kmax,
+                                   factorial,
+                                   n_peaks,
                                    weight[mask_LL])
 
         log_pdf_bright = log_pdf_hl(mu[mask_HL],
