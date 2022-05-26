@@ -128,6 +128,21 @@ parser.add_argument(
     help='Path to the file containing the event ids of interleaved pedestals',
 )
 
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
 
 def main():
     args = parser.parse_args()
@@ -197,6 +212,8 @@ def main():
     calib_config = config[config['calibration_product']]
     if args.systematic_correction_file is not None:
         calib_config['systematic_correction_path'] = args.systematic_correction_file
+
+    lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,

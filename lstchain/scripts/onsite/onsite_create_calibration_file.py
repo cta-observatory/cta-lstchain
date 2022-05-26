@@ -84,6 +84,21 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
+optional.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+
 
 
 def main():
@@ -209,13 +224,14 @@ def main():
         "lstchain_create_calibration_file",
         f"--input_file={input_file}",
         f"--output_file={output_file}",
-        "--EventSource.default_trigger_type=tib",
+        "--LSTEventSource.default_trigger_type=tib",
         f"--EventSource.min_flatfield_adc={min_ff}",
         f"--EventSource.max_flatfield_adc={max_ff}",
         f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
         f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path}",
         f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
         f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
+        f"--LSTEventSource.use_flatfield_heuristic={args.use_flatfield_heuristic}",
         f"--FlatFieldCalculator.sample_size={stat_events}",
         f"--PedestalCalculator.sample_size={stat_events}",
         f"--config={config_file}",

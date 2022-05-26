@@ -16,7 +16,6 @@ __all__ = [
     'bin_definition',
     'calculate_sensitivity',
     'calculate_sensitivity_lima',
-    'calculate_sensitivity_lima_ebin',
     'diff_events_after_cut',
     'find_cut',
     'get_weights',
@@ -401,51 +400,6 @@ def calculate_sensitivity_lima(n_signal, n_background, alpha):
     n_excesses_5sigma[n_excesses_5sigma < bkg_5percent] = bkg_5percent[n_excesses_5sigma < bkg_5percent]
 
     sensitivity = n_excesses_5sigma / (n_signal) * 100  # percentage of Crab
-
-    return n_excesses_5sigma, sensitivity
-
-
-def calculate_sensitivity_lima_ebin(n_on_events, n_background, alpha, n_bins_energy):
-    """
-    Sensitivity calculation using the Li & Ma formula
-    eq. 17 of Li & Ma (1983).
-    https://ui.adsabs.harvard.edu/abs/1983ApJ...272..317L/abstract
-
-    Parameters
-    ----------
-    n_on_events:   `numpy.ndarray` number of ON events in the signal region
-    n_background: `numpy.ndarray` number of events in the background region
-    alpha:        `float` inverse of the number of off positions
-    n_bins_energy:`int` number of bins in energy
-
-    Returns
-    -------
-    sensitivity: `numpy.ndarray` sensitivity in percentage of Crab units
-    n_excesses_5sigma: `numpy.ndarray` number of excesses corresponding to
-                a 5 sigma significance
-
-    """
-
-    stat = WStatCountsStatistic(
-        n_on=n_on_events,
-        n_off=n_background,
-        alpha=alpha
-    )
-
-    n_excesses_5sigma = stat.n_sig_matching_significance(5)
-
-    for i in range(0, n_bins_energy):
-        # If the excess needed to get 5 sigma is less than 10,
-        # we force it to be at least 10
-        if n_excesses_5sigma[i] < 10:
-            n_excesses_5sigma[i] = 10
-        # If the excess needed to get 5 sigma is less than 5%
-        # of the background, we force it to be at least 5% of
-        # the background
-        if n_excesses_5sigma[i] < 0.05 * n_background[i] * alpha[i]:
-            n_excesses_5sigma[i] = 0.05 * n_background[i] * alpha[i]
-
-    sensitivity = n_excesses_5sigma / n_on_events * 100  # percentage of Crab
 
     return n_excesses_5sigma, sensitivity
 
