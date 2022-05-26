@@ -183,6 +183,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    gzip = traits.Bool(
+        help="If True, the DL3 file will be gzipped",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3Cuts]
 
     aliases = {
@@ -207,11 +212,15 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
+        "gzip": (
+            {"DataReductionFITSWriter": {"gzip": True}},
+            "gzip the DL3 files if True",
+        ),
     }
 
     def setup(self):
 
-        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
+        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2, compress=self.gzip)
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)
@@ -426,7 +435,6 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-
 
     def start(self):
 
