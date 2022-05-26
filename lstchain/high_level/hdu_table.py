@@ -35,7 +35,7 @@ DEFAULT_HEADER["TELESCOP"] = "CTA-N"
 wobble_offset = 0.4 * u.deg
 
 
-def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
+def create_obs_index_hdu(file_list, obs_index_file, overwrite):
     """
     Create the obs index table and write it to the given file.
     The Index table is created as per,
@@ -43,10 +43,8 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
 
     Parameters
     ----------
-    filename_list : list
-        list of filenames of the fits files
-    fits_dir : Path
-        Path of the fits files
+    file_list : list
+        list of the fits files
     obs_index_file : Path
         Path for the OBS index file
     overwrite : Bool
@@ -55,11 +53,10 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
     obs_index_tables = []
 
     # loop through the files
-    for file in filename_list:
-        filepath = fits_dir / file
-        if filepath.is_file():
+    for file in file_list:
+        if file.is_file():
             try:
-                hdu_list = fits.open(filepath)
+                hdu_list = fits.open(file)
                 evt_hdr = hdu_list["EVENTS"].header
             except Exception:
                 log.error(f"fits corrupted for file {file}")
@@ -114,8 +111,7 @@ def create_obs_index_hdu(filename_list, fits_dir, obs_index_file, overwrite):
 
 
 def create_hdu_index_hdu(
-        filename_list,
-        fits_dir,
+        file_list,
         hdu_index_file,
         overwrite=False
 ):
@@ -126,10 +122,8 @@ def create_hdu_index_hdu(
 
     Parameters
     ----------
-    filename_list : list
-        list of filenames of the fits files
-    fits_dir : Path
-        Path of the fits files
+    file_list : list
+        list of the fits files
     hdu_index_file : Path
         Path for HDU index file
     overwrite : Bool
@@ -140,16 +134,15 @@ def create_hdu_index_hdu(
 
     base_dir = os.path.commonpath(
         [
-            hdu_index_file.parent.absolute().resolve(),
-            fits_dir.absolute().resolve()
+            hdu_index_file.parent.resolve(),
+            file_list[0].resolve()
         ]
     )
     # loop through the files
-    for file in filename_list:
-        filepath = fits_dir / file
-        if filepath.is_file():
+    for file in file_list:
+        if file.is_file():
             try:
-                hdu_list = fits.open(filepath)
+                hdu_list = fits.open(file)
                 evt_hdr = hdu_list["EVENTS"].header
 
                 # just test they are here
@@ -169,10 +162,10 @@ def create_hdu_index_hdu(
             "OBS_ID": evt_hdr["OBS_ID"],
             "HDU_TYPE": "events",
             "HDU_CLASS": "events",
-            "FILE_DIR": str(os.path.relpath(fits_dir, hdu_index_file.parent)),
-            "FILE_NAME": str(file),
+            "FILE_DIR": os.path.relpath(file.parent, hdu_index_file.parent),
+            "FILE_NAME": file.name,
             "HDU_NAME": "EVENTS",
-            "SIZE": filepath.stat().st_size,
+            "SIZE": file.stat().st_size,
         }
         hdu_index_tables.append(t_events)
 
@@ -318,10 +311,12 @@ def add_icrs_position_params(data, source_pos):
 
     return data
 
+
 def set_expected_pos_to_reco_altaz(data):
     """
-    Set expected source positions to reconstructed alt, az positions for source-dependent analysis
-    This is just a trick to easily extract ON/OFF events in gammapy analysis. 
+    Set expected source positions to reconstructed alt, az positions for
+    source-dependent analysis.
+    This is just a trick to easily extract ON/OFF events in gammapy analysis.
     """
     # set expected source positions as reco positions
     time = data['dragon_time']
@@ -330,11 +325,15 @@ def set_expected_pos_to_reco_altaz(data):
     expected_src_y = data['expected_src_y'] * u.m
     focal = 28 * u.m
     pointing_alt = data['pointing_alt']
-    pointing_az  = data['pointing_az']
-    expected_src_altaz = camera_to_altaz(expected_src_x, expected_src_y, focal, pointing_alt, pointing_az, obstime=obstime)
+    pointing_az = data['pointing_az']
+    expected_src_altaz = camera_to_altaz(
+        expected_src_x, expected_src_y, focal,
+        pointing_alt, pointing_az, obstime=obstime
+    )
     data["reco_alt"] = expected_src_altaz.alt
-    data["reco_az"]  = expected_src_altaz.az
-    
+    data["reco_az"] = expected_src_altaz.az
+
+
 def create_event_list(
         data, run_number, source_name, source_pos, effective_time, elapsed_time
 ):
