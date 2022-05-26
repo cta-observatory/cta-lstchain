@@ -142,8 +142,8 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    no_gzip = traits.Bool(
-        help="If True, the DL3 file will not be gzipped",
+    gzip = traits.Bool(
+        help="If True, the DL3 file will be gzipped",
         default_value=False,
     ).tag(config=True)
 
@@ -168,15 +168,15 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
-        "no-gzip": (
-            {"DataReductionFITSWriter": {"no_gzip": True}},
-            "Do not gzip the DL3 files if True",
+        "gzip": (
+            {"DataReductionFITSWriter": {"gzip": True}},
+            "gzip the DL3 files if True",
         ),
     }
 
     def setup(self):
 
-        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2, no_compress=self.no_gzip)
+        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2, compress=self.gzip)
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)

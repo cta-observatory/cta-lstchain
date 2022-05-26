@@ -35,8 +35,15 @@ class FITSIndexWriter(Tool):
     > lstchain_create_dl3_index_files
         -d /path/to/DL3/files/
         -o /path/to/DL3/index/files
-        -p dl3*[run_1-run_n]*.fits.gz
+        -p dl3*[run_1-run_n]*.fits
         --overwrite
+
+    Or if the DL3 files are stored in sub-directories:
+    < lstchain_create_dl3_index_files
+       -d /path/to/DL3/files/
+       -o /path/to/DL3/index/files
+       -p /sub-directory*/dl3*[run_1-run_n]*.fits   
+       --overwrite
     """
 
     input_dl3_dir = traits.Path(
@@ -48,7 +55,7 @@ class FITSIndexWriter(Tool):
 
     file_pattern = traits.Unicode(
         help="File pattern to search in the given Path",
-        default_value="dl3*.fits*"
+        default_value="dl3*.fits"
     ).tag(config=True)
 
     output_index_path = traits.Path(
