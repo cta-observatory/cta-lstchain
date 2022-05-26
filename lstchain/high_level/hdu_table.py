@@ -134,8 +134,8 @@ def create_hdu_index_hdu(
 
     base_dir = os.path.commonpath(
         [
-            hdu_index_file.parent.absolute().resolve(),
-            file_list[0].absolute().resolve()
+            hdu_index_file.parent.resolve(),
+            file_list[0].resolve()
         ]
     )
     # loop through the files
