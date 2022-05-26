@@ -34,6 +34,16 @@ DEFAULT_HEADER["TELESCOP"] = "CTA-N"
 
 wobble_offset = 0.4 * u.deg
 
+LST_EPOCH = Time('2018-10-01T00:00:00', scale='utc')
+
+
+def time_to_fits(time, epoch=LST_EPOCH):
+    '''Convert time to time since epoch
+
+    This is the real elapsed time, i.e. including leap seconds for UTC.
+    '''
+    return (time - epoch).to(u.s)
+
 
 def create_obs_index_hdu(file_list, obs_index_file, overwrite):
     """
@@ -223,7 +233,7 @@ def create_hdu_index_hdu(
     hdu_index_list.writeto(hdu_index_file, overwrite=overwrite)
 
 
-def get_timing_params(data):
+def get_timing_params(data, epoch=LST_EPOCH):
     """
     Get event lists and retrieve some timing parameters for the DL3 event list
     as a dict
@@ -233,16 +243,19 @@ def get_timing_params(data):
     t_start_iso = time_utc[0].to_value("iso", "date_hms")
     t_stop_iso = time_utc[-1].to_value("iso", "date_hms")
 
+    mjdreff, mjdrefi = np.modf(epoch.mjd)
+
     time_pars = {
-        "t_start": data["dragon_time"].value[0],
-        "t_stop": data["dragon_time"].value[-1],
+        "t_start": time_to_fits(time_utc[0], epoch=epoch),
+        "t_stop": time_to_fits(time_utc[-1], epoch=epoch),
         "t_start_iso": t_start_iso,
         "t_stop_iso": t_stop_iso,
         "date_obs": t_start_iso[:10],
         "time_obs": t_start_iso[11:],
         "date_end": t_stop_iso[:10],
         "time_end": t_stop_iso[11:],
-        "MJDREF": Time("1970-01-01T00:00", scale="utc")
+        "MJDREFI": int(mjdrefi),
+        "MJDREFF": mjdreff,
     }
     return time_pars
 
@@ -335,7 +348,8 @@ def set_expected_pos_to_reco_altaz(data):
 
 
 def create_event_list(
-        data, run_number, source_name, source_pos, effective_time, elapsed_time
+    data, run_number, source_name, source_pos, effective_time, elapsed_time,
+    epoch=LST_EPOCH,
 ):
     """
     Create the event_list BinTableHDUs from the given data
@@ -374,7 +388,7 @@ def create_event_list(
     event_table = QTable(
         {
             "EVENT_ID": data["event_id"],
-            "TIME": data["dragon_time"],
+            "TIME": time_to_fits(Time(data["dragon_time"], format='unix')),
             "RA": data["RA"].to(u.deg),
             "DEC": data["Dec"].to(u.deg),
             "ENERGY": data["reco_energy"],
@@ -417,15 +431,18 @@ def create_event_list(
     ev_header["TIME-OBS"] = time_params["time_obs"]
     ev_header["DATE-END"] = time_params["date_end"]
     ev_header["TIME-END"] = time_params["time_end"]
-    ev_header["TSTART"] = time_params["t_start"]
-    ev_header["TSTOP"] = time_params["t_stop"]
-    ev_header["MJDREFI"] = int(time_params["MJDREF"].mjd)
-    ev_header["MJDREFF"] = time_params["MJDREF"].mjd - int(time_params["MJDREF"].mjd)
+    ev_header["TSTART"] = (time_params["t_start"].value, time_params["t_start"].unit)
+    ev_header["TSTOP"] = (time_params["t_stop"].value, time_params["t_stop"].unit)
+    ev_header["MJDREFI"] = time_params["MJDREFI"]
+    ev_header["MJDREFF"] = time_params["MJDREFF"]
     ev_header["TIMEUNIT"] = "s"
     ev_header["TIMESYS"] = "UTC"
     ev_header["TIMEREF"] = "TOPOCENTER"
     ev_header["ONTIME"] = elapsed_time
-    ev_header["TELAPSE"] = time_params["t_stop"] - time_params["t_start"]
+    ev_header["TELAPSE"] = (
+        (time_params["t_stop"] - time_params["t_start"]).to_value(u.s),
+        u.s
+    )
     ev_header["DEADC"] = effective_time / elapsed_time
     ev_header["LIVETIME"] = effective_time
 
