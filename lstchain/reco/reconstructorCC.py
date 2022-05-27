@@ -64,12 +64,14 @@ def compile_reconstructor_cc():
         n_pixels, n_samples = waveform.shape
         sumlh = 0.0
         for i in range(n_pixels):
+            poisson = np.empty((n_pixels, n_peaks))
+            for k in range(n_peaks):
+                # Generalised Poisson term
+                poisson[i, k] = (mu[i] * pow(mu[i] + k * crosstalk[i], (k - 1)) / factorial[k]
+                                 * np.exp(-mu[i] - k * crosstalk[i]))
             for j in range(n_samples):
                 sumlh_k = 0.0
                 for k in range(n_peaks):
-                    # Generalised Poisson term
-                    poisson = (mu[i] * pow(mu[i] + k * crosstalk[i], (k - 1)) / factorial[k]
-                               * np.exp(-mu[i] - k * crosstalk[i]))
                     # Gaussian term
                     mean = k * templates[i, j]
                     sigma = k * ((sig_s[i] * templates[i, j]) ** 2)
@@ -77,12 +79,12 @@ def compile_reconstructor_cc():
                     gauss = 1 / (np.sqrt(2 * np.pi) * sigma) * np.exp(
                         -(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma)
                     # Add the contribution for the k number of p.e. to the single sample likelihood
-                    sumlh_k += poisson * gauss
+                    sumlh_k += poisson[i, k] * gauss
                 # Security to deal with negatively rounded values
                 if sumlh_k <= 0:
                     return -np.inf
                 # Add the log single sample likelihood to the full log likelihood
-                # An optional weight increasing high signal ample importance is supported
+                # An optional weight increasing high signal sample importance is supported
                 sumlh += weight[i, j] * np.log(sumlh_k)
         return sumlh
 
@@ -127,7 +129,7 @@ def compile_reconstructor_cc():
                 log_gauss = (-(waveform[i, j] - mean) * (waveform[i, j] - mean) / 2.0 / sigma / sigma
                              - np.log(np.sqrt(2 * np.pi) * sigma))
                 # Add the log single sample likelihood to the full log likelihood
-                # An optional weight increasing high signal ample importance is supported
+                # An optional weight increasing high signal sample importance is supported
                 sumlh += weight[i, j] * log_gauss
         return sumlh
 
@@ -165,7 +167,7 @@ def compile_reconstructor_cc():
             # Compute the x and y coordinates projection in the 2D gaussian length and width coordinates
             le = (x[i] - x_cm) * np.cos(psi) + (y[i] - y_cm) * np.sin(psi)
             wi = -(x[i] - x_cm) * np.sin(psi) + (y[i] - y_cm) * np.cos(psi)
-            # Check which side of the maximum the current point is for asymetry purpose
+            # Check which side of the maximum the current point is for asymmetry purpose
             rl_pos = rl if (le < 0.0) else 1.0
             a = 2 * (rl_pos * length) ** 2
             b = 2 * width ** 2
