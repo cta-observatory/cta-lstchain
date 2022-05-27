@@ -47,7 +47,7 @@ def compile_reconstructor_cc():
             Single p.e. intensity distribution standard deviation for each pixel
         templates: float64 2D array
             Value of the pulse template evaluated in each pixel at each observed time
-        factorial: unsigned int64
+        factorial: unsigned int64 1D array
             Pre-computed table of factorials
         n_peaks: int64
             Size of the factorial array and possible number of photo-electron
@@ -142,22 +142,22 @@ def compile_reconstructor_cc():
 
         Parameters
         ----------
-        size: array-like
+        size: float64 1D array
             Integral of the 2D Gaussian
-        x, y: array-like
+        x, y: float64 1D array
             Position at which the log gaussian is evaluated
-        x_cm, y_cm: float
+        x_cm, y_cm: float64
             Center of the 2D Gaussian
-        width, length: float
+        width, length: float64
             Standard deviations of the 2 dimensions of the 2D Gaussian law
-        psi: float
+        psi: float64
             Orientation of the 2D Gaussian
-        rl: float
+        rl: float64
             Asymmetry factor between the two lengths
 
         Returns
         -------
-        gauss2d: array-like
+        gauss2d: float64 1D array
             Evaluation of the 2D gaussian law at (x,y)
 
         """
@@ -301,7 +301,7 @@ def compile_reconstructor_cc():
             Maximum number of p.e. term used in the low luminosity likelihood
         use_weight: bool
             If True, the brightest sample are made more important in the likelihood computation
-        factorial unsigned int64
+        factorial: unsigned int64
             Pre-computed table of factorials
 
         Returns

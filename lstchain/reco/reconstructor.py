@@ -297,6 +297,24 @@ class TimeWaveformFitter(TelescopeComponent):
         return mask_pixel, mask_time
 
     def find_transition_charge(self, crosstalk, poisson_proba_min=1e-2):
+        """
+        Find the charge below which the full likelihood computation is performed and above which a Gaussian
+        approximation is used. For a given pixel crosstalk it finds the maximum charge with a Generalised Poisson term
+        below poisson_proba_min for n_peaks photo-electrons. n_peaks here is the configured maximum number of
+        photo-electron considered in the full likelihood computation.
+
+        Parameters
+        ----------
+        crosstalk : float
+            Pixels crosstalk
+        poisson_proba_min: float
+
+        Returns
+        -------
+        transition_charge: float32
+            Model charge of transition between full and approximated likelihood
+
+        """
         transition_charge = self.n_peaks / (1 + crosstalk)
         step = transition_charge / 100
 
