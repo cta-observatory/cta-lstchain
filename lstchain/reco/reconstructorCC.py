@@ -299,6 +299,8 @@ def compile_reconstructor_cc():
             Pulse template properties used in the interpolation of the model
         n_peaks: int64
             Maximum number of p.e. term used in the low luminosity likelihood
+        transition_charge: float32
+            Model charge above which the Gaussian approximation (log_pdf_hl) is used
         use_weight: bool
             If True, the brightest sample are made more important in the likelihood computation
         factorial: unsigned int64
