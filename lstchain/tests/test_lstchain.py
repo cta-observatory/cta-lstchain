@@ -130,6 +130,39 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
+@pytest.mark.private_data
+def test_r0_to_dl1_lhfit_observed(tmp_path):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    config = deepcopy(standard_config)
+    config['source_config']['EventSource']['max_events'] = None
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['lh_fit_config'] = {
+        "sigma_s": [
+            ["type", "*", 1.0],
+            ["type", "LST_LST_LSTCam", 0.3282]
+        ],
+        "crosstalk": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "sigma_space": 3,
+        "sigma_time": 4,
+        "time_before_shower": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "time_after_shower": [
+            ["type", "*", 20.0],
+            ["type", "LST_LST_LSTCam", 20.0]
+        ],
+        "n_peaks": 0,
+        "no_asymmetry": False,
+        "use_weight": False,
+        "verbose": 0
+    }
+    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+
+
 def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
     with tables.open_file(simulated_dl1_file, 'r') as f:
