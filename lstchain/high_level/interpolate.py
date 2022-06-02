@@ -15,7 +15,7 @@ from pyirf.io.gadf import (
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion,
-    interpolate_psf_table, # interpolate_rad_max
+    interpolate_psf_table,  # interpolate_rad_max
 )
 from scipy.spatial import Delaunay, distance
 from scipy.interpolate import griddata
@@ -33,39 +33,23 @@ def interp_params(params_list, data):
     """
     mc_pars = []
     if "ZEN_PNT" in params_list:
-        if isinstance(data["ZEN_PNT"], u.Quantity):
-            unit = data["ZEN_PNT"].unit
-        else:
-            unit = data.comments["ZEN_PNT"]
-
         mc_pars.append(
             np.cos(
-                u.Quantity(
-                    value=data["ZEN_PNT"],
-                    unit=unit
-                ).to_value(u.rad)
+                u.Quantity(data["ZEN_PNT"], "deg").to_value(u.rad)
             )
         )
 
     if "B_DELTA" in params_list:
-        if isinstance(data["B_DELTA"], u.Quantity):
-            unit = data["B_DELTA"].unit
-        else:
-            unit = data.comments["B_DELTA"]
-
         mc_pars.append(
             np.sin(
-                u.Quantity(
-                    value=data["B_DELTA"],
-                    unit=unit
-                ).to_value(u.rad)
+                u.Quantity(data["B_DELTA"], "deg").to_value(u.rad)
             )
         )
 
     return mc_pars
 
 
-def check_in_delaunay_triangle(irfs, data_params):
+def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
     """
     From a given list of IRFs as grid points used for interpolation, retrieve
     the Delaunay triangulation list of IRFs, where the simplex includes the
@@ -84,6 +68,8 @@ def check_in_delaunay_triangle(irfs, data_params):
     data_pars: Dict of arrays of range of parameters of the observed data
         in the event list, to check for interpolation.
         'Dict'
+    use_nearest_irf_node: Boolean if we need only the nearest IRF node.
+        'Bool'
 
     Returns
     -------
@@ -114,18 +100,23 @@ def check_in_delaunay_triangle(irfs, data_params):
 
     target_in_simplex = tri.find_simplex(data_val)
 
-    if target_in_simplex == -1:
-        # The target values are not contained in any Delaunay triangle formed
-        # by the paramters of the list of IRFs provided.
-        # So just include the IRF with the closest parameter values
-        # to the target values
-        index = distance.cdist([data_val], mc_params).argmin()
-        print("Target value is outside interpolation. Using the nearest IRF.")
-        new_irfs.append(irfs[index])
+    if not use_nearest_irf_node:
+        if target_in_simplex == -1:
+            # The target values are not contained in any Delaunay triangle formed
+            # by the paramters of the list of IRFs provided.
+            # So just include the IRF with the closest parameter values
+            # to the target values
+            index = distance.cdist([data_val], mc_params).argmin()
+            print("Target value is outside interpolation. Using the nearest IRF.")
+            new_irfs.append(irfs[index])
+        else:
+            # Just select the IRFs that are needed for the Delaunay triangulation
+            for i in tri.simplices[target_in_simplex]:
+                new_irfs.append(irfs[i])
     else:
-        # Just select the IRFs that are needed for the Delaunay triangulation
-        for i in tri.simplices[target_in_simplex]:
-            new_irfs.append(irfs[i])
+        index = distance.cdist([data_val], mc_params).argmin()
+        print("Using the nearest IRF.")
+        new_irfs.append(irfs[index])
 
     return new_irfs
 
@@ -172,7 +163,7 @@ def compare_irfs(irfs):
                     select_meta.append("AL_CUT")
                 else:
                     select_meta.append("RAD_MAX")
-    except:
+    except KeyError:
         print(f"Effective Area is not present in {irfs[0]}")
 
     # Comparing the metadata information
@@ -250,18 +241,22 @@ def interpolate_gh_table(
     Parameters
     ----------
     gh_cuts: numpy.ndarray, shape=(N, M, ...)
-        Gammaness-cuts for all combinations of grid-points, energy and fov_offset.
+        Gammaness-cuts for all combinations of grid-points, energy and
+        fov_offset.
         Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
     grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding to the N input templates.
+        Array of the N O-dimensional morphing parameter values corresponding
+        to the N input templates.
     target_point: numpy.ndarray, shape=(O)
         Value for which the interpolation is performed (target point)
     method: 'linear’, ‘nearest’, ‘cubic’
-        Interpolation method for scipy.interpolate.griddata [1]. Defaults to 'linear'.
+        Interpolation method for scipy.interpolate.griddata [1].
+        Defaults to 'linear'.
     Returns
     -------
     gh_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Gammaness-cuts for the target grid-point, shape (1, M:n_energy_bins, n_fov_offset_bins)
+        Gammaness-cuts for the target grid-point,
+        shape (1, M:n_energy_bins, n_fov_offset_bins)
     """
     return griddata(grid_points, gh_cuts, target_point, method=method)
 
@@ -278,15 +273,18 @@ def interpolate_rad_max(
         Theta-cuts for all combinations of grid-points, energy and fov_offset.
         Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
     grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding to the N input templates.
+        Array of the N O-dimensional morphing parameter values corresponding
+        to the N input templates.
     target_point: numpy.ndarray, shape=(O)
         Value for which the interpolation is performed (target point)
     method: 'linear’, ‘nearest’, ‘cubic’
-        Interpolation method for scipy.interpolate.griddata [1]. Defaults to 'linear'.
+        Interpolation method for scipy.interpolate.griddata [1].
+        Defaults to 'linear'.
     Returns
     -------
     rad_max_interp: numpy.ndarray, shape=(1, M, ...)
-        Theta-cuts for the target grid-point, shape (1, M:n_energy_bins, n_fov_offset_bins)
+        Theta-cuts for the target grid-point,
+        shape (1, M:n_energy_bins, n_fov_offset_bins)
     """
 
     return griddata(grid_points, rad_max, target_point, method=method)
@@ -347,10 +345,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                 extra_headers[k] = main_headers[k]
 
     for par in data_pars.keys():
-        extra_headers[par] = (
-            data_pars[par].value,
-            data_pars[par].unit
-        )
+        extra_headers[par] = (data_pars[par].to_value(u.deg), "deg")
 
     for i in np.arange(n_grid):
         f = fits.open(irfs[i])[1].header

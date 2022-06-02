@@ -350,7 +350,7 @@ def set_expected_pos_to_reco_altaz(data):
 
 def create_event_list(
     data, run_number, source_name, source_pos,
-    effective_time, elapsed_time, epoch=LST_EPOCH, data_pars,
+    effective_time, elapsed_time, data_pars, epoch=LST_EPOCH
 ):
     """
     Create the event_list BinTableHDUs from the given data
