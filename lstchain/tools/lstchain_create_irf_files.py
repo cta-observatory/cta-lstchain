@@ -28,6 +28,10 @@ For source-dependent analysis, alpha cut can be used instead of theta cut.
 If you want to generate source-dependent IRFs, source-dep flag should be activated.
 The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.
 
+One can also use custom FoV offset for point-like or ring-wobble MC, by using
+the custom_fov_offset flag and providing the range in the config file or
+using the default range.
+
 """
 
 from astropy import table
@@ -113,6 +117,7 @@ class IRFFITSWriter(Tool):
         -g /path/to/DL2_MC_gamma_file.h5
         -o /path/to/irf.fits.gz
         --point-like (Only for point_like IRFs)
+        --custom-fov-offset (For custom FoV offset range)
         --global-gh-cut 0.9
         --global-theta-cut 0.2
         --irf-obs-time 50
@@ -205,6 +210,11 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    custom_fov_offset = traits.Bool(
+        help="True for using custom FoV offset range",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3Cuts, DataBinning]
 
     aliases = {
@@ -247,6 +257,10 @@ class IRFFITSWriter(Tool):
         "energy-dependent-alpha": (
             {"IRFFITSWriter": {"energy_dependent_alpha": True}},
             "Uses energy-dependent cuts for alpha",
+        ),
+        "custom-fov-offset": (
+            {"IRFFITSWrite": {"custom_fov_offset": True}},
+            "Uses custom FoV offset range",
         ),
     }
 
@@ -423,16 +437,20 @@ class IRFFITSWriter(Tool):
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
-            mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 1
-            )
-            fov_offset_bins = [
-                mean_fov_offset - 0.1, mean_fov_offset + 0.1
-            ] * u.deg
-            self.log.info('Single offset for point like gamma MC')
+            if not self.custom_fov_offset:
+                mean_fov_offset = round(
+                    gammas["true_source_fov_offset"].mean().to_value(), 1
+                )
+                fov_offset_bins = [
+                    mean_fov_offset - 0.1, mean_fov_offset + 0.1
+                ] * u.deg
+                self.log.info(f'Single offset {mean_fov_offset} for point like gamma MC')
+            else:
+                mean_fov_offset = self.data_bin.fov_offset_bins()
+                self.log.info(f'Custom offset {mean_fov_offset} for point like gamma MC')
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
-            self.log.info('Multiple offset for diffuse gamma MC')
+            self.log.info(f'Multiple offset {fov_offset_bins} for diffuse gamma MC')
 
             if self.energy_dependent_theta:
                 fov_offset_bins = [
@@ -514,7 +532,7 @@ class IRFFITSWriter(Tool):
                         self.cuts.global_alpha_cut,
                         'deg'
                     )
-                    
+
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
@@ -643,10 +661,10 @@ class IRFFITSWriter(Tool):
             alpha_header = fits.Header()
             alpha_header["CREATOR"] = f"lstchain v{__version__}"
             alpha_header["DATE"] = Time.now().utc.iso
-            
+
             for k, v in extra_headers.items():
                 alpha_header[k] = v
-                
+
             self.hdus.append(
                 fits.BinTableHDU(
                     self.alpha_cuts, header=gh_header, name="AL_CUTS"
