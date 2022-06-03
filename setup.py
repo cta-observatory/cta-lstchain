@@ -53,6 +53,7 @@ setup(
         'numba',
         'numpy<1.22.0a0',
         'pandas',
+        'protobuf~=3.20.0',
         'pyirf~=0.7.0',
         'scipy',
         'seaborn',
