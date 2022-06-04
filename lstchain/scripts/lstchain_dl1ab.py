@@ -40,12 +40,18 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
+    dl1_params_tel_mon_cal_key,
     global_metadata, 
     write_metadata,
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
 from lstchain.reco.disp import disp
 from lstchain.reco.r0_to_dl1 import parametrize_image
+from ctapipe.io import read_table
+from ctapipe_io_lst.constants import LOW_GAIN, HIGH_GAIN
+
+ORIGINAL_CALIBRATION_ID = 0
+INTERLEAVED_CALIBRATION_ID = 1
 
 log = logging.getLogger(__name__)
 
@@ -164,6 +170,18 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
+    apply_interleaved_cal = False
+    if "apply_interleaved_cal" in config:
+        apply_interleaved_cal = config['apply_interleaved_cal']
+
+    if apply_interleaved_cal:
+        if is_simulation:
+            apply_interleaved_cal = False
+        else:
+            mon_calib = read_table(args.input_file, dl1_params_tel_mon_cal_key)
+            if len(mon_calib) < 2:
+                apply_interleaved_cal = False
+
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     optics = subarray_info.tel[tel_id].optics
@@ -205,12 +223,16 @@ def main():
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
+        
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.extend(disp_params)
         uncertainty_params = {'width_uncertainty', 'length_uncertainty'}
         if set(dl1_params_input).intersection(uncertainty_params):
             parameters_to_update.extend(uncertainty_params)
+
+        if apply_interleaved_cal:
+            parameters_to_update.extend('calibration_id')
 
         if increase_nsb:
             rng = np.random.default_rng(
@@ -221,10 +243,10 @@ def main():
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
+
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
-
 
             params = outfile.root[dl1_params_lstcam_key].read()
             if image_mask_save:
@@ -242,6 +264,26 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
+                if apply_interleaved_cal:
+                    selected_gain_channel = row['selected_gain_channel']
+                    
+                    if params['calibration_id'] == ORIGINAL_CALIBRATION_ID:
+                        flag_selected_gain = np.array(
+                            [selected_gain_channel == HIGHG_AIN, 
+                             selected_gain_channel == LOW_GAIN],
+                            dtype=bool
+                        ) 
+
+                        dc_to_pe_original = mon_calib['dc_to_pe'][ORIGINAL_CALIBRATION_ID][flag_selected_gain] 
+                        dc_to_pe_interleaved = mon_calib['dc_to_pe'][INTERLEAVED_CALIBRATION_ID][flag_selected_gain] 
+                        image *= (dc_to_pe_interleaved / dc_to_pe_original)
+                        
+                        time_correction_original = mon_calib['time_correction'][ORIGINAL_CALIBRATION_ID][flag_selected_gain]
+                        time_correction_interleaved = mon_calib['time_correction'][INTERLEAVED_CALIBRATION_ID][flag_selected_gain]
+                        peak_time += (time_correction_interleaved - time_correction_original)
+                        
+                        params['calibration_id'] = INTERLEAVED_CALIBRATION_ID
+                        
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now

@@ -64,6 +64,7 @@
     "threshold": 267,
     "fraction_cleaning_intensity": 0.03
   },
+  "apply_interleaved_cal": true,
 
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
