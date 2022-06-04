@@ -269,7 +269,7 @@ def main():
                     
                     if params['calibration_id'] == ORIGINAL_CALIBRATION_ID:
                         flag_selected_gain = np.array(
-                            [selected_gain_channel == HIGHG_AIN, 
+                            [selected_gain_channel == HIGH_GAIN, 
                              selected_gain_channel == LOW_GAIN],
                             dtype=bool
                         ) 
