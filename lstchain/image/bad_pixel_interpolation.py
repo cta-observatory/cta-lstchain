@@ -89,4 +89,4 @@ def bad_pixel_interpolation(
     
     for i, bad_pixel_id in enumerate(bad_pixel_ids):
         image[bad_pixel_id] = np.average(image, weights = weight_factors[i])
-        peak_time[bad_pixel_id] = np.average(image, weights = weight_factors[i])
+        peak_time[bad_pixel_id] = np.average(peak_time, weights = weight_factors[i])
