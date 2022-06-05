@@ -200,7 +200,7 @@ def test_create_dl3_energy_dependent_cuts(
 
     dl2_name = observed_dl2_file.name
     observed_dl3_file = temp_dir_observed_files / dl2_name.replace('dl2', 'dl3')
-    observed_dl3_file = observed_dl3_file.with_suffix(".fits.gz")
+    observed_dl3_file = observed_dl3_file.with_suffix(".fits")
 
     assert (
         run_tool(
