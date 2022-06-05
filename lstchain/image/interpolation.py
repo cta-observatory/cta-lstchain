@@ -3,28 +3,26 @@ import numpy as np
 from ctapipe.image import number_of_islands
 
 __all__ = [
+    'get_bad_pixel_island'
     'get_bad_pixel_and_neighbors_by_island',
     'interpolate_bad_pixels'
 ]
 
-
-def get_bad_pixel_and_neighbors_by_island(camera_geom, monitoring_table):
+def get_bad_pixel_island(camera_geom, monitoring_table):
     """
-    Get bad pixel and neighboring pixels mask
+    Get bad pixel island
     Parameters
     ----------
     camera_geom: 
           camera geometory
-    monitoring_table: `int`   
+    monitoring_table:   
           monitoring table
     Returns
     -------
-    bad_pixel_by_island: `np.ndarray`
-    
-    bad_pixel_neighbors_by_island: `np.ndarray`
-    
+    bad_pixels: `np.ndarray`
+    num_bad_pixel_islands: `int`
+    bad_pixel_island_labels: `np.ndarray`
     """
-
     unusable = monitoring_table['unusable_pixels']
     # Locate pixels with HG declared unusable either in original calibration or                                                                                         
     # in interleaved events:                                                                                                                                            
@@ -32,9 +30,30 @@ def get_bad_pixel_and_neighbors_by_island(camera_geom, monitoring_table):
     for tf in unusable[1:][0]:   # calibrations with interleaveds                                                                                                       
         bad_pixels = np.logical_or(bad_pixels, tf)
         
-    bad_pixels_neighbors = bad_pixels | camera_geom.neighbor_matrix_sparse.dot(bad_pixels)
+    bad_pixels_and_neighbors = bad_pixels | camera_geom.neighbor_matrix_sparse.dot(bad_pixels)
     
-    num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geom, bad_pixels_neighbors)
+    num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geom, bad_pixels_and_neighbors)
+
+    return bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels
+
+
+def get_bad_pixel_and_neighbors_by_island(camera_geom, monitoring_table):
+    """
+    Get bad pixel and neighboring pixels mask by island
+    Parameters
+    ----------
+    camera_geom: 
+          camera geometory
+    monitoring_table:
+          monitoring table
+    Returns
+    -------
+    bad_pixel_by_island: `np.ndarray`
+    bad_pixel_neighbors_by_island: `np.ndarray`
+    
+    """
+
+    bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels = get_bad_pixel_island(camera_geom, monitoring_table)
 
     bad_pixel_by_island = []
     bad_pixel_neighbors_by_island = []
