@@ -29,7 +29,10 @@ from ctapipe.instrument import SubarrayDescription
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
-from lstchain.image.interpolation import get_bad_pixel_and_neighbors_by_island, interpolate_bad_pixels
+from lstchain.image.bad_pixel_interpolation import(
+    get_bad_pixel_id_and_weight, 
+    bad_pixel_interpolation
+)
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 
 from lstchain.io.config import (
@@ -232,9 +235,7 @@ def main():
 
         if not args.bad_pixel_interpolation:
             monitoring_table = infile.root[dl1_params_tel_mon_cal_key]
-            bad_pixel_by_island, bad_pixel_neighbors_by_island = get_bad_pixel_and_neighbors_by_island(
-                camera_geom, monitoring_table
-            )
+            bad_pixel_ids, weight_factors = get_bad_pixel_id_and_weight(camera_geom, monitoring_table)
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
@@ -258,8 +259,8 @@ def main():
                 peak_time = row['peak_time']
 
                 if not args.bad_pixel_interpolation:
-                    interpolate_bad_pixels(
-                        image, peak_time, bad_pixel_by_island, bad_pixel_neighbors_by_island
+                    bad_pixel_interpolation(
+                        image, peak_time, bad_pixel_ids, weight_factors
                     )
                     
                 if increase_nsb:
