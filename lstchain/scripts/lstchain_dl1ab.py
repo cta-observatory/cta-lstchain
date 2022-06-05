@@ -231,9 +231,6 @@ def main():
         if set(dl1_params_input).intersection(uncertainty_params):
             parameters_to_update.extend(uncertainty_params)
 
-        if apply_interleaved_cal:
-            parameters_to_update.extend('calibration_id')
-
         if increase_nsb:
             rng = np.random.default_rng(
                     infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
@@ -267,7 +264,7 @@ def main():
                 if apply_interleaved_cal:
                     selected_gain_channel = row['selected_gain_channel']
                     
-                    if params['calibration_id'] == ORIGINAL_CALIBRATION_ID:
+                    if params[ii]['calibration_id'] == ORIGINAL_CALIBRATION_ID:
                         flag_selected_gain = np.array(
                             [selected_gain_channel == HIGH_GAIN, 
                              selected_gain_channel == LOW_GAIN],
@@ -276,14 +273,14 @@ def main():
 
                         dc_to_pe_original = mon_calib['dc_to_pe'][ORIGINAL_CALIBRATION_ID][flag_selected_gain] 
                         dc_to_pe_interleaved = mon_calib['dc_to_pe'][INTERLEAVED_CALIBRATION_ID][flag_selected_gain] 
-                        image *= (dc_to_pe_interleaved / dc_to_pe_original)
+                        image *= np.divide(dc_to_pe_interleaved, dc_to_pe_original, 
+                                           out = np.zeros(dc_to_pe_interleaved.shape, dtype=float), 
+                                           where = (dc_to_pe_original != 0))
                         
                         time_correction_original = mon_calib['time_correction'][ORIGINAL_CALIBRATION_ID][flag_selected_gain]
                         time_correction_interleaved = mon_calib['time_correction'][INTERLEAVED_CALIBRATION_ID][flag_selected_gain]
                         peak_time += (time_correction_interleaved - time_correction_original)
-                        
-                        params['calibration_id'] = INTERLEAVED_CALIBRATION_ID
-                        
+                                                
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
@@ -370,6 +367,9 @@ def main():
 
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
+
+                if apply_interleaved_cal:
+                    params[ii]['calibration_id'] = INTERLEAVED_CALIBRATION_ID
 
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
