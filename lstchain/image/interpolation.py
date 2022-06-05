@@ -1,30 +1,36 @@
 
 import numpy as np
 from ctapipe.image import number_of_islands
+from ctapipe_io_lst.constants import N_PIXELS, PIXEL_INDEX
 
 __all__ = [
-    'get_bad_pixel_island'
-    'get_bad_pixel_and_neighbors_by_island',
-    'get_bad_pixel_and_neighbors_with_weights',
-    'interpolate_bad_pixels',
-    'interpolate_bad_pixels_with_weights'
+    'get_bad_pixel_id_and_weight'
+    'interpolate_bad_pixels'
 ]
 
-def get_bad_pixel_island(camera_geom, monitoring_table):
+def get_bad_pixel_id_and_weight(
+        camera_geom, monitoring_table, apply_weight = True, power = 2
+):
     """
-    Get a list of bad pixels and labels of island around the bad pixels
+    Get bad pixel id list and weight factors
     Parameters
     ----------
     camera_geom: 
           camera geometory
-    monitoring_table:   
+    monitoring_table:
           monitoring table
+    apply_weight:
+          apply weight based on distance to bad pixels if True
+    power:
+          power of weight factor if `apply_weight` = True 
     Returns
     -------
-    bad_pixels: `np.ndarray`
-    num_bad_pixel_islands: `int`
-    bad_pixel_island_labels: `np.ndarray`
+    bad_pixel_ids: `np.ndarray`
+          pixel ids of bad pixels
+    bad_pixel_neighbors_by_island: `np.ndarray`
+          weight factors to compute average values
     """
+
     unusable = monitoring_table['unusable_pixels']
     # Locate pixels with HG declared unusable either in original calibration or                                                                                         
     # in interleaved events:                                                                                                                                            
@@ -32,85 +38,40 @@ def get_bad_pixel_island(camera_geom, monitoring_table):
     for tf in unusable[1:][0]:   # calibrations with interleaveds                                                                                                       
         bad_pixels = np.logical_or(bad_pixels, tf)
         
-    bad_pixels_and_neighbors = bad_pixels | camera_geom.neighbor_matrix_sparse.dot(bad_pixels)
+    bad_pixel_ids = PIXEL_INDEX[bad_pixels]
     
     # Label islands containing bad pixels and neighbors
-    num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geom, bad_pixels_and_neighbors)
-
-    return bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels
-
-
-def get_bad_pixel_and_neighbors_by_island(camera_geom, monitoring_table):
-    """
-    Get bad pixel and neighboring pixels mask by island
-    Parameters
-    ----------
-    camera_geom: 
-          camera geometory
-    monitoring_table:
-          monitoring table
-    Returns
-    -------
-    bad_pixel_by_island: `np.ndarray`
-    bad_pixel_neighbors_by_island: `np.ndarray`
-    
-    """
-
-    bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels = get_bad_pixel_island(camera_geom, monitoring_table)
-
-    bad_pixel_by_island = np.zeros([num_bad_pixel_islands - 1, 1855], dtype = 'bool')
-    bad_pixel_neighbors_by_island = np.zeros([num_bad_pixel_islands - 1, 1855], dtype = 'bool')
-
-    # Get a list of bad pixels and neighbors on each bad pixel island
-    for island_index in range(num_bad_pixel_islands):
-        
-        bad_pixel_island = (bad_pixel_island_labels == (island_index + 1))
-        bad_pixel_by_island[island_index, bad_pixel_island & bad_pixels] = True
-        bad_pixel_neighbors_by_island[island_index, bad_pixel_island & ~bad_pixels] = True
-        
-    return bad_pixel_by_island, bad_pixel_neighbors_by_island
+    bad_pixels_and_neighbors = bad_pixels | camera_geom.neighbor_matrix_sparse.dot(bad_pixels)
+    _, bad_pixel_island_labels = number_of_islands(camera_geom, bad_pixels_and_neighbors)
 
 
-def get_bad_pixel_and_neighbors_with_weights(camera_geom, monitoring_table):
-    """
-    Get bad pixel and neighboring pixels mask with weights
-    Parameters
-    ----------
-    camera_geom: 
-          camera geometory
-    monitoring_table:
-          monitoring table
-    Returns
-    -------
-    bad_pixel_by_island: `np.ndarray`
-    bad_pixel_neighbors_by_island: `np.ndarray`
-    weights: `np.ndarray`
-    """
-
-    bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels = get_bad_pixel_island(camera_geom, monitoring_table)
+    weight_factors = np.zeros([len(bad_pixel_ids), N_PIXELS])
 
     pix_x = camera_geom.pix_x.to_value("m")
     pix_y = camera_geom.pix_y.to_value("m")
 
-    bad_pixel_neighbors = np.zeros([np.sum(bad_pixels), 1855], dtype = 'bool')
-    dist_from_bad_pixel = np.zeros([np.sum(bad_pixels), 1855])
+    for i, bad_pixel_id in enumerate(bad_pixel_ids):
 
-    for i, bad_pixel in enumerate(np.where(bad_pixels)[0]):
+        bad_pixel_island_id = bad_pixel_island_labels[bad_pixel_id]
+        good_pixels_on_island = (bad_pixel_island_labels == bad_pixel_island_id) & ~bad_pixels
+        weight_factors[i][good_pixels_on_island] = 1
 
-        island_index = bad_pixel_island_labels[bad_pixel]
-        bad_pixel_island = (bad_pixel_island_labels == island_index)
-        bad_pixel_neighbors[i] = (bad_pixel_island & ~bad_pixels)
+        if apply_weight == True:
+            dist_to_bad_pixel = np.sqrt(
+                (pix_x - pix_x[bad_pixel_id])**2 + (pix_y - pix_y[bad_pixel_id])**2
+            )
+            
+            weight_factors[i] *= np.divide(1, dist_to_bad_pixel, 
+                                           out = np.zeros(dist_to_bad_pixel.shape),
+                                           where = (dist_to_bad_pixel != 0)
+            )
+            weight_factors[i] **= power
 
-        dist_from_bad_pixel[i] = np.sqrt(
-            (pix_x[bad_pixel_neighbors[i]] - pix_x[bad_pixel])**2 +
-            (pix_y[bad_pixel_neighbors[i]] - pix_y[bad_pixel])**2
-        )
-
-    return bad_pixels, bad_pixel_neighbors, dist_from_bad_pixel
+    return bad_pixel_ids, weight_factors
 
 
 def interpolate_bad_pixels(
-        image, peak_time, bad_pixel_by_island, bad_pixel_neighbors_by_island
+        image, peak_time, bad_pixel_ids, weight_factors
 ):
     """
     Interpolate bad pixels using the average values of nighboring pixels
@@ -120,39 +81,12 @@ def interpolate_bad_pixels(
           Pixel charges
     peak_time: `np.ndarray`
           Pixel peak time
-    bad_pixel_by_island: `np.ndarray`
-          mask of bad pixels
-    bad_pixel_neighbors_by_island: `np.ndarray`
-          mask of bad pixel neighbors
+    bad_pixel_ids: `np.ndarray`
+          pixel ids of bad pixels
+    weight_factors: `np.ndarray`
+          weight factors to compute average values
     """
     
-    for bad_pixel, bad_pixel_neighbors in zip(
-            bad_pixel_by_island, bad_pixel_neighbors_by_island
-    ):
-        image[bad_pixel] = np.average(image[bad_pixel_neighbors])
-        peak_time[bad_pixel] = np.average(peak_time[bad_pixel_neighbors])
-
-
-def interpolate_bad_pixels_with_weights(
-        image, peak_time, 
-        bad_pixels, bad_pixel_neighbors, dist_from_bad_pixel    
-):
-    """
-    Interpolate bad pixels using the average values of nighboring pixels
-    Parameters
-    ----------
-    image: `np.ndarray`
-          Pixel charges
-    peak_time: `np.ndarray`
-          Pixel peak time
-    bad_pixel_by_island: `np.ndarray`
-          mask of bad pixels
-    bad_pixel_neighbors_by_island: `np.ndarray`
-          mask of bad pixel neighbors
-    """
-    
-    for i, bad_pixel in enumerate(np.where(bad_pixels)[0]):
-            
-        image[bad_pixel] = np.average(image[bad_pixel_neighbors[i]], weights=1/dist_from_bad_pixel[i]**2)
-        peak_time[bad_pixel] = np.average(peak_time[bad_pixel_neighbors[i]], weights=1/dist_from_bad_pixel[i]**2)
-    
+    for i, bad_pixel_id in enumerate(bad_pixel_ids):
+        image[bad_pixel_id] = np.average(image, weights = weight_factors[i])
+        peak_time[bad_pixel_id] = np.average(image, weights = weight_factors[i])
