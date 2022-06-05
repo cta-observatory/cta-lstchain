@@ -5,7 +5,7 @@ from ctapipe_io_lst.constants import N_PIXELS, PIXEL_INDEX
 
 __all__ = [
     'get_bad_pixel_id_and_weight'
-    'interpolate_bad_pixels'
+    'bad_pixel_interpolation'
 ]
 
 def get_bad_pixel_id_and_weight(
@@ -70,7 +70,7 @@ def get_bad_pixel_id_and_weight(
     return bad_pixel_ids, weight_factors
 
 
-def interpolate_bad_pixels(
+def bad_pixel_interpolation(
         image, peak_time, bad_pixel_ids, weight_factors
 ):
     """
