@@ -64,7 +64,11 @@
     "threshold": 267,
     "fraction_cleaning_intensity": 0.03
   },
-
+  "bad_pixel_interpolation": {
+    "apply_weight": true,
+    "weight_power": 2
+  }
+    
   "random_forest_energy_regressor_args": {
     "max_depth": 30,
     "min_samples_leaf": 10,

@@ -176,6 +176,11 @@ def main():
     if "delta_time" in config[clean_method_name]:
         delta_time = config[clean_method_name]["delta_time"]
 
+    if args.bad_pixel_interpolation:
+        apply_weighted_interpolation = config['bad_pixel_interpolation']['apply_weight']
+        weight_power = config['bad_pixel_interpolation']['weight_power']
+
+
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     optics = subarray_info.tel[tel_id].optics
@@ -235,7 +240,9 @@ def main():
 
         if not args.bad_pixel_interpolation:
             monitoring_table = infile.root[dl1_params_tel_mon_cal_key]
-            bad_pixel_ids, weight_factors = get_bad_pixel_id_and_weight(camera_geom, monitoring_table)
+            bad_pixel_ids, weight_factors = get_bad_pixel_id_and_weight(
+                camera_geom, monitoring_table, apply_weighted_interpolation, weight_power
+            )
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
