@@ -12,7 +12,7 @@ __all__ = [
 
 def get_bad_pixel_island(camera_geom, monitoring_table):
     """
-    Get bad pixel island
+    Get a list of bad pixels and labels of island around the bad pixels
     Parameters
     ----------
     camera_geom: 
@@ -34,6 +34,7 @@ def get_bad_pixel_island(camera_geom, monitoring_table):
         
     bad_pixels_and_neighbors = bad_pixels | camera_geom.neighbor_matrix_sparse.dot(bad_pixels)
     
+    # Label islands containing bad pixels and neighbors
     num_bad_pixel_islands, bad_pixel_island_labels = number_of_islands(camera_geom, bad_pixels_and_neighbors)
 
     return bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels
@@ -57,21 +58,22 @@ def get_bad_pixel_and_neighbors_by_island(camera_geom, monitoring_table):
 
     bad_pixels, num_bad_pixel_islands, bad_pixel_island_labels = get_bad_pixel_island(camera_geom, monitoring_table)
 
-    bad_pixel_by_island = []
-    bad_pixel_neighbors_by_island = []
+    bad_pixel_by_island = np.zeros([num_bad_pixel_islands - 1, 1855], dtype = 'bool')
+    bad_pixel_neighbors_by_island = np.zeros([num_bad_pixel_islands - 1, 1855], dtype = 'bool')
 
-    for island_index in range(1, num_bad_pixel_islands+1):
+    # Get a list of bad pixels and neighbors on each bad pixel island
+    for island_index in range(num_bad_pixel_islands):
         
-        bad_pixel_island = (bad_pixel_island_labels == island_index)
-        bad_pixel_by_island.append(bad_pixel_island & bad_pixels)
-        bad_pixel_neighbors_by_island.append(bad_pixel_island & ~bad_pixels)
+        bad_pixel_island = (bad_pixel_island_labels == (island_index + 1))
+        bad_pixel_by_island[island_index, bad_pixel_island & bad_pixels] = True
+        bad_pixel_neighbors_by_island[island_index, bad_pixel_island & ~bad_pixels] = True
         
     return bad_pixel_by_island, bad_pixel_neighbors_by_island
 
 
 def get_bad_pixel_and_neighbors_with_weights(camera_geom, monitoring_table):
     """
-    Get bad pixel and neighboring pixels mask by island with weights
+    Get bad pixel and neighboring pixels mask with weights
     Parameters
     ----------
     camera_geom: 
@@ -90,24 +92,20 @@ def get_bad_pixel_and_neighbors_with_weights(camera_geom, monitoring_table):
     pix_x = camera_geom.pix_x.to_value("m")
     pix_y = camera_geom.pix_y.to_value("m")
 
-    bad_pixel_neighbors = []
-    dist_from_bad_pixel = []
+    bad_pixel_neighbors = np.zeros([np.sum(bad_pixels), 1855], dtype = 'bool')
+    dist_from_bad_pixel = np.zeros([np.sum(bad_pixels), 1855])
 
-    for bad_pixel in np.where(bad_pixels)[0]:
+    for i, bad_pixel in enumerate(np.where(bad_pixels)[0]):
 
         island_index = bad_pixel_island_labels[bad_pixel]
         bad_pixel_island = (bad_pixel_island_labels == island_index)
-        bad_pixel_neighbors_= (bad_pixel_island & ~bad_pixels)
-        bad_pixel_neighbors.append(bad_pixel_neighbors_)
+        bad_pixel_neighbors[i] = (bad_pixel_island & ~bad_pixels)
 
-        dist_from_bad_pixel.append(
-            np.sqrt(
-                (pix_x[bad_pixel_neighbors_] - pix_x[bad_pixel])**2 +
-                (pix_y[bad_pixel_neighbors_] - pix_y[bad_pixel])**2
-            )
+        dist_from_bad_pixel[i] = np.sqrt(
+            (pix_x[bad_pixel_neighbors[i]] - pix_x[bad_pixel])**2 +
+            (pix_y[bad_pixel_neighbors[i]] - pix_y[bad_pixel])**2
         )
-                
-        
+
     return bad_pixels, bad_pixel_neighbors, dist_from_bad_pixel
 
 
