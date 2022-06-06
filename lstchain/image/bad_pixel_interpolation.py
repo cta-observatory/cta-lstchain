@@ -4,7 +4,7 @@ from ctapipe.image import number_of_islands
 from ctapipe_io_lst.constants import N_PIXELS, PIXEL_INDEX
 
 __all__ = [
-    'get_bad_pixel_id_and_weight'
+    'get_bad_pixel_id_and_weight',
     'bad_pixel_interpolation'
 ]
 
