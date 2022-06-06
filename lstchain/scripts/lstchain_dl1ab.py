@@ -238,7 +238,7 @@ def main():
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
-        if not args.bad_pixel_interpolation:
+        if args.bad_pixel_interpolation:
             monitoring_table = infile.root[dl1_params_tel_mon_cal_key]
             bad_pixel_ids, weight_factors = get_bad_pixel_id_and_weight(
                 camera_geom, monitoring_table, apply_weighted_interpolation, weight_power
@@ -265,7 +265,7 @@ def main():
                 image = row['image']
                 peak_time = row['peak_time']
 
-                if not args.bad_pixel_interpolation:
+                if args.bad_pixel_interpolation:
                     bad_pixel_interpolation(
                         image, peak_time, bad_pixel_ids, weight_factors
                     )

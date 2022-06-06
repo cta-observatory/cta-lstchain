@@ -424,7 +424,8 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
         "lstchain_dl1ab",
         "-f", observed_dl1_files["dl1_file1"],
         "-o", output_dl1ab,
-        "--no-pedestal-cleaning"
+        "--no-pedestal-cleaning",
+        "--no-bad-pixel-interpolation"
     )
     assert output_dl1ab.is_file()
 
