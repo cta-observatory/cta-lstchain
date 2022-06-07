@@ -199,13 +199,13 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
-    gzip = traits.Bool(
-        help="If True, the DL3 file will be gzipped",
+    use_nearest_irf_node = traits.Bool(
+        help="If True, only look for the nearest IRF node to the data. No interpolation",
         default_value=False,
     ).tag(config=True)
 
-    use_nearest_irf_node = traits.Bool(
-        help="If True, only look for the nearest IRF node to the data. No interpolation",
+    gzip = traits.Bool(
+        help="If True, the DL3 file will be gzipped",
         default_value=False,
     ).tag(config=True)
 
@@ -232,13 +232,13 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
-        "gzip": (
-            {"DataReductionFITSWriter": {"gzip": True}},
-            "gzip the DL3 files if True",
-        ),
         "use-nearest-irf-node": (
             {"DataReductionFITSWriter": {"use_nearest_irf_node": True}},
             "Only use the closest IRF, if True",
+        ),
+        "gzip": (
+            {"DataReductionFITSWriter": {"gzip": True}},
+            "gzip the DL3 files if True",
         ),
     }
 
