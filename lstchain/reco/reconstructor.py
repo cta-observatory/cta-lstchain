@@ -416,6 +416,7 @@ class TimeWaveformFitter(TelescopeComponent):
 
             container.lhfit_wl = u.Quantity(self.end_parameters['wl'])
             container.lhfit_wl_uncertainty = u.Quantity(self.error_parameters['wl'])
+            container.lhfit_intensity = self.end_parameters['charge']
             container.lhfit_intensity_uncertainty = self.error_parameters['charge']
             container.lhfit_log_intensity = np.log10(container.lhfit_intensity)
             container.lhfit_t_68 = container.lhfit_length.value * container.lhfit_time_gradient
