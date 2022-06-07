@@ -16,6 +16,7 @@ from .hdu_table import (
 from .interpolate import (
     interp_params,
     check_in_delaunay_triangle,
+    get_nearest_az_node,
     compare_irfs,
     load_irf_grid,
     interpolate_irf,
@@ -32,6 +33,7 @@ __all__ = [
     "get_pointing_params",
     "interp_params",
     "check_in_delaunay_triangle",
+    "get_nearest_az_node",
     "compare_irfs",
     "load_irf_grid",
     "interpolate_irf",

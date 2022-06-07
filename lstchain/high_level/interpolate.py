@@ -46,6 +46,11 @@ def interp_params(params_list, data):
             )
         )
 
+    if "AZ_PNT" in params_list:
+        mc_pars.append(
+            u.Quantity(data["AZ_PNT"], "deg").to_value(u.rad)
+        )
+
     return mc_pars
 
 
@@ -83,6 +88,7 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
 
     new_irfs = []
     mc_params = np.empty((len(irfs), len(data_pars)))
+    mc_params_0 = np.empty((len(irfs), len(data_params)))
 
     for i, irf in enumerate(irfs):
         f = fits.open(irf)[1].header
@@ -90,8 +96,11 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
         mc_pars = interp_params(data_pars, f)
         mc_params[i, :] = np.array(mc_pars)
 
+        mc_pars_0 = interp_params(data_params, f)
+        mc_params_0[i, :] = np.array(mc_pars_0)
     data_val = interp_params(data_pars, data_params)
-
+    data_val_0 = interp_params(data_params, data_params)
+    #print(data_val, data_val_0)
     try:
         tri = Delaunay(mc_params)
     except ValueError:
@@ -108,17 +117,49 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
             # to the target values
             index = distance.cdist([data_val], mc_params).argmin()
             print("Target value is outside interpolation. Using the nearest IRF.")
+            index = get_nearest_az_node(mc_params, index, mc_params_0, data_val_0)
             new_irfs.append(irfs[index])
         else:
             # Just select the IRFs that are needed for the Delaunay triangulation
             for i in tri.simplices[target_in_simplex]:
-                new_irfs.append(irfs[i])
+                i2 = get_nearest_az_node(mc_params, i, mc_params_0, data_val_0)
+                new_irfs.append(irfs[i2])
     else:
         index = distance.cdist([data_val], mc_params).argmin()
         print("Using the nearest IRF.")
+        index = get_nearest_az_node(mc_params, index, mc_params_0, data_val_0)
         new_irfs.append(irfs[index])
 
     return new_irfs
+
+
+def get_nearest_az_node(irf_params, index, irf_params_full, target_params_full):
+    """
+    Check to see if a given IRF node overlaps with another node, in the
+    interpolation parameter space, and to select based on the azimuth (hard-
+    coded to be index 2 for now) angle, the nearest node to the target.
+    """
+    # Remove the numerical variations by shortening the precision of values
+    irf_params_short = np.around(irf_params, 3)
+
+    # Find the uniques set of nodes, to compare and choose the indices
+    irf_unique, irf_num = np.unique(
+        irf_params_short, axis=0, return_counts=True
+    )
+    idx = np.flatnonzero((irf_unique == irf_params_short[index]).all(1))
+
+    if irf_num[idx] > 1:
+        # Only using the overlapping nodes
+        idx_list = np.flatnonzero(
+            (irf_params_short == irf_params_short[index]).all(1)
+        )
+        # Finding the shortest distance with respect to target azimuth
+        diff = np.abs(irf_params_full[idx_list, 2] - target_params_full[2])
+        idx = idx_list[np.where(diff == diff.min())[0]][0]
+    else:
+        # if there are no overlapping nodes
+        idx = index
+    return idx
 
 
 def compare_irfs(irfs):
