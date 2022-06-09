@@ -42,8 +42,8 @@ class TimeWaveformFitter(TelescopeComponent):
                         allow_none=False).tag(config=True)
     use_interleaved = Path(None, help='Location of the dl1 file used to estimate the pedestal exploiting interleaved'
                                       ' events.', allow_none=True).tag(config=True)
-    n_peaks = Int(50, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
-                           'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
+    n_peaks = Int(0, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
+                          'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
                   allow_none=False).tag(config=True)
     verbose = Int(0, help='4 - used for tests: create debug plots\n'
                           '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
@@ -169,6 +169,7 @@ class TimeWaveformFitter(TelescopeComponent):
                             'rl': 0.0
                             }
 
+        # Temporal parameters extraction fails when cleaning select only 2 pixels, we use defaults values in this case
         if np.isnan(start_parameters['t_cm']):
             start_parameters['t_cm'] = 0.
         if np.isnan(start_parameters['v']):
