@@ -597,6 +597,7 @@ def r0_to_dl1(
 
                 dl1_container.az_tel = event.pointing.tel[telescope_id].azimuth
                 dl1_container.alt_tel = event.pointing.tel[telescope_id].altitude
+                dl1_container.sin_az_tel = np.sin(dl1_container.az_tel)
 
                 dl1_container.trigger_time = event.trigger.time.unix
                 dl1_container.event_type = event.trigger.event_type

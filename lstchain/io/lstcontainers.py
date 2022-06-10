@@ -88,6 +88,8 @@ class DL1ParametersContainer(Container):
     az_tel = Field(None, 'Telescope azimuth pointing',
                    unit=u.rad)
 
+    sin_az_tel = Field(None, 'Sin of telescope azimuth pointing, used for RF')
+
     obs_id = Field(-1, 'Observation ID')
     event_id = Field(-1, 'Event ID')
     calibration_id = Field(-1, 'ID of the employed calibration event')

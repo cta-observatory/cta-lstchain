@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from lstchain.image.modifier import calculate_noise_parameters
+from lstchain.io.config import dump_config, read_configuration_file
 
 log = logging.getLogger(__name__)
 
@@ -32,16 +33,30 @@ parser.add_argument(
          'one used for calibration and DL1 creation)',
     required=True,
 )
+
 parser.add_argument(
     '--input-mc', type=Path,
     help='Path to a simtel file of the production (must include the true '
          'p.e. images)',
     required=True,
 )
+
 parser.add_argument(
     '--input-data', type=Path,
     help='Path to a data DL1 file of the production (must include DL1a)',
     required=True,
+)
+
+parser.add_argument(
+    '--output-file', '-o',
+    type=Path,
+    help='Path to a output file where to dump the update config',
+)
+
+parser.add_argument(
+    '--overwrite',
+    action='store_true',
+    help='Use to overwrite output-file',
 )
 
 
@@ -76,7 +91,10 @@ def main():
     log.info(json.dumps(dict_nsb, indent=2))
     log.info('\n')
 
-    return
+    if args.output_file:
+        cfg = read_configuration_file(args.config)
+        cfg['image_modifier'].update(dict_nsb)
+        dump_config(cfg, args.output_file, overwrite=args.overwrite)
 
 
 if __name__ == '__main__':
