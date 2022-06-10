@@ -45,6 +45,31 @@ class TimeWaveformFitter(TelescopeComponent):
     n_peaks = Int(0, help='Maximum brightness (p.e.) for which the full likelihood computation is used. '
                           'If the Poisson term for Np.e.>n_peak is more than 1e-6 a Gaussian approximation is used.',
                   allow_none=False).tag(config=True)
+    bound_charge_factor = FloatTelescopeParameter(default_value=4,
+                                                  help='Maximum relative change to the fitted charge parameter.',
+                                                  allow_none=False).tag(config=True)
+    bound_t_cm_value = FloatTelescopeParameter(default_value=10,
+                                               help='Maximum change to the t_cm parameter.',
+                                               allow_none=False).tag(config=True)
+    bound_centroid_control_parameter = FloatTelescopeParameter(default_value=1,
+                                                               help='Maximum change of the centroid coordinated in '
+                                                                    'number of seed length',
+                                                               allow_none=False).tag(config=True)
+    bound_max_length_factor = FloatTelescopeParameter(default_value=2,
+                                                      help='Maximum relative increase to the fitted length parameter.',
+                                                      allow_none=False).tag(config=True)
+    bound_length_asymmetry = FloatTelescopeParameter(default_value=9,
+                                                     help='Bounds for the fitted rl parameter.',
+                                                     allow_none=False).tag(config=True)
+    bound_max_v_cm_factor = FloatTelescopeParameter(default_value=2,
+                                                    help='Maximum relative increase to the fitted v_cm parameter.',
+                                                    allow_none=False).tag(config=True)
+    default_seed_t_cm = FloatTelescopeParameter(default_value=0,
+                                                help='Default starting value of t_cm when the seed extraction failed.',
+                                                allow_none=False).tag(config=True)
+    default_seed_v_cm = FloatTelescopeParameter(default_value=40,
+                                                help='Default starting value of v_cm when the seed extraction failed.',
+                                                allow_none=False).tag(config=True)
     verbose = Int(0, help='4 - used for tests: create debug plots\n'
                           '3 - create debug plots, wait for input after each event, increase minuit verbose level\n'
                           '2 - create debug plots, increase minuit verbose level\n'
@@ -171,29 +196,27 @@ class TimeWaveformFitter(TelescopeComponent):
 
         # Temporal parameters extraction fails when cleaning select only 2 pixels, we use defaults values in this case
         if np.isnan(start_parameters['t_cm']):
-            start_parameters['t_cm'] = 0.
+            start_parameters['t_cm'] = self.default_seed_t_cm.tel[telescope_id]
         if np.isnan(start_parameters['v']):
-            start_parameters['v'] = 40
+            start_parameters['v'] = self.default_seed_v_cm.tel[telescope_id]
 
         t_max = n_samples * dt
-        v_min, v_max = 0, max(2 * start_parameters['v'], 50)
-        rl_min, rl_max = -9, 9
+        v_min, v_max = 0, max(self.bound_max_v_cm_factor.tel[telescope_id] * start_parameters['v'], 50)
+        rl_min, rl_max = -self.bound_length_asymmetry.tel[telescope_id], self.bound_length_asymmetry.tel[telescope_id]
         if self.no_asymmetry:
             rl_min, rl_max = 0.0, 0.0
+        bound_centroid = self.bound_centroid_control_parameter.tel[telescope_id] * start_length
 
-        bound_parameters = {'charge': (dl1_container.intensity * 0.25,
-                                       dl1_container.intensity * 4.0),
-                            't_cm': (-10, t_max + 10),
-                            'x_cm': (start_x_cm.to_value(unit)
-                                     - start_length,
-                                     start_x_cm.to_value(unit)
-                                     + start_length),
-                            'y_cm': (start_y_cm.to_value(unit)
-                                     - start_length,
-                                     start_y_cm.to_value(unit)
-                                     + start_length),
+        bound_parameters = {'charge': (dl1_container.intensity / self.bound_charge_factor.tel[telescope_id],
+                                       dl1_container.intensity * self.bound_charge_factor.tel[telescope_id]),
+                            't_cm': (-self.bound_t_cm_value.tel[telescope_id],
+                                     t_max + self.bound_t_cm_value.tel[telescope_id]),
+                            'x_cm': (start_x_cm.to_value(unit) - bound_centroid,
+                                     start_x_cm.to_value(unit) + bound_centroid),
+                            'y_cm': (start_y_cm.to_value(unit) - bound_centroid,
+                                     start_y_cm.to_value(unit) + bound_centroid),
                             'length': (pix_radius,
-                                       min(2 * start_length, r_max)),
+                                       min(self.bound_max_length_factor.tel[telescope_id] * start_length, r_max)),
                             'wl': (0.001, 1.0),
                             'psi': (-np.pi * 2.0, np.pi * 2.0),
                             'v': (v_min, v_max),
