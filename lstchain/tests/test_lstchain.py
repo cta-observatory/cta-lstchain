@@ -13,14 +13,6 @@ from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_ima
 from lstchain.reco.utils import filter_events
 from lstchain.reco.dl1_to_dl2 import build_models
 
-# Compile the likelihood reconstruction functions if it is not done previously
-try:
-    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
-except ImportError:
-    from lstchain.scripts import numba_compil_lhfit
-    numba_compil_lhfit.compile_reconstructor_cc()
-    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
-
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
@@ -84,11 +76,14 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
-def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
-    from lstchain.reco.r0_to_dl1 import r0_to_dl1
-    # Call log_pdf_hl to justify the import
+def test_lhfit_numba_compiled():
+    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
     log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
                np.float64([0]), np.float64([[1]]), np.float64([[1]]))
+
+
+def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
     config = deepcopy(standard_config)
     config['source_config']['EventSource']['max_events'] = 5
     config['source_config']['EventSource']['allowed_tels'] = [1]
@@ -130,6 +125,7 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
+@pytest.mark.run(after='test_lhfit_numba_compiled')
 @pytest.mark.private_data
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1

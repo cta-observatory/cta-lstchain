@@ -1,3 +1,3 @@
-from lstchain.reco.reconstructorCC import compile_reconstructor_cc
+from lstchain.reco.reconstructorCC import cc
 
-compile_reconstructor_cc()
+cc.compile()
