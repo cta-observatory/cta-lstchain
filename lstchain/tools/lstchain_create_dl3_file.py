@@ -459,7 +459,7 @@ class DataReductionFITSWriter(Tool):
             else:
                 self.final_irf_output = check_in_delaunay_triangle(
                     self.irf_list, self.data_params, self.use_nearest_irf_node
-                )
+                )[0]
         self.check_energy_dependent_cuts()
 
         self.effective_time, self.elapsed_time = get_effective_time(self.data)
