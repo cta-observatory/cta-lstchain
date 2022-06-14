@@ -510,4 +510,4 @@ def test_run_summary(run_summary_path):
 
 def test_numba_compil_lhfit():
     from lstchain.scripts import numba_compil_lhfit
-    numba_compil_lhfit.compile_reconstructor_cc()
+    numba_compil_lhfit.main()

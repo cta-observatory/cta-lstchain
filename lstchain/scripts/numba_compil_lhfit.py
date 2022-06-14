@@ -1,3 +1,9 @@
 from lstchain.reco.reconstructorCC import cc
 
-cc.compile()
+
+def main():
+    cc.compile()
+
+
+if __name__ == '__main__':
+    main()
