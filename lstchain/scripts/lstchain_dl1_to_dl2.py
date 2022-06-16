@@ -172,6 +172,10 @@ def main():
                                                  reg_disp_norm=reg_disp_norm,
                                                  cls_disp_sign=cls_disp_sign, focal_length=focal_length,
                                                  custom_config=config)
+            elif config['disp_method'] is None:
+                dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy,
+                                              focal_length=focal_length, custom_config=config)
+
 
             dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
