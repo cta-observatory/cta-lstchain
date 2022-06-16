@@ -78,6 +78,28 @@ def test_sigma_clipping():
     assert (mask[outliers] == False).all()
 
 
+def test_sigma_clipping_no_outliers():
+    from lstchain.statistics import sigma_clipped_mean_std, expected_ignored
+
+    rng = np.random.default_rng()
+
+    n_events = 1_000_000
+    true_mean = 20
+    true_std = 2
+    values = rng.normal(true_mean, true_std, n_events)
+
+    for max_sigma in (2, 3, 4):
+        for n_iterations in range(1, 6):
+            mean, std, mask = sigma_clipped_mean_std(
+                values, max_sigma=max_sigma, n_iterations=n_iterations,
+            )
+            ignored = np.count_nonzero(~mask) / mask.size
+            expected = expected_ignored(max_sigma, n_iterations)
+
+            assert np.allclose(mean, true_mean, rtol=0.01), f'{max_sigma}, {n_iterations}'
+            assert np.allclose(std, true_std, rtol=0.01), f'{max_sigma}, {n_iterations}'
+            assert np.isclose(ignored, expected, rtol=0.1), f'{max_sigma}, {n_iterations}'
+
 
 def test_sigma_clipping_masked():
     from lstchain.statistics import sigma_clipped_mean_std
