@@ -206,8 +206,7 @@ class PedestalIntegrator(PedestalCalculator):
         # mask the part of the array not filled
         self.sample_masked_pixels[self.num_events_seen:] = 1
 
-        pedestal_results = calculate_pedestal_results(
-            self,
+        pedestal_results = self.calculate_pedestal_results(
             self.charges,
             self.sample_masked_pixels,
         )
@@ -253,6 +252,58 @@ class PedestalIntegrator(PedestalCalculator):
         self.num_events_seen += 1
 
 
+    def calculate_pedestal_results(self, trace_integral, masked_pixels_of_sample):
+        """Calculate and return the sample statistics"""
+        masked_trace_integral = np.ma.array(
+            trace_integral,
+            mask=masked_pixels_of_sample
+        )
+        # median over the sample per pixel
+        pixel_median = np.ma.median(masked_trace_integral, axis=0)
+
+        # mean and std over the sample per pixel
+        pixel_mean, pixel_std, mask = sigma_clipped_mean_std(
+            masked_trace_integral,
+            max_sigma=self.sigma_clipping_max_sigma,
+            n_iterations=self.sigma_clipping_iterations,
+            axis=0
+        )
+
+        # median over the camera
+        median_of_pixel_median = np.ma.median(pixel_median, axis=1)
+
+        # std of median over the camera
+        std_of_pixel_median = np.ma.std(pixel_median, axis=1)
+
+        # median of the std over the camera
+        median_of_pixel_std = np.ma.median(pixel_std, axis=1)
+
+        # std of the std over camera
+        std_of_pixel_std = np.ma.std(pixel_std, axis=1)
+
+        # outliers from standard deviation
+        deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
+        charge_std_outliers = np.logical_or(
+            deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
+            deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis],
+        )
+
+        # outliers from median
+        deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
+        charge_median_outliers = np.logical_or(
+            deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
+            deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
+        )
+
+        return {
+            'charge_median': np.ma.getdata(pixel_median),
+            'charge_mean': np.ma.getdata(pixel_mean),
+            'charge_std': np.ma.getdata(pixel_std),
+            'charge_std_outliers': np.ma.getdata(charge_std_outliers),
+            'charge_median_outliers': np.ma.getdata(charge_median_outliers)
+        }
+
+
 def calculate_time_results(
     time_start,
     trigger_time,
@@ -262,61 +313,6 @@ def calculate_time_results(
         'sample_time': (time_start + (trigger_time - time_start) / 2).unix*u.s,
         'sample_time_min': time_start.unix*u.s,
         'sample_time_max': trigger_time.unix*u.s,
-    }
-
-
-def calculate_pedestal_results(self,
-                               trace_integral,
-                               masked_pixels_of_sample,
-):
-    """Calculate and return the sample statistics"""
-    masked_trace_integral = np.ma.array(
-        trace_integral,
-        mask=masked_pixels_of_sample
-    )
-    # median over the sample per pixel
-    pixel_median = np.ma.median(masked_trace_integral, axis=0)
-
-    # mean and std over the sample per pixel
-    pixel_mean, pixel_std, _ = sigma_clipped_mean_std(
-        masked_trace_integral,
-        max_sigma=self.sigma_clipping_max_sigma,
-        n_iterations=self.sigma_clipping_iterations,
-        axis=0
-    )
-
-    # median over the camera
-    median_of_pixel_median = np.ma.median(pixel_median, axis=1)
-
-    # std of median over the camera
-    std_of_pixel_median = np.ma.std(pixel_median, axis=1)
-
-    # median of the std over the camera
-    median_of_pixel_std = np.ma.median(pixel_std, axis=1)
-
-    # std of the std over camera
-    std_of_pixel_std = np.ma.std(pixel_std, axis=1)
-
-    # outliers from standard deviation
-    deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
-    charge_std_outliers = np.logical_or(
-        deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:,np.newaxis],
-        deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:,np.newaxis],
-    )
-
-    # outliers from median
-    deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
-    charge_median_outliers = np.logical_or(
-        deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
-        deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
-    )
-
-    return {
-        'charge_median': np.ma.getdata(pixel_median),
-        'charge_mean': np.ma.getdata(pixel_mean),
-        'charge_std': np.ma.getdata(pixel_std),
-        'charge_std_outliers': np.ma.getdata(charge_std_outliers),
-        'charge_median_outliers': np.ma.getdata(charge_median_outliers)
     }
 
 
