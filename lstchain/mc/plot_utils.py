@@ -5,6 +5,7 @@ import pandas as pd
 from ctaplot.plots import plot_sensitivity_magic_performance
 from matplotlib.colors import LogNorm
 from pyirf.spectral import CRAB_MAGIC_JHEAP2015
+from astropy.visualization import quantity_support
 
 from lstchain.spectra.crab import crab_hegra
 from lstchain.visualization.plot_dl2 import plot_pos
@@ -140,6 +141,7 @@ def format_axes_sensitivity(ax):
     ax.grid(ls='--', alpha=.5)
 
 
+@u.quantity_input(emin=u.TeV, emax=u.TeV)
 def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     """
     Plot a percentage of the Crab SED
@@ -158,7 +160,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     """
     ax = plt.gca() if ax is None else ax
 
-    energy = np.geomspace(emin.to_value(u.TeV), emax.to_value(u.TeV), 40) * u.TeV
+    energy = np.geomspace(emin.to(u.TeV), emax.to(u.TeV), 40)
 
     if percentage == 100:
         kwargs.setdefault('label', 'Crab (MAGIC JHEAP 2015)')
@@ -166,10 +168,13 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
         kwargs.setdefault('label', f'{percentage}% Crab (MAGIC JHEAP 2015)')
 
     kwargs.setdefault('color', 'gray')
-    ax.plot(energy.to_value(u.TeV),
-            percentage / 100. * (energy ** 2 * CRAB_MAGIC_JHEAP2015(energy)).to_value(u.TeV / (u.cm * u.cm * u.s)),
-            **kwargs
-            )
+
+    with quantity_support():
+        ax.plot(energy,
+                percentage/100. * (energy**2 * CRAB_MAGIC_JHEAP2015(energy)),
+                **kwargs
+                )
+
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel("Energy [TeV]")
@@ -178,6 +183,7 @@ def plot_Crab_SED(emin, emax, percentage=100, ax=None, **kwargs):
     return ax
 
 
+@u.quantity_input(energy=u.TeV, sensitivity=u.TeV/(u.m**2*u.s))
 def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
     """
     Plot the achieved sensitivity
@@ -204,10 +210,19 @@ def plot_sensitivity(energy, sensitivity, ax=None, **kwargs):
     ax.set_yscale("log")
     ax.set_xscale("log")
 
-    ax.errorbar(egeom[mask].to_value(),
-                (sensitivity[mask] / 100 * (dFdE[0] * egeom[mask] \
-                                            * egeom[mask]).to(u.TeV / (u.cm * u.cm * u.s))).to_value(),
-                xerr=binsize[mask].to_value(), marker='o', color='C3', label='Sensitivity')
+    kwargs.setdefault('marker', 'o')
+    kwargs.setdefault('color', 'C3')
+    kwargs.setdefault('label', 'sensitivity')
+
+    sens_unit = u.TeV / (u.cm * u.cm * u.s)
+    with quantity_support():
+        ax.errorbar(egeom[mask],
+                    sensitivity[mask] / (100 * sens_unit) * (dFdE[0] * egeom[mask] * egeom[mask]).to(sens_unit),
+                    xerr=binsize[mask], **kwargs)
+
+    ax.set_xlabel(f'Energy / {energy.unit}')
+    ax.set_ylabel(f'Sensitivity / ({sensitivity.unit})')
+    plt.tight_layout()
 
     return ax
 
@@ -273,6 +288,7 @@ def sensitivity_minimization_plot(n_bins_energy, n_bins_gammaness, n_bins_theta2
     return figarr
 
 
+@u.quantity_input(energy=u.TeV, sensitivity=u.TeV/(u.m**2*u.s))
 def sensitivity_plot_comparison(energy, sensitivity, ax=None):
     """
     Main sensitivity plot.

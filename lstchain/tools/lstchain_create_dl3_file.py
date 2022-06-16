@@ -14,12 +14,14 @@ To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 
 For source-dependent analysis, a source-dep flag should be activated.
-Similarly to the cuts on gammaness, the global alpha cut values are provided 
+Similarly to the cuts on gammaness, the global alpha cut values are provided
 from AL_CUT stored in the HDU header.
-The alpha cut is already applied on this step, and all survived events with each 
-assumed source position (on and off) are saved after the gammaness and alpha cut.
-To adapt to the high-level analysis used by gammapy, assumed source position (on and off)
-is set as a reco source position just as a trick to obtain survived events easily.
+The alpha cut is already applied on this step, and all survived events with
+each assumed source position (on and off) are saved after the gammaness and
+alpha cut.
+To adapt to the high-level analysis used by gammapy, assumed source position
+(on and off) is set as a reco source position just as a trick to obtain
+survived events easily.
 """
 
 from astropy.coordinates import SkyCoord
@@ -140,6 +142,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    gzip = traits.Bool(
+        help="If True, the DL3 file will be gzipped",
+        default_value=False,
+    ).tag(config=True)
+
     classes = [EventSelector, DL3Cuts]
 
     aliases = {
@@ -161,11 +168,15 @@ class DataReductionFITSWriter(Tool):
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
         ),
+        "gzip": (
+            {"DataReductionFITSWriter": {"gzip": True}},
+            "gzip the DL3 files if True",
+        ),
     }
 
     def setup(self):
 
-        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2)
+        self.filename_dl3 = dl2_to_dl3_filename(self.input_dl2, compress=self.gzip)
         self.provenance_log = self.output_dl3_path / (self.name + ".provenance.log")
 
         Provenance().add_input_file(self.input_dl2)
@@ -196,7 +207,7 @@ class DataReductionFITSWriter(Tool):
 
         try:
             with fits.open(self.input_irf) as hdul:
-                self.use_energy_dependent_cuts = (
+                self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
         except:
@@ -205,11 +216,17 @@ class DataReductionFITSWriter(Tool):
                 " to check for global cut information in the Header value"
             )
 
+        if self.source_dep:
+            with fits.open(self.input_irf) as hdul:
+                self.use_energy_dependent_alpha_cuts = (
+                    "AL_CUT" not in hdul["EFFECTIVE AREA"].header
+                )
+            
     def apply_srcindep_gh_cut(self):
         ''' apply gammaness cut '''
         self.data = self.event_sel.filter_cut(self.data)
 
-        if self.use_energy_dependent_cuts:
+        if self.use_energy_dependent_gh_cuts:
             self.energy_dependent_gh_cuts = QTable.read(
                 self.input_irf, hdu="GH_CUTS"
             )
@@ -238,7 +255,7 @@ class DataReductionFITSWriter(Tool):
 
             data_temp = self.event_sel.filter_cut(data_temp)
             
-            if self.use_energy_dependent_cuts:
+            if self.use_energy_dependent_gh_cuts:
                 self.energy_dependent_gh_cuts = QTable.read(
                     self.input_irf, hdu="GH_CUTS"
                 )
@@ -246,14 +263,30 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_energy_dependent_gh_cuts(
                     data_temp, self.energy_dependent_gh_cuts
                 )
+                self.log.info(
+                    "Using gamma efficiency of "
+                    f"{self.energy_dependent_gh_cuts.meta['GH_EFF']}"
+                )
             else:
                 with fits.open(self.input_irf) as hdul:
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
                     
-            with fits.open(self.input_irf) as hdul:
-                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
+            if self.use_energy_dependent_alpha_cuts:
+                self.energy_dependent_alpha_cuts = QTable.read(
+                    self.input_irf, hdu="AL_CUTS"
+                )
+                data_temp = self.cuts.apply_energy_dependent_alpha_cuts(
+                    data_temp, self.energy_dependent_alpha_cuts
+                )
+                self.log.info(
+                    "Using alpha containment region of "
+                    f'{self.energy_dependent_alpha_cuts.meta["AL_CONT"]}'
+                )
+            else:
+                with fits.open(self.input_irf) as hdul:
+                    self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
+                data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
             # set expected source positions as reco positions
             set_expected_pos_to_reco_altaz(data_temp)
@@ -262,7 +295,6 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-
 
     def start(self):
 
