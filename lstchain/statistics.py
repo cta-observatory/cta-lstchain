@@ -89,7 +89,7 @@ def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
     original_mask = values.mask.copy()
     mean = values.mean(axis=axis)
     std = values.std(axis=axis)
-    
+
     for _ in range(n_iterations):
         values.mask = original_mask | (np.abs(values - mean) >= (max_sigma * std))
         mean = values.mean(axis=axis)

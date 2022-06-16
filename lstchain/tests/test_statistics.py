@@ -81,7 +81,7 @@ def test_sigma_clipping():
 def test_sigma_clipping_no_outliers():
     from lstchain.statistics import sigma_clipped_mean_std, expected_ignored
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(0)
 
     n_events = 1_000_000
     true_mean = 20
