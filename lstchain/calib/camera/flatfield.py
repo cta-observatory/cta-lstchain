@@ -5,7 +5,7 @@ Factory for the estimation of the flat field coefficients
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Path
+from ctapipe.core.traits import  List, Path, Int
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from ctapipe.image.extractor import ImageExtractor
 from lstchain.statistics import sigma_clipped_mean_std
@@ -50,6 +50,17 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         exists=True, directory_ok=False,
         help='Path to time sampling correction file'
     ).tag(config=True)
+
+    sigma_clipping_max_sigma = Int(
+        default_value=4,
+        help="max_sigma value for the sigma clipping outlier removal",
+    ).tag(config=True)
+
+    sigma_clipping_iterations = Int(
+        default_value=5,
+        help="Number of iterations for the sigma clipping outlier removal",
+    ).tag(config=True)
+
 
     def __init__(self, subarray, **kwargs):
 
@@ -306,7 +317,12 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             mask=masked_pixels_of_sample
         )
 
-        pixel_mean, pixel_std, mask = sigma_clipped_mean_std(masked_trace_integral)
+        pixel_mean, pixel_std, _ = sigma_clipped_mean_std(
+            masked_trace_integral,
+            max_sigma=self.sigma_clipping_max_sigma,
+            n_iterations=self.sigma_clipping_iterations,
+            axis=0
+        )
 
         # median over the sample per pixel
         pixel_median = np.ma.median(masked_trace_integral, axis=0)

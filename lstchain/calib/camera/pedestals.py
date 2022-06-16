@@ -6,7 +6,7 @@ Factory for the estimation of the flat field coefficients
 import numpy as np
 from astropy import units as u
 from ctapipe.calib.camera.pedestals import PedestalCalculator
-from ctapipe.core.traits import List, Path
+from ctapipe.core.traits import List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
 
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
@@ -50,6 +50,16 @@ class PedestalIntegrator(PedestalCalculator):
         allow_none=True,
         directory_ok=False,
         help='Path to time sampling correction file',
+    ).tag(config=True)
+
+    sigma_clipping_max_sigma = Int(
+        default_value=4,
+        help="max_sigma value for the sigma clipping outlier removal",
+    ).tag(config=True)
+
+    sigma_clipping_iterations = Int(
+        default_value=5,
+        help="Number of iterations for the sigma clipping outlier removal",
     ).tag(config=True)
 
 
@@ -268,7 +278,12 @@ def calculate_pedestal_results(self,
     pixel_median = np.ma.median(masked_trace_integral, axis=0)
 
     # mean and std over the sample per pixel
-    pixel_mean, pixel_std, _ = sigma_clipped_mean_std(masked_trace_integral, axis=0)
+    pixel_mean, pixel_std, _ = sigma_clipped_mean_std(
+        masked_trace_integral,
+        max_sigma=self.sigma_clipping_max_sigma,
+        n_iterations=self.sigma_clipping_iterations,
+        axis=0
+    )
 
     # median over the camera
     median_of_pixel_median = np.ma.median(pixel_median, axis=1)
