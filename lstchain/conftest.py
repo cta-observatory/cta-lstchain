@@ -274,8 +274,6 @@ def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
     models_srcdep_path = temp_dir_simulated_srcdep_files
     file_model_energy_srcdep = models_srcdep_path / "reg_energy.sav"
     file_model_gh_sep_srcdep = models_srcdep_path / "cls_gh.sav"
-    file_model_disp_norm_srcdep = models_srcdep_path / "reg_disp_norm.sav"
-    file_model_disp_sign_srcdep = models_srcdep_path / "cls_disp_sign.sav"
     srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
 
     run_program(
@@ -293,8 +291,6 @@ def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
         "energy": file_model_energy_srcdep,
         "gh_sep": file_model_gh_sep_srcdep,
         "path": models_srcdep_path,
-        "disp_norm": file_model_disp_norm_srcdep,
-        "disp_sign": file_model_disp_sign_srcdep,
     }
 
 @pytest.fixture(scope="session")

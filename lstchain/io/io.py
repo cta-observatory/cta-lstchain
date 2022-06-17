@@ -900,6 +900,10 @@ def read_mc_dl2_to_QTable(filename):
         events_srcdep = get_srcdep_params(filename, 'on')
         events = pd.concat([events, events_srcdep], axis=1)
 
+        for k in ['reco_alt', 'reco_az']:
+            if not k in events.keys():
+                del unit_mapping[k]
+
     events = events.rename(columns=name_mapping)
 
     events = QTable.from_pandas(events)
@@ -949,6 +953,10 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     if srcdep_flag:
         data_srcdep = get_srcdep_params(filename, srcdep_pos)
         data = pd.concat([data, data_srcdep], axis=1)
+        
+        for k in ['reco_alt', 'reco_az']:
+            if not k in data.keys():
+                del unit_mapping[k]
 
     data = data.rename(columns=name_mapping)
 

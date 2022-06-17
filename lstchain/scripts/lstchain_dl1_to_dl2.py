@@ -155,26 +155,28 @@ def main():
 
         for i, k in enumerate(srcdep_assumed_positions):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
+
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
                                                    finite_params=config['energy_regression_features']
-                                                                 + config['disp_regression_features']
-                                                                 + config['particle_classification_features']
-                                                                 + config['disp_classification_features'],
-                                                   )
+                                                   + config['disp_regression_features']
+                                                   + config['particle_classification_features']
+                                                   + config['disp_classification_features'],
+                                               )
 
-            if config['disp_method'] == 'disp_vector':
+            if config['disp_method'] is not None:                
+                if config['disp_method'] == 'disp_vector':
+                    dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                     reg_disp_vector=reg_disp_vector,
+                                                     focal_length=focal_length, custom_config=config)
+                elif config['disp_method'] == 'disp_norm_sign':
+                    dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                     reg_disp_norm=reg_disp_norm,
+                                                     cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                                     custom_config=config)
+            else:
                 dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
-                                                 reg_disp_vector=reg_disp_vector,
                                                  focal_length=focal_length, custom_config=config)
-            elif config['disp_method'] == 'disp_norm_sign':
-                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
-                                                 reg_disp_norm=reg_disp_norm,
-                                                 cls_disp_sign=cls_disp_sign, focal_length=focal_length,
-                                                 custom_config=config)
-            elif config['disp_method'] is None:
-                dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy,
-                                              focal_length=focal_length, custom_config=config)
 
 
             dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)

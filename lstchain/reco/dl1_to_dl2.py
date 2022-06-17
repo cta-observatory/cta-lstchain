@@ -597,26 +597,26 @@ def apply_models(dl1,
         # Defined on the major image axis; sign is such that it is typically positive for gammas:    
         dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
         
-    if 'mc_alt_tel' in dl2.columns:
-        alt_tel = dl2['mc_alt_tel'].values
-        az_tel = dl2['mc_az_tel'].values
-    elif 'alt_tel' in dl2.columns:
-        alt_tel = dl2['alt_tel'].values
-        az_tel = dl2['az_tel'].values
-    else:
-        alt_tel = - np.pi / 2. * np.ones(len(dl2))
-        az_tel = - np.pi / 2. * np.ones(len(dl2))
+        if 'mc_alt_tel' in dl2.columns:
+            alt_tel = dl2['mc_alt_tel'].values
+            az_tel = dl2['mc_az_tel'].values
+        elif 'alt_tel' in dl2.columns:
+            alt_tel = dl2['alt_tel'].values
+            az_tel = dl2['az_tel'].values
+        else:
+            alt_tel = - np.pi / 2. * np.ones(len(dl2))
+            az_tel = - np.pi / 2. * np.ones(len(dl2))
+            
+        src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
+                                                      dl2.y.values * u.m,
+                                                      dl2.reco_disp_dx.values * u.m,
+                                                      dl2.reco_disp_dy.values * u.m,
+                                                      focal_length,
+                                                      alt_tel * u.rad,
+                                                      az_tel * u.rad)
 
-    src_pos_reco = utils.reco_source_position_sky(dl2.x.values * u.m,
-                                                  dl2.y.values * u.m,
-                                                  dl2.reco_disp_dx.values * u.m,
-                                                  dl2.reco_disp_dy.values * u.m,
-                                                  focal_length,
-                                                  alt_tel * u.rad,
-                                                  az_tel * u.rad)
-
-    dl2['reco_alt'] = src_pos_reco.alt.rad
-    dl2['reco_az'] = src_pos_reco.az.rad
+        dl2['reco_alt'] = src_pos_reco.alt.rad
+        dl2['reco_az'] = src_pos_reco.az.rad
 
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])

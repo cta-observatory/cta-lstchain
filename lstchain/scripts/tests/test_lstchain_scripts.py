@@ -182,8 +182,6 @@ def test_lstchain_mc_trainpipe(rf_models):
 
 def test_lstchain_mc_trainpipe_srcdep(rf_models_srcdep):
     assert rf_models_srcdep["energy"].is_file()
-    assert rf_models_srcdep["disp_norm"].is_file()
-    assert rf_models_srcdep["disp_sign"].is_file()
     assert rf_models_srcdep["gh_sep"].is_file()
 
 
@@ -308,10 +306,6 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "gammaness" in dl2_srcdep_df['on'].columns
     assert "reco_type" in dl2_srcdep_df['on'].columns
     assert "reco_energy" in dl2_srcdep_df['on'].columns
-    assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
-    assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
-    assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
 
 
 @pytest.mark.private_data
@@ -363,11 +357,7 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
         'skewness_from_source',
         'gammaness',
         'reco_type',
-        'reco_energy',
-        'reco_disp_dx',
-        'reco_disp_dy',
-        'reco_src_x',
-        'reco_src_y'
+        'reco_energy'
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:
