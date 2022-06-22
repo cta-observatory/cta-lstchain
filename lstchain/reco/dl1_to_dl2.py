@@ -530,16 +530,21 @@ def apply_models(dl1,
     Parameters
     ----------
     dl1: `pandas.DataFrame`
-    classifier: string or Random Forest Classifier
-        Location of the, or pre-loaded, RF for Gamma/Hadron separation
-    reg_energy: string or Random Forest Regressor
-        Location of the, or pre-loaded, RF for Energy reconstruction
-    reg_disp_vector: string or Random Forest Regressor
-        Location of the, or pre-loaded, RF for disp vector reconstruction
-    reg_disp_norm: string or Random Forest Regressor
-        Location of the, or pre-loaded, RF for disp norm reconstruction
-    cls_disp_sign: string or Random Forest Classifier
-        Location of the, or pre-loaded, RF for disp sign reconstruction
+    classifier: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
+        Path to the random forest filename or file or pre-loaded RandomForestClassifier object
+        for Gamma/Hadron separation
+    reg_energy: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for Energy reconstruction
+    reg_disp_vector: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for disp vector reconstruction
+    reg_disp_norm: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for disp norm reconstruction
+    cls_disp_sign: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
+        Path to the random forest filename or file or pre-loaded RandomForestClassifier object
+        for disp sign reconstruction
     focal_length: `astropy.unit`
     custom_config: dictionary
         Modified configuration to update the standard one
