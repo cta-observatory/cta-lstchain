@@ -130,15 +130,6 @@ class TimeWaveformFitter(TelescopeComponent):
         """
 
         geometry = self.subarray.tel[telescope_id].camera.geometry
-
-        # setup angle to distance conversion on the camera plane
-        focal_length = self.subarray.tel[telescope_id].optics.equivalent_focal_length
-        angle_dist_eq = [(u.rad, u.m, lambda x: np.tan(x) * focal_length.to_value(u.m),
-                          lambda x: np.arctan(x / focal_length.to_value(u.m))),
-                         (u.rad**2, u.m**2, lambda x: (np.tan(np.sqrt(x)) * focal_length.to_value(u.m))**2,
-                          lambda x: (np.arctan(np.sqrt(x) / focal_length.to_value(u.m)))**2)]
-        u.set_enabled_equivalencies(angle_dist_eq)
-
         unit = geometry.pix_x.unit
         pix_x = geometry.pix_x.to_value(unit)
         pix_y = geometry.pix_y.to_value(unit)
@@ -268,14 +259,21 @@ class TimeWaveformFitter(TelescopeComponent):
         return unit, fit_params
 
     def __call__(self, event, telescope_id, dl1_container):
-        self.start_parameters = None
-        self.names_parameters = None
-        unit_cam, fit_params = self.call_setup(event, telescope_id, dl1_container)
-        self.end_parameters = None
-        self.error_parameters = None
-        self.fcn = None
+        # setup angle to distance conversion on the camera plane for the current telescope
+        focal_length = self.subarray.tel[telescope_id].optics.equivalent_focal_length
+        angle_dist_eq = [(u.rad, u.m, lambda x: np.tan(x) * focal_length.to_value(u.m),
+                          lambda x: np.arctan(x / focal_length.to_value(u.m))),
+                         (u.rad**2, u.m**2, lambda x: (np.tan(np.sqrt(x)) * focal_length.to_value(u.m))**2,
+                          lambda x: (np.arctan(np.sqrt(x) / focal_length.to_value(u.m)))**2)]
+        with u.set_enabled_equivalencies(angle_dist_eq):
+            self.start_parameters = None
+            self.names_parameters = None
+            unit_cam, fit_params = self.call_setup(event, telescope_id, dl1_container)
+            self.end_parameters = None
+            self.error_parameters = None
+            self.fcn = None
 
-        return self.predict(unit_cam, fit_params)
+            return self.predict(unit_cam, fit_params)
 
     def clean_data(self, pix_x, pix_y, pix_radius, times, start_parameters, telescope_id):
         """
