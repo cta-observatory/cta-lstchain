@@ -6,7 +6,7 @@ import numpy as np
 import h5py
 from ctapipe.core import Component
 from ctapipe.core import traits
-from ctapipe.core.traits import  Float, List, Path
+from ctapipe.core.traits import  Float, Path
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
@@ -38,6 +38,8 @@ class CalibrationCalculator(Component):
     """
 
     systematic_correction_path = Path(
+        default_value=None,
+        allow_none=True,
         exists=True, directory_ok=False,
         help='Path to systematic correction file ',
     ).tag(config=True)
@@ -57,14 +59,11 @@ class CalibrationCalculator(Component):
         default_value='FlasherFlatFieldCalculator'
     )
 
-    classes = List([
-                    FlatFieldCalculator,
-                    PedestalCalculator
-                    ]
-                   + traits.classes_with_traits(FlatFieldCalculator)
-                   + traits.classes_with_traits(PedestalCalculator)
-
-                   )
+    classes = (
+        [FlatFieldCalculator, PedestalCalculator]
+        + traits.classes_with_traits(FlatFieldCalculator)
+        + traits.classes_with_traits(PedestalCalculator)
+    )
 
     def __init__(
         self,
@@ -123,7 +122,6 @@ class CalibrationCalculator(Component):
 
             except:
                 raise IOError(f"Problem in reading quadratic term file {self.systematic_correction_path}")
-
         self.log.debug(f"{self.pedestal}")
         self.log.debug(f"{self.flatfield}")
 

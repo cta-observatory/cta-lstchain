@@ -18,8 +18,8 @@ $> python lstchain_merge_muon_files.py
 import argparse
 import os
 from glob import glob
-from astropy.table import Table, vstack
 
+from astropy.table import Table, vstack
 
 parser = argparse.ArgumentParser(description='Merge fits files')
 
@@ -44,12 +44,11 @@ parser.add_argument('--run-number', '-r', action='store', type=int,
 parser.add_argument('--pattern', '-p',
                     help='Glob pattern to match files',
                     default='*.fits',
-)
-
-args = parser.parse_args()
-
+                    )
 
 def main():
+    args = parser.parse_args()
+    
     if args.run_number:
         run = f'Run{args.run_number:05d}'
         file_list = sorted(filter(
@@ -59,15 +58,13 @@ def main():
     else:
         file_list = sorted(glob(os.path.join(args.srcdir, args.pattern)))
 
-
     if not file_list:
         raise IOError(f'No muon files in {args.srcdir} with the parameters requested')
 
     tab = Table.read('{}'.format(file_list[0]), format='fits')
-    for i in range(1,len(file_list)):
+    for i in range(1, len(file_list)):
         tab2 = Table.read('{}'.format(file_list[i]), format='fits')
         tab = vstack([tab, tab2])
-
 
     if os.path.exists(args.outfile):
         raise IOError(args.outfile + ' exists, exiting.')
@@ -77,6 +74,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-    

@@ -1,20 +1,19 @@
-import tempfile
-from pathlib import Path
-
+from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
+from ctapipe.utils import get_dataset_path
+import os
 
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.scripts.tests.test_lstchain_scripts import run_program
-from ctapipe.utils import get_dataset_path
 from lstchain.tests.test_lstchain import (
+    test_calib_path,
+    test_data,
     test_drive_report,
     test_drs4_pedestal_path,
-    test_calib_path,
-    test_time_calib_path,
     test_r0_path,
     test_r0_path2,
-    test_data,
+    test_time_calib_path,
 )
 
 
@@ -33,25 +32,33 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session")
-def temp_dir():
-    """Shared temporal directory for the tests."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+def lst1_subarray():
+    return LSTEventSource.create_subarray(geometry_version=4)
 
 
 @pytest.fixture(scope="session")
-def temp_dir_simulated_files():
+def temp_dir_simulated_files(tmp_path_factory):
     """Temporal common directory for processing simulated data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("simulated_files")
+
+@pytest.fixture(scope="session")
+def temp_dir_simulated_srcdep_files(tmp_path_factory):
+    """Temporal common directory for processing simulated data for source-dependent analysis."""
+    return tmp_path_factory.mktemp("simulated_srcdep_files")
 
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
-def temp_dir_observed_files():
+def temp_dir_observed_files(tmp_path_factory):
     """Temporal common directory for processing observed data."""
-    with tempfile.TemporaryDirectory(prefix="test_lstchain") as d:
-        yield Path(d)
+    return tmp_path_factory.mktemp("observed_files")
+
+
+@pytest.mark.private_data
+@pytest.fixture(scope="session")
+def temp_dir_observed_srcdep_files(tmp_path_factory):
+    """Temporal common directory for processing observed data."""
+    return tmp_path_factory.mktemp("observed_srcdep_files")
 
 
 @pytest.fixture(scope="session")
@@ -131,13 +138,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path1
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path1
     )
 
     run_program(
@@ -159,13 +166,13 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
-            "lstchain_check_dl1",
-            "-b",
-            "--omit-pdf",
-            "--output-dir",
-            temp_dir_observed_files,
-            "--input-file",
-            dl1_output_path2
+        "lstchain_check_dl1",
+        "-b",
+        "--omit-pdf",
+        "--output-dir",
+        temp_dir_observed_files,
+        "--input-file",
+        dl1_output_path2
     )
 
     return {
@@ -198,6 +205,27 @@ def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
 
 
 @pytest.fixture(scope="session")
+def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_file, rf_models_srcdep):
+    """
+    Produce the test source-dependent dl2 file from the simulated dl1 test file
+    using the random forest test models.
+    """
+    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_gamma_test_large.h5"
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    run_program(
+        "lstchain_dl1_to_dl2",
+        "--input-file",
+        simulated_dl1_file,
+        "--path-models",
+        rf_models_srcdep["path"],
+        "--output-dir",
+        temp_dir_simulated_srcdep_files,
+        "--config",
+        srcdep_config_file,
+    )
+    return srcdep_dl2_file
+
+@pytest.fixture(scope="session")
 def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     """
     Produce a fake dl1 proton file by copying the dl2 gamma test file
@@ -217,8 +245,9 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     proton_file = simulated_dl1_file
     models_path = temp_dir_simulated_files
     file_model_energy = models_path / "reg_energy.sav"
-    file_model_disp = models_path / "reg_disp_vector.sav"
     file_model_gh_sep = models_path / "cls_gh.sav"
+    file_model_disp_norm = models_path / "reg_disp_norm.sav"
+    file_model_disp_sign = models_path / "cls_disp_sign.sav"
 
     run_program(
         "lstchain_mc_trainpipe",
@@ -231,15 +260,46 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     )
     return {
         "energy": file_model_energy,
-        "disp": file_model_disp,
         "gh_sep": file_model_gh_sep,
         "path": models_path,
+        "disp_norm": file_model_disp_norm,
+        "disp_sign": file_model_disp_sign,
     }
 
+@pytest.fixture(scope="session")
+def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+    """Produce test random forest models for source-dependent analysis."""
+    gamma_file = simulated_dl1_file
+    proton_file = simulated_dl1_file
+    models_srcdep_path = temp_dir_simulated_srcdep_files
+    file_model_energy_srcdep = models_srcdep_path / "reg_energy.sav"
+    file_model_gh_sep_srcdep = models_srcdep_path / "cls_gh.sav"
+    file_model_disp_norm_srcdep = models_srcdep_path / "reg_disp_norm.sav"
+    file_model_disp_sign_srcdep = models_srcdep_path / "cls_disp_sign.sav"
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+
+    run_program(
+        "lstchain_mc_trainpipe",
+        "--fg",
+        gamma_file,
+        "--fp",
+        proton_file,
+        "-o",
+        models_srcdep_path,
+        "-c",
+        srcdep_config_file,
+    )
+    return {
+        "energy": file_model_energy_srcdep,
+        "gh_sep": file_model_gh_sep_srcdep,
+        "path": models_srcdep_path,
+        "disp_norm": file_model_disp_norm_srcdep,
+        "disp_sign": file_model_disp_sign_srcdep,
+    }
 
 @pytest.fixture(scope="session")
 @pytest.mark.private_data
-def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
+def observed_dl2_file(temp_dir_observed_files, observed_dl1_files, rf_models):
     """Produce a dl2 file from an observed dl1 file."""
     real_data_dl2_file = temp_dir_observed_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
     run_program(
@@ -252,6 +312,26 @@ def observed_dl2_file(temp_dir_observed_files, observed_dl1_files,  rf_models):
         temp_dir_observed_files
     )
     return real_data_dl2_file
+
+
+@pytest.fixture(scope="session")
+@pytest.mark.private_data
+def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files, rf_models_srcdep):
+    """Produce a source-dependent dl2 file from an observed dl1 file."""
+    real_data_srcdep_dl2_file = temp_dir_observed_srcdep_files / (observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2"))
+    srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
+    run_program(
+        "lstchain_dl1_to_dl2",
+        "--input-file",
+        observed_dl1_files["dl1_file1"],
+        "--path-models",
+        rf_models_srcdep["path"],
+        "--output-dir",
+        temp_dir_observed_srcdep_files,
+        "--config",
+        srcdep_config_file,
+    )
+    return real_data_srcdep_dl2_file
 
 
 @pytest.fixture(scope="session")
@@ -274,3 +354,22 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
         irf_file
     )
     return irf_file
+
+
+@pytest.fixture(scope="session")
+def simulated_srcdep_irf_file(temp_dir_simulated_srcdep_files, simulated_srcdep_dl2_file):
+    """
+    Produce test source-dependent irf file from the simulated dl2 test file.
+    """
+
+    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "irf.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_srcdep_dl2_file,
+        "--output-irf-file",
+        srcdep_irf_file,
+        "--point-like",
+        "--source-dep"
+    )
+    return srcdep_irf_file

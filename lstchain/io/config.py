@@ -1,12 +1,13 @@
 import json
-import os
+from pathlib import Path
 from copy import copy
 
 __all__ = [
-    'read_configuration_file',
+    'get_cleaning_parameters',
     'get_standard_config',
+    'get_srcdep_config',
+    'read_configuration_file',
     'replace_config',
-    'get_cleaning_parameters'
 ]
 
 
@@ -22,7 +23,8 @@ def read_configuration_file(config_filename):
     -------
     Dictionnary
     """
-    assert os.path.exists(config_filename)
+    if not Path(config_filename).exists():
+        raise FileNotFoundError(f"config file {config_filename} does not exist")
 
     with open(config_filename) as json_file:
         data = json.load(json_file)
@@ -38,8 +40,36 @@ def get_standard_config():
     -------
     dict
     """
-    standard_config_file = os.path.join(os.path.dirname(__file__), "../data/lstchain_standard_config.json")
+    standard_config_file = Path(__file__).parent.joinpath("../data/lstchain_standard_config.json")
     return read_configuration_file(standard_config_file)
+
+
+def get_mc_config():
+    """
+    Load the config from the file 'data/lstchain_mc_config.json'
+
+    Returns
+    -------
+    dict
+    """
+    std_cfg = get_standard_config()
+    mc_cfg = read_configuration_file(Path(__file__).parent.joinpath("../data/lstchain_mc_config.json"))
+    std_cfg.update(mc_cfg)
+    return std_cfg
+
+
+def get_srcdep_config():
+    """
+    Load the config for source-dependent analysis from the file 'data/lstchain_src_dep_config.json'
+
+    Returns
+    -------
+    dict
+    """
+    std_cfg = get_standard_config()
+    src_dep_cfg = read_configuration_file(Path(__file__).parent.joinpath("../data/lstchain_src_dep_config.json"))
+    std_cfg.update(src_dep_cfg)
+    return std_cfg
 
 
 def replace_config(base_config, new_config):
@@ -56,11 +86,11 @@ def replace_config(base_config, new_config):
     dict
     """
     config = copy(base_config)
-
     for k in new_config.keys():
         config[k] = new_config[k]
 
     return config
+
 
 def get_cleaning_parameters(config, clean_method_name):
     """
@@ -80,3 +110,19 @@ def get_cleaning_parameters(config, clean_method_name):
     isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
     min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
+
+
+def dump_config(config, filename, overwrite=False):
+    """
+    Dump config to a json file
+
+    Parameters
+    ----------
+    config: dict
+    filename: Path
+    overwrite: bool
+    """
+    if Path(filename).exists() and not overwrite:
+        raise FileExistsError(f"File {filename} exists, use overwrite=True")
+    with open(filename, 'w') as file:
+        json.dump(config, file, indent=2)

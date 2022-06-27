@@ -2,13 +2,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from ctapipe.containers import MuonEfficiencyContainer, MuonParametersContainer
-from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe.containers import (
+    MuonEfficiencyContainer,
+    MuonParametersContainer,
+)
+from ctapipe.coordinates import (
+    CameraFrame,
+    TelescopeFrame,
+)
 from ctapipe.image.cleaning import tailcuts_clean
-from ctapipe.image.muon import MuonRingFitter
-from ctapipe.image.muon.features import ring_completeness, ring_containment
+from ctapipe.image.muon import (
+    MuonIntensityFitter,
+    MuonRingFitter
+)
+from ctapipe.image.muon.features import (
+    ring_completeness,
+    ring_containment,
+)
 
-from ctapipe.image.muon import MuonIntensityFitter
 from lstchain.image.muon import plot_muon_event
 
 __all__ = [
@@ -20,6 +31,7 @@ __all__ = [
     'pixel_coords_to_telescope',
     'radial_light_distribution',
     'tag_pix_thr',
+    'update_parameters',
 ]
 
 
@@ -27,14 +39,17 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
     """
     Get the x, y coordinates of the pixels in the telescope frame
 
-    Paramenters
-    ---------
-    geom: CameraGeometry
-    equivalent_focal_length:    Focal length of the telescope
+    Parameters
+    ----------
+    geom : `CameraGeometry`
+        Camera geometry
+    equivalent_focal_length: `float`
+        Focal length of the telescope
 
     Returns
-    ---------
-    fov_lon, fov_lat:    `floats` coordinates in  the TelescopeFrame
+    -------
+    fov_lon, fov_lat : `floats`
+        Coordinates in  the TelescopeFrame
     """
 
     camera_coord = SkyCoord(geom.pix_x, geom.pix_y,
@@ -45,24 +60,70 @@ def pixel_coords_to_telescope(geom, equivalent_focal_length):
     return tel_coord.fov_lon, tel_coord.fov_lat
 
 
+def update_parameters(config, n_pixels):
+    """
+    Create the parameters used to select good muon rings and perform the muon analysis.
+
+    Parameters
+    ----------
+    config: `dict` or None
+        Subset of parameters to be updated
+    n_pixels: `int`
+        Number of pixels of the camera
+
+    Returns
+    -------
+    params: `dict`
+        Dictionary of parameters used for the muon analysis
+
+    """
+    params = {
+        'tailcuts': [10, 5],  # Thresholds used for the tail_cut cleaning
+        'min_pix': 0.08,  # minimum fraction of the number of pixels in the ring with >0 signal
+        'min_pix_fraction_after_cleaning': 0.1,  # minimum fraction of the ring pixels that must be above tailcuts[0]
+        'min_ring_radius': 0.8 * u.deg,  # minimum ring radius
+        'max_ring_radius': 1.5 * u.deg,  # maximum ring radius
+        'max_radial_stdev': 0.1 * u.deg,  # maximum standard deviation of the light distribution along ring radius
+        'max_radial_excess_kurtosis': 1.,  # maximum excess kurtosis
+        'min_impact_parameter': 0.2,  # in fraction of mirror radius
+        'max_impact_parameter': 0.9,  # in fraction of mirror radius
+        'ring_integration_width': 0.25,  # +/- integration range along ring radius,
+                                         # in fraction of ring radius (was 0.4 until 20200326)
+        'outer_ring_width': 0.2,  # in fraction of ring radius, width of ring just outside the
+                                  # integrated muon ring, used to check pedestal bias
+        'ring_completeness_threshold': 30,  # Threshold in p.e. for pixels used in the ring completeness estimation
+    }
+    if config is not None:
+        for key in config.keys():
+            params[key] = config[key]
+    params['min_pix'] = int(n_pixels * params['min_pix'])
+
+    return params
+
+
 def fit_muon(x, y, image, geom, tailcuts):
     """
     Fit the muon ring
 
-    Paramenters
-    ---------
-    x, y:    `floats` coordinates in  the TelescopeFrame
-    image:   `np.ndarray` number of photoelectrons in each pixel
-    geom:    CameraGeometry
-    image:   `list` tail cuts for image cleaning
+    Parameters
+    ----------
+    x, y : `floats`
+        Coordinates in  the TelescopeFrame
+    image : `np.ndarray`
+        Number of photoelectrons in each pixel
+    geom : CameraGeometry
+    tailcuts :`list`
+        Tail cuts for image cleaning
 
     Returns
-    ---------
-    muonringparam: ``
-    clean_mask:    `np.ndarray` mask after cleaning
-    dist:          `np.ndarray` distance of every pixel
-                    to the center of the muon ring
-    image_clean:   `np.ndarray` image after cleaning
+    -------
+    muonringparam
+    clean_mask: `np.ndarray`
+        Mask after cleaning
+    dist: `np.ndarray`
+        Distance of every pixel to the center of the muon ring
+    image_clean: `np.ndarray`
+        Image after cleaning
     """
 
     fitter = MuonRingFitter(fit_method='kundu_chaudhuri')
@@ -95,66 +156,66 @@ def fit_muon(x, y, image, geom, tailcuts):
     return ring, clean_mask, dist, image_clean
 
 
-def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
-                       mirror_area, plot_rings, plots_path):
+def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot_rings, plots_path):
     """
     Analyze an event to fit a muon ring
 
-    Paramenters
-    ---------
-    event_id:   `int` id of the analyzed event
-    image:      `np.ndarray` number of photoelectrons in each pixel
-    geom:       CameraGeometry
-    equivalent_focal_length: `float` focal length of the telescope
-    mirror_area: `float` mirror area of the telescope in square meters
-    plot_rings: `bool` plot the muon ring
-    plots_path: `string` path to store the figures
+    Parameters
+    ----------
+    subarray: `ctapipe.instrument.subarray.SubarrayDescription`
+        Telescopes subarray
+    tel_id : `int`
+        Id of the telescope used
+    event_id : `int`
+        Id of the analyzed event
+    image : `np.ndarray`
+        Number of photoelectrons in each pixel
+    good_ring_config : `dict` or None
+        Set of parameters used to identify good muon rings to update LST-1 defaults
+    plot_rings : `bool`
+        Plot the muon ring
+    plots_path : `string`
+        Path to store the figures
 
     Returns
-    ---------
-
-    muonintensityoutput MuonEfficiencyContainer
-    dist_mask           ndarray, pixels used in ring intensity likelihood fit
-    ring_size           float, in p.e. total intensity in ring
-    size_outside_ring   float, in p.e. to check for "shower contamination"
-    muonringparam       MuonParametersContainer
-    good_ring           bool, it determines whether the ring can be used for
-                        analysis or not
-    radial_distribution dict, return of function radial_light_distribution
-    mean_pixel_charge_around_ring  float, charge "just outside" ring,
-                                   to check the possible signal extrator bias
-    muonparameters      MuonParametersContainer
-
-    TODO: several hard-coded quantities that can go into a configuration file
+    -------
+    muonintensityoutput : `MuonEfficiencyContainer`
+    dist_mask : `ndarray`
+        Pixels used in ring intensity likelihood fit
+    ring_size : `float`
+        Total intensity in ring in photoelectrons
+    size_outside_ring : `float`
+        Intensity outside the muon ting in photoelectrons
+        to check for "shower contamination"
+    muonringparam : `MuonParametersContainer`
+    good_ring : `bool`
+        It determines whether the ring can be used for analysis or not
+    radial_distribution : `dict`
+        Return of function radial_light_distribution
+    mean_pixel_charge_around_ring : float
+        Charge "just outside" ring, to check the possible signal extractor bias
+    muonparameters : `MuonParametersContainer`
     """
 
-    lst1_tel_id = 1
-    lst1_description = subarray.tels[lst1_tel_id]
-
-    tailcuts = [10, 5]
+    tel_description = subarray.tels[tel_id]
 
     cam_rad = (
-                          lst1_description.camera.geometry.guess_radius() / lst1_description.optics.equivalent_focal_length) * u.rad
+                      tel_description.camera.geometry.guess_radius() / tel_description.optics.equivalent_focal_length
+              ) * u.rad
+    geom = tel_description.camera.geometry
+    equivalent_focal_length = tel_description.optics.equivalent_focal_length
+    mirror_area = tel_description.optics.mirror_area
 
-    # some cuts for good ring selection:
-    min_pix = 148  # (8%) minimum number of pixels in the ring with >0 signal
-    min_pix_fraction_after_cleaning = 0.1  # minimum fraction of the ring pixels that must be above tailcuts[0]
-    min_ring_radius = 0.8 * u.deg  # minimum ring radius
-    max_ring_radius = 1.5 * u.deg  # maximum ring radius
-    max_radial_stdev = 0.1 * u.deg  # maximum standard deviation of the light distribution along ring radius
-    max_radial_excess_kurtosis = 1.  # maximum excess kurtosis
-    min_impact_parameter = 0.2  # in fraction of mirror radius
-    max_impact_parameter = 0.9  # in fraction of mirror radius
-    ring_integration_width = 0.25  # +/- integration range along ring radius, in fraction of ring radius (was 0.4 until 20200326)
-    outer_ring_width = 0.2  # in fraction of ring radius, width of ring just outside the integrated muon ring, used to check pedestal bias
+    # some parameters for analysis and cuts for good ring selection:
+    params = update_parameters(good_ring_config, geom.n_pixels)
 
     x, y = pixel_coords_to_telescope(geom, equivalent_focal_length)
     muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom,
-                                                            tailcuts)
+                                                            params['tailcuts'])
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
     dist_mask = np.abs(dist - muonringparam.radius
-                       ) < muonringparam.radius * ring_integration_width
+                       ) < muonringparam.radius * params['ring_integration_width']
     pix_ring = image * dist_mask
     pix_outside_ring = image * ~dist_mask
 
@@ -162,7 +223,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     dist_mask_2 = np.logical_and(~dist_mask,
                                  np.abs(dist - muonringparam.radius) <
                                  muonringparam.radius *
-                                 (ring_integration_width + outer_ring_width))
+                                 (params['ring_integration_width'] + params['outer_ring_width']))
     pix_ring_2 = image[dist_mask_2]
 
     #    nom_dist = np.sqrt(np.power(muonringparam.center_x,2)
@@ -181,13 +242,13 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
 
     # Do complicated calculations (minuit-based max likelihood ring fit) only for selected rings:
     candidate_clean_ring = all(
-        [radial_distribution['standard_dev'] < max_radial_stdev,
-         radial_distribution['excess_kurtosis'] < max_radial_excess_kurtosis,
-         (pix_ring > tailcuts[0]).sum() >
-         min_pix_fraction_after_cleaning * min_pix,
-         np.count_nonzero(pix_ring) > min_pix,
-         muonringparam.radius < max_ring_radius,
-         muonringparam.radius > min_ring_radius
+        [radial_distribution['standard_dev'] < params['max_radial_stdev'],
+         radial_distribution['excess_kurtosis'] < params['max_radial_excess_kurtosis'],
+         (pix_ring > params['tailcuts'][0]).sum() >
+         params['min_pix_fraction_after_cleaning'] * params['min_pix'],
+         np.count_nonzero(pix_ring) > params['min_pix'],
+         muonringparam.radius < params['max_ring_radius'],
+         muonringparam.radius > params['min_ring_radius']
          ])
 
     if candidate_clean_ring:
@@ -198,7 +259,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
         pedestal_stddev = 1.1 * np.ones(len(image))
 
         muonintensityoutput = \
-            intensity_fitter(1,
+            intensity_fitter(tel_id,
                              muonringparam.center_x,
                              muonringparam.center_y,
                              muonringparam.radius,
@@ -217,7 +278,7 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
             muonringparam.radius,
             muonringparam.center_x,
             muonringparam.center_y,
-            threshold=30,
+            threshold=params['ring_completeness_threshold'],
             bins=30)
 
         # No longer existing in ctapipe 0.8:
@@ -251,8 +312,8 @@ def analyze_muon_event(subarray, event_id, image, geom, equivalent_focal_length,
     # Now add the conditions based on the detailed muon ring fit:
     conditions = [
         candidate_clean_ring,
-        muonintensityoutput.impact < max_impact_parameter * mirror_radius,
-        muonintensityoutput.impact > min_impact_parameter * mirror_radius,
+        muonintensityoutput.impact < params['max_impact_parameter'] * mirror_radius,
+        muonintensityoutput.impact > params['min_impact_parameter'] * mirror_radius,
 
         # TODO: To be applied when we have decent optics.
         # muonintensityoutput.width
@@ -316,15 +377,19 @@ def muon_filter(image, thr_low=0, thr_up=1.e10):
     Tag muon with a double threshold on the image photoelectron size
     Default values apply no tagging
 
-    Paramenters
-    ---------
-    image:      `np.ndarray` number of photoelectrons in each pixel
-    thr_low: `float` lower size threshold in photoelectrons
-    thr_up: `float` upper size threshold in photoelectrons
+    Parameters
+    ----------
+    image : `np.ndarray`
+        Number of photoelectrons in each pixel
+    thr_low : `float`
+        Lower size threshold in photoelectrons
+    thr_up : `float`
+        Upper size threshold in photoelectrons
 
     Returns
-    ---------
-    `bool` it determines whether a muon was tagged or not
+    -------
+    `bool`
+        It determines whether a muon was tagged or not
 
     """
     return image.sum() > thr_low and image.sum() < thr_up
@@ -332,19 +397,24 @@ def muon_filter(image, thr_low=0, thr_up=1.e10):
 
 def tag_pix_thr(image, thr_low=50, thr_up=500, pe_thr=10):
     """
-    Tag event with a double threshold on the number of pixels above 10 photoelectrons
+    Tag event with a double threshold on the number of pixels above 10 photoelectrons.
     Default values apply elimination of pedestal and calibration events
 
-    Paramenters
-    ---------
-    image:      `np.ndarray` number of photoelectrons in each pixel
-    thr_low: `int` lower threshold for number of pixel > 10 pe
-    thr_up: `int` upper threshold for number of pixel > 10 pe
-    pe_thr: 'float' minimum number of photoelectrons for a pixel to be counted
+    Parameters
+    ----------
+    image : `np.ndarray`
+        Number of photoelectrons in each pixel
+    thr_low : `int`
+        Lower threshold for number of pixel > 10 pe
+    thr_up : `int`
+        Upper threshold for number of pixel > 10 pe
+    pe_thr : 'float'
+        Minimum number of photoelectrons for a pixel to be counted
 
     Returns
-    ---------
-    `bool` it determines whether a the event is in the given nr of pixel range
+    -------
+    `bool`
+        It determines whether an event is in the given nr of pixel range
 
     """
 
@@ -354,23 +424,25 @@ def tag_pix_thr(image, thr_low=50, thr_up=500, pe_thr=10):
 
 def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
     """
+    Calculate the radial distribution of the muon ring
 
     Parameters
     ----------
-    center_x: float
+    center_x : `float`
         Center of muon ring in the field of view from circle fitting
-    center_y: float
+    center_y : `float`
         Center of muon ring in the field of view from circle fitting
-    pixel_x: ndarray
+    pixel_x : `ndarray`
         X position of pixels in image
-    pixel_y: ndarray
+    pixel_y : `ndarray`
         Y position of pixel in image
-    image: ndarray
+    image : `ndarray`
         Amplitude of image pixels
 
     Returns
     -------
     standard_dev, skewness
+
     """
 
     if np.sum(image) == 0:
@@ -398,6 +470,19 @@ def radial_light_distribution(center_x, center_y, pixel_x, pixel_y, image):
 
 
 def create_muon_table():
+    """
+    Create the empty dictionary to include the parameters
+    of the fitted muon
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    `dict`
+    """
+
     return {'event_id': [],
             'event_time': [],
             'mc_energy': [],
@@ -433,6 +518,47 @@ def fill_muon_event(mc_energy, output_parameters, good_ring, event_id,
                     muonringparam, radial_distribution, size,
                     size_outside_ring, mean_pixel_charge_around_ring,
                     muonparameters, hg_peak_sample=np.nan, lg_peak_sample=np.nan):
+    """
+    Fill the dictionary with the parameters of a muon event
+
+    Parameters
+    ----------
+    mc_energy: `float`
+        Energy for simulated muons
+    output_parameters: `dict`
+        Empty dictionary to include the parameters
+        of the fitted muon
+    good_ring : `bool`
+        It determines whether the ring can be used for analysis or not
+    event_id : `int`
+        Id of the analyzed event
+    event_time: `float`
+        Time of the event
+    muonintensityparam: `MuonParametersContainer`
+    dist_mask : `ndarray`
+        Pixels used in ring intensity likelihood fit
+    muonringparam : `MuonParametersContainer`
+    radial_distribution : `dict`
+        Return of function radial_light_distribution
+    size : `float`
+        Total intensity in ring in photoelectrons
+    size_outside_ring : `float`
+        Intensity outside the muon ting in photoelectrons
+        to check for "shower contamination"
+    mean_pixel_charge_around_ring : float
+        Charge "just outside" ring, to check the possible signal extractor bias
+    muonparameters : `MuonParametersContainer`
+    hg_peak_sample: `np.ndarray`
+        HG sample of the peak
+    lg_peak_sample: `np.ndarray`
+        LG sample of the peak
+
+    Returns
+    -------
+    None
+
+    """
+
     output_parameters['event_id'].append(event_id)
     output_parameters['event_time'].append(event_time)
     output_parameters['mc_energy'].append(mc_energy)

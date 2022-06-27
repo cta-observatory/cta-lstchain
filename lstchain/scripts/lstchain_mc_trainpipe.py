@@ -10,66 +10,72 @@ Outputs are RF trained models
 
 Usage:
 
-$> python lst-trainpipe 
---input_file_gamma dl1_gamma_20deg_180deg_cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4_merge_test.h5 
---input-file-proton dl1_proton_20deg_180degcta-prod3-demo-2147m-LaPalma-baseline-mono_merge_test.h5 
+$> python lst-trainpipe
+--input_file_gamma dl1_gamma_20deg_180deg_cta-prod3-demo-2147m-LaPalma-baseline-mono_off0.4_merge_test.h5
+--input-file-proton dl1_proton_20deg_180degcta-prod3-demo-2147m-LaPalma-baseline-mono_merge_test.h5
 
 """
 
 import argparse
-from lstchain.reco import dl1_to_dl2
-from distutils.util import strtobool
+
 from lstchain.io.config import read_configuration_file
+from lstchain.reco import dl1_to_dl2
 
 parser = argparse.ArgumentParser(description="Train Random Forests.")
 
 # Required argument
-parser.add_argument('--input-file-gamma', '--fg', type=str,
-                    dest='gammafile',
-                    help='Path to the dl1 file of gamma events for training')
+parser.add_argument(
+    '--input-file-gamma', '--fg',
+    dest='gammafile',
+    required=True,
+    help='Path to the dl1 file of gamma events for training'
+)
 
-parser.add_argument('--input-file-proton', '--fp', type=str,
-                    dest='protonfile',
-                    help='Path to the dl1 file of proton events for training')
+parser.add_argument(
+    '--input-file-proton', '--fp',
+    dest='protonfile',
+    required=True,
+    help='Path to the dl1 file of proton events for training',
+)
 
 # Optional arguments
-parser.add_argument('--store-rf', '-s', action='store', type=lambda x: bool(strtobool(x)),
-                    dest='storerf',
-                    help='Boolean. True for storing trained models in 3 files'
-                    'Default=True, use False otherwise',
-                    default=True)
+parser.add_argument(
+    '--no-save-models',
+    dest='save_models',
+    action='store_false',
+    help='Disable storing trained models',
+)
 
-parser.add_argument('--output-dir', '-o', action='store', type=str,
-                     dest='path_models',
-                     help='Path to store the resulting RF',
-                     default='./trained_models/')
+parser.add_argument(
+    '--output-dir', '-o',
+    dest='path_models',
+    default='./trained_models/',
+    help='Path to store the resulting RF',
+)
 
-parser.add_argument('--config', '-c', action='store', type=str,
-                    dest='config_file',
-                    help='Path to a configuration file. If none is given, a standard configuration is applied',
-                    default=None
-                    )
+parser.add_argument(
+    '--config', '-c',
+    dest='config_file',
+    help='Path to a configuration file. If none is given, a standard configuration is applied',
+)
 
-
-args = parser.parse_args()
 
 def main():
+    args = parser.parse_args()
+
     #Train the models
-        
+
     config = {}
     if args.config_file is not None:
-        try:
-            config = read_configuration_file(args.config_file)
-        except("Custom configuration could not be loaded !!!"):
-            pass
+        config = read_configuration_file(args.config_file)
 
-            
-    dl1_to_dl2.build_models(args.gammafile,
-                            args.protonfile,
-                            save_models=args.storerf,
-                            path_models=args.path_models,
-                            custom_config=config,
-                            )
+    dl1_to_dl2.build_models(
+        args.gammafile,
+        args.protonfile,
+        save_models=args.save_models,
+        path_models=args.path_models,
+        custom_config=config,
+    )
 
 
 if __name__ == '__main__':

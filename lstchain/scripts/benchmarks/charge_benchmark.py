@@ -1,21 +1,26 @@
-
-
 import argparse
-import matplotlib.pyplot as plt
-from lstchain.reco import r0_to_dl1
-from lstchain.io.config import read_configuration_file, get_standard_config
-from lstchain.paths import r0_to_dl1_filename
-import ctaplot
-from ctaplot.plots.calib import plot_charge_resolution, plot_photoelectron_true_reco, plot_pixels_pe_spectrum
-from pathlib import Path
 import logging
+import os
 import sys
+from pathlib import Path
+
+import ctaplot
+import matplotlib.pyplot as plt
 import tables
 from astropy.table import Table
+from ctaplot.plots.calib import (
+    plot_charge_resolution,
+    plot_photoelectron_true_reco,
+    plot_pixels_pe_spectrum,
+)
 from matplotlib.backends.backend_pdf import PdfPages
-import os
 
-
+from lstchain.io.config import (
+    get_standard_config,
+    read_configuration_file,
+)
+from lstchain.paths import r0_to_dl1_filename
+from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
 
@@ -40,16 +45,14 @@ parser.add_argument('--config', '-c', action='store', type=Path,
                     default=None
                     )
 
-
 args = parser.parse_args()
 
 
 def main():
-
     ctaplot.set_style()
 
     output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
     output_file = output_dir / r0_to_dl1_filename(args.input_file.name)
 
     r0_to_dl1.allowed_tels = {1, 2, 3, 4}
@@ -100,6 +103,6 @@ def main():
         pdf.savefig()
         plt.close()
 
+
 if __name__ == '__main__':
     main()
-

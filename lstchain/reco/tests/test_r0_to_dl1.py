@@ -2,7 +2,6 @@ from ctapipe.containers import ArrayEventContainer
 import numpy as np
 from lstchain.reco.r0_to_dl1 import rescale_dl1_charge
 from copy import copy
-
 def test_rescale_dl1_charge():
     event = ArrayEventContainer()
     tel_ids = [1, 3]
@@ -16,3 +15,14 @@ def test_rescale_dl1_charge():
 
     for tel_id in tel_ids:
         np.testing.assert_allclose(event.dl1.tel[tel_id].image, images[tel_id]*rescaling_factor)
+
+def test_r0_to_dl1_nsb_tuning(tmp_path, mc_gamma_testfile):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    from lstchain.io import standard_config
+    import os
+    config = standard_config
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['waveform_nsb_tuning']['nsb_tuning'] = True
+    config['waveform_nsb_tuning']['spe_location'] = os.path.join(os.path.dirname(__file__),
+                                                                 '../../data/SinglePhE_ResponseInPhE_expo2Gaus.dat')
+    r0_to_dl1(mc_gamma_testfile, custom_config=standard_config, output_filename=tmp_path / "tmp.h5")

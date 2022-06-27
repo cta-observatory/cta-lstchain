@@ -29,6 +29,12 @@ GENERAL_RE = re.compile(
     r"(?:.(\d+))?"  # subrun number
 )
 
+CALIBRATION_RE = re.compile(
+    r"(?:.*)"  # prefix
+    r".Run(\d+)"  # run number
+    r"(?:.(\d+))?"  # subrun number
+)
+
 EXTENSIONS_TO_REMOVE = {
     ".fits",
     ".fits.fz",
@@ -57,6 +63,15 @@ def run_info_from_filename(filename):
         raise ValueError(f"Filename {filename} does not include pattern {GENERAL_RE}")
 
     return _parse_match(m)
+
+
+def parse_calibration_name(filename):
+    m = CALIBRATION_RE.match(os.path.basename(filename))
+    if m is None:
+        raise ValueError(f'Filename {filename} does not match patter {CALIBRATION_RE}')
+
+    run, subrun = m.groups()
+    return Run(tel_id=None, run=parse_int(run), subrun=parse_int(subrun), stream=None)
 
 
 def parse_r0_filename(filename):
@@ -212,10 +227,15 @@ def r0_to_dl1_filename(r0_path):
     return p.with_name("dl1_" + p.name + ".h5")
 
 
-def dl2_to_dl3_filename(dl2_path):
+def dl2_to_dl3_filename(dl2_path, compress=False):
     """Create the filename for a dl3 file from a given dl2 file path"""
 
     filename_dl2 = str(dl2_path).split("/")[-1]
     filename_dl3 = filename_dl2.replace("dl2", "dl3")
-    filename_dl3 = filename_dl3.replace("h5", "fits.gz")
+
+    if compress:
+        filename_dl3 = filename_dl3.replace("h5", "fits.gz")
+    else:
+        filename_dl3 = filename_dl3.replace("h5", "fits")
+
     return filename_dl3

@@ -4,16 +4,17 @@ Functions to handle custom containers for the mono reconstruction of LST1
 
 import astropy.units as u
 import numpy as np
-from astropy.units import Quantity
 from astropy.coordinates import Angle
+from astropy.units import Quantity
 from ctapipe.core import Container, Field
-from ctapipe.image import leakage_parameters as leakage
 from ctapipe.image import concentration_parameters as concentration
+from ctapipe.image import leakage_parameters as leakage
 from ctapipe.image import timing_parameters
 from ctapipe.image.morphology import number_of_islands
 from numpy import nan
 
 from ..reco.disp import disp_parameters_event
+from ..reco.utils import get_event_pos_in_camera
 
 __all__ = [
     'DL1MonitoringEventIndexContainer',
@@ -44,11 +45,11 @@ class DL1ParametersContainer(Container):
     length = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the major-axis',
                    unit=u.deg)
     length_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of length',
-                   unit=u.deg)
+                               unit=u.deg)
     width = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the minor-axis',
-                             unit=u.deg)
+                  unit=u.deg)
     width_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of width',
-                   unit=u.deg)
+                              unit=u.deg)
     psi = Field(Angle(np.nan, u.rad), 'rotation angle of ellipse', unit=u.rad)
 
     skewness = Field(np.nan, 'measure of the asymmetry')
@@ -86,12 +87,15 @@ class DL1ParametersContainer(Container):
     az_tel = Field(None, 'Telescope azimuth pointing',
                    unit=u.rad)
 
+    sin_az_tel = Field(None, 'Sin of telescope azimuth pointing, used for RF')
+
     obs_id = Field(-1, 'Observation ID')
     event_id = Field(-1, 'Event ID')
     calibration_id = Field(-1, 'ID of the employed calibration event')
     dragon_time = Field(None, 'Dragon time event trigger')
     ucts_time = Field(None, 'UCTS time event trigger')
     tib_time = Field(None, 'TIB time event trigger')
+    ucts_jump = Field(False, 'UCTS info jumped (corrected)')
 
     mc_energy = Field(None, 'Simulated Energy', unit=u.TeV)
     log_mc_energy = Field(None, 'log of simulated energy/TeV')
@@ -105,7 +109,7 @@ class DL1ParametersContainer(Container):
                            "negative for antimatter.")
     mc_az_tel = Field(None, 'Telescope MC azimuth pointing', unit=u.rad)
     mc_alt_tel = Field(None, 'Telescope MC altitude pointing', unit=u.rad)
-    mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm**2)
+    mc_x_max = Field(None, "MC Xmax value", unit=u.g / u.cm ** 2)
     mc_core_distance = Field(None, "Distance from the impact point to the telescope", unit=u.m)
 
     hadroness = Field(None, "Hadroness")
@@ -122,8 +126,8 @@ class DL1ParametersContainer(Container):
     event_type = Field(None, "event type")
 
     # info not available in data
-    #num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
-    #trig_pix_id = Field(None, "pixels involved in the camera trigger")
+    # num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
+    # trig_pix_id = Field(None, "pixels involved in the camera trigger")
 
     def fill_hillas(self, hillas):
         """
@@ -186,7 +190,7 @@ class DL1ParametersContainer(Container):
         self.disp_miss = disp.miss
 
     def set_timing_features(self, geom, image, peak_time, hillas):
-        try:    # if np.polyfit fails (e.g. len(image) < deg + 1)
+        try:  # if np.polyfit fails (e.g. len(image) < deg + 1)
             timepars = timing_parameters(geom, image, peak_time, hillas)
             self.time_gradient = timepars.slope.value
             self.intercept = timepars.intercept
@@ -219,11 +223,9 @@ class DL1ParametersContainer(Container):
         self.tel_pos_z = tel_pos[2]
 
     def set_source_camera_position(self, event, telescope):
-        source_pos = utils.get_event_pos_in_camera(event, telescope)
+        source_pos = get_event_pos_in_camera(event, telescope)
         self.src_x = source_pos[0]
         self.src_y = source_pos[1]
-
-
 
 
 class DispContainer(Container):
@@ -241,6 +243,7 @@ class DispContainer(Container):
 
 class ExtraMCInfo(Container):
     obs_id = Field(0, "MC Run Identifier")
+
 
 class ExtraImageInfo(Container):
     """ attach the tel_id """
@@ -275,7 +278,6 @@ class MetaData(Container):
     """
     Some metadata
     """
-    SOURCE_FILENAMES = Field([], "filename of the source file")
     LSTCHAIN_VERSION = Field(None, "version of lstchain")
     CTAPIPE_VERSION = Field(None, "version of ctapipe")
     CTAPIPE_IO_LST_VERSION = Field(None, "version of ctapipe_io_lst")
@@ -307,7 +309,6 @@ class LSTEventType:
 
     @staticmethod
     def is_mono(trigger_type):
-
         return trigger_type >> 0 & 1 and trigger_type != -1
 
     @staticmethod
@@ -320,11 +321,11 @@ class LSTEventType:
 
     @staticmethod
     def is_single_pe(trigger_type):
-        return trigger_type >> 3 & 1  and trigger_type != -1
+        return trigger_type >> 3 & 1 and trigger_type != -1
 
     @staticmethod
     def is_soft_trig(trigger_type):
-        return trigger_type >> 4 & 1  and trigger_type != -1
+        return trigger_type >> 4 & 1 and trigger_type != -1
 
     @staticmethod
     def is_pedestal(trigger_type):
@@ -332,11 +333,11 @@ class LSTEventType:
 
     @staticmethod
     def is_slow_control(trigger_type):
-        return trigger_type >> 6 & 1  and trigger_type != -1
+        return trigger_type >> 6 & 1 and trigger_type != -1
 
     @staticmethod
     def is_busy(trigger_type):
-        return trigger_type >> 7 & 1  and trigger_type != -1
+        return trigger_type >> 7 & 1 and trigger_type != -1
 
     @staticmethod
     def is_unknown(trigger_type):

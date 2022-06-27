@@ -21,16 +21,16 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 from ctapipe.instrument import SubarrayDescription
-from lstchain.io import standard_config, replace_config, read_configuration_file
+
+from lstchain.io import (
+    read_configuration_file,
+    replace_config,
+    standard_config,
+)
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events
 from lstchain.visualization import plot_dl2
-
-try:
-    import ctaplot
-except ImportError as e:
-    print("ctaplot not installed, some plotting function will be missing")
 
 log = logging.getLogger(__name__)
 
@@ -54,12 +54,12 @@ parser.add_argument('--input-file-proton-test', '--p-test', type=str,
                     help='path to the dl1 file of proton events for test')
 
 # Optional arguments
-
-parser.add_argument('--store-rf', '-s', action='store', type=bool,
-                    dest='storerf',
-                    help='Boolean. True for storing trained RF in 3 files'
-                         'Default=False, any user input will be considered True',
-                    default=True)
+parser.add_argument(
+    '--no-save-models',
+    dest='save_models',
+    action='store_false',
+    help='Disable storing trained models',
+)
 
 parser.add_argument('--batch', '-b', action='store', type=bool,
                     dest='batch',
@@ -77,16 +77,13 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None
                     )
 
-args = parser.parse_args()
-
 
 def main():
+    args = parser.parse_args()
+
     custom_config = {}
     if args.config_file is not None:
-        try:
-            custom_config = read_configuration_file(args.config_file)
-        except("Custom configuration could not be loaded !!!"):
-            pass
+        custom_config = read_configuration_file(args.config_file)
 
     config = replace_config(standard_config, custom_config)
 
@@ -94,10 +91,10 @@ def main():
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
 
-    reg_energy, reg_disp_vector, cls_gh = dl1_to_dl2.build_models(
+    reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = dl1_to_dl2.build_models(
         args.gammafile,
         args.protonfile,
-        save_models=args.storerf,
+        save_models=args.save_models,
         path_models=args.path_models,
         custom_config=config,
     )
@@ -111,8 +108,8 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
-                                  custom_config=config)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm, cls_disp_sign=cls_disp_sign,
+                                  focal_length=focal_length, custom_config=config)
 
     ####PLOT SOME RESULTS#####
 

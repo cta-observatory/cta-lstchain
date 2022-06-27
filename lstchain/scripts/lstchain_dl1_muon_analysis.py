@@ -3,8 +3,7 @@
 """
 Script to perform the analysis of muon events.
 
-- Inputs are a DL1a data file (pixel information is needed) and a
-calibration file
+- Inputs are a DL1a data file (pixel information is needed) and a calibration file
 - Output is a table with muon parameters (to be updated to a dataframe!)
 
 Usage:
@@ -31,7 +30,6 @@ from lstchain.image.muon import (
     tag_pix_thr,
 )
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.io.io import read_telescopes_descriptions, read_subarray_description
 from lstchain.visualization import plot_calib
 
 parser = argparse.ArgumentParser()
@@ -58,7 +56,6 @@ parser.add_argument(
     help="Path to corresponding calibration file (containing bad pixel information).",
 )
 
-
 # Optional argument
 parser.add_argument(
     "--plot-rings",
@@ -81,10 +78,10 @@ parser.add_argument(
     help="Maximum number of processed muon ring candidates",
 )
 
-args = parser.parse_args()
-
 
 def main():
+
+    args = parser.parse_args()
 
     print("input files: {}".format(args.input_file))
     print("calib file: {}".format(args.calib_file))
@@ -116,18 +113,11 @@ def main():
     for filename in filenames:
         print('Opening file', filename)
 
-        subarray_info = SubarrayDescription.from_hdf(filename)
-        geom = subarray_info.tel[lst1_tel_id].camera.geometry
-
-        subarray = read_subarray_description(filename, subarray_name='LST-1')
+        subarray = SubarrayDescription.from_hdf(filename)
 
         images = Table.read(filename, path=dl1_images_lstcam_key)['image']
-
         parameters = pd.read_hdf(filename, key=dl1_params_lstcam_key)
-        telescope_description = read_telescopes_descriptions(filename)[lst1_tel_id]
 
-        equivalent_focal_length = telescope_description.optics.equivalent_focal_length
-        mirror_area = telescope_description.optics.mirror_area
 
         # fill dummy event times with NaNs in case they do not exist (like in MC):
         if 'dragon_time' not in parameters.keys():
@@ -135,17 +125,21 @@ def main():
             dummy_times[:] = np.nan
             parameters['dragon_time'] = dummy_times
 
+        # fill MC energies with -1 in case they do not exist (like in real data):
+        if 'mc_energy' not in parameters.keys():
+            parameters['mc_energy'] = np.ones_like(parameters['event_id']) * -1
+
         for full_image, event_id, dragon_time, mc_energy in zip(
                 images, parameters['event_id'], parameters['dragon_time'], parameters['mc_energy']):
             if args.calib_file is not None:
-                image = full_image*(~bad_pixels)
+                image = full_image * (~bad_pixels)
             else:
                 image = full_image
             # print("Event {}. Number of pixels above 10 phe: {}".format(event_id,
             #                                                           np.size(image[image > 10.])))
             # if((np.size(image[image > 10.]) > 300) or (np.size(image[image > 10.]) < 50)):
             #     continue
-            if not tag_pix_thr(image): # default skips pedestal and calibration events
+            if not tag_pix_thr(image):  # default skips pedestal and calibration events
                 continue
 
             # default values apply no filtering.
@@ -157,10 +151,10 @@ def main():
                 muonintensityparam, dist_mask, size, size_outside_ring,
                 muonringparam, good_ring, radial_distribution,
                 mean_pixel_charge_around_ring, muonparameters
-            ) = analyze_muon_event(subarray,
-                event_id, image, geom, equivalent_focal_length,
-                mirror_area, args.plot_rings, args.plots_path
-            )
+            ) = analyze_muon_event(subarray, lst1_tel_id, event_id,
+                                   image, good_ring_config=None,
+                                   plot_rings=args.plot_rings, plots_path=args.plots_path
+                                   )
 
             if good_ring:
                 num_muons += 1
@@ -184,6 +178,7 @@ def main():
 
     table = Table(output_parameters)
     table.write(args.output_file, format='fits', overwrite=True)
+
 
 if __name__ == '__main__':
     main()

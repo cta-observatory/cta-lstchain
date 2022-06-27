@@ -2,7 +2,8 @@
 
 """
 Pipeline for the reconstruction of Energy, disp and gamma/hadron
-separation of events stored in a simtelarray file.
+separation of events stored in a DL1 file.
+
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
@@ -15,31 +16,33 @@ $> python lstchain_dl1_to_dl2.py
 """
 
 import argparse
-import numpy as np
 import os
-import pandas as pd
-from tables import open_file
+
 import joblib
+import numpy as np
+import pandas as pd
 from ctapipe.instrument import SubarrayDescription
-from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
-from lstchain.reco import dl1_to_dl2
+from tables import open_file
+
 from lstchain.io import (
-    read_configuration_file,
-    standard_config,
-    replace_config,
-    write_dl2_dataframe,
     get_dataset_keys,
+    get_srcdep_params,
     global_metadata,
-    write_metadata
+    read_configuration_file,
+    replace_config,
+    standard_config,
+    write_dl2_dataframe,
+    write_metadata,
 )
 from lstchain.io.io import (
+    dl1_images_lstcam_key,
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
-    dl1_images_lstcam_key,
-    dl2_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
     write_dataframe,
 )
+from lstchain.reco import dl1_to_dl2
+from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
 parser = argparse.ArgumentParser(description="DL1 to DL2")
 
@@ -66,10 +69,9 @@ parser.add_argument('--config', '-c', action='store', type=str,
                     default=None, required=False)
 
 
-args = parser.parse_args()
-
-
 def main():
+    args = parser.parse_args()
+
     custom_config = {}
     if args.config_file is not None:
         try:
@@ -95,13 +97,20 @@ def main():
             data.az_tel = - np.pi / 2.
 
     # Load the trained RF for reconstruction:
-    fileE = args.path_models + "/reg_energy.sav"
-    fileD = args.path_models + "/reg_disp_vector.sav"
-    fileH = args.path_models + "/cls_gh.sav"
+    file_reg_energy = os.path.join(args.path_models, 'reg_energy.sav')
+    reg_energy = joblib.load(file_reg_energy)
 
-    reg_energy = joblib.load(fileE)
-    reg_disp_vector = joblib.load(fileD)
-    cls_gh = joblib.load(fileH)
+    file_cls_gh = os.path.join(args.path_models, 'cls_gh.sav')
+    cls_gh = joblib.load(file_cls_gh)
+
+    if config['disp_method'] == 'disp_vector':
+        file_disp_vector = os.path.join(args.path_models, 'reg_disp_vector.sav')
+        reg_disp_vector = joblib.load(file_disp_vector)
+    elif config['disp_method'] == 'disp_norm_sign':
+        file_disp_norm = os.path.join(args.path_models, 'reg_disp_norm.sav')
+        file_disp_sign = os.path.join(args.path_models, 'cls_disp_sign.sav')
+        reg_disp_norm = joblib.load(file_disp_norm)
+        cls_disp_sign = joblib.load(file_disp_sign)
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
@@ -114,40 +123,64 @@ def main():
         data = filter_events(data,
                              filters=config["events_filters"],
                              finite_params=config['energy_regression_features']
-                             + config['disp_regression_features']
-                             + config['particle_classification_features']
-                             + config['disp_classification_features'],
+                                           + config['disp_regression_features']
+                                           + config['particle_classification_features']
+                                           + config['disp_classification_features'],
                              )
 
-        dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector, focal_length=focal_length,
-                                      custom_config=config)
+        if config['disp_method'] == 'disp_vector':
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_vector=reg_disp_vector,
+                                          focal_length=focal_length,
+                                          custom_config=config)
+        elif config['disp_method'] == 'disp_norm_sign':
+            dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
+                                          cls_disp_sign=cls_disp_sign,
+                                          focal_length=focal_length, custom_config=config)
 
     # Source-dependent analysis
     if config['source_dependent']:
-        data_srcdep = pd.read_hdf(args.input_file, key=dl1_params_src_dep_lstcam_key)
-        data_srcdep.columns = pd.MultiIndex.from_tuples(
-            [tuple(col[1:-1].replace('\'', '').replace(' ', '').split(",")) for col in data_srcdep.columns])
+
+        # if source-dependent parameters are already in dl1 data, just read those data.
+        if dl1_params_src_dep_lstcam_key in get_dataset_keys(args.input_file):
+            data_srcdep = get_srcdep_params(args.input_file)
+
+        # if not, source-dependent parameters are added now
+        else:
+            data_srcdep = pd.concat(dl1_to_dl2.get_source_dependent_parameters(
+                data, config, focal_length=focal_length), axis=1)
 
         dl2_srcdep_dict = {}
+        srcindep_keys = data.keys()
+        srcdep_assumed_positions = data_srcdep.columns.levels[0]
 
-        for i, k in enumerate(data_srcdep.columns.levels[0]):
+        for i, k in enumerate(srcdep_assumed_positions):
             data_with_srcdep_param = pd.concat([data, data_srcdep[k]], axis=1)
             data_with_srcdep_param = filter_events(data_with_srcdep_param,
                                                    filters=config["events_filters"],
-                                                   finite_params=config['regression_features'] + config[
-                                                       'classification_features'],
+                                                   finite_params=config['energy_regression_features']
+                                                                 + config['disp_regression_features']
+                                                                 + config['particle_classification_features']
+                                                                 + config['disp_classification_features'],
                                                    )
-            dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy, reg_disp_vector,
-                                             focal_length=focal_length, custom_config=config)
 
-            dl2_srcdep = dl2_df.drop(data.keys(), axis=1)
+            if config['disp_method'] == 'disp_vector':
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                 reg_disp_vector=reg_disp_vector,
+                                                 focal_length=focal_length, custom_config=config)
+            elif config['disp_method'] == 'disp_norm_sign':
+                dl2_df = dl1_to_dl2.apply_models(data_with_srcdep_param, cls_gh, reg_energy,
+                                                 reg_disp_norm=reg_disp_norm,
+                                                 cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                                 custom_config=config)
+
+            dl2_srcdep = dl2_df.drop(srcindep_keys, axis=1)
             dl2_srcdep_dict[k] = dl2_srcdep
 
             if i == 0:
-                dl2_srcindep = dl2_df.drop(data_srcdep[k].keys(), axis=1)
+                dl2_srcindep = dl2_df[srcindep_keys]
 
     os.makedirs(args.output_dir, exist_ok=True)
-    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2'))
+    output_file = os.path.join(args.output_dir, os.path.basename(args.input_file).replace('dl1', 'dl2', 1))
 
     if os.path.exists(output_file):
         raise IOError(output_file + ' exists, exiting.')
@@ -163,7 +196,7 @@ def main():
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
-    metadata = global_metadata(None, input_url=output_file)
+    metadata = global_metadata()
     write_metadata(metadata, output_file)
 
     with open_file(args.input_file, 'r') as h5in:
@@ -191,7 +224,8 @@ def main():
 
     else:
         write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)
-        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config, meta=metadata)
+        write_dataframe(pd.concat(dl2_srcdep_dict, axis=1), output_file, dl2_params_src_dep_lstcam_key, config=config,
+                        meta=metadata)
 
 
 if __name__ == '__main__':

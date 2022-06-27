@@ -15,8 +15,13 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time
 from ctapipe.containers import EventType
-from ctapipe_io_lst import (CDTS_AFTER_37201_DTYPE, CDTS_BEFORE_37201_DTYPE,
-                            DRAGON_COUNTERS_DTYPE, LSTEventSource, MultiFiles)
+from ctapipe_io_lst import (
+    CDTS_AFTER_37201_DTYPE,
+    CDTS_BEFORE_37201_DTYPE,
+    DRAGON_COUNTERS_DTYPE,
+    LSTEventSource,
+    MultiFiles,
+)
 from ctapipe_io_lst.event_time import combine_counters
 from traitlets.config import Config
 
@@ -154,6 +159,8 @@ def type_of_run(date_path, run_number, counters, n_events=500):
     filename = list_of_files[0]
 
     config = Config()
+    config.LSTEventSource.apply_drs4_corrections = False
+    config.LSTEventSource.pointing_information = False
     config.EventTimeCalculator.dragon_reference_time = int(counters["dragon_reference_time"])
     config.EventTimeCalculator.dragon_reference_counter = int(counters["dragon_reference_counter"])
     config.EventTimeCalculator.dragon_module_id = int(counters["dragon_reference_module_id"])
@@ -260,15 +267,15 @@ def main():
     """
     Build an astropy Table with run summary information and write it
     as ECSV file with the following information (one row per run):
-     - run_id
-     - number of subruns
-     - type of run (DRS4, CALI, DATA, CONF)
-     - start of the run
-     - dragon reference UCTS timestamp if available (-1 otherwise)
-     - dragon reference time source ("ucts" or "run_date")
-     - dragon_reference_module_id
-     - dragon_reference_module_index
-     - dragon_reference_counter
+    - run_id
+    - number of subruns
+    - type of run (DRS4, PEDCALIB, DATA, ERROR)
+    - start of the run
+    - dragon reference UCTS timestamp if available (-1 otherwise)
+    - dragon reference time source ("ucts" or "run_date")
+    - dragon_reference_module_id
+    - dragon_reference_module_index
+    - dragon_reference_counter
     """
 
     args = parser.parse_args()

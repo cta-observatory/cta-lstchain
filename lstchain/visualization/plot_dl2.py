@@ -11,16 +11,25 @@ import joblib
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io.misc.hdf5 import write_table_hdf5, read_table_hdf5
-from astropy.table import Table
+
+from astropy.io.misc.hdf5 import (
+    read_table_hdf5,
+    write_table_hdf5,
+)
+from astropy.table import Table, QTable
+
 from matplotlib.cm import get_cmap
 from scipy.stats import norm
 
-from ..io.config import get_standard_config, read_configuration_file
+from ..io.config import (
+    get_standard_config,
+    read_configuration_file,
+)
 
 __all__ = [
     'direction_results',
     'energy_results',
+    'plot_1d_excess',
     'plot_disp',
     'plot_disp_vector',
     'plot_energy_resolution',
@@ -28,7 +37,6 @@ __all__ = [
     'plot_importances',
     'plot_pos',
     'plot_roc_gamma',
-    'plot_1d_excess',
     'plot_wobble',
 ]
 
@@ -37,17 +45,14 @@ def plot_features(data, true_hadroness=False):
     """Plot the distribution of different features that characterize
     events, such as hillas parameters or MC data.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: pandas DataFrame
-
-true_hadroness:
-    True: True gammas and proton events are plotted (they are separated using true hadroness).
-    False: Gammas and protons are separated using reconstructed hadroness (hadro_rec)
+    true_hadroness:
+        True: True gammas and proton events are plotted (they are separated using true hadroness).
+        False: Gammas and protons are separated using reconstructed hadroness (hadro_rec).
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     # Energy distribution
     plt.subplot(331)
@@ -173,10 +178,12 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     """
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
-    ctaplot.resolution_per_energy(dl2_data.mc_energy, dl2_data.reco_energy, dl2_data.reco_energy)
-    ctaplot.plot_energy_resolution(dl2_data.mc_energy, dl2_data.reco_energy, ax=axes[0, 0], bias_correction=False)
+    ctaplot.plot_energy_resolution(dl2_data.mc_energy.values * u.TeV,
+                                   dl2_data.reco_energy.values * u.TeV,
+                                   ax=axes[0, 0], bias_correction=False)
     ctaplot.plot_energy_resolution_cta_requirement('north', ax=axes[0, 0], color='black')
-    ctaplot.plot_energy_bias(dl2_data.mc_energy, dl2_data.reco_energy, ax=axes[1, 0])
+
+    ctaplot.plot_energy_bias(dl2_data.mc_energy.values * u.TeV, dl2_data.reco_energy.values * u.TeV, ax=axes[1, 0])
     ctaplot.plot_migration_matrix(dl2_data.mc_energy.apply(np.log10),
                                   dl2_data.reco_energy.apply(np.log10),
                                   ax=axes[0, 1],
@@ -192,15 +199,17 @@ def energy_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[0, 0].label_outer()
     axes[1, 0].set_title("")
     axes[1, 0].set_ylabel("Energy bias")
-    for ax in axes.ravel(): ax.grid(which='both')
+    for ax in axes.ravel():
+        ax.grid(True, which='both')
     axes[1, 1].remove()
 
     fig.tight_layout()
 
     if points_outfile:
-        e_bins, e_res = ctaplot.energy_resolution_per_energy(dl2_data.mc_energy, dl2_data.reco_energy)
-        e_bins, e_bias = ctaplot.energy_bias(dl2_data.mc_energy, dl2_data.reco_energy)
-        write_energy_resolutions(points_outfile, e_bins * u.TeV, e_res, e_bias)
+        e_bins, e_res = ctaplot.energy_resolution_per_energy(dl2_data.mc_energy.values * u.TeV,
+                                                             dl2_data.reco_energy.values * u.TeV)
+        e_bins, e_bias = ctaplot.energy_bias(dl2_data.mc_energy.values * u.TeV, dl2_data.reco_energy.values * u.TeV)
+        write_energy_resolutions(points_outfile, e_bins, e_res, e_bias)
 
     if plot_outfile:
         fig.savefig(plot_outfile)
@@ -215,13 +224,13 @@ def write_energy_resolutions(outfile, e_bins, res, bias=None, overwrite=False, a
     Parameters
     ----------
     outfile: str
-    e_bins: `numpy.ndarray`
+    e_bins: `numpy.ndarray` or `astropy.Quantity`
     res: `np.ndarray`
     bias: `np.ndarray`
     overwrite
     append
     """
-    e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
+    e_bins_t = QTable(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
     data = res
     names = ['energy_res', 'energy_res_err_lo', 'energy_res_err_hi']
@@ -241,12 +250,12 @@ def write_angular_resolutions(outfile, e_bins, res, overwrite=False, append=True
     Parameters
     ----------
     outfile: str
-    e_bins: `numpy.ndarray`
+    e_bins: `numpy.ndarray` or `astropy.Quantity`
     res: `np.ndarray`
     overwrite
     append
     """
-    e_bins_t = Table(data=e_bins[..., np.newaxis], names=['energy_bins'])
+    e_bins_t = QTable(data=e_bins[..., np.newaxis], names=['energy_bins'])
 
     data = res
     names = ['angular_res', 'angular_res_err_lo', 'angular_res_err_hi']
@@ -276,19 +285,16 @@ def read_resolutions(filename):
 def plot_disp(data, true_hadroness=False):
     """Plot the performance of reconstructed position
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     data: pandas DataFrame
-
     true_hadroness: boolean
-    True: True gammas and proton events are plotted (they are separated
-    using true hadroness).
-    False: Gammas and protons are separated using reconstructed
-    hadroness (hadro_rec)
+        True: True gammas and proton events are plotted (they are separated
+        using true hadroness).
+        False: Gammas and protons are separated using reconstructed
+        hadroness (hadro_rec)
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     gammas = data[data[hadro] == 0]
 
@@ -363,9 +369,7 @@ def plot_pos(data, true_hadroness=False):
     False: Gammas and protons are separated using reconstructed
     hadroness (hadro_rec)
     """
-    hadro = "reco_type"
-    if true_hadroness:
-        hadro = "mc_type"
+    hadro = "mc_type" if true_hadroness else "reco_type"
 
     # True position
 
@@ -447,13 +451,10 @@ def plot_importances(model, features_names, ax=None, **kwargs):
     std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
     indices = np.argsort(importances)
 
-    ordered_features = []
-    for index in indices:
-        ordered_features = ordered_features + [features_names[index]]
-
+    ordered_features = [features_names[index] for index in indices]
     ax.set_title("Feature importances (gini index)")
 
-    ax.barh(range(len(features_names)),
+    ax.barh(ordered_features,
             importances[indices],
             xerr=std[indices],
             align="center",
@@ -461,7 +462,7 @@ def plot_importances(model, features_names, ax=None, **kwargs):
             )
 
     ax.set_yticks(range(len(features_names)))
-    ax.set_yticklabels(np.array(features_names)[indices])
+    ax.set_yticklabels(ordered_features)
     ax.grid()
 
     return ax
@@ -492,31 +493,49 @@ def plot_models_features_importances(path_models, config_file=None, axes=None, *
         config = read_configuration_file(config_file)
 
     if axes is None:
-        fig, axes = plt.subplots(1, 3, figsize=(20, 5))
+        fig, axes = plt.subplots(2, 2, figsize=(20, 20))
     else:
-        fig = axes[0].get_figure()
+        fig = axes.ravel()[0].get_figure()
 
     fig.suptitle('Features importances')
 
     ### Regression models ###
     energy_reg_features_names = config['energy_regression_features']
     disp_reg_features_names = config['disp_regression_features']
+    disp_clf_features_names = config['disp_classification_features']
 
     energy = joblib.load(os.path.join(path_models, "reg_energy.sav"))
-    disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
 
-    plot_importances(disp, disp_reg_features_names, ax=axes[0], **kwargs)
-    axes[0].set_title("disp")
+    if config['disp_method'] == 'disp_vector':
+        ax = axes[0, 0]
+        disp = joblib.load(os.path.join(path_models, "reg_disp_vector.sav"))
+        plot_importances(disp, disp_reg_features_names, ax=ax, **kwargs)
+        ax.set_title("disp vector")
+        ax = axes[0, 1]
+        ax.axis("off")
 
-    plot_importances(energy, energy_reg_features_names, ax=axes[1], **kwargs)
-    axes[1].set_title("energy")
+    elif config['disp_method'] == 'disp_norm_sign':
+        disp_norm = joblib.load(os.path.join(path_models, "reg_disp_norm.sav"))
+        disp_sign = joblib.load(os.path.join(path_models, "cls_disp_sign.sav"))
+
+        ax = axes[0, 0]
+        plot_importances(disp_norm, disp_reg_features_names, ax=ax, **kwargs)
+        ax.set_title("disp norm")
+        ax = axes[0, 1]
+        plot_importances(disp_sign, disp_clf_features_names, ax=ax, **kwargs)
+        ax.set_title("disp sign")
+
+    ax = axes[1, 0]
+    plot_importances(energy, energy_reg_features_names, ax=ax, **kwargs)
+    ax.set_title("energy")
 
     ### Classification model ###
     clf_features_names = config['particle_classification_features']
     clf = joblib.load(os.path.join(path_models, "cls_gh.sav"))
 
-    plot_importances(clf, clf_features_names, ax=axes[2], **kwargs)
-    axes[2].set_title("classification")
+    ax = axes[1, 1]
+    plot_importances(clf, clf_features_names, ax=ax, **kwargs)
+    ax.set_title("classification")
 
     fig.tight_layout()
 
@@ -563,7 +582,7 @@ def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_nor
 
     Parameters
     ----------
-   dl2_data: `pandas.DataFrame`
+    dl2_data: `pandas.DataFrame`
         Reconstructed MC events at DL2+ level.
     ax: `matplotlib.pyplot.axes` or None
     bias_correction: `bool`
@@ -577,8 +596,8 @@ def plot_energy_resolution(dl2_data, ax=None, bias_correction=False, cta_req_nor
     ax: `matplotlib.pyplot.axes`
     """
 
-    ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy,
-                                        dl2_data.reco_energy,
+    ax = ctaplot.plot_energy_resolution(dl2_data.mc_energy.values * u.TeV,
+                                        dl2_data.reco_energy.values * u.TeV,
                                         ax=ax,
                                         bias_correction=bias_correction,
                                         **kwargs,
@@ -610,11 +629,11 @@ def plot_angular_resolution(dl2_data, ax=None, bias_correction=False, cta_req_no
     ax: `matplotlib.pyplot.axes`
     """
 
-    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt,
-                                                    dl2_data.reco_az,
-                                                    dl2_data.mc_alt,
-                                                    dl2_data.mc_az,
-                                                    dl2_data.reco_energy,
+    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                                    dl2_data.reco_alt.values * u.rad,
+                                                    dl2_data.mc_az.values * u.rad,
+                                                    dl2_data.reco_az.values * u.rad,
+                                                    dl2_data.reco_energy.values * u.TeV,
                                                     ax=ax,
                                                     bias_correction=bias_correction,
                                                     **kwargs
@@ -644,21 +663,21 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
-    ax = ctaplot.plot_theta2(dl2_data.reco_alt,
-                             dl2_data.reco_az,
-                             dl2_data.mc_alt,
-                             dl2_data.mc_az,
+    ax = ctaplot.plot_theta2(dl2_data.mc_alt.values * u.rad,
+                             dl2_data.reco_alt.values * u.rad,
+                             dl2_data.mc_az.values * u.rad,
+                             dl2_data.reco_az.values * u.rad,
                              ax=axes[0, 0],
                              bins=100,
                              range=(0, 1),
                              )
     ax.grid()
 
-    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt,
-                                               dl2_data.reco_az,
-                                               dl2_data.mc_alt,
-                                               dl2_data.mc_az,
-                                               dl2_data.reco_energy,
+    ctaplot.plot_angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                               dl2_data.reco_alt.values * u.rad,
+                                               dl2_data.mc_az.values * u.rad,
+                                               dl2_data.reco_az.values * u.rad,
+                                               dl2_data.reco_energy.values * u.TeV,
                                                ax=axes[0, 1],
                                                )
 
@@ -666,8 +685,8 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[0, 1].grid()
     axes[0, 1].legend()
 
-    ctaplot.plot_migration_matrix(dl2_data.mc_alt,
-                                  dl2_data.reco_alt,
+    ctaplot.plot_migration_matrix(dl2_data.mc_alt.values * u.rad,
+                                  dl2_data.reco_alt.values * u.rad,
                                   ax=axes[1, 0],
                                   colorbar=True,
                                   xy_line=True,
@@ -677,8 +696,8 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     axes[1, 0].set_xlabel('simu alt [rad]')
     axes[1, 0].set_ylabel('reco alt [rad]')
 
-    ctaplot.plot_migration_matrix(dl2_data.mc_az,
-                                  dl2_data.reco_az,
+    ctaplot.plot_migration_matrix(dl2_data.mc_az.values * u.rad,
+                                  dl2_data.reco_az.values * u.rad,
                                   ax=axes[1, 1],
                                   colorbar=True,
                                   xy_line=True,
@@ -691,11 +710,11 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     fig.tight_layout()
 
     if points_outfile:
-        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.reco_alt,
-                                                                dl2_data.reco_az,
-                                                                dl2_data.mc_alt,
-                                                                dl2_data.mc_az,
-                                                                dl2_data.reco_energy,
+        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                                                dl2_data.reco_alt.values * u.rad,
+                                                                dl2_data.mc_az.values * u.rad,
+                                                                dl2_data.reco_az.values * u.rad,
+                                                                dl2_data.reco_energy.values * u.TeV,
                                                                 )
 
         write_angular_resolutions(points_outfile, e_bins * u.TeV, ang_res * u.rad)

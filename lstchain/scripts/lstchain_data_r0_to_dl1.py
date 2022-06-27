@@ -12,7 +12,7 @@ Usage:
 $> python lstchain_data_r0_to_dl1.py
 --input-file LST-1.1.Run02030.0000.fits.fz
 --output-dir ./
---pedestal-file drs4_pedestal.Run2028.0000.fits
+--pedestal-file drs4_pedestal.Run2028.0000.h5
 --calibration-file calibration.Run2029.0000.hdf5
 --time-calibration-file time_calibration.Run2029.0000.hdf5
 
@@ -23,9 +23,13 @@ import logging
 import sys
 from pathlib import Path
 
-from lstchain.io import  standard_config
+from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from lstchain.paths import (
+    parse_r0_filename,
+    r0_to_dl1_filename,
+    run_to_dl1_filename,
+)
 from lstchain.reco import r0_to_dl1
 
 log = logging.getLogger(__name__)
@@ -61,6 +65,11 @@ parser.add_argument(
 parser.add_argument(
     '--time-calibration-file', '-t', type=Path,
     help='Path to a calibration file for pulse time correction'
+)
+
+parser.add_argument(
+    '--systematic-correction-file', '--systematics', type=Path,
+    help='Path to the file with the calibration systematics corrections'
 )
 
 parser.add_argument(
@@ -114,12 +123,32 @@ parser.add_argument(
     help='Maximum number of events to be processed.',
 )
 
-args = parser.parse_args()
+parser.add_argument(
+    '--pedestal-ids-path', type=Path,
+    help='Path to the file containing the event ids of interleaved pedestals',
+)
+
+parser.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+parser.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
 
 
 def main():
+    args = parser.parse_args()
+
     output_dir = args.output_dir.absolute()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     if not args.input_file.is_file():
         log.error('Input file does not exist or is not a file')
@@ -169,6 +198,8 @@ def main():
 
     if args.pointing_file is not None:
         lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
+    if args.pedestal_ids_path is not None:
+        lst_event_source['pedestal_ids_path'] = args.pedestal_ids_path
 
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:
@@ -178,13 +209,17 @@ def main():
     if args.time_calibration_file is not None:
         lst_r0_corrections['drs4_time_calibration_path'] = args.time_calibration_file
 
+    calib_config = config[config['calibration_product']]
+    if args.systematic_correction_file is not None:
+        calib_config['systematic_correction_path'] = args.systematic_correction_file
+
+    lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,
         output_filename=output_filename,
         custom_config=config,
     )
-
 
 
 if __name__ == '__main__':

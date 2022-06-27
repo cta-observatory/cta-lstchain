@@ -5,17 +5,25 @@ import pandas as pd
 import pytest
 import tables
 from astropy.table import Table
+from ctapipe.instrument import SubarrayDescription
 
 
 @pytest.fixture
 def merged_h5file(tmp_path, simulated_dl1_file):
-    """Produce a smart merged h5 file from simulated dl1 files."""
-    from lstchain.io.io import smart_merge_h5files
+    """Produce a merged h5 file from simulated dl1 files."""
+    from lstchain.io.io import auto_merge_h5files
+
+    subarray_before = SubarrayDescription.from_hdf(simulated_dl1_file)
 
     merged_dl1_file = tmp_path / "dl1_merged.h5"
-    smart_merge_h5files(
+    auto_merge_h5files(
         [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file
     )
+
+    subarray_merged = SubarrayDescription.from_hdf(merged_dl1_file)
+
+    # check that subarray name is correctly retained
+    assert subarray_before.name == subarray_merged.name
     return merged_dl1_file
 
 
@@ -32,7 +40,7 @@ def test_write_dataframe():
     config = config.get_standard_config()
 
     with tempfile.NamedTemporaryFile() as f:
-        meta = global_metadata(None, input_url=f.name)
+        meta = global_metadata()
         write_dataframe(df, f.name, "data/awesome_table", config=config, meta=meta)
 
         with tables.open_file(f.name) as h5_file:
@@ -82,7 +90,6 @@ def test_write_dataframe_index():
             np.testing.assert_array_equal(table["event_id"], df.index)
 
 
-@pytest.mark.run(after="test_apply_models")
 def test_write_dl2_dataframe(tmp_path, simulated_dl2_file):
     from lstchain.io.io import dl2_params_lstcam_key
     from lstchain.io import write_dl2_dataframe
@@ -91,7 +98,6 @@ def test_write_dl2_dataframe(tmp_path, simulated_dl2_file):
     write_dl2_dataframe(dl2, tmp_path / "dl2_test.h5")
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_merging_check(simulated_dl1_file):
     from lstchain.io.io import merging_check
 
@@ -101,12 +107,14 @@ def test_merging_check(simulated_dl1_file):
     assert merging_check([dl1_file, dl1_file]) == [dl1_file, dl1_file]
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
-def test_smart_merge_h5files(merged_h5file):
+def test_merge_h5files(merged_h5file):
     assert merged_h5file.is_file()
 
+    # check source filenames is properly written
+    with tables.open_file(merged_h5file) as file:
+        assert len(file.root.source_filenames.filenames) == 2
 
-@pytest.mark.run(after="test_r0_to_dl1")
+
 def test_read_simu_info_hdf5(simulated_dl1_file):
     from lstchain.io.io import read_simu_info_hdf5
 
@@ -116,7 +124,6 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
     assert mcheader.num_showers == 20000
 
 
-@pytest.mark.run(after="test_smart_merge_h5files")
 def test_read_simu_info_merged_hdf5(merged_h5file):
     from lstchain.io.io import read_simu_info_merged_hdf5
 
@@ -126,7 +133,6 @@ def test_read_simu_info_merged_hdf5(merged_h5file):
     assert mcheader.num_showers == 40000
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
 def test_trigger_type_in_dl1_params(simulated_dl1_file):
     from lstchain.io.io import dl1_params_lstcam_key
 
@@ -134,14 +140,15 @@ def test_trigger_type_in_dl1_params(simulated_dl1_file):
     assert "trigger_type" in params.columns
 
 
-@pytest.mark.run(after="test_r0_to_dl1")
-def test_read_subarray_description(mc_gamma_testfile, simulated_dl1_file):
-    from lstchain.io.io import read_subarray_description
-    from ctapipe.io import EventSource
+def test_extract_simulation_nsb(mc_gamma_testfile):
+    from lstchain.io.io import extract_simulation_nsb
+    nsb = extract_simulation_nsb(mc_gamma_testfile)
+    assert np.isclose(nsb[0], 0.317, rtol=0.1)
+    assert np.isclose(nsb[1], 0.276, rtol=0.1)
 
-    source = EventSource(mc_gamma_testfile)
-    dl1_subarray = read_subarray_description(simulated_dl1_file)
-    dl1_subarray.peek()
-    dl1_subarray.info()
-    assert len(dl1_subarray.tels) == len(source.subarray.tels)
-    assert (dl1_subarray.to_table() == source.subarray.to_table()).all()
+
+def test_check_mc_type(simulated_dl1_file):
+    from lstchain.io.io import check_mc_type
+
+    mc_type = check_mc_type(simulated_dl1_file)
+    assert mc_type == 'diffuse'
