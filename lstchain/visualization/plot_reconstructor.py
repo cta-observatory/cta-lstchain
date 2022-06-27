@@ -44,9 +44,15 @@ def plot_debug(fitter, event, telescope_id, dl1_container, identifier):
     plot_event(fitter, image, geometry, save=True, ids=identifier)
     plot_residual(fitter, image, geometry, save=True, ids=identifier)
     plot_model(fitter, geometry, save=True, ids=identifier)
-    _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
-    for params in fitter.start_parameters.keys():
-        plot_likelihood(fitter, fit_params, params, save=True, ids=identifier)
+    focal_length = fitter.subarray.tel[telescope_id].optics.equivalent_focal_length
+    angle_dist_eq = [(u.rad, u.m, lambda x: np.tan(x) * focal_length.to_value(u.m),
+                      lambda x: np.arctan(x / focal_length.to_value(u.m))),
+                     (u.rad**2, u.m**2, lambda x: (np.tan(np.sqrt(x)) * focal_length.to_value(u.m))**2,
+                      lambda x: (np.arctan(np.sqrt(x) / focal_length.to_value(u.m)))**2)]
+    with u.set_enabled_equivalencies(angle_dist_eq):
+        _, fit_params = fitter.call_setup(event, telescope_id, dl1_container)
+        for params in fitter.start_parameters.keys():
+            plot_likelihood(fitter, fit_params, params, save=True, ids=identifier)
     plot_likelihood(fitter, fit_params, 'x_cm', 'y_cm', save=True, ids=identifier)
 
     if fitter.verbose == 3:
