@@ -169,7 +169,7 @@ def test_build_models(simulated_dl1_file, rf_models):
         custom_config=custom_config
     )
 
-    _, _, _, _ = build_models(
+    build_models(
         infile,
         infile,
         save_models=True,
