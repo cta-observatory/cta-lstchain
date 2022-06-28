@@ -54,7 +54,6 @@ parser.add_argument('--input-files', '-f',
                     nargs='+',
                     dest='input_files',
                     help='Path (or list of paths) to a DL1 HDF5 file',
-                    default=None,
                     required=True)
 
 parser.add_argument('--path-models', '-p',
