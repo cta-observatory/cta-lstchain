@@ -269,6 +269,7 @@ def test_merge_datacheck_files(temp_dir_observed_files):
 def test_lstchain_merged_dl1_to_dl2(
     temp_dir_simulated_files, simulated_dl1_file, merged_simulated_dl1_file, rf_models
 ):
+    simulated_dl1_file = simulated_dl1_file.parent.joinpath('another_dl1.h5').symlink_to(simulated_dl1_file)
     output_file_1 = simulated_dl1_file.with_name(
         simulated_dl1_file.name.replace("dl1", "dl2")
     )
