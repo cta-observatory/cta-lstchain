@@ -20,16 +20,18 @@ def merged_h5file(tmp_path, simulated_dl1_file):
         [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file
     )
 
+    merged_dl1_file_ = tmp_path / "dl1_merged_nocheck.h5"
+    auto_merge_h5files(
+        [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file_, run_checks=False
+    )
+
     subarray_merged = SubarrayDescription.from_hdf(merged_dl1_file)
 
     # check that subarray name is correctly retained
     assert subarray_before.name == subarray_merged.name
     return merged_dl1_file
     
-    merged_dl1_file_ = tmp_path / "dl1_merged_nocheck.h5"
-    auto_merge_h5files(
-        [simulated_dl1_file, simulated_dl1_file], output_filename=merged_dl1_file_, run_checks=False
-    )
+
 
 
 def test_write_dataframe():
