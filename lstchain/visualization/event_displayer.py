@@ -8,11 +8,11 @@ import os
 import glob
 import tables
 
-from lstchain.reco.utils import get_effective_time, add_delta_t_key
+#from lstchain.reco.utils import get_effective_time, add_delta_t_key
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.visualization import CameraDisplay
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.instrument import CameraGeometry
+#from ctapipe.instrument import CameraGeometry
 from ctapipe.io import EventSource
 
 
@@ -206,7 +206,7 @@ def plot(      array_ids,                     #array with the ID's of the events
             basic_plot(N)        
 
         #second image of times
-        ax2=plt.subplot(1,2,2)
+        plt.subplot(1,2,2)
 
         basic_plot(N,'time')
 
@@ -231,7 +231,7 @@ def plot(      array_ids,                     #array with the ID's of the events
     #plot parameters in a context to not affect the before defined parameters
     with plt.rc_context(rc={'figure.figsize':(10,9),
                             'font.size':17,
-                            'mathtext.fontset':'custom',
+#                            'mathtext.fontset':'custom',
                             'mathtext.rm':'Bitstream Vera Sans',
                             'mathtext.it':'Bitstream Vera Sans:italic',
                             'mathtext.bf':'Bitstream Vera Sans:bold',
@@ -265,9 +265,9 @@ def plot(      array_ids,                     #array with the ID's of the events
             for data_file in data_files:
                 dfDL1 = pd.read_hdf(data_file, dl1_parameters)
                 dummy.append(dfDL1)
-            data_parameters = pd.concat(dummy, ignore_index=True)
+            # data_parameters = pd.concat(dummy, ignore_index=True)
             subarray_info = SubarrayDescription.from_hdf(data_files[0])
-            focal_length = subarray_info.tel[1].optics.equivalent_focal_length
+            # focal_length = subarray_info.tel[1].optics.equivalent_focal_length
             camera_geom = subarray_info.tel[1].camera.geometry
             dummy1 = []
             dummy2 = []
@@ -334,14 +334,14 @@ def animate(   array_ids,                     #array with the ID's of the events
     run_number=config[1]
     subrun_events=config[2]
     dl2_directory=config[3]
-    dl1_parameters=config[4]
+    # dl1_parameters=config[4]
     dl2_parameters=config[5]
-    dl1_directory=config[6]
+    # dl1_directory=config[6]
     R0_directory=config[7]
-    calibration_directory = config[8]
-    drs4_pedestal_path = config[9]
-    calib_path = config[10]
-    time_calib_path = config[11]
+    # calibration_directory = config[8]
+    # drs4_pedestal_path = config[9]
+    # calib_path = config[10]
+    # time_calib_path = config[11]
     configuration=config[12]
     
     #################################################
@@ -424,7 +424,7 @@ def animate(   array_ids,                     #array with the ID's of the events
     #plot parameters in a context to not affect the before defined parameters
     with plt.rc_context(rc={'figure.figsize':(10,9),
                             'font.size':17,
-                            'mathtext.fontset':'custom',
+                            # 'mathtext.fontset':'custom',
                             'mathtext.rm':'Bitstream Vera Sans',
                             'mathtext.it':'Bitstream Vera Sans:italic',
                             'mathtext.bf':'Bitstream Vera Sans:bold',
@@ -597,7 +597,7 @@ def search( config,                         #configuration data
     if gamma_like==True:
         sort='gammaness'
 
-        inflim_gammanness=0.83
+        # inflim_gammanness=0.83
         inflim_intensity=1200,
 
     #muonlike events
