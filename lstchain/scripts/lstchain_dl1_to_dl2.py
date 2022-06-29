@@ -44,8 +44,8 @@ from lstchain.io.io import (
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
-parser = argparse.ArgumentParser(description="Run the DL1 to DL2 step, applying prediction from the trained models. "
-                                 "Run the script with --help to see the options.")
+parser = argparse.ArgumentParser(description="""Run the DL1 to DL2 step, applying prediction from the trained models.
+                                 Run the script with --help to see the options.""")
 
 # Required arguments
 parser.add_argument('--input-files', '-f',
