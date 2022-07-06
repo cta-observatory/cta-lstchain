@@ -82,6 +82,10 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
         super().__init__(subarray, **kwargs)
 
+        #FIXME: workaround for bug in ctapipe 0.14, remove when updating to 0.15
+        if self.parent is not None:
+            self.log = self.parent.log.getChild(self.__class__.__name__)
+
         self.log.info("Used events statistics : %d", self.sample_size)
 
         # members to keep state in calculate_relative_gain()
