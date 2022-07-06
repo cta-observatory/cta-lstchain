@@ -78,6 +78,8 @@ nitpick_ignore = [
     # ("py:class", "ctapipe.core.tool.Tool"),
     # ("py:class", "ctapipe.core.component.Component"),
     # ("py:class", "ctapipe.core.container.Container"),
+    ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
+    ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
 ]
 
 # The suffix(es) of source filenames.

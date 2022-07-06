@@ -6,3 +6,4 @@ API Docs
   :glob:
 
   */index
+  ctapipe_compat
