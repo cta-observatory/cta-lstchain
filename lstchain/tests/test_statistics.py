@@ -75,7 +75,7 @@ def test_sigma_clipping():
 
     assert np.allclose(mean, true_mean, rtol=0.01)
     assert np.allclose(std, true_std, rtol=0.1)
-    assert (mask[outliers] == False).all()
+    assert (mask[outliers] == True).all()
 
 
 def test_sigma_clipping_no_outliers():
@@ -93,7 +93,7 @@ def test_sigma_clipping_no_outliers():
             mean, std, mask = sigma_clipped_mean_std(
                 values, max_sigma=max_sigma, n_iterations=n_iterations,
             )
-            ignored = np.count_nonzero(~mask) / mask.size
+            ignored = np.count_nonzero(mask) / mask.size
             expected = expected_ignored(max_sigma, n_iterations)
 
             assert np.allclose(mean, true_mean, rtol=0.01), f'{max_sigma}, {n_iterations}'
@@ -127,4 +127,4 @@ def test_sigma_clipping_masked():
 
     assert np.allclose(mean, true_mean, rtol=0.01)
     assert np.allclose(std, true_std, rtol=0.1)
-    assert (mask[outliers] == False).all()
+    assert (mask[outliers] == True).all()

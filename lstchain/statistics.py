@@ -98,7 +98,7 @@ def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
     # correct std for bias introduced by clipping
     std /= expected_std(max_sigma, n_iterations)
 
-    return mean, std, ~values.mask
+    return mean, std, values.mask
 
 
 def expected_std(max_sigma, n_iterations):

@@ -318,7 +318,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             mask=masked_pixels_of_sample
         )
 
-        pixel_mean, pixel_std, used_values = sigma_clipped_mean_std(
+        # mean and std over the sample per pixel
+        pixel_mean, pixel_std, unused_values = sigma_clipped_mean_std(
             masked_trace_integral,
             max_sigma=self.sigma_clipping_max_sigma,
             n_iterations=self.sigma_clipping_iterations,
@@ -326,8 +327,11 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         )
 
         # only warn for values discard in the sigma clipping, not those from before
-        outliers = (~used_values) & (~masked_trace_integral.mask)
+        outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "flatfield")
+
+        # ignore outliers identified by sigma clipping also for following operations
+        masked_trace_integral.mask = unused_values
 
         # median over the sample per pixel
         pixel_median = np.ma.median(masked_trace_integral, axis=0)
