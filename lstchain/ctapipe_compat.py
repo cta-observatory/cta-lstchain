@@ -17,24 +17,24 @@ from ctapipe.calib.camera.flatfield import FlatFieldCalculator as UpstreamFlatFi
 # issue: https://github.com/cta-observatory/ctapipe/issues/1882
 # Release with fix: https://github.com/cta-observatory/ctapipe/releases/tag/v0.15.0
 class Component(UpstreamComponent):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         if self.parent is not None:
             self.log = self.parent.log.getChild(self.__class__.__name__)
 
 
 class PedestalCalculator(UpstreamPedestalCalculator):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         if self.parent is not None:
             self.log = self.parent.log.getChild(self.__class__.__name__)
 
 
 class FlatFieldCalculator(UpstreamFlatFieldCalculator):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         if self.parent is not None:
             self.log = self.parent.log.getChild(self.__class__.__name__)
