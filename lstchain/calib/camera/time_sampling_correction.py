@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 
 
-from ctapipe.core import Component
+from lstchain.ctapipe_compat import Component
 from ctapipe.core.traits import Path
 
 __all__ = [

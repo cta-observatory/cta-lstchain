@@ -3,9 +3,10 @@ import operator
 import astropy.units as u
 
 from ctapipe.containers import EventType
-from ctapipe.core import Component
 from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
+
+from lstchain.ctapipe_compat import Component
 
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut

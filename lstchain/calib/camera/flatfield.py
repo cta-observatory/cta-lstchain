@@ -4,7 +4,7 @@ Factory for the estimation of the flat field coefficients
 
 import numpy as np
 from astropy import units as u
-from ctapipe.calib.camera.flatfield import FlatFieldCalculator
+from lstchain.ctapipe_compat import FlatFieldCalculator
 from ctapipe.core.traits import  List, Path, Int
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from ctapipe.image.extractor import ImageExtractor
@@ -81,10 +81,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         """
         super().__init__(subarray, **kwargs)
-
-        #FIXME: workaround for bug in ctapipe 0.14, remove when updating to 0.15
-        if self.parent is not None:
-            self.log = self.parent.log.getChild(self.__class__.__name__)
 
         self.log.info("Used events statistics : %d", self.sample_size)
 

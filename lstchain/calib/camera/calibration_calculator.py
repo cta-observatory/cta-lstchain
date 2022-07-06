@@ -4,7 +4,7 @@ Component for the estimation of the calibration coefficients  events
 
 import numpy as np
 import h5py
-from ctapipe.core import Component
+from lstchain.ctapipe_compat import Component
 from ctapipe.core import traits
 from ctapipe.core.traits import  Float, Path
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
@@ -91,10 +91,6 @@ class CalibrationCalculator(Component):
         """
 
         super().__init__(parent=parent, config=config,**kwargs)
-
-        #FIXME: workaround for bug in ctapipe 0.14, remove when updating to 0.15
-        if self.parent is not None:
-            self.log = self.parent.log.getChild(self.__class__.__name__)
 
         if self.squared_excess_noise_factor<=0:
             msg="Argument squared_excess_noise_factor must have a positive value"
