@@ -143,6 +143,11 @@ parser.add_argument(
     )
 )
 
+parser.add_argument(
+    '--default-trigger-type',
+    help='Alias for LSTEventSource.default_trigger_type, can be set to "tib" for runs with UCTS problems.',
+)
+
 
 def main():
     args = parser.parse_args()
@@ -200,6 +205,9 @@ def main():
         lst_event_source['PointingSource']['drive_report_path'] = args.pointing_file
     if args.pedestal_ids_path is not None:
         lst_event_source['pedestal_ids_path'] = args.pedestal_ids_path
+
+    if args.default_trigger_type is not None:
+        lst_event_source["default_trigger_type"] = args.default_trigger_type
 
     lst_r0_corrections = lst_event_source['LSTR0Corrections']
     if args.pedestal_file is not None:
