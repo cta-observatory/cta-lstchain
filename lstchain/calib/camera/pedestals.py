@@ -267,7 +267,6 @@ class PedestalIntegrator(PedestalCalculator):
             masked_trace_integral,
             max_sigma=self.sigma_clipping_max_sigma,
             n_iterations=self.sigma_clipping_iterations,
-            axis=0
         )
 
         # only warn for values discard in the sigma clipping, not those from before

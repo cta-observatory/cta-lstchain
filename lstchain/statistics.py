@@ -70,7 +70,7 @@ class OnlineStats:
 
 
 
-def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
+def sigma_clipped_mean_std(values, max_sigma=4, n_iterations=5):
     '''
     Compute robust estimates of mean and std via sigma clipping
 
@@ -86,17 +86,29 @@ def sigma_clipped_mean_std(values, axis=0, max_sigma=4, n_iterations=5):
         mask = np.zeros(values.shape, dtype=bool)
         values = np.ma.array(values, mask=mask, copy=True)
 
+    squeeze = False
+    if values.ndim == 1:
+        squeeze = True
+        values = np.ma.array(values, ndmin=2).T
+
     original_mask = values.mask.copy()
-    mean = values.mean(axis=axis)
-    std = values.std(axis=axis)
+    mean = values.mean(axis=0)
+    std = values.std(axis=0)
+
+    valid_std = std > 0
 
     for _ in range(n_iterations):
-        values.mask = original_mask | (np.abs(values - mean) >= (max_sigma * std))
-        mean = values.mean(axis=axis)
-        std = values.std(axis=axis)
+        outliers = np.abs(values[:, valid_std] - mean[valid_std]) >= (max_sigma * std[valid_std])
+        values.mask[:, valid_std] = original_mask[:, valid_std] | outliers
+        mean[valid_std] = values[:, valid_std].mean(axis=0)
+        std[valid_std] = values[:, valid_std].std(axis=0)
+        valid_std = std != 0
 
     # correct std for bias introduced by clipping
     std /= expected_std(max_sigma, n_iterations)
+
+    if squeeze:
+        return np.squeeze(mean), np.squeeze(std), values.mask
 
     return mean, std, values.mask
 

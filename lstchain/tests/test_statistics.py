@@ -70,7 +70,7 @@ def test_sigma_clipping():
     assert not np.allclose(values.std(axis=0), true_std, rtol=0.01)
 
     with np.printoptions(precision=3):
-        mean, std, mask = sigma_clipped_mean_std(values, axis=0, max_sigma=3)
+        mean, std, mask = sigma_clipped_mean_std(values, max_sigma=3)
 
 
     assert np.allclose(mean, true_mean, rtol=0.01)
@@ -122,7 +122,7 @@ def test_sigma_clipping_masked():
     values = np.ma.array(values, mask=broken)
 
     with np.printoptions(precision=3):
-        mean, std, mask = sigma_clipped_mean_std(values, axis=0, max_sigma=3)
+        mean, std, mask = sigma_clipped_mean_std(values, max_sigma=3)
 
 
     assert np.allclose(mean, true_mean, rtol=0.01)

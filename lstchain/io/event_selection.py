@@ -122,7 +122,7 @@ class DL3Cuts(Component):
 
     alpha_containment = Float(
         help="Percentage containment region for alpha cuts",
-        default=0.68,
+        default_value=0.68,
     ).tag(config=True)
 
     global_alpha_cut = Float(
