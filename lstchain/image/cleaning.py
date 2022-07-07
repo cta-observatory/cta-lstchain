@@ -1,6 +1,50 @@
 import numpy as np
+from ctapipe.image import ImageCleaner
+from ctapipe.core.traits import Bool, Float, Int
 
-__all__ = ['apply_dynamic_cleaning']
+__all__ = [
+    'apply_dynamic_cleaning',
+    'LSTImageCleaner'
+]
+
+class LSTImageCleaner(ImageCleaner):
+    """
+
+    """
+    def __call__():
+        
+    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
+    n_pixels = np.count_nonzero(signal_pixels)
+
+    if n_pixels > 0:
+
+        if delta_time is not None:
+            signal_pixels = apply_time_delta_cleaning(
+                camera_geometry,
+                signal_pixels,
+                peak_time,
+                min_number_neighbors=1,
+                time_limit=delta_time
+            )
+
+        if use_dynamic_cleaning:
+            threshold_dynamic = config['dynamic_cleaning']['threshold']
+            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
+            signal_pixels = apply_dynamic_cleaning(image,
+                                                   signal_pixels,
+                                                   threshold_dynamic,
+                                                   fraction_dynamic)
+
+        # check the number of islands
+        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
+        dl1_container.n_islands = num_islands
+
+        if use_main_island:
+            n_pixels_on_island = np.bincount(island_labels)
+            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+            max_island_label = np.argmax(n_pixels_on_island)
+            signal_pixels[island_labels != max_island_label] = False
+
 
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
