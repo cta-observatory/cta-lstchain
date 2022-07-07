@@ -33,7 +33,7 @@ from .volume_reducer import apply_volume_reduction
 from ..data import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..image.cleaning import apply_dynamic_cleaning
+from ..image.cleaning import apply_dynamic_cleaning, LSTImageCleaner
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -138,8 +138,7 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
     geom_selected = camera_geometry[signal_pixels]
     image_selectecd = image[signal_pixels]
     hillas = hillas_parameters(geom_selected, image_selectecd)
-
-    # Fill container
+# Fill container
     dl1_container.fill_hillas(hillas)
 
     # convert ctapipe's width and length (in m) to deg:
@@ -190,16 +189,6 @@ def get_dl1(
 
     config = replace_config(standard_config, custom_config)
 
-    # pop delta_time and use_main_island, so we can pass cleaning_parameters to
-    # tailcuts
-    cleaning_parameters = config["tailcut"].copy()
-    delta_time = cleaning_parameters.pop("delta_time", None)
-    use_main_island = cleaning_parameters.pop("use_only_main_island", True)
-
-    use_dynamic_cleaning = False
-    if "apply" in config["dynamic_cleaning"]:
-        use_dynamic_cleaning = config["dynamic_cleaning"]["apply"]
-
     dl1_container = DL1ParametersContainer() if dl1_container is None else dl1_container
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
@@ -210,52 +199,26 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
+    image_cleaner = LSTImageCleaner(subarray=subarray, config=Config(config["image_cleaning"]))
+    signal_pixels, num_islands = image_cleaner(tel_id=telescope_id,
+                                               image=image,
+                                               arrival_times=peak_time
+    )
+    dl1_container.n_islands = num_islands
+
+    # count surviving pixels
     n_pixels = np.count_nonzero(signal_pixels)
+    dl1_container.n_pixels = n_pixels
 
     if n_pixels > 0:
-
-        if delta_time is not None:
-            signal_pixels = apply_time_delta_cleaning(
-                camera_geometry,
-                signal_pixels,
-                peak_time,
-                min_number_neighbors=1,
-                time_limit=delta_time
-            )
-
-        if use_dynamic_cleaning:
-            threshold_dynamic = config['dynamic_cleaning']['threshold']
-            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
-            signal_pixels = apply_dynamic_cleaning(image,
-                                                   signal_pixels,
-                                                   threshold_dynamic,
-                                                   fraction_dynamic)
-
-        # check the number of islands
-        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
-        dl1_container.n_islands = num_islands
-
-        if use_main_island:
-            n_pixels_on_island = np.bincount(island_labels)
-            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-            max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels != max_island_label] = False
-
-
-        # count surviving pixels
-        n_pixels = np.count_nonzero(signal_pixels)
-        dl1_container.n_pixels = n_pixels
-
-        if n_pixels > 0:
-            parametrize_image(
-                image=image,
-                peak_time=peak_time,
-                signal_pixels=signal_pixels,
-                camera_geometry=camera_geometry,
-                focal_length=optics.equivalent_focal_length,
-                dl1_container=dl1_container,
-            )
+        parametrize_image(
+            image=image,
+            peak_time=peak_time,
+            signal_pixels=signal_pixels,
+            camera_geometry=camera_geometry,
+            focal_length=optics.equivalent_focal_length,
+            dl1_container=dl1_container,
+        )
 
     # We set other fields which still make sense for a non-parametrized
     # image:

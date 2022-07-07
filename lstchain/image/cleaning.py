@@ -1,6 +1,11 @@
 import numpy as np
 from ctapipe.image import ImageCleaner
-from ctapipe.core.traits import Bool, Float, Int
+from ctapipe.core.traits import (
+    FloatTelescopeParameter,
+    IntTelescopeParameter,
+    BoolTelescopeParameter,
+)
+from ctapipe.image import number_of_islands
 
 __all__ = [
     'apply_dynamic_cleaning',
@@ -11,40 +16,73 @@ class LSTImageCleaner(ImageCleaner):
     """
 
     """
-    def __call__():
-        
-    signal_pixels = cleaning_method(camera_geometry, image, **cleaning_parameters)
-    n_pixels = np.count_nonzero(signal_pixels)
+    image_cleaner_type = create_class_enum_trait(
+        base_class=ImageCleaner, default_value="TailcutsImageCleaner"
+    )   
 
-    if n_pixels > 0:
+    delta_time = FloatTelescopeParameter(
+        default_value=2, 
+        help="Time limit for the ``delta_time_cleaning``. Set to None if no" 
+        "``time_delta_cleaning`` should be applied",
+    ).tag(config=True)
 
-        if delta_time is not None:
-            signal_pixels = apply_time_delta_cleaning(
-                camera_geometry,
-                signal_pixels,
-                peak_time,
-                min_number_neighbors=1,
-                time_limit=delta_time
-            )
+    use_dynamic_cleaning = BoolTelescopeParameter(
+        default_value=True,
+        help="Set to true if dynamic cleaning should be applied"
+    ).tag(config=True)
 
-        if use_dynamic_cleaning:
-            threshold_dynamic = config['dynamic_cleaning']['threshold']
-            fraction_dynamic = config['dynamic_cleaning']['fraction_cleaning_intensity']
-            signal_pixels = apply_dynamic_cleaning(image,
-                                                   signal_pixels,
-                                                   threshold_dynamic,
-                                                   fraction_dynamic)
+    fraction_dynamic = FloatTelescopeParameter(
+        default_value=0.03,
+        help="``fraction`` parameter for ``apply_dynamic_cleaning``"
+    ).tag(config=True)
 
-        # check the number of islands
-        num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
-        dl1_container.n_islands = num_islands
+    threshold_dynamic = FloatTelescopeParameter(
+        default_value=267,
+        help="``threshold`` parameter for ``apply_dynamic_cleaning``",
+    ).tag(config=True)  
 
-        if use_main_island:
-            n_pixels_on_island = np.bincount(island_labels)
-            n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-            max_island_label = np.argmax(n_pixels_on_island)
-            signal_pixels[island_labels != max_island_label] = False
+    use_only_main_island = BoolTelescopeParameter(
+        default_value=False,
+        help="Set to true if only use main island"
+    ).tag(config=True)
 
+    def __call__(self, tel_id: int, image: np.ndarray, arrival_times=None): 
+
+        cleaner = ImageCleaner.from_name(
+            self.image_cleaner_type, subarray=self.subarray, parent=self
+        )
+
+        camera_geometry = self.subarray.tel[tel_id].camera.geometry
+        signal_pixels = cleaner(tel_id=tel_id, image=image, arrival_times=arrival_times)
+        n_pixels = np.count_nonzero(signal_pixels)
+
+        if n_pixels > 0:
+
+            if self.delta_time is not None:
+                signal_pixels = apply_time_delta_cleaning(
+                    camera_geometry,
+                    signal_pixels,
+                    arrival_times,
+                    min_number_neighbors=1,
+                    time_limit=self.delta_time
+                )
+
+            if self.use_dynamic_cleaning:
+                signal_pixels = apply_dynamic_cleaning(image,
+                                                       signal_pixels,
+                                                       self.threshold_dynamic,
+                                                       self.fraction_dynamic)
+
+            # check the number of islands
+            num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
+
+            if self.use_only_main_island:
+                n_pixels_on_island = np.bincount(island_labels)
+                n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                max_island_label = np.argmax(n_pixels_on_island)
+                signal_pixels[island_labels != max_island_label] = False
+
+        return signal_pixels, num_islands
 
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
