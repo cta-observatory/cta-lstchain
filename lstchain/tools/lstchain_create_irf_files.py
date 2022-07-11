@@ -504,7 +504,7 @@ class IRFFITSWriter(Tool):
                         'deg'
                     )
             else:
-
+                # add dummy "RAD_MAX" to adapt to 1D analysis with gammapy>0.20.1
                 extra_headers["RAD_MAX"] = (
                     0.1,
                     'deg'
