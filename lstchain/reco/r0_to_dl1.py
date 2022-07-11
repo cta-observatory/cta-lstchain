@@ -22,7 +22,6 @@ from ctapipe.image import (
     hillas_parameters,
     tailcuts_clean,
 )
-from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
@@ -33,7 +32,7 @@ from .volume_reducer import apply_volume_reduction
 from ..data import NormalizedPulseTemplate
 from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
-from ..image.cleaning import apply_dynamic_cleaning, LSTImageCleaner
+from ..image.cleaning import LSTImageCleaner
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
@@ -66,9 +65,6 @@ __all__ = [
     'get_dl1',
     'r0_to_dl1',
 ]
-
-
-cleaning_method = tailcuts_clean
 
 
 def setup_writer(writer, subarray, is_simulation):
@@ -136,9 +132,9 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
     '''
 
     geom_selected = camera_geometry[signal_pixels]
-    image_selectecd = image[signal_pixels]
-    hillas = hillas_parameters(geom_selected, image_selectecd)
-# Fill container
+    image_selected = image[signal_pixels]
+    hillas = hillas_parameters(geom_selected, image_selected)
+    # Fill container
     dl1_container.fill_hillas(hillas)
 
     # convert ctapipe's width and length (in m) to deg:
@@ -151,12 +147,12 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
 
     dl1_container.set_timing_features(
         geom_selected,
-        image_selectecd,
+        image_selected,
         peak_time[signal_pixels],
         hillas,
     )
     dl1_container.set_leakage(camera_geometry, image, signal_pixels)
-    dl1_container.set_concentration(geom_selected, image_selectecd, hillas)
+    dl1_container.set_concentration(geom_selected, image_selected, hillas)
     dl1_container.log_intensity = np.log10(dl1_container.intensity)
 
 
