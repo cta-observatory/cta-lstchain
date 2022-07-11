@@ -6,7 +6,7 @@ from ctapipe.core.traits import (
     BoolTelescopeParameter,
     create_class_enum_trait
 )
-from ctapipe.image import number_of_islands
+from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 
 __all__ = [
     'apply_dynamic_cleaning',
@@ -55,6 +55,7 @@ class LSTImageCleaner(ImageCleaner):
 
         camera_geometry = self.subarray.tel[tel_id].camera.geometry
         signal_pixels = cleaner(tel_id=tel_id, image=image, arrival_times=arrival_times)
+        print(type(signal_pixels), signal_pixels.shape, signal_pixels)
         n_pixels = np.count_nonzero(signal_pixels)
         num_islands = {}
 
