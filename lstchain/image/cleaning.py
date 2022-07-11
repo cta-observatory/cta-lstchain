@@ -55,7 +55,6 @@ class LSTImageCleaner(ImageCleaner):
 
         camera_geometry = self.subarray.tel[tel_id].camera.geometry
         signal_pixels = cleaner(tel_id=tel_id, image=image, arrival_times=arrival_times)
-        print(type(signal_pixels), signal_pixels.shape, signal_pixels)
         n_pixels = np.count_nonzero(signal_pixels)
         num_islands = {}
 
@@ -67,14 +66,14 @@ class LSTImageCleaner(ImageCleaner):
                     signal_pixels,
                     arrival_times,
                     min_number_neighbors=1,
-                    time_limit=self.delta_time
+                    time_limit=self.delta_time.tel[tel_id]
                 )
 
             if self.use_dynamic_cleaning:
                 signal_pixels = apply_dynamic_cleaning(image,
                                                        signal_pixels,
-                                                       self.threshold_dynamic,
-                                                       self.fraction_dynamic)
+                                                       self.threshold_dynamic.tel[tel_id],
+                                                       self.fraction_dynamic.tel[tel_id])
 
             # check the number of islands
             num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)

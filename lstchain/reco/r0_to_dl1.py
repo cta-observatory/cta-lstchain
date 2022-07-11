@@ -210,14 +210,15 @@ def get_dl1(
         n_pixels = np.count_nonzero(signal_pixels)
         dl1_container.n_pixels = n_pixels
 
-        parametrize_image(
-            image=image,
-            peak_time=peak_time,
-            signal_pixels=signal_pixels,
-            camera_geometry=camera_geometry,
-            focal_length=optics.equivalent_focal_length,
-            dl1_container=dl1_container,
-        )
+        if n_pixels > 0:
+            parametrize_image(
+                image=image,
+                peak_time=peak_time,
+                signal_pixels=signal_pixels,
+                camera_geometry=camera_geometry,
+                focal_length=optics.equivalent_focal_length,
+                dl1_container=dl1_container,
+            )
 
     # We set other fields which still make sense for a non-parametrized
     # image:
