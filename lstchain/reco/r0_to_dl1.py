@@ -199,18 +199,17 @@ def get_dl1(
     image = dl1.image
     peak_time = dl1.peak_time
 
-    image_cleaner = LSTImageCleaner(subarray=subarray, config=Config(config["image_cleaning"]))
-    signal_pixels, num_islands = image_cleaner(tel_id=telescope_id,
-                                               image=image,
-                                               arrival_times=peak_time
+    image_cleaner = LSTImageCleaner(subarray=subarray, config=Config(config))
+    signal_pixels, num_islands, n_pixels = image_cleaner(tel_id=telescope_id,
+                                                         image=image,
+                                                         arrival_times=peak_time
     )
-    dl1_container.n_islands = num_islands
-
-    # count surviving pixels
-    n_pixels = np.count_nonzero(signal_pixels)
-    dl1_container.n_pixels = n_pixels
-
     if n_pixels > 0:
+        dl1_container.n_islands = num_islands
+        # count surviving pixels
+        n_pixels = np.count_nonzero(signal_pixels)
+        dl1_container.n_pixels = n_pixels
+
         parametrize_image(
             image=image,
             peak_time=peak_time,

@@ -4,6 +4,7 @@ from ctapipe.core.traits import (
     FloatTelescopeParameter,
     IntTelescopeParameter,
     BoolTelescopeParameter,
+    create_class_enum_trait
 )
 from ctapipe.image import number_of_islands
 
@@ -55,6 +56,7 @@ class LSTImageCleaner(ImageCleaner):
         camera_geometry = self.subarray.tel[tel_id].camera.geometry
         signal_pixels = cleaner(tel_id=tel_id, image=image, arrival_times=arrival_times)
         n_pixels = np.count_nonzero(signal_pixels)
+        num_islands = {}
 
         if n_pixels > 0:
 
@@ -82,7 +84,7 @@ class LSTImageCleaner(ImageCleaner):
                 max_island_label = np.argmax(n_pixels_on_island)
                 signal_pixels[island_labels != max_island_label] = False
 
-        return signal_pixels, num_islands
+        return signal_pixels, num_islands, n_pixels
 
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
