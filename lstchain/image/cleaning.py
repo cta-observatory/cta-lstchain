@@ -60,7 +60,7 @@ class LSTImageCleaner(ImageCleaner):
 
         if n_pixels > 0:
 
-            if self.delta_time is not None:
+            if self.delta_time.tel[tel_id] is not None:
                 signal_pixels = apply_time_delta_cleaning(
                     camera_geometry,
                     signal_pixels,
@@ -68,8 +68,7 @@ class LSTImageCleaner(ImageCleaner):
                     min_number_neighbors=1,
                     time_limit=self.delta_time.tel[tel_id]
                 )
-
-            if self.use_dynamic_cleaning:
+            if self.use_dynamic_cleaning.tel[tel_id]:
                 signal_pixels = apply_dynamic_cleaning(image,
                                                        signal_pixels,
                                                        self.threshold_dynamic.tel[tel_id],
@@ -77,8 +76,7 @@ class LSTImageCleaner(ImageCleaner):
 
             # check the number of islands
             num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
-
-            if self.use_only_main_island:
+            if self.use_only_main_island.tel[tel_id]:
                 n_pixels_on_island = np.bincount(island_labels)
                 n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
                 max_island_label = np.argmax(n_pixels_on_island)
