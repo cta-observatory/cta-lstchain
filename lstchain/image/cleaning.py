@@ -1,17 +1,56 @@
 import numpy as np
-from ctapipe.image import ImageCleaner
 from ctapipe.core.traits import (
     FloatTelescopeParameter,
     IntTelescopeParameter,
     BoolTelescopeParameter,
     create_class_enum_trait
 )
-from ctapipe.image import number_of_islands, apply_time_delta_cleaning
+from ctapipe.image import (
+    ImageCleaner,
+    number_of_islands,
+    apply_time_delta_cleaning,
+)
 
 __all__ = [
     'apply_dynamic_cleaning',
     'LSTImageCleaner'
 ]
+
+
+def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
+    """
+    Application of the dynamic cleaning
+
+    Parameters
+    ----------
+    image: `np.ndarray`
+          Pixel charges
+    signal_pixels
+    threshold: `float`
+        Minimum average charge in the 3 brightest pixels to apply
+        the dynamic cleaning (else nothing is done)
+    fraction: `float`
+        Pixels below fraction * (average charge in the 3 brightest pixels)
+        will be removed from the cleaned image
+
+    Returns
+    -------
+    mask_dynamic_cleaning: `np.ndarray`
+        Mask with the selected pixels after the dynamic cleaning
+
+    """
+
+    max_3_value_index = np.argsort(image)[-3:]
+    mean_3_max_signal = np.mean(image[max_3_value_index])
+
+    if mean_3_max_signal < threshold:
+        return signal_pixels
+
+    dynamic_threshold = fraction * mean_3_max_signal
+    mask_dynamic_cleaning = (image >= dynamic_threshold) & signal_pixels
+
+    return mask_dynamic_cleaning
+
 
 class LSTImageCleaner(ImageCleaner):
     """
@@ -83,38 +122,3 @@ class LSTImageCleaner(ImageCleaner):
                 signal_pixels[island_labels != max_island_label] = False
 
         return signal_pixels, num_islands, n_pixels
-
-
-def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
-    """
-    Application of the dynamic cleaning
-
-    Parameters
-    ----------
-    image: `np.ndarray`
-          Pixel charges
-    signal_pixels
-    threshold: `float`
-        Minimum average charge in the 3 brightest pixels to apply
-        the dynamic cleaning (else nothing is done)
-    fraction: `float`
-        Pixels below fraction * (average charge in the 3 brightest pixels)
-        will be removed from the cleaned image
-
-    Returns
-    -------
-    mask_dynamic_cleaning: `np.ndarray`
-        Mask with the selected pixels after the dynamic cleaning
-
-    """
-
-    max_3_value_index = np.argsort(image)[-3:]
-    mean_3_max_signal = np.mean(image[max_3_value_index])
-
-    if mean_3_max_signal < threshold:
-        return signal_pixels
-
-    dynamic_threshold = fraction * mean_3_max_signal
-    mask_dynamic_cleaning = (image >= dynamic_threshold) & signal_pixels
-
-    return mask_dynamic_cleaning
