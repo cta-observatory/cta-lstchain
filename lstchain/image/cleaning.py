@@ -108,16 +108,16 @@ def lst_image_cleaning(
         pixel timing information
     signal_pixels: `np.ndarray`
         boolean mask of cleaned pixels after e.g. `TailcutsImageCleaner`
-    delta_time: `FloatTelescopeParameter`
+    delta_time: `Float`
         Time limit for the `apply_time_delta_cleaning` in step 2).
         Set to `None` if no time_delta_cleaning should be applied
-    use_dynamic_cleaning: `BoolTelescopeParameter`
+    use_dynamic_cleaning: `Bool`
         Set to True, if dynamic cleaning (Step 3) should be applied
-    fraction_dynamic: `FloatTelescopeParameter`
+    fraction_dynamic: `Float`
         Fraction parameter for `apply_dynamic_cleaning`
-    threshold_dynamic: `FloatTelescopeParameter`
+    threshold_dynamic: `Float`
         Threshold parameter for `apply_dynamic_cleaning`
-    use_only_main_island: `BoolTelescopeParameter`
+    use_only_main_island: `Bool`
         Set to True if considering only the main island in step 4)
 
     Returns
