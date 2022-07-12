@@ -14,6 +14,7 @@ from ctapipe.image import (
 __all__ = [
     'apply_dynamic_cleaning',
     'get_only_main_island',
+    'lst_image_cleaning',
     'LSTImageCleaner'
 ]
 
