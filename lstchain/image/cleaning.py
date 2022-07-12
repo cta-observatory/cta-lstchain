@@ -13,6 +13,7 @@ from ctapipe.image import (
 
 __all__ = [
     'apply_dynamic_cleaning',
+    'get_only_main_island',
     'LSTImageCleaner'
 ]
 
@@ -50,6 +51,36 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     mask_dynamic_cleaning = (image >= dynamic_threshold) & signal_pixels
 
     return mask_dynamic_cleaning
+
+
+def get_only_main_island(camera_geometry, signal_pixels):
+    """
+    Reduce the selected image mask to return only the main island
+
+    Parameters
+    ----------
+    camera_geometry: `ctapipe.instrument.camera.CameraGeometry`
+        Camera geometry for the used telescope
+    signal_pixels: `np.ndarray`
+        Mask with the selected pixels
+
+    Returns
+    -------
+    signal_pixels: `np.ndarray`
+        Mask with the selected pixels after selecting only the main island
+    num_islands: `int`
+        Number of islands before it was reduced to one
+
+    """
+
+    num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
+
+    n_pixels_on_island = np.bincount(island_labels)
+    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+    max_island_label = np.argmax(n_pixels_on_island)
+    signal_pixels[island_labels != max_island_label] = False
+
+    return signal_pixels, num_islands
 
 
 class LSTImageCleaner(ImageCleaner):
@@ -95,7 +126,7 @@ class LSTImageCleaner(ImageCleaner):
         camera_geometry = self.subarray.tel[tel_id].camera.geometry
         signal_pixels = cleaner(tel_id=tel_id, image=image, arrival_times=arrival_times)
         n_pixels = np.count_nonzero(signal_pixels)
-        num_islands = {}
+        num_islands = 0
 
         if n_pixels > 0:
 
@@ -113,12 +144,9 @@ class LSTImageCleaner(ImageCleaner):
                                                        self.threshold_dynamic.tel[tel_id],
                                                        self.fraction_dynamic.tel[tel_id])
 
-            # check the number of islands
-            num_islands, island_labels = number_of_islands(camera_geometry, signal_pixels)
             if self.use_only_main_island.tel[tel_id]:
-                n_pixels_on_island = np.bincount(island_labels)
-                n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-                max_island_label = np.argmax(n_pixels_on_island)
-                signal_pixels[island_labels != max_island_label] = False
+                signal_pixels, num_islands = get_only_main_island(
+                    camera_geometry, signal_pixels
+                )
 
         return signal_pixels, num_islands, n_pixels
