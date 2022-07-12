@@ -26,7 +26,7 @@ dependencies:
   - sphinx_rtd_theme
   - sphinx-argparse
   - nbsphinx
-  - numba::numba
+  - numba
   - numpydoc
   - pandas
   - pymongo
