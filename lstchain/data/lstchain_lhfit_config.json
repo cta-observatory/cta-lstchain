@@ -27,6 +27,21 @@
     }
   },
 
+  "LSTImageCleaner" : {
+    "delta_time": 2,
+    "use_dynamic_cleaning": true,
+    "fraction_dynamic": 0.03,
+    "threshold_dynamic": 267,
+    "use_only_main_island": false,
+    "image_cleaner_type": "TailcutsImageCleaner",
+    "TailcutsImageCleaner": {
+        "picture_threshold_pe": 8,
+        "boundary_threshold_pe": 4,
+        "min_picture_neighbors": 2,
+        "keep_isolated_pixels": false
+    }
+  },
+
   "events_filters": {
     "intensity": [0, Infinity],
     "width": [0, Infinity],
@@ -42,14 +57,6 @@
     "proton_classifier": 1.0
   },
 
-  "tailcut": {
-    "picture_thresh":8,
-    "boundary_thresh":4,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
   "tailcuts_clean_with_pedestal_threshold": {
     "picture_thresh":8,
     "boundary_thresh":4,
@@ -58,11 +65,6 @@
     "min_number_picture_neighbors":2,
     "use_only_main_island":false,
     "delta_time": 2
-  },
-  "dynamic_cleaning": {
-    "apply": true,
-    "threshold": 267,
-    "fraction_cleaning_intensity": 0.03
   },
 
   "random_forest_energy_regressor_args": {
