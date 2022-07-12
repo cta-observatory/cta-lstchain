@@ -63,12 +63,12 @@ def get_only_main_island(island_labels, signal_pixels):
     island_labels: `np.ndarray`
         Returned island labels from `ctapipe.image.number_of_islands`
     signal_pixels: `np.ndarray`
-        Mask with the selected pixels
+        Boolean mask with the selected pixels
 
     Returns
     -------
     signal_pixels: `np.ndarray`
-        Mask with the selected pixels after selecting only the main island
+        Boolean mask with the selected pixels after selecting only the main island
 
     """
 
@@ -123,7 +123,7 @@ def lst_image_cleaning(
     Returns
     -------
     signal_pixels: `np.ndarray`
-        Mask with the selected pixels after all the cleaning steps
+        Boolean mask with the selected pixels after all the cleaning steps
     num_islands: `int`
         Number of islands before it was reduced to one in step 3)
     n_pixels: `int`
