@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# import sys
+import sys
 from setuptools import setup, find_packages
 import os
-
+sys.path.append("./lstchain/reco/")
+# Import the compilable module using numba ahead of time compilation
+from reconstructorCC import cc
+# Create an extension
+ext = cc.distutils_extension()
+# Change name to save the compiled extension in the right place
+ext.name = 'lstchain.reco.'+ext.name
 
 def find_scripts(script_dir, prefix):
     script_list = [
@@ -45,9 +51,10 @@ setup(
         'ctapipe~=0.12.0',
         'ctapipe_io_lst~=0.18.2',
         'ctaplot~=0.6.2',
-        'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
+        'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.19.0',
         'h5py',
+        'iminuit>=2',
         'joblib',
         'matplotlib~=3.5',
         'numba',
@@ -77,4 +84,5 @@ setup(
         ],
     },
     entry_points=entry_points,
+    ext_modules=[ext],
 )
