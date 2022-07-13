@@ -1,5 +1,11 @@
 import numpy as np
 from scipy.interpolate import interp1d
+try:
+    from lstchain.reco.log_pdf_CC import template_interpolation as template_interpolation
+    compiled_available = True
+except ImportError:
+    compiled_available = False
+    pass
 
 
 class NormalizedPulseTemplate:
@@ -76,8 +82,45 @@ class NormalizedPulseTemplate:
 
         """
 
-        y = amplitude * self._template[gain](time - t_0) + baseline
+        y = amplitude * self._template[gain](time - t_0) - baseline
         return np.array(y)
+
+    if compiled_available:
+        def compiled_interpolation(self, time, gain, amplitude=1, t_0=0, baseline=0):
+            """
+            Use the interpolated template to access the value of the pulse at
+            time = time in gain regime = gain. Additionally, an alternative
+            normalisation, origin of time and baseline can be used.
+            Uses compiled function instead of scipy to gain time.
+            Works only for a single pixel due to the rigidity of type handling
+            in the compiled code
+
+            Parameters
+            ----------
+            time: float array
+                Time after the origin to estimate the value of the pulse
+            gain: string
+                Identifier of the gain channel
+                Either "HG" or "LG"
+            amplitude: float
+                Normalisation factor to apply to the template
+            t_0: float
+                Shift in the origin of time
+            baseline: float array
+                Baseline to be subtracted
+
+            Return
+            ----------
+            y: array
+                Value of the template at the requested times
+
+            """
+            # To work with `template_interpolation` some array operations are needed
+            is_high_gain = np.array([gain == 'HG'])
+            y = amplitude * template_interpolation(is_high_gain, np.array([time-t_0]), self.t0, self.dt,
+                                                   self.amplitude_HG, self.amplitude_LG,
+                                                   self.amplitude_HG.shape[0]) - baseline
+            return np.array(y)[0]
 
     def resample_template(self):
         """

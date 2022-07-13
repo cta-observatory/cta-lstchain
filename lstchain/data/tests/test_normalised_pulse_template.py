@@ -20,4 +20,7 @@ def test_load_from_file_and_miscellaneous(tmp_path):
     save_path = tmp_path / "tmp_pulse2.txt"
     template.save(save_path)
     template = NormalizedPulseTemplate.load_from_file(path, resample=True)
+    a = template.compiled_interpolation(np.array([[0.2,0.8,2,3.5]]), np.array(['HG']))
+    b = template(np.array([[0.2,0.8,2,3.5]]),'HG')
+    assert np.all(np.isclose(a,b,rtol=1e-5))
     template = NormalizedPulseTemplate.load_from_file(path, resample=True, dt=0.5)

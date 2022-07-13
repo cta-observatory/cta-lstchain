@@ -215,7 +215,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
     ----------
     gain: boolean 1D array
         Gain channel used per pixel
-    times: float64 1D array
+    times: float64 2D array
         Times of each waveform samples
     t0: float64
         Time of the first value of the pulse templates
