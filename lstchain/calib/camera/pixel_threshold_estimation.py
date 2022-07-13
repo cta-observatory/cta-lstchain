@@ -139,9 +139,9 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
     else:
         config = std_config
 
-    cleaning_method = 'tailcuts_clean_with_pedestal_threshold'
-    picture_th, _, _, _ = get_cleaning_parameters(config, cleaning_method)
-    sigma = config[cleaning_method]['sigma']
+    image_cleaner = "TailcutsImageCleaner"
+    picture_th, _, _, _ = get_cleaning_parameters(config, image_cleaner)
+    sigma = config["pedestal_cleaning"]["sigma"]
 
     # Obtain the picture thresholds of pixels based on the "clean with
     # pedestal threshold" method:
