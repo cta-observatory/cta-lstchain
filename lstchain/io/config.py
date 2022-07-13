@@ -94,23 +94,23 @@ def replace_config(base_config, new_config):
     return config
 
 
-def get_cleaning_parameters(config, clean_method_name):
+def get_cleaning_parameters(config, cleaner):
     """
     Return cleaning parameters from configuration dict.
 
     Parameters
     ----------
     config: configuration dict
-    clean_method_name: name of cleaning method
+    cleaner: name of the image cleaner
 
     Returns
     -------
     tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
     """
-    picture_th = config["LSTImageCleaner"][clean_method_name]["picture_threshold_pe"]
-    boundary_th = config["LSTImageCleaner"][clean_method_name]["boundary_threshold_pe"]
-    isolated_pixels = config["LSTImageCleaner"][clean_method_name]["keep_isolated_pixels"]
-    min_n_picture_neighbors = config["LSTImageCleaner"][clean_method_name]["min_picture_neighbors"]
+    picture_th = config["LSTImageCleaner"][cleaner]["picture_threshold_pe"]
+    boundary_th = config["LSTImageCleaner"][cleaner]["boundary_threshold_pe"]
+    isolated_pixels = config["LSTImageCleaner"][cleaner]["keep_isolated_pixels"]
+    min_n_picture_neighbors = config["LSTImageCleaner"][cleaner]["min_picture_neighbors"]
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
 
 
