@@ -233,7 +233,8 @@ def main():
                     arrival_times=peak_time
                 )
 
-
+                # the `n_pixels` here is the number of pixels which survived only the first step
+                # of the LSTImageCleaner (e.g. after the TailcutsImageCleaner)
                 if n_pixels > 0:
                     dl1_container.n_islands = num_islands
                     # count surviving pixels after all the cleaning steps

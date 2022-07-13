@@ -42,6 +42,10 @@
     }
   },
 
+  "pedestal_cleaning": {
+    "sigma":2.5
+  },
+
   "events_filters": {
     "intensity": [0, Infinity],
     "width": [0, Infinity],
@@ -55,16 +59,6 @@
     "gamma_tmp_regressors": 0.8,
     "gamma_classifier": 0.2,
     "proton_classifier": 1.0
-  },
-
-  "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":8,
-    "boundary_thresh":4,
-    "sigma":2.5,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
   },
 
   "random_forest_energy_regressor_args": {
