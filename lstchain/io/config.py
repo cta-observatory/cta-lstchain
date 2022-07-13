@@ -3,7 +3,9 @@ from pathlib import Path
 from copy import copy
 
 __all__ = [
+    'dump_config',
     'get_cleaning_parameters',
+    'get_mc_config',
     'get_standard_config',
     'get_srcdep_config',
     'read_configuration_file',
