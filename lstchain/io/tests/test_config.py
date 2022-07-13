@@ -6,12 +6,12 @@ import tempfile
 def test_get_standard_config():
     std_cfg = config.get_standard_config()
     assert 'source_config' in std_cfg
-    assert 'tailcut' in std_cfg
+    assert 'LSTImageCleaner' in std_cfg
 
 
 def test_get_srcdep_config():
     srcdep_config = config.get_srcdep_config()
-    assert 'tailcut' in srcdep_config
+    assert 'LSTImageCleaner' in srcdep_config
     assert srcdep_config['source_dependent']
     assert srcdep_config['mc_nominal_source_x_deg'] == 0.4
     assert srcdep_config['observation_mode'] == 'wobble'
@@ -20,7 +20,7 @@ def test_get_srcdep_config():
 
 def test_get_mc_config():
     mc_cfg = config.get_mc_config()
-    assert 'tailcut' in mc_cfg
+    assert 'LSTImageCleaner' in mc_cfg
     assert mc_cfg['LocalPeakWindowSum']['apply_integration_correction']
     assert mc_cfg['GlobalPeakWindowSum']['apply_integration_correction']
 
@@ -36,12 +36,12 @@ def test_replace_config():
 
 def test_get_cleaning_parameters():
     std_config = config.get_standard_config()
-    cleaning_params = get_cleaning_parameters(std_config, 'tailcut')
+    cleaning_params = get_cleaning_parameters(std_config, 'TailcutsImageCleaner')
     picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-    assert std_config['tailcut']['picture_thresh'] == picture_th
-    assert std_config['tailcut']['boundary_thresh'] == boundary_th
-    assert std_config['tailcut']['keep_isolated_pixels'] == isolated_pixels
-    assert std_config['tailcut']['min_number_picture_neighbors'] == min_n_neighbors
+    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"] == picture_th
+    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["boundary_threshold_pe"] == boundary_th
+    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["keep_isolated_pixels"] == isolated_pixels
+    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["min_picture_neighbors"] == min_n_neighbors
 
 
 def test_dump_config():
