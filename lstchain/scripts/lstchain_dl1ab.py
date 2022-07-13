@@ -15,6 +15,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+from traitlets.config import Config
 
 import astropy.units as u
 import numpy as np
@@ -138,7 +139,7 @@ def main():
     optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
 
-    image_cleaner = LSTImageCleaner(subarray=subarray_info, config=config)
+    image_cleaner = LSTImageCleaner(subarray=subarray_info, config=Config(config))
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [
