@@ -241,7 +241,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
             # Find the index before the requested time
             a = (times[i, j]-t0)/dt
             t = int(a)
-            if a < size:
+            if t+1 < size:
                 # Select the gain and interpolate the pulse template at the requested time
                 out[i, j] = a_hg[t] * (1. - a + t) + a_hg[t+1] * (a-t) if gain[i] else \
                     a_lg[t] * (1. - a + t) + a_lg[t+1] * (a-t)
