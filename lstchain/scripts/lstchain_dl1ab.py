@@ -19,15 +19,10 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 import tables
-from ctapipe.image import (
-    tailcuts_clean,
-    number_of_islands,
-    apply_time_delta_cleaning,
-)
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
-from lstchain.image.cleaning import apply_dynamic_cleaning
+from lstchain.image.cleaning import apply_dynamic_cleaning, LSTImageCleaner
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 
@@ -128,46 +123,22 @@ def main():
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
-        clean_method_name = 'tailcuts_clean_with_pedestal_threshold'
-        sigma = config[clean_method_name]['sigma']
+        sigma = config["pedestal_cleaning"]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
-        cleaning_params = get_cleaning_parameters(config, clean_method_name)
-        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        pic_thresh = config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"]
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh > pic_th) / len(pedestal_thresh):.3f}")
-        picture_th = np.clip(pedestal_thresh, pic_th, None)
+                 f"{np.sum(pedestal_thresh > pic_thresh ) / len(pedestal_thresh):.3f}")
+        pic_thresh_ped = np.clip(pedestal_thresh, pic_thresh, None)
+        config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"] = pic_thresh_ped
         log.info(f"Tailcut clean with pedestal threshold config used:"
-                 f"{config['tailcuts_clean_with_pedestal_threshold']}")
-    else:
-        clean_method_name = 'tailcut'
-        cleaning_params = get_cleaning_parameters(config, clean_method_name)
-        picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-        log.info(f"Tailcut config used: {config['tailcut']}")
-
-    use_dynamic_cleaning = False
-    if 'apply' in config['dynamic_cleaning']:
-        use_dynamic_cleaning = config['dynamic_cleaning']['apply']
-
-    if use_dynamic_cleaning:
-        THRESHOLD_DYNAMIC_CLEANING = config['dynamic_cleaning']['threshold']
-        FRACTION_CLEANING_SIZE = config['dynamic_cleaning']['fraction_cleaning_intensity']
-        log.info("Using dynamic cleaning for events with average size of the "
-                 f"3 most brighest pixels > {config['dynamic_cleaning']['threshold']} p.e")
-        log.info("Remove from image pixels which have charge below "
-                 f"= {config['dynamic_cleaning']['fraction_cleaning_intensity']} * average size")
-
-    use_only_main_island = True
-    if "use_only_main_island" in config[clean_method_name]:
-        use_only_main_island = config[clean_method_name]["use_only_main_island"]
-
-    delta_time = None
-    if "delta_time" in config[clean_method_name]:
-        delta_time = config[clean_method_name]["delta_time"]
+                 f"{config['LSTImageCleaner']} with {config["pedestal_cleaning"]}")
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
+
+    image_cleaner = LSTImageCleaner(subarray=subarray_info, config=config)
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [
@@ -256,49 +227,16 @@ def main():
                                                camera_geom.neighbor_matrix_sparse.indices,
                                                camera_geom.neighbor_matrix_sparse.indptr)
 
-                signal_pixels = tailcuts_clean(camera_geom,
-                                               image,
-                                               picture_th,
-                                               boundary_th,
-                                               isolated_pixels,
-                                               min_n_neighbors)
+                signal_pixels, num_islands, n_pixels = image_cleaner(
+                    tel_id=tel_id,
+                    image=image,
+                    arrival_times=peak_time
+                )
 
-                n_pixels = np.count_nonzero(signal_pixels)
 
                 if n_pixels > 0:
-
-                    # if delta_time has been set, we require at least one
-                    # neighbor within delta_time to accept a pixel in the image:
-                    if delta_time is not None:
-                        cleaned_pixel_times = peak_time
-                        # makes sure only signal pixels are used in the time
-                        # check:
-                        cleaned_pixel_times[~signal_pixels] = np.nan
-                        new_mask = apply_time_delta_cleaning(camera_geom,
-                                                             signal_pixels,
-                                                             cleaned_pixel_times,
-                                                             1, delta_time)
-                        signal_pixels = new_mask
-
-                    if use_dynamic_cleaning:
-                        new_mask = apply_dynamic_cleaning(image,
-                                                          signal_pixels,
-                                                          THRESHOLD_DYNAMIC_CLEANING,
-                                                          FRACTION_CLEANING_SIZE)
-                        signal_pixels = new_mask
-
-                    # count a number of islands after all of the image cleaning steps
-                    num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
                     dl1_container.n_islands = num_islands
-
-                    n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
-                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-                    max_island_label = np.argmax(n_pixels_on_island)
-
-                    if use_only_main_island:
-                        signal_pixels[island_labels != max_island_label] = False
-
-                    # count the surviving pixels
+                    # count surviving pixels after all the cleaning steps
                     n_pixels = np.count_nonzero(signal_pixels)
                     dl1_container.n_pixels = n_pixels
 
