@@ -131,7 +131,7 @@ def main():
         pic_thresh_ped = np.clip(pedestal_thresh, pic_thresh, None)
         config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"] = pic_thresh_ped
         log.info(f"Tailcut clean with pedestal threshold config used:"
-                 f"{config['LSTImageCleaner']} with {config["pedestal_cleaning"]}")
+                 f"{config['LSTImageCleaner']} with {config['pedestal_cleaning']}")
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
