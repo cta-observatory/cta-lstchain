@@ -412,10 +412,8 @@ def r0_to_dl1(
             if is_simu:
                 nsb_original = extract_simulation_nsb(input_filename)
                 pulse_template = NormalizedPulseTemplate.load_from_eventsource(
-                    subarray.tel[1].camera.readout, resample=config['waveform_nsb_tuning']['use_compiled']
+                    subarray.tel[1].camera.readout, resample=True
                 )
-                if config['waveform_nsb_tuning']['use_compiled']:
-                    pulse_template = pulse_template.compiled_interpolation
                 if 'nsb_tuning_ratio' in config['waveform_nsb_tuning'].keys():
                     # get value from config to possibly extract it beforehand on multiple files for averaging purposes
                     # or gain time
