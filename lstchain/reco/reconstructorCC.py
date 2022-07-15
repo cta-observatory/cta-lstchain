@@ -204,7 +204,7 @@ def linval(a, b, x):
     return y
 
 
-@njit(cache=True)
+@njit()
 @cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:])')
 def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
     """
