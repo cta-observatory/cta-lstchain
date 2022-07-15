@@ -204,9 +204,9 @@ def linval(a, b, x):
     return y
 
 
-@njit()
-@cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:],i8)')
-def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
+@njit(cache=True)
+@cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:])')
+def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
     """
     Fast template interpolator using uniformly sampled base with known origin and step.
     The algorithm finds the indexes between which the template is needed and performs a linear interpolation.
@@ -235,6 +235,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
 
     """
     n, m = times.shape
+    size = a_hg.shape[0]
     out = np.empty((n, m))
     for i in range(n):
         for j in range(m):
@@ -324,9 +325,8 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
     for i in range(n_pixels):
         for j in range(n_samples):
             t[i, j] = times[j] - t_model[i] - time_shift[i]
-    size_template = template_hg.shape[0]
     templates = template_interpolation(is_high_gain, t, template_t0, template_dt,
-                                       template_hg, template_lg, size_template)
+                                       template_hg, template_lg)
     rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
     mu = asygaussian2d(charge * pix_area,
                        p_x,

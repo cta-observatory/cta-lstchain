@@ -82,8 +82,7 @@ class NormalizedPulseTemplate:
         # To work with `template_interpolation` some array operations are needed
         is_high_gain = np.array([gain == 'HG'])
         y = amplitude * template_interpolation(is_high_gain, np.array([time-t_0]), self.t0, self.dt,
-                                               self.amplitude_HG, self.amplitude_LG,
-                                               self.amplitude_HG.shape[0]) - baseline
+                                               self.amplitude_HG, self.amplitude_LG) - baseline
         return y[0]
 
     def resample_template(self):
