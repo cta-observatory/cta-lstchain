@@ -192,19 +192,16 @@ def get_dl1(
 
     dl1 = calibrated_event.dl1.tel[telescope_id]
     telescope = subarray.tel[telescope_id]
-    camera_geometry = telescope.camera.geometry
-    optics = telescope.optics
 
     image = dl1.image
     peak_time = dl1.peak_time
 
     image_cleaner = LSTImageCleaner(subarray=subarray, config=Config(config))
-    signal_pixels, num_islands, n_pixels = image_cleaner(tel_id=telescope_id,
-                                                         image=image,
-                                                         arrival_times=peak_time
+    signal_pixels, n_pixels, num_islands = image_cleaner(tel_id=telescope_id,
+                                                         event=calibrated_event
     )
-    # the `n_pixels` here is the number of pixels which survived only the first step
-    # of the LSTImageCleaner (e.g. after the TailcutsImageCleaner)
+    # the `n_pixels` here is the number of pixels which survived only the `tailcuts_clean`
+    # in step 2) in the LSTImageCleaner
     if n_pixels > 0:
         dl1_container.n_islands = num_islands
         # count surviving pixels after all the cleaning steps
@@ -216,17 +213,14 @@ def get_dl1(
                 image=image,
                 peak_time=peak_time,
                 signal_pixels=signal_pixels,
-                camera_geometry=camera_geometry,
-                focal_length=optics.equivalent_focal_length,
+                camera_geometry=telescope.camera.geometry,
+                focal_length=telescope.optics.equivalent_focal_length,
                 dl1_container=dl1_container,
             )
 
     # We set other fields which still make sense for a non-parametrized
     # image:
     dl1_container.set_telescope_info(subarray, telescope_id)
-
-    # save the applied cleaning mask
-    calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
 
     return dl1_container
 

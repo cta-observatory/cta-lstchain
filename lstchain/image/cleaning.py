@@ -112,12 +112,12 @@ class LSTImageCleaner(ImageCleaner):
     """
 
     picture_threshold_pe = FloatTelescopeParameter(
-        default_value=10.0,
+        default_value=8.0,
         help="top-level threshold in photoelectrons for `tailcuts_clean`"
     ).tag(config=True)
 
     boundary_threshold_pe = FloatTelescopeParameter(
-        default_value=5.0, help="second-level threshold in photoelectrons for `tailcuts_clean`"
+        default_value=4.0, help="second-level threshold in photoelectrons for `tailcuts_clean`"
     ).tag(config=True)
 
     min_picture_neighbors = IntTelescopeParameter(
@@ -164,7 +164,7 @@ class LSTImageCleaner(ImageCleaner):
     ).tag(config=True)
     
     sigma = FloatTelescopeParameter(
-        default_value=267,
+        default_value=2.5,
         help="`sigma` parameter for interleaved pedestal cleaning",
     ).tag(config=True)  
 

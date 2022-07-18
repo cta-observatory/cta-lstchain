@@ -28,22 +28,17 @@
   },
 
   "LSTImageCleaner" : {
+    "picture_threshold_pe": 8,
+    "boundary_threshold_pe": 4,
+    "min_picture_neighbors": 2,
+    "keep_isolated_pixels": false,
     "delta_time": 2,
     "use_dynamic_cleaning": true,
     "fraction_dynamic": 0.03,
     "threshold_dynamic": 267,
     "use_only_main_island": false,
-    "image_cleaner_type": "TailcutsImageCleaner",
-    "TailcutsImageCleaner": {
-        "picture_threshold_pe": 8,
-        "boundary_threshold_pe": 4,
-        "min_picture_neighbors": 2,
-        "keep_isolated_pixels": false
-    }
-  },
-
-  "pedestal_cleaning": {
-    "sigma":2.5
+    "use_pedestal_cleaning": false,
+    "sigma": 2.5
   },
 
   "events_filters": {
