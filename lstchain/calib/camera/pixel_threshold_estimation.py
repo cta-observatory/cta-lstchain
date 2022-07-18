@@ -10,6 +10,27 @@ from lstchain.io.config import get_cleaning_parameters
 ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
 
+def get_ped_thresh(tel_id, event, sigma):
+    ped_charge_mean = event.mon.tel[tel_id].pedestal.charge_mean
+    ped_charge_std = event.mon.tel[tel_id].pedestal.charge_std
+    dc_to_pe = event.mon.tel[tel_id].calibration.dc_to_pe[ORIGINAL_CALIBRATION_ID]
+    ped_charge_mean_pe = ped_charge_mean * dc_to_pe
+    ped_charge_std_pe = ped_charge_std * dc_to_pe
+
+    if ped_charge_std_pe.shape[0] > 1:
+        pedestal_id = INTERLEAVED_CALIBRATION_ID
+    else:
+        pedestal_id = ORIGINAL_CALIBRATION_ID
+
+    threshold_clean_pe = ped_charge_mean_pe + sigma * ped_charge_std_pe
+
+    unusable_pixels = event.mon.tel[tel_id].calibration.unusable_pixels
+
+    threshold_clean_pe[pedestal_id, HIGH_GAIN, unusable_pixels] = \
+        max(threshold_clean_pe[pedestal_id, HIGH_GAIN, :])
+    
+    return threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
+
 def get_bias_and_std(dl1_file):
     """
     Function to extract bias and std of pedestal from interleaved events from dl1 file.
