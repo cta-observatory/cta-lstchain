@@ -88,89 +88,29 @@ def get_only_main_island(geom, signal_pixels):
     return signal_pixels, num_islands
 
 
-def lst_image_cleaning(
-    geom,
-    image,
-    arrival_times,
-    signal_pixels,
-    delta_time,
-    use_dynamic_cleaning,
-    fraction_dynamic,
-    threshold_dynamic,
-    use_only_main_island
-):
+class LSTImageCleaner(ImageCleaner):
     """
-    Clean an already selected image of signal pixels (e.g. with TailcutsImageCleaner)
-    in 3 further steps:
-    1) Apply time_delta_cleaning - `ctapipe.image.apply_time_delta_cleaning`
-    2) Apply dynamic_cleaning - `lstchain.image.cleaning.apply_dynamic_cleaning`
-    3) Get only main island - `lstchain.image.cleaning.get_only_main_island`
-
-    Parameters
-    ----------
-    image: `np.ndarray`
-        pixel values
-    arrival_times: `np.ndarray`
-        pixel timing information
-    signal_pixels: `np.ndarray`
-        boolean mask of cleaned pixels after e.g. `TailcutsImageCleaner`
-    delta_time: `Float`
-        Time limit for the `apply_time_delta_cleaning` in step 2).
-        Set to `None` if no time_delta_cleaning should be applied
-    use_dynamic_cleaning: `Bool`
-        Set to True, if dynamic cleaning (Step 3) should be applied
-    fraction_dynamic: `Float`
-        Fraction parameter for `apply_dynamic_cleaning`
-    threshold_dynamic: `Float`
-        Threshold parameter for `apply_dynamic_cleaning`
-    use_only_main_island: `Bool`
-        Set to True if considering only the main island in step 4)
+    Clean images basically in 5 steps:
+    1) Get picture threshold for `tailcuts_clean` in step 2) from interleaved
+       pedestal events if `use_pedestal_cleaning` is set to `true`
+    2) Apply tailcuts image cleaning algorithm - `ctapipe.image.tailcuts_clean`
+    3) Apply time_delta_cleaning - `ctapipe.image.apply_time_delta_cleaning` if
+       `delta_time` is not None
+    4) Apply dynamic_cleaning - `lstchain.image.cleaning.apply_dynamic_cleaning` if
+       `use_dynamic_cleaning` is set to `true`
+    5) Get only main island - `lstchain.image.cleaning.get_only_main_island` if
+       `use_only_main_island` is set to `true`
 
     Returns
     -------
     signal_pixels: `np.ndarray`
         Boolean mask with the selected pixels after all the cleaning steps
     num_islands: `int`
-        Number of islands before it was reduced to one in step 3)
+        Number of islands before it was reduced to one in step 5)
     n_pixels: `int`
-        Number of pixels which survived the cleaning in the previous step
-        (e.g. after the TailcutsImageCleaner)
+        Number of pixels which survived the `tailcuts_clean` in step 2)
     """
 
-    n_pixels = np.count_nonzero(signal_pixels)
-    num_islands = 0
-
-    if n_pixels > 0:
-        if delta_time is not None:
-            signal_pixels = apply_time_delta_cleaning(
-                geom,
-                signal_pixels,
-                arrival_times,
-                min_number_neighbors=1,
-                time_limit=delta_time
-            )
-        if use_dynamic_cleaning:
-            signal_pixels = apply_dynamic_cleaning(
-                image,
-                signal_pixels,
-                threshold_dynamic,
-                fraction_dynamic
-            )
-        if use_only_main_island:
-            signal_pixels, num_islands = get_only_main_island(geom, signal_pixels)
-        else:
-            num_islands, _ = number_of_islands(geom, signal_pixels)
-
-    return signal_pixels, num_islands, n_pixels
-
-class LSTImageCleaner(ImageCleaner):
-    """
-    Clean images in two steps:
-    1) Apply first image cleaning algorithm
-       Default: TailcutsImageCleaner - `ctapipe.image.TailcutsImageCleaner`
-    2) Apply `lst_image_cleaning`-algorithm on signal_pixels returned from step 1)
-
-    """
     picture_threshold_pe = FloatTelescopeParameter(
         default_value=10.0,
         help="top-level threshold in photoelectrons for `tailcuts_clean`"
