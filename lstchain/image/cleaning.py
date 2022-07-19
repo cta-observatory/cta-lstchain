@@ -11,18 +11,14 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
     tailcuts_clean
 )
-from ctapipe_io_lst.constants import HIGH_GAIN
 from lstchain.calib.camera.pixel_threshold_estimation import get_ped_thresh
 
 __all__ = [
     'apply_dynamic_cleaning',
     'get_only_main_island',
-    'lst_image_cleaning',
     'LSTImageCleaner'
 ]
 
-ORIGINAL_CALIBRATION_ID = 0
-INTERLEAVED_CALIBRATION_ID = 1
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     """
