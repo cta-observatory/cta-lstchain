@@ -30,8 +30,6 @@ def merged_h5file(tmp_path, simulated_dl1_file):
     # check that subarray name is correctly retained
     assert subarray_before.name == subarray_merged.name
     return merged_dl1_file
-    
-
 
 
 def test_write_dataframe():
