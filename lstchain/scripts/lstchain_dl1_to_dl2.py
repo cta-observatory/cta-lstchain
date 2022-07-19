@@ -85,7 +85,7 @@ def apply_to_file(filename, models_dict, output_dir, config):
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
 
     if 'lh_fit_config' in config.keys():
-        lhfit_data = pd.read_hdf(args.input_file, key=dl1_likelihood_params_lstcam_key)
+        lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)
         if np.all(lhfit_data['obs_id'] == data['obs_id']) & np.all(lhfit_data['event_id'] == data['event_id']):
             lhfit_data.drop({'obs_id', 'event_id'}, axis=1, inplace=True)
         lhfit_keys = lhfit_data.keys()
