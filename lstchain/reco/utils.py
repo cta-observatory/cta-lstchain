@@ -9,6 +9,7 @@ Module with auxiliar functions:
 
 import logging
 from warnings import warn
+from copy import deepcopy
 
 import astropy.units as u
 import numpy as np
@@ -758,3 +759,42 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     delta = np.arccos(term)
 
     return delta
+
+
+def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inplace=True):
+    """
+    Fix the bias introduced by reconstructing the events direction with the nominal focal length.
+    This should not be necessary in the future, when the effective focal length is read and used directly from the MC
+    See https://github.com/cta-observatory/ctaplot/issues/190 for more details.
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame` | `astropy.table.Table`
+    effective_focal_length: `astropy.Quantity`
+    inplace: bool
+        If True, modify the input events inplace. Otherwise, return a copy.
+
+    Returns
+    -------
+    None | `pandas.DataFrame` | `astropy.table.Table`
+    """
+    if not inplace:
+        events = deepcopy(events)
+
+    reco_altaz = reco_source_position_sky(events['x'],
+                                          events['y'],
+                                          events['reco_disp_dx'],
+                                          events['reco_disp_dy'],
+                                          effective_focal_length,
+                                          events['alt_tel'],
+                                          events['az_tel'])
+
+    if isinstance(events, pd.DataFrame):
+        events['reco_alt'] = reco_altaz.alt.to_value(u.rad)
+        events['reco_az'] = reco_altaz.az.to_value(u.rad)
+    else:
+        events['reco_alt'] = reco_altaz.alt.to(u.rad)
+        events['reco_az'] = reco_altaz.az.to(u.rad)
+
+    if not inplace:
+        return events
