@@ -116,6 +116,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
                               root_uep='/dl1/event/telescope/parameters') as f:
             for name in trig_tags:
                 trig_tags[name].extend(f.root.LST_LSTCam.col(name))
+
     num_pedestals = {'trigger_type':
                          (np.array(trig_tags['trigger_type']) ==
                           TriggerBits.PEDESTAL.value).sum(),
@@ -1211,49 +1212,31 @@ def merge_dl1datacheck_files(file_list):
     merged_file.create_group('/', 'dl1datacheck')
     merged_file.create_group('/', 'instrument')
 
-    # The tables in the merged file will be copied from the first file. If a
-    # table is missing in the first file (e.g. pedestals) it will be left
-    # empty in the whole merged file.
-
-    if '/dl1datacheck/pedestals' in first_file.root.dl1datacheck:
-        pedestals = \
-            first_file.copy_node('/dl1datacheck', name='pedestals',
-                                 newparent=merged_file.root.dl1datacheck)
-    else:
-        pedestals = None
-
-    if '/dl1datacheck/flatfield' in first_file.root.dl1datacheck:
-        flatfield = \
-            first_file.copy_node('/dl1datacheck', name='flatfield',
-                                 newparent=merged_file.root.dl1datacheck)
-    else:
-        flatfield = None
-
-    # the ones below are compulsory, an exception will be raised if not present:
-    cosmics = first_file.copy_node('/dl1datacheck', name='cosmics',
-                                   newparent=merged_file.root.dl1datacheck)
+    # The tables below are the same in all merged files, so they are just
+    # copied from the first file:
     first_file.copy_node('/dl1datacheck', name='histogram_binning',
                          newparent=merged_file.root.dl1datacheck)
     first_file.copy_node('/dl1datacheck', name='used_trigger_tag',
                          newparent=merged_file.root.dl1datacheck)
     first_file.close()
 
-    for filename in file_list[1:]:
-        file = tables.open_file(filename)
-        if pedestals is not None:
-            if '/dl1datacheck/pedestals' in file.root.dl1datacheck:
-                pedestals.append(file.root.dl1datacheck.pedestals[:])
-            else:
-                logger.warning('Table pedestals is missing in file ' +
-                               str(filename))
-        if flatfield is not None:
-            if '/dl1datacheck/flatfield' in file.root.dl1datacheck:
-                flatfield.append(file.root.dl1datacheck.flatfield[:])
-            else:
-                logger.warning('Table flatfield is missing in file ' +
-                               str(filename))
+    # Now merge the rest of the other tables for all files:
+    newtables = {}
 
-        cosmics.append(file.root.dl1datacheck.cosmics[:])
+    for filename in file_list:
+        file = tables.open_file(filename)
+        for tablename in ['pedestals', 'flatfield', 'cosmics']:
+            if tablename in file.root.dl1datacheck:
+                if tablename in newtables:
+                    newtables[tablename].append(file.root.dl1datacheck[
+                                              tablename][:])
+                else:
+                    newtables[tablename] = file.copy_node(
+                            '/dl1datacheck',
+                            name=tablename,
+                            newparent=merged_file.root.dl1datacheck)
+            else:
+                logger.warning(f'Table {tablename} is missing in file {filename}')
         file.close()
 
     merged_file.close()

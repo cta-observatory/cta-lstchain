@@ -52,6 +52,11 @@ class DL3Cuts(Component):
     Selection cuts for DL2 to DL3 conversion
     """
 
+    min_event_p_en_bin = Float(
+        help="Minimum events per energy bin, to evaluate percentile cuts",
+        default_value=100,
+    ).tag(config=True)
+
     global_gh_cut = Float(
         help="Global selection cut for gh_score (gammaness)",
         default_value=0.6,
@@ -62,14 +67,66 @@ class DL3Cuts(Component):
         default_value=0.95,
     ).tag(config=True)
 
+    min_gh_cut = Float(
+        help="Minimum gh_score (gammaness) cut in an energy bin",
+        default_value=0.1,
+    ).tag(config=True)
+
+    max_gh_cut = Float(
+        help="Maximum gh_score (gammaness) cut in an energy bin",
+        default_value=0.95,
+    ).tag(config=True)
+
+    min_theta_cut = Float(
+        help="Minimum theta cut (deg) in an energy bin",
+        default_value=0.05,
+    ).tag(config=True)
+
+    max_theta_cut = Float(
+        help="Maximum theta cut (deg) in an energy bin",
+        default_value=0.32,
+    ).tag(config=True)
+
+    fill_theta_cut = Float(
+        help="Fill value of theta cut (deg) in an energy bin with fewer " +
+            "than minimum number of events present",
+        default_value=0.32,
+    ).tag(config=True)
+
     theta_containment = Float(
         help="Percentage containment region for theta cuts",
-        default=0.68,
+        default_value=0.68,
     ).tag(config=True)
 
     global_theta_cut = Float(
-        help="Global selection cut for theta",
+        help="Global selection cut (deg) for theta",
         default_value=0.2,
+    ).tag(config=True)
+
+    min_alpha_cut = Float(
+        help="Minimum alpha cut (deg) in an energy bin",
+        default_value=1,
+    ).tag(config=True)
+
+    max_alpha_cut = Float(
+        help="Maximum alpha cut (deg) in an energy bin",
+        default_value=45,
+    ).tag(config=True)
+
+    fill_alpha_cut = Float(
+        help="Fill value of alpha cut (deg) in an energy bin with fewer " +
+            "than minimum number of events present",
+        default_value=45,
+    ).tag(config=True)
+
+    alpha_containment = Float(
+        help="Percentage containment region for alpha cuts",
+        default=0.68,
+    ).tag(config=True)
+
+    global_alpha_cut = Float(
+        help="Global selection cut (deg) for alpha",
+        default_value=20,
     ).tag(config=True)
 
     allowed_tels = List(
@@ -85,8 +142,7 @@ class DL3Cuts(Component):
         return data[data["gh_score"] > self.global_gh_cut]
 
     def energy_dependent_gh_cuts(
-        self, data, energy_bins, min_value=0.1,
-        max_value=0.99, smoothing=None, min_events=10
+        self, data, energy_bins, smoothing=None
     ):
         """
         Evaluating energy-dependent gammaness cuts, in a given
@@ -98,14 +154,15 @@ class DL3Cuts(Component):
             data["gh_score"],
             data["reco_energy"],
             bins=energy_bins,
-            min_value=min_value,
-            max_value=max_value,
+            min_value=self.min_gh_cut,
+            max_value=self.max_gh_cut,
             fill_value=data["gh_score"].max(),
             percentile=100 * (1 - self.gh_efficiency),
             smoothing=smoothing,
-            min_events=min_events,
+            min_events=self.min_event_p_en_bin,
         )
         return gh_cuts
+
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
@@ -117,7 +174,7 @@ class DL3Cuts(Component):
             data["gh_score"],
             data["reco_energy"],
             gh_cuts,
-            operator.ge,
+            operator.gt,
         )
         return data[data["selected_gh"]]
 
@@ -128,9 +185,7 @@ class DL3Cuts(Component):
         return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
     def energy_dependent_theta_cuts(
-        self, data, energy_bins, min_value=0.05 * u.deg,
-        fill_value=0.32 * u.deg, max_value=0.32 * u.deg,
-        smoothing=None, min_events=10
+        self, data, energy_bins, smoothing=None,
     ):
         """
         Evaluating an optimized energy-dependent theta cuts, in a given
@@ -144,12 +199,12 @@ class DL3Cuts(Component):
             data["theta"],
             data["reco_energy"],
             bins=energy_bins,
-            min_value=min_value,
-            max_value=max_value,
-            fill_value=fill_value,
+            min_value=self.min_theta_cut * u.deg,
+            max_value=self.max_theta_cut * u.deg,
+            fill_value=self.fill_theta_cut * u.deg,
             percentile=100 * self.theta_containment,
             smoothing=smoothing,
-            min_events=min_events,
+            min_events=self.min_event_p_en_bin,
         )
         return theta_cuts
 
@@ -163,10 +218,53 @@ class DL3Cuts(Component):
             data["theta"],
             data["reco_energy"],
             theta_cuts,
-            operator.le,
+            operator.lt,
         )
         return data[data["selected_theta"]]
 
+    def apply_global_alpha_cut(self, data):
+        """
+        Applying a global alpha cut on a given data
+        """
+        return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
+
+    def energy_dependent_alpha_cuts(
+            self, data, energy_bins, smoothing=None
+    ):
+        """
+        Evaluating an optimized energy-dependent alpha cuts, in a given
+        data, with provided reco energy bins, and other parameters to
+        pass to the pyirf.cuts.calculate_percentile_cut function.
+        Note: Using too fine binning will result in too un-smooth cuts.
+        """
+        
+        alpha_cuts = calculate_percentile_cut(
+            data["alpha"],
+            data["reco_energy"],
+            bins=energy_bins,
+            min_value=self.min_alpha_cut * u.deg,
+            max_value=self.max_alpha_cut * u.deg,
+            fill_value=self.fill_alpha_cut * u.deg,
+            percentile=100 * self.alpha_containment,
+            smoothing=smoothing,
+            min_events=self.min_event_p_en_bin,
+        )
+        return alpha_cuts
+        
+    def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
+        """
+        Applying a given energy-dependent alpha cuts to a data file, along the
+        reco energy bins provided.
+        """
+        
+        data["selected_alpha"] = evaluate_binned_cut(
+            data["alpha"],
+            data["reco_energy"],
+            alpha_cuts,
+            operator.lt,
+        )
+        return data[data["selected_alpha"]]
+            
     def allowed_tels_filter(self, data):
         """
         Applying a filter on telescopes used for observation.
@@ -185,12 +283,12 @@ class DataBinning(Component):
 
     true_energy_min = Float(
         help="Minimum value for True Energy bins in TeV units",
-        default_value=0.01,
+        default_value=0.005,
     ).tag(config=True)
 
     true_energy_max = Float(
         help="Maximum value for True Energy bins in TeV units",
-        default_value=100,
+        default_value=200,
     ).tag(config=True)
 
     true_energy_n_bins_per_decade = Float(
@@ -200,12 +298,12 @@ class DataBinning(Component):
 
     reco_energy_min = Float(
         help="Minimum value for Reco Energy bins in TeV units",
-        default_value=0.01,
+        default_value=0.005,
     ).tag(config=True)
 
     reco_energy_max = Float(
         help="Maximum value for Reco Energy bins in TeV units",
-        default_value=100,
+        default_value=200,
     ).tag(config=True)
 
     reco_energy_n_bins_per_decade = Float(
@@ -260,17 +358,17 @@ class DataBinning(Component):
 
     source_offset_min = Float(
         help="Minimum value for Source offset for PSF IRF",
-        default_value=0.0001,
+        default_value=0,
     ).tag(config=True)
 
     source_offset_max = Float(
         help="Maximum value for Source offset for PSF IRF",
-        default_value=1.0001,
+        default_value=1,
     ).tag(config=True)
 
     source_offset_n_edges = Int(
         help="Number of edges for Source offset for PSF IRF",
-        default_value=1000,
+        default_value=101,
     ).tag(config=True)
 
     def true_energy_bins(self):

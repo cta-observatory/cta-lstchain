@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# import sys
+import sys
 from setuptools import setup, find_packages
 import os
-
+sys.path.append("./lstchain/reco/")
+# Import the compilable module using numba ahead of time compilation
+from reconstructorCC import cc
+# Create an extension
+ext = cc.distutils_extension()
+# Change name to save the compiled extension in the right place
+ext.name = 'lstchain.reco.'+ext.name
 
 def find_scripts(script_dir, prefix):
     script_list = [
@@ -32,26 +38,29 @@ docs_require = [
     "sphinx_argparse",
     "sphinx_rtd_theme",
     "numpydoc",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinxcontrib-mermaid"
 ]
 
 setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
-    packages=find_packages(),
+    packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
         'astropy~=4.2',
         'bokeh~=1.0',
         'ctapipe~=0.12.0',
-        'ctapipe_io_lst~=0.14.0',
-        'ctaplot~=0.5.5',
-        'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
+        'ctapipe_io_lst~=0.18.2',
+        'ctaplot~=0.6.2',
+        'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.19.0',
         'h5py',
+        'iminuit>=2',
         'joblib',
         'matplotlib~=3.5',
         'numba',
         'numpy<1.22.0a0',
         'pandas',
+        'protobuf~=3.20.0',
         'pyirf~=0.6.0',
         'scipy',
         'seaborn',
@@ -61,6 +70,7 @@ setup(
         'pymongo',
         'pyparsing',
         'setuptools_scm',
+        'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
         "all": tests_require + docs_require,
@@ -74,4 +84,5 @@ setup(
         ],
     },
     entry_points=entry_points,
+    ext_modules=[ext],
 )

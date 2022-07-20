@@ -137,8 +137,10 @@ class DL1DataCheckContainer(Container):
             # not be counted.
             uj = table['ucts_jump'].data.copy()
             # find the first False value, and set to False also all the earlier ones:
-            first_non_jump = np.where(uj==False)[0][0]
-            uj[:first_non_jump] = False
+            if np.sum(uj == False) > 0:
+                first_non_jump = np.where(uj==False)[0][0]
+                uj[:first_non_jump] = False
+
             # count only the jumps occurring in events of the type we are
             # processing:
             self.num_ucts_jumps = np.sum(uj[mask])
@@ -252,10 +254,16 @@ class DL1DataCheckContainer(Container):
                        hist_tgrad_vs_length_intensity_gt_200)
         self.hist_tgrad_vs_length_intensity_gt_200 = counts
 
-        x = table['x'].quantity[mask]
-        y = table['y'].quantity[mask]
         # event-wise, id of camera pixel which contains the image's cog:
-        cog_pixid = geom.position_to_pix_index(x, y)
+        # we skip nan coordinates to avoid a lot of ctapipe warnings
+        cog_pixid = np.zeros(mask.sum(), dtype='int')
+        for k, x, y in zip(range(mask.sum()),
+                           table['x'].quantity[mask],
+                           table['y'].quantity[mask]):
+            if np.isfinite(x) & np.isfinite(y):
+                cog_pixid[k] = geom.position_to_pix_index(x, y)
+            else:
+                cog_pixid[k] = -1
 
         self.cog_within_pixel = np.zeros(geom.n_pixels)
         # explicitly skip -1 values, lest they end in the highest pixel id...
@@ -405,12 +413,12 @@ def count_trig_types(array):
     an ndarray of shape (10, 2) [i, j] means we found j events of type i
 
     """
-    ucts_trig_types, counts = np.unique(array, return_counts=True)
+    types, counts = np.unique(array, return_counts=True)
     # write the different trigger types, then the number of events of
     # each type. Pad to 10 entries (more than enough for trigger types):
-    ucts_trig_types = np.append(ucts_trig_types, (10 - len(ucts_trig_types)) * [0])
+    types = np.append(types, (10 - len(types)) * [0])
     counts = np.append(counts, (10 - len(counts)) * [0])
-    return np.array([[t, n] for t, n in zip(ucts_trig_types, counts)])
+    return np.array([[t, n] for t, n in zip(types, counts)])
 
 
 

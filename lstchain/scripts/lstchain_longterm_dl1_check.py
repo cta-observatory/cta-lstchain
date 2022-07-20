@@ -30,6 +30,9 @@ import tables
 import warnings
 
 from astropy.table import Table
+from astropy.coordinates import Angle
+import astropy.units as u
+
 from bokeh.io import output_file as bokeh_output_file
 from bokeh.io import show, save
 from bokeh.layouts import gridplot, column
@@ -109,6 +112,8 @@ def main():
                # number of events with wrong trigger type:
                'wrong_ucts_trig_type': [],
                'wrong_tib_trig_type': [],
+               'unknown_ucts_trig_type': [],
+               'unknown_tib_trig_type': [],
                'num_ucts_jumps': []}
 
     pedestals = copy.deepcopy(cosmics)
@@ -155,13 +160,18 @@ def main():
                   'num_cosmics': [],
                   'num_pedestals': [],
                   'num_flatfield': [],
+
+                  'num_unknown_ucts_trigger_tags': [],
                   'num_wrong_ucts_tags_in_cosmics': [],
                   'num_wrong_ucts_tags_in_pedestals': [],
                   'num_wrong_ucts_tags_in_flatfield': [],
                   'num_ucts_jumps': [],
+
+                  'num_unknown_tib_trigger_tags': [],
                   'num_wrong_tib_tags_in_cosmics': [],
                   'num_wrong_tib_tags_in_pedestals': [],
                   'num_wrong_tib_tags_in_flatfield': [],
+
                   'num_pedestals_after_cleaning': [],
                   'num_contained_mu_rings': [],
 
@@ -252,7 +262,7 @@ def main():
             try:
                 a.get_node('/dl1datacheck/' + tablename)
             except Exception:
-                log.warning('Table {name} is missing!')
+                log.warning(f'Run {runnumber}: Table {tablename} is missing!')
                 datatables.append(None)
                 datatables_no_stars.append(None)
                 continue
@@ -268,7 +278,9 @@ def main():
 
         # fill data which are common to all tables:
 
-        total_num_ucts_jumps = 0  # To add up all jumps, for any event type
+        total_num_ucts_jumps = 0   # To add up all jumps, for any event type
+        total_num_unknown_ucts = 0 # To add up events with unknown ucts
+        total_num_unknown_tib = 0  # The same for tib
 
         # The tables in each file correspond to a full run, and contain one
         # row per subrun, what we do below is
@@ -292,6 +304,25 @@ def main():
             num_wrong_tags = trigtag_mismatches(table, tag)
             d['wrong_ucts_trig_type'].extend(num_wrong_tags[0])
             d['wrong_tib_trig_type'].extend(num_wrong_tags[1])
+
+            # Store and add up the number of unknown trigger tags of each type:
+            # in trigger_type and ucts_trigger_type the first index is for
+            # the subruns, the second goes over different trigger tags
+            # present in the data, and in the third [0] means the trigger
+            # tag value and [1] the number of events in the subrun with that
+            # value:
+            # TriggerBits.UNKNOWN (0)
+            unknown_mask = table['trigger_type'][:, :, 0] == 0
+            num_unknowns = np.ma.array(table['trigger_type'][:, :, 1],
+                                       mask = ~unknown_mask).sum(axis=1).data
+            d['unknown_tib_trig_type'].extend(num_unknowns)
+            total_num_unknown_tib += num_unknowns.sum()
+
+            unknown_mask = table['ucts_trigger_type'][:, :, 0] == 0
+            num_unknowns = np.ma.array(table['ucts_trigger_type'][:, :, 1],
+                                       mask = ~unknown_mask).sum(axis=1).data
+            d['unknown_ucts_trig_type'].extend(num_unknowns)
+            total_num_unknown_ucts += num_unknowns.sum()
 
             if 'num_ucts_jumps' in table.colnames:
                 d['num_ucts_jumps'].extend(table['num_ucts_jumps'])
@@ -378,12 +409,16 @@ def main():
         runsummary['min_azimuth'].extend([table['mean_az_tel'].min()])
         az = table['mean_az_tel']
         mean_az = np.arctan2(np.mean(np.sin(az)), np.mean(np.cos(az)))
+        mean_az = Angle(mean_az, u.rad).wrap_at('360d').rad
+        
         runsummary['mean_azimuth'].extend([mean_az])
         runsummary['max_azimuth'].extend([table['mean_az_tel'].max()])
 
         ra = np.deg2rad(table['tel_ra'])
-        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), np.mean(np.cos(
-                ra))))
+        mean_ra = np.rad2deg(np.arctan2(np.mean(np.sin(ra)), 
+                                        np.mean(np.cos(ra))))
+        mean_ra = Angle(mean_ra, u.deg).wrap_at('360d').deg
+        
         runsummary['mean_ra'].extend([mean_ra])
 
         runsummary['mean_dec'].extend([table['tel_dec'].mean()])
@@ -397,6 +432,13 @@ def main():
         runsummary['num_wrong_ucts_tags_in_cosmics'].extend([nwucts])
         nwtib = np.sum(cosmics['wrong_tib_trig_type'][-len(table):])
         runsummary['num_wrong_tib_tags_in_cosmics'].extend([nwtib])
+
+        # Number of 'unknown' trigger tags for this whole run, for any kind
+        # of event type:
+        runsummary['num_unknown_tib_trigger_tags'].extend([
+            total_num_unknown_tib])
+        runsummary['num_unknown_ucts_trigger_tags'].extend([
+            total_num_unknown_ucts])
 
         # number of ucts jumps in the run, for any kind of event type:
         runsummary['num_ucts_jumps'].extend([total_num_ucts_jumps])
@@ -456,8 +498,8 @@ def main():
             nstars = table['num_nearby_stars']
             mean_number_of_pixels_nearby_stars = np.nanmean(np.nansum(nstars,
                                                                       axis=1))
-            runsummary['mean_number_of_pixels_nearby_stars'] = \
-                mean_number_of_pixels_nearby_stars
+            runsummary['mean_number_of_pixels_nearby_stars'].extend(
+                [mean_number_of_pixels_nearby_stars])
 
             # charge_stddev is [pixels], containing pixwise means in the full
             # run:
@@ -542,7 +584,6 @@ def main():
             runsummary['num_flatfield'].extend([np.nan])
             runsummary['num_wrong_ucts_tags_in_flatfield'].extend([np.nan])
             runsummary['num_wrong_tib_tags_in_flatfield'].extend([np.nan])
-            runsummary['num_pedestals_after_cleaning'].extend([np.nan])
             runsummary['ff_charge_mean'].extend([np.nan])
             runsummary['ff_charge_mean_err'].extend([np.nan])
             runsummary['ff_charge_stddev'].extend([np.nan])
@@ -791,7 +832,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
 
     # Flat field pixel charges (just for the mean; the std dev may be strongly
     # affected by stars), in pe.
-    ff_charge = 75
+    ff_charge = 73.5
     ff_charge_tolerance = 0.1  # relative tolerance
 
     # Limits of FF mean pixel time (ns) w.r.t. camera average:
@@ -813,7 +854,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # lower rates just due to geometrical reasons)
     
     # Minimum muon ring intensity (pe)
-    min_muon_intensity = 2000
+    min_muon_intensity = 1960
 
     # global peak HG sample id range in muon ring events:
     muon_peak_hg_sample_range = (8, 18)
@@ -855,7 +896,9 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                           format(run,
                                  date=date.strftime("%b %d %Y %H:%M:%S")))
 
-    runsummary = read_table(filename, '/runsummary/table')
+    runsummary = read_table(filename, '/runsummary/table').to_pandas()
+    # avoid issues with nans in bokeh (fill 0's instead):
+    runsummary.fillna(0, inplace=True)
 
     if np.sum(runsummary['num_ucts_jumps']) > 0:
         log.info('Attention: UCTS jumps were detected and corrected:')
@@ -961,6 +1004,39 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0.child = grid0
     page0.title = 'Event rates'
 
+
+    page0a = Panel()
+
+    num_events = runsummary['num_cosmics'] + runsummary['num_pedestals'] + \
+                 runsummary['num_flatfield']
+    fig_ucts1 = show_graph(x=runtime,
+                           y=runsummary['num_unknown_ucts_trigger_tags'] /
+                             num_events,
+                           xlabel='date',
+                           ylabel='Fraction of UNKNOWN UCTS trigger tags',
+                           size=4, xtype='datetime', ytype='linear',
+                           point_labels=run_titles)
+    fig_ucts2 = show_graph(x=runtime, y=runsummary['num_ucts_jumps'],
+                           xlabel='date',
+                           ylabel='Number of corrected UCTS jumps',
+                           size=4, xtype='datetime', ytype='linear',
+                           point_labels=run_titles)
+    row1 = [fig_ucts1, fig_ucts2]
+    fig_tib = show_graph(x=runtime,
+                         y=runsummary['num_unknown_tib_trigger_tags'] /
+                           num_events,
+                         xlabel='date',
+                         ylabel='Fraction of UNKNOWN TIB trigger tags',
+                         size=4, xtype='datetime', ytype='linear',
+                         point_labels=run_titles)
+    row2 = [fig_tib]
+    grid0a = gridplot([row1, row2], sizing_mode=None,
+                      plot_width=pad_width, plot_height=pad_height)
+    page0a.child = grid0a
+    page0a.title = 'Trigger tags'
+
+
+
     page0b = Panel()
     items = []
     for trigtype in ['ucts', 'tib']:
@@ -980,6 +1056,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pad_height = 350
     row1 = items[:3]
     row2 = items[3:]
+
     grid0b = gridplot([row1, row2], sizing_mode=None,
                       plot_width=pad_width, plot_height=pad_height)
     page0b.child = grid0b
@@ -1030,6 +1107,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page0c.child = grid0c
     page0c.title = 'Pointing'
 
+    # Lists to store arrays containing the number of runs in which a pixel
+    # exceeds a limit in any of the checked quantities:
+    pixel_problems = []
+    check_name = []
+
     page1 = Panel()
     pad_width = 350
     pad_height = 370
@@ -1046,8 +1128,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        content_upplim=ped_max_charge_stddev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ped_pix_charge_stddev'])
-    pixel_report('Pedestal standard deviation', stddev_no_stars,
-                 0, ped_max_charge_stddev, run_fraction)
+    _, too_high = pixel_report('Pedestal standard deviation', stddev_no_stars,
+                               0, ped_max_charge_stddev, run_fraction)
+    pixel_problems.append(too_high)
+    check_name.append("Too high pedestal charge std dev")
 
     grid1 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1069,10 +1153,13 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # those calculated excluding the subruns in which a given pixel was close
     # to any bright star:
     mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_charge_mean'])
-    pixel_report('Flat-Field mean charge', mean_no_stars,
-                 ff_charge * (1 - ff_charge_tolerance),
-                 ff_charge * (1 + ff_charge_tolerance),
-                 run_fraction)
+    too_low, too_high = pixel_report('Flat-Field mean charge', mean_no_stars,
+                                     ff_charge * (1 - ff_charge_tolerance),
+                                     ff_charge * (1 + ff_charge_tolerance),
+                                     run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low flatfield mean charge",
+                       "Too high flatfield mean charge"])
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field charge std dev (pe)',
@@ -1096,18 +1183,27 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        content_upplim=ff_max_rel_time)
 
     mean_no_stars = np.array(pixwise_runsummary_no_stars['ff_pix_rel_time_mean'])
-    pixel_report('Flat-Field mean relative time', mean_no_stars,
-                 ff_min_rel_time, ff_max_rel_time, run_fraction)
+    too_low, too_high = pixel_report('Flat-Field mean relative time',
+                                     mean_no_stars,
+                                     ff_min_rel_time, ff_max_rel_time,
+                                     run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low flatfield mean relative time",
+                       "Too high flatfield mean relative time"])
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
                        pad_height, 'Flat-Field rel. time std dev (ns)',
                        run_titles, showlog=False,
-                       display_range=[0.2, max(0.7, 1.1 * np.nanmax(stddev))],
+                       display_range=[0.2, np.nanmax(np.append(1.1*stddev,
+                                                               0.7))],
                        content_upplim=ff_max_rel_time_stdev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ff_pix_rel_time_stddev'])
-    pixel_report('Flat-Field rel. time std dev', stddev_no_stars, 0,
-                 ff_max_rel_time_stdev, run_fraction)
+    _, too_high = pixel_report('Flat-Field rel. time std dev',
+                               stddev_no_stars, 0, ff_max_rel_time_stdev,
+                               run_fraction)
+    pixel_problems.append(too_high)
+    check_name.append("Too high flatfield relative time std dev")
 
     grid3 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1152,8 +1248,12 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
         pixwise_runsummary_no_stars['cosmics_pix_fraction_pulses_above30'] *
         pixwise_runsummary_no_stars['ncosmics_per_pix'] /
         pixwise_runsummary_no_stars['elapsed_time_per_pix'])
-    pixel_report('Cosmics, rate of >30pe pulses', pulse_rate_above_30_no_stars,
-                 r30_lowlim, r30_upplim, run_fraction)
+    too_low, too_high = pixel_report('Cosmics, rate of >30pe pulses',
+                                     pulse_rate_above_30_no_stars,
+                                     r30_lowlim, r30_upplim, run_fraction)
+    pixel_problems.extend([too_low, too_high])
+    check_name.extend(["Too low rate of >30 pe cosmics pulses",
+                       "Too high rate of >30 pe cosmics pulses"])
 
     grid4 = gridplot([row1, row2], sizing_mode=None, plot_width=pad_width,
                      plot_height=pad_height)
@@ -1187,6 +1287,29 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                      plot_height=pad_height)
     page4b.child = grid4b
     page4b.title = 'Cosmics'
+
+    # Now we make a page with a summary of the pixel problems (in what
+    # fraction of the runs each pixel showed a given problem)
+    page4c = Panel()
+    fraction_of_runs = np.array(pixel_problems) / len(runsummary)
+
+    row = show_camera(fraction_of_runs, engineering_geom,
+                      pad_width, pad_height,
+                      'Fraction of runs', titles=check_name,
+                      showlog=False,
+                      display_range=(1e-6, 1.1))
+    # We set the minimum to non-zero so pixels without problems appear in grey
+
+    row[0].title = 'issue'
+    # show in red pixels with issues in more than half of the runs (for some
+    # reason this does not work until one clicks on the z-range slider of one
+    # of the plots):
+    row[2].value=(1e-6, 0.5)
+
+    grid4c = gridplot([row], sizing_mode=None, plot_width=pad_width,
+                      plot_height=pad_height)
+    page4c.child = grid4c
+    page4c.title = 'Pixel problems'
 
     page5 = Panel()
     pad_width = 550
@@ -1415,8 +1538,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     page8.child = grid8
     page8.title = "Cosmics, averages"
 
-    tabs = Tabs(tabs=[page0, page0b, page0c, page1, page2,
-                      page3, page4, page4b, page5, page6,
+    tabs = Tabs(tabs=[page0, page0a, page0b, page0c, page1, page2,
+                      page3, page4, page4b, page4c, page5, page6,
                       page7, page8])
 
     if batch:
@@ -1438,6 +1561,8 @@ def show_graph(x, y, xlabel, ylabel, ey=None, eylow=None, eyhigh=None,
     x: ndarray, x coordinates
     y: ndarray, y coordinates
     ey: ndarray, size of y error bars
+    eylow, eyhigh: ndarrays, size of lower- and upper-side y-error bars (if
+                   provided, they are used instead of ey)
     xlabel: x-axis label
     ylabel: y-axis label
     xtype: 'log', 'linear', 'datetime'
@@ -1540,13 +1665,15 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     Returns
     -------
+    too_low_count, too_high_count: ndarrays [num_pixels]  Number of runs in
+    which each pixel was below low_limit and above upp_limit respectively
 
     '''
 
     npixels = value.shape[1]
 
     # maximum fraction of faulty pixels that will be reported individually.
-    # Beyomd that just a generic warning is displayed:
+    # Beyond that, just a generic warning is displayed:
     max_fraction_for_detailed_warning = 0.05
 
     too_low = value < low_limit
@@ -1580,7 +1707,7 @@ def pixel_report(title, value, low_limit, upp_limit, run_fraction):
 
     log.info('')
 
-    return
+    return too_low_count, too_high_count
 
 def get_datacheck_table(filename, tablename, exclude_stars=False):
     """
@@ -1685,7 +1812,7 @@ def trigtag_mismatches(table, tag_value):
     Returns
     -------
     num_wrong_tags [ndarray, ndarray] each of the arrays with same
-    number of elements as number of rows in the tabke (i.e. = number of subruns)
+    number of elements as number of rows in the table (i.e. = number of subruns)
     The arrays contain the number of non-matching tags, for ucts and tib
     respectively
 
@@ -1700,7 +1827,13 @@ def trigtag_mismatches(table, tag_value):
                 # not =0) is the trigger type, and trigtype[1] the
                 # number of events in the subrun which have that
                 # trigger type.
-                if trigtype[0] == 0:
+
+                # skip the 'unknown' cases, we are counting here just the
+                # wrong tags:
+                if trigtype[0] == 0: # TriggerBits.UNKNOWN:
+                    continue
+
+                if trigtype[1] == 0:
                     # no more trigger types are stored for this subrun
                     break
                 elif (trigtype[0] & tag_value) == 0:

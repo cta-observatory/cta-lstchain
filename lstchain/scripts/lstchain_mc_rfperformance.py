@@ -2,7 +2,7 @@
 
 """
 Pipeline to test train three Random Forests destinated to Energy, disp
-reconstruction and Gamma/Hadron separation and test the performance 
+reconstruction and Gamma/Hadron separation and test the performance
 of Random Forests.
 
 Inputs are DL1 files
@@ -96,6 +96,7 @@ def main():
         args.protonfile,
         save_models=args.save_models,
         path_models=args.path_models,
+        free_model_memory=False,
         custom_config=config,
     )
 
@@ -108,8 +109,9 @@ def main():
 
     data = pd.concat([gammas, proton], ignore_index=True)
 
-    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm, cls_disp_sign=cls_disp_sign,
-                                  focal_length=focal_length, custom_config=config)
+    dl2 = dl1_to_dl2.apply_models(data, cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
+                                  cls_disp_sign=cls_disp_sign, focal_length=focal_length,
+                                  custom_config=config)
 
     ####PLOT SOME RESULTS#####
 
@@ -143,9 +145,10 @@ def main():
     if not args.batch:
         plt.show()
 
-    plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
-    if not args.batch:
-        plt.show()
+    if args.save_models:
+        plot_dl2.plot_models_features_importances(args.path_models, args.config_file)
+        if not args.batch:
+            plt.show()
 
     plt.hist(dl2[dl2['mc_type'] == 101]['gammaness'], bins=100)
     plt.hist(dl2[dl2['mc_type'] == 0]['gammaness'], bins=100)

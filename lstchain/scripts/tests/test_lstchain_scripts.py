@@ -23,8 +23,7 @@ from lstchain.io.io import (
     dl1_params_tel_mon_flat_key,
 )
 
-from lstchain.io.config import get_standard_config
-
+from lstchain.io.config import get_standard_config, get_srcdep_config
 import json
 
 
@@ -167,7 +166,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -312,7 +311,7 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns
 
 
 @pytest.mark.private_data
@@ -348,7 +347,13 @@ def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
 def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
     assert observed_srcdep_dl2_file.is_file()
     dl2_srcdep_df = get_srcdep_params(observed_srcdep_dl2_file)
-    srcdep_assumed_positions = ['on', 'off_090', 'off_180', 'off_270']
+    srcdep_config = get_srcdep_config()
+    srcdep_assumed_positions = ['on']
+    n_off_wobble=srcdep_config.get('n_off_wobble')
+    for ioff in range(n_off_wobble):
+        off_angle = 2 * np.pi / (n_off_wobble + 1) * (ioff + 1)
+        srcdep_assumed_positions.append('off_{:03}'.format(round(np.rad2deg(off_angle))))
+
     srcdep_dl2_params = [
         'expected_src_x',
         'expected_src_y',
@@ -501,3 +506,10 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_source" in run_summary_table.columns
 
     assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+
+
+def test_numba_compil_lhfit():
+    from lstchain.scripts import numba_compil_lhfit
+    assert numba_compil_lhfit.cc.name == 'log_pdf_CC'
+    assert 'log_pdf' in numba_compil_lhfit.cc._exported_functions
+    assert len(numba_compil_lhfit.cc._exported_functions) == 6

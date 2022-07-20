@@ -486,31 +486,28 @@ def expand_tel_list(tel_list, max_tels):
 
 
 def filter_events(
-    events,
-    filters=dict(
-        intensity=[0, np.inf],
-        width=[0, np.inf],
-        length=[0, np.inf],
-        wl=[0, np.inf],
-        r=[0, np.inf],
-        leakage_intensity_width_2=[0, 1],
-    ),
-    finite_params=None,
+        events,
+        filters=None,
+        finite_params=None,
 ):
     """
     Apply data filtering to a pandas dataframe or astropy Table.
     The Table object will be converted to pandas dataframe and used.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
-    Returning filter is converted to a numpy object so that it can be used by both dataframe
-    and table inputs
+    The returned object is of the same type as passed `events`
 
     Parameters
     ----------
     events: `pandas.DataFrame` or 'astropy.table.Table'
     filters: dict containing events features names and their filtering range
+        example : dict(intensity=[0, np.inf], width=[0, np.inf], r=[0, np.inf])
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
+    n_events: int or float
+        Number of events to keep.
+        If an integer > 1 is passed this will be the maximum number of events to keep.
+        If a float < 1, this is the ratio of events to keep.
 
     Returns
     -------
@@ -524,6 +521,7 @@ def filter_events(
         events_df = events
 
     filter = np.ones(len(events_df), dtype=bool)
+    filters = {} if filters is None else filters
 
     for col, (lower_limit, upper_limit) in filters.items():
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
@@ -542,7 +540,11 @@ def filter_events(
                 if v > 0:
                     log.warning(f"{k} : {v}")
 
-    return events[filter.to_numpy()]
+    # if pandas DataFrame or Series, transforms to numpy
+    filter = filter.to_numpy() if hasattr(filter, 'to_numpy') else filter
+    events = events[filter]
+
+    return events
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):

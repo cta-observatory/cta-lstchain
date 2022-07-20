@@ -1,129 +1,4 @@
 {
-  "source_config" : {
-    "EventSource": {
-      "allowed_tels": [1, 2, 3, 4],
-      "max_events": null
-    },
-    "LSTEventSource": {
-      "default_trigger_type": "ucts",
-      "allowed_tels": [1],
-      "min_flatfield_adc": 3000,
-      "min_flatfield_pixel_fraction": 0.8,
-      "calibrate_flatfields_and_pedestals": false,
-      "EventTimeCalculator": {
-        "dragon_reference_counter": null,
-        "dragon_reference_time": null
-      },
-      "PointingSource":{
-        "drive_report_path": null
-      },
-      "LSTR0Corrections":{
-        "drs4_pedestal_path": null,
-        "calibration_path": null,
-        "drs4_time_calibration_path": null
-      }
-    }
-  },
-
-  "events_filters": {
-    "intensity": [0, Infinity],
-    "width": [0, Infinity],
-    "length": [0, Infinity],
-    "wl": [0, Infinity],
-    "r": [0, Infinity],
-    "leakage_intensity_width_2": [0, Infinity]
-  },
-
-  "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":6,
-    "boundary_thresh":3,
-    "sigma":2.5,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
-
-  "dynamic_cleaning": {
-    "apply": true,
-    "threshold": 267,
-    "fraction_cleaning_intensity": 0.03
-  },
-
-  "random_forest_energy_regressor_args": {
-    "max_depth": 50,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 150,
-    "bootstrap": true,
-    "criterion": "squared_error",
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0,
-    "warm_start": false
-  },
-
-  "random_forest_disp_regressor_args": {
-    "max_depth": 50,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 150,
-    "bootstrap": true,
-    "criterion": "squared_error",
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0,
-    "warm_start": false
-  },
-
-  "random_forest_particle_classifier_args": {
-    "max_depth": 100,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 100,
-    "criterion": "gini",
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "bootstrap": true,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0.0,
-    "warm_start": false,
-    "class_weight": null
-  },
-
-  "random_forest_disp_classifier_args": {
-    "max_depth": 100,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 100,
-    "criterion": "gini",
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "bootstrap": true,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0.0,
-    "warm_start": false,
-    "class_weight": null
-  },
-    
   "energy_regression_features": [
     "log_intensity",
     "width",
@@ -135,9 +10,7 @@
     "leakage_intensity_width_2",
     "dist"
   ],
-
   "disp_method": "disp_norm_sign",
-
   "disp_regression_features": [
     "log_intensity",
     "width",
@@ -149,7 +22,6 @@
     "leakage_intensity_width_2",
     "dist"
   ],
-
   "disp_classification_features": [
     "log_intensity",
     "width",
@@ -161,7 +33,6 @@
     "leakage_intensity_width_2",
     "dist"
   ],
-
   "particle_classification_features": [
     "log_intensity",
     "width",
@@ -175,46 +46,17 @@
     "dist"
   ],
 
-    
-  "allowed_tels": [1, 2, 3, 4],
-  "max_events": null,
-  "write_pe_image": false,
-  "mc_image_scaling_factor": 1,
-  "CameraCalibrator": {
-    "apply_waveform_time_shift": false
-  },
-  "image_extractor": "LocalPeakWindowSum",
-  "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "image_extractor_config": {},
-  "gain_selector": "ThresholdGainSelector",
-  "gain_selector_config": {
-    "threshold":  3500
-  },
-  "LocalPeakWindowSum":{
-    "window_shift": 4,
-    "window_width":8
-  },
-  "GlobalPeakWindowSum":{
-    "window_shift": 4,
-    "window_width":8
-  },
-  "timestamps_pointing":"ucts",
-
-  "train_gamma_src_r_deg": [0, Infinity],
-
+  "train_gamma_src_r_deg": [
+    0,
+    Infinity
+  ],
   "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
 
   "observation_mode": "wobble",
-  "n_off_wobble": 3,
+  "n_off_wobble": 1,
   "source_name": "Crab Nebula",
-  "source_ra":83.63308333,
-  "source_dec":22.0145,
-
-  "volume_reducer":{
-    "algorithm": null,
-    "parameters": {
-    }
-  }
+  "source_ra": 83.63308333,
+  "source_dec": 22.0145
 }

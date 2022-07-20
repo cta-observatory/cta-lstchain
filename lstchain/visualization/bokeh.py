@@ -182,12 +182,19 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
     Returns
     -------
-    [p1, p2, p3]: three bokeh figures, intended for showing them on the same row
+    [slider, p1, range_slider, p2, p3]: three bokeh figures, intended for
+    showing them on the same row, and two sliders, one for the run numbers (
+    or whatever "sets" of data we are displaying) and the other for the
+    z-range of the plots.
     p1 is the camera display (with "content" in linear & logarithmic scale)
     p2: content vs. pixel
     p3: histogram of content (with one entry per pixel)
 
     """
+
+    if np.isfinite(content).sum() == 0:
+        # Nothing to plot...
+        return [None]
 
     # patch to reduce gaps between bokeh's cam circular pixels:
     camgeom = copy.deepcopy(geom)

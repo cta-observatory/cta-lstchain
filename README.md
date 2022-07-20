@@ -1,4 +1,4 @@
-# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=master)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amaster)
+# cta-lstchain [![Build Status](https://github.com/cta-observatory/cta-lstchain/workflows/CI/badge.svg?branch=master)](https://github.com/cta-observatory/cta-lstchain/actions?query=workflow%3ACI+branch%3Amaster) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6344673.svg)](https://doi.org/10.5281/zenodo.6344673)
 
 Repository for the high level analysis of the LST.
 The analysis is heavily based on [ctapipe](https://github.com/cta-observatory/ctapipe), adding custom code for mono reconstruction.
@@ -18,7 +18,7 @@ are unit tested and should be working as long as the build status is passing.
 ### As user
 
 ```
-LSTCHAIN_VER=0.8.4  (or the version you want to install - usually the latest release)
+LSTCHAIN_VER=0.9.6  (or the version you want to install - usually the latest release)
 wget https://raw.githubusercontent.com/cta-observatory/cta-lstchain/v$LSTCHAIN_VER/environment.yml
 conda env create -n lst -f environment.yml
 conda activate lst
@@ -86,3 +86,7 @@ See [here](https://cta-observatory.github.io/ctapipe/development/pullrequests.ht
 ## Report issue / Ask a question
 
 Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
+
+## Cite
+
+If you use lstchain in a publication, please cite it using Zenodo _Cite as_ from https://doi.org/10.5281/zenodo.6344673

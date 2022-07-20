@@ -23,12 +23,18 @@ and saved with other IRFs.
 
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
+
+For source-dependent analysis, alpha cut can be used instead of theta cut.
+If you want to generate source-dependent IRFs, source-dep flag should be activated.
+The global alpha cut used to generate IRFs is stored as AL_CUT in the HDU header.
+
 """
 
 from astropy import table
 from astropy.io import fits
 from astropy.time import Time
 import astropy.units as u
+from traitlets import Undefined
 import numpy as np
 
 from ctapipe.core import (
@@ -70,6 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
+from lstchain.io.io import check_mc_type
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -119,6 +126,16 @@ class IRFFITSWriter(Tool):
         --energy-dependent-theta
         --gh-efficiency 0.95
         --theta-containment 0.68
+
+    Or generate source-dependent IRFs
+    > lstchain_create_irf_files
+        -g /path/to/DL2_MC_gamma_file.h5
+        -o /path/to/irf.fits.gz
+        --point-like
+        --global-gh-cut 0.9
+        --global-alpha-cut 10
+        --source-dep
+
     """
 
     input_gamma_dl2 = traits.Path(
@@ -173,8 +190,18 @@ class IRFFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    energy_dependent_alpha = traits.Bool(
+        help="True for applying energy-dependent alpha cuts",
+        default_value=False,
+    ).tag(config=True)
+
     overwrite = traits.Bool(
         help="If True, overwrites existing output file without asking",
+        default_value=False,
+    ).tag(config=True)
+
+    source_dep = traits.Bool(
+        help="True for source-dependent analysis",
         default_value=False,
     ).tag(config=True)
 
@@ -190,6 +217,8 @@ class IRFFITSWriter(Tool):
         "gh-efficiency": "DL3Cuts.gh_efficiency",
         "theta-containment": "DL3Cuts.theta_containment",
         "global-theta-cut": "DL3Cuts.global_theta_cut",
+        "alpha-containment": "DL3Cuts.alpha_containment",
+        "global-alpha-cut": "DL3Cuts.global_alpha_cut",
         "allowed-tels": "DL3Cuts.allowed_tels",
         "overwrite": "IRFFITSWriter.overwrite",
     }
@@ -203,6 +232,10 @@ class IRFFITSWriter(Tool):
             {"IRFFITSWriter": {"overwrite": True}},
             "overwrites output file",
         ),
+        "source-dep": (
+            {"IRFFITSWriter": {"source_dep": True}},
+            "Source-dependent analysis will be performed",
+        ),
         "energy-dependent-gh": (
             {"IRFFITSWriter": {"energy_dependent_gh": True}},
             "Uses energy-dependent cuts for gammaness",
@@ -210,6 +243,10 @@ class IRFFITSWriter(Tool):
         "energy-dependent-theta": (
             {"IRFFITSWriter": {"energy_dependent_theta": True}},
             "Uses energy-dependent cuts for theta",
+        ),
+        "energy-dependent-alpha": (
+            {"IRFFITSWriter": {"energy_dependent_alpha": True}},
+            "Uses energy-dependent cuts for alpha",
         ),
     }
 
@@ -232,7 +269,7 @@ class IRFFITSWriter(Tool):
                 "(use .fits or .fits.gz)."
                 )
 
-        if self.input_proton_dl2 and self.input_electron_dl2 is not None:
+        if self.input_proton_dl2 and self.input_electron_dl2 is not Undefined:
             self.only_gamma_irf = False
         else:
             self.only_gamma_irf = True
@@ -243,7 +280,7 @@ class IRFFITSWriter(Tool):
 
         self.mc_particle = {
             "gamma": {
-                "file": str(self.input_gamma_dl2),
+                "file": self.input_gamma_dl2,
                 "target_spectrum": CRAB_MAGIC_JHEAP2015,
             },
         }
@@ -254,12 +291,12 @@ class IRFFITSWriter(Tool):
         # Read and update MC information
         if not self.only_gamma_irf:
             self.mc_particle["proton"] = {
-                "file": str(self.input_proton_dl2),
+                "file":  self.input_proton_dl2,
                 "target_spectrum": IRFDOC_PROTON_SPECTRUM,
             }
 
             self.mc_particle["electron"] = {
-                "file": str(self.input_electron_dl2),
+                "file": self.input_electron_dl2,
                 "target_spectrum": IRFDOC_ELECTRON_SPECTRUM,
             }
 
@@ -276,10 +313,7 @@ class IRFFITSWriter(Tool):
             self.log.info(f"Simulated {particle_type.title()} Events:")
             p["events"], p["simulation_info"] = read_mc_dl2_to_QTable(p["file"])
 
-            if p["simulation_info"].viewcone.value == 0.0:
-                p["mc_type"] = "point_like"
-            else:
-                p["mc_type"] = "diffuse"
+            p["mc_type"] = check_mc_type(p["file"])
 
             self.log.debug(
                 f"Simulated {p['mc_type']} {particle_type.title()} Events:"
@@ -297,19 +331,31 @@ class IRFFITSWriter(Tool):
                     p["simulated_spectrum"],
                 )
 
-            for prefix in ("true", "reco"):
-                k = f"{prefix}_source_fov_offset"
-                p["events"][k] = calculate_source_fov_offset(
-                    p["events"], prefix=prefix
-                )
-            # calculate theta / distance between reco and assumed source position
-            p["events"]["theta"] = calculate_theta(
-                p["events"],
-                assumed_source_az=p["events"]["true_az"],
-                assumed_source_alt=p["events"]["true_alt"],
-            )
-            self.log.debug(p["simulation_info"])
+            if not self.source_dep:
+                for prefix in ("true", "reco"):
+                    k = f"{prefix}_source_fov_offset"
+                    p["events"][k] = calculate_source_fov_offset(
+                        p["events"], prefix=prefix
+                    )
 
+                # calculate theta / distance between reco and assumed source position
+                p["events"]["theta"] = calculate_theta(
+                    p["events"],
+                    assumed_source_az=p["events"]["true_az"],
+                    assumed_source_alt=p["events"]["true_alt"],
+                )
+
+            else:
+                # Alpha cut is applied for source-dependent analysis.
+                # To adapt source-dependent analysis to pyirf codes,
+                # true position is set as reco position for survived events
+                # after alpha cut
+                p["events"]["true_source_fov_offset"] = calculate_source_fov_offset(
+                    p["events"], prefix="true"
+                )
+                p["events"]["reco_source_fov_offset"] = p["events"]["true_source_fov_offset"]
+
+        self.log.debug(p["simulation_info"])
         gammas = self.mc_particle["gamma"]["events"]
 
         # Binning of parameters used in IRFs
@@ -323,7 +369,7 @@ class IRFFITSWriter(Tool):
 
         if self.energy_dependent_gh:
             self.gh_cuts_gamma = self.cuts.energy_dependent_gh_cuts(
-                gammas, reco_energy_bins, min_value=0.1, max_value=0.95
+                gammas, reco_energy_bins
             )
             gammas = self.cuts.apply_energy_dependent_gh_cuts(
                 gammas, self.gh_cuts_gamma
@@ -339,26 +385,44 @@ class IRFFITSWriter(Tool):
             )
 
         if self.point_like:
-            if self.energy_dependent_theta:
-                self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
-                    gammas, reco_energy_bins,
-                    min_value=0.05 * u.deg, max_value=0.32 * u.deg,
-                )
-                gammas = self.cuts.apply_energy_dependent_theta_cuts(
-                    gammas, self.theta_cuts
-                )
-                self.log.info(
-                    "Using a containment region for theta of "
-                    f"{self.cuts.theta_containment}"
-                )
+            if not self.source_dep:
+                if self.energy_dependent_theta:
+                    self.theta_cuts = self.cuts.energy_dependent_theta_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_theta_cuts(
+                        gammas, self.theta_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for theta of "
+                        f"{self.cuts.theta_containment}"
+                    )
+                else:
+                    gammas = self.cuts.apply_global_theta_cut(gammas)
+                    self.log.info(
+                        "Using a global Theta cut of "
+                        f"{self.cuts.global_theta_cut} for point-like IRF"
+                    )
             else:
-                gammas = self.cuts.apply_global_theta_cut(gammas)
-                self.log.info(
-                    "Using a global Theta cut of "
-                    f"{self.cuts.global_theta_cut} for point-like IRF"
-                )
+                if self.energy_dependent_alpha:
+                    self.alpha_cuts = self.cuts.energy_dependent_alpha_cuts(
+                        gammas, reco_energy_bins,
+                    )
+                    gammas = self.cuts.apply_energy_dependent_alpha_cuts(
+                        gammas, self.alpha_cuts
+                    )
+                    self.log.info(
+                        "Using a containment region for alpha of "
+                        f"{self.cuts.alpha_containment} %"
+                    )
+                else:
+                    gammas = self.cuts.apply_global_alpha_cut(gammas)
+                    self.log.info(
+                        'Using a global Alpha cut of '
+                        f'{self.cuts.global_alpha_cut} for point like IRF'
+                    )
 
-        if self.mc_particle["gamma"]["mc_type"] == "point_like":
+        if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
             mean_fov_offset = round(
                 gammas["true_source_fov_offset"].mean().to_value(), 1
             )
@@ -380,7 +444,6 @@ class IRFFITSWriter(Tool):
                     )
                 ] * u.deg
                 self.log.info("For RAD MAX, the full FoV is used")
-
 
         if not self.only_gamma_irf:
             background = table.vstack(
@@ -422,27 +485,41 @@ class IRFFITSWriter(Tool):
         if not self.energy_dependent_gh:
             extra_headers["GH_CUT"] = self.cuts.global_gh_cut
 
-            if self.point_like:
-                extra_headers["RAD_MAX"] = (
-                    self.cuts.global_theta_cut,
-                    'deg'
-                )
         else:
             extra_headers["GH_EFF"] = (
                 self.cuts.gh_efficiency,
                 "gamma/hadron efficiency"
             )
-            if self.point_like and self.energy_dependent_theta:
-                extra_headers["TH_CONT"] = (
-                    self.cuts.theta_containment,
-                    "Theta containment region in percentage"
-                )
 
+        if self.point_like:
+            if not self.source_dep:
+                if self.energy_dependent_theta:
+                    extra_headers["TH_CONT"] = (
+                        self.cuts.theta_containment,
+                        "Theta containment region in percentage"
+                    )
+                else:
+                    extra_headers["RAD_MAX"] = (
+                        self.cuts.global_theta_cut,
+                        'deg'
+                    )
+            else:
+                if self.energy_dependent_alpha:
+                    extra_headers["AL_CONT"] = (
+                        self.cuts.alpha_containment,
+                        "Alpha containment region in percentage"
+                    )
+                else:
+                    extra_headers["AL_CUT"] = (
+                        self.cuts.global_alpha_cut,
+                        'deg'
+                    )
+                    
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
         with np.errstate(invalid="ignore", divide="ignore"):
-            if self.mc_particle["gamma"]["mc_type"] == "point_like":
+            if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
                 self.effective_area = effective_area_per_energy(
                     gammas,
                     self.mc_particle["gamma"]["simulation_info"],
@@ -551,14 +628,31 @@ class IRFFITSWriter(Tool):
             self.log.info("GH CUTS HDU added")
 
         if self.energy_dependent_theta and self.point_like:
+            if not self.source_dep:
+                self.hdus.append(
+                    create_rad_max_hdu(
+                        self.theta_cuts["cut"][:, np.newaxis],
+                        reco_energy_bins, fov_offset_bins,
+                        **extra_headers
+                    )
+                )
+                self.log.info("RAD MAX HDU added")
+
+        if self.energy_dependent_alpha and self.source_dep:
+            # Create a separate temporary header
+            alpha_header = fits.Header()
+            alpha_header["CREATOR"] = f"lstchain v{__version__}"
+            alpha_header["DATE"] = Time.now().utc.iso
+            
+            for k, v in extra_headers.items():
+                alpha_header[k] = v
+                
             self.hdus.append(
-                create_rad_max_hdu(
-                    self.theta_cuts["cut"][:, np.newaxis],
-                    reco_energy_bins, fov_offset_bins,
-                    **extra_headers
+                fits.BinTableHDU(
+                    self.alpha_cuts, header=gh_header, name="AL_CUTS"
                 )
             )
-            self.log.info("RAD MAX HDU added")
+            self.log.info("ALPHA CUTS HDU added")
 
     def finish(self):
 

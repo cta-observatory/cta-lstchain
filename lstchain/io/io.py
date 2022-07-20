@@ -30,7 +30,6 @@ from .lstcontainers import (
     ThrownEventsHistogram,
 )
 
-
 log = logging.getLogger(__name__)
 
 __all__ = [
@@ -41,6 +40,7 @@ __all__ = [
     'auto_merge_h5files',
     'check_mcheader',
     'check_metadata',
+    'check_mc_type',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
@@ -80,6 +80,8 @@ dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -530,7 +532,7 @@ def check_mcheader(mcheader1, mcheader2):
         v1 = mcheader1[k]
         v2 = mcheader2[k]
         if v1 != v2:
-            raise ValueError('MC headers do not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'MC headers do not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def check_thrown_events_histogram(thrown_events_hist1, thrown_events_hist2):
@@ -615,7 +617,7 @@ def check_metadata(metadata1, metadata2):
         v1 = metadata1[k]
         v2 = metadata2[k]
         if v1 != v2:
-            raise ValueError('Metadata does not match for key {k}:  {v1!r} / {v2!r}')
+            raise ValueError(f'Metadata does not match for key {k}:  {v1!r} / {v2!r}')
 
 
 def global_metadata():
@@ -881,6 +883,12 @@ def read_mc_dl2_to_QTable(filename):
         "reco_az": u.rad,
     }
 
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
     simu_info = read_simu_info_merged_hdf5(filename)
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
@@ -891,9 +899,14 @@ def read_mc_dl2_to_QTable(filename):
         viewcone=simu_info.max_viewcone_radius,
     )
 
-    events = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(
-        columns=name_mapping
-    )
+    events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        events_srcdep = get_srcdep_params(filename, 'on')
+        events = pd.concat([events, events_srcdep], axis=1)
+
+    events = events.rename(columns=name_mapping)
+
     events = QTable.from_pandas(events)
 
     for k, v in unit_mapping.items():
@@ -902,12 +915,13 @@ def read_mc_dl2_to_QTable(filename):
     return events, pyirf_simu_info
 
 
-def read_data_dl2_to_QTable(filename):
+def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
     Read data DL2 files from lstchain and return QTable format
     Parameters
     ----------
     filename: path to the lstchain DL2 file
+    srcdep_pos: assumed source position for source-dependent analysis
 
     Returns
     -------
@@ -929,7 +943,19 @@ def read_data_dl2_to_QTable(filename):
         "dragon_time": u.s,
     }
 
-    data = pd.read_hdf(filename, key=dl2_params_lstcam_key).rename(columns=name_mapping)
+    # add alpha for source-dependent analysis
+    srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
+
+    if srcdep_flag:
+        unit_mapping['alpha'] = u.deg
+
+    data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+
+    if srcdep_flag:
+        data_srcdep = get_srcdep_params(filename, srcdep_pos)
+        data = pd.concat([data, data_srcdep], axis=1)
+
+    data = data.rename(columns=name_mapping)
 
     data = QTable.from_pandas(data)
 
@@ -1110,3 +1136,34 @@ def extract_simulation_nsb(filename):
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
 
+
+def check_mc_type(filename):
+    """
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+    Returns
+    -------
+    string
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+    
+    min_viewcone = simu_info.min_viewcone_radius.value
+    max_viewcone = simu_info.max_viewcone_radius.value
+
+    if max_viewcone == 0.0:
+        mc_type = 'point_like'
+
+    elif min_viewcone == 0.0:
+        mc_type = 'diffuse'
+        
+    elif (max_viewcone - min_viewcone) < 0.1:
+        mc_type = 'ring_wobble'
+
+    else:
+        raise ValueError('mc type cannot be identified')
+
+    return mc_type
+            
