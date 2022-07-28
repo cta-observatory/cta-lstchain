@@ -46,9 +46,9 @@ setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
-        'astropy~=4.2',
+        'astropy',
         'bokeh~=1.0',
-        'ctapipe~=0.12.0',
+        'ctapipe~=0.15.0',
         'ctapipe_io_lst~=0.18.2',
         'ctaplot~=0.6.2',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2

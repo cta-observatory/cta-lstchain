@@ -5,9 +5,9 @@ channels:
 dependencies:
   - python=3.8
   - numpy=1.21
-  - astropy~=4.2
+  - astropy
   - pip
-  - ctapipe=0.12
+  - ctapipe=0.15
   - gammapy=0.19
   - h5py
   - ipython
