@@ -5,13 +5,14 @@ Factory for the estimation of the flat field coefficients
 
 import numpy as np
 from astropy import units as u
-from lstchain.ctapipe_compat import PedestalCalculator
+from astropy.stats import sigma_clipped_stats
+
 from ctapipe.core.traits import List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
 
+from lstchain.ctapipe_compat import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
-from lstchain.statistics import sigma_clipped_mean_std
 
 
 __all__ = [
@@ -259,16 +260,18 @@ class PedestalIntegrator(PedestalCalculator):
             trace_integral,
             mask=masked_pixels_of_sample
         )
-        # median over the sample per pixel
-        pixel_median = np.ma.median(masked_trace_integral, axis=0)
 
         # mean and std over the sample per pixel
-        pixel_mean, pixel_std, unused_values = sigma_clipped_mean_std(
+        max_sigma = self.sigma_clipping_max_sigma
+        pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
             masked_trace_integral,
-            max_sigma=self.sigma_clipping_max_sigma,
-            n_iterations=self.sigma_clipping_iterations,
+            sigma=max_sigma,
+            maxiters=self.sigma_clipping_iterations,
+            cenfunc="mean",
+            axis=0,
         )
 
+        unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
         check_outlier_mask(outliers, self.log, "pedestal")
