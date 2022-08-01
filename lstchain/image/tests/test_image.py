@@ -5,7 +5,6 @@ from lstchain.image.cleaning import (
 )
 from ctapipe.image import number_of_islands, dilate
 from ctapipe.instrument import CameraGeometry
-from traitlets.config import Config
 import numpy as np
 
 def test_dynamic_cleaning():
@@ -35,13 +34,10 @@ def test_get_only_main_island():
         mask[pix] = True
         mask[some_neighs] = True
 
-    num_islands, island_labels = number_of_islands(geom, mask)
-    # Number of islands should be 2 here
+    signal_pixels, num_islands = get_only_main_island(geom, mask)
     assert(num_islands == 2)
 
-    signal_pixels = get_only_main_island(island_labels, mask)
     num_island, _ = number_of_islands(geom, signal_pixels)
-    
     assert(num_island == 1)
     assert(signal_pixels.sum() == 13)
 
