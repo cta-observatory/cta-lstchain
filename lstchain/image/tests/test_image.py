@@ -21,26 +21,6 @@ def test_dynamic_cleaning():
                                   fraction)
     assert(mask.sum() == signal_pixels.sum())
 
-def test_get_only_main_island():
-
-    # Creating a mask of pixels with two islands:
-    # Bigger island around pixel#39,40,41 and smaller one around pixel#42
-    geom = CameraGeometry.from_name("LSTCam")
-    mask = np.array(1855*[False])
-
-    num_pix = [39, 40, 41, 42]
-    for pix in num_pix:
-        some_neighs = geom.neighbors[pix][0:6]
-        mask[pix] = True
-        mask[some_neighs] = True
-
-    signal_pixels, num_islands = get_only_main_island(geom, mask)
-    assert(num_islands == 2)
-
-    num_island, _ = number_of_islands(geom, signal_pixels)
-    assert(num_island == 1)
-    assert(signal_pixels.sum() == 13)
-
 def test_lst_image_cleaning():
 
     geom = CameraGeometry.from_name("LSTCam")
@@ -69,7 +49,7 @@ def test_lst_image_cleaning():
         use_dynamic_cleaning=True,
         fraction_dynamic=0.3,
         threshold_dynamic=40,
-        use_only_main_island=True
+        use_only_largest_island=True
     )
     
     assert(num_islands == 2)

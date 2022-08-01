@@ -10,11 +10,11 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
     tailcuts_clean
 )
+from ctapipe.image.morphology import largest_island
 from lstchain.calib.camera.pixel_threshold_estimation import get_ped_thresh
 
 __all__ = [
     'apply_dynamic_cleaning',
-    'get_only_main_island',
     'lst_image_cleaning',
     'LSTImageCleaner'
 ]
@@ -53,34 +53,6 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     return mask_dynamic_cleaning
 
 
-def get_only_main_island(geom, signal_pixels):
-    """
-    Reduce the selected image mask to return only the main island
-
-    Parameters
-    ----------
-    geom: `ctapipe.instrument.CameraGeometry`
-        Camera geometry information
-    signal_pixels: `np.ndarray`
-        Boolean mask with the selected pixels
-
-    Returns
-    -------
-    signal_pixels: `np.ndarray`
-        Boolean mask with the selected pixels after selecting only the main island
-    num_islands: `int`
-        Number of islands before it was reduced to one
-
-    """
-    num_islands, island_labels = number_of_islands(geom, signal_pixels)
-    n_pixels_on_island = np.bincount(island_labels)
-    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-    max_island_label = np.argmax(n_pixels_on_island)
-    signal_pixels[island_labels != max_island_label] = False
-
-    return signal_pixels, num_islands
-
-
 def lst_image_cleaning(
         geom,
         image,
@@ -90,7 +62,7 @@ def lst_image_cleaning(
         threshold_dynamic,
         fraction_dynamic,
         delta_time=None,
-        use_only_main_island=False
+        use_only_largest_island=False
     ):
     """
     Clean an already selected mask of signal pixels (with e.g. `tailcuts_clean`) in
@@ -100,8 +72,8 @@ def lst_image_cleaning(
        `delta_time` is not None
     2) Apply dynamic_cleaning - `lstchain.image.cleaning.apply_dynamic_cleaning` if
        `use_dynamic_cleaning` is set to `true`
-    3) Get only main island - `lstchain.image.cleaning.get_only_main_island` if
-       `use_only_main_island` is set to `true`
+    3) Get only largest island - `ctapipe.image.morphology.largest_island` if
+       `use_only_largest_island` is set to `true`
 
     Parameters
     ----------
@@ -122,7 +94,7 @@ def lst_image_cleaning(
     delta_time: `float`
         Time limit for the `time_delta_cleaning`. Set to None if no 
         `time_delta_cleaning` should be applied
-    use_only_main_island: `bool`
+    use_only_largest_island: `bool`
         Set to true to get only main island
 
     Returns
@@ -130,9 +102,9 @@ def lst_image_cleaning(
     signal_pixels: `np.ndarray`
         Boolean mask with the selected pixels after all the cleaning steps
     num_islands: `int`
-        Number of islands before it was reduced to one in step 5)
+        Number of islands before it was reduced to one in step 3)
     n_pixels: `int`
-        Number of pixels which survived the `tailcuts_clean` in step 2)
+        Number of selected pixels before they got reduced
 
     """
     n_pixels = np.count_nonzero(signal_pixels)
@@ -154,26 +126,21 @@ def lst_image_cleaning(
                 threshold_dynamic,
                 fraction_dynamic
             )
-        if use_only_main_island:
-            signal_pixels, num_islands = get_only_main_island(geom, signal_pixels)
-        else:
-            num_islands, _ = number_of_islands(geom, signal_pixels)
+
+        num_islands, island_labels = number_of_islands(geom, signal_pixels)
+        if use_only_largest_island:
+            signal_pixels = largest_island(island_labels)
     
     return signal_pixels, num_islands, n_pixels
 
 
 class LSTImageCleaner(ImageCleaner):
     """
-    Clean images basically in 5 steps:
+    Clean images basically in 3 steps:
     1) Get picture threshold for `tailcuts_clean` in step 2) from interleaved
        pedestal events if `use_pedestal_cleaning` is set to `true`
     2) Apply tailcuts image cleaning algorithm - `ctapipe.image.tailcuts_clean`
-    3) Apply time_delta_cleaning - `ctapipe.image.apply_time_delta_cleaning` if
-       `delta_time` is not None
-    4) Apply dynamic_cleaning - `lstchain.image.cleaning.apply_dynamic_cleaning` if
-       `use_dynamic_cleaning` is set to `true`
-    5) Get only main island - `lstchain.image.cleaning.get_only_main_island` if
-       `use_only_main_island` is set to `true`
+    3) Apply `lst_image_cleaning` - `lstchain.image.cleaning.lst_image_cleaning`
 
     Returns
     -------
@@ -225,7 +192,7 @@ class LSTImageCleaner(ImageCleaner):
         help="`threshold` parameter for `apply_dynamic_cleaning`",
     ).tag(config=True)  
 
-    use_only_main_island = BoolTelescopeParameter(
+    use_only_largest_island = BoolTelescopeParameter(
         default_value=False,
         help="Set to true to get only main island"
     ).tag(config=True)
@@ -270,7 +237,7 @@ class LSTImageCleaner(ImageCleaner):
             use_dynamic_cleaning=self.use_dynamic_cleaning.tel[tel_id],
             threshold_dynamic=self.threshold_dynamic.tel[tel_id],
             fraction_dynamic=self.fraction_dynamic.tel[tel_id],
-            use_only_main_island=self.use_only_main_island.tel[tel_id]
+            use_only_largest_island=self.use_only_largest_island.tel[tel_id]
         )
 
         event.dl1.tel[tel_id].image_mask = signal_pixels

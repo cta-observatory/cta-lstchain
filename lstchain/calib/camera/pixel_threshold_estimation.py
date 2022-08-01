@@ -180,9 +180,9 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
     else:
         config = std_config
 
-    image_cleaner = "TailcutsImageCleaner"
-    picture_th, _, _, _ = get_cleaning_parameters(config, image_cleaner)
-    sigma = config["pedestal_cleaning"]["sigma"]
+    cleaner = "LSTImageCleaner"
+    picture_th, _, _, _ = get_cleaning_parameters(config, cleaner)
+    sigma = config[cleaner]["sigma"]
 
     # Obtain the picture thresholds of pixels based on the "clean with
     # pedestal threshold" method:

@@ -36,7 +36,7 @@
     "use_dynamic_cleaning": true,
     "fraction_dynamic": 0.03,
     "threshold_dynamic": 267,
-    "use_only_main_island": false,
+    "use_only_largest_island": false,
     "use_pedestal_cleaning": false,
     "sigma": 2.5
   },

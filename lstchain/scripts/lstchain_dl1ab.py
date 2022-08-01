@@ -249,7 +249,7 @@ def main():
                     use_dynamic_cleaning=config[cleaner]["use_dynamic_cleaning"],
                     threshold_dynamic=config[cleaner]["threshold_dynamic"],
                     fraction_dynamic=config[cleaner]["fraction_dynamic"],
-                    use_only_main_island=config[cleaner]["use_only_main_island"]
+                    use_only_largest_island=config[cleaner]["use_only_largest_island"]
                 )
 
                 # the `n_pixels` here is the number of pixels after `tailcuts_clean`
