@@ -11,12 +11,32 @@ ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
 
 def get_ped_thresh(tel_id, event, sigma):
+    """
+    Does the same as `get_threshold_from_dl1_file`, but instead of extracting the 
+    interleaved pedestal values directly with pytables, it uses the event loop.
+
+    Parameters
+    ----------
+    tel_id: int
+        Telescope id
+    event: ctapipe.containers.ArrayEventContainer
+        Top-level container for all event information. 
+    sigma: float
+        cleaning level parameter
+
+    Returns
+    -------
+    picture_thresh: np.ndarray
+        picture threshold calculated using interleaved pedestal events
+    """
+    # `get_bias_and_std`
     ped_charge_mean = event.mon.tel[tel_id].pedestal.charge_mean
     ped_charge_std = event.mon.tel[tel_id].pedestal.charge_std
     dc_to_pe = event.mon.tel[tel_id].calibration.dc_to_pe[ORIGINAL_CALIBRATION_ID]
     ped_charge_mean_pe = ped_charge_mean * dc_to_pe
     ped_charge_std_pe = ped_charge_std * dc_to_pe
 
+    # `get_threshold_from_dl1_file`
     if ped_charge_std_pe.shape[0] > 1:
         pedestal_id = INTERLEAVED_CALIBRATION_ID
     else:

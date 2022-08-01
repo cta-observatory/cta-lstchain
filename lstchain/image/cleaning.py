@@ -2,8 +2,7 @@ import numpy as np
 from ctapipe.core.traits import (
     FloatTelescopeParameter,
     IntTelescopeParameter,
-    BoolTelescopeParameter,
-    create_class_enum_trait
+    BoolTelescopeParameter
 )
 from ctapipe.image import (
     ImageCleaner,
@@ -16,9 +15,9 @@ from lstchain.calib.camera.pixel_threshold_estimation import get_ped_thresh
 __all__ = [
     'apply_dynamic_cleaning',
     'get_only_main_island',
+    'lst_image_cleaning',
     'LSTImageCleaner'
 ]
-
 
 def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
     """
@@ -42,7 +41,6 @@ def apply_dynamic_cleaning(image, signal_pixels, threshold, fraction):
         Mask with the selected pixels after the dynamic cleaning
 
     """
-
     max_3_value_index = np.argsort(image)[-3:]
     mean_3_max_signal = np.mean(image[max_3_value_index])
 
@@ -74,7 +72,6 @@ def get_only_main_island(geom, signal_pixels):
         Number of islands before it was reduced to one
 
     """
-
     num_islands, island_labels = number_of_islands(geom, signal_pixels)
     n_pixels_on_island = np.bincount(island_labels)
     n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
@@ -82,6 +79,87 @@ def get_only_main_island(geom, signal_pixels):
     signal_pixels[island_labels != max_island_label] = False
 
     return signal_pixels, num_islands
+
+
+def lst_image_cleaning(
+        geom,
+        image,
+        signal_pixels,
+        arrival_times,
+        use_dynamic_cleaning,
+        threshold_dynamic,
+        fraction_dynamic,
+        delta_time=None,
+        use_only_main_island=False
+    ):
+    """
+    Clean an already selected mask of signal pixels (with e.g. `tailcuts_clean`) in
+    3 Steps:
+
+    1) Apply time_delta_cleaning - `ctapipe.image.apply_time_delta_cleaning` if
+       `delta_time` is not None
+    2) Apply dynamic_cleaning - `lstchain.image.cleaning.apply_dynamic_cleaning` if
+       `use_dynamic_cleaning` is set to `true`
+    3) Get only main island - `lstchain.image.cleaning.get_only_main_island` if
+       `use_only_main_island` is set to `true`
+
+    Parameters
+    ----------
+    geom: `ctapipe.instrument.CameraGeometry`
+        Camera geometry information
+    image: `np.ndarray`
+        pixel values
+    signal_pixels: `np.ndarray`
+        Boolean mask with selected pixels
+    arrival_times: `np.ndarray`
+        Pixel timing information
+    use_dynamic_cleaning: `bool`
+        Set to true if dynamic cleaning should be applied
+    threshold_dynamic: `float`
+        `fraction` parameter for `apply_dynamic_cleaning`
+    fraction_dynamic: `float`
+        `threshold` parameter for `apply_dynamic_cleaning`
+    delta_time: `float`
+        Time limit for the `time_delta_cleaning`. Set to None if no 
+        `time_delta_cleaning` should be applied
+    use_only_main_island: `bool`
+        Set to true to get only main island
+
+    Returns
+    -------
+    signal_pixels: `np.ndarray`
+        Boolean mask with the selected pixels after all the cleaning steps
+    num_islands: `int`
+        Number of islands before it was reduced to one in step 5)
+    n_pixels: `int`
+        Number of pixels which survived the `tailcuts_clean` in step 2)
+
+    """
+    n_pixels = np.count_nonzero(signal_pixels)
+    num_islands = 0
+
+    if n_pixels > 0:
+        if delta_time is not None:
+            signal_pixels = apply_time_delta_cleaning(
+                geom,
+                signal_pixels,
+                arrival_times,
+                min_number_neighbors=1,
+                time_limit=delta_time
+            )
+        if use_dynamic_cleaning:
+            signal_pixels = apply_dynamic_cleaning(
+                image,
+                signal_pixels,
+                threshold_dynamic,
+                fraction_dynamic
+            )
+        if use_only_main_island:
+            signal_pixels, num_islands = get_only_main_island(geom, signal_pixels)
+        else:
+            num_islands, _ = number_of_islands(geom, signal_pixels)
+    
+    return signal_pixels, num_islands, n_pixels
 
 
 class LSTImageCleaner(ImageCleaner):
@@ -106,7 +184,6 @@ class LSTImageCleaner(ImageCleaner):
     n_pixels: `int`
         Number of pixels which survived the `tailcuts_clean` in step 2)
     """
-
     picture_threshold_pe = FloatTelescopeParameter(
         default_value=8.0,
         help="top-level threshold in photoelectrons for `tailcuts_clean`"
@@ -150,7 +227,7 @@ class LSTImageCleaner(ImageCleaner):
 
     use_only_main_island = BoolTelescopeParameter(
         default_value=False,
-        help="Set to true if only get main island"
+        help="Set to true to get only main island"
     ).tag(config=True)
     
     use_pedestal_cleaning = BoolTelescopeParameter(
@@ -184,29 +261,17 @@ class LSTImageCleaner(ImageCleaner):
             keep_isolated_pixels=self.keep_isolated_pixels.tel[tel_id],
         )
 
-        n_pixels = np.count_nonzero(signal_pixels)
-        num_islands = 0
-
-        if n_pixels > 0:
-            if self.delta_time.tel[tel_id] is not None:
-                signal_pixels = apply_time_delta_cleaning(
-                    geom,
-                    signal_pixels,
-                    arrival_times,
-                    min_number_neighbors=1,
-                    time_limit=self.delta_time.tel[tel_id]
-                )
-            if self.use_dynamic_cleaning:
-                signal_pixels = apply_dynamic_cleaning(
-                    image,
-                    signal_pixels,
-                    self.threshold_dynamic.tel[tel_id],
-                    self.fraction_dynamic.tel[tel_id]
-                )
-            if self.use_only_main_island:
-                signal_pixels, num_islands = get_only_main_island(geom, signal_pixels)
-            else:
-                num_islands, _ = number_of_islands(geom, signal_pixels)
+        signal_pixels, num_islands, n_pixels = lst_image_cleaning(
+            geom=geom,
+            image=image,
+            signal_pixels=signal_pixels,
+            arrival_times=arrival_times,
+            delta_time=self.delta_time.tel[tel_id],
+            use_dynamic_cleaning=self.use_dynamic_cleaning.tel[tel_id],
+            threshold_dynamic=self.threshold_dynamic.tel[tel_id],
+            fraction_dynamic=self.fraction_dynamic.tel[tel_id],
+            use_only_main_island=self.use_only_main_island.tel[tel_id]
+        )
 
         event.dl1.tel[tel_id].image_mask = signal_pixels
 

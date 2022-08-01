@@ -520,7 +520,7 @@ def r0_to_dl1(
                     dl1_container.fill_mc(event, subarray.positions[telescope_id])
 
                 assert event.dl1.tel[telescope_id].image is not None
-                breakpoint()
+
                 try:
                     get_dl1(
                         event,
