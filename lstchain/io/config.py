@@ -107,10 +107,10 @@ def get_cleaning_parameters(config, cleaner):
     -------
     tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
     """
-    picture_th = config["LSTImageCleaner"][cleaner]["picture_threshold_pe"]
-    boundary_th = config["LSTImageCleaner"][cleaner]["boundary_threshold_pe"]
-    isolated_pixels = config["LSTImageCleaner"][cleaner]["keep_isolated_pixels"]
-    min_n_picture_neighbors = config["LSTImageCleaner"][cleaner]["min_picture_neighbors"]
+    picture_th = config[cleaner]["picture_threshold_pe"]
+    boundary_th = config[cleaner]["boundary_threshold_pe"]
+    isolated_pixels = config[cleaner]["keep_isolated_pixels"]
+    min_n_picture_neighbors = config[cleaner]["min_picture_neighbors"]
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
 
 

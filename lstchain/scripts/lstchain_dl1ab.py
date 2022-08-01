@@ -15,6 +15,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+from ctapipe.image.cleaning import tailcuts_clean
 from traitlets.config import Config
 
 import astropy.units as u
@@ -23,7 +24,7 @@ import tables
 from ctapipe.instrument import SubarrayDescription
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
-from lstchain.image.cleaning import apply_dynamic_cleaning, LSTImageCleaner
+from lstchain.image.cleaning import lst_image_cleaning
 from lstchain.image.modifier import random_psf_smearer, set_numba_seed, add_noise_in_pixels
 from lstchain.io import get_dataset_keys, copy_h5_nodes, HDF5_ZSTD_FILTERS, add_source_filenames
 
@@ -97,9 +98,13 @@ def main():
     else:
         config = std_config
 
-
     with tables.open_file(args.input_file, 'r') as f:
         is_simulation = 'simulation' in f.root
+
+    cleaner = "LSTImageCleaner"
+    use_pedestal_cleaning = config[cleaner]["use_pedestal_cleaning"]
+    if is_simulation or not args.pedestal_cleaning:
+        use_pedestal_cleaning = False
 
     increase_nsb = False
     increase_psf = False
@@ -119,27 +124,26 @@ def main():
                      "not be saved.")
             args.no_image = True
 
-    if is_simulation:
-        args.pedestal_cleaning = False
-
-    if args.pedestal_cleaning:
+    if use_pedestal_cleaning is True:
         log.info("Pedestal cleaning")
-        sigma = config["pedestal_cleaning"]['sigma']
+        sigma = config[cleaner]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
-        pic_thresh = config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"]
+        cleaning_params = get_cleaning_parameters(config, cleaner)
+        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
-                 f"{np.sum(pedestal_thresh > pic_thresh ) / len(pedestal_thresh):.3f}")
-        pic_thresh_ped = np.clip(pedestal_thresh, pic_thresh, None)
-        config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"] = pic_thresh_ped
+                 f"{np.sum(pedestal_thresh > pic_th ) / len(pedestal_thresh):.3f}")
+        pic_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
-                 f"{config['LSTImageCleaner']} with {config['pedestal_cleaning']}")
+                 f"{config[cleaner]}")
+
+    else:
+        cleaning_params = get_cleaning_parameters(config, cleaner)
+        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
     optics = subarray_info.tel[tel_id].optics
     camera_geom = subarray_info.tel[tel_id].camera.geometry
-
-    image_cleaner = LSTImageCleaner(subarray=subarray_info, config=Config(config))
 
     dl1_container = DL1ParametersContainer()
     parameters_to_update = [
@@ -228,14 +232,27 @@ def main():
                                                camera_geom.neighbor_matrix_sparse.indices,
                                                camera_geom.neighbor_matrix_sparse.indptr)
 
-                signal_pixels, num_islands, n_pixels = image_cleaner(
-                    tel_id=tel_id,
+                signal_pixels = tailcuts_clean(
+                    geom=camera_geom,
                     image=image,
-                    arrival_times=peak_time
+                    picture_thresh=pic_th,
+                    boundary_thresh=boundary_th,
+                    keep_isolated_pixels=isolated_pixels,
+                    min_number_picture_neighbors=min_n_neighbors
+                )
+                signal_pixels, num_islands, n_pixels = lst_image_cleaning(
+                    geom=camera_geom,
+                    image=image,
+                    signal_pixels=signal_pixels,
+                    arrival_times=peak_time,
+                    delta_time=config[cleaner]["delta_time"],
+                    use_dynamic_cleaning=config[cleaner]["use_dynamic_cleaning"],
+                    threshold_dynamic=config[cleaner]["threshold_dynamic"],
+                    fraction_dynamic=config[cleaner]["fraction_dynamic"],
+                    use_only_main_island=config[cleaner]["use_only_main_island"]
                 )
 
-                # the `n_pixels` here is the number of pixels which survived only the first step
-                # of the LSTImageCleaner (e.g. after the TailcutsImageCleaner)
+                # the `n_pixels` here is the number of pixels after `tailcuts_clean`
                 if n_pixels > 0:
                     dl1_container.n_islands = num_islands
                     # count surviving pixels after all the cleaning steps

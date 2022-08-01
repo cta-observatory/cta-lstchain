@@ -20,7 +20,6 @@ from ctapipe.containers import EventType
 from ctapipe.image import (
     HillasParameterizationError,
     hillas_parameters,
-    tailcuts_clean,
 )
 from ctapipe.io import EventSource, HDF5TableWriter
 from ctapipe.utils import get_dataset_path
