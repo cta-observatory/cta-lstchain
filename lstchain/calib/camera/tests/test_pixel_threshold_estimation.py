@@ -1,6 +1,6 @@
 import numpy as np
-from ctapipe.containers import ArrayEventContainer
 import pytest
+from ctapipe.containers import ArrayEventContainer
 
 def test_get_ped_thresh():
     from ..pixel_threshold_estimation import get_ped_thresh
@@ -36,9 +36,9 @@ def test_get_threshold_from_dl1_file(observed_dl1_files):
     file = observed_dl1_files["dl1_file1"]
     sigma = 2.5
     ped_thresh = get_threshold_from_dl1_file(file, sigma_clean=sigma)
-
+    
     assert (ped_thresh.shape == (1855,))
-    assert (ped_thresh[ped_thresh>0].sum() == 1855)
+    assert (np.max(ped_thresh) > 0)
 
 
 @pytest.mark.private_data
@@ -47,6 +47,6 @@ def test_get_unusable_pixels(observed_dl1_files):
 
     file = observed_dl1_files["dl1_file1"]
     unusable_pixels = get_unusable_pixels(file, pedestal_id=0)
-
-    assert (unusable_pixels.shape == (1855,))
+    
+    assert (len(unusable_pixels[0]) == 2)
 
