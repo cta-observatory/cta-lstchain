@@ -21,7 +21,7 @@ def get_ped_thresh(tel_id, event, sigma_clean):
         Telescope id
     event: ctapipe.containers.ArrayEventContainer
         Top-level container for all event information. 
-    sigma: float
+    sigma_clean: float
         cleaning level parameter
 
     Returns

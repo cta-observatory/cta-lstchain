@@ -36,12 +36,13 @@ def test_replace_config():
 
 def test_get_cleaning_parameters():
     std_config = config.get_standard_config()
-    cleaning_params = get_cleaning_parameters(std_config, 'TailcutsImageCleaner')
+    cleaner = "LSTImageCleaner"
+    cleaning_params = get_cleaning_parameters(std_config, cleaner)
     picture_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
-    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["picture_threshold_pe"] == picture_th
-    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["boundary_threshold_pe"] == boundary_th
-    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["keep_isolated_pixels"] == isolated_pixels
-    assert std_config["LSTImageCleaner"]["TailcutsImageCleaner"]["min_picture_neighbors"] == min_n_neighbors
+    assert std_config[cleaner]["picture_threshold_pe"] == picture_th
+    assert std_config[cleaner]["boundary_threshold_pe"] == boundary_th
+    assert std_config[cleaner]["keep_isolated_pixels"] == isolated_pixels
+    assert std_config[cleaner]["min_picture_neighbors"] == min_n_neighbors
 
 
 def test_dump_config():

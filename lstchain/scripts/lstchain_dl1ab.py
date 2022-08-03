@@ -16,7 +16,6 @@ import argparse
 import logging
 from pathlib import Path
 from ctapipe.image.cleaning import tailcuts_clean
-from traitlets.config import Config
 
 import astropy.units as u
 import numpy as np
@@ -124,21 +123,17 @@ def main():
                      "not be saved.")
             args.no_image = True
 
+    cleaning_params = get_cleaning_parameters(config, cleaner)
+    pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
     if use_pedestal_cleaning is True:
         log.info("Pedestal cleaning")
         sigma = config[cleaner]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
-        cleaning_params = get_cleaning_parameters(config, cleaner)
-        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
+        pic_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
                  f"{np.sum(pedestal_thresh > pic_th ) / len(pedestal_thresh):.3f}")
-        pic_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config[cleaner]}")
-
-    else:
-        cleaning_params = get_cleaning_parameters(config, cleaner)
-        pic_th, boundary_th, isolated_pixels, min_n_neighbors = cleaning_params
 
     subarray_info = SubarrayDescription.from_hdf(args.input_file)
     tel_id = config["allowed_tels"][0] if "allowed_tels" in config else 1
