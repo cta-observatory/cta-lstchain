@@ -10,7 +10,7 @@ from lstchain.io.config import get_cleaning_parameters
 ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
 
-def get_ped_thresh(tel_id, event, sigma):
+def get_ped_thresh(tel_id, event, sigma_clean):
     """
     Does the same as `get_threshold_from_dl1_file`, but instead of extracting the 
     interleaved pedestal values directly with pytables, it uses the event loop.
@@ -42,7 +42,7 @@ def get_ped_thresh(tel_id, event, sigma):
     else:
         pedestal_id = ORIGINAL_CALIBRATION_ID
 
-    threshold_clean_pe = ped_charge_mean_pe + sigma * ped_charge_std_pe
+    threshold_clean_pe = ped_charge_mean_pe + sigma_clean * ped_charge_std_pe
 
     unusable_pixels = event.mon.tel[tel_id].calibration.unusable_pixels
 
