@@ -1,9 +1,8 @@
 from lstchain.image.cleaning import (
     apply_dynamic_cleaning,
-    get_only_main_island,
     lst_image_cleaning,
 )
-from ctapipe.image import number_of_islands, dilate
+from ctapipe.image import dilate
 from ctapipe.instrument import CameraGeometry
 import numpy as np
 
