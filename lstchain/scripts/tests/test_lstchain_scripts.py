@@ -390,8 +390,8 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
     config_path = tmp_path / 'config.json'
     with config_path.open('w') as f:
         config = get_standard_config()
-        config['LSTImageCleaner']["TailcutsImageCleaner"]["picture_threshold_pe"] = 10
-        config['LSTImageCleaner']["TailcutsImageCleaner"]["boundary_threshold_pe"] = 5
+        config['LSTImageCleaner']["picture_threshold_pe"] = 10
+        config['LSTImageCleaner']["boundary_threshold_pe"] = 5
         json.dump(config, f)
 
     run_program(
