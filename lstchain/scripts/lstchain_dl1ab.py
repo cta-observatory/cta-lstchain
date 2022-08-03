@@ -129,9 +129,9 @@ def main():
         log.info("Pedestal cleaning")
         sigma = config[cleaner]['sigma']
         pedestal_thresh = get_threshold_from_dl1_file(args.input_file, sigma)
-        pic_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Fraction of pixel cleaning thresholds above picture thr.:"
                  f"{np.sum(pedestal_thresh > pic_th ) / len(pedestal_thresh):.3f}")
+        pic_th = np.clip(pedestal_thresh, pic_th, None)
         log.info(f"Tailcut clean with pedestal threshold config used:"
                  f"{config[cleaner]}")
 
