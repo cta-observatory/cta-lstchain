@@ -216,7 +216,9 @@ class LSTImageCleaner(ImageCleaner):
         pic_thresh = self.picture_threshold_pe.tel[tel_id]
 
         if self.use_pedestal_cleaning.tel[tel_id]:
-            ped_thresh = get_ped_thresh(tel_id=tel_id, event=event, sigma_clean=self.sigma)
+            ped_thresh = get_ped_thresh(tel_id=tel_id, 
+                                        event=event, 
+                                        sigma_clean=self.sigma.tel[tel_id])
             pic_thresh = np.clip(ped_thresh, pic_thresh, None)
 
         signal_pixels = tailcuts_clean(
