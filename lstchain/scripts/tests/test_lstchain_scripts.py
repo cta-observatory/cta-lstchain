@@ -41,7 +41,7 @@ ALL_SCRIPTS = find_entry_points("lstchain")
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
 
     if result.returncode != 0:
         raise ValueError(
@@ -65,16 +65,20 @@ def simulated_dl1ab(temp_dir_simulated_files, simulated_dl1_file):
     run_program("lstchain_dl1ab", "-f", simulated_dl1_file, "-o", output_file)
     return output_file
 
-def test_add_source_dependent_parameters(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+
+def test_add_source_dependent_parameters(
+    temp_dir_simulated_srcdep_files, simulated_dl1_file
+):
     shutil.copy(simulated_dl1_file, temp_dir_simulated_srcdep_files / "dl1_copy.h5")
     dl1_file = temp_dir_simulated_srcdep_files / "dl1_copy.h5"
     run_program("lstchain_add_source_dependent_parameters", "-f", dl1_file)
     dl1_params_src_dep = get_srcdep_params(dl1_file)
 
-    assert 'alpha' in dl1_params_src_dep['on'].columns
-    assert 'dist' in dl1_params_src_dep['on'].columns
-    assert 'time_gradient_from_source' in dl1_params_src_dep['on'].columns
-    assert 'skewness_from_source' in dl1_params_src_dep['on'].columns
+    assert "alpha" in dl1_params_src_dep["on"].columns
+    assert "dist" in dl1_params_src_dep["on"].columns
+    assert "time_gradient_from_source" in dl1_params_src_dep["on"].columns
+    assert "skewness_from_source" in dl1_params_src_dep["on"].columns
+
 
 @pytest.fixture(scope="session")
 def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
@@ -122,7 +126,7 @@ def test_observed_dl1_validity(observed_dl1_files):
     assert dl1_params_tel_mon_ped_key in dl1_tables
     assert dl1_params_tel_mon_flat_key in dl1_tables
 
-    subarray = SubarrayDescription.from_hdf(observed_dl1_files['dl1_file1'])
+    subarray = SubarrayDescription.from_hdf(observed_dl1_files["dl1_file1"])
     assert 1 in subarray.tel
     assert subarray.tel[1].name == "LST"
 
@@ -244,12 +248,8 @@ def test_lstchain_merge_dl1_hdf5_observed_files(
     merged_dl1_df = pd.read_hdf(merged_dl1_observed_file, key=dl1_params_lstcam_key)
     assert merged_dl1_observed_file.is_file()
     assert len(dl1a_df) + len(dl1b_df) == len(merged_dl1_df)
-    assert dl1_images_lstcam_key in get_dataset_keys(
-        merged_dl1_observed_file
-    )
-    assert dl1_params_lstcam_key in get_dataset_keys(
-        merged_dl1_observed_file
-    )
+    assert dl1_images_lstcam_key in get_dataset_keys(merged_dl1_observed_file)
+    assert dl1_params_lstcam_key in get_dataset_keys(merged_dl1_observed_file)
 
 
 @pytest.mark.private_data
@@ -299,19 +299,19 @@ def test_lstchain_dl1_to_dl2(simulated_dl2_file):
 def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert simulated_srcdep_dl2_file.is_file()
     dl2_srcdep_df = get_srcdep_params(simulated_srcdep_dl2_file)
-    assert "expected_src_x" in dl2_srcdep_df['on'].columns
-    assert "expected_src_y" in dl2_srcdep_df['on'].columns
-    assert "dist" in dl2_srcdep_df['on'].columns
-    assert "alpha" in dl2_srcdep_df['on'].columns
-    assert "time_gradient_from_source" in dl2_srcdep_df['on'].columns
-    assert "skewness_from_source" in dl2_srcdep_df['on'].columns
-    assert "gammaness" in dl2_srcdep_df['on'].columns
-    assert "reco_type" in dl2_srcdep_df['on'].columns
-    assert "reco_energy" in dl2_srcdep_df['on'].columns
-    assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
-    assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
-    assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns
+    assert "expected_src_x" in dl2_srcdep_df["on"].columns
+    assert "expected_src_y" in dl2_srcdep_df["on"].columns
+    assert "dist" in dl2_srcdep_df["on"].columns
+    assert "alpha" in dl2_srcdep_df["on"].columns
+    assert "time_gradient_from_source" in dl2_srcdep_df["on"].columns
+    assert "skewness_from_source" in dl2_srcdep_df["on"].columns
+    assert "gammaness" in dl2_srcdep_df["on"].columns
+    assert "reco_type" in dl2_srcdep_df["on"].columns
+    assert "reco_energy" in dl2_srcdep_df["on"].columns
+    assert "reco_disp_dx" in dl2_srcdep_df["on"].columns
+    assert "reco_disp_dy" in dl2_srcdep_df["on"].columns
+    assert "reco_src_x" in dl2_srcdep_df["on"].columns
+    assert "reco_src_y" in dl2_srcdep_df["on"].columns
 
 
 @pytest.mark.private_data
@@ -327,6 +327,7 @@ def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
         assert path.is_file()
         t = read_table(path, "/interleaved_pedestal_ids")
         assert len(t) == expected_length
+
 
 @pytest.mark.private_data
 def test_lstchain_observed_dl1_to_dl2(observed_dl2_file):
@@ -348,26 +349,28 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
     assert observed_srcdep_dl2_file.is_file()
     dl2_srcdep_df = get_srcdep_params(observed_srcdep_dl2_file)
     srcdep_config = get_srcdep_config()
-    srcdep_assumed_positions = ['on']
-    n_off_wobble=srcdep_config.get('n_off_wobble')
+    srcdep_assumed_positions = ["on"]
+    n_off_wobble = srcdep_config.get("n_off_wobble")
     for ioff in range(n_off_wobble):
         off_angle = 2 * np.pi / (n_off_wobble + 1) * (ioff + 1)
-        srcdep_assumed_positions.append('off_{:03}'.format(round(np.rad2deg(off_angle))))
+        srcdep_assumed_positions.append(
+            "off_{:03}".format(round(np.rad2deg(off_angle)))
+        )
 
     srcdep_dl2_params = [
-        'expected_src_x',
-        'expected_src_y',
-        'dist',
-        'alpha',
-        'time_gradient_from_source',
-        'skewness_from_source',
-        'gammaness',
-        'reco_type',
-        'reco_energy',
-        'reco_disp_dx',
-        'reco_disp_dy',
-        'reco_src_x',
-        'reco_src_y'
+        "expected_src_x",
+        "expected_src_y",
+        "dist",
+        "alpha",
+        "time_gradient_from_source",
+        "skewness_from_source",
+        "gammaness",
+        "reco_type",
+        "reco_energy",
+        "reco_disp_dx",
+        "reco_disp_dy",
+        "reco_src_x",
+        "reco_src_y",
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:
@@ -379,7 +382,7 @@ def test_dl1ab(simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     with tables.open_file(simulated_dl1ab) as output:
         assert dl1_images_lstcam_key in output.root
-        assert '/source_filenames' in output.root
+        assert "/source_filenames" in output.root
         assert len(output.root.source_filenames.filenames[:]) == 1
 
 
@@ -387,34 +390,37 @@ def test_dl1ab_no_images(simulated_dl1_file, tmp_path):
     """Produce a new simulated dl1 file using the dl1ab script."""
     output_file = tmp_path / "dl1ab_no_images.h5"
 
-    config_path = tmp_path / 'config.json'
-    with config_path.open('w') as f:
+    config_path = tmp_path / "config.json"
+    with config_path.open("w") as f:
         config = get_standard_config()
-        config['LSTImageCleaner']["picture_threshold_pe"] = 10
-        config['LSTImageCleaner']["boundary_threshold_pe"] = 5
+        config["LSTImageCleaner"]["picture_threshold_pe"] = 10
+        config["LSTImageCleaner"]["boundary_threshold_pe"] = 5
         json.dump(config, f)
 
     run_program(
         "lstchain_dl1ab",
-        "-f", simulated_dl1_file,
-        "-o", output_file,
-        "-c", config_path,
-        '--no-image',
+        "-f",
+        simulated_dl1_file,
+        "-o",
+        output_file,
+        "-c",
+        config_path,
+        "--no-image",
     )
 
-    with tables.open_file(output_file, 'r') as output:
+    with tables.open_file(output_file, "r") as output:
         assert dl1_images_lstcam_key not in output.root
         assert dl1_params_lstcam_key in output.root
 
         new_parameters = output.root[dl1_params_lstcam_key][:]
 
-        with tables.open_file(simulated_dl1_file, 'r') as input_file:
+        with tables.open_file(simulated_dl1_file, "r") as input_file:
             old_parameters = input_file.root[dl1_params_lstcam_key][:]
 
             # new cleaning should result in less pixels
-            assert (new_parameters['n_pixels'] <= old_parameters['n_pixels']).all()
-            assert (new_parameters['n_pixels'] < old_parameters['n_pixels']).any()
-            assert (new_parameters['length'] != old_parameters['length']).any()
+            assert (new_parameters["n_pixels"] <= old_parameters["n_pixels"]).all()
+            assert (new_parameters["n_pixels"] < old_parameters["n_pixels"]).any()
+            assert (new_parameters["length"] != old_parameters["length"]).any()
 
 
 @pytest.mark.private_data
@@ -422,9 +428,11 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     output_dl1ab = tmp_path / "dl1ab.h5"
     run_program(
         "lstchain_dl1ab",
-        "-f", observed_dl1_files["dl1_file1"],
-        "-o", output_dl1ab,
-        "--no-pedestal-cleaning"
+        "-f",
+        observed_dl1_files["dl1_file1"],
+        "-o",
+        output_dl1ab,
+        "--no-pedestal-cleaning",
     )
     assert output_dl1ab.is_file()
 
@@ -432,8 +440,8 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
 
     np.testing.assert_allclose(
-        dl1.to_numpy(dtype='float'),
-        dl1ab.to_numpy(dtype='float'),
+        dl1.to_numpy(dtype="float"),
+        dl1ab.to_numpy(dtype="float"),
         rtol=1e-3,
         equal_nan=True,
     )
@@ -492,7 +500,10 @@ def test_run_summary(run_summary_path):
 
     run_summary_table = Table.read(run_summary_path)
 
-    assert run_summary_table.meta["date"] == datetime.strptime(date, "%Y%m%d").date().isoformat()
+    assert (
+        run_summary_table.meta["date"]
+        == datetime.strptime(date, "%Y%m%d").date().isoformat()
+    )
     assert "lstchain_version" in run_summary_table.meta
     assert "run_id" in run_summary_table.columns
     assert "n_subruns" in run_summary_table.columns
@@ -510,6 +521,7 @@ def test_run_summary(run_summary_path):
 
 def test_numba_compil_lhfit():
     from lstchain.scripts import numba_compil_lhfit
-    assert numba_compil_lhfit.cc.name == 'log_pdf_CC'
-    assert 'log_pdf' in numba_compil_lhfit.cc._exported_functions
+
+    assert numba_compil_lhfit.cc.name == "log_pdf_CC"
+    assert "log_pdf" in numba_compil_lhfit.cc._exported_functions
     assert len(numba_compil_lhfit.cc._exported_functions) == 6

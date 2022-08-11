@@ -6,25 +6,25 @@ from ctapipe.image import dilate
 from ctapipe.instrument import CameraGeometry
 import numpy as np
 
+
 def test_dynamic_cleaning():
 
     npixels = 1855
-    image = np.linspace(0, npixels-1, npixels)
-    signal_pixels = np.array(npixels*[True])
+    image = np.linspace(0, npixels - 1, npixels)
+    signal_pixels = np.array(npixels * [True])
     fraction = 0.03
     mean3 = np.mean(image[-3:])
     mask = apply_dynamic_cleaning(image, signal_pixels, 100, fraction)
-    assert(mask.sum() == np.sum(image>fraction*mean3))
-    mask = apply_dynamic_cleaning(image, signal_pixels,
-                                  np.max(image),
-                                  fraction)
-    assert(mask.sum() == signal_pixels.sum())
+    assert mask.sum() == np.sum(image > fraction * mean3)
+    mask = apply_dynamic_cleaning(image, signal_pixels, np.max(image), fraction)
+    assert mask.sum() == signal_pixels.sum()
+
 
 def test_lst_image_cleaning():
 
     geom = CameraGeometry.from_name("LSTCam")
     n_pixels = 1855
-    mask = np.array(1855*[False])
+    mask = np.array(1855 * [False])
     image = np.zeros((1855,))
     arrival_times = np.zeros((1855,))
 
@@ -48,9 +48,9 @@ def test_lst_image_cleaning():
         use_dynamic_cleaning=True,
         fraction_dynamic=0.3,
         threshold_dynamic=40,
-        use_only_largest_island=True
+        use_only_largest_island=True,
     )
-    
-    assert(num_islands == 2)
-    assert(signal_pixels.sum() == 5)
-    assert(n_pixels == 63)
+
+    assert num_islands == 2
+    assert signal_pixels.sum() == 5
+    assert n_pixels == 63
