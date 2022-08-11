@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from ctapipe.containers import ArrayEventContainer
 
 def test_get_ped_thresh():
     from ..pixel_threshold_estimation import get_ped_thresh
+    from ctapipe.containers import ArrayEventContainer
 
     tel_id = 1
     sigma = 2
@@ -33,12 +33,11 @@ def test_get_bias_and_std(observed_dl1_files):
 def test_get_threshold_from_dl1_file(observed_dl1_files):
     from ..pixel_threshold_estimation import get_threshold_from_dl1_file
 
-    file = observed_dl1_files["dl1_file1"]
     sigma = 2.5
+    file = observed_dl1_files["dl1_file1"]
     ped_thresh = get_threshold_from_dl1_file(file, sigma_clean=sigma)
     
     assert (ped_thresh.shape == (1855,))
-    assert (np.max(ped_thresh) > 0)
 
 
 @pytest.mark.private_data

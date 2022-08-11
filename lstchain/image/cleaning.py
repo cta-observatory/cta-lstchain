@@ -215,7 +215,9 @@ class LSTImageCleaner(ImageCleaner):
         arrival_times = event.dl1.tel[tel_id].peak_time
         pic_thresh = self.picture_threshold_pe.tel[tel_id]
 
-        if self.use_pedestal_cleaning.tel[tel_id]:
+        if (self.use_pedestal_cleaning.tel[tel_id] and 
+            event.mon.tel[tel_id].pedestal.charge_mean.ndim == 3
+        ):
             ped_thresh = get_ped_thresh(tel_id=tel_id, 
                                         event=event, 
                                         sigma_clean=self.sigma.tel[tel_id])
