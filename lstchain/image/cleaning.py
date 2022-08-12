@@ -132,18 +132,10 @@ class LSTImageCleaner(ImageCleaner):
     """
     Clean images basically in 3 steps:
     1) Get picture threshold for `tailcuts_clean` in step 2) from interleaved
-       pedestal events if `use_pedestal_cleaning` is set to `true`
+    pedestal events if `use_pedestal_cleaning` is set to `true`
     2) Apply tailcuts image cleaning algorithm - `ctapipe.image.tailcuts_clean`
     3) Apply `lst_image_cleaning` - `lstchain.image.cleaning.lst_image_cleaning`
 
-    Returns
-    -------
-    signal_pixels: `np.ndarray`
-        Boolean mask with the selected pixels after all the cleaning steps
-    num_islands: `int`
-        Number of islands before it was reduced to one in step 5)
-    n_pixels: `int`
-        Number of pixels which survived the `tailcuts_clean` in step 2)
     """
 
     picture_threshold_pe = FloatTelescopeParameter(
@@ -203,12 +195,23 @@ class LSTImageCleaner(ImageCleaner):
     ).tag(config=True)
 
     def __call__(self, tel_id: int, event):
+        """
+        Apply LST image cleaning.
 
+        Returns
+        -------
+        signal_pixels: `np.ndarray`
+            Boolean mask with the selected pixels after all the cleaning steps
+        num_islands: `int`
+            Number of islands before it was reduced to one in step 5)
+        n_pixels: `int`
+            Number of pixels which survived the `tailcuts_clean` in step 2)
+        """
         geom = self.subarray.tel[tel_id].camera.geometry
         image = event.dl1.tel[tel_id].image
         arrival_times = event.dl1.tel[tel_id].peak_time
         pic_thresh = self.picture_threshold_pe.tel[tel_id]
-        ped_std = event.mon.tel[tel_id].pedestal.charge_std 
+        ped_std = event.mon.tel[tel_id].pedestal.charge_std
 
         if (
             self.use_pedestal_cleaning.tel[tel_id]
