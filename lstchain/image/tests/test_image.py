@@ -1,13 +1,8 @@
-from lstchain.image.cleaning import (
-    apply_dynamic_cleaning,
-    lst_image_cleaning,
-)
-from ctapipe.image import dilate
-from ctapipe.instrument import CameraGeometry
 import numpy as np
 
 
 def test_dynamic_cleaning():
+    from lstchain.image.cleaning import apply_dynamic_cleaning
 
     npixels = 1855
     image = np.linspace(0, npixels - 1, npixels)
@@ -21,6 +16,9 @@ def test_dynamic_cleaning():
 
 
 def test_lst_image_cleaning():
+    from ctapipe.image import dilate
+    from ctapipe.instrument import CameraGeometry
+    from lstchain.image.cleaning import lst_image_cleaning
 
     geom = CameraGeometry.from_name("LSTCam")
     n_pixels = 1855
