@@ -162,9 +162,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.collect_sample(charge, pixel_mask)
 
-        sample_age = self.trigger_time - self.time_start
-
-
+        sample_age = (self.trigger_time - self.time_start).to_value(u.s)
         # check if to create a calibration event
         if (self.num_events_seen > 0 and
                 (sample_age > self.sample_duration or

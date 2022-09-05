@@ -81,6 +81,8 @@ dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -1195,3 +1197,4 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
+            

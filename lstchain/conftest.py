@@ -135,6 +135,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         "2516351600",
         "--dragon-module-id",
         "132",
+        "--default-trigger-type=tib",
     )
 
     run_program(
@@ -163,6 +164,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         test_drive_report,
         '--run-summary-path',
         run_summary_path,
+        "--default-trigger-type=tib",
     )
 
     run_program(

@@ -166,7 +166,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -509,3 +509,10 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_source" in run_summary_table.columns
 
     assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+
+
+def test_numba_compil_lhfit():
+    from lstchain.scripts import numba_compil_lhfit
+    assert numba_compil_lhfit.cc.name == 'log_pdf_CC'
+    assert 'log_pdf' in numba_compil_lhfit.cc._exported_functions
+    assert len(numba_compil_lhfit.cc._exported_functions) == 6

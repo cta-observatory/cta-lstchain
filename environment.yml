@@ -14,6 +14,7 @@ dependencies:
   - jupyter
   - matplotlib=3.5
   - notebook
+  - iminuit>=2
   - joblib
   - toml
   - protozfits=2.0
@@ -25,13 +26,13 @@ dependencies:
   - sphinx_rtd_theme
   - sphinx-argparse
   - nbsphinx
+  - numba
   - numpydoc
   - pandas
   - pymongo
   - seaborn
   - jinja2=3.0 # pinned for bokeh 1.0 compatibility
   - pip:
-
-      - ctapipe_io_lst~=0.18.1
+      - ctapipe_io_lst~=0.18.2
       - ctaplot~=0.6.2
       - pyirf~=0.7.0
