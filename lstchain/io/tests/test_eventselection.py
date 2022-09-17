@@ -100,7 +100,7 @@ def test_dl3_energy_dependent_cuts():
     assert alpha_cut["cut"][0] == 15.88 * u.deg
     assert len(data_th) == 21
     assert len(data_gh) == 26
-    assert len(data_al) == 14
+    assert len(data_al) == 17
 
 
 def test_data_binning():
