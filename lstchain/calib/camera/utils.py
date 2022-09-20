@@ -14,6 +14,6 @@ def check_outlier_mask(outliers, log, kind, n_pixels_threshold=50):
             "Outliers: %d events with more than %d pixels",
             len(bad_index), n_pixels_threshold
         )
-        log.warning("Bad Index: %s", bad_index)
-        log.warning("Bad gain: %s", bad_gain)
-        log.warning("Bad Pixel Counts: %s", counts[bad_index, bad_gain])
+        log.warning("Bad event index: %s", bad_index)
+        log.warning("Bad gain channel: %s", bad_gain)
+        log.warning("Number of bad pixels in those entries: %s", counts[bad_index, bad_gain])
