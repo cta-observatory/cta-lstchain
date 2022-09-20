@@ -3,9 +3,10 @@ import operator
 import astropy.units as u
 
 from ctapipe.containers import EventType
-from ctapipe.core import Component
 from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
+
+from lstchain.ctapipe_compat import Component
 
 from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
@@ -121,7 +122,7 @@ class DL3Cuts(Component):
 
     alpha_containment = Float(
         help="Percentage containment region for alpha cuts",
-        default=0.68,
+        default_value=0.68,
     ).tag(config=True)
 
     global_alpha_cut = Float(
