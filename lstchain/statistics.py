@@ -1,7 +1,6 @@
 import numba
 import numpy as np
 from numba.experimental import jitclass
-from scipy.stats import norm, truncnorm
 
 
 @jitclass(dict(
@@ -67,68 +66,3 @@ class OnlineStats:
     def std(self):
         '''Get the current sample std. dev. of all tracked statistics'''
         return np.sqrt(self.var)
-
-
-
-def sigma_clipped_mean_std(values, max_sigma=4, n_iterations=5):
-    '''
-    Compute robust estimates of mean and std via sigma clipping
-
-    Values outside max_sigma * std are removed from the sample and then
-    mean and std are computed again.
-    '''
-
-
-    # support masked array
-    if hasattr(values, 'mask'):
-        values = values.copy()
-    else:
-        mask = np.zeros(values.shape, dtype=bool)
-        values = np.ma.array(values, mask=mask, copy=True)
-
-    squeeze = False
-    if values.ndim == 1:
-        squeeze = True
-        values = np.ma.array(values, ndmin=2).T
-
-    original_mask = values.mask.copy()
-    mean = values.mean(axis=0)
-    std = values.std(axis=0)
-
-    valid_std = std > 0
-
-    for _ in range(n_iterations):
-        outliers = np.abs(values[:, valid_std] - mean[valid_std]) >= (max_sigma * std[valid_std])
-        values.mask[:, valid_std] = original_mask[:, valid_std] | outliers
-        mean[valid_std] = values[:, valid_std].mean(axis=0)
-        std[valid_std] = values[:, valid_std].std(axis=0)
-        valid_std = std != 0
-
-    # correct std for bias introduced by clipping
-    std /= expected_std(max_sigma, n_iterations)
-
-    if squeeze:
-        return np.squeeze(mean), np.squeeze(std), values.mask
-
-    return mean, std, values.mask
-
-
-def expected_std(max_sigma, n_iterations):
-    '''Expected std of std normal data after applying sigma clipping'''
-    std = 1
-    truncdist = truncnorm(-max_sigma, max_sigma)
-
-    for _ in range(n_iterations):
-        truncdist = truncnorm(-max_sigma * std, max_sigma * std)
-        std = truncdist.std()
-
-    return std
-
-
-def expected_ignored(max_sigma, n_iterations):
-    '''Calculate the expected percentage of discarded samples for
-    a normal distribution without outliers
-    '''
-    std = expected_std(max_sigma, n_iterations - 1)
-    stdnorm = norm(0, 1)
-    return 1.0 - (stdnorm.cdf(max_sigma * std) - stdnorm.cdf(-max_sigma * std))
