@@ -86,7 +86,7 @@ def fill_stats(
 
 
 class DRS4Timelapse(Tool):
-    name = 'lstchain_create_drs4_pedestal_file'
+    name = 'lstchain_create_drs4_timelapse_file'
 
     output_path = Path(directory_ok=False).tag(config=True)
     skip_samples_front = Integer(default_value=10).tag(config=True)
