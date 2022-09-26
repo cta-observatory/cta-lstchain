@@ -79,8 +79,8 @@ jobs:
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
             pytest-cov 'coverage!=6.3.0' pytest-xdist
 
-          echo "pip install ."
-          pip install .
+          echo "pip install -e ."
+          pip install -e .
 
       - name: Download test data
         env:

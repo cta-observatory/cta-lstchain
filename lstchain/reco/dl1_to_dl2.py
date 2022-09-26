@@ -27,7 +27,7 @@ from ..io import (
     get_dataset_keys,
     get_srcdep_params,
 )
-from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_likelihood_params_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
@@ -369,6 +369,13 @@ def build_models(filegammas, fileprotons,
             src_dep_df_proton = get_source_dependent_parameters(df_proton, config, focal_length=focal_length)
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
+
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
 
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
