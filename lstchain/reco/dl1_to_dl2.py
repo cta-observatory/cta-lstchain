@@ -775,7 +775,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             elif 'source_ra' and 'source_dec' in config:
                 source_coord = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
             else:
-                raise NameError(
+                raise KeyError(
                     'source position (`source_name` or `source_ra` & `source_dec`) is not defined in a config file for source-dependent analysis.'
                 )
 
@@ -789,7 +789,7 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
             
         else:
-            raise NameError(
+            raise KeyError(
                 '`observation_mode` is not defined in a config file for source-dependent analysis. It should be `on` or `wobble`'
             )
 
