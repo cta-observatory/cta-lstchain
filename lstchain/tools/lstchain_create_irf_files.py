@@ -504,6 +504,12 @@ class IRFFITSWriter(Tool):
                         'deg'
                     )
             else:
+                # add dummy "RAD_MAX" to adapt to 1D analysis with gammapy>0.20.1
+                extra_headers["RAD_MAX"] = (
+                    0.1,
+                    'deg'
+                )
+
                 if self.energy_dependent_alpha:
                     extra_headers["AL_CONT"] = (
                         self.cuts.alpha_containment,
