@@ -47,8 +47,8 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
         else:
             disp_angle = np.arctan(disp_dy/disp_dx)
 
-    # disp_sign : indicates in which direction, "positive or negative" we must move along the 
-    # reconstructed image axis (with direction defined by versor cos(hillas_psi), sin(hillas_psi)) 
+    # disp_sign : indicates in which direction, "positive" or "negative" we must move along the 
+    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi)) 
     # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
 
     sqrdist_plus  = (cog_x + disp_norm*np.cos(hillas_psi) - src_x)**2 + (cog_y + disp_norm*np.sin(hillas_psi) - src_y)**2
