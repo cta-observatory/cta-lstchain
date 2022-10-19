@@ -3,11 +3,13 @@ from pathlib import Path
 from copy import copy
 
 __all__ = [
-    'get_cleaning_parameters',
-    'get_standard_config',
-    'get_srcdep_config',
-    'read_configuration_file',
-    'replace_config',
+    "dump_config",
+    "get_cleaning_parameters",
+    "get_mc_config",
+    "get_standard_config",
+    "get_srcdep_config",
+    "read_configuration_file",
+    "replace_config",
 ]
 
 
@@ -40,7 +42,9 @@ def get_standard_config():
     -------
     dict
     """
-    standard_config_file = Path(__file__).parent.joinpath("../data/lstchain_standard_config.json")
+    standard_config_file = Path(__file__).parent.joinpath(
+        "../data/lstchain_standard_config.json"
+    )
     return read_configuration_file(standard_config_file)
 
 
@@ -53,7 +57,9 @@ def get_mc_config():
     dict
     """
     std_cfg = get_standard_config()
-    mc_cfg = read_configuration_file(Path(__file__).parent.joinpath("../data/lstchain_mc_config.json"))
+    mc_cfg = read_configuration_file(
+        Path(__file__).parent.joinpath("../data/lstchain_mc_config.json")
+    )
     std_cfg.update(mc_cfg)
     return std_cfg
 
@@ -67,7 +73,9 @@ def get_srcdep_config():
     dict
     """
     std_cfg = get_standard_config()
-    src_dep_cfg = read_configuration_file(Path(__file__).parent.joinpath("../data/lstchain_src_dep_config.json"))
+    src_dep_cfg = read_configuration_file(
+        Path(__file__).parent.joinpath("../data/lstchain_src_dep_config.json")
+    )
     std_cfg.update(src_dep_cfg)
     return std_cfg
 
@@ -92,23 +100,23 @@ def replace_config(base_config, new_config):
     return config
 
 
-def get_cleaning_parameters(config, clean_method_name):
+def get_cleaning_parameters(config, cleaner):
     """
     Return cleaning parameters from configuration dict.
 
     Parameters
     ----------
     config: configuration dict
-    clean_method_name: name of cleaning method
+    cleaner: name of the image cleaner
 
     Returns
     -------
     tuple (picture threshold, boundary threshold, keep isolated pixels, min number picture neighbors)
     """
-    picture_th = config[clean_method_name]['picture_thresh']
-    boundary_th = config[clean_method_name]['boundary_thresh']
-    isolated_pixels = config[clean_method_name]['keep_isolated_pixels']
-    min_n_picture_neighbors = config[clean_method_name]['min_number_picture_neighbors']
+    picture_th = config[cleaner]["picture_threshold_pe"]
+    boundary_th = config[cleaner]["boundary_threshold_pe"]
+    isolated_pixels = config[cleaner]["keep_isolated_pixels"]
+    min_n_picture_neighbors = config[cleaner]["min_picture_neighbors"]
     return picture_th, boundary_th, isolated_pixels, min_n_picture_neighbors
 
 
@@ -124,5 +132,5 @@ def dump_config(config, filename, overwrite=False):
     """
     if Path(filename).exists() and not overwrite:
         raise FileExistsError(f"File {filename} exists, use overwrite=True")
-    with open(filename, 'w') as file:
+    with open(filename, "w") as file:
         json.dump(config, file, indent=2)

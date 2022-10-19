@@ -10,6 +10,50 @@ from lstchain.io.config import get_cleaning_parameters
 ORIGINAL_CALIBRATION_ID = 0
 INTERLEAVED_CALIBRATION_ID = 1
 
+
+def get_ped_thresh(tel_id, event, sigma_clean):
+    """
+    Does the same as `get_threshold_from_dl1_file`, but instead of extracting the
+    interleaved pedestal values directly with pytables, it uses the event loop.
+
+    Parameters
+    ----------
+    tel_id: int
+        Telescope id
+    event: ctapipe.containers.ArrayEventContainer
+        Top-level container for all event information.
+    sigma_clean: float
+        cleaning level parameter
+
+    Returns
+    -------
+    picture_thresh: np.ndarray
+        picture threshold calculated using interleaved pedestal events
+    """
+    # `get_bias_and_std`
+    ped_charge_mean = event.mon.tel[tel_id].pedestal.charge_mean
+    ped_charge_std = event.mon.tel[tel_id].pedestal.charge_std
+    dc_to_pe = event.mon.tel[tel_id].calibration.dc_to_pe[ORIGINAL_CALIBRATION_ID]
+    ped_charge_mean_pe = ped_charge_mean * dc_to_pe
+    ped_charge_std_pe = ped_charge_std * dc_to_pe
+
+    # `get_threshold_from_dl1_file`
+    if ped_charge_std_pe.shape[0] > 1:
+        pedestal_id = INTERLEAVED_CALIBRATION_ID
+    else:
+        pedestal_id = ORIGINAL_CALIBRATION_ID
+
+    threshold_clean_pe = ped_charge_mean_pe + sigma_clean * ped_charge_std_pe
+
+    unusable_pixels = event.mon.tel[tel_id].calibration.unusable_pixels
+
+    threshold_clean_pe[pedestal_id, HIGH_GAIN, unusable_pixels] = max(
+        threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
+    )
+
+    return threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
+
+
 def get_bias_and_std(dl1_file):
     """
     Function to extract bias and std of pedestal from interleaved events from dl1 file.
@@ -32,6 +76,7 @@ def get_bias_and_std(dl1_file):
         ped_charge_std_pe = ped_charge_std * dc_to_pe
 
     return ped_charge_mean_pe, ped_charge_std_pe
+
 
 def get_threshold_from_dl1_file(dl1_path, sigma_clean):
     """
@@ -65,28 +110,33 @@ def get_threshold_from_dl1_file(dl1_path, sigma_clean):
         pedestal_id = INTERLEAVED_CALIBRATION_ID
     else:
         pedestal_id = ORIGINAL_CALIBRATION_ID
-    threshold_clean_pe = ped_mean_pe + sigma_clean*ped_std_pe
+    threshold_clean_pe = ped_mean_pe + sigma_clean * ped_std_pe
     # find pixels with std = 0 and mean = 0 <=> dead pixels in interleaved
     # pedestal event likely due to stars
     unusable_pixels = get_unusable_pixels(dl1_path, pedestal_id)
     # for dead pixels set max value of threshold
-    threshold_clean_pe[pedestal_id, HIGH_GAIN, unusable_pixels] = \
-        max(threshold_clean_pe[pedestal_id, HIGH_GAIN, :])
+    threshold_clean_pe[pedestal_id, HIGH_GAIN, unusable_pixels] = max(
+        threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
+    )
     # return pedestal interleaved threshold from data run for high gain
     return threshold_clean_pe[pedestal_id, HIGH_GAIN, :]
 
+
 def get_unusable_pixels(dl1_path, pedestal_id):
     with tables.open_file(dl1_path) as f:
-        calibration_id = f.root.dl1.event.telescope.monitoring.pedestal.col('calibration_id')
-        unusable_pixels = np.where(f.root[dl1_params_tel_mon_cal_key].col(
-                                   'unusable_pixels')[calibration_id[pedestal_id],
-                                                      HIGH_GAIN,
-                                                      :] == True)
+        calibration_id = f.root.dl1.event.telescope.monitoring.pedestal.col(
+            "calibration_id"
+        )
+        unusable_pixels = np.where(
+            f.root[dl1_params_tel_mon_cal_key].col("unusable_pixels")[
+                calibration_id[pedestal_id], HIGH_GAIN, :
+            ]
+            == True
+        )
     return unusable_pixels
 
 
-def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
-                                      max_fraction=0.04):
+def find_safe_threshold_from_dl1_file(dl1_path, config_file=None, max_fraction=0.04):
     """
     Function to obtain an integer value for the picture threshold such that
     at most a fraction max_fraction of pixels have a higher value resulting
@@ -134,14 +184,13 @@ def find_safe_threshold_from_dl1_file(dl1_path, config_file=None,
     """
     std_config = get_standard_config()
     if config_file is not None:
-        config = replace_config(std_config,
-                                read_configuration_file(config_file))
+        config = replace_config(std_config, read_configuration_file(config_file))
     else:
         config = std_config
 
-    cleaning_method = 'tailcuts_clean_with_pedestal_threshold'
-    picture_th, _, _, _ = get_cleaning_parameters(config, cleaning_method)
-    sigma = config[cleaning_method]['sigma']
+    cleaner = "LSTImageCleaner"
+    picture_th, _, _, _ = get_cleaning_parameters(config, cleaner)
+    sigma = config[cleaner]["sigma"]
 
     # Obtain the picture thresholds of pixels based on the "clean with
     # pedestal threshold" method:
