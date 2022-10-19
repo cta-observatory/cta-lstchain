@@ -372,7 +372,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # calculate widening of the noise bump:
     added_noise = (np.sum(dq[dq<maxq]**2)/len(dq[dq<maxq]) -
                    np.sum(dqmc[dqmc<maxq]**2)/len(dqmc[dqmc < maxq]))
-    extra_noise_in_dim_pixels = max(0, added_noise)
+    extra_noise_in_dim_pixels = max(0., added_noise)
 
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
            extra_noise_in_bright_pixels
