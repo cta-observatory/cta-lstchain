@@ -351,8 +351,8 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     # The idea is that when a strong signal is present, the biased extractor
     # will integrate around it, and the additional noise is unbiased because
     # it won't modify the integration range.
-    # The noise is defined as the number of NSB photons, i.e. the extra variance, 
-    # rather than standard deviation, of the distribution
+    # The noise is defined as the number of NSB photoelectrons, i.e. the extra
+    # variance, rather than standard deviation, of the distribution
     extra_noise_in_bright_pixels = \
         ((data_median_std_ped_pe**2 - mc_unbiased_std_ped_pe**2) *
          shower_extractor_window_width / pedestal_extractor_window_width)
