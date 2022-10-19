@@ -317,7 +317,8 @@ def main():
                         dl1_container['x'].to_value(u.m),
                         dl1_container['y'].to_value(u.m),
                         params['src_x'][ii],
-                        params['src_y'][ii]
+                        params['src_y'][ii],
+                        params['psi'][ii].to_value(u.rad)
                     )
 
                     dl1_container['disp_dx'] = disp_dx
