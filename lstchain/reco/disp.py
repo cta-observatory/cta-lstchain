@@ -51,8 +51,8 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     # reconstructed image axis (with direction defined by versor cos(hillas_psi), sin(hillas_psi)) 
     # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
 
-    sqrdist_plus  = (cog_x + disp_norm*cos(hillas_psi) - srcx)**2 + (cog_y + disp_norm*sin(hillas_psi) - srcy)**2
-    sqrdist_minus = (cog_x - disp_norm*cos(hillas_psi) - srcx)**2 + (cog_y - disp_norm*sin(hillas_psi) - srcy)**2
+    sqrdist_plus  = (cog_x + disp_norm*np.cos(hillas_psi) - srcx)**2 + (cog_y + disp_norm*np.sin(hillas_psi) - srcy)**2
+    sqrdist_minus = (cog_x - disp_norm*np.cos(hillas_psi) - srcx)**2 + (cog_y - disp_norm*np.sin(hillas_psi) - srcy)**2
     disp_sign = np.sign(sqrdist_minus - sqrdist_plus)
 
     return disp_dx, disp_dy, disp_norm, disp_angle, disp_sign
