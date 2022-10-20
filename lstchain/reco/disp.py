@@ -38,7 +38,7 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
     
-    disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas.psi)
+    disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas_psi)
     disp_sign = np.sign(disp_norm)
     disp_norm = abs(disp_norm)
     
