@@ -37,7 +37,16 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
-    disp_norm = np.sqrt(disp_dx**2 + disp_dy**2)
+    
+    disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas.psi)
+    disp_sign = np.sign(disp_norm)
+    disp_norm = abs(disp_norm)
+    
+    # disp_sign : indicates in which direction, "positive" or "negative", we must move along the 
+    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi)) 
+    # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
+
+    
     if hasattr(disp_dx, '__len__'):
         disp_angle = np.arctan(disp_dy / disp_dx)
         disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
@@ -46,14 +55,6 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
             disp_angle = np.pi/2. * np.sign(disp_dy)
         else:
             disp_angle = np.arctan(disp_dy/disp_dx)
-
-    # disp_sign : indicates in which direction, "positive" or "negative" we must move along the 
-    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi)) 
-    # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
-
-    sqrdist_plus  = (cog_x + disp_norm*np.cos(hillas_psi) - src_x)**2 + (cog_y + disp_norm*np.sin(hillas_psi) - src_y)**2
-    sqrdist_minus = (cog_x - disp_norm*np.cos(hillas_psi) - src_x)**2 + (cog_y - disp_norm*np.sin(hillas_psi) - src_y)**2
-    disp_sign = np.sign(sqrdist_minus - sqrdist_plus)
 
     return disp_dx, disp_dy, disp_norm, disp_angle, disp_sign
 
