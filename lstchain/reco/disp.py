@@ -119,11 +119,11 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     """
     disp_container = lstcontainers.DispContainer()
 
-    d = disp(hillas_parameters.x.to(u.m).value,
-             hillas_parameters.y.to(u.m).value,
-             source_pos_x.to(u.m).value,
-             source_pos_y.to(u.m).value,
-             hillas_parameters.psi.to(u.rad).value
+    d = disp(hillas_parameters.x.to_value(u.m),
+             hillas_parameters.y.to_value(u.m),
+             source_pos_x.to_value(u.m),
+             source_pos_y.to_value(u.m),
+             hillas_parameters.psi.to_value(u.rad)
              )
 
     disp_container.dx = d[0] * u.m
@@ -133,7 +133,7 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     disp_container.sign = d[4]
     disp_container.miss = miss(disp_container.dx.value,
                                disp_container.dy.value,
-                               hillas_parameters.psi.to(u.rad).value) * u.m
+                               hillas_parameters.psi.to_value(u.rad)) * u.m
     return disp_container
 
 
