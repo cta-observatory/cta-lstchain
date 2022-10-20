@@ -40,7 +40,7 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     
     disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas_psi)
     disp_sign = np.sign(disp_norm)
-    disp_norm = abs(disp_norm)
+    disp_norm = np.abs(disp_norm)
     
     # disp_sign : indicates in which direction, "positive" or "negative", we must move along the 
     # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi)) 
