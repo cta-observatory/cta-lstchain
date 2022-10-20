@@ -131,9 +131,9 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     disp_container.norm = d[2] * u.m
     disp_container.angle = d[3] * u.rad
     disp_container.sign = d[4]
-    disp_container.miss = miss(disp_container.dx.value,
-                               disp_container.dy.value,
-                               hillas_parameters.psi.to_value(u.rad)) * u.m
+    disp_container.miss = miss(disp_container.dx.to_value(u.m),
+                               disp_container.dy.to_value(u.m),
+                               hillas_parameters.psi.to_value(u.rad))
     return disp_container
 
 
