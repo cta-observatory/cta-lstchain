@@ -771,7 +771,8 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     disp_parameters = disp.disp(df.x.values * u.m,
                                 df.y.values * u.m,
                                 source_pos_in_camera.x,
-                                source_pos_in_camera.y)
+                                source_pos_in_camera.y,
+                                df.psi.values * u.rad)
 
     with tables.open_file(dl1_file, mode="a") as file:
         tab = file.root[table_path]
