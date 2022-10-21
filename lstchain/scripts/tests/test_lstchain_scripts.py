@@ -506,10 +506,3 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_source" in run_summary_table.columns
 
     assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
-
-
-def test_numba_compil_lhfit():
-    from lstchain.scripts import numba_compil_lhfit
-    assert numba_compil_lhfit.cc.name == 'log_pdf_CC'
-    assert 'log_pdf' in numba_compil_lhfit.cc._exported_functions
-    assert len(numba_compil_lhfit.cc._exported_functions) == 6

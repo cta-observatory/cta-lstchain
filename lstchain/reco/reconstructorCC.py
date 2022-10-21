@@ -1,31 +1,12 @@
+"""
+Numba jitted functions for the waveform likelihood reconstructor
+"""
+
 import numpy as np
-from numba.pycc import CC
 from numba import njit
 
-"""
-Define functions for ahead of time compilation with numba.
-It will be compiled during installation to create c shared library with optimized functions.
-cc.compile() can be used to compile after installing lstchain.
-Functions pool:
--log_pdf_ll
--log_pdf_hl
--asygaussian2d
--linval
--template_interpolation
--log_pdf
 
-Decorator @cc.export take the name to be used for the compiled function and the function signature.
-Meaning of the symbols is defined here https://numba.pydata.org/numba-doc/dev/reference/types.html#numba-types
-@njit decorator makes function available to other function compiled here.
-
-"""
-
-cc = CC('log_pdf_CC')
-cc.verbose = True
-
-
-@njit()
-@cc.export('log_pdf_ll', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:],f8[:,:],u8[:],i8,f8[:,:])')
+@njit(cache=True)
 def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_peaks, weight):
     """
     Performs the sum log likelihood for low luminosity pixels in TimeWaveformFitter.
@@ -88,8 +69,7 @@ def log_pdf_ll(mu, waveform, error, crosstalk, sig_s, templates, factorial, n_pe
             sumlh += weight[i, j] * np.log(sumlh_k)
     return sumlh
 
-@njit()
-@cc.export('log_pdf_hl', 'f8(f8[:],f4[:,:],f4[:],f8[:],f8[:,:],f8[:,:])')
+@njit(cache=True)
 def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
     """
     Performs the sum log likelihood for high luminosity pixels in TimeWaveformFitter.log_pdf
@@ -134,8 +114,7 @@ def log_pdf_hl(mu, waveform, error, crosstalk, templates, weight):
     return sumlh
 
 
-@njit()
-@cc.export('asygaussian2d', 'f8[:](f8[:],f8[:],f8[:],f8,f8,f8,f8,f8,f8)')
+@njit(cache=True)
 def asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
     """
     Evaluate the bi-dimensional gaussian law with asymmetry along the
@@ -177,8 +156,7 @@ def asygaussian2d(size, x, y, x_cm, y_cm, width, length, psi, rl):
     return gauss2d
 
 
-@njit()
-@cc.export('linval', 'f8[:](f8,f8,f8[:])')
+@njit(cache=True)
 def linval(a, b, x):
     """
     Linear law function
@@ -204,8 +182,7 @@ def linval(a, b, x):
     return y
 
 
-@njit()
-@cc.export('template_interpolation', 'f8[:,:](b1[:],f8[:,:],f8,f8,f8[:],f8[:],i8)')
+@njit(cache=True)
 def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
     """
     Fast template interpolator using uniformly sampled base with known origin and step.
@@ -251,10 +228,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
     return out
 
 
-@cc.export('log_pdf', 'f8(f8,f8,f8,f8,f8,f8,f8,f8,f8,'
-                      'f4[:,:],f4[:],b1[:],f8[:],f8[:],f8[:],f4[:],'
-                      'f8[:],f8[:],f8[:],f8,f8,f8[:],'
-                      'f8[:],i8,f4,b1,u8[:])')
+@njit(cache=True)
 def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
             data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
             p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
