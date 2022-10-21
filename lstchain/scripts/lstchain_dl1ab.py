@@ -328,7 +328,7 @@ def main():
                     dl1_container['disp_angle'] = disp_angle
                     dl1_container['disp_sign'] = disp_sign
 
-                dl1_container['sin_az_tel'] = np.sin(infile.root[dl1_params_lstcam_key].col('az_tel'))
+                dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
                     
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
