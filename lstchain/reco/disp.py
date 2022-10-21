@@ -1,4 +1,3 @@
-import astropy.units as u
 import numpy as np
 
 from . import utils
@@ -37,16 +36,16 @@ def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
-    
+
     disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas_psi)
     disp_sign = np.sign(disp_norm)
     disp_norm = np.abs(disp_norm)
-    
-    # disp_sign : indicates in which direction, "positive" or "negative", we must move along the 
-    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi)) 
+
+    # disp_sign : indicates in which direction, "positive" or "negative", we must move along the
+    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi))
     # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
 
-    
+
     if hasattr(disp_dx, '__len__'):
         disp_angle = np.arctan(disp_dy / disp_dx)
         disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
@@ -73,7 +72,7 @@ def miss(disp_dx, disp_dy, hillas_psi):
     -------
 
     """
-    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi)*disp_dy)
+    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi) * disp_dy)
 
 
 def disp_parameters(cog_x, cog_y, hillas_psi, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
@@ -117,24 +116,23 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     -------
     `lstchain.io.containers.DispContainer`
     """
-    disp_container = lstcontainers.DispContainer()
 
-    d = disp(hillas_parameters.x.to_value(u.m),
-             hillas_parameters.y.to_value(u.m),
-             source_pos_x.to_value(u.m),
-             source_pos_y.to_value(u.m),
-             hillas_parameters.psi.to_value(u.rad)
-             )
+    dx, dy, norm, angle, sign = disp(
+        hillas_parameters.x,
+        hillas_parameters.y,
+        source_pos_x,
+        source_pos_y,
+        hillas_parameters.psi
+    )
 
-    disp_container.dx = d[0] * u.m
-    disp_container.dy = d[1] * u.m
-    disp_container.norm = d[2] * u.m
-    disp_container.angle = d[3] * u.rad
-    disp_container.sign = d[4]
-    disp_container.miss = miss(disp_container.dx.to_value(u.m),
-                               disp_container.dy.to_value(u.m),
-                               hillas_parameters.psi.to_value(u.rad))
-    return disp_container
+    return lstcontainers.DispContainer(
+        dx=dx,
+        dy=dy,
+        norm=norm,
+        angle=angle,
+        sign=sign,
+        miss=miss(dx, dy, hillas_parameters.psi)
+    )
 
 
 
