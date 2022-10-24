@@ -226,8 +226,12 @@ def main():
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
 
+            params_node = outfile.root[dl1_params_lstcam_key]
+            params = params_node.read()
 
-            params = outfile.root[dl1_params_lstcam_key].read()
+            log.warning(f"Parameters not in original DL1 file {args.input_file} that can't be recomputed:"
+                        f"{set(parameters_to_update) - set(params_node.colnames)}")
+            parameters_to_update = list(set(parameters_to_update) & set(params_node.colnames))
             if image_mask_save:
                 image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
 
