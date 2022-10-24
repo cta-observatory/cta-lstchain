@@ -347,6 +347,7 @@ def main():
                      path=dl1_params_lstcam_key,
                      overwrite=True,
                      append=True,
+                     serialize_meta=True,
                      # compression=HDF5_ZSTD_FILTERS.complib,
                      compression_opts=HDF5_ZSTD_FILTERS.complevel)
 
