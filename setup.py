@@ -1,15 +1,8 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import sys
 from setuptools import setup, find_packages
 import os
-sys.path.append("./lstchain/reco/")
-# Import the compilable module using numba ahead of time compilation
-from reconstructorCC import cc
-# Create an extension
-ext = cc.distutils_extension()
-# Change name to save the compiled extension in the right place
-ext.name = 'lstchain.reco.'+ext.name
+
 
 def find_scripts(script_dir, prefix):
     script_list = [
@@ -84,5 +77,4 @@ setup(
         ],
     },
     entry_points=entry_points,
-    ext_modules=[ext],
 )
