@@ -3,10 +3,7 @@ import matplotlib.pyplot as plt
 from copy import copy
 import astropy.units as u
 from ctapipe.visualization import CameraDisplay
-try:
-    from lstchain.reco.log_pdf_CC import asygaussian2d as asygaussian2d
-except ImportError:
-    pass
+from lstchain.reco.reconstructorCC import asygaussian2d as asygaussian2d
 
 __all__ = [
     'plot_1dlikelihood',

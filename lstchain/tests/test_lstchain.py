@@ -77,7 +77,7 @@ def test_r0_available():
 
 
 def test_lhfit_numba_compiled():
-    from lstchain.reco.log_pdf_CC import log_pdf_hl as log_pdf_hl
+    from lstchain.reco.reconstructorCC import log_pdf_hl
     log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
                np.float64([0]), np.float64([[1]]), np.float64([[1]]))
 

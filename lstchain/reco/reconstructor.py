@@ -9,13 +9,10 @@ from lstchain.data.normalised_pulse_template import NormalizedPulseTemplate
 from ctapipe.core import TelescopeComponent
 from ctapipe.core.traits import Bool, Float, FloatTelescopeParameter, Int, Path
 from lstchain.io.lstcontainers import DL1LikelihoodParametersContainer
+from lstchain.reco.reconstructorCC import log_pdf as log_pdf
 
 logger = logging.getLogger(__name__)
 
-try:
-    from lstchain.reco.log_pdf_CC import log_pdf as log_pdf
-except ImportError:
-    pass
 
 
 class TimeWaveformFitter(TelescopeComponent):
