@@ -19,6 +19,7 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 import tables
+from ctapipe.io import read_table
 from ctapipe.image import (
     tailcuts_clean,
     number_of_islands,
@@ -194,7 +195,7 @@ def main():
         'n_pixels',
         'wl',
         'log_intensity',
-        'sin_az_tel'
+        'sin_az_tel',
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -222,12 +223,14 @@ def main():
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
+        params = read_table(infile, dl1_params_lstcam_key)
+        for p in set(parameters_to_update) - set(params.colnames):
+            params[p] = np.empty(len(params), dtype=np.float32)
+
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
 
-
-            params = outfile.root[dl1_params_lstcam_key].read()
             if image_mask_save:
                 image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
 
@@ -336,11 +339,16 @@ def main():
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
 
-            outfile.root[dl1_params_lstcam_key][:] = params
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
         write_metadata(metadata, args.output_file)
+        params.write(args.output_file,
+                     path=dl1_params_lstcam_key,
+                     overwrite=True,
+                     append=True,
+                     compression=HDF5_ZSTD_FILTERS.complib,
+                     compression_opts=HDF5_ZSTD_FILTERS.complevel)
 
 
 if __name__ == '__main__':
