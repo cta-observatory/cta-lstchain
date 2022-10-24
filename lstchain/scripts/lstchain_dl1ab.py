@@ -193,7 +193,8 @@ def main():
         'time_gradient',
         'n_pixels',
         'wl',
-        'log_intensity'
+        'log_intensity',
+        'sin_az_tel'
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -327,6 +328,8 @@ def main():
                     dl1_container['disp_angle'] = disp_angle
                     dl1_container['disp_sign'] = disp_sign
 
+                dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
+                    
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
