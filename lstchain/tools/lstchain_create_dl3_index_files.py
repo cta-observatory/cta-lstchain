@@ -39,10 +39,17 @@ class FITSIndexWriter(Tool):
         --overwrite
 
     Or if the DL3 files are stored in sub-directories:
-    < lstchain_create_dl3_index_files
+    > lstchain_create_dl3_index_files
        -d /path/to/DL3/files/
        -o /path/to/DL3/index/files
-       -p /sub-directory*/dl3*[run_1-run_n]*.fits   
+       -p /sub-directory*/dl3*[run_1-run_n]*.fits
+       --overwrite
+
+    Or if the DL3 files are stored in the current directory:
+    > lstchain_create_dl3_index_files
+       -d ./
+       -o ./
+       -p "dl3*[run_1-run_n]*.fits"
        --overwrite
     """
 
