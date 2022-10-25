@@ -365,6 +365,7 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         gammas = self.event_sel.filter_cut(gammas)
+        gammas = self.event_sel.same_disp_sign(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
 
         if self.energy_dependent_gh:
@@ -461,6 +462,7 @@ class IRFFITSWriter(Tool):
                 background = self.cuts.apply_global_gh_cut(background)
 
             background = self.event_sel.filter_cut(background)
+            background = self.event_sel.same_disp_sign(background)
             background = self.cuts.allowed_tels_filter(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
@@ -520,7 +522,7 @@ class IRFFITSWriter(Tool):
                         self.cuts.global_alpha_cut,
                         'deg'
                     )
-                    
+
         # Write HDUs
         self.hdus = [fits.PrimaryHDU(), ]
 
@@ -649,10 +651,10 @@ class IRFFITSWriter(Tool):
             alpha_header = fits.Header()
             alpha_header["CREATOR"] = f"lstchain v{__version__}"
             alpha_header["DATE"] = Time.now().utc.iso
-            
+
             for k, v in extra_headers.items():
                 alpha_header[k] = v
-                
+
             self.hdus.append(
                 fits.BinTableHDU(
                     self.alpha_cuts, header=gh_header, name="AL_CUTS"

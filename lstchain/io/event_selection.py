@@ -24,6 +24,9 @@ class EventSelector(Component):
     For event_type, we choose the sub-array trigger, EventType.SUBARRAY.value,
     32, which is for shower event candidate, as per the latest CTA R1 Event
     Data Model.
+
+    Another event selection can happen by selecting events where the
+    reconstructed disp sign is the same as the "true" disp sign value.
     """
 
     filters = Dict(
@@ -43,9 +46,18 @@ class EventSelector(Component):
 
     def filter_cut(self, events):
         """
-        Apply the event filters
+        Apply the standard event filters.
         """
         return filter_events(events, self.filters, self.finite_params)
+
+    def same_disp_sign(self, events):
+        """
+        Apply a mask to have events with the reconstructed disp sign,
+        be the same as the true, to avoid wrong head-tail assignment
+        in the reconstructed image of the MC data.
+        """
+        disp_mask = events["reco_disp_sign"] == events["disp_sign"]
+        return events[disp_mask]
 
 
 class DL3Cuts(Component):
@@ -86,6 +98,12 @@ class DL3Cuts(Component):
     max_theta_cut = Float(
         help="Maximum theta cut (deg) in an energy bin",
         default_value=0.32,
+    ).tag(config=True)
+
+    max_theta_range = Float(
+        help="Maximum value of theta (deg), approximate for the PSF size," +
+            " to calculate the percentile cut in each energy bin.",
+        default_value=0.7,
     ).tag(config=True)
 
     fill_theta_cut = Float(
@@ -190,15 +208,17 @@ class DL3Cuts(Component):
     ):
         """
         Evaluating an optimized energy-dependent theta cuts, in a given
-        data, with provided reco energy bins, and other parameters to
+        data, within the "central PSF" region as can be checked with data-MC
+        comparisons, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
+        within_central_psf = data["theta"].to(u.deg) <= self.max_theta_range * u.deg
 
         theta_cuts = calculate_percentile_cut(
-            data["theta"],
-            data["reco_energy"],
+            data["theta"][within_central_psf],
+            data["reco_energy"][within_central_psf],
             bins=energy_bins,
             min_value=self.min_theta_cut * u.deg,
             max_value=self.max_theta_cut * u.deg,
@@ -238,7 +258,7 @@ class DL3Cuts(Component):
         pass to the pyirf.cuts.calculate_percentile_cut function.
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        
+
         alpha_cuts = calculate_percentile_cut(
             data["alpha"],
             data["reco_energy"],
@@ -251,13 +271,13 @@ class DL3Cuts(Component):
             min_events=self.min_event_p_en_bin,
         )
         return alpha_cuts
-        
+
     def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
         """
         Applying a given energy-dependent alpha cuts to a data file, along the
         reco energy bins provided.
         """
-        
+
         data["selected_alpha"] = evaluate_binned_cut(
             data["alpha"],
             data["reco_energy"],
@@ -265,7 +285,7 @@ class DL3Cuts(Component):
             operator.le,
         )
         return data[data["selected_alpha"]]
-            
+
     def allowed_tels_filter(self, data):
         """
         Applying a filter on telescopes used for observation.
