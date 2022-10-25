@@ -8,7 +8,6 @@ from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
 
 
-from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 
@@ -238,7 +237,7 @@ class DL3Cuts(Component):
         pass to the pyirf.cuts.calculate_percentile_cut function.
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        
+
         alpha_cuts = calculate_percentile_cut(
             data["alpha"],
             data["reco_energy"],
@@ -251,13 +250,13 @@ class DL3Cuts(Component):
             min_events=self.min_event_p_en_bin,
         )
         return alpha_cuts
-        
+
     def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
         """
         Applying a given energy-dependent alpha cuts to a data file, along the
         reco energy bins provided.
         """
-        
+
         data["selected_alpha"] = evaluate_binned_cut(
             data["alpha"],
             data["reco_energy"],
@@ -265,7 +264,7 @@ class DL3Cuts(Component):
             operator.le,
         )
         return data[data["selected_alpha"]]
-            
+
     def allowed_tels_filter(self, data):
         """
         Applying a filter on telescopes used for observation.
@@ -289,12 +288,12 @@ class DataBinning(Component):
 
     true_energy_max = Float(
         help="Maximum value for True Energy bins in TeV units",
-        default_value=200,
+        default_value=500,
     ).tag(config=True)
 
-    true_energy_n_bins_per_decade = Float(
-        help="Number of edges per decade for True Energy bins",
-        default_value=5,
+    true_energy_n_bins = Int(
+        help="Number of bins in log scale for True Energy",
+        default_value=25,
     ).tag(config=True)
 
     reco_energy_min = Float(
@@ -304,12 +303,12 @@ class DataBinning(Component):
 
     reco_energy_max = Float(
         help="Maximum value for Reco Energy bins in TeV units",
-        default_value=200,
+        default_value=500,
     ).tag(config=True)
 
-    reco_energy_n_bins_per_decade = Float(
-        help="Number of edges per decade for Reco Energy bins",
-        default_value=5,
+    reco_energy_n_bins = Int(
+        help="Number of bins in log scale for Reco Energy",
+        default_value=25,
     ).tag(config=True)
 
     energy_migration_min = Float(
@@ -324,7 +323,7 @@ class DataBinning(Component):
 
     energy_migration_n_bins = Int(
         help="Number of bins in log scale for Energy Migration matrix",
-        default_value=31,
+        default_value=30,
     ).tag(config=True)
 
     fov_offset_min = Float(
@@ -374,48 +373,37 @@ class DataBinning(Component):
 
     def true_energy_bins(self):
         """
-        Creates bins per decade for true MC energy using pyirf function.
-        The overflow binning added is not needed at the current stage.
-
-        Examples
-        --------
-        It can be used as:
-
-        >>> add_overflow_bins(***)[1:-1]
+        Creates bins for true energy in log scale using numpy.geomspace with
+        true_energy_n_bins + 1 edges.
         """
-        true_energy = create_bins_per_decade(
+        true_energy = np.geomspace(
             self.true_energy_min * u.TeV,
             self.true_energy_max * u.TeV,
-            self.true_energy_n_bins_per_decade,
+            self.true_energy_n_bins + 1,
         )
         return true_energy
 
     def reco_energy_bins(self):
         """
-        Creates bins per decade for reconstructed MC energy using pyirf function.
-        The overflow binning added is not needed at the current stage.
-
-        Examples
-        --------
-        It can be used as:
-
-        >>> add_overflow_bins(***)[1:-1]
+        Creates bins for reco energy in log scale using numpy.geomspace with
+        reco_energy_n_bins + 1 edges.
         """
-        reco_energy = create_bins_per_decade(
+        reco_energy = np.geomspace(
             self.reco_energy_min * u.TeV,
             self.reco_energy_max * u.TeV,
-            self.reco_energy_n_bins_per_decade,
+            self.reco_energy_n_bins + 1,
         )
         return reco_energy
 
     def energy_migration_bins(self):
         """
-        Creates bins for energy migration.
+        Creates bins for energy migration in log scale using numpy.geomspace
+        with energy_migration_n_bins + 1 edges.
         """
         energy_migration = np.geomspace(
             self.energy_migration_min,
             self.energy_migration_max,
-            self.energy_migration_n_bins,
+            self.energy_migration_n_bins + 1,
         )
         return energy_migration
 

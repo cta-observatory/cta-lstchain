@@ -108,13 +108,13 @@ def test_data_binning():
 
     tempbin.true_energy_min = 0.01
     tempbin.true_energy_max = 100
-    tempbin.true_energy_n_bins_per_decade = 5
+    tempbin.true_energy_n_bins = 20
     tempbin.reco_energy_min = 0.01
     tempbin.reco_energy_max = 100
-    tempbin.reco_energy_n_bins_per_decade = 5
+    tempbin.reco_energy_n_bins = 20
     tempbin.energy_migration_min = 0.2
     tempbin.energy_migration_max = 5
-    tempbin.energy_migration_n_bins = 15
+    tempbin.energy_migration_n_bins = 14
     tempbin.fov_offset_min = 0.1
     tempbin.fov_offset_max = 1.1
     tempbin.fov_offset_n_edges = 9
