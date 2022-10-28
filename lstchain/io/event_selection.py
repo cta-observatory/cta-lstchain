@@ -50,11 +50,14 @@ class EventSelector(Component):
         """
         return filter_events(events, self.filters, self.finite_params)
 
-    def same_disp_sign(self, events):
+    def same_disp_sign_filter(self, events):
         """
-        Apply a mask to have events with the reconstructed disp sign,
-        be the same as the true, to avoid wrong head-tail assignment
-        in the reconstructed image of the MC data.
+        Apply a mask to have events with the reconstructed disp sign
+        (reco_disp_sign), be the same as the true value (disp_sign),
+        to avoid wrong head-tail assignment in the reconstructed
+        image of the MC data.
+
+        The function returns modified events after applying the mask.
         """
         disp_mask = events["reco_disp_sign"] == events["disp_sign"]
         return events[disp_mask]

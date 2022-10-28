@@ -365,7 +365,7 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         gammas = self.event_sel.filter_cut(gammas)
-        gammas = self.event_sel.same_disp_sign(gammas)
+        gammas = self.event_sel.same_disp_sign_filter(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
 
         if self.energy_dependent_gh:
@@ -462,7 +462,7 @@ class IRFFITSWriter(Tool):
                 background = self.cuts.apply_global_gh_cut(background)
 
             background = self.event_sel.filter_cut(background)
-            background = self.event_sel.same_disp_sign(background)
+            background = self.event_sel.same_disp_sign_filter(background)
             background = self.cuts.allowed_tels_filter(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()

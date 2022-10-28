@@ -53,7 +53,7 @@ def test_event_selection():
     evt_fil.filters = dict(a=[0, 5], b=[0, 6], c=[0, 7])
 
     data_t3 = evt_fil.filter_cut(data_t)
-    data_t3 = evt_fil.same_disp_sign(data_t3)
+    data_t3 = evt_fil.same_disp_sign_filter(data_t3)
 
     np.testing.assert_array_equal(
         data_t3,
