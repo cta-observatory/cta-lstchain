@@ -136,3 +136,26 @@ def test_check_delaunay_triangles(simulated_irf_file):
 
     assert len(new_irfs) == 3
     assert len(new_irfs2) == 1
+
+
+def test_interpolate_gh_cuts():
+    from lstchain.high_level.interpolate import interpolate_gh_cuts
+    import numpy as np
+
+    # linear test case
+    gh_cuts_1 = np.array([[0, 0], [0.1, 0], [0.2, 0.1], [0.3, 0.2]])
+    gh_cuts_2 = 2 * gh_cuts_1
+    gh_cut = np.array([gh_cuts_1, gh_cuts_2])
+
+    grid_points = np.array([[0], [0.1]])
+    target_point = np.array([0.05])
+
+    interp = interpolate_gh_cuts(
+        gh_cuts=gh_cut,
+        grid_points=grid_points,
+        target_point=target_point,
+        method="linear",
+    )
+
+    assert interp.shape == (1, *gh_cuts_1.shape)
+    assert np.allclose(interp, 1.5 * gh_cuts_1)

@@ -15,7 +15,8 @@ from pyirf.io.gadf import (
 from pyirf.interpolation import (
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion,
-    interpolate_psf_table,  # interpolate_rad_max
+    interpolate_psf_table,
+    interpolate_rad_max,
 )
 from scipy.spatial import Delaunay, distance
 from scipy.interpolate import griddata
@@ -273,12 +274,13 @@ def load_irf_grid(irfs, extname, interp_col, gadf_irf=True):
     return np.stack(irf_list)
 
 
-def interpolate_gh_table(
+def interpolate_gh_cuts(
     gh_cuts, grid_points, target_point, method="linear",
 ):
     """
     Interpolates a grid of GH CUTS tables to a target-point.
     Wrapper around scipy.interpolate.griddata [1].
+
     Parameters
     ----------
     gh_cuts: numpy.ndarray, shape=(N, M, ...)
@@ -293,42 +295,15 @@ def interpolate_gh_table(
     method: 'linear’, ‘nearest’, ‘cubic’
         Interpolation method for scipy.interpolate.griddata [1].
         Defaults to 'linear'.
+
     Returns
     -------
     gh_cuts_interp: numpy.ndarray, shape=(1, M, ...)
         Gammaness-cuts for the target grid-point,
         shape (1, M:n_energy_bins, n_fov_offset_bins)
     """
+
     return griddata(grid_points, gh_cuts, target_point, method=method)
-
-
-def interpolate_rad_max(
-    rad_max, grid_points, target_point, method="linear",
-):
-    """
-    Interpolates a grid of RAD_MAX tables for point-like IRFs to a target-point.
-    Wrapper around scipy.interpolate.griddata [1].
-    Parameters
-    ----------
-    rad_max: numpy.ndarray, shape=(N, M, ...)
-        Theta-cuts for all combinations of grid-points, energy and fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
-    grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding
-        to the N input templates.
-    target_point: numpy.ndarray, shape=(O)
-        Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
-        Interpolation method for scipy.interpolate.griddata [1].
-        Defaults to 'linear'.
-    Returns
-    -------
-    rad_max_interp: numpy.ndarray, shape=(1, M, ...)
-        Theta-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
-    """
-
-    return griddata(grid_points, rad_max, target_point, method=method)
 
 
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
@@ -473,7 +448,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
         temp_irf = QTable.read(irfs[0], hdu="GH_CUTS")
 
-        gh_cut_interp = interpolate_gh_table(
+        gh_cut_interp = interpolate_gh_cuts(
             gh_cuts_list, irf_pars, interp_pars, method=interp_method
         )
 
