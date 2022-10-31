@@ -95,7 +95,7 @@ class DataReductionFITSWriter(Tool):
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
         --input-irf-path /path/to/irf/
-        --irf-file-pattern irf*.fits.gz
+        --irf-file-pattern "irf*.fits.gz"
         --final-irf-file final_interp_irf.fits.gz
         --source-name Crab
         --source-ra 83.633deg
@@ -107,7 +107,7 @@ class DataReductionFITSWriter(Tool):
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
         --input-irf-path /path/to/irf
-        --irf-file-pattern irf.fits.gz
+        --irf-file-pattern "irf.fits.gz"
         --source-name Crab
         --source-dep
         --overwrite
@@ -117,7 +117,7 @@ class DataReductionFITSWriter(Tool):
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
         -i /path/to/irf/
-        -p irf*.fits.gz
+        -p "irf*.fits.gz"
         -f final_interp_irf.fits.gz
         --interp-method linear
         --source-name Crab
@@ -130,9 +130,9 @@ class DataReductionFITSWriter(Tool):
         -d /path/to/DL2_data_file.h5
         -o /path/to/DL3/file/
         -i /path/to/irf/
-        -p irf*.fits.gz
+        -p "irf*.fits.gz"
         -f final_interp_irf.fits.gz
-        --use-nearest-irf-node True
+        --use-nearest-irf-node
         --source-name Crab
         --source-ra 83.633deg
         --source-dec 22.01deg
