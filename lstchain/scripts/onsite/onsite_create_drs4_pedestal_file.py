@@ -53,7 +53,7 @@ parser.add_argument(
 
 
 def main():
-    args = parser.parse_args()
+    args = parser.parse_known_args()
     run = args.run_number
     prod_id = args.prod_version
     max_events = args.max_events
