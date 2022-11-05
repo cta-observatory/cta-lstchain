@@ -227,8 +227,10 @@ def main():
             params_node = outfile.root[dl1_params_lstcam_key]
             params = params_node.read()
 
-            log.warning(f"Parameters not in original DL1 file {args.input_file} that can't be recomputed:"
-                        f"{set(parameters_to_update) - set(params_node.colnames)}")
+            new_params = set(parameters_to_update) - set(params_node.colnames)
+            if new_params:
+                log.warning(f"Parameters not in original DL1 file {args.input_file} that can't be recomputed:"
+                            f"{new_params}")
             parameters_to_update = list(set(parameters_to_update) & set(params_node.colnames))
             if image_mask_save:
                 image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
