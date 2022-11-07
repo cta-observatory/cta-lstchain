@@ -104,25 +104,24 @@ def main():
     with tables.open_file(args.input_file, 'r') as f:
         is_simulation = 'simulation' in f.root
 
-    if "image_modifier" in config:
-        imconfig = config["image_modifier"]
-        increase_nsb = imconfig.get("increase_nsb", False)
-        increase_psf = imconfig.get("increase_psf", False)
-        if increase_nsb or increase_psf:
-            log.info(f"image_modifier configuration: {imconfig}")
-            log.info("NOTE: Using the image_modifier options means images will "
-                     "not be saved.")
-            args.no_image = True
-        if increase_nsb:
-            extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
-            extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
-            transition_charge = imconfig["transition_charge"]
-            extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
-        if increase_psf:
-            smeared_light_fraction = imconfig["smeared_light_fraction"]
+    imconfig = config.get('image_modifier', {})
+    increase_nsb = imconfig.get("increase_nsb", False)
+    increase_psf = imconfig.get("increase_psf", False)
 
-    if is_simulation:
-        args.pedestal_cleaning = False
+    if increase_nsb or increase_psf:
+        log.info(f"image_modifier configuration: {imconfig}")
+        log.info("NOTE: Using the image_modifier options means images will "
+                 "not be saved.")
+        args.no_image = True
+    if increase_nsb:
+        extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
+        extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
+        transition_charge = imconfig["transition_charge"]
+        extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
+    if increase_psf:
+        smeared_light_fraction = imconfig["smeared_light_fraction"]
+
+    args.pedestal_cleaning = False if is_simulation else args.pedestal_cleaning
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
