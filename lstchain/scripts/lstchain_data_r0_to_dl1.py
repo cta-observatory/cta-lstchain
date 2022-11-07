@@ -221,7 +221,8 @@ def main():
     if args.systematic_correction_file is not None:
         calib_config['systematic_correction_path'] = args.systematic_correction_file
 
-    lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
+    if args.use_flatfield_heuristic is not None:
+        lst_event_source["use_flatfield_heuristic"] = args.use_flatfield_heuristic
 
     r0_to_dl1.r0_to_dl1(
         args.input_file,
