@@ -89,4 +89,26 @@ Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
 
 ## Cite
 
-If you use lstchain in a publication, please cite it using Zenodo _Cite as_ from https://doi.org/10.5281/zenodo.6344673
+If you use lstchain in a publication, please cite the version you used from Zenodo _Cite as_, see https://doi.org/10.5281/zenodo.6344673
+
+Please also cite the following proceedings:
+
+```
+@misc{https://doi.org/10.48550/arxiv.2109.03515,
+  doi = {10.48550/ARXIV.2109.03515},
+  
+  url = {https://arxiv.org/abs/2109.03515},
+  
+  author = {López-Coto, R. and Moralejo, A. and Artero, M. and Baquero, A. and Bernardos, M. and Contreras, J. L. and Di Pierro, F. and García, E. and Kerszberg, D. and López-Moya, M. and MasAguilar, A. and Morcuende, D. and Noethe, M. and Nozaki, S. and Ohtani, Y. and Priyadarshi, C. and Suda, Y. and Vuillaume, T.},
+  
+  keywords = {High Energy Astrophysical Phenomena (astro-ph.HE), Instrumentation and Methods for Astrophysics (astro-ph.IM), FOS: Physical sciences, FOS: Physical sciences},
+  
+  title = {Physics Performance of the Large-Sized Telescope prototype of the Cherenkov Telescope Array},
+  
+  publisher = {arXiv},
+  
+  year = {2021},
+  
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
