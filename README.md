@@ -89,7 +89,7 @@ Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
 
 ## Cite
 
-If you use lstchain in a publication, please cite the version you used from Zenodo _Cite as_, see https://doi.org/10.5281/zenodo.6344673
+If you use lstchain in a publication, please cite the exact version you used from Zenodo _Cite as_, see https://doi.org/10.5281/zenodo.6344673
 
 Please also cite the following proceedings:
 
