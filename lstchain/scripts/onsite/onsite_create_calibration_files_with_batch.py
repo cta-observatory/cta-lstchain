@@ -161,7 +161,7 @@ def main():
                 fh.write("#SBATCH --job-name=%s.job\n" % run)
                 fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run, sub_run, now))
                 fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run, sub_run, now))
-                fh.write("#SBATCH -p short\n")
+                fh.write("#SBATCH -p long\n")
                 fh.write("#SBATCH --cpus-per-task=1\n")
                 fh.write("#SBATCH --mem-per-cpu=10G\n")
                 fh.write("#SBATCH -D %s \n" % output_dir)
