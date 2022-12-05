@@ -134,14 +134,16 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         charge = 0
         peak_pos = 0
         if self.extractor:
-            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
+            charge = dl1.image
+            peak_pos = dl1.peak_time
 
         # shift the time if time shift is already defined
         # (e.g. drs4 waveform time shifts for LST)
         time_shift = event.calibration.tel[self.tel_id].dl1.time_shift
         if time_shift is not None:
                 peak_pos -= time_shift
-
 
         return charge, peak_pos
 
@@ -296,7 +298,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (time_start +(trigger_time - time_start) / 2).unix*u.s,
+            'sample_time': (time_start + (trigger_time - time_start) / 2).unix * u.s,
             'sample_time_min': time_start.unix*u.s,
             'sample_time_max': trigger_time.unix*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,
