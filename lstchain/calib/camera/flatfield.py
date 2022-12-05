@@ -7,8 +7,8 @@ from astropy.stats import sigma_clipped_stats
 
 from ctapipe.core.traits import  List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
+from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 
-from lstchain.ctapipe_compat import FlatFieldCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
 
