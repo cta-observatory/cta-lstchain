@@ -321,7 +321,7 @@ def r0_to_dl1(
     Parameters
     ----------
     input_filename: str
-        path to input file, default: `gamma_test_large.simtel.gz`
+        path to input file, default is an example simulation file
     output_filename: str or None
         path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
@@ -399,7 +399,7 @@ def r0_to_dl1(
 
     if is_simu:
         write_mcheader(
-            source.simulation_config,
+            source.simulation_config[source.obs_ids[0]],
             output_filename,
             obs_id=source.obs_ids[0],
             filters=HDF5_ZSTD_FILTERS,
