@@ -462,7 +462,6 @@ class IRFFITSWriter(Tool):
                 background = self.cuts.apply_global_gh_cut(background)
 
             background = self.event_sel.filter_cut(background)
-            background = self.event_sel.same_disp_sign_filter(background)
             background = self.cuts.allowed_tels_filter(background)
 
             background_offset_bins = self.data_bin.bkg_fov_offset_bins()
