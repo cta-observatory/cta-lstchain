@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 __doc__ = """
 Run the DL1 to DL2 step: Pipeline for the reconstruction of Energy, disp and gamma/hadron
-separation of events stored in a DL1 file, taking DL1 files and trained Random Forests as input 
-and outputting DL2 data file.
+separation of events stored in a DL1 file. It takes DL1 files and trained Random Forests as input 
+and outputs DL2 data file.
 Run lstchain_dl1_to_dl2 --help to see the options.
 """
 
