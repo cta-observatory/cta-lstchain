@@ -4,8 +4,7 @@ Component for the estimation of the calibration coefficients  events
 
 import numpy as np
 import h5py
-from lstchain.ctapipe_compat import Component
-from ctapipe.core import traits
+from ctapipe.core import traits, Component
 from ctapipe.core.traits import  Float, Path
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator

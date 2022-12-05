@@ -10,7 +10,7 @@ from astropy.stats import sigma_clipped_stats
 from ctapipe.core.traits import List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
 
-from lstchain.ctapipe_compat import PedestalCalculator
+from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
 

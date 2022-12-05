@@ -3,7 +3,7 @@ import numpy as np
 
 from numba import njit, prange
 
-from lstchain.ctapipe_compat import Component
+from ctapipe.core import Component
 from ctapipe.core.traits import Int, Float, Unicode
 from ctapipe.image.extractor import ImageExtractor
 from ctapipe.containers import EventType
