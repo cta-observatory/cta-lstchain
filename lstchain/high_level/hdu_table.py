@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 DEFAULT_HEADER = fits.Header()
 DEFAULT_HEADER["CREATOR"] = f"lstchain v{__version__}"
 DEFAULT_HEADER["HDUDOC"] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
-DEFAULT_HEADER["HDUVERS"] = "0.2"
+DEFAULT_HEADER["HDUVERS"] = "0.3"
 DEFAULT_HEADER["HDUCLASS"] = "GADF"
 DEFAULT_HEADER["ORIGIN"] = "CTA"
 DEFAULT_HEADER["TELESCOP"] = "CTA-N"
@@ -264,9 +264,11 @@ def get_pointing_params(data, source_pos, wobble_offset_std):
     """
     Convert the telescope pointing and reconstructed pointing position for
     each event into AltAz and ICRS Frame of reference.
-    Also get the observational mode and wobble offset of the data as per
-    the given source position and standard wobble offset to compare.
+    Also get the camera-center offset of the data as per the given source
+    position.
 
+    Observation_mode is POINTING for all LST observations as per the
+    upcoming GADF v0.3
     """
     pointing_alt = data["pointing_alt"]
     pointing_az = data["pointing_az"]
@@ -279,17 +281,9 @@ def get_pointing_params(data, source_pos, wobble_offset_std):
         frame=AltAz(obstime=time_utc[0], location=location),
     ).transform_to(frame="icrs")
 
-    # Observation modes
     source_pointing_diff = source_pos.separation(pnt_icrs)
-    if np.around(source_pointing_diff, 1) == wobble_offset_std:
-        mode = "WOBBLE"
-    elif np.around(source_pointing_diff, 1) > 1 * u.deg:
-        mode = "OFF"
-    elif np.around(source_pointing_diff, 1) == 0.0 * u.deg:
-        mode = "ON"
-    else:
-        # Nomenclature is to be worked out or have a separate way to mark mispointings
-        mode = "UNDETERMINED"
+
+    mode = "POINTING"
 
     log.info(
         "Source pointing difference with camera pointing"
