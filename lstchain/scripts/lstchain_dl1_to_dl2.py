@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-
-"""
-Pipeline for the reconstruction of Energy, disp and gamma/hadron
+__doc__ = """
+Run the DL1 to DL2 step: Pipeline for the reconstruction of Energy, disp and gamma/hadron
 separation of events stored in a DL1 file.
-
 - Input: DL1 files and trained Random Forests.
 - Output: DL2 data file.
 
-Usage:
-
-$> python lstchain_dl1_to_dl2.py
---input-file dl1_LST-1.Run02033.0137.h5
---path-models ./trained_models
-
+Run lstchain_dl1_to_dl2 --help to see the options.
 """
 
 import argparse
@@ -46,8 +39,8 @@ from lstchain.io.io import (
 from lstchain.reco import dl1_to_dl2
 from lstchain.reco.utils import filter_events, impute_pointing, add_delta_t_key
 
-parser = argparse.ArgumentParser(description="""Run the DL1 to DL2 step, applying prediction from the trained models.
-                                 Run the script with --help to see the options.""")
+
+parser = argparse.ArgumentParser(description=__doc__)
 
 # Required arguments
 parser.add_argument('--input-files', '-f',
