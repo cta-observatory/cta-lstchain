@@ -32,7 +32,7 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def lst1_subarray():
-    return LSTEventSource.create_subarray(geometry_version=4)
+    return LSTEventSource.create_subarray(tel_id=1)
 
 
 @pytest.fixture(scope="session")
