@@ -38,7 +38,9 @@ from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
     dl1_params_src_dep_lstcam_key,
+    dl1_likelihood_params_lstcam_key,
     dl2_params_src_dep_lstcam_key,
+    dl2_likelihood_params_lstcam_key,
     write_dataframe,
 )
 from lstchain.reco import dl1_to_dl2
@@ -81,6 +83,13 @@ parser.add_argument('--config', '-c',
 
 def apply_to_file(filename, models_dict, output_dir, config):
     data = pd.read_hdf(filename, key=dl1_params_lstcam_key)
+
+    if 'lh_fit_config' in config.keys():
+        lhfit_data = pd.read_hdf(filename, key=dl1_likelihood_params_lstcam_key)
+        if np.all(lhfit_data['obs_id'] == data['obs_id']) & np.all(lhfit_data['event_id'] == data['event_id']):
+            lhfit_data.drop({'obs_id', 'event_id'}, axis=1, inplace=True)
+        lhfit_keys = lhfit_data.keys()
+        data = pd.concat([data, lhfit_data], axis=1)
 
     # if real data, add deltat t to dataframe keys
     data = add_delta_t_key(data)
@@ -191,6 +200,9 @@ def apply_to_file(filename, models_dict, output_dir, config):
     if dl1_params_src_dep_lstcam_key in dl1_keys:
         dl1_keys.remove(dl1_params_src_dep_lstcam_key)
 
+    if dl1_likelihood_params_lstcam_key in dl1_keys:
+        dl1_keys.remove(dl1_likelihood_params_lstcam_key)
+
     metadata = global_metadata()
     write_metadata(metadata, output_file)
 
@@ -215,7 +227,13 @@ def apply_to_file(filename, models_dict, output_dir, config):
 
     # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
     if not config['source_dependent']:
-        write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
+        if 'lh_fit_config' not in config.keys():
+            write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
+        else:
+            dl2_onlylhfit = dl2[lhfit_keys]
+            dl2.drop(lhfit_keys, axis=1, inplace=True)
+            write_dl2_dataframe(dl2, output_file, config=config, meta=metadata)
+            write_dataframe(dl2_onlylhfit, output_file, dl2_likelihood_params_lstcam_key, config=config, meta=metadata)
 
     else:
         write_dl2_dataframe(dl2_srcindep, output_file, config=config, meta=metadata)

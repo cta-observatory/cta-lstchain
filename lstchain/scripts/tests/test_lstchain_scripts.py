@@ -166,7 +166,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -318,7 +318,7 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns
 
 
 @pytest.mark.private_data
@@ -513,3 +513,10 @@ def test_run_summary(run_summary_path):
     assert "dragon_reference_source" in run_summary_table.columns
 
     assert (run_summary_table["run_type"] == ["DATA", "ERROR", "DATA"]).all()
+
+
+def test_numba_compil_lhfit():
+    from lstchain.scripts import numba_compil_lhfit
+    assert numba_compil_lhfit.cc.name == 'log_pdf_CC'
+    assert 'log_pdf' in numba_compil_lhfit.cc._exported_functions
+    assert len(numba_compil_lhfit.cc._exported_functions) == 6
