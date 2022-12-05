@@ -3,10 +3,6 @@ import pytest
 from lstchain.calib import load_calibrator_from_config, load_gain_selector_from_config, load_image_extractor_from_config
 from lstchain.io.config import get_standard_config
 
-@pytest.fixture
-def lst1_subarray():
-    from ctapipe_io_lst import LSTEventSource
-    return LSTEventSource.create_subarray(tel_id=1)
 
 def test_load_calibrator_from_config(lst1_subarray):
     from lstchain.io.config import get_standard_config
