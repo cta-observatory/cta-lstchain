@@ -19,7 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
-from lstchain.io import read_configuration_file
+from lstchain.io import read_calibration_file
 from lstchain.onsite import (
     DEFAULT_BASE_PATH,
     DEFAULT_CONFIG,
