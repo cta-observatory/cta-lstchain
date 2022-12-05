@@ -4,11 +4,11 @@ channels:
   - default
 dependencies:
   - python=3.8
-  - numpy=1.21
-  - astropy~=4.2
+  - numpy=1.22
+  - astropy=5
   - pip
-  - ctapipe=0.12
-  - gammapy=0.19
+  - ctapipe=0.17
+  - gammapy=1
   - h5py
   - ipython
   - jupyter
@@ -21,7 +21,7 @@ dependencies:
   - protobuf=3.20
   - pyparsing
   - scikit-learn=1.0
-  - sphinx~=4.2
+  - sphinx=4
   - sphinx-automodapi
   - sphinx_rtd_theme
   - sphinx-argparse
@@ -33,6 +33,6 @@ dependencies:
   - seaborn
   - jinja2=3.0 # pinned for bokeh 1.0 compatibility
   - pip:
-      - ctapipe_io_lst~=0.18.2
+      - git+https://github.com/cta-observatory/ctapipe_io_lst@ctapipe_0.17
       - ctaplot~=0.6.2
-      - pyirf~=0.6.0
+      - pyirf~=0.8.0
