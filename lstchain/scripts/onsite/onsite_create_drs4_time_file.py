@@ -73,7 +73,7 @@ optional.add_argument(
 )
 
 def main():
-    args = parser.parse_args()
+    args, remaining_args = parser.parse_known_args()
     run = args.run_number
     prod_id = args.prod_version
     stat_events = args.statistics
@@ -135,6 +135,8 @@ def main():
 
     if args.no_progress:
         cmd.append("--no-progress")
+
+    cmd.extend(*remaining_args)
 
     print("\n--> RUNNING...")
     subprocess.run(cmd, check=True)
