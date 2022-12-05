@@ -113,7 +113,7 @@ class TimeCorrectionCalculate(Component):
             waveforms = event.r1.tel[self.tel_id].waveform
             no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
             # select both gain
-            broken_pixels = event.mon.tel[self.teL_id].pixel_status.hardware_failing_pixels
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
             dl1 = self.extractor(
                 event.r1.tel[self.tel_id].waveform[:, :, :],
                 self.tel_id,
