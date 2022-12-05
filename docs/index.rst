@@ -17,7 +17,6 @@
 
    introduction
    contribute
-   tutorials/index
 
 .. _lstchain_docs:
 
