@@ -136,7 +136,7 @@ def main():
     if args.no_progress:
         cmd.append("--no-progress")
 
-    cmd.extend(*remaining_args)
+    cmd.extend(remaining_args)
 
     print("\n--> RUNNING...")
     subprocess.run(cmd, check=True)
