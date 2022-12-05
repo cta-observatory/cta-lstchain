@@ -39,8 +39,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8]
-        ctapipe-version: [v0.12.0]
+        python-version: ["3.8", "3.9", "3.10"]
+        ctapipe-version: ["v0.17.0"]
 
     steps:
       - uses: actions/checkout@v3
@@ -68,13 +68,14 @@ jobs:
         run: |
           python --version
           echo "Installing additional pip packages"
+
+          echo "pip install -e ."
+          pip install -e .
+
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
           pip install \
             "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
             pytest-cov 'coverage!=6.3.0' pytest-xdist
-
-          echo "pip install -e ."
-          pip install -e .
 
       - name: Download test data
         env:
