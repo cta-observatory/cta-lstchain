@@ -19,6 +19,7 @@ import pymongo
 import lstchain
 import lstchain.visualization.plot_calib as calib
 from lstchain.io.data_management import query_yes_no
+from lstchain.io import read_configuration_file
 from lstchain.onsite import (
     DEFAULT_BASE_PATH,
     DEFAULT_CONFIG,
@@ -246,8 +247,8 @@ def main():
     plot_file = f"{output_dir}/log/{output_name}.pdf"
 
     print(f"\n--> PRODUCING PLOTS in {plot_file} ...")
-    calib.read_file(output_file, tel_id)
-    calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, run, plot_file)
+    mon = read_calibration_file(output_file, tel_id)
+    calib.plot_calibration_results(mon.pedestal, mon.flatfield, mon.calibration, run, plot_file)
 
     print("\n--> END")
 
