@@ -113,19 +113,24 @@ class TimeCorrectionCalculate(Component):
             waveforms = event.r1.tel[self.tel_id].waveform
             no_gain_selection = np.zeros((waveforms.shape[0], waveforms.shape[1]), dtype=np.int64)
             # select both gain
-            charge, peak_time = self.extractor(
-                    event.r1.tel[self.tel_id].waveform[:, :, :],
-                    self.tel_id,
-                    no_gain_selection)
-            self.calib_peak_time_jit(charge,
-                                     peak_time,
-                                     pixel_ids,
-                                     self.first_cap_array,
-                                     self.mean_values_per_bin,
-                                     self.entries_per_bin,
-                                     n_cap=self.n_capacitors,
-                                     n_combine=self.n_combine,
-                                     min_charge=self.minimum_charge)
+            broken_pixels = event.mon.tel[self.teL_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(
+                event.r1.tel[self.tel_id].waveform[:, :, :],
+                self.tel_id,
+                no_gain_selection,
+                broken_pixels=broken_pixels,
+            )
+            self.calib_peak_time_jit(
+                dl1.image,
+                dl1.peak_time,
+                pixel_ids,
+                self.first_cap_array,
+                self.mean_values_per_bin,
+                self.entries_per_bin,
+                n_cap=self.n_capacitors,
+                n_combine=self.n_combine,
+                min_charge=self.minimum_charge,
+            )
             self.sum_events += 1
 
     @staticmethod

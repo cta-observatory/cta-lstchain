@@ -136,9 +136,10 @@ class PedestalIntegrator(PedestalCalculator):
         charge = 0
         peak_pos = 0
         if self.extractor:
-            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
 
-        return charge, peak_pos
+        return dl1.image, dl1.peak_time
 
     def calculate_pedestals(self, event):
         """
