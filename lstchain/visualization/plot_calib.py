@@ -385,7 +385,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 disp.image = gain
                 disp.cmap = plt.cm.coolwarm
                 
-                plt.title(f"flat-fielded gain [ADC/pe]")             
+                plt.title("flat-fielded gain [ADC/pe]")             
                 disp.add_colorbar()
                 plt.subplots_adjust(top=0.92)
                 # gain
