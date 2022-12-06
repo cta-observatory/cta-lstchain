@@ -1,6 +1,5 @@
 import numpy as np
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
 from matplotlib import pyplot as plt
