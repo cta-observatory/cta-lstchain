@@ -1,5 +1,3 @@
-import pytest
-
 from lstchain.calib import load_calibrator_from_config, load_gain_selector_from_config, load_image_extractor_from_config
 from lstchain.io.config import get_standard_config
 

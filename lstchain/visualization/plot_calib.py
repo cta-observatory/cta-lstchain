@@ -1,18 +1,10 @@
 import numpy as np
-# read back the monitoring containers written with the tool calc_camera_calibration.py
-from ctapipe.containers import (
-    FlatFieldContainer,
-    WaveformCalibrationContainer,
-    PedestalContainer,
-    PixelStatusContainer,
-)
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from lstchain.io import read_calibration_file
 
 __all__ = [
     "plot_calibration_results",
