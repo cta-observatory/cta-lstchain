@@ -142,9 +142,9 @@ class FitIntensityScan(Tool):
                 if os.path.getsize(inp_file) < 100:
                     raise IOError(f"file size run {run} is too short \n")
 
-                self.log.debug(f"Read file {inp_file}")
+                self.log.debug(f"Read file {inp_file}")               
                 mon = read_calibration_file(inp_file)
-
+                
                 for chan in self.gain_channels:
                     # verify that the median signal is inside the asked range
                     median_charge = np.median(mon.flatfield.charge_median[chan])
@@ -169,8 +169,6 @@ class FitIntensityScan(Tool):
                             (self.unusable_pixels[chan], mon.calibration.unusable_pixels[chan]))
                     self.selected_runs[chan].append(run)
                     self.log.info(f"{channel[chan]}: select run {run}, median charge {median_charge:6.1f} ADC\n")
-                else:
-                    raise IOError(f"--> Problem in reading {run}\n")
 
             # check to have enough selected runs
             for chan in self.gain_channels:
