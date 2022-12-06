@@ -174,6 +174,7 @@ def main():
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",
+                    f"--r0-dir {r0_dir}",
                     f"--output_base_name={output_base_name}",
                     f"--config={config_file}",
                 ]
