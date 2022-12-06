@@ -78,10 +78,12 @@ jobs:
           echo "pip install -e ."
           pip install -e .
 
+          pip install pytest-cov 'coverage!=6.3.0' pytest-xdist
           # we install ctapipe using pip to be able to select any commit, e.g. the current master
-          pip install \
-            "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov 'coverage!=6.3.0' pytest-xdist
+          pip install "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
+
+          which pip
+          pip freeze
 
       - name: Download test data
         env:
