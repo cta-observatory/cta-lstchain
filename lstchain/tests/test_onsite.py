@@ -10,7 +10,7 @@ test_r0_path = test_data / 'real/R0/'
 test_subrun1 = test_r0_path / '20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_subrun2 = test_r0_path / '20210215/LST-1.1.Run03669.0000_first50.fits.fz'
 
-PRO = 'v0.8.2.post2.dev48+gb1343281'
+PRO = 'ctapipe-v0.17'
 BASE_DIR = test_data / 'real'
 
 
