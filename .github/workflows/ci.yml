@@ -35,7 +35,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -exl {0}
 
     strategy:
       matrix:
