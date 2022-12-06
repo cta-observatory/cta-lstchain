@@ -38,6 +38,8 @@ standard_config = get_standard_config()
 srcdep_config = get_srcdep_config()
 
 __all__ = [
+    'auto_merge_h5files',
+    'add_source_filenames',
     'DL1LikelihoodParametersContainer',
     'DL1ParametersContainer',
     'DL3Cuts',
@@ -66,4 +68,6 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
+    'standard_config',
+    'srcdep_config',
 ]
