@@ -3,7 +3,7 @@ import logging
 from bokeh.layouts import gridplot
 from bokeh.models import HoverTool
 from bokeh.models import ColumnDataSource, CustomJS, Slider
-from bokeh.models import Range1d, RangeSlider
+from bokeh.models import Range1d, RangeSlider, Div
 from bokeh.models.annotations import Title
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
@@ -223,6 +223,11 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         display_min = display_range[0]
         display_max = display_range[1]
 
+    if display_min == display_max:
+        # Avoid problems with bokeh display
+        display_min *= 0.99
+        display_max *= 1.01
+
     cam = CameraDisplay(camgeom, display_min, display_max,
                         label, titles[0], use_notebook=False, autoshow=False)
     cam.image = allimages[0]
@@ -372,10 +377,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log=source1log,
-                                  source2=source2,
-                                  source2_lowlim=source2_lowlim,
-                                  source2_upplim=source2_upplim,
-                                  source3=source3,
                                   zz=cds_allimages,
                                   title=cam.figure.title,
                                   titlelog=titlelog,
@@ -383,37 +384,23 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                         code="""
         var slider_value = cb_obj.value
         var z = zz.data['z']
-        varzlow = zz.data['lowlim']
-        varzupp = zz.data['upplim']
-        var edges = zz.data['edges']
-        var hist = zz.data['hist']
+        var zlog = zz.data['zlog']
         for (var i = 0; i < source1.data['image'].length; i++) {
-             source1.data['image'][i] = z[slider_value-1][i]
-             if (showlog) {
-                 var zlog = zz.data['zlog']
-                 source1log.data['image'][i] = zlog[slider_value-1][i]
-             }
-             source2.data['value'][i] = source1.data['image'][i]
-             source2_lowlim.data['value'][i] = varzlow[slider_value-1][i]
-             source2_upplim.data['value'][i] = varzupp[slider_value-1][i]
+            source1.data['image'][i] = z[slider_value-1][i]
+            if (showlog) {
+                source1log.data['image'][i] = zlog[slider_value-1][i]
+            }
         }
-        for (var j = 0; j < source3.data['top'].length; j++) {
-            source3.data['top'][j] = hist[slider_value-1][j]
-            source3.data['left'][j] = edges[slider_value-1][j]
-            source3.data['right'][j] = edges[slider_value-1][j+1]
-        }
-
         title.text = zz.data['titles'][slider_value-1]
         source1.change.emit()
         if (showlog) {
             titlelog.text = title.text
             source1log.change.emit()
         }
-        source2.change.emit()
-        source2_lowlim.change.emit()
-        source2_upplim.change.emit()
-        source3.change.emit()
     """)
+
+    slider_style = Div(text="""<style>.custom-slider .bk-input-group {
+    height:300px;}</style>""")
 
     slider = None
     if numsets > 1:
@@ -423,8 +410,8 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
         if numsets > 299:
             slider_height = numsets+1
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
-                        orientation='vertical', show_value=False,
-                        height=slider_height)
+                        show_value=False,
+                        orientation='vertical', css_classes=["custom-slider"])
 
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
@@ -447,13 +434,13 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     step = (display_max - display_min) / 100.
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
-                               title="z_range", orientation='vertical',
-                               direction='rtl', height=300,
+                               title="z_range",
+                               orientation='vertical',
+                               css_classes=["custom-slider"],
                                show_value=False)
     range_slider.js_on_change('value', callback2)
 
-    return [slider, p1, range_slider, p2, p3]
-
+    return [slider, p1, range_slider, p2, p3, slider_style]
 
 def plot_mean_and_stddev_bokeh(table, camgeom, columns, labels):
     """
