@@ -1,4 +1,3 @@
-import copy
 import logging
 from bokeh.layouts import gridplot
 from bokeh.models import HoverTool
@@ -399,19 +398,25 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
         }
     """)
 
+    slider_height = 300
+    # https://github.com/bokeh/bokeh/issues/10444
     slider_style = Div(text="""<style>.custom-slider .bk-input-group {
-    height:300px;}</style>""")
+    height:"""+str(slider_height)+"""px;}</style>""")
 
     slider = None
     if numsets > 1:
-        slider_height = 300
         # WARNING: the html won't look nice for number of sets much larger
         # than 300! But in this way we avoid that the slider skips elements:
+        sstyle = ["custom-slider"]
         if numsets > 299:
-            slider_height = numsets+1
+            slider_style_long = Div(text="""<style>.long-slider 
+            .bk-input-group {
+            height:""" + str(numsets+1) + """px;}</style>""")
+            sstyle = ["long-slider"]
+
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
                         show_value=False,
-                        orientation='vertical', css_classes=["custom-slider"])
+                        orientation='vertical', css_classes=sstyle)
 
         slider.margin = (0, 0, 0, 35)
         slider.js_on_change('value', callback)
