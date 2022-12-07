@@ -107,7 +107,7 @@ def read_simu_info_hdf5(filename):
     """
 
     with HDF5TableReader(filename) as reader:
-        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer())
+        mc_reader = reader.read("/simulation/run_config", SimulationConfigContainer)
         mc = next(mc_reader)
 
     return mc
@@ -117,7 +117,7 @@ def read_simu_info_merged_hdf5(filename):
     """
     Read simu info from a merged hdf5 file.
     Check that simu info are the same for all runs from merged file
-    Combine relevant simu info such as num_showers (sum)
+    Combine relevant simu info such as n_showers (sum)
     Note: works for a single run file as well
 
     Parameters
@@ -132,13 +132,13 @@ def read_simu_info_merged_hdf5(filename):
     with open_file(filename) as file:
         simu_info = file.root["simulation/run_config"]
         colnames = simu_info.colnames
-        skip = {"num_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
+        skip = {"n_showers", "shower_prog_start", "detector_prog_start", "obs_id"}
         for k in filter(lambda k: k not in skip, colnames):
             assert np.all(simu_info[:][k] == simu_info[0][k])
-        num_showers = simu_info[:]["num_showers"].sum()
+        n_showers = simu_info[:]["n_showers"].sum()
 
     combined_mcheader = read_simu_info_hdf5(filename)
-    combined_mcheader["num_showers"] = num_showers
+    combined_mcheader["n_showers"] = n_showers
 
     for k in combined_mcheader.keys():
         if (
@@ -519,7 +519,7 @@ def check_mcheader(mcheader1, mcheader2):
     keys = list(mcheader1.keys())
     """keys that don't need to be checked: """
     for k in [
-        "num_showers",
+        "n_showers",
         "shower_reuse",
         "detector_prog_start",
         "detector_prog_id",
@@ -910,7 +910,7 @@ def read_mc_dl2_to_QTable(filename):
     ) * u.rad
 
     pyirf_simu_info = SimulatedEventsInfo(
-        n_showers=simu_info.num_showers * simu_info.shower_reuse,
+        n_showers=simu_info.n_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
