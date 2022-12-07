@@ -435,7 +435,7 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     range_slider = RangeSlider(start=display_min, end=display_max,
                                value=(display_min, display_max), step=step,
                                title="z_range",
-                               orientation='vertical',
+                               orientation='vertical', direction='rtl',
                                css_classes=["custom-slider"],
                                show_value=False)
     range_slider.js_on_change('value', callback2)
