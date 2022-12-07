@@ -1114,7 +1114,6 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     mean = np.array(pixwise_runsummary['ped_pix_charge_mean'])
     stddev = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
 
-
     row1 = show_camera(mean, engineering_geom, pad_width,
                        'Pedestals mean charge', run_titles)
     row2 = show_camera(stddev, engineering_geom, pad_width,
