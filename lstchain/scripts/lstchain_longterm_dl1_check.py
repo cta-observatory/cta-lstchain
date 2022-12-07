@@ -48,7 +48,6 @@ from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 # from ctapipe.instrument import SubarrayDescription
 from ctapipe_io_lst import load_camera_geometry
-from pkg_resources import resource_filename
 
 from ctapipe.io import read_table
 from ctapipe_io_lst import TriggerBits
