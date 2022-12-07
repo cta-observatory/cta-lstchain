@@ -169,8 +169,8 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
         # write also the histogram binnings:
         writer.write("dl1datacheck/histogram_binning", histogram_binning)
 
-    subarray_info = SubarrayDescription.from_hdf(filenames[0])
-    subarray_info.to_hdf(datacheck_filename)
+    # subarray_info = SubarrayDescription.from_hdf(filenames[0])
+    # subarray_info.to_hdf(datacheck_filename)
 
     # write out also which trigger tag has been used for finding pedestals:
     file = h5py.File(datacheck_filename, mode='a')
@@ -1248,7 +1248,7 @@ def merge_dl1datacheck_files(file_list):
 
     # For copying the camera geometry we use astropy tables to avoid a
     # NaturalNameWarning from tables/path.py
-    subarray_info = SubarrayDescription.from_hdf(first_file_name)
-    subarray_info.to_hdf(merged_filename)
+    # subarray_info = SubarrayDescription.from_hdf(first_file_name)
+    # subarray_info.to_hdf(merged_filename)
 
     return merged_filename
