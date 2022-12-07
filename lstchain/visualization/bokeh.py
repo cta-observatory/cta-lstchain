@@ -376,6 +376,10 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log=source1log,
+                                  source2=source2,
+                                  source2_lowlim=source2_lowlim,
+                                  source2_upplim=source2_upplim,
+                                  source3=source3,
                                   zz=cds_allimages,
                                   title=cam.figure.title,
                                   titlelog=titlelog,
@@ -384,14 +388,30 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
         var slider_value = cb_obj.value
         var z = zz.data['z']
         var zlog = zz.data['zlog']
+        var zlow = zz.data['lowlim']
+        var zupp = zz.data['upplim']
+        var edges = zz.data['edges']
+        var hist = zz.data['hist']
         for (var i = 0; i < source1.data['image'].length; i++) {
             source1.data['image'][i] = z[slider_value-1][i]
             if (showlog) {
                 source1log.data['image'][i] = zlog[slider_value-1][i]
             }
+            source2.data['value'][i] = source1.data['image'][i]
+            source2_lowlim.data['value'][i] = zlow[slider_value-1][i]
+            source2_upplim.data['value'][i] = zupp[slider_value-1][i]
+        }
+        for (var j = 0; j < source3.data['top'].length; j++) {
+            source3.data['top'][j] = hist[slider_value-1][j]
+            source3.data['left'][j] = edges[slider_value-1][j]
+            source3.data['right'][j] = edges[slider_value-1][j+1]
         }
         title.text = zz.data['titles'][slider_value-1]
         source1.change.emit()
+        source2.change.emit()
+        source2_lowlim.change.emit()
+        source2_upplim.change.emit()
+        source3.change.emit()
         if (showlog) {
             titlelog.text = title.text
             source1log.change.emit()
