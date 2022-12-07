@@ -3,7 +3,7 @@ Extract flat field coefficients from flasher data files.
 """
 import numpy as np
 from traitlets import Unicode, Int, Bool, Float
-
+from tqdm.auto import tqdm
 
 from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
@@ -18,7 +18,6 @@ from ctapipe_io_lst import LSTEventSource
 __all__ = [
     'CalibrationHDF5Writer'
 ]
-
 
 class CalibrationHDF5Writer(Tool):
     """
@@ -103,7 +102,6 @@ class CalibrationHDF5Writer(Tool):
         self.eventsource = None
         self.processor = None
         self.writer = None
-        self.tot_events = 0
         self.simulation = False
 
     def setup(self):
@@ -129,10 +127,7 @@ class CalibrationHDF5Writer(Tool):
                 raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
 
             # remember how many events in the files
-            self.tot_events = len(self.eventsource.multi_file)
-            self.log.debug(f"Input file has file {self.tot_events} events")
         else:
-            self.tot_events = self.eventsource.max_events
             self.simulation = True
 
         group_name = 'tel_' + str(tel_id)
@@ -152,120 +147,89 @@ class CalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
-        end_of_file = False
 
-        try:
-            self.log.debug("Start loop")
-            self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
-            for count, event in enumerate(self.eventsource):
+        self.log.debug("Start loop")
+        self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
+        for count, event in enumerate(tqdm(self.eventsource)):
 
-                # if simulation use not calibrated and not gain selected R0 waveform
+            # if simulation use not calibrated and not gain selected R0 waveform
+            if self.simulation:
+                # estimate offset of each channel from the camera median pedestal value
+                offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
+                event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
+
+            # save the config, to be retrieved as data.meta['config']
+            if count == 0:
+
                 if self.simulation:
-                    # estimate offset of each channel from the camera median pedestal value
-                    offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
-                    event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
+                    initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
 
+                ped_data = event.mon.tel[tel_id].pedestal
+                add_config_metadata(ped_data, self.config)
+                add_global_metadata(ped_data, metadata)
 
-                if count % 1000 == 0 and count> self.events_to_skip:
-                    self.log.debug(f"Event {count}")
+                ff_data = event.mon.tel[tel_id].flatfield
+                add_config_metadata(ff_data, self.config)
+                add_global_metadata(ff_data, metadata)
 
-                # if last event write results
-                max_events_reached = (
-                        self.eventsource.max_events is not None and count == self.eventsource.max_events - 1)
-                if count == self.tot_events-1 or max_events_reached:
-                    self.log.debug(f"Last event, count = {count}")
-                    end_of_file = True
+                status_data = event.mon.tel[tel_id].pixel_status
+                add_config_metadata(status_data, self.config)
+                add_global_metadata(status_data, metadata)
 
-                # save the config, to be retrieved as data.meta['config']
-                if count == 0:
+                calib_data = event.mon.tel[tel_id].calibration
+                add_config_metadata(calib_data, self.config)
+                add_global_metadata(calib_data, metadata)
 
-                    if self.simulation:
-                        initialize_pixel_status(event.mon.tel[tel_id],event.r1.tel[tel_id].waveform.shape)
+            # skip first events which are badly drs4 corrected
+            if not self.simulation and count < self.events_to_skip:
+                continue
 
-                    ped_data = event.mon.tel[tel_id].pedestal
-                    add_config_metadata(ped_data, self.config)
-                    add_global_metadata(ped_data, metadata)
+            # if pedestal event
+            # use a cut on the charge for MC events if trigger not defined
+            if self._is_pedestal(event, tel_id):
+                new_ped = self.processor.pedestal.calculate_pedestals(event)
 
-                    ff_data = event.mon.tel[tel_id].flatfield
-                    add_config_metadata(ff_data, self.config)
-                    add_global_metadata(ff_data, metadata)
+            # if flat-field event
+            # use a cut on the charge for MC events if trigger not defined
+            elif self._is_flatfield(event, tel_id):
 
-                    status_data = event.mon.tel[tel_id].pixel_status
-                    add_config_metadata(status_data, self.config)
-                    add_global_metadata(status_data, metadata)
+               new_ff = self.processor.flatfield.calculate_relative_gain(event)
 
-                    calib_data = event.mon.tel[tel_id].calibration
-                    add_config_metadata(calib_data, self.config)
-                    add_global_metadata(calib_data, metadata)
+            # write pedestal results when enough statistics or end of file
+            if new_ped:
+                # update the monitoring container with the last statistics
+                self.processor.pedestal.store_results(event)
 
-                # skip first events which are badly drs4 corrected
-                if not self.simulation and count < self.events_to_skip:
-                    continue
+                # write the event
+                self.log.info(f"Write pedestal data at event n. {count+1}, id {event.index.event_id} "
+                               f"stat = {ped_data.n_events} events")
 
-                # if pedestal event
-                # use a cut on the charge for MC events if trigger not defined
-                if event.trigger.event_type==EventType.SKY_PEDESTAL or (
-                    self.simulation and
-                    np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
-                    < self.mc_max_pedestal_adc):
+                # write on file
+                self.writer.write('pedestal', ped_data)
+                new_ped = False
 
-                    new_ped = self.processor.pedestal.calculate_pedestals(event)
+            # write flatfield results when enough statistics (also for pedestals) or end of file
+            if new_ff and ped_data.n_events > 0:
+                # update the monitoring container with the last statistics
+                self.log.info(f"Write flatfield data at event n. {count+1}, id {event.index.event_id} "
+                               f"stat = {ff_data.n_events} events")
 
+                # write on file
+                self.writer.write('flatfield', ff_data)
 
-                # if flat-field event
-                # use a cut on the charge for MC events if trigger not defined
-                elif event.trigger.event_type==EventType.FLATFIELD or (
-                        self.simulation and
-                        np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
-                        > self.mc_min_flatfield_adc):
+                new_ff = False
 
-                   new_ff = self.processor.flatfield.calculate_relative_gain(event)
+                # Then, calculate calibration coefficients
+                self.processor.calculate_calibration_coefficients(event)
 
-                # write pedestal results when enough statistics or end of file
-                if new_ped or end_of_file:
+                # write calib and pixel status
+                self.log.debug("Write pixel_status data")
+                self.writer.write('pixel_status', status_data)
 
-                    # update the monitoring container with the last statistics
-                    if end_of_file:
-                        self.processor.pedestal.store_results(event)
-
-                    # write the event
-                    self.log.debug(f"Write pedestal data at event n. {count+1}, id {event.index.event_id} "
-                                   f"stat = {ped_data.n_events} events")
-
-                    # write on file
-                    self.writer.write('pedestal', ped_data)
-
-                    new_ped = False
-
-                # write flatfield results when enough statistics (also for pedestals) or end of file
-                if (new_ff and ped_data.n_events > 0) or end_of_file:
-
-                    # update the monitoring container with the last statistics
-                    if end_of_file:
-                        self.processor.flatfield.store_results(event)
-
-                    self.log.debug(f"Write flatfield data at event n. {count+1}, id {event.index.event_id} "
-                                   f"stat = {ff_data.n_events} events")
-
-                    # write on file
-                    self.writer.write('flatfield', ff_data)
-
-                    new_ff = False
-
-                    # Then, calculate calibration coefficients
-                    self.processor.calculate_calibration_coefficients(event)
-
-                    # write calib and pixel status
-                    self.log.debug("Write pixel_status data")
-                    self.writer.write('pixel_status', status_data)
-
-                    self.log.debug("Write calibration data")
-                    self.writer.write('calibration', calib_data)
-                    if self.one_event:
-                        break
-
-        except ValueError as e:
-            self.log.error(e)
+                self.log.debug("Write calibration data")
+                self.writer.write('calibration', calib_data)
+                if self.one_event:
+                    break
 
     def finish(self):
         Provenance().add_output_file(
@@ -273,6 +237,31 @@ class CalibrationHDF5Writer(Tool):
             role='mon.tel.calibration'
         )
         self.writer.close()
+
+
+    @staticmethod
+    def _median_waveform_sum(event, tel_id):
+        return np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
+
+    def _is_pedestal(self, event, tel_id=1):
+        return (
+            (event.trigger.event_type == EventType.SKY_PEDESTAL)
+            or (
+                self.simulation
+                and self._median_waveform_sum(event, tel_id) < self.mc_max_pedestal_adc
+            )
+        )
+
+    def _is_flatfield(self, event, tel_id):
+        return (
+            (event.trigger.event_type == EventType.FLATFIELD)
+            or (
+                self.simulation
+                and self._median_waveform_sum(event, tel_id) > self.mc_min_flatfield_adc
+            )
+        )
+
+
 
 def initialize_pixel_status(mon_camera_container,shape):
     """
