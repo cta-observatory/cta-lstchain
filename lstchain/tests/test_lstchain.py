@@ -23,7 +23,7 @@ calib_version = 'ctapipe-v0.17'
 test_calib_path = calib_path / f'calibration/20200218/{calib_version}/calibration_filters_52.Run02006.0000.h5'
 test_drs4_pedestal_path = calib_path / f'drs4_baseline/20200218/{calib_version}/drs4_pedestal.Run02005.0000.h5'
 test_time_calib_path = calib_path / f'drs4_time_sampling_from_FF/20191124/{calib_version}/time_calibration.Run01625.0000.h5'
-test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
+test_drive_report = test_data / 'real/monitoring/DrivePositioning/DrivePosition_log_20200218.txt'
 
 
 def test_r0_to_dl1(tmp_path, mc_gamma_testfile):
