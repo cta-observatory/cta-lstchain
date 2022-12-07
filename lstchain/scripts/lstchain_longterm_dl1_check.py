@@ -47,7 +47,7 @@ from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 # from ctapipe.instrument import SubarrayDescription
-from ctapipe.instrument import CameraGeometry
+from ctapipe_io_lst import load_camera_geometry
 from pkg_resources import resource_filename
 
 from ctapipe.io import read_table
@@ -875,9 +875,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     max_average_ff_time = 23  # ns
     max_average_ff_charge_stdev = 11  # pe
 
-    # Read in the camera geometry:
-    camfilename = resource_filename('lstchain', 'resources/LST1Cam.ecsv')
-    camgeom = CameraGeometry.from_table(Table.read(camfilename))
+    camgeom = load_camera_geometry()
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
     bokeh_output_file(Path(filename).with_suffix('.html'),
