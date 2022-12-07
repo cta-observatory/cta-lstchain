@@ -153,7 +153,7 @@ class CameraDisplay:
         self.update()
 
 
-def show_camera(content, geom, pad_width, pad_height, label, titles=None,
+def show_camera(content, camgeom, pad_width, label, titles=None,
                 showlog=True, display_range=None,
                 content_lowlim=None, content_upplim=None):
     """
@@ -166,6 +166,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     be just (number_of_pixels), in case a single camera display is to be shown
 
     geom: camera geometry
+
     pad_width: width in pixels of each of the 3 pads in the plot
     pad_height: height in pixels of each of the 3 pads in the plot
     label: string to label the quantity which is displayed, the same for the N
@@ -195,9 +196,6 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
     if np.isfinite(content).sum() == 0:
         # Nothing to plot...
         return [None]
-
-    # patch to reduce gaps between bokeh's cam circular pixels:
-    camgeom = copy.deepcopy(geom)
 
     numsets = 1
     if np.ndim(content) > 1:
@@ -279,7 +277,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
 
         # c.add_colorbar()
         c.figure.plot_width = pad_width
-        c.figure.plot_height = int(pad_height * 0.85)
+        c.figure.plot_height = int(pad_width * 0.9)
         c.figure.grid.visible = False
         c.figure.axis.visible = True
         c.figure.xaxis.axis_label = 'X position (m)'
@@ -303,8 +301,9 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_range=(display_min, display_max),
                 x_axis_label='Pixel id',
                 y_axis_label=label)
-    p2.min_border_top = 60
-    p2.min_border_bottom = 70
+    p2.min_border_top = 40
+    p2.min_border_bottom = 50
+    p2.plot_width = pad_width
 
     source2 = ColumnDataSource(data=dict(pix_id=cam.geom.pix_id,
                                          value=cam.image))
@@ -361,6 +360,7 @@ def show_camera(content, geom, pad_width, pad_height, label, titles=None,
                 y_axis_label='Number of pixels', y_axis_type='log')
     p3.quad(top='top', bottom='bottom', left='left', right='right',
             source=source3)
+    p3.plot_width = pad_width
 
     if titles is None:
         titles = [None] * len(allimages)

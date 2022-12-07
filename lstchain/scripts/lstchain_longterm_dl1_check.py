@@ -48,6 +48,7 @@ from bokeh.plotting import figure
 from ctapipe.coordinates import EngineeringCameraFrame
 # from ctapipe.instrument import SubarrayDescription
 from ctapipe.instrument import CameraGeometry
+from pkg_resources import resource_filename
 
 from ctapipe.io import read_table
 from ctapipe_io_lst import TriggerBits
@@ -792,20 +793,6 @@ def main():
         pd.DataFrame(d).to_hdf(output_file_name, key=name, mode='a',
                                format='table', data_columns=d.keys())
 
-    # We write out the camera geometry information, assuming it is the same
-    # for all files (hence we take it from the first one):
-    # subarray_info = SubarrayDescription.from_hdf(files[0])
-    # subarray_info.to_hdf(output_file_name)
-
-    cam_description_table = \
-        Table.read(files[0],
-                   path='/configuration/instrument/telescope/camera/geometry_0')
-    geom = CameraGeometry.from_table(cam_description_table)
-    geom.to_table().write(output_file_name,
-                          path=f'/configuration/instrument/telescope/camera'
-                               f'/geometry_0',
-                          append=True, serialize_meta=True)
-
     log.info('_________________________________________________')
     log.info('')
     log.info('WARNINGS relative to the quality of the data:')
@@ -889,14 +876,8 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     max_average_ff_charge_stdev = 11  # pe
 
     # Read in the camera geometry:
-    # subarray_info = SubarrayDescription.from_hdf(filename)
-    # camgeom = subarray_info.tel[tel_id].camera.geometry
-
-    cam_description_table = \
-        Table.read(filename,
-                   path='/configuration/instrument/telescope/camera/geometry_0')
-    camgeom = CameraGeometry.from_table(cam_description_table)
-
+    camfilename = resource_filename('lstchain', 'resources/LST1Cam.ecsv')
+    camgeom = CameraGeometry.from_table(Table.read(camfilename))
     engineering_geom = camgeom.transform_to(EngineeringCameraFrame())
 
     bokeh_output_file(Path(filename).with_suffix('.html'),
@@ -1136,13 +1117,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     mean = np.array(pixwise_runsummary['ped_pix_charge_mean'])
     stddev = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
 
-
     row1 = show_camera(mean, engineering_geom, pad_width,
-                       pad_height, 'Pedestals mean charge',
-                       run_titles)
+                       'Pedestals mean charge', run_titles)
     row2 = show_camera(stddev, engineering_geom, pad_width,
-                       pad_height, 'Pedestals charge std dev',
-                       run_titles,
+                       'Pedestals charge std dev', run_titles,
                        content_upplim=ped_max_charge_stddev)
     stddev_no_stars = np.array(pixwise_runsummary_no_stars[
                                    'ped_pix_charge_stddev'])
@@ -1162,7 +1140,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     stddev = np.array(pixwise_runsummary['ff_pix_charge_stddev'])
 
     row1 = show_camera(mean, engineering_geom, pad_width,
-                       pad_height, 'Flat-Field mean charge (pe)', run_titles,
+                       'Flat-Field mean charge (pe)', run_titles,
                        display_range=[0, 100],
                        content_lowlim=ff_charge * (1 - ff_charge_tolerance),
                        content_upplim=ff_charge * (1 + ff_charge_tolerance))
@@ -1180,10 +1158,10 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        "Too high flatfield mean charge"])
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
-                       pad_height, 'Flat-Field charge std dev (pe)',
+                       'Flat-Field charge std dev (pe)',
                        run_titles,
                        display_range=[0, 14])
-    grid2 = gridplot([row1, row2], sizing_mode=None, width=pad_width,
+    grid2 = gridplot([row1, row2], sizing_mode='scale_height',
                      height=pad_height)
 
     page2.child = grid2
@@ -1195,7 +1173,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     stddev = np.array(pixwise_runsummary['ff_pix_rel_time_stddev'])
 
     row1 = show_camera(mean, engineering_geom, pad_width,
-                       pad_height, 'Flat-Field mean relative time (ns)',
+                       'Flat-Field mean relative time (ns)',
                        run_titles, showlog=False, display_range=[-1, 1],
                        content_lowlim=ff_min_rel_time,
                        content_upplim=ff_max_rel_time)
@@ -1210,7 +1188,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
                        "Too high flatfield mean relative time"])
 
     row2 = show_camera(stddev, engineering_geom, pad_width,
-                       pad_height, 'Flat-Field rel. time std dev (ns)',
+                       'Flat-Field rel. time std dev (ns)',
                        run_titles, showlog=False,
                        display_range=[0.2, np.nanmax(np.append(1.1*stddev,
                                                                0.7))],
@@ -1223,7 +1201,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pixel_problems.append(too_high)
     check_name.append("Too high flatfield relative time std dev")
 
-    grid3 = gridplot([row1, row2], sizing_mode=None, width=pad_width,
+    grid3 = gridplot([row1, row2], sizing_mode='scale_height',
                      height=pad_height)
     page3.child = grid3
     page3.title = 'Interleaved flat field, time'
@@ -1253,11 +1231,11 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     r30_lowlim[:, pixel_index_limit:] = 0.5 * r30_lowlim[:, pixel_index_limit:]
 
     row1 = show_camera(pulse_rate_above_10, engineering_geom,
-                       pad_width, pad_height,
+                       pad_width,
                        'Cosmics, rate of >10pe pulses (/s)', run_titles,
                        display_range=[0, 150])
     row2 = show_camera(pulse_rate_above_30, engineering_geom,
-                       pad_width, pad_height,
+                       pad_width,
                        'Cosmics, rate of >30pe pulses (/s)', run_titles,
                        display_range=[0, 12],
                        content_lowlim=r30_lowlim, content_upplim=r30_upplim)
@@ -1273,7 +1251,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     check_name.extend(["Too low rate of >30 pe cosmics pulses",
                        "Too high rate of >30 pe cosmics pulses"])
 
-    grid4 = gridplot([row1, row2], sizing_mode=None, width=pad_width,
+    grid4 = gridplot([row1, row2], sizing_mode='scale_height',
                      height=pad_height)
     page4.child = grid4
     page4.title = 'Cosmics'
@@ -1287,21 +1265,19 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # We set units of rate:
     cogs = pixwise_runsummary['cosmics_cog_within_pixel'] / \
            pixwise_runsummary['elapsed_time_per_pix']
-    row1 = show_camera(cogs,
-                       engineering_geom,
-                       pad_width, pad_height,
+    row1 = show_camera(cogs, engineering_geom,
+                       pad_width,
                        'Cosmics, image cog distribution (/s)', run_titles,
                        display_range=(0,1.1*np.nanmax(cogs)))
     cogs = pixwise_runsummary['cosmics_cog_within_pixel_intensity_gt_200'] / \
            pixwise_runsummary['elapsed_time_per_pix']
 
-    row2 = show_camera(cogs,
-            engineering_geom,
-            pad_width, pad_height,
+    row2 = show_camera(cogs, engineering_geom,
+            pad_width,
             'Cosmics, >200 pe image cog distribution (/s)',
             run_titles, display_range=(0, 1.1*np.nanmax(cogs)))
 
-    grid4b = gridplot([row1, row2], sizing_mode=None, width=pad_width,
+    grid4b = gridplot([row1, row2], sizing_mode='scale_height',
                      height=pad_height)
     page4b.child = grid4b
     page4b.title = 'Cosmics'
@@ -1312,7 +1288,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     fraction_of_runs = np.array(pixel_problems) / len(runsummary)
 
     row = show_camera(fraction_of_runs, engineering_geom,
-                      pad_width, pad_height,
+                      pad_width,
                       'Fraction of runs', titles=check_name,
                       showlog=False,
                       display_range=(1e-6, 1.1))
@@ -1324,8 +1300,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     # of the plots):
     row[2].value=(1e-6, 0.5)
 
-    grid4c = gridplot([row], sizing_mode=None, width=pad_width,
-                      height=pad_height)
+    grid4c = gridplot([row], height=pad_height)
     page4c.child = grid4c
     page4c.title = 'Pixel problems'
 
