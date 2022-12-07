@@ -398,21 +398,28 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
         }
     """)
 
-    slider_height = 300
+
     # https://github.com/bokeh/bokeh/issues/10444
-    slider_style = Div(text="""<style>.custom-slider .bk-input-group {
-    height:"""+str(slider_height)+"""px;}</style>""")
+    slider_height = 300
+    slider_style = Div(text=f"""<style>
+    .fixed-length-slider .bk-input-group {{
+        height: {slider_height}px;
+    }}
+    .custom-length-slider .bk-input-group {{
+        height: {100*(numsets+1)}px;
+    }}
+    </style>
+    """)
 
     slider = None
     if numsets > 1:
-        # WARNING: the html won't look nice for number of sets much larger
-        # than 300! But in this way we avoid that the slider skips elements:
-        sstyle = ["custom-slider"]
+        sstyle = ["fixed-length-slider"]
+        
+        # WARNING: the page won't look nice for number of sets much larger
+        # than 300! (=very long slider) But in this way we avoid that the
+        # run slider skips elements:
         if numsets > 299:
-            slider_style_long = Div(text="""<style>.long-slider 
-            .bk-input-group {
-            height:""" + str(numsets+1) + """px;}</style>""")
-            sstyle = ["long-slider"]
+            sstyle = ["custom-length-slider"]
 
         slider = Slider(start=1, end=numsets, value=1, step=1, title="run",
                         show_value=False,
@@ -441,7 +448,7 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
                                value=(display_min, display_max), step=step,
                                title="z_range",
                                orientation='vertical', direction='rtl',
-                               css_classes=["custom-slider"],
+                               css_classes=["fixed-length-slider"],
                                show_value=False)
     range_slider.js_on_change('value', callback2)
 
