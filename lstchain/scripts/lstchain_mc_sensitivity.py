@@ -213,7 +213,7 @@ def main():
     gamma_ps_simu_info = read_simu_info_merged_hdf5(args.dl2_file_g)
     emin = gamma_ps_simu_info.energy_range_min.value
     emax = gamma_ps_simu_info.energy_range_max.value
-    total_number_of_events = gamma_ps_simu_info.num_showers * gamma_ps_simu_info.shower_reuse * ntelescopes_gamma
+    total_number_of_events = gamma_ps_simu_info.n_showers * gamma_ps_simu_info.shower_reuse * ntelescopes_gamma
     spectral_index = gamma_ps_simu_info.spectral_index
     area = (gamma_ps_simu_info.max_scatter_range.value - gamma_ps_simu_info.min_scatter_range.value) ** 2 * np.pi
     ctaplot.plot_effective_area_per_energy_power_law(emin, emax, total_number_of_events, spectral_index,
