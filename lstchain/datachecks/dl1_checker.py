@@ -225,9 +225,13 @@ def process_dl1_file(filename, bins, tel_id=1):
     dl1datacheck_flatfield = DL1DataCheckContainer()
     dl1datacheck_cosmics = DL1DataCheckContainer()
 
-    subarray_info = SubarrayDescription.from_hdf(filename)
-    geom = subarray_info.tel[tel_id].camera.geometry
-    equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+    #subarray_info = SubarrayDescription.from_hdf(filename)
+    #geom = subarray_info.tel[tel_id].camera.geometry
+    #equivalent_focal_length = subarray_info.tel[tel_id].optics.equivalent_focal_length
+
+    geom = load_camera_geometry()
+    equivalent_focal_length = geom.frame.focal_length
+
     m2deg = np.rad2deg(u.m / equivalent_focal_length * u.rad) / u.m
 
     parameters = read_table(filename, dl1_params_lstcam_key)
@@ -362,8 +366,9 @@ def plot_datacheck(datacheck_filename, out_path=None, batch=False,
         pdf_filename = Path(out_path, pdf_filename.name)
 
     # Read camera geometry
-    subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
-    geom = subarray_info.tel[tel_id].camera.geometry
+    # subarray_info = SubarrayDescription.from_hdf(datacheck_filename)
+    # geom = subarray_info.tel[tel_id].camera.geometry
+    geom = load_camera_geometry()
     engineering_geom = geom.transform_to(EngineeringCameraFrame())
 
     # For future bokeh-based display, turned off for now:
