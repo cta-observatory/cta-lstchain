@@ -376,10 +376,6 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     # One has to add here everything that must change when moving the slider:
     callback = CustomJS(args=dict(source1=cam.datasource,
                                   source1log=source1log,
-                                  source2=source2,
-                                  source2_lowlim=source2_lowlim,
-                                  source2_upplim=source2_upplim,
-                                  source3=source3,
                                   zz=cds_allimages,
                                   title=cam.figure.title,
                                   titlelog=titlelog,
@@ -430,6 +426,9 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     }}
     </style>
     """)
+
+    slider_style = Div(text="""<style>.custom-slider .bk-input-group {
+    height:300px;}</style>""")
 
     slider = None
     if numsets > 1:
