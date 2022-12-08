@@ -217,11 +217,10 @@ class DL3Cuts(Component):
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        within_central_psf = data["theta"].to(u.deg) <= self.max_theta_range * u.deg
 
         theta_cuts = calculate_percentile_cut(
-            data["theta"][within_central_psf],
-            data["reco_energy"][within_central_psf],
+            data["theta"],
+            data["reco_energy"],
             bins=energy_bins,
             min_value=self.min_theta_cut * u.deg,
             max_value=self.max_theta_cut * u.deg,

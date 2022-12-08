@@ -100,7 +100,7 @@ def test_dl3_energy_dependent_cuts():
     temp_cuts.theta_containment = 0.68
     temp_cuts.alpha_containment = 0.68
     temp_cuts.min_event_p_en_bin = 2
-    temp_cuts.max_theta_range = 0.5
+    temp_cuts.max_theta_range = 0.3
 
     temp_data = QTable({
         "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 4)),
@@ -115,7 +115,10 @@ def test_dl3_energy_dependent_cuts():
     theta_cut = temp_cuts.energy_dependent_theta_cuts(
         temp_data, en_range,
     )
-
+    mask = temp_data["theta"] <= temp_cuts.max_theta_range * u.deg
+    theta_cut_2 = temp_cuts.energy_dependent_theta_cuts(
+        temp_data[mask], en_range,
+    )
     gh_cut = temp_cuts.energy_dependent_gh_cuts(
         temp_data, en_range,
     )
@@ -125,6 +128,7 @@ def test_dl3_energy_dependent_cuts():
     )
 
     data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
+    data_th_2 = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut_2)
     data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
     data_al = temp_cuts.apply_energy_dependent_alpha_cuts(temp_data, alpha_cut)
 
@@ -132,6 +136,7 @@ def test_dl3_energy_dependent_cuts():
     assert gh_cut["cut"][1] == 0.38
     assert alpha_cut["cut"][0] == 21.32 * u.deg
     assert len(data_th) == 15
+    assert len(data_th_2) == 12
     assert len(data_gh) == 36
     assert len(data_al) == 23
 
@@ -165,8 +170,8 @@ def test_data_binning():
     bkg_fov = tempbin.bkg_fov_offset_bins()
     src_off = tempbin.source_offset_bins()
 
-    assert len(e_true) == 20
-    assert len(e_reco) == 20
+    assert len(e_true) == 21
+    assert len(e_reco) == 21
     assert len(e_migra) == 15
     assert len(fov_off) == 9
     assert len(bkg_fov) == 11

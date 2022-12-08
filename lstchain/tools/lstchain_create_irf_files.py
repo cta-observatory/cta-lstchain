@@ -365,7 +365,6 @@ class IRFFITSWriter(Tool):
         source_offset_bins = self.data_bin.source_offset_bins()
 
         gammas = self.event_sel.filter_cut(gammas)
-        gammas = self.event_sel.same_disp_sign_filter(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
 
         if self.energy_dependent_gh:
