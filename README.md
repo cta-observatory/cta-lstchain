@@ -89,4 +89,28 @@ Use [GitHub Issues](https://github.com/cta-observatory/cta-lstchain/issues).
 
 ## Cite
 
-If you use lstchain in a publication, please cite it using Zenodo _Cite as_ from https://doi.org/10.5281/zenodo.6344673
+If you use lstchain in a publication, please cite the exact version you used from Zenodo _Cite as_, see https://doi.org/10.5281/zenodo.6344673
+
+Please also cite the following proceedings by adding the bibtex entry:
+
+```
+@inproceedings{lst_performance_icrc2021,
+  author = {López-Coto, R. and Moralejo, A. and Artero, M. and Baquero, A. and Bernardos, M. and Contreras, J. L. and Di Pierro, F. and García, E. and Kerszberg, D. and López-Moya, M. and MasAguilar, A. and Morcuende, D. and Noethe, M. and Nozaki, S. and Ohtani, Y. and Priyadarshi, C. and Suda, Y. and Vuillaume, T. and others},
+  usera = "{for the CTA LST Project}",
+  title = "{Physics Performance of the Large Size Telescope prototype of the Cherenkov Telescope Array}",
+  doi = "10.22323/1.395.0806",
+  booktitle = "Proceedings, 37th International Cosmic Ray Conference",
+  location = "Berlin, Germany",
+  year = 2021,
+  volume = "395",
+  pages = "806"
+}
+```
+
+and the macro to your main `.tex` file to correctly add the "CTA LST Project":
+```
+% we use the user a field as "dedication", i.e. for the CTA-LST Consortium
+\renewbibmacro*{author}{%
+  \iffieldundef{usera}{\printnames{author}}{\printnames{author} \printfield{usera}}%
+}%
+```
