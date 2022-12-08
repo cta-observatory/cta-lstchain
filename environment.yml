@@ -20,7 +20,7 @@ dependencies:
   - protozfits=2.0
   - protobuf=3.20
   - pyparsing
-  - scikit-learn=1.0
+  - scikit-learn~=1.1
   - sphinx~=4.2
   - sphinx-automodapi
   - sphinx_rtd_theme

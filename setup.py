@@ -57,7 +57,7 @@ setup(
         'pyirf~=0.6.0',
         'scipy',
         'seaborn',
-        'scikit-learn~=1.0',
+        'scikit-learn~=1.1',
         'tables',
         'toml',
         'pymongo',
