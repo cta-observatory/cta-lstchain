@@ -1103,21 +1103,31 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
 
     logger = logging.getLogger(__name__)
 
+    # We first check for inf values that occasionally appear for data with
+    # problems, and transform them in nans (ignored in later calculations)
+    varmean = table.col(columns[0])
+    varstddev = table.col(columns[1])
+
+    if np.isnan(varmean).sum() > 0:
+        nanmask = np.isnan(np.mean(varmean, axis=0))
+        logger.info(f'Pixels with NaNs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[nanmask]}')
+    if np.isinf(varmean).sum() > 0:
+        infmask = np.isinf(np.mean(varmean, axis=0))
+        logger.info(f'Pixels with infs in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[infmask]}')
+
+    varmean = np.where(np.isfinite(varmean), varmean, np.nan)    
+    varstddev = np.where(np.isfinite(varstddev), varstddev, np.nan) 
+
     # calculate pixel-wise mean and standard deviation for the whole run,
     # from the subrun-wise values:
-    mean = np.sum(np.multiply(table.col(columns[0]),
-                              table.col('num_events')[:, None]),
-                  axis=0) / np.sum(table.col('num_events'))
-    stddev = np.sqrt(np.sum(np.multiply(table.col(columns[1]) ** 2,
-                                        table.col('num_events')[:, None]),
-                            axis=0) / np.sum(table.col('num_events')))
-
-    if np.isnan(mean).sum() > 0:
-        logger.info(f'Pixels with NaNs in {columns[0]}: '
-                    f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
-    if np.isinf(mean).sum() > 0:
-        logger.info(f'Pixels with inf in {columns[0]}: '
-                    f'{np.array(camgeom.pix_id.tolist())[np.isinf(mean)]}')
+    mean = np.nansum(np.multiply(varmean,
+                                 table.col('num_events')[:, None]),
+                     axis=0) / np.sum(table.col('num_events'))
+    stddev = np.sqrt(np.nansum(np.multiply(varstddev ** 2,
+                                           table.col('num_events')[:, None]),
+                               axis=0) / np.sum(table.col('num_events')))
 
     # plot mean and std dev (of e.g. pedestal charge or time), as camera
     # display, vs. pixel id, and as a histogram:
