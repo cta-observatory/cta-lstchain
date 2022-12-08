@@ -1751,6 +1751,8 @@ def get_datacheck_table(filename, tablename, exclude_stars=False):
 
 def pix_subrun_mean_to_run_mean(means, events):
     """
+    Convert per-pixel subrun-wise mean values to run-wise mean values 
+    Exclude from the means the subruns with inf and nan values
 
     Parameters
     ----------
@@ -1764,12 +1766,18 @@ def pix_subrun_mean_to_run_mean(means, events):
     means
 
     """
+
+    allok = np.isfinite(means)
+    okmeans = np.where(allok, means, np.nan)
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return np.nansum(means * events, axis=0) / np.nansum(events, axis=0)
+        return np.nansum(okmeans * events, axis=0) / np.nansum(events, axis=0)
 
 def pix_subrun_std_to_run_std(stds, events):
     """
+    Convert per-pixel subrun-wise std dev values to run-wise std dev values 
+    Exclude from the means the subruns with inf and nan values
 
     Parameters
     ----------
@@ -1783,9 +1791,13 @@ def pix_subrun_std_to_run_std(stds, events):
     std devs
 
     """
+
+    allok = np.isfinite(stds)
+    okstds = np.where(allok, stds, np.nan)
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return (np.nansum(stds**2 * events, axis=0) /
+        return (np.nansum(okstds**2 * events, axis=0) /
                 np.nansum(events, axis=0)) ** 0.5
 
 
