@@ -29,7 +29,6 @@ from astropy import units as u
 from astropy.table import Table, vstack
 from ctapipe.containers import EventType
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import HDF5TableWriter
 from ctapipe.io import read_table
 from ctapipe_io_lst import TriggerBits, load_camera_geometry
