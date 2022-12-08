@@ -210,10 +210,9 @@ class DL3Cuts(Component):
         self, data, energy_bins, smoothing=None,
     ):
         """
-        Evaluating an optimized energy-dependent theta cuts, in a given
-        data, within the "central PSF" region as can be checked with data-MC
-        comparisons, with provided reco energy bins, and other parameters to
-        pass to the pyirf.cuts.calculate_percentile_cut function.
+        Evaluating an optimized energy-dependent theta cuts, with provided
+        reco energy bins, and other parameters to pass to the
+        pyirf.cuts.calculate_percentile_cut function.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
