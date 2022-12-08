@@ -170,8 +170,8 @@ def test_data_binning():
     bkg_fov = tempbin.bkg_fov_offset_bins()
     src_off = tempbin.source_offset_bins()
 
-    assert len(e_true) == 21
-    assert len(e_reco) == 21
+    assert len(e_true) == 20
+    assert len(e_reco) == 20
     assert len(e_migra) == 15
     assert len(fov_off) == 9
     assert len(bkg_fov) == 11
