@@ -1115,6 +1115,9 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
     if np.isnan(mean).sum() > 0:
         logger.info(f'Pixels with NaNs in {columns[0]}: '
                     f'{np.array(camgeom.pix_id.tolist())[np.isnan(mean)]}')
+    if np.isinf(mean).sum() > 0:
+        logger.info(f'Pixels with inf in {columns[0]}: '
+                    f'{np.array(camgeom.pix_id.tolist())[np.isinf(mean)]}')
 
     # plot mean and std dev (of e.g. pedestal charge or time), as camera
     # display, vs. pixel id, and as a histogram:
@@ -1122,18 +1125,27 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
                              figsize=pagesize)
     fig.suptitle(labels[2], fontsize='xx-large')
     fig.tight_layout(rect=[0, 0.03, 1, 0.98], pad=3.0, h_pad=3.0, w_pad=2.0)
+
     cam = CameraDisplay(camgeom, mean, ax=axes[0, 0], norm=norm,
                         title=labels[0])
-    cam.add_colorbar(ax=axes[0, 0])
+    if np.isfinite(mean).sum() > 0:
+        cam.add_colorbar(ax=axes[0, 0])
     if not batch:
         cam.show()
+
     cam = CameraDisplay(camgeom, stddev, ax=axes[1, 0], norm=norm,
                         title=labels[1])
-    cam.add_colorbar(ax=axes[1, 0])
+    if np.isfinite(stddev).sum() > 0:
+        cam.add_colorbar(ax=axes[1, 0])
+
     # line below needed to get the top and bottom camera displays of equal size:
     axes[1, 0].set_xlim((axes[0, 0].get_xlim()))
     if not batch:
         cam.show()
+
+    if (np.isfinite(mean).sum() == 0) and (np.isfinite(stddev).sum() == 0):
+        return
+
     # plot mean vs. pixel_id and as histogram:
     axes[0, 1].plot(camgeom.pix_id, mean)
     axes[0, 1].set_xlabel('Pixel id')
@@ -1142,6 +1154,10 @@ def plot_mean_and_stddev(table, camgeom, columns, labels, pagesize, batch=False,
     axes[0, 2].hist(mean[~np.isnan(mean)], bins=200)
     axes[0, 2].set_xlabel(labels[0])
     axes[0, 2].set_ylabel('Number of pixels')
+
+    if np.isfinite(stddev).sum() == 0:
+        return
+
     # now the standard deviation:
     axes[1, 1].plot(camgeom.pix_id, stddev)
     axes[1, 1].set_xlabel('Pixel id')
