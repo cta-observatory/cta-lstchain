@@ -15,7 +15,7 @@ dependencies:
   - matplotlib=3.5
   - notebook
   - iminuit>=2
-  - joblib==1.2
+  - joblib~=1.2.0
   - toml
   - protozfits=2.0
   - protobuf=3.20

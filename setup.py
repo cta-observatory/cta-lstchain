@@ -48,7 +48,7 @@ setup(
         'gammapy~=0.19.0',
         'h5py',
         'iminuit>=2',
-        'joblib==1.2',
+        'joblib~=1.2.0',
         'matplotlib~=3.5',
         'numba',
         'numpy<1.22.0a0',
