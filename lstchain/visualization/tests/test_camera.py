@@ -31,10 +31,8 @@ def test_display_dl1_event(mc_gamma_testfile):
     from ctapipe.io import EventSource, EventSeeker
     from ctapipe.calib import CameraCalibrator
 
-    source = EventSource(mc_gamma_testfile, back_seekable=True)
-    seeker = EventSeeker(source)
-    event = seeker.get_event_index(11)  # event 11 has telescopes 1 and 4 with data
+    source = EventSource(mc_gamma_testfile)
+    event = next(iter(source))
     CameraCalibrator(subarray=source.subarray)(event)
     plt.figure()
     display_dl1_event(event, source.subarray.tel[1].camera.geometry, tel_id=1)
-    display_dl1_event(event, source.subarray.tel[4].camera.geometry, tel_id=4)

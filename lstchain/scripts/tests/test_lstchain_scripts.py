@@ -454,7 +454,7 @@ def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
 
 
 def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
-    dl2_file = tmp_path / "dl2_gamma_test_large.h5"
+    dl2_file = tmp_path / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_mc_r0_to_dl2",
         "--input-file",
@@ -474,7 +474,7 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
 
     events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
-    assert sim_info.energy_max == 330 * u.TeV
+    assert sim_info.energy_max == 5 * u.TeV
 
 
 @pytest.mark.private_data
