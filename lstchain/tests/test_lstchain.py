@@ -121,14 +121,14 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
         os.remove('./event/'+path)
     os.rmdir('./event')
     os.remove(tmp_path / "tmp.h5")
-    config['source_config']['EventSource']['allowed_tels'] = [1, 2]
+
+    config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config']["no_asymmetry"] = True
     config['lh_fit_config']["use_weight"] = True
     config['lh_fit_config']["verbose"] = 0
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
-@pytest.mark.run(after='test_lhfit_numba_compiled')
 @pytest.mark.private_data
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1
