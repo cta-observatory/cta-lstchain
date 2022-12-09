@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
 from ctapipe.io import EventSource
-from ctapipe.utils import get_dataset_path
 from ctapipe.calib import CameraCalibrator
 from ctapipe.image.cleaning import tailcuts_clean
 from lstchain.io import get_standard_config

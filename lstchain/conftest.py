@@ -1,7 +1,6 @@
 from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
-from ctapipe.utils import get_dataset_path
 from ctapipe.instrument import SubarrayDescription
 import os
 
