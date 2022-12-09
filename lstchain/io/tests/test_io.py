@@ -125,8 +125,8 @@ def test_read_simu_info_hdf5(simulated_dl1_file):
 
     mcheader = read_simu_info_hdf5(simulated_dl1_file)
     # simtel verion of the mc_gamma_testfile defined in test_lstchain
-    assert mcheader.simtel_version == 1462392225
-    assert mcheader.n_showers == 20000
+    assert mcheader.simtel_version == 1593356843
+    assert mcheader.n_showers == 10
 
 
 def test_read_simu_info_merged_hdf5(merged_h5file):
@@ -134,8 +134,8 @@ def test_read_simu_info_merged_hdf5(merged_h5file):
 
     mcheader = read_simu_info_merged_hdf5(merged_h5file)
     # simtel verion of the mc_gamma_testfile defined in test_lstchain
-    assert mcheader.simtel_version == 1462392225
-    assert mcheader.n_showers == 40000
+    assert mcheader.simtel_version == 1593356843
+    assert mcheader.n_showers == 20
 
 
 def test_trigger_type_in_dl1_params(simulated_dl1_file):

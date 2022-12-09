@@ -60,13 +60,13 @@ def temp_dir_observed_srcdep_files(tmp_path_factory):
 @pytest.fixture(scope="session")
 def mc_gamma_testfile():
     """Get a simulated test file."""
-    return get_dataset_path("gamma_test_large.simtel.gz")
+    return test_data / "mc/simtel_theta_20_az_180_gdiffuse_10evts.simtel.gz"
 
 
 @pytest.fixture(scope="session")
 def simulated_dl1_file(temp_dir_simulated_files, mc_gamma_testfile):
     """Produce a dl1 file from simulated data."""
-    output_dl1_path = temp_dir_simulated_files / "dl1_gamma_test_large.h5"
+    output_dl1_path = temp_dir_simulated_files / "dl1_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_mc_r0_to_dl1", "-f", mc_gamma_testfile, "-o", temp_dir_simulated_files
     )
@@ -189,7 +189,7 @@ def simulated_dl2_file(temp_dir_simulated_files, simulated_dl1_file, rf_models):
     Produce the test dl2 file from the simulated dl1 test file
     using the random forest test models.
     """
-    dl2_file = temp_dir_simulated_files / "dl2_gamma_test_large.h5"
+    dl2_file = temp_dir_simulated_files / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_dl1_to_dl2",
         "--input-file",
@@ -208,7 +208,7 @@ def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_fil
     Produce the test source-dependent dl2 file from the simulated dl1 test file
     using the random forest test models.
     """
-    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_gamma_test_large.h5"
+    srcdep_dl2_file = temp_dir_simulated_srcdep_files / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     srcdep_config_file = os.path.join(os.getcwd(), "./lstchain/data/lstchain_src_dep_config.json")
     run_program(
         "lstchain_dl1_to_dl2",
@@ -348,7 +348,7 @@ def observed_srcdep_dl2_file(temp_dir_observed_srcdep_files, observed_dl1_files,
 
 
 @pytest.fixture(scope="session")
-def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
+def simulated_irf_file(simulated_dl2_file):
     """
     Produce test irf file from the simulated dl2 test file.
     Using the same test file for gamma, proton and electron inputs
@@ -370,7 +370,7 @@ def simulated_irf_file(temp_dir_simulated_files, simulated_dl2_file):
 
 
 @pytest.fixture(scope="session")
-def simulated_srcdep_irf_file(temp_dir_simulated_srcdep_files, simulated_srcdep_dl2_file):
+def simulated_srcdep_irf_file(simulated_srcdep_dl2_file):
     """
     Produce test source-dependent irf file from the simulated dl2 test file.
     """
