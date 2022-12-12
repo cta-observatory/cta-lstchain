@@ -88,6 +88,7 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "-o",
         merged_dl1_file,
         "--no-image",
+        "--pattern=dl1_*.h5"
     )
     return merged_dl1_file
 
