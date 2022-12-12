@@ -27,8 +27,7 @@ def pytest_configure(config):
     if "private_data" not in config.option.markexpr:
         if config.option.markexpr:
             config.option.markexpr += " and "
-        else:
-            config.option.markexpr += "not private_data"
+        config.option.markexpr += "not private_data"
 
 
 @pytest.fixture(scope="session")
