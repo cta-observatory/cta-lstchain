@@ -165,7 +165,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "increase_nsb" in line:
             assert line == '  "increase_nsb": true,'
         if "extra_noise_in_dim_pixels" in line:
-            assert line == '  "extra_noise_in_dim_pixels": 1.95,'
+            assert line == '  "extra_noise_in_dim_pixels": 1.962,'
         if "extra_bias_in_dim_pixels" in line:
             assert line == '  "extra_bias_in_dim_pixels": 0,'
         if "transition_charge" in line:
