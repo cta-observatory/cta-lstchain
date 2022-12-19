@@ -32,8 +32,7 @@ dependencies:
   - pymongo
   - seaborn
   - scipy>=1.8
-  - jinja2=3.0 # pinned for bokeh 1.0 compatibility
   - pip:
-      - git+https://github.com/cta-observatory/ctapipe_io_lst@ctapipe_0.17
+      - ctapipe_io_lst~=0.19.0
       - ctaplot~=0.6.2
       - pyirf~=0.8.0
