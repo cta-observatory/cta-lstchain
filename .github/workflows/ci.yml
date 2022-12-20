@@ -119,7 +119,6 @@ jobs:
           sudo apt update --yes && sudo apt install --yes git build-essential pandoc graphviz
           pip install -U pip setuptools wheel
           pip install -e .[docs]
-          pip install git+https://github.com/cta-observatory/ctapipe_io_lst@ctapipe_0.17
           git describe --tags
           python -c 'import lstchain; print(lstchain.__version__)'
       - name: Build docs
