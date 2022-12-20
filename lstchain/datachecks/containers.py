@@ -428,43 +428,58 @@ class DL1DataCheckHistogramBins(Container):
     """
     
     # delta_t between consecutive events (ms)
-    hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),
-                         'hist_delta_t binning')
+    hist_delta_t = Field(None, 'hist_delta_t binning')
     # pixel charge and image intensity (units: p.e):
-    hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121),
-                                     'hist_pixelchargespectrum binning')
-    hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
+    hist_pixelchargespectrum = Field(None, 'hist_pixelchargespectrum binning')
+    hist_intensity = Field(None, 'hist_intensity binning')
 
     # dist0, width and length (units: degrees):
-    hist_dist0 = Field(np.linspace(0., 2.5, 50), 'hist_dist0 binning')
-    hist_dist0_intensity_gt_200 = Field(np.linspace(0., 2.5, 50),
+    hist_dist0 = Field(None, 'hist_dist0 binning')
+    hist_dist0_intensity_gt_200 = Field(None,
                                         'hist_dist0_intensity_gt_200 binning')
-    hist_psi = Field(np.linspace(-100., 100., 101), 'hist_psi binning')
-    hist_psi_intensity_gt_200 = Field(np.linspace(-100., 100., 101),
-                                      'hist_psi_intensity_gt_200 binning')
+    hist_psi = Field(None, 'hist_psi binning')
+    hist_psi_intensity_gt_200 = Field(None, 'hist_psi_intensity_gt_200 binning')
 
-    hist_nislands = Field(np.linspace(-0.5, 29.5, 31), 'hist_nislands binning')
-    hist_npixels = Field(np.linspace(0.5, 2000.5, 400), 'hist_npixels binning')
+    hist_nislands = Field(None, 'hist_nislands binning')
+    hist_npixels = Field(None, 'hist_npixels binning')
 
     # 2d histograms
     # width and length vs. image intensity:
-    hist_width = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                 np.linspace(0., 0.8, 101)]),
-                       'hist_width binning')
-    hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                  np.linspace(0., 1., 101)]),
-                        'hist_length binning')
-    hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                    np.linspace(-4., 4., 101)]),
-                          'hist_skewness binning')
+    hist_width = Field(None, 'hist_width binning')
+    hist_length = Field(None, 'hist_length binning')
+    hist_skewness = Field(None, 'hist_skewness binning')
     # time gradient vs. length:
-    hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
-                                           np.linspace(0., 200., 101)]),
-                                 'hist_tgrad_vs_length binning')
+    hist_tgrad_vs_length = Field(None, 'hist_tgrad_vs_length binning')
     hist_tgrad_vs_length_intensity_gt_200 = \
-        Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
-              'hist_tgrad_vs_length_intensity_gt_200 binning')
-    # time intercept (image time @ charge c.o.g.) vs. image intensity:
-    hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                     np.linspace(-30., 40., 101)]),
-                           'hist_intercept binning')
+        Field(None, 'hist_tgrad_vs_length_intensity_gt_200 binning')
+    # time intercept (image time @charge c.o.g.) vs. image intensity:
+    hist_intercept = Field(None, 'hist_intercept binning')
+
+    def init(self):
+        # Set the default binnings:
+        self.hist_delta_t = np.linspace(-1.e-2, 2., 200)
+        self.hist_pixelchargespectrum = np.logspace(-1., 4.7, 121)
+        self.hist_intensity = np.logspace(1., 6., 101)
+        # dist0, width and length (units: degrees):
+        self.hist_dist0 = np.linspace(0., 2.5, 50)
+        self.hist_dist0_intensity_gt_200 = np.linspace(0., 2.5, 50)
+        self.hist_psi = np.linspace(-100., 100., 101)
+        self.hist_psi_intensity_gt_200 = np.linspace(-100., 100., 101)
+        self.hist_nislands = np.linspace(-0.5, 29.5, 31)
+        self.hist_npixels = np.linspace(0.5, 2000.5, 400)
+        # 2d histograms
+        # width and length vs. image intensity:
+        self.hist_width = np.array([np.logspace(0.7, 5.7, 101),
+                                    np.linspace(0., 0.8, 101)])
+        self.hist_length = np.array([np.logspace(0.7, 5.7, 101),
+                                     np.linspace(0., 1., 101)])
+        self.hist_skewness = np.array([np.logspace(0.7, 5.7, 101),
+                                       np.linspace(-4., 4., 101)])
+        # time gradient vs. length:
+        self.hist_tgrad_vs_length = np.array([np.linspace(0., 1.0, 101),
+                                              np.linspace(0., 200., 101)])
+        self.hist_tgrad_vs_length_intensity_gt_200 = np.array([np.linspace(0., 1.0, 101),
+                                                               np.linspace(0., 50., 101)])
+        # time intercept (image time @charge c.o.g.) vs. image intensity:
+        self.hist_intercept = np.array([np.logspace(0.7, 5.7, 101),
+                                        np.linspace(-30., 40., 101)])

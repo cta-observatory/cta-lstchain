@@ -134,6 +134,7 @@ def check_dl1(filenames, output_path, max_cores=4, create_pdf=False, batch=False
     # create container for the histograms' binnings, to be saved in the hdf5
     # output file:
     histogram_binning = DL1DataCheckHistogramBins()
+    histogram_binning.init()
 
     # create the dl1_datacheck containers (one per subrun) for the three
     # event types, and add them to the list dl1datacheck:
