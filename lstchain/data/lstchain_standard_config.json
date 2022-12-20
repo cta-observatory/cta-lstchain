@@ -262,9 +262,9 @@
       "tel_id":1,
       "time_sampling_correction_path": null,
       "charge_product":"LocalPeakWindowSum",
-      "charge_median_cut_outliers": [-0.5,0.5],
+      "charge_median_cut_outliers": [-0.9,2],
       "charge_std_cut_outliers": [-10,10],
-      "time_cut_outliers": [5,30],
+      "time_cut_outliers": [2,38],
       "LocalPeakWindowSum":{
         "window_shift": 5,
         "window_width":12,
