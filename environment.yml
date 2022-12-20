@@ -25,6 +25,7 @@ dependencies:
   - sphinx-automodapi
   - sphinx_rtd_theme
   - sphinx-argparse
+  - sphinxcontrib-mermaid
   - nbsphinx
   - numba
   - numpydoc
