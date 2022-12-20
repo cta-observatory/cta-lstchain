@@ -429,43 +429,72 @@ with np.printoptions(threshold=3, precision=3, edgeitems=1):
         """
         
         # delta_t between consecutive events (ms)
-        hist_delta_t = Field(np.linspace(-1.e-2, 2., 200),
-                             'hist_delta_t binning')
+        hist_delta_t = Field(
+            default_factory=lambda: np.linspace(-1.e-2, 2., 200),
+            description='hist_delta_t binning',
+        )
         # pixel charge and image intensity (units: p.e):
-        hist_pixelchargespectrum = Field(np.logspace(-1., 4.7, 121),
-                                         'hist_pixelchargespectrum binning')
-        hist_intensity = Field(np.logspace(1., 6., 101), 'hist_intensity binning')
+        hist_pixelchargespectrum = Field(
+            default_factory=lambda: np.logspace(-1., 4.7, 121),
+            description='hist_pixelchargespectrum binning',
+        )
+        hist_intensity = Field(
+            default_factory=lambda: np.logspace(1., 6., 101),
+            description='hist_intensity binning',
+        )
 
         # dist0, width and length (units: degrees):
-        hist_dist0 = Field(np.linspace(0., 2.5, 50), 'hist_dist0 binning')
-        hist_dist0_intensity_gt_200 = Field(np.linspace(0., 2.5, 50),
-                                            'hist_dist0_intensity_gt_200 binning')
-        hist_psi = Field(np.linspace(-100., 100., 101), 'hist_psi binning')
-        hist_psi_intensity_gt_200 = Field(np.linspace(-100., 100., 101),
-                                          'hist_psi_intensity_gt_200 binning')
+        hist_dist0 = Field(
+            default_factory=lambda: np.linspace(0., 2.5, 50),
+            description='hist_dist0 binning',
+        )
+        hist_dist0_intensity_gt_200 = Field(
+            default_factory=lambda: np.linspace(0., 2.5, 50),
+            description='hist_dist0_intensity_gt_200 binning',
+        )
+        hist_psi = Field(
+            default_factory=lambda: np.linspace(-100., 100., 101),
+            description='hist_psi binning',
+        )
+        hist_psi_intensity_gt_200 = Field(
+            default_factory=lambda: np.linspace(-100., 100., 101),
+            description='hist_psi_intensity_gt_200 binning'
+        )
 
-        hist_nislands = Field(np.linspace(-0.5, 29.5, 31), 'hist_nislands binning')
-        hist_npixels = Field(np.linspace(0.5, 2000.5, 400), 'hist_npixels binning')
+        hist_nislands = Field(
+            default_factory=lambda: np.linspace(-0.5, 29.5, 31),
+            description='hist_nislands binning'
+        )
+        hist_npixels = Field(
+            default_factory=lambda: np.linspace(0.5, 2000.5, 400),
+            description='hist_npixels binning',
+        )
 
         # 2d histograms
         # width and length vs. image intensity:
-        hist_width = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                     np.linspace(0., 0.8, 101)]),
-                           'hist_width binning')
-        hist_length = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                      np.linspace(0., 1., 101)]),
-                            'hist_length binning')
-        hist_skewness = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                        np.linspace(-4., 4., 101)]),
-                              'hist_skewness binning')
+        hist_width = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(0., 0.8, 101)]),
+            description='hist_width binning'
+        )
+        hist_length = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(0., 1., 101)]),
+            description='hist_length binning'
+        )
+        hist_skewness = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(-4., 4., 101)]),
+            description='hist_skewness binning',
+        )
         # time gradient vs. length:
-        hist_tgrad_vs_length = Field(np.array([np.linspace(0., 1.0, 101),
-                                               np.linspace(0., 200., 101)]),
-                                     'hist_tgrad_vs_length binning')
-        hist_tgrad_vs_length_intensity_gt_200 = \
-            Field(np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
-                  'hist_tgrad_vs_length_intensity_gt_200 binning')
+        hist_tgrad_vs_length = Field(
+            default_factory=lambda: np.array([np.linspace(0., 1.0, 101), np.linspace(0., 200., 101)]),
+            description='hist_tgrad_vs_length binning',
+        )
+        hist_tgrad_vs_length_intensity_gt_200 = Field(
+            default_factory=lambda: np.array([np.linspace(0., 1.0, 101), np.linspace(0., 50., 101)]),
+            description='hist_tgrad_vs_length_intensity_gt_200 binning',
+        )
         # time intercept (image time @ charge c.o.g.) vs. image intensity:
-        hist_intercept = Field(np.array([np.logspace(0.7, 5.7, 101),
-                                         np.linspace(-30., 40., 101)]),
-                               'hist_intercept binning')
+        hist_intercept = Field(
+            default_factory=lambda: np.array([np.logspace(0.7, 5.7, 101), np.linspace(-30., 40., 101)]),
+            description='hist_intercept binning'
+        )
