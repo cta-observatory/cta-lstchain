@@ -168,7 +168,7 @@ class DRS4PedestalAndSpikeHeight(Tool):
         **flag(
             "timelapse-correction",
             "LSTR0Corrections.apply_timelapse_correction",
-            "Wether to apply drs4 timelapse correction or not.",
+            "Whether to apply drs4 timelapse correction or not.",
         ),
     }
 
