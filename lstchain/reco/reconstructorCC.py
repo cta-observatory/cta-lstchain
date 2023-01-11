@@ -183,7 +183,7 @@ def linval(a, b, x):
 
 
 @njit(cache=True)
-def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
+def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
     """
     Fast template interpolator using uniformly sampled base with known origin and step.
     The algorithm finds the indexes between which the template is needed and performs a linear interpolation.
@@ -192,7 +192,7 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
     ----------
     gain: boolean 1D array
         Gain channel used per pixel
-    times: float64 1D array
+    times: float64 2D array
         Times of each waveform samples
     t0: float64
         Time of the first value of the pulse templates
@@ -202,8 +202,6 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
         Template values for the high gain channel
     a_lg: float64 1D array
         Template values for the low gain channel
-    size: int64
-        Number of element in a_hg and a_lg
 
     Returns
     -------
@@ -212,18 +210,19 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg, size):
 
     """
     n, m = times.shape
+    size = a_hg.shape[0]
     out = np.empty((n, m))
     for i in range(n):
         for j in range(m):
             # Find the index before the requested time
             a = (times[i, j]-t0)/dt
             t = int(a)
-            if a < size:
+            if t+1 < size:
                 # Select the gain and interpolate the pulse template at the requested time
                 out[i, j] = a_hg[t] * (1. - a + t) + a_hg[t+1] * (a-t) if gain[i] else \
                     a_lg[t] * (1. - a + t) + a_lg[t+1] * (a-t)
             else:
-                # Assume 0 if outside of the recorded range
+                # Assume 0 if outside the recorded range
                 out[i, j] = 0.0
     return out
 
@@ -298,9 +297,8 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
     for i in range(n_pixels):
         for j in range(n_samples):
             t[i, j] = times[j] - t_model[i] - time_shift[i]
-    size_template = template_hg.shape[0]
     templates = template_interpolation(is_high_gain, t, template_t0, template_dt,
-                                       template_hg, template_lg, size_template)
+                                       template_hg, template_lg)
     rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
     mu = asygaussian2d(charge * pix_area,
                        p_x,
