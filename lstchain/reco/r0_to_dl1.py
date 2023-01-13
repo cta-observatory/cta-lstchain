@@ -376,8 +376,8 @@ def r0_to_dl1(
 
         # Pulse extractor for muon ring analysis. Same parameters (window_width and _shift) as the one for showers, but
         # using GlobalPeakWindowSum, since the signal for the rings is expected to be very isochronous
-        r1_dl1_calibrator_for_muon_rings = CameraCalibrator(image_extractor_type = config['image_extractor_for_muons'],
-                                                            config=Config(config),subarray = subarray)
+        r1_dl1_calibrator_for_muon_rings = CameraCalibrator(image_extractor_type=config['image_extractor_for_muons'],
+                                                            config=Config(config), subarray=subarray)
 
         # Component to process interleaved pedestal and flat-fields
         calib_config = Config({config['calibration_product']: config[config['calibration_product']]})
@@ -443,6 +443,11 @@ def r0_to_dl1(
     if 'lh_fit_config' in config.keys():
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
+        if lhfit_fitter_config['TimeWaveformFitter']['use_interleaved'] and not is_simu:
+            tmp_source = EventSource(input_url=input_filename,
+                                      config=Config(config["source_config"]))
+            lhfit_fitter.get_ped_from_interleaved(tmp_source)
+            del tmp_source
 
     with HDF5TableWriter(
         filename=output_filename,
