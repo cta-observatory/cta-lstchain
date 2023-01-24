@@ -59,7 +59,7 @@ jobs:
       - name: Mamba setup
         uses: mamba-org/provision-with-micromamba@v14
         with:
-          activate-environment: "lst-dev"
+          environment-name: "lst-dev"
           environment-file: environment.yml
 
       - name: Install dependencies
