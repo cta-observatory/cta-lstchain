@@ -49,20 +49,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare conda installation
+      - name: Prepare mamba installation
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
-          # fix mamba error that the directory does not exist
-          mkdir -p ~/conda_pkgs_dir/cache
           # setup correct python version
           sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml
 
-      - name: Conda setup
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Mamba setup
+        uses: mamba-org/provision-with-micromamba@v14
         with:
-          mamba-version: "*"
-          auto-update-conda: true
           activate-environment: "lst-dev"
           environment-file: environment.yml
 
