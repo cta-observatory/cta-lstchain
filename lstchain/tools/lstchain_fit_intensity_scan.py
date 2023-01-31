@@ -264,8 +264,8 @@ class FitIntensityScan(Tool):
             channel = ["HG", "LG"]
             for chan in [0, 1]:
                 if self.signal[chan] is not None:
-                    hf.create_dataset(f'median_signal_{channel[chan]}', data=np.median(self.signal[chan], axis=0))
-                    hf.create_dataset(f'median_variance_{channel[chan]}', data=np.median(self.variance[chan], axis=0))
+                    hf.create_dataset(f'median_signal_{channel[chan]}', data=self.signal[chan])
+                    hf.create_dataset(f'median_variance_{channel[chan]}', data=self.variance[chan])
                     hf.create_dataset(f'runs_{channel[chan]}', data=self.selected_runs[chan])
 
             hf.create_dataset('runs', data=self.run_list)
