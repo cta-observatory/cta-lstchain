@@ -155,7 +155,7 @@ class FitIntensityScan(Tool):
                     self.log.debug(f"Read file {inp_file}")
                     for chan in self.gain_channels:
                         # verify that the median signal is inside the asked range
-                        median_charge = np.median(ff_data.charge_median[chan])
+                        median_charge = np.nanmedian(ff_data.charge_median[chan])
 
                         if median_charge > self.signal_range[chan][1] or median_charge < self.signal_range[chan][0]:
                             self.log.debug(
@@ -264,8 +264,8 @@ class FitIntensityScan(Tool):
             channel = ["HG", "LG"]
             for chan in [0, 1]:
                 if self.signal[chan] is not None:
-                    hf.create_dataset(f'median_signal_{channel[chan]}', data=self.signal[chan])
-                    hf.create_dataset(f'median_variance_{channel[chan]}', data=self.variance[chan])
+                    hf.create_dataset(f'signal_{channel[chan]}', data=self.signal[chan])
+                    hf.create_dataset(f'variance_{channel[chan]}', data=self.variance[chan])
                     hf.create_dataset(f'runs_{channel[chan]}', data=self.selected_runs[chan])
 
             hf.create_dataset('runs', data=self.run_list)
