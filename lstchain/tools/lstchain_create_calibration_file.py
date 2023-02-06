@@ -103,7 +103,6 @@ class CalibrationHDF5Writer(Tool):
         self.eventsource = None
         self.processor = None
         self.writer = None
-        self.tot_events = 0
         self.simulation = False
 
     def setup(self):
@@ -127,12 +126,7 @@ class CalibrationHDF5Writer(Tool):
 
             if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
                 raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
-
-            # remember how many events in the files
-            #self.tot_events = len(self.eventsource.multi_file)
-            #self.log.debug(f"Input file has file {self.tot_events} events")
         else:
-            self.tot_events = self.eventsource.max_events
             self.simulation = True
 
         group_name = 'tel_' + str(tel_id)
@@ -152,7 +146,6 @@ class CalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
-        
 
         try:
             self.log.debug("Start loop")
@@ -164,7 +157,6 @@ class CalibrationHDF5Writer(Tool):
                     # estimate offset of each channel from the camera median pedestal value
                     offset = np.median(event.mon.tel[tel_id].calibration.pedestal_per_sample, axis=1).round()
                     event.r1.tel[tel_id].waveform = event.r0.tel[tel_id].waveform.astype(np.float32) - offset[:, np.newaxis, np.newaxis]
-
 
                 if count % 1000 == 0 and count> self.events_to_skip:
                     self.log.debug(f"Event {count}")
@@ -196,7 +188,7 @@ class CalibrationHDF5Writer(Tool):
                     continue
 
                 # if pedestal event
-                # use a cut on the charge for MC events if trigger not defined
+                # (use a cut on the charge for MC events if trigger not defined)
                 if event.trigger.event_type==EventType.SKY_PEDESTAL or (
                     self.simulation and
                     np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
@@ -206,9 +198,8 @@ class CalibrationHDF5Writer(Tool):
                         new_ped = True
                         count_ped = count+1
 
-
                 # if flat-field event
-                # use a cut on the charge for MC events if trigger not defined
+                # (use a cut on the charge for MC events if trigger not defined)
                 elif event.trigger.event_type==EventType.FLATFIELD or (
                         self.simulation and
                         np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
@@ -217,7 +208,6 @@ class CalibrationHDF5Writer(Tool):
                    if self.processor.flatfield.calculate_relative_gain(event):
                        new_ff = True
                        count_ff = count+1
-
                   
                 # write flatfield results when enough statistics (also for pedestals) 
                 if (new_ff and new_ped):
@@ -233,9 +223,7 @@ class CalibrationHDF5Writer(Tool):
                                    f"stat = {ped_data.n_events} events")
 
                     # write only pedestal data used for calibration                                 
-                    self.writer.write('pedestal', ped_data)
-                    
-                    
+                    self.writer.write('pedestal', ped_data)                  
 
                     new_ff = False
                     new_ped = False
@@ -276,7 +264,6 @@ def initialize_pixel_status(mon_camera_container,shape):
     status_container.flatfield_failing_pixels = np.zeros((shape[0],shape[1]), dtype=bool)
 
     mon_camera_container.pixel_status = status_container
-
 
 def main():
     exe = CalibrationHDF5Writer()
