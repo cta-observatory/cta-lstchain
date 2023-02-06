@@ -171,6 +171,7 @@ def main():
                     "onsite_create_calibration_file",
                     f"-r {run}",
                     f"-v {prod_id}",
+                    f"--r0-dir {r0_dir}",
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",

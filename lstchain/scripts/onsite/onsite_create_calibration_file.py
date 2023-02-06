@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-
+from astropy.time import Time
 import pymongo
 
 import lstchain
@@ -98,7 +98,6 @@ optional.add_argument(
         " Should be used only for data from before 2022"
     )
 )
-
 
 
 def main():
@@ -255,6 +254,10 @@ def main():
 
 def search_filter(run, database_url):
     """read the employed filters form mongodb"""
+
+    # there was a change of Mongo DB data names on 5/12/2022
+    NEW_DB_NAMES_DATE = Time("2022-12-04T00:00:00")
+
     filters = None
     try:
 
@@ -264,8 +267,14 @@ def search_filter(run, database_url):
         mycol = mydb["RUN_INFORMATION"]
         mydoc = mycol.find({"run_number": {"$eq": run}})
         for x in mydoc:
-            w1 = int(x["cbox"]["wheel1 position"])
-            w2 = int(x["cbox"]["wheel2 position"])
+            date =  Time(x["start_time"])
+            if date < NEW_DB_NAMES_DATE:
+                w1 = int(x["cbox"]["wheel1 position"])
+                w2 = int(x["cbox"]["wheel2 position"])
+            else:
+                w1 = int(x["cbox"]["CBOX_WheelPosition1"])
+                w2 = int(x["cbox"]["CBOX_WheelPosition2"])
+
             filters = f"{w1:1d}{w2:1d}"
 
     except Exception as e:

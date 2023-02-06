@@ -83,13 +83,15 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
             pad = 420
             image = ff_data.charge_median
             mask = ff_data.charge_median_outliers
+
             for chan in np.arange(2):
                 pad += 1
                 plt.subplot(pad)
                 plt.tight_layout()
+                select = np.logical_not(mask[chan])
                 disp = CameraDisplay(camera)
-                mymin = np.median(image[chan]) - 2 * np.std(image[chan])
-                mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+                mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
+                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
@@ -104,9 +106,10 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 pad += 1
                 plt.subplot(pad)
                 plt.tight_layout()
+                select = np.logical_not(mask[chan])
                 disp = CameraDisplay(camera)
-                mymin = np.median(image[chan]) - 2 * np.std(image[chan])
-                mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+                mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
+                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
@@ -121,9 +124,10 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 pad += 1
                 plt.subplot(pad)
                 plt.tight_layout()
+                select = np.logical_not(mask[chan])
                 disp = CameraDisplay(camera)
-                mymin = np.median(image[chan]) - 2 * np.std(image[chan])
-                mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+                mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
+                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
@@ -138,9 +142,10 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 pad += 1
                 plt.subplot(pad)
                 plt.tight_layout()
+                select = np.logical_not(mask[chan])
                 disp = CameraDisplay(camera)
-                mymin = np.median(image[chan]) - 2 * np.std(image[chan])
-                mymax = np.median(image[chan]) + 2 * np.std(image[chan])
+                mymin = np.median(image[chan][select]) - 2 * np.std(image[chan][select])
+                mymax = np.median(image[chan][select]) + 2 * np.std(image[chan][select])
                 disp.set_limits_minmax(mymin, mymax)
                 disp.highlight_pixels(mask[chan], linewidth=2)
                 disp.image = image[chan]
@@ -385,7 +390,7 @@ def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
                 disp.image = gain
                 disp.cmap = plt.cm.coolwarm
                 
-                plt.title(f"flat-fielded gain [ADC/pe]")             
+                plt.title("flat-fielded gain [ADC/pe]")             
                 disp.add_colorbar()
                 plt.subplots_adjust(top=0.92)
                 # gain

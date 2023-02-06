@@ -306,7 +306,7 @@ class PedestalIntegrator(PedestalCalculator):
         )
         
         # mask pixels with NaN mean, due to missing statistics
-        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)[0]
+        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
         charge_median_outliers[pixels_without_stat] = True
         charge_std_outliers[pixels_without_stat] = True
         
