@@ -25,6 +25,7 @@ def ring_completeness(
     Estimate how complete a ring is.
     Bin the light distribution along the the ring and apply a threshold to the
     bin content.
+
     Parameters
     ----------
     pixel_x: array-like
@@ -43,6 +44,7 @@ def ring_completeness(
         number of photons a bin must contain to be counted
     bins: int
         number of bins to use for the histogram
+
     Returns
     -------
     ring_completeness: float
