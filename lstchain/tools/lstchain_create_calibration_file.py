@@ -3,7 +3,6 @@ Extract flat field coefficients from flasher data files.
 """
 import numpy as np
 from traitlets import Unicode, Int, Bool, Float
-import copy
 
 from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
