@@ -15,10 +15,8 @@ from ctapipe.image.muon import (
     MuonIntensityFitter,
     MuonRingFitter
 )
-from ctapipe.image.muon.features import (
-    ring_completeness,
-    ring_containment,
-)
+from ctapipe.image.muon.features import ring_containment
+from lstchain.ctapipe_compat import ring_completeness
 
 from lstchain.image.muon import plot_muon_event
 
