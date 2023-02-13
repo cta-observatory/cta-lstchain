@@ -131,7 +131,6 @@ class PedestalIntegrator(PedestalCalculator):
             waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
             [no_gain_selection, np.arange(n_pixels)])
 
-
         # Extract charge and time
         charge = 0
         peak_pos = 0
@@ -139,7 +138,7 @@ class PedestalIntegrator(PedestalCalculator):
             broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
             dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
             charge = dl1.image
-            peak_pos = dl1.peak_time
+            peak_pos = dl1.peak_time 
 
         return charge, peak_pos
 
@@ -167,7 +166,6 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.trigger_time = event.trigger.time
 
-
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -175,7 +173,6 @@ class PedestalIntegrator(PedestalCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
-
 
         self.collect_sample(charge, pixel_mask)
 
@@ -235,7 +232,6 @@ class PedestalIntegrator(PedestalCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
 
-
         n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
         shape = (sample_size, n_channels, n_pix)
@@ -243,7 +239,6 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
         self.sample_masked_pixels = np.zeros(shape)
-
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""
@@ -256,14 +251,13 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
 
-
     def calculate_pedestal_results(self, trace_integral, masked_pixels_of_sample):
         """Calculate and return the sample statistics"""
         masked_trace_integral = np.ma.array(
             trace_integral,
             mask=masked_pixels_of_sample
         )
-
+       
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
         pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
@@ -273,7 +267,6 @@ class PedestalIntegrator(PedestalCalculator):
             cenfunc="mean",
             axis=0,
         )
-
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
