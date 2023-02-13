@@ -478,7 +478,7 @@ def build_models(filegammas, fileprotons,
         # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
         disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
-        disp_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
+        disp_sign_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
         del tmp_reg_disp_norm
         del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
