@@ -478,10 +478,13 @@ def build_models(filegammas, fileprotons,
         # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
         disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        disp_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
         del tmp_reg_disp_norm
         del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
         test['reco_disp_sign'] = disp_sign
+        test['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -503,6 +506,14 @@ def build_models(filegammas, fileprotons,
 
     train = test[test['log_reco_energy'] > energy_min]
 
+    # source-dep & indep combined parameters
+    if config['source_dependent']:
+        train['reco_disp_sign_correctness'] = train['reco_disp_sign_proba']
+        select = np.sign(train['skewness']) * np.sign(train['skewness_from_source']) == -1
+        train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
+
+        train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
+    
     # Train the Classifier
 
     cls_gh = train_sep(train, custom_config=config)
@@ -596,11 +607,13 @@ def apply_models(dl1,
             cls_disp_sign = joblib.load(cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
         disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
+        disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
         del reg_disp_norm
         del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
-
+        dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -647,6 +660,15 @@ def apply_models(dl1,
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
 
+    # source-dep & indep combined parameters    
+    if config['source_dependent']:
+        dl2['reco_disp_sign_correctness'] = dl2['reco_disp_sign_proba']
+        select = np.sign(dl2['skewness']) * np.sign(dl2['skewness_from_source']) == -1
+        dl2['reco_disp_sign_correctness'][select] = 1 - dl2['reco_disp_sign_correctness'][select]
+
+        dl2['reco_disp_norm_diff'] = np.abs(dl2['dist'] - dl2['reco_disp_norm'])
+        
+    
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
