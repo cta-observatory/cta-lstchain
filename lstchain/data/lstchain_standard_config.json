@@ -286,7 +286,7 @@
       "transform_waveform": true,
       "waveform_dtype": "uint16",
       "waveform_offset": 400,
-      "waveform_scale": 1  
+      "waveform_scale": 80  
     }
   }
 }
