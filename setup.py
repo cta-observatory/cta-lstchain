@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from setuptools import setup, find_packages
 import os
@@ -41,7 +40,7 @@ setup(
     install_requires=[
         'astropy~=5.0',
         'bokeh~=2.0',
-        'ctapipe~=0.17.0',
+        'ctapipe~=0.18.0',
         'ctapipe_io_lst~=0.19.0',
         'ctaplot~=0.6.2',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
