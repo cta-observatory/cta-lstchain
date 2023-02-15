@@ -2,9 +2,10 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
+from pathlib import Path 
 from traitlets import Unicode,  Bool
 from tqdm.auto import tqdm
-
+from ctapipe.instrument.subarray import SubarrayDescription
 from ctapipe.core import Provenance, traits
 from ctapipe.io import HDF5TableWriter
 from ctapipe.core import Tool
@@ -45,6 +46,16 @@ class CatBCalibrationHDF5Writer(Tool):
         help='Name of the output file'
     ).tag(config=True)
 
+    input_path = Unicode(
+        '.',
+        help='Path of input file'
+    ).tag(config=True)
+
+    input_file_pattern = Unicode(
+        'interleaved_LST-1.Run*.*.h5',
+        help='Pattern for searching the input files with interleaved events to be processed'
+    ).tag(config=True)
+
     cat_A_calibration_file = Unicode(
         'catA_calibration.hdf5',
         help='Name of category A calibration file'
@@ -59,8 +70,10 @@ class CatBCalibrationHDF5Writer(Tool):
         ("i", "input_file"): 'EventSource.input_url',
         ("m", "max_events"): 'EventSource.max_events',
         ("o", "output_file"): 'CatBCalibrationHDF5Writer.output_file',
-        ("k", "cat_A_calibration_file"): 'CatBCalibrationHDF5Writer.cat_A_calibration_file',
-       
+        ("k", "cat_A_calibration_file"): 'CatBCalibrationHDF5Writer.cat_A_calibration_file',  
+        ("input_file_pattern"): 'CatBCalibrationHDF5Writer.input_file_pattern',
+        ("input_path"): 'CatBCalibrationHDF5Writer.input_path',      
+
     }
 
     flags = {
@@ -94,12 +107,17 @@ class CatBCalibrationHDF5Writer(Tool):
     def setup(self):
 
         self.log.debug("Opening file")
-        self.eventsource = EventSource.from_config(parent=self)
+        #self.eventsource = EventSource.from_config(parent=self)
+
+        self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
+        
+
+        self.subarray = SubarrayDescription.from_hdf(self.input_paths[0])
 
         self.processor = CalibrationCalculator.from_name(
             self.calibration_product,
             parent=self,
-            subarray = self.eventsource.subarray
+            subarray = self.subarray
         )
 
         tel_id = self.processor.tel_id
@@ -126,80 +144,81 @@ class CatBCalibrationHDF5Writer(Tool):
         new_ff = False
 
         self.log.debug("Start loop")
-        
-        for count, event in enumerate(tqdm(self.eventsource)):
-            
-            # initialize the event monitoring data
-            event.mon.tel[tel_id] = self.monitoring_data
-            
-            # save the config, to be retrieved as data.meta['config']
-            if count == 0:
-                
-                print(event.mon.tel[tel_id].pixel_status)
-
-                ped_data = event.mon.tel[tel_id].pedestal
-                add_config_metadata(ped_data, self.config)
-                add_global_metadata(ped_data, metadata)
-
-                ff_data = event.mon.tel[tel_id].flatfield
-                add_config_metadata(ff_data, self.config)
-                add_global_metadata(ff_data, metadata)
-
-                status_data = event.mon.tel[tel_id].pixel_status
-                add_config_metadata(status_data, self.config)
-                add_global_metadata(status_data, metadata)
-
-                calib_data = event.mon.tel[tel_id].calibration
-                add_config_metadata(calib_data, self.config)
-                add_global_metadata(calib_data, metadata)
-  
-            # if pedestal event
-            if self._is_pedestal(event, tel_id):
+        for path in self.input_paths:                    
+            self.log.debug(f"read {path}")
+            with EventSource(path,parent=self) as eventsource:
                
-                if self.processor.pedestal.calculate_pedestals(event):
-                    new_ped = True
-                    count_ped = count+1
+                for count, event in enumerate(tqdm(eventsource)):
+                    
+                    # initialize the event monitoring data
+                    event.mon.tel[tel_id] = self.monitoring_data
+                    
+                    # save the config, to be retrieved as data.meta['config']
+                    if count == 0:
+                        
+                        ped_data = event.mon.tel[tel_id].pedestal
+                        add_config_metadata(ped_data, self.config)
+                        add_global_metadata(ped_data, metadata)
 
-            # if flat-field event
-            elif self._is_flatfield(event, tel_id):
+                        ff_data = event.mon.tel[tel_id].flatfield
+                        add_config_metadata(ff_data, self.config)
+                        add_global_metadata(ff_data, metadata)
 
-                if self.processor.flatfield.calculate_relative_gain(event):
-                    new_ff = True
-                    count_ff = count+1
-                
-            # write flatfield results when enough statistics (also for pedestals) 
-            if (new_ff and new_ped):
-                self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
-                                
-                self.log.debug(f"Ready flatfield data at event n. {count_ff} "
-                                f"stat = {ff_data.n_events} events")
+                        status_data = event.mon.tel[tel_id].pixel_status
+                        add_config_metadata(status_data, self.config)
+                        add_global_metadata(status_data, metadata)
 
-                # write on file
-                self.writer.write('flatfield', ff_data)
+                        calib_data = event.mon.tel[tel_id].calibration
+                        add_config_metadata(calib_data, self.config)
+                        add_global_metadata(calib_data, metadata)
+        
+                    # if pedestal event
+                    if self._is_pedestal(event, tel_id):
+                    
+                        if self.processor.pedestal.calculate_pedestals(event):
+                            new_ped = True
+                            count_ped = count+1
 
-                self.log.debug(f"Ready pedestal data at event n. {count_ped} "
-                                f"stat = {ped_data.n_events} events")
+                    # if flat-field event
+                    elif self._is_flatfield(event, tel_id):
 
-                # write only pedestal data used for calibration                                 
-                self.writer.write('pedestal', ped_data)                  
+                        if self.processor.flatfield.calculate_relative_gain(event):
+                            new_ff = True
+                            count_ff = count+1
+                        
+                    # write flatfield results when enough statistics (also for pedestals) 
+                    if (new_ff and new_ped):
+                        self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
+                                        
+                        self.log.debug(f"Ready flatfield data at event n. {count_ff} "
+                                        f"stat = {ff_data.n_events} events")
 
-                new_ff = False
-                new_ped = False
-                
-                # Then, calculate calibration coefficients
-                self.processor.calculate_calibration_coefficients(event)
+                        # write on file
+                        self.writer.write('flatfield', ff_data)
 
-                # write calib and pixel status
-                self.log.debug("Write pixel_status data")
-                self.writer.write('pixel_status', status_data)
+                        self.log.debug(f"Ready pedestal data at event n. {count_ped} "
+                                        f"stat = {ped_data.n_events} events")
 
-                self.log.debug("Write calibration data")
-                self.writer.write('calibration', calib_data)
-                if self.one_event:
-                    break
+                        # write only pedestal data used for calibration                                 
+                        self.writer.write('pedestal', ped_data)                  
+
+                        new_ff = False
+                        new_ped = False
+                        
+                        # Then, calculate calibration coefficients
+                        self.processor.calculate_calibration_coefficients(event)
+
+                        # write calib and pixel status
+                        self.log.debug("Write pixel_status data")
+                        self.writer.write('pixel_status', status_data)
+
+                        self.log.debug("Write calibration data")
+                        self.writer.write('calibration', calib_data)
+                        if self.one_event:
+                            break
             
-            # store the updated version of the data
-            self.monitoring_data = event.mon.tel[tel_id]     
+                    # store the updated version of the data
+                    self.monitoring_data = event.mon.tel[tel_id]     
 
     def finish(self):
         Provenance().add_output_file(
