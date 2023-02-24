@@ -477,8 +477,10 @@ def build_models(filegammas, fileprotons,
         tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
         # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
-        disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
         disp_sign_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
+        col = list(tmp_cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
         del tmp_reg_disp_norm
         del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
@@ -606,8 +608,10 @@ def apply_models(dl1,
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
-        disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
         disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
+        col = list(cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
         del reg_disp_norm
         del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
