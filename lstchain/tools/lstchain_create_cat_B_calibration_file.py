@@ -71,6 +71,7 @@ class CatBCalibrationHDF5Writer(Tool):
         ("m", "max_events"): 'EventSource.max_events',
         ("o", "output_file"): 'CatBCalibrationHDF5Writer.output_file',
         ("k", "cat_A_calibration_file"): 'CatBCalibrationHDF5Writer.cat_A_calibration_file',  
+        ("s", "systematics_file"): "LSTCalibrationCalculator.systematic_correction_path",
         ("input_file_pattern"): 'CatBCalibrationHDF5Writer.input_file_pattern',
         ("input_path"): 'CatBCalibrationHDF5Writer.input_path',      
 
@@ -111,7 +112,6 @@ class CatBCalibrationHDF5Writer(Tool):
 
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
         
-
         self.subarray = SubarrayDescription.from_hdf(self.input_paths[0])
 
         self.processor = CalibrationCalculator.from_name(
@@ -132,6 +132,12 @@ class CatBCalibrationHDF5Writer(Tool):
 
         # initialize the monitoring data
         self.monitoring_data = read_calibration_file(self.cat_A_calibration_file)
+
+        # extract flat-fielding factor 
+        mask= self.monitoring_data.calibration.unusable_pixels
+        masked_npe = np.ma.array(self.monitoring_data.calibration.n_pe,mask=mask)
+        npe_signal_median = np.ma.median(masked_npe, axis=1)
+        self.inverse_FF_factor = self.monitoring_data.calibration.n_pe/npe_signal_median[:, np.newaxis]
         
     def start(self):
         '''Calibration coefficient calculator'''
@@ -142,7 +148,8 @@ class CatBCalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
-
+    
+        scale = np.array([1.088,1.004])
         self.log.debug("Start loop")
         for path in self.input_paths:                    
             self.log.debug(f"read {path}")
@@ -152,7 +159,13 @@ class CatBCalibrationHDF5Writer(Tool):
                     
                     # initialize the event monitoring data
                     event.mon.tel[tel_id] = self.monitoring_data
-                    
+
+                    # unscale the R1 waveform for the flat-fielding factor 
+                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
+
+                    # unscale the R1 waveform window integration scaling factor
+                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform / scale[:,np.newaxis,np.newaxis]
+
                     # save the config, to be retrieved as data.meta['config']
                     if count == 0:
                         

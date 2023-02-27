@@ -12,7 +12,7 @@
   },
   "PedestalIntegrator": {
     "sample_duration": 10000,
-    "sample_size": 500,
+    "sample_size": 1000,
     "tel_id": 1,
     "charge_median_cut_outliers": [
       -10,
@@ -26,7 +26,7 @@
   },
   "FlasherFlatFieldCalculator": {
     "sample_duration": 10000,
-    "sample_size": 500,
+    "sample_size": 1000,
     "tel_id": 1,
     "charge_product": "LocalPeakWindowSum",
     "charge_median_cut_outliers": [
