@@ -1,7 +1,7 @@
 {
   "version": 1,
   "CatBCalibrationHDF5Writer": {
-    "one_event": true,
+    "one_event": false,
     "calibration_product": "LSTCalibrationCalculator",
     "log_level": "DEBUG"
   },
@@ -14,25 +14,25 @@
   },
   "PedestalIntegrator": {
     "sample_duration": 100000,
-    "sample_size": 10000,
+    "sample_size": 1000,
     "tel_id": 1,
     "charge_median_cut_outliers": [
-      -10,
-      10
+      -15,
+      15
     ],
     "charge_std_cut_outliers": [
-      -10,
-      10
+      -15,
+      15
     ],
     "charge_product": "FixedWindowSum"
   },
   "FlasherFlatFieldCalculator": {
     "sample_duration": 1000000,
-    "sample_size": 10000,
+    "sample_size": 1000,
     "tel_id": 1,
     "charge_product": "LocalPeakWindowSum",
     "charge_median_cut_outliers": [
-      -0.9,
+      -0.5,
       0.5
     ],
     "charge_std_cut_outliers": [

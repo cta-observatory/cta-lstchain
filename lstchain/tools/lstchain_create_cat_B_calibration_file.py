@@ -163,7 +163,7 @@ class CatBCalibrationHDF5Writer(Tool):
                     event.mon.tel[tel_id] = self.monitoring_data
 
                     # unscale the R1 waveform for the flat-fielding factor 
-                    event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
+                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
 
                     # unscale the R1 waveform window integration scaling factor
                     #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform / scale[:,np.newaxis,np.newaxis]
