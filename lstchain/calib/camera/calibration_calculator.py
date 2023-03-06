@@ -236,9 +236,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
-            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.HG_LG_ratio
+            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
             
-        
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
 

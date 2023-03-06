@@ -150,7 +150,9 @@ class CatBCalibrationHDF5Writer(Tool):
         new_ff = False
     
         scale = np.array([1.088,1.004])
+        stop = False
         self.log.debug("Start loop")
+    
         for path in self.input_paths:                    
             self.log.debug(f"read {path}")
             with EventSource(path,parent=self) as eventsource:
@@ -161,7 +163,7 @@ class CatBCalibrationHDF5Writer(Tool):
                     event.mon.tel[tel_id] = self.monitoring_data
 
                     # unscale the R1 waveform for the flat-fielding factor 
-                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
+                    event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
 
                     # unscale the R1 waveform window integration scaling factor
                     #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform / scale[:,np.newaxis,np.newaxis]
@@ -227,11 +229,19 @@ class CatBCalibrationHDF5Writer(Tool):
 
                         self.log.debug("Write calibration data")
                         self.writer.write('calibration', calib_data)
+                        
                         if self.one_event:
-                            break
-            
+                            stop = True                
+                    
+                    if stop:
+                        break
+
                     # store the updated version of the data
-                    self.monitoring_data = event.mon.tel[tel_id]     
+                    self.monitoring_data = event.mon.tel[tel_id]
+
+            if stop:
+                break  
+                     
 
     def finish(self):
         Provenance().add_output_file(
