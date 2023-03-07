@@ -1,7 +1,7 @@
 {
   "version": 1,
   "CatBCalibrationHDF5Writer": {
-    "one_event": false,
+    "one_event": true,
     "calibration_product": "LSTCalibrationCalculator",
     "log_level": "DEBUG"
   },

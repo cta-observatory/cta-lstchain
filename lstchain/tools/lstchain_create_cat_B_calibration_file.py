@@ -196,7 +196,9 @@ class CatBCalibrationHDF5Writer(Tool):
 
                     # if flat-field event
                     elif self._is_flatfield(event, tel_id):
-
+                        if np.median(np.sum(event.r1.tel[1].waveform[0,0]))< 30: 
+                            print(np.median(np.sum(event.r1.tel[1].waveform[0,0])))
+                            print(event.index.event_id)
                         if self.processor.flatfield.calculate_relative_gain(event):
                             new_ff = True
                             count_ff = count+1
