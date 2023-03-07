@@ -331,7 +331,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             cenfunc="mean",
             axis=0,
         )
-
+        
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
