@@ -132,9 +132,9 @@ def main():
     image_mask = data_images['image_mask']
 
     print("Original standard cleaning, pixel survival probabilities:")
-    print('  Minimum: ', np.mean(image_mask, axis=0).min())
-    print('  Maximum: ', np.mean(image_mask, axis=0).max())
-    print('  Mean: ', np.mean(image_mask, axis=0).mean())
+    print('  Minimum: ', np.round(np.mean(image_mask, axis=0).min(), 5))
+    print('  Maximum: ', np.round(np.mean(image_mask, axis=0).max(), 5))
+    print('  Mean: ', np.round(np.mean(image_mask, axis=0).mean(), 5))
 
     # NOTE: for files which have no interleaved pedestals or which have too few
     # because it is the last subrun in a run, we may have trouble...
@@ -176,7 +176,7 @@ def main():
     if fraction_of_survival > max_survival_fraction:
         print("Fraction in CRs of pixels with >",
               min_charge_for_certain_selection, "pe & neighbors:",
-              fraction_of_survival, "higher than maximum allowed:",
+              np.round(fraction_of_survival, 3), "higher than maximum allowed:",
               max_survival_fraction)
         # Modify the value of min_charge_for_certain_selection to get a lower
         # survival fraction
@@ -236,7 +236,7 @@ def main():
     cr_masks = selected_pixels_masks[(event_type_data==32)]
     fraction_of_survival = cr_masks.sum() / len(cr_masks.flatten())
     print("Fraction in CRs of pixels with >", min_charge_for_certain_selection,
-          "pe & neighbors:", fraction_of_survival)
+          "pe & neighbors:", np.round(fraction_of_survival, 3))
 
     # Keep track of how many events were fully saved (whole camera)>
     summary_info.fraction_of_full_CR_events = \
