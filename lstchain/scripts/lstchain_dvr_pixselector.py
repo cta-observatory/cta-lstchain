@@ -80,8 +80,11 @@ def main():
     summary_info.run_id = run_id
     summary_info.subrun_id = subrun_id
 
-    output_dir = args.output_dir
-    output_file = output_dir + f'/Pixel_selection_LST-1.Run{run_id:d}.{subrun_id:04d}.h5'
+
+    output_dir = args.output_dir.absolute()
+    output_dir.mkdir(exist_ok=True, parents=True)
+    output_file = Path(output_dir, f'/Pixel_selection_LST-1.Run{run_id:d}.'
+                                   f'{subrun_id:04d}.h5')
     print('Output file: ', output_file)
 
     data_parameters = read_table(dl1_file,
