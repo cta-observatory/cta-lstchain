@@ -17,7 +17,7 @@ parser.add_argument('-f', '--dl1-file', dest='dl1_file',
                     type=Path,
                     help='Input DL1 file name')
 parser.add_argument('-o', '--output-dir', dest='output_dir',
-                    type=Path, default='./',
+                    type=Path, default=Path('./'),
                     help='Path to the output directory')
 parser.add_argument('-t', '--picture-threshold', dest='picture_threshold',
                     type=float, default=8.,
