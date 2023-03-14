@@ -46,7 +46,8 @@ class RunSummary(Container):
     min_pixel_survival_fraction = Field(np.float32(np.nan), 'min_pixel_survival_fraction')
     max_pixel_survival_fraction = Field(np.float32(np.nan), 'max_pixel_survival_fraction')
     mean_pixel_survival_fraction = Field(np.float32(np.nan), 'mean_pixel_survival_fraction')
-    fraction_of_full_CR_events = Field(np.float32(np.nan), 'fraction_of_full_CR_events')
+    fraction_of_full_shower_events = Field(np.float32(np.nan),
+                                           'fraction_of_full_shower_events')
     number_of_always_saved_pixels = Field(0, 'number_of_always_saved_pixels')
     ped_mean = Field(np.float32(np.nan), '')  # photo-electrons
     ped_stdev = Field(np.float32(np.nan), '') # photo-electrons
@@ -156,7 +157,7 @@ def main():
     # rate
 
     selected_pixels_masks = []
-    # Check what fraction of cosmics is kept with the current value of
+    # Check what fraction of shower events is kept with the current value of
     # min_charge_for_certain_selection
 
     for event_index in range(len(charges_data)):
@@ -174,7 +175,7 @@ def main():
                             len(selected_pixels_masks.flatten()))
 
     if fraction_of_survival > max_survival_fraction:
-        print("Fraction in CRs of pixels with >",
+        print("Fraction in shower events of pixels with >",
               min_charge_for_certain_selection, "pe & neighbors:",
               np.round(fraction_of_survival, 3), "higher than maximum allowed:",
               max_survival_fraction)
@@ -230,18 +231,19 @@ def main():
 
     cr_masks = selected_pixels_masks[(event_type_data==32)]
     fraction_of_survival = cr_masks.sum() / len(cr_masks.flatten())
-    print("Fraction in CRs of pixels with >", min_charge_for_certain_selection,
+    print("Fraction in shower events of pixels with >",
+          min_charge_for_certain_selection,
           "pe & neighbors:", np.round(fraction_of_survival, 3))
 
     num_sel_pixels = np.array(num_sel_pixels)
-    print('Average number of selected pixels per event:',
+    print('Average number of selected pixels per event (of any type):',
           np.round(num_sel_pixels.sum() / len(data_parameters), 2))
-    print(f'Fraction: '
+    print(f'Fraction of whole camera: '
           f'{num_sel_pixels.sum()/len(data_parameters)/camera_geom.n_pixels:.3f}')
 
 
     # Keep track of how many events were fully saved (whole camera)>
-    summary_info.fraction_of_full_CR_events = \
+    summary_info.fraction_of_full_shower_events = \
         np.round((np.sum(selected_pixels_masks[(data_parameters['event_type']==32)],
                          axis=1) ==  camera_geom.n_pixels).sum() /
                          (data_parameters['event_type']==32).sum(), 5)
