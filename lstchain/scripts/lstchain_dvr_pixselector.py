@@ -227,16 +227,18 @@ def main():
             highest_removed_charge.append(0.)
 
     selected_pixels_masks = np.array(selected_pixels_masks)
-    num_sel_pixels = np.array(num_sel_pixels)
-
-    print('selected pixels per event:', num_sel_pixels.sum()/len(data_parameters))
-    print(f'Fraction: '
-          f'{num_sel_pixels.sum()/len(data_parameters)/camera_geom.n_pixels:.3f}')
 
     cr_masks = selected_pixels_masks[(event_type_data==32)]
     fraction_of_survival = cr_masks.sum() / len(cr_masks.flatten())
     print("Fraction in CRs of pixels with >", min_charge_for_certain_selection,
           "pe & neighbors:", np.round(fraction_of_survival, 3))
+
+    num_sel_pixels = np.array(num_sel_pixels)
+    print('Average number of selected pixels per event:',
+          np.round(num_sel_pixels.sum() / len(data_parameters), 2))
+    print(f'Fraction: '
+          f'{num_sel_pixels.sum()/len(data_parameters)/camera_geom.n_pixels:.3f}')
+
 
     # Keep track of how many events were fully saved (whole camera)>
     summary_info.fraction_of_full_CR_events = \
