@@ -257,7 +257,8 @@ def main():
     summary_info.mean_pixel_survival_fraction = np.round(np.mean(pixel_survival_fraction), 5)
 
     data = PixelMask()
-    writer_conf = tables.Filters(complevel=5, complib='blosc:zstd', fletcher32=True)
+#    writer_conf = tables.Filters(complevel=5, complib='blosc:zstd', fletcher32=True)
+    writer_conf = tables.Filters(complevel=9, fletcher32=True)
     with HDF5TableWriter(output_file, filters=writer_conf) as writer:
         for evid, evtype, std_clean_npixels, highestQ, pixmask in zip(
                 event_ids, event_type_data, data_parameters['n_pixels'],
