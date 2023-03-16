@@ -10,6 +10,7 @@ from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
 from ctapipe.io import HDF5TableWriter
+from ctapipe.containers import EventType
 
 parser = argparse.ArgumentParser(description="DVR pixel selector")
 
@@ -107,6 +108,9 @@ def main():
     summary_info.number_of_events = number_of_events
 
     event_type_data = data_parameters['event_type']
+    cosmic_mask   = event_type_data == EventType.SUBARRAY.value
+    pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
+
     data_images = read_table(dl1_file, "/dl1/event/telescope/image/LST_LSTCam")
 
     data_calib = read_table(dl1_file, "/dl1/event/telescope/monitoring/calibration")
@@ -140,13 +144,13 @@ def main():
     # NOTE: for files which have no interleaved pedestals or which have too few
     # because it is the last subrun in a run, we may have trouble...
 
-    ped_mean = np.nanmean(charges_data[event_type_data==2], axis=0)
+    ped_mean = np.nanmean(charges_data[pedestal_mask], axis=0)
     # Exclude 10% of brightest pixels (to avoid influence of stars, here we want
     # to estimate the "~diffuse" NSB, or "average in the bulk of the pixels, not
     # including bright stars")
     ninety_percent_dimmest_pixels = np.argsort(ped_mean)[:-int(len(ped_mean)*0.1)]
     # pedestal charges for those 90% of the pixels:
-    pq = charges_data[event_type_data==2][:,ninety_percent_dimmest_pixels].flatten()
+    pq = charges_data[pedestal_mask][:,ninety_percent_dimmest_pixels].flatten()
     # Cut that keeps a given fraction (pedcutfraction) of the pedestal charges:
 
     charge_per_mil_pedestal = np.sort(pq)[-int(ped_cut_fraction*len(pq))]
@@ -160,15 +164,13 @@ def main():
     # Check what fraction of shower events is kept with the current value of
     # min_charge_for_certain_selection
 
-    for event_index in range(len(charges_data)):
-        if event_type_data[event_index] != 32:
-            continue # skip interleaved events
-        charge_map = charges_data[event_index]
+    for charge_map, event_type in zip(charges_data, event_type_data):
         selected_pixels = get_selected_pixels(charge_map,
                                               min_charge_for_certain_selection,
                                               number_of_rings, camera_geom,
-                                              data_parameters['event_type'][event_index])
+                                              event_type)
         selected_pixels_masks.append(selected_pixels)
+
     selected_pixels_masks = np.array(selected_pixels_masks)
 
     fraction_of_survival = (selected_pixels_masks.sum() /
@@ -188,7 +190,7 @@ def main():
     summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
     # Cuts to identify promising muon ring candidates:
-    mucan_event_list = np.where((event_type_data==32) &
+    mucan_event_list = np.where(cosmic_mask &
                                 (data_parameters['intensity']>1000) &
                                 (data_parameters['length']>0.5) &
                                 (data_parameters['n_pixels']>50) &
@@ -205,23 +207,25 @@ def main():
     full_camera = np.array(camera_geom.n_pixels*[True])
 
     for event_index in range(len(charges_data)):
+    for charge_map, event_id, event_type in zip(charges_data,
+                                                data_parameters['event_id'],
+                                                event_type_data):
         # keep full camera for muon candidates:
-        if data_parameters['event_id'][event_index] in mucan_event_id_list:
+        if event_id in mucan_event_id_list:
             selected_pixels = full_camera
         else:
-            charge_map = charges_data[event_index]
             selected_pixels = get_selected_pixels(charge_map,
                                                   min_charge_for_certain_selection,
                                                   number_of_rings,
                                                   camera_geom,
-                                                  data_parameters['event_type'][event_index])
+                                                  event_type)
         # Include pixels that must be kept for all events:
         selected_pixels |= keep_always_mask
     
         num_sel_pixels.append(selected_pixels.sum())
         selected_pixels_masks.append(selected_pixels)
     
-        event_ids.append(data_parameters['event_id'][event_index])
+        event_ids.append(event_id)
         if selected_pixels.sum() < camera_geom.n_pixels:
             highest_removed_charge.append(np.nanmax(charge_map[~selected_pixels]))
         else:
@@ -229,7 +233,7 @@ def main():
 
     selected_pixels_masks = np.array(selected_pixels_masks)
 
-    cr_masks = selected_pixels_masks[(event_type_data==32)]
+    cr_masks = selected_pixels_masks[cosmic_mask]
     fraction_of_survival = cr_masks.sum() / len(cr_masks.flatten())
     print("Fraction in shower events of pixels with >",
           min_charge_for_certain_selection,
@@ -242,14 +246,14 @@ def main():
           f'{num_sel_pixels.sum()/len(data_parameters)/camera_geom.n_pixels:.3f}')
 
 
-    # Keep track of how many events were fully saved (whole camera)>
+    # Keep track of how many cosmic events were fully saved (whole camera)>
     summary_info.fraction_of_full_shower_events = \
-        np.round((np.sum(selected_pixels_masks[(data_parameters['event_type']==32)],
-                         axis=1) ==  camera_geom.n_pixels).sum() /
-                         (data_parameters['event_type']==32).sum(), 5)
+        np.round((np.sum(selected_pixels_masks[cosmic_mask],
+                         axis=1) == camera_geom.n_pixels).sum() /
+                         cosmic_mask.sum(), 5)
 
-    summary_info.ped_mean = np.round(np.mean(charges_data[(data_parameters['event_type']==2)]), 3)
-    summary_info.ped_stdev = np.round(np.std(charges_data[(data_parameters['event_type']==2)]), 3)
+    summary_info.ped_mean = np.round(np.mean(charges_data[pedestal_mask]),3)
+    summary_info.ped_stdev = np.round(np.std(charges_data[pedestal_mask]), 3)
 
     pixel_survival_fraction = np.mean(selected_pixels_masks, axis=0)
     summary_info.min_pixel_survival_fraction = np.round(np.min(pixel_survival_fraction), 5)
@@ -257,7 +261,6 @@ def main():
     summary_info.mean_pixel_survival_fraction = np.round(np.mean(pixel_survival_fraction), 5)
 
     data = PixelMask()
-#    writer_conf = tables.Filters(complevel=5, complib='blosc:zstd', fletcher32=True)
     writer_conf = tables.Filters(complevel=9, fletcher32=True)
     with HDF5TableWriter(output_file, filters=writer_conf) as writer:
         for evid, evtype, std_clean_npixels, highestQ, pixmask in zip(
@@ -293,7 +296,8 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
     geom: camera geometry
 
-    event_type: physics trigger (32) interleaved flat-field(0) or pedestal (2)
+    event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
+    unknown(255)  are those currently in use in LST1
 
     min_npixels_for_full_event: full camera will be selected for events with
     more than this number of pixels passing the standard selection
@@ -304,10 +308,21 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
     """
 
-    # Keep all pixels in interleaved pedestal and flatfield events:
-    if event_type != 32:
-        return np.array(geom.n_pixels * [True])
+    # the pixel selection will be applied only to "physics triggers" (showers),
+    # not to other events like interleaved pedestal and flatfield events:
+    event_types_to_be_reduced = [EventType.SUBARRAY.value,
+                                 EventType.UNKNOWN.value,
+                                 EventType.HARDWARE_STEREO.value,
+                                 EventType.DAQ.value]
+    # Note: some of these types are not yet in use
+    # Chances are that pixels labeled as "unknown" are cosmics, so we include
+    # them among the types to be reduced.
 
+    selected_pixels = np.array(geom.n_pixels * [True])
+    if event_type not in event_types_to_be_reduced:
+        return selected_pixels
+
+    # Now proceed with the identification of interesting pixels to be saved
     selected_pixels = np.array(geom.n_pixels * [False])
 
     # Keep pixels that have a charge above min_charge_for_certain_selection:
