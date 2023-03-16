@@ -206,7 +206,6 @@ def main():
 
     full_camera = np.array(camera_geom.n_pixels*[True])
 
-    for event_index in range(len(charges_data)):
     for charge_map, event_id, event_type in zip(charges_data,
                                                 data_parameters['event_id'],
                                                 event_type_data):
