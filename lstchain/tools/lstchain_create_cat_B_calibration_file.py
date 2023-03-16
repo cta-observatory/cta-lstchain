@@ -3,6 +3,7 @@ Extract flat field coefficients from flasher data files.
 """
 import numpy as np
 from pathlib import Path 
+from copy import deepcopy
 from traitlets import Unicode,  Bool
 from tqdm.auto import tqdm
 from ctapipe.instrument.subarray import SubarrayDescription
@@ -99,7 +100,7 @@ class CatBCalibrationHDF5Writer(Tool):
         Input file must contain interleaved pedestal and flat-field events
 
         For getting help run:
-            lstchain_create_catA_calibration_file --help
+            lstchain_create_catB_calibration_file --help
         """
         self.eventsource = None
         self.processor = None
@@ -108,7 +109,6 @@ class CatBCalibrationHDF5Writer(Tool):
     def setup(self):
 
         self.log.debug("Opening file")
-        #self.eventsource = EventSource.from_config(parent=self)
 
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
         
@@ -131,13 +131,7 @@ class CatBCalibrationHDF5Writer(Tool):
         )
 
         # initialize the monitoring data
-        self.monitoring_data = read_calibration_file(self.cat_A_calibration_file)
-
-        # extract flat-fielding factor 
-        mask= self.monitoring_data.calibration.unusable_pixels
-        masked_npe = np.ma.array(self.monitoring_data.calibration.n_pe,mask=mask)
-        npe_signal_median = np.ma.median(masked_npe, axis=1)
-        self.inverse_FF_factor = self.monitoring_data.calibration.n_pe/npe_signal_median[:, np.newaxis]
+        self.cat_A_monitoring_data = read_calibration_file(self.cat_A_calibration_file)
         
     def start(self):
         '''Calibration coefficient calculator'''
@@ -149,25 +143,22 @@ class CatBCalibrationHDF5Writer(Tool):
         new_ped = False
         new_ff = False
     
-        scale = np.array([1.088,1.004])
         stop = False
         self.log.debug("Start loop")
+        
+        # initialize the monitoring data with the cat-A calibration
+        monitoring_data = deepcopy(self.cat_A_monitoring_data)
     
         for path in self.input_paths:                    
             self.log.debug(f"read {path}")
+
             with EventSource(path,parent=self) as eventsource:
-               
+     
                 for count, event in enumerate(tqdm(eventsource)):
-                    
-                    # initialize the event monitoring data
-                    event.mon.tel[tel_id] = self.monitoring_data
 
-                    # unscale the R1 waveform for the flat-fielding factor 
-                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform * self.inverse_FF_factor[:,:,np.newaxis]
-
-                    # unscale the R1 waveform window integration scaling factor
-                    #event.r1.tel[tel_id].waveform = event.r1.tel[tel_id].waveform / scale[:,np.newaxis,np.newaxis]
-
+                     # initialize the event monitoring data for event (to be improved)
+                    event.mon.tel[tel_id] = monitoring_data
+                             
                     # save the config, to be retrieved as data.meta['config']
                     if count == 0:
                         
@@ -196,9 +187,7 @@ class CatBCalibrationHDF5Writer(Tool):
 
                     # if flat-field event
                     elif self._is_flatfield(event, tel_id):
-                        if np.median(np.sum(event.r1.tel[1].waveform[0,0]))< 30: 
-                            print(np.median(np.sum(event.r1.tel[1].waveform[0,0])))
-                            print(event.index.event_id)
+
                         if self.processor.flatfield.calculate_relative_gain(event):
                             new_ff = True
                             count_ff = count+1
@@ -225,9 +214,12 @@ class CatBCalibrationHDF5Writer(Tool):
                         # Then, calculate calibration coefficients
                         self.processor.calculate_calibration_coefficients(event)
 
+                        # Set the time correction relative to the Cat-A calibration so to avoid to decalibrate (as for dc_to_pe)
+                        calib_data.time_correction -= self.cat_A_monitoring_data.calibration.time_correction 
+
                         # write calib and pixel status
                         self.log.debug("Write pixel_status data")
-                        self.writer.write('pixel_status', status_data)
+                        self.writer.write('pixel_status', status_data) 
 
                         self.log.debug("Write calibration data")
                         self.writer.write('calibration', calib_data)
@@ -238,8 +230,8 @@ class CatBCalibrationHDF5Writer(Tool):
                     if stop:
                         break
 
-                    # store the updated version of the data
-                    self.monitoring_data = event.mon.tel[tel_id]
+                    # store the monitoring data for the next event
+                    monitoring_data = event.mon.tel[tel_id]
 
             if stop:
                 break  

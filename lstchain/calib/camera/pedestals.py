@@ -257,7 +257,7 @@ class PedestalIntegrator(PedestalCalculator):
             trace_integral,
             mask=masked_pixels_of_sample
         )
-       
+
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
         pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
@@ -267,6 +267,7 @@ class PedestalIntegrator(PedestalCalculator):
             cenfunc="mean",
             axis=0,
         )
+        
         unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
         # only warn for values discard in the sigma clipping, not those from before
         outliers = unused_values & (~masked_trace_integral.mask)
@@ -274,7 +275,7 @@ class PedestalIntegrator(PedestalCalculator):
 
         # ignore outliers identified by sigma clipping also for following operations
         masked_trace_integral.mask = unused_values
-
+    
         # median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
