@@ -84,7 +84,7 @@ def main():
 
     output_dir = args.output_dir.absolute()
     output_dir.mkdir(exist_ok=True, parents=True)
-    output_file = Path(output_dir, f'Pixel_selection_LST-1.Run{run_id:d}.'
+    output_file = Path(output_dir, f'Pixel_selection_LST-1.Run{run_id:05d}.'
                                    f'{subrun_id:04d}.h5')
     print('Output file: ', output_file)
 
