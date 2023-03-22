@@ -61,18 +61,25 @@ def main():
 
     # By default use the provided picture threshold to keep pixels:
     min_charge_for_certain_selection = args.picture_threshold
+
+    # For the record, keep the input "picture threshold". It is not necessarily
+    # the value that will be used for pixel selection, if it allows too many
+    # pixels too survive.
+    summary_info.picture_threshold = args.picture_threshold
+
     # Value will be modified, if a too high average fraction (
-    # > max_survival_fraction) of pixels survive
-    # with that cut
+    # > max_survival_fraction) of pixels (and FIRST neighbors) survive
+    # with that picture threshold
     max_survival_fraction = 0.15
-    # The new value will be the charge above which a fraction ped_cut_fraction
-    # of pedestal charges lie. This will be computed using the 90% of pixels
-    # with lower mean pedestal (to avoid pixels illuminated by bright stars to
-    # dominate the calculation)
+
+    # The new value, if survival fraction turns out to be too high, will be the
+    # charge above which a fraction ped_cut_fraction of pedestal charges lie.
+    # This will be computed using the 90% of pixels with lower mean pedestal
+    # (to avoid pixels illuminated by bright stars to dominate the calculation)
     ped_cut_fraction = 0.001
 
-    # Number of "rings" of pixels to be kept around pixels which are above
-    # min_charge_for_certain_selection
+    # Number of "rings" of pixels to be finally kept around pixels which are
+    # above min_charge_for_certain_selection
     number_of_rings = args.number_of_rings
     summary_info.number_of_rings = number_of_rings
 
@@ -161,13 +168,16 @@ def main():
     # rate
 
     selected_pixels_masks = []
-    # Check what fraction of shower events is kept with the current value of
-    # min_charge_for_certain_selection
+    # Check what fraction of pixels in shower events is kept with the current
+    # value of min_charge_for_certain_selection (and ONE ring of neighbors)
 
     for charge_map, event_type in zip(charges_data, event_type_data):
+        # use only shower events:
+        if event_type != EventType.SUBARRAY.value:
+            continue
         selected_pixels = get_selected_pixels(charge_map,
                                               min_charge_for_certain_selection,
-                                              number_of_rings, camera_geom,
+                                              1, camera_geom,
                                               event_type)
         selected_pixels_masks.append(selected_pixels)
 
@@ -178,7 +188,7 @@ def main():
 
     if fraction_of_survival > max_survival_fraction:
         print("Fraction in shower events of pixels with >",
-              min_charge_for_certain_selection, "pe & neighbors:",
+              min_charge_for_certain_selection, "pe & first neighbors:",
               np.round(fraction_of_survival, 3), "higher than maximum allowed:",
               max_survival_fraction)
         # Modify the value of min_charge_for_certain_selection to get a lower
