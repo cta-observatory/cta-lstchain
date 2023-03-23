@@ -330,17 +330,16 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
     if event_type not in event_types_to_be_reduced:
         return selected_pixels
 
-    # Now proceed with the identification of interesting pixels to be saved
-    selected_pixels = np.array(geom.n_pixels * [False])
-
+    # Now proceed with the identification of interesting pixels to be saved.
     # Keep pixels that have a charge above min_charge_for_certain_selection:
-    selected_pixels |= (charge_map > min_charge_for_certain_selection)
+    selected_pixels = (charge_map > min_charge_for_certain_selection)
 
     # Add "number_of_rings" rings of pixels around the already selected ones:
     for ring in range(number_of_rings):
-        additional_pixels = np.array(geom.n_pixels * [False])
-        for pix in geom.pix_id[selected_pixels]:
-            additional_pixels |= geom.neighbor_matrix[pix]
+        # we add-up (sum) the selected-pixel-wise map of neighbors, to find
+        # those who appear at least once (>0). Those should be added:
+        additional_pixels = (np.sum(geom.neighbor_matrix[selected_pixels],
+                                    axis=0)>0)
         selected_pixels |= additional_pixels
 
     # if more than min_npixels_for_full_event were selected, keep whole camera:
