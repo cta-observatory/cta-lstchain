@@ -56,8 +56,18 @@ class RunSummary(Container):
 
 def main():
     args = parser.parse_args()
-
     summary_info = RunSummary()
+
+    # The pixel selection will be applied only to "physics triggers"
+    # (showers), not to other events like interleaved pedestal and flatfield
+    # events:
+    event_types_to_be_reduced = [EventType.SUBARRAY.value,
+                                 EventType.UNKNOWN.value,
+                                 EventType.HARDWARE_STEREO.value,
+                                 EventType.DAQ.value]
+    # (Note: some of these types are not yet in use). Chances are that pixels
+    # labeled as "unknown" are cosmics, so we include them among the types to
+    # be reduced.
 
     # By default use the provided picture threshold to keep pixels:
     min_charge_for_certain_selection = args.picture_threshold
@@ -68,9 +78,9 @@ def main():
     summary_info.picture_threshold = args.picture_threshold
 
     # Value will be modified, if a too high average fraction (
-    # > max_survival_fraction) of pixels (and FIRST neighbors) survive
-    # with that picture threshold
-    max_survival_fraction = 0.15
+    # > max_pix_survival_fraction_in_ped) of pixels (and FIRST neighbors)
+    # survive, in pedestal events, with that picture threshold
+    max_pix_survival_fraction_in_ped = 0.05
 
     # The new value, if survival fraction turns out to be too high, will be the
     # charge above which a fraction ped_cut_fraction of pedestal charges lie.
@@ -115,6 +125,9 @@ def main():
     summary_info.number_of_events = number_of_events
 
     event_type_data = data_parameters['event_type']
+    # event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
+    # unknown(255)  are those currently in use in LST1
+
     cosmic_mask   = event_type_data == EventType.SUBARRAY.value
     pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
 
@@ -168,35 +181,37 @@ def main():
     # rate
 
     selected_pixels_masks = []
-    # Check what fraction of pixels in shower events is kept with the current
+    # Check what fraction of pixels in PEDESTAL events is kept with the current
     # value of min_charge_for_certain_selection (and ONE ring of neighbors)
 
-    for charge_map, event_type in zip(charges_data, event_type_data):
-        # use only shower events:
-        if event_type != EventType.SUBARRAY.value:
-            continue
-        selected_pixels = get_selected_pixels(charge_map,
-                                              min_charge_for_certain_selection,
-                                              1, camera_geom,
-                                              event_type)
-        selected_pixels_masks.append(selected_pixels)
+    fraction_of_survival = 1.
+    while fraction_of_survival > max_pix_survival_fraction_in_ped:
+        for charge_map, event_type in zip(charges_data, event_type_data):
+            # use only pedestal events:
+            if event_type != EventType.SKY_PEDESTAL.value:
+                continue
+            selected_pixels = get_selected_pixels(charge_map,
+                                                  min_charge_for_certain_selection,
+                                                  1, camera_geom)
+            selected_pixels_masks.append(selected_pixels)
 
-    selected_pixels_masks = np.array(selected_pixels_masks)
+        selected_pixels_masks = np.array(selected_pixels_masks)
+        fraction_of_survival = (selected_pixels_masks.sum() /
+                                len(selected_pixels_masks.flatten()))
+        if fraction_of_survival <= max_pix_survival_fraction_in_ped:
+            break
 
-    fraction_of_survival = (selected_pixels_masks.sum() /
-                            len(selected_pixels_masks.flatten()))
-
-    if fraction_of_survival > max_survival_fraction:
         print("Fraction in shower events of pixels with >",
               min_charge_for_certain_selection, "pe & first neighbors:",
               np.round(fraction_of_survival, 3), "is higher than maximum "
                                                  "allowed:",
-              max_survival_fraction)
+              max_pix_survival_fraction_in_ped)
         # Modify the value of min_charge_for_certain_selection to get a lower
         # survival fraction
-        min_charge_for_certain_selection = charge_per_mil_pedestal
-        print("min_charge_for_certain_selection changed to",
-              min_charge_for_certain_selection)
+        min_charge_for_certain_selection += 1.
+
+    print("min_charge_for_certain_selection changed to",
+          min_charge_for_certain_selection)
 
     summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
@@ -223,12 +238,14 @@ def main():
         # keep full camera for muon candidates:
         if event_id in mucan_event_id_list:
             selected_pixels = full_camera
+        elif event_type not in event_types_to_be_reduced:
+            selected_pixels = full_camera
         else:
             selected_pixels = get_selected_pixels(charge_map,
                                                   min_charge_for_certain_selection,
                                                   number_of_rings,
-                                                  camera_geom,
-                                                  event_type)
+                                                  camera_geom)
+
         # Include pixels that must be kept for all events:
         selected_pixels |= keep_always_mask
     
@@ -288,7 +305,7 @@ def main():
 
 
 def get_selected_pixels(charge_map, min_charge_for_certain_selection,
-                        number_of_rings, geom, event_type,
+                        number_of_rings, geom,
                         min_npixels_for_full_event=500):
     """
     Function to select the pixels which likely contain a Cherenkov signal
@@ -305,9 +322,6 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
     geom: camera geometry
 
-    event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
-    unknown(255)  are those currently in use in LST1
-
     min_npixels_for_full_event: full camera will be selected for events with
     more than this number of pixels passing the standard selection
 
@@ -317,20 +331,7 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
 
     """
 
-    # the pixel selection will be applied only to "physics triggers" (showers),
-    # not to other events like interleaved pedestal and flatfield events:
-    event_types_to_be_reduced = [EventType.SUBARRAY.value,
-                                 EventType.UNKNOWN.value,
-                                 EventType.HARDWARE_STEREO.value,
-                                 EventType.DAQ.value]
-    # Note: some of these types are not yet in use
-    # Chances are that pixels labeled as "unknown" are cosmics, so we include
-    # them among the types to be reduced.
-
-    if event_type not in event_types_to_be_reduced:
-        return np.array(geom.n_pixels * [True])
-
-    # Now proceed with the identification of interesting pixels to be saved.
+    # Proceed with the identification of interesting pixels to be saved.
     # Keep pixels that have a charge above min_charge_for_certain_selection:
     selected_pixels = (charge_map > min_charge_for_certain_selection)
 
