@@ -180,12 +180,12 @@ def main():
     # fixed value picture_threshold unless it results in a too high survival
     # rate
 
-    selected_pixels_masks = []
     # Check what fraction of pixels in PEDESTAL events is kept with the current
     # value of min_charge_for_certain_selection (and ONE ring of neighbors)
 
     fraction_of_survival = 1.
     while fraction_of_survival > max_pix_survival_fraction_in_ped:
+        selected_pixels_masks = []
         for charge_map, event_type in zip(charges_data, event_type_data):
             # use only pedestal events:
             if event_type != EventType.SKY_PEDESTAL.value:
