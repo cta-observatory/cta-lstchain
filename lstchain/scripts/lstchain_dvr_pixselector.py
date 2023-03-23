@@ -201,7 +201,7 @@ def main():
         if fraction_of_survival <= max_pix_survival_fraction_in_ped:
             break
 
-        print("Fraction in shower events of pixels with >",
+        print("Fraction in pedestal events of pixels with >",
               min_charge_for_certain_selection, "pe & first neighbors:",
               np.round(fraction_of_survival, 3), "is higher than maximum "
                                                  "allowed:",
@@ -213,7 +213,7 @@ def main():
     if min_charge_for_certain_selection > args.picture_threshold:
         print("min_charge_for_certain_selection changed to",
               min_charge_for_certain_selection)
-    print("Fraction in shower events of pixels with >",
+    print("Fraction in pedestal events of pixels with >",
           min_charge_for_certain_selection, "pe & first neighbors:",
           np.round(fraction_of_survival, 3)),
 
