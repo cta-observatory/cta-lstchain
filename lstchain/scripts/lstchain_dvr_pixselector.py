@@ -66,8 +66,8 @@ def main():
                                  EventType.HARDWARE_STEREO.value,
                                  EventType.DAQ.value]
     # (Note: some of these types are not yet in use). Chances are that pixels
-    # labeled as "unknown" are cosmics, so we include them among the types to
-    # be reduced.
+    # labeled as "unknown" are cosmics (=showers), so we include them among the
+    # types to be reduced.
 
     # By default use the provided picture threshold to keep pixels:
     min_charge_for_certain_selection = args.picture_threshold
@@ -78,15 +78,13 @@ def main():
     summary_info.picture_threshold = args.picture_threshold
 
     # Value will be modified, if a too high average fraction (
-    # > max_pix_survival_fraction_in_ped) of pixels (and FIRST neighbors)
-    # survive, in pedestal events, with that picture threshold
-    max_pix_survival_fraction_in_ped = 0.05
+    # > max_pix_survival_fraction) of pixels (and FIRST neighbors)
+    # survive, in shower events, with that picture threshold. The value is
+    # computed excluding the 10% noisiest pixels in the camera, because we
+    # want it to be stable when e.g. stars get in and out of the camera,
+    # or when changing wobbles (star field changes)
+    max_pix_survival_fraction = 0.1
 
-    # The new value, if survival fraction turns out to be too high, will be the
-    # charge above which a fraction ped_cut_fraction of pedestal charges lie.
-    # This will be computed using the 90% of pixels with lower mean pedestal
-    # (to avoid pixels illuminated by bright stars to dominate the calculation)
-    ped_cut_fraction = 0.001
 
     # Number of "rings" of pixels to be finally kept around pixels which are
     # above min_charge_for_certain_selection
@@ -128,7 +126,7 @@ def main():
     # event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
     # unknown(255)  are those currently in use in LST1
 
-    cosmic_mask   = event_type_data == EventType.SUBARRAY.value
+    cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
     pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
 
     data_images = read_table(dl1_file, "/dl1/event/telescope/image/LST_LSTCam")
@@ -161,51 +159,41 @@ def main():
     print('  Maximum: ', np.round(np.mean(image_mask, axis=0).max(), 5))
     print('  Mean: ', np.round(np.mean(image_mask, axis=0).mean(), 5))
 
-    # NOTE: for files which have no interleaved pedestals or which have too few
-    # because it is the last subrun in a run, we may have trouble...
-
-    ped_mean = np.nanmean(charges_data[pedestal_mask], axis=0)
-    # Exclude 10% of brightest pixels (to avoid influence of stars, here we want
-    # to estimate the "~diffuse" NSB, or "average in the bulk of the pixels, not
-    # including bright stars")
-    ninety_percent_dimmest_pixels = np.argsort(ped_mean)[:-int(len(ped_mean)*0.1)]
-    # pedestal charges for those 90% of the pixels:
-    pq = charges_data[pedestal_mask][:,ninety_percent_dimmest_pixels].flatten()
-    # Cut that keeps a given fraction (pedcutfraction) of the pedestal charges:
-
-    charge_per_mil_pedestal = np.sort(pq)[-int(ped_cut_fraction*len(pq))]
-    charge_per_mil_pedestal = np.round(charge_per_mil_pedestal)
-    # We round it to an integer number of photo-electrons. We want to avoid too
-    # many different ways of reducing the data. This is also why we use the
-    # fixed value picture_threshold unless it results in a too high survival
-    # rate
-
-    # Check what fraction of pixels in PEDESTAL events is kept with the current
+    # Check what fraction of pixels in shower events is kept with the current
     # value of min_charge_for_certain_selection (and ONE ring of neighbors)
-
+    # We compute the value excluding the noisiest pixels (e.g. from stars)
     fraction_of_survival = 1.
-    while fraction_of_survival > max_pix_survival_fraction_in_ped:
+    target_nevents = 5000 # number of events for the calculation (to speed up!)
+    charges_cosmics = charges_data[cosmic_mask]
+    event_jump = int(charges_cosmics.shape[0] / target_nevents)
+    charges_cosmics_sampled = charges_cosmics[::event_jump, :]
+
+    while fraction_of_survival > max_pix_survival_fraction:
         selected_pixels_masks = []
-        for charge_map, event_type in zip(charges_data, event_type_data):
-            # use only pedestal events:
-            if event_type != EventType.SKY_PEDESTAL.value:
-                continue
+        for charge_map in charges_cosmics_sampled:
             selected_pixels = get_selected_pixels(charge_map,
                                                   min_charge_for_certain_selection,
                                                   1, camera_geom)
             selected_pixels_masks.append(selected_pixels)
 
         selected_pixels_masks = np.array(selected_pixels_masks)
-        fraction_of_survival = (selected_pixels_masks.sum() /
-                                len(selected_pixels_masks.flatten()))
-        if fraction_of_survival <= max_pix_survival_fraction_in_ped:
+        per_pix_fraction_of_survival = (np.sum(selected_pixels_masks, axis=0) /
+                                        selected_pixels_masks.shape[0])
+        ninety_percent_dimmest = np.sort(per_pix_fraction_of_survival)[:int(
+                0.9*len(per_pix_fraction_of_survival))]
+
+        # Compute the survival fraction using only the 90% dimmer pixels - we
+        # do not want to change the thresholds just because of stars,
+        # but rather based on the "bulk" of the diffuse NSB
+        fraction_of_survival = np.mean(ninety_percent_dimmest)
+        if fraction_of_survival <= max_pix_survival_fraction:
             break
 
-        print("Fraction in pedestal events of pixels with >",
+        print("Fraction in shower events of pixels with >",
               min_charge_for_certain_selection, "pe & first neighbors:",
               np.round(fraction_of_survival, 3), "is higher than maximum "
                                                  "allowed:",
-              max_pix_survival_fraction_in_ped)
+              max_pix_survival_fraction)
         # Modify the value of min_charge_for_certain_selection to get a lower
         # survival fraction
         min_charge_for_certain_selection += 1.
@@ -213,7 +201,7 @@ def main():
     if min_charge_for_certain_selection > args.picture_threshold:
         print("min_charge_for_certain_selection changed to",
               min_charge_for_certain_selection)
-    print("Fraction in pedestal events of pixels with >",
+    print("Fraction in shower events of pixels with >",
           min_charge_for_certain_selection, "pe & first neighbors:",
           np.round(fraction_of_survival, 3)),
 
