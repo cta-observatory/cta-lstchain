@@ -165,7 +165,7 @@ def main():
     fraction_of_survival = 1.
     target_nevents = 5000 # number of events for the calculation (to speed up!)
     charges_cosmics = charges_data[cosmic_mask]
-    event_jump = int(charges_cosmics.shape[0] / target_nevents)
+    event_jump = int(charges_cosmics.shape[0] / target_nevents) + 1
     charges_cosmics_sampled = charges_cosmics[::event_jump, :]
 
     while fraction_of_survival > max_pix_survival_fraction:
