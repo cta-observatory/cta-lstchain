@@ -210,8 +210,12 @@ def main():
         # survival fraction
         min_charge_for_certain_selection += 1.
 
-    print("min_charge_for_certain_selection changed to",
-          min_charge_for_certain_selection)
+    if min_charge_for_certain_selection > args.picture_threshold:
+        print("min_charge_for_certain_selection changed to",
+              min_charge_for_certain_selection)
+    print("Fraction in shower events of pixels with >",
+          min_charge_for_certain_selection, "pe & first neighbors:",
+          np.round(fraction_of_survival, 3)),
 
     summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
