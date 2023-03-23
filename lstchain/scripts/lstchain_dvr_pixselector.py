@@ -189,7 +189,8 @@ def main():
     if fraction_of_survival > max_survival_fraction:
         print("Fraction in shower events of pixels with >",
               min_charge_for_certain_selection, "pe & first neighbors:",
-              np.round(fraction_of_survival, 3), "higher than maximum allowed:",
+              np.round(fraction_of_survival, 3), "is higher than maximum "
+                                                 "allowed:",
               max_survival_fraction)
         # Modify the value of min_charge_for_certain_selection to get a lower
         # survival fraction
@@ -326,9 +327,8 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
     # Chances are that pixels labeled as "unknown" are cosmics, so we include
     # them among the types to be reduced.
 
-    selected_pixels = np.array(geom.n_pixels * [True])
     if event_type not in event_types_to_be_reduced:
-        return selected_pixels
+        return np.array(geom.n_pixels * [True])
 
     # Now proceed with the identification of interesting pixels to be saved.
     # Keep pixels that have a charge above min_charge_for_certain_selection:
