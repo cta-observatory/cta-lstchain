@@ -244,9 +244,8 @@ def main():
 
     cr_masks = selected_pixels_masks[cosmic_mask]
     fraction_of_survival = cr_masks.sum() / len(cr_masks.flatten())
-    print("Fraction in shower events of pixels with >",
-          min_charge_for_certain_selection,
-          "pe & neighbors:", np.round(fraction_of_survival, 3))
+    print("Fraction in shower events of selected pixels:", np.round(
+            fraction_of_survival, 3))
 
     num_sel_pixels = np.array(num_sel_pixels)
     print('Average number of selected pixels per event (of any type):',
