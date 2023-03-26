@@ -79,9 +79,6 @@ def main():
     # labeled as "unknown" are cosmics (=showers), so we include them among the
     # types to be reduced.
 
-    # By default use the provided picture threshold to keep pixels:
-    min_charge_for_certain_selection = args.picture_threshold
-
     # For the record, keep the input "picture threshold". It is not necessarily
     # the value that will be used for pixel selection, if it allows too many
     # pixels too survive.
@@ -108,6 +105,9 @@ def main():
     for dl1_file in dl1_files:
         print()
         print('Input file:', dl1_file)
+
+        # By default use the provided picture threshold to keep pixels:
+        min_charge_for_certain_selection = args.picture_threshold
 
         run_info = parse_dl1_filename(dl1_file)
         run_id, subrun_id = run_info.run, run_info.subrun
@@ -146,9 +146,15 @@ def main():
         number_of_events = len(data_parameters)
         summary_info.number_of_events = number_of_events
 
-        event_type_data = data_parameters['event_type']
+        event_type_data = data_parameters['event_type'].data
         # event_type: physics trigger (32) interleaved flat-field(0) pedestal (2),
         # unknown(255)  are those currently in use in LST1
+
+        found_event_types = np.unique(event_type_data)
+        print('Event types found:', found_event_types)
+        if EventType.SUBARRAY.value not in found_event_types:
+            print('No shower event (SUBARRAY type) found in file! SKIPPING IT!')
+            continue
 
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
