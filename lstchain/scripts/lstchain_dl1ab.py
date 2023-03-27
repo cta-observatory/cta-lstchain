@@ -290,7 +290,7 @@ def main():
             for k, item in metadata.as_dict().items():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
             outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
-            
+
             for ii, row in enumerate(image_table):
                
                 dl1_container.reset()
@@ -307,18 +307,17 @@ def main():
 
                     dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain,pixel_index]
                     time_correction = catB_time_correction[calib_idx][selected_gain,pixel_index] 
-                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain,pixel_index]
-                    
-                    # unbiased pedestal value in integration window
-                    n_samples = config['LocalPeakWindowSum']['width']
-                    pedestal = catB_pedestal_per_sample * n_samples
+                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain,pixel_index]                         
+            
+                    n_samples = config['LocalPeakWindowSum']['window_width']
+                    pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
 
                     # calibrate charge 
                     image = (image - pedestal) * dc_to_pe
 
                     # put to zero charge unusable pixels in order not to select them in the cleaning
                     image[unusable_pixels] = 0
-
+            
                     # time flafielding
                     peak_time = peak_time - time_correction 
 
@@ -326,8 +325,6 @@ def main():
                     calibrated_image[ii] = image
                     calibrated_peak_time[ii] = peak_time
                     
-
-
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
