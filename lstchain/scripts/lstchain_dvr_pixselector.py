@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+This script reads in DL1 files and determines for each event which pixels
+contain relevant information and should hence be kept when reducing the raw
+data volume.
+"""
+
 import argparse
 from pathlib import Path
 import tables
@@ -334,6 +340,9 @@ def main():
                     data.pixmask = pixmask
                     writer.write("selected_pixels_masks", data)
 
+    print()
+    print('lstchain_dvr_pixselector finished successfully!')
+    print()
 
 def get_selected_pixels(charge_map, min_charge_for_certain_selection,
                         number_of_rings, geom,
