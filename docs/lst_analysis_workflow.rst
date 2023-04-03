@@ -133,7 +133,6 @@ Then, you can use the conda environment used to produce the MC files:
     :caption: conda activate
 
     conda activate /fefs/aswg/software/conda/envs/ENV_NAME
-``
 
 
 The `ENV_NAME` used for MC production is provided in the lstmcipe config file.
