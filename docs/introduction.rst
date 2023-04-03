@@ -25,7 +25,7 @@ Data levels
 +------+---------------------------------------------------------------------------+-------------+
 | DL2  | Event parameters (energy, direction, time, etc.)                          | HDF5        |
 +------+---------------------------------------------------------------------------+-------------+
-| DL3  | Event parameters (energy, direction, time, etc.) after event selection    | FITS        |
+| DL3  | Lists of reconstructed events after event selection                       | FITS        |
 |      | with corresponding IRFs (PSF, EDISP, BKG)                                 |             |
 +------+---------------------------------------------------------------------------+-------------+
 
