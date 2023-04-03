@@ -16,6 +16,7 @@
    :name: _lstchain_overview
 
    introduction
+   lst_analysis_workflow
    contribute
 
 .. _lstchain_docs:

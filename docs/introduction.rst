@@ -12,12 +12,13 @@ Dependencies
 Data levels
 ===========
 
-* R0
-* R1
-* DL1a
-* DL1b
-* DL2
-* DL3
+* R0: uncalibrated RAW waveforms from the camera
+* R1: calibrated waveforms from the camera
+* DL1a: Integrated charge and peak position of the waveform
+* DL1b: Image parameters (size, shape, intensity, etc.)
+* DL2: Event parameters (energy, direction, time, etc.)
+* DL3: Event parameters (energy, direction, time, etc.) after event selection
+* IRF: Instrument response functions (PSF, EDISP, BKG)
 
 Analysis steps
 ==============
@@ -59,3 +60,4 @@ and analyze the results using ``gammapy``
 
 For a quick look into the data and perform :math:`{\theta}^2/{\alpha}` plots, you can also use:
 ``lstchain.scripts.lstchain_post_dl2``
+

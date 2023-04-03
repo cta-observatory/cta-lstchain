@@ -17,6 +17,7 @@ The scripts to be executed from the command line are described below:
 * `lstchain_dl1_muon_analysis`_
 * `lstchain_dl1_to_dl2`_
 * `lstchain_dl1ab`_
+* `lstchain_dump_config`_
 * `lstchain_find_pedestals`_
 * `lstchain_longterm_dl1_check`_
 * `lstchain_mc_r0_to_dl1`_
