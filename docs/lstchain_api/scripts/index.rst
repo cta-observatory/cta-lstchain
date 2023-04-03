@@ -284,3 +284,16 @@ Usage
    :module: lstchain.scripts.lstchain_tune_nsb
    :func: parser
    :prog: lstchain_tune_nsb
+
+
+lstchain\_dump\_config 
+++++++++++++++++++++++++++++++++++++++++++++++
+
+.. automodule:: lstchain.scripts.lstchain_dump_config
+
+Usage
+-----
+.. argparse::
+   :module: lstchain.scripts.lstchain_dump_config
+   :func: parser
+   :prog: lstchain_dump_config
