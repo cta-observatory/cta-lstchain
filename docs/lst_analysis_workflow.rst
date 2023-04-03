@@ -77,6 +77,21 @@ https://cta-observatory.github.io/lstmcpipe/productions.html
 The RF models are stored in the following directory:
 ``/fefs/aswg/data/models/...``
 
+
+Tuning of DL1 files and RF models
+---------------------------------
+
+In case of high NSB in the data, it is possible to tune the DL1 files and the RF models to improve the performance of the analysis.      
+This is done by changing the `config` file of the RF models and producing new DL1 files and training new RF models.
+To produce a config tuned to the data you want to analyse, you may run ``lstchain_tune_nsb`` function that will produce a ``tuned_nsb_config.json`` file.
+
+To request a new production of RF models, you can open a pull-request on the lstmcpipe repository, producing a complete MC config, using:
+
+.. code-block::
+
+    lstchain-dump-config --mc --update-with tuned_nsb_config.json --output-file PATH_TO_OUTPUT_FILE
+
+
 lstchain config
 ---------------
 
