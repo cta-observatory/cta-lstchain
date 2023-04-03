@@ -12,13 +12,23 @@ Dependencies
 Data levels
 ===========
 
-* R0: uncalibrated RAW waveforms from the camera
-* R1: calibrated waveforms from the camera
-* DL1a: Integrated charge and peak position of the waveform
-* DL1b: Image parameters (size, shape, intensity, etc.)
-* DL2: Event parameters (energy, direction, time, etc.)
-* DL3: Event parameters (energy, direction, time, etc.) after event selection
-* IRF: Instrument response functions (PSF, EDISP, BKG)
++------+---------------------------------------------------------------------------+-------------+
+| Level| Description                                                               | File Format |
++======+===========================================================================+=============+
+| R0   | Uncalibrated RAW waveforms from the camera                                | ZFITS       |
++------+---------------------------------------------------------------------------+-------------+
+| R1   | Calibrated waveforms from the camera                                      |             |
++------+---------------------------------------------------------------------------+-------------+
+| DL1a | Integrated charge and peak position of the waveform                       | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL1b | Image parameters (size, shape, intensity, etc.)                           | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL2  | Event parameters (energy, direction, time, etc.)                          | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL3  | Event parameters (energy, direction, time, etc.) after event selection    | FITS        |
+|      | with corresponding IRFs (PSF, EDISP, BKG)                                 |             |
++------+---------------------------------------------------------------------------+-------------+
+
 
 Analysis steps
 ==============
