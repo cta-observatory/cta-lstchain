@@ -295,5 +295,5 @@ Usage
 -----
 .. argparse::
    :module: lstchain.scripts.lstchain_dump_config
-   :func: build_parser()
+   :func: build_parser
    :prog: lstchain_dump_config
