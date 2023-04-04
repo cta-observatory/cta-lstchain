@@ -42,9 +42,9 @@ lstmcpipe handles the analysis of MC data on the cluster at La Palma.
 It produces the trained models and the MC DL2 files required for data analysis.
 Its usage is recommended in order to:
 - avoid common mistakes and pitfalls
-- do not worry about ressources management for this part of the analysis which requires specific needs
+- do not worry about resources management for this part of the analysis which requires specific needs
 - have a reproducible analysis
-- have common analysis production and therefore save computing ressources
+- have common analysis production and therefore save computing resources
 
 If you need a specific MC analysis production, you can request one by opening a pull-request on the GitHub repository.
 
