@@ -21,7 +21,7 @@ Data levels
 +------+---------------------------------------------------------------------------+-------------+
 | DL1a | Integrated charge and peak position of the waveform                       | HDF5        |
 +------+---------------------------------------------------------------------------+-------------+
-| DL1b | Image parameters (width, length, intensity, etc.)                           | HDF5        |
+| DL1b | Image parameters (width, length, intensity, etc.)                         | HDF5        |
 +------+---------------------------------------------------------------------------+-------------+
 | DL2  | Event parameters (energy, direction, time, etc.)                          | HDF5        |
 +------+---------------------------------------------------------------------------+-------------+
@@ -32,6 +32,7 @@ Data levels
 
 Analysis steps
 ==============
+
 R1 to DL1
 ---------
 Usage of
