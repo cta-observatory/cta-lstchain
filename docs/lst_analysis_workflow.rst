@@ -7,33 +7,15 @@ Pipeline
 
 Here is a simplified version of the LST-1 data analysis pipeline and the different tools used for each step:
 
-.. mermaid::
+.. this image can be modified going to mermaid.live and loading it using its URL in Actions/LOAD GIST
+.. image:: https://mermaid.ink/img/pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs?type=png)](https://mermaid.live/edit#pako:eNptkk2LwjAQhv9KyGkXLOh662EvusKCXuqxKTLbjlrIR0lSliL-9500DXTVHNJ8PO87M-nceG0a5Dk_S_NbX8F6ti-EFprRKJYnVb8d-5-Lhe76zrJMOq_qru0wyz6ZIqV0ZbGbVtVM9chu9x-nw6akDztsqhTATdZRUxbLeMmmcQGloBxnIXRnjTeaFiix9tboiUTdJL8YJcamYlodQn8XO5eAmOgDEFQNeBizswiShV31rHgsZ_ZOQREh44CI7X6VPFfJLuW4mtFPScxLeYmtJyxAoTQCxhfqhnAPGuTgWpdM1snkJcMXXKFV0DbUAbegEdxfUaHgOS0bPEMvveBC3wmF3pvjoGuee9vjgvcdeeO2BfqH6v_hV9N6Y3l-BunoEMftIXba2HD3P0O7zCs
+    :width: 1080
+    :align: center
     :alt: LST-1 data analysis pipeline
-    :caption: LST-1 data analysis pipeline
-
-    flowchart LR
-
-        R0_mc(Subgraph) --lstmcpipe--> models[RF models]
-        R0_mc --lstmcpipe--> DL2_MC[DL2 MC]
-
-        subgraph R0_mc[R0 MC]
-            gamma[gamma\nproton\nelectron]
-        end
-
-        DL2_MC --lstchain--> IRFs
-
-        models --lstchain--> DL2_data[DL2 real data]
-        models --lstmcpipe--> DL2_MC
-
-        R0_data --lstosa-->DL1_data[DL1 data]
-
-        DL1_data --lstchain--> DL2_data
-
-        DL2_data --lstchain--> DL3_data
-        IRFs --gammapy--> analysis
-        DL3_data --gammapy--> analysis
 
 
+The steps marked with lstchain must be run by the analysers using the corresponding lstchain command (see :ref:`the Analysis Steps <introduction>`) .
+Other tools are described below.
 
 
 lstmcpipe
@@ -49,6 +31,7 @@ Its usage is recommended in order to:
 If you need a specific MC analysis production, you can request one by opening a pull-request on the GitHub repository.
 
 repository: https://github.com/cta-observatory/lstmcpipe
+
 documentation: https://cta-observatory.github.io/lstmcpipe
 
 lstosa
@@ -57,7 +40,8 @@ lstosa handles the analysis of real data on the cluster at La Palma.
 It automatically produces the DL1 files required for data analysis.
 Analysers should not need to use this package directly (it is maintained and handled by LSTOSA team), but use the DL1 files it produces.
 
-repository: https://github.com/cta-observatory/lstosa
+repository: https://github.com/cta-observatory/lstosa    
+
 documentation: https://lstosa.readthedocs.io/
 
 
@@ -130,7 +114,6 @@ To use the main conda, add this to your `.bashrc`:
 Then, you can use the conda environment used to produce the MC files:
 
 .. code-block::
-    :caption: conda activate
 
     conda activate /fefs/aswg/software/conda/envs/ENV_NAME
 
