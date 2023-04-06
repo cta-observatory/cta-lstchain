@@ -130,7 +130,7 @@ class CalibrationHDF5Writer(Tool):
         else:
             self.simulation = True
 
-        group_name = "tel_" + str(self.tel_id)
+        group_name = f"tel_{self.tel_id}"
 
         self.log.debug(f"Open output file {self.output_file}")
 
