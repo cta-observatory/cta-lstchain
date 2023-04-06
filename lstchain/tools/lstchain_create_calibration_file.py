@@ -270,8 +270,8 @@ class CalibrationHDF5Writer(Tool):
             )
 
     @staticmethod
-    def _median_waveform_sum(event):
-        return np.median(np.sum(event.r1.tel[self.tel_id].waveform[0], axis=1))
+    def _median_waveform_sum(event, tel_id=1):
+        return np.median(np.sum(event.r1.tel[tel_id].waveform[0], axis=1))
 
     def _is_pedestal(self, event):
         # use a cut on the charge for MC events if trigger not defined
