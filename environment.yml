@@ -28,7 +28,7 @@ dependencies:
   - nbsphinx
   - numba
   - numpydoc
-  - pandas
+  - pandas>=2
   - pymongo
   - seaborn
   - jinja2=3.0 # pinned for bokeh 1.0 compatibility
