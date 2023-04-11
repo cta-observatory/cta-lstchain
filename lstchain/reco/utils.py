@@ -529,8 +529,8 @@ def filter_events(
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_null', True):
-            not_finite_mask = events_df[_finite_params].isnull()
+        with pd.option_context('mode.use_inf_as_na', True):
+            not_finite_mask = events_df[_finite_params].isna()
         filter &= ~(not_finite_mask.any(axis=1))
 
         not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]

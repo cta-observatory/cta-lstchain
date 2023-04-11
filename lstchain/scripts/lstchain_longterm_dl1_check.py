@@ -1111,7 +1111,7 @@ def plot(filename='longterm_dl1_check.h5', batch=False, tel_id=1):
     pad_width = 350
     pad_height = 370
 
-    mean = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
+    mean = np.array(pixwise_runsummary['ped_pix_charge_mean'])
     stddev = np.array(pixwise_runsummary['ped_pix_charge_stddev'])
 
     row1 = show_camera(mean, engineering_geom, pad_width,

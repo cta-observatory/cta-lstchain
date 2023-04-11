@@ -28,7 +28,7 @@ dependencies:
   - nbsphinx
   - numba
   - numpydoc
-  - pandas
+  - pandas>=2
   - pymongo
   - seaborn
   - ctapipe_io_lst==0.19
