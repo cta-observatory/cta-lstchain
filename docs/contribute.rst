@@ -29,7 +29,7 @@ run ``pytest -m 'private_data or not private_data'``, to exectute all tests.
 
 Build the documentation locally
 -------------------------------
-Install the required dependencies for building the documentation: ``pip install -e .[docs]``
+Install the required dependencies for building the documentation: ``pip install -e ".[docs]"``
 
 Compile the documentation from ``docs``: ``make clean html``.
 
@@ -44,3 +44,13 @@ Then visit the printed url.
 .. note::
     Automatic documentation deployment is actually doing:
     ``make html SPHINXOPTS="-W --keep-going -n --color -j auto"``
+
+
+Contribute to the documentation
+-------------------------------
+
+The documentation might fall behind the code or analysis workflow, 
+so if you find something that is not documented or not clear, please contribute to the documentation.    
+Simply modify the corresponding `.rst` files in `docs` and open a pull-request with your changes.    
+
+Please do, someone will probably come after you and face the same issues you did.
