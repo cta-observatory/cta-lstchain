@@ -83,6 +83,14 @@ The lstchain config used to produce the RF models of a production is provided in
 It is a good idea to use the same config for the data analysis.
 You can also produce a config using `lstchain-dump-config`.
 
+DL3/IRF config files
+--------------------
+
+ DL3/IRF example config files are provided in `docs/example`:
+  - `dl3_tool_config.json <examples/dl3_tool_config.json>`_
+  - `irf_tool_config.json <examples/irf_tool_config.json>`_
+
+Such files should be used to produce DL3 files and IRFs from DL2 (see :ref:`the Analysis Steps <introduction>`)
 
 Environment
 ===========

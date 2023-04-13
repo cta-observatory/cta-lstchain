@@ -26,7 +26,7 @@ Data levels
 | DL2  | Event parameters (energy, direction, time, etc.)                          | HDF5        |
 +------+---------------------------------------------------------------------------+-------------+
 | DL3  | Lists of reconstructed events after event selection                       | FITS        |
-|      | with corresponding IRFs (PSF, EDISP, BKG, etc.)                           |             |
+|      | with corresponding IRFs (AEFF, EDISP, PSF, etc.)                           |             |
 +------+---------------------------------------------------------------------------+-------------+
 
 
@@ -63,9 +63,9 @@ DL2 to DL3
 ----------
 
 To write DL3 and IRF files, you should use:
+``lstchain.tools.lstchain_create_irf_files``
 ``lstchain.tools.lstchain_create_dl3_file``
 ``lstchain.tools.lstchain_create_dl3_index_files``
-``lstchain.tools.lstchain_create_irf_files``
 
 and analyze the results using ``gammapy``
 
