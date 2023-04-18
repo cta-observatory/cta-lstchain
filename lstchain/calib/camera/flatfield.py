@@ -171,7 +171,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # time
         self.trigger_time = event.trigger.tel[self.tel_id].time
-
+        
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -206,7 +206,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
         if self.num_events_seen == 0:
             raise ValueError("No flat-field events in statistics, zero results")
-
+       
         container = event.mon.tel[self.tel_id].flatfield
 
         # mask the part of the array not filled
@@ -337,9 +337,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # ignore outliers identified by sigma clipping also for following operations
         masked_trace_integral.mask = unused_values
 
-        # median over the sample per pixel
-        pixel_median = np.ma.median(masked_trace_integral, axis=0)
-
         # median of the median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
 
@@ -358,13 +355,19 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         charge_median_outliers = (
             np.logical_or(charge_deviation < self.charge_median_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
                           charge_deviation > self.charge_median_cut_outliers[1] * median_of_pixel_median[:,np.newaxis]))
-
+        
+        
         # outliers from standard deviation
         deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
         charge_std_outliers = (
             np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:, np.newaxis],
                           deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:, np.newaxis]))
-
+        
+        # mask pixels with NaN mean, due to missing statistics
+        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
+        charge_median_outliers[pixels_without_stat] = True
+        charge_std_outliers[pixels_without_stat] = True
+        
         return {
             'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
             'relative_gain_mean': np.ma.getdata(np.ma.mean(relative_gain_event, axis=0)),

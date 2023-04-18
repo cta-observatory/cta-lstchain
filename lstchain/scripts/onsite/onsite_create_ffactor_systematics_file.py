@@ -45,7 +45,7 @@ optional.add_argument('--no_pro_symlink', action="store_true",
 
 
 def main():
-    args = parser.parse_args()
+    args, remaining_args = parser.parse_known_args()
     date = args.date
     prod_id = args.prod_version
     base_dir = args.base_dir
@@ -122,6 +122,7 @@ def main():
         f"--input_prefix={prefix}",
         f"--log-file={log_file}",
         "--log-file-level=DEBUG",
+        *remaining_args,
     ]
 
     print("\n--> RUNNING...")

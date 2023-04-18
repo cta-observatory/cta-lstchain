@@ -304,7 +304,12 @@ class PedestalIntegrator(PedestalCalculator):
             deviation < self.charge_median_cut_outliers[0] * std_of_pixel_median[:,np.newaxis],
             deviation > self.charge_median_cut_outliers[1] * std_of_pixel_median[:,np.newaxis],
         )
-
+        
+        # mask pixels with NaN mean, due to missing statistics
+        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
+        charge_median_outliers[pixels_without_stat] = True
+        charge_std_outliers[pixels_without_stat] = True
+        
         return {
             'charge_median': np.ma.getdata(pixel_median),
             'charge_mean': np.ma.getdata(pixel_mean),

@@ -12,15 +12,27 @@ Dependencies
 Data levels
 ===========
 
-* R0
-* R1
-* DL1a
-* DL1b
-* DL2
-* DL3
++------+---------------------------------------------------------------------------+-------------+
+| Level| Description                                                               | File Format |
++======+===========================================================================+=============+
+| R0   | Uncalibrated RAW waveforms from the camera                                | ZFITS       |
++------+---------------------------------------------------------------------------+-------------+
+| R1   | Calibrated waveforms from the camera                                      |             |
++------+---------------------------------------------------------------------------+-------------+
+| DL1a | Integrated charge and peak position of the waveform                       | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL1b | Image parameters (width, length, intensity, etc.)                         | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL2  | Event parameters (energy, direction, time, etc.)                          | HDF5        |
++------+---------------------------------------------------------------------------+-------------+
+| DL3  | Lists of reconstructed events after event selection                       | FITS        |
+|      | with corresponding IRFs (AEFF, EDISP, PSF, etc.)                          |             |
++------+---------------------------------------------------------------------------+-------------+
+
 
 Analysis steps
 ==============
+
 R1 to DL1
 ---------
 Usage of
@@ -51,11 +63,12 @@ DL2 to DL3
 ----------
 
 To write DL3 and IRF files, you should use:
+``lstchain.tools.lstchain_create_irf_files``
 ``lstchain.tools.lstchain_create_dl3_file``
 ``lstchain.tools.lstchain_create_dl3_index_files``
-``lstchain.tools.lstchain_create_irf_files``
 
 and analyze the results using ``gammapy``
 
 For a quick look into the data and perform :math:`{\theta}^2/{\alpha}` plots, you can also use:
 ``lstchain.scripts.lstchain_post_dl2``
+
