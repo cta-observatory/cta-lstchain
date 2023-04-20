@@ -1,15 +1,50 @@
 #!/usr/bin/env python
 
 """
-This script reads in DL1 files and determines for each event which pixels
+This script uses DL1 files to determine for each event which pixels
 contain relevant information and should hence be kept when reducing the raw
 data volume.
+
+We need to change the main parameter of the data reduction (pixel selection
+threshold, called "min_charge_for_certain_selection") depending on the NSB
+level (otherwise high NSB data would not be reduced at all).
+However, since we do not want to use different threshold for the subruns of a
+given run (for reasons of stability & simplicity of analysis), we cannot
+decide the threshold subrun by subrun.
+
+The approach is the following: we run first the script over all subruns of a
+run, for example:
+
+lstchain_dvr_pixselector -f "/xxx/yyy/dl1_LST-1.Run12469.????.h5"
+
+This creates in the output directory (which is the current by default) a file
+DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" which
+includes the DVR algorithm parameters determined for each subrun.
+
+Then we run again the script, but subrun by subrun, and using the option to
+create the pixel maks:
+
+lstchain_dvr_pixselector -f "/xxx/yyy/dl1_LST-1.Run12469.????.h5" --write-pixel-masks
+
+The script will detect that the file DVR_settings_LST-1.Run12469.h5 already
+exists, read it, and use as threshold for DVR the average for all subruns,
+in p.e., rounded to the closest lower integer (we do not want to have too many
+different ways of reducing the data, so we "discretize" the threshold in
+1-p.e. steps). Then the event-wise pixel maks (selected pixels) for the subrun
+will be computed and written out to a file
+Pixel_selection_LST-1.Run12469.xxxx.h5  for each subrun xxxx
+
+If the option --write-pixel-masks is used, and there is more than one input
+DL1 file, or the DVR_settings_LST-1.Run*.h5 file is not found, the program
+will stop and show an error message.
+
 """
 
 import argparse
 from pathlib import Path
 import tables
 import glob
+import os
 import numpy as np
 
 from lstchain.paths import parse_dl1_filename
@@ -68,11 +103,23 @@ def main():
     args = parser.parse_args()
     summary_info = RunSummary()
 
+    dl1_files = glob.glob(args.dl1_files)
+    dl1_files.sort()
+
     if (args.write_pixel_masks):
-        print('Option to write pixel masks in output file selected')
+        print('Option to write pixel masks in output file selected. I will '
+              'read in the Data Volume Reduction parameters from the '
+              'corresponding DVR_settings_*.h5 file')
+        print('(the --picture_threshold and --number-of-rings command-line '
+              'options, if provided, will be ignored!)')
+        if len(dl1_files) > 1:
+            print('ERROR: option --write-pixel-masks can be used only with '
+                  'a single input DL1 file')
+            exit(1)
+
     else:
-        print('Pixel masks will not be written in the output file. Use option '
-              '-m to write them out')
+        print('I will calculate the Data Volume Reduction parameters from '
+              'the input DL1 files, and write them to the output file')
 
     # The pixel selection will be applied only to "physics triggers"
     # (showers), not to other events like interleaved pedestal and flatfield
@@ -104,16 +151,11 @@ def main():
     number_of_rings = args.number_of_rings
     summary_info.number_of_rings = number_of_rings
 
-    dl1_files = glob.glob(args.dl1_files)
-    dl1_files.sort()
     current_run_number = -1
 
     for dl1_file in dl1_files:
         print()
         print('Input file:', dl1_file)
-
-        # By default use the provided picture threshold to keep pixels:
-        min_charge_for_certain_selection = args.picture_threshold
 
         run_info = parse_dl1_filename(dl1_file)
         run_id, subrun_id = run_info.run, run_info.subrun
@@ -123,12 +165,37 @@ def main():
         output_dir = args.output_dir.absolute()
         output_dir.mkdir(exist_ok=True, parents=True)
 
+        # The file DVR_settings_LST-1.Run*.h5 will be needed in case the
+        # --write-pixel_masks option is used:
+        input_dvr_settings_file = Path(output_dir,
+                                       f'DVR_settings_LST-1.Run{run_id:05d}.h5')
+        dvr_settings = None
+
+        # If we are just calculating the Data Volume Reduction settings, we
+        # write a single file for the whole run:
         output_file = Path(output_dir, f'DVR_settings_LST-1.Run{run_id:05d}.h5')
 
-        # For writing the pixels masks we will create subrun-wise files:
+        # On the other hand, for writing the pixels masks we will create
+        # subrun-wise files:
         if args.write_pixel_masks:
             output_file = Path(output_dir, f'Pixel_selection_LST-1.Run'
                                            f'{run_id:05d}.{subrun_id:04d}.h5')
+
+            if not os.path.isfile(input_dvr_settings_file):
+                print('ERROR: option --write-pixel-masks selected, but file ' +
+                      input_dvr_settings_file + 'does not exist!')
+                print('You must run first this script over all the subruns of '
+                      'the run in one go, and without the --write-pixel-masks '
+                      'option.')
+                exit(2)
+
+            dvr_settings = read_table(input_dvr_settings_file, '/run_summary')
+            # We just take the values below from the first table row, because by
+            # construction they are all identical. These are the settings
+            # used in the execution that resulted in the creation of the
+            # DVR_settings_LST-1.Run*.h5 file:
+            summary_info.number_of_rings = dvr_settings['number_of_rings'][0]
+            summary_info.picture_threshold = dvr_settings['picture_threshold'][0]
 
         print('Output file:', output_file)
 
@@ -196,51 +263,22 @@ def main():
         print('  Maximum: ', np.round(np.mean(image_mask, axis=0).max(), 5))
         print('  Mean: ', np.round(np.mean(image_mask, axis=0).mean(), 5))
 
-        # Check what fraction of pixels in shower events is kept with the current
-        # value of min_charge_for_certain_selection (and ONE ring of neighbors)
-        # We compute the value excluding the noisiest pixels (e.g. from stars)
-        fraction_of_survival = 1.
-        target_nevents = 5000 # number of events for the calculation (to speed up!)
         charges_cosmics = charges_data[cosmic_mask]
-        event_jump = int(charges_cosmics.shape[0] / target_nevents) + 1
-        charges_cosmics_sampled = charges_cosmics[::event_jump, :]
-
-        while fraction_of_survival > max_pix_survival_fraction:
-            selected_pixels_masks = []
-            for charge_map in charges_cosmics_sampled:
-                selected_pixels = get_selected_pixels(charge_map,
-                                                      min_charge_for_certain_selection,
-                                                      1, camera_geom)
-                selected_pixels_masks.append(selected_pixels)
-
-            selected_pixels_masks = np.array(selected_pixels_masks)
-            per_pix_fraction_of_survival = (np.sum(selected_pixels_masks, axis=0) /
-                                            selected_pixels_masks.shape[0])
-            ninety_percent_dimmest = np.sort(per_pix_fraction_of_survival)[:int(
-                    0.9*len(per_pix_fraction_of_survival))]
-
-            # Compute the survival fraction using only the 90% dimmer pixels
-            # - we do not want to change the thresholds just because of stars,
-            # but rather based on the "bulk" of the diffuse NSB
-            fraction_of_survival = np.mean(ninety_percent_dimmest)
-            if fraction_of_survival <= max_pix_survival_fraction:
-                break
-
-            print("Fraction in shower events of pixels with >",
-                  min_charge_for_certain_selection, "pe & first neighbors:",
-                  np.round(fraction_of_survival, 3), "is higher than maximum "
-                                                     "allowed:",
-                  max_pix_survival_fraction)
-            # Modify the value of min_charge_for_certain_selection to get a lower
-            # survival fraction
-            min_charge_for_certain_selection += 1.
-
-        if min_charge_for_certain_selection > args.picture_threshold:
-            print("min_charge_for_certain_selection changed to",
-                  min_charge_for_certain_selection)
-        print("Fraction in shower events of pixels with >",
-              min_charge_for_certain_selection, "pe & first neighbors:",
-              np.round(fraction_of_survival, 3)),
+        if not args.write_pixel_masks:
+            # Calculate an adequate data volume reduction pixel threshold for
+            # this subrun:
+            min_charge_for_certain_selection = find_DVR_threshold(charges_cosmics,
+                                                                  max_pix_survival_fraction,
+                                                                  args.picture_threshold,
+                                                                  camera_geom)
+        else:
+            runmask = dvr_settings['run_id'] == run_id
+            meanq = dvr_settings['min_charge_for_certain_selection'][runmask].mean()
+            min_charge_for_certain_selection  = np.floor(meanq)
+            # we do not have to calculate it from scratch, we get the
+            # value (same for all subruns) from the DVR_settings_LST*.h5 file,
+            # just averaging the subrun-wise values and taking the closest
+            # (lower) integer
 
         summary_info.min_charge_for_certain_selection = min_charge_for_certain_selection
 
@@ -317,7 +355,8 @@ def main():
         writer_conf = tables.Filters(complevel=9, fletcher32=True)
 
         # In the "DVR settings determination mode" (not writing pixel masks)
-        # we will write only one file per run number
+        # we will write only one file per run number, so for every new subrun
+        # we just append one row to the run_summary table.
         filemode = 'a'
         if run_id != current_run_number:
             filemode = 'w'
@@ -327,6 +366,8 @@ def main():
                              mode=filemode) as writer:
             writer.write("run_summary", summary_info)
 
+        # In the pixel selection mode we create a new file per subrun,
+        # which contains the event-wise pixel masks:
         if args.write_pixel_masks:
             data = PixelMask()
             with HDF5TableWriter(output_file, filters=writer_conf, mode='a') as writer:
@@ -388,3 +429,58 @@ def get_selected_pixels(charge_map, min_charge_for_certain_selection,
         selected_pixels = np.array(geom.n_pixels * [True])
 
     return selected_pixels
+
+
+def find_DVR_threshold(charges_cosmics, max_pix_survival_fraction,
+                       picture_threshold, camera_geom):
+
+    # By default use the provided picture threshold to keep pixels:
+    min_charge_for_certain_selection = picture_threshold
+
+    # Check what fraction of pixels in shower events is kept with the current
+    # value of min_charge_for_certain_selection (and ONE ring of neighbors)
+    # We compute the value excluding the noisiest pixels (e.g. from stars)
+    fraction_of_survival = 1.
+    target_nevents = 5000  # number of events for the calculation (to speed up!)
+
+    event_jump = int(charges_cosmics.shape[0] / target_nevents) + 1
+    charges_cosmics_sampled = charges_cosmics[::event_jump, :]
+
+    while fraction_of_survival > max_pix_survival_fraction:
+        selected_pixels_masks = []
+        for charge_map in charges_cosmics_sampled:
+            selected_pixels = get_selected_pixels(charge_map,
+                                                  min_charge_for_certain_selection,
+                                                  1, camera_geom)
+            selected_pixels_masks.append(selected_pixels)
+
+        selected_pixels_masks = np.array(selected_pixels_masks)
+        per_pix_fraction_of_survival = (np.sum(selected_pixels_masks, axis=0) /
+                                        selected_pixels_masks.shape[0])
+        ninety_percent_dimmest = np.sort(per_pix_fraction_of_survival)[
+                                 :int(0.9 * len(per_pix_fraction_of_survival))]
+
+        # Compute the survival fraction using only the 90% dimmer pixels
+        # - we do not want to change the thresholds just because of stars,
+        # but rather based on the "bulk" of the diffuse NSB
+        fraction_of_survival = np.mean(ninety_percent_dimmest)
+        if fraction_of_survival <= max_pix_survival_fraction:
+            break
+
+        print("Fraction in shower events of pixels with >",
+              min_charge_for_certain_selection, "pe & first neighbors:",
+              np.round(fraction_of_survival, 3), "is higher than maximum "
+                                                 "allowed:",
+              max_pix_survival_fraction)
+        # Modify the value of min_charge_for_certain_selection to get a lower
+        # survival fraction
+        min_charge_for_certain_selection += 1.
+
+    if min_charge_for_certain_selection > picture_threshold:
+        print("min_charge_for_certain_selection changed to",
+              min_charge_for_certain_selection)
+    print("Fraction in shower events of pixels with >",
+          min_charge_for_certain_selection, "pe & first neighbors:",
+          np.round(fraction_of_survival, 3)),
+
+    return min_charge_for_certain_selection
