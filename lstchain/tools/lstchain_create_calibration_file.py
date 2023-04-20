@@ -150,6 +150,13 @@ class CalibrationHDF5Writer(Tool):
         self.log.debug("Start loop")
         self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
         for count, event in enumerate(tqdm(self.eventsource)):
+            # stop if max events are reached
+            if (
+                self.eventsource.max_events is not None
+                and count == self.eventsource.max_events
+            ):
+                break
+
             self.last_event = event
 
             # if simulation use not calibrated and not gain selected R0 waveform
@@ -163,12 +170,6 @@ class CalibrationHDF5Writer(Tool):
                     - offset[:, np.newaxis, np.newaxis]
                 )
 
-            # stop if max events are reached
-            if (
-                self.eventsource.max_events is not None
-                and count == self.eventsource.max_events - 1
-            ):
-                break
 
             # save the config, to be retrieved as data.meta['config']
             if count == 0:
