@@ -4,7 +4,9 @@ from astropy.io import fits
 from astropy.table import Table
 
 
-def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
+def test_compare_irfs(
+    simulated_irf_file, simulated_srcdep_irf_file, simulated_dl2_file
+):
     from lstchain.high_level.interpolate import compare_irfs
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
 
@@ -22,12 +24,50 @@ def test_compare_irfs(simulated_irf_file, simulated_dl2_file):
         irf_file_2,
         "--global-gh-cut=0.7",
     )
+    irf_file_3 = simulated_dl2_file.parent / "en_dep_cut_irf_1.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--input-proton-dl2",
+        simulated_dl2_file,
+        "--input-electron-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file_3,
+        "--energy-dependent-gh",
+        "--energy-dependent-theta",
+        "--gh-efficiency=0.7",
+        "--theta-containment=0.7",
+    )
+    irf_file_4 = simulated_dl2_file.parent / "en_dep_cut_irf_2.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--input-proton-dl2",
+        simulated_dl2_file,
+        "--input-electron-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file_4,
+        "--energy-dependent-gh",
+        "--energy-dependent-theta",
+        "--gh-efficiency=0.8",
+        "--theta-containment=0.8",
+    )
 
     irfs_1 = [simulated_irf_file, irf_file_2]
     irfs_2 = [simulated_irf_file, simulated_irf_file]
+    irfs_3 = [irf_file_3, irf_file_4]
+    irfs_4 = [irf_file_3, irf_file_3]
+    irfs_5 = [simulated_srcdep_irf_file, simulated_srcdep_irf_file]
 
     assert compare_irfs(irfs_1) == 0
     assert compare_irfs(irfs_2)
+    assert compare_irfs(irfs_3) == 0
+    assert compare_irfs(irfs_4)
+    assert compare_irfs(irfs_5)
 
 
 def test_load_irf_grid(simulated_irf_file):
@@ -96,7 +136,7 @@ def test_interp_irf(simulated_irf_file):
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
     data_pars = {"ZEN_PNT": 30 * u.deg, "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg)}
-    print(data_pars)
+
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
 
@@ -122,12 +162,14 @@ def test_check_delaunay_triangles(simulated_irf_file):
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
     new_irfs3 = check_in_delaunay_triangle(irfs, data_pars, use_nearest_irf_node=True)
+    new_irfs4 = check_in_delaunay_triangle([], data_pars)
 
     t3 = Table.read(new_irfs3[0], hdu=1).meta
 
     assert len(new_irfs) == 3
     assert len(new_irfs2) == 1
     assert t3["ZEN_PNT"] == 20
+    assert len(new_irfs4) == 0
 
 
 def test_get_nearest_az_node():
