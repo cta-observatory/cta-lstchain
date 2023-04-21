@@ -112,7 +112,6 @@ def main():
               'corresponding DVR_settings_*.h5 file')
         print('(the --picture_threshold and --number-of-rings command-line '
               'options, if provided, will be ignored!)')
-        exit(1)
 
     else:
         print('I will calculate the Data Volume Reduction parameters from '
@@ -184,7 +183,7 @@ def main():
                 print('You must run first this script over all the subruns of '
                       'the run in one go, and without the --write-pixel-masks '
                       'option.')
-                exit(2)
+                exit(1)
 
             dvr_settings = read_table(input_dvr_settings_file, '/run_summary')
             # We just take the values below from the first table row, because by
