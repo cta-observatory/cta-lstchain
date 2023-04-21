@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 import astropy.units as u
-from astropy.table import Table, QTable
+from astropy.table import QTable, Table
 from astropy.io import fits
 from astropy.time import Time
 
@@ -101,7 +101,7 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
         mc_params_0[i, :] = np.array(mc_pars_0)
     data_val = interp_params(data_pars, data_params)
     data_val_0 = interp_params(data_params, data_params)
-    #print(data_val, data_val_0)
+
     try:
         tri = Delaunay(mc_params)
     except ValueError:
@@ -116,6 +116,7 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
             # by the paramters of the list of IRFs provided.
             # So just include the IRF with the closest parameter values
             # to the target values
+
             index = distance.cdist([data_val], mc_params).argmin()
             print("Target value is outside interpolation. Using the nearest IRF.")
             index = get_nearest_az_node(mc_params, index, mc_params_0, data_val_0)

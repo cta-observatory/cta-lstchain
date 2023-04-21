@@ -46,15 +46,13 @@ from lstchain.io import (
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
 )
-from lstchain.high_level.hdu_table import (
+from lstchain.high_level import (
     add_icrs_position_params,
-    create_event_list,
-    set_expected_pos_to_reco_altaz,
-)
-from lstchain.high_level.interpolate import (
     check_in_delaunay_triangle,
     compare_irfs,
+    create_event_list,
     interpolate_irf,
+    set_expected_pos_to_reco_altaz,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
@@ -356,7 +354,7 @@ class DataReductionFITSWriter(Tool):
                 self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
-        except:
+        except Exception:
             raise ToolConfigurationError(
                 f"{self.final_irf_output} does not have EFFECTIVE AREA HDU, "
                 " to check for global cut information in the Header value"
