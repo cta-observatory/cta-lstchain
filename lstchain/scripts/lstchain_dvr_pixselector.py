@@ -21,8 +21,8 @@ This creates in the output directory (which is the current by default) a file
 DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" which
 includes the DVR algorithm parameters determined for each subrun.
 
-Then we run again the script, but subrun by subrun, and using the option to
-create the pixel maks:
+Then we run again the script over all subruns, and using the option to create
+the pixel maks:
 
 lstchain_dvr_pixselector -f "/xxx/yyy/dl1_LST-1.Run12469.????.h5" --write-pixel-masks
 
@@ -34,9 +34,9 @@ different ways of reducing the data, so we "discretize" the threshold in
 will be computed and written out to a file
 Pixel_selection_LST-1.Run12469.xxxx.h5  for each subrun xxxx
 
-If the option --write-pixel-masks is used, and there is more than one input
-DL1 file, or the DVR_settings_LST-1.Run*.h5 file is not found, the program
-will stop and show an error message.
+If the option --write-pixel-masks is used, then options --number-of-rings and
+--picture-threshold will be ignored, since the DVR settings will be obtained
+from the DVR_settings file.
 
 """
 
