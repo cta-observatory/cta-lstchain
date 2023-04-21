@@ -24,8 +24,8 @@ from .interpolate import (
 
 __all__ = [
     "add_icrs_position_params",
-    'analyze_on_off',
-    'analyze_wobble',
+    "analyze_on_off",
+    "analyze_wobble",
     "check_in_delaunay_triangle",
     "compare_irfs",
     "create_event_list",
@@ -38,5 +38,5 @@ __all__ = [
     "interpolate_irf",
     "load_irf_grid",
     "set_expected_pos_to_reco_altaz",
-    'setup_logging',
+    "setup_logging",
 ]

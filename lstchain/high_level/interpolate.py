@@ -34,23 +34,13 @@ def interp_params(params_list, data):
     """
     mc_pars = []
     if "ZEN_PNT" in params_list:
-        mc_pars.append(
-            np.cos(
-                u.Quantity(data["ZEN_PNT"], "deg").to_value(u.rad)
-            )
-        )
+        mc_pars.append(np.cos(u.Quantity(data["ZEN_PNT"], "deg").to_value(u.rad)))
 
     if "B_DELTA" in params_list:
-        mc_pars.append(
-            np.sin(
-                u.Quantity(data["B_DELTA"], "deg").to_value(u.rad)
-            )
-        )
+        mc_pars.append(np.sin(u.Quantity(data["B_DELTA"], "deg").to_value(u.rad)))
 
     if "AZ_PNT" in params_list:
-        mc_pars.append(
-            u.Quantity(data["AZ_PNT"], "deg").to_value(u.rad)
-        )
+        mc_pars.append(u.Quantity(data["AZ_PNT"], "deg").to_value(u.rad))
 
     return mc_pars
 
@@ -62,7 +52,12 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
     target points in data_params.
 
     If the target point does not exist inside the simplex, the IRF
-    corresponding to the nearest grid point to the target value.
+    corresponding to the nearest grid point to the target value. This is also
+    acheived if use_nearest_irf_node is passed as True.
+
+    Fetching the nearest IRF node is also performed by checking the azimuth
+    values, as there might be more than a single node, with the same position
+    in the interpolation parameter space.
 
     If the list of given IRFs are not enough for calculating the Delaunay
     triangulation, an empty list is returned.
@@ -85,30 +80,32 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
     # Exclude AZ_PNT as target interpolation parameter
     d = data_params.copy()
     d.pop("AZ_PNT", None)
-    data_pars = [*d.keys()]
+    # For the interpolation parameters only
+    data_pars_sel = [*d.keys()]
 
     new_irfs = []
-    mc_params = np.empty((len(irfs), len(data_pars)))
-    mc_params_0 = np.empty((len(irfs), len(data_params)))
+    mc_params_sel = np.empty((len(irfs), len(data_pars_sel)))
+    mc_params_full = np.empty((len(irfs), len(data_params)))
 
     for i, irf in enumerate(irfs):
         f = fits.open(irf)[1].header
 
-        mc_pars = interp_params(data_pars, f)
-        mc_params[i, :] = np.array(mc_pars)
+        mc_pars_sel = interp_params(data_pars_sel, f)
+        mc_params_sel[i, :] = np.array(mc_pars_sel)
 
-        mc_pars_0 = interp_params(data_params, f)
-        mc_params_0[i, :] = np.array(mc_pars_0)
-    data_val = interp_params(data_pars, data_params)
-    data_val_0 = interp_params(data_params, data_params)
+        mc_pars_full = interp_params(data_params, f)
+        mc_params_full[i, :] = np.array(mc_pars_full)
+
+    data_val_sel = interp_params(data_pars_sel, data_params)
+    data_val_full = interp_params(data_params, data_params)
 
     try:
-        tri = Delaunay(mc_params)
+        tri = Delaunay(mc_params_sel)
     except ValueError:
-        print('Not enough grid values for Delaunay triangulation')
+        print("Not enough grid values for Delaunay triangulation")
         return new_irfs
 
-    target_in_simplex = tri.find_simplex(data_val)
+    target_in_simplex = tri.find_simplex(data_val_sel)
 
     if not use_nearest_irf_node:
         if target_in_simplex == -1:
@@ -117,44 +114,44 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
             # So just include the IRF with the closest parameter values
             # to the target values
 
-            index = distance.cdist([data_val], mc_params).argmin()
+            index = distance.cdist([data_val_sel], mc_params_sel).argmin()
             print("Target value is outside interpolation. Using the nearest IRF.")
-            index = get_nearest_az_node(mc_params, index, mc_params_0, data_val_0)
+            index = get_nearest_az_node(
+                mc_params_sel, index, mc_params_full, data_val_full
+            )
             new_irfs.append(irfs[index])
         else:
             # Just select the IRFs that are needed for the Delaunay triangulation
             for i in tri.simplices[target_in_simplex]:
-                i2 = get_nearest_az_node(mc_params, i, mc_params_0, data_val_0)
-                new_irfs.append(irfs[i2])
+                i_sel = get_nearest_az_node(
+                    mc_params_sel, i, mc_params_full, data_val_full
+                )
+                new_irfs.append(irfs[i_sel])
     else:
-        index = distance.cdist([data_val], mc_params).argmin()
+        index = distance.cdist([data_val_sel], mc_params_sel).argmin()
         print("Using the nearest IRF.")
-        index = get_nearest_az_node(mc_params, index, mc_params_0, data_val_0)
+        index = get_nearest_az_node(mc_params_sel, index, mc_params_full, data_val_full)
         new_irfs.append(irfs[index])
 
     return new_irfs
 
 
-def get_nearest_az_node(irf_params, index, irf_params_full, target_params_full):
+def get_nearest_az_node(irf_params_sel, index, irf_params_full, target_params_full):
     """
     Check to see if a given IRF node overlaps with another node, in the
     interpolation parameter space, and to select based on the azimuth (hard-
     coded to be index 2 for now) angle, the nearest node to the target.
     """
     # Remove the numerical variations by shortening the precision of values
-    irf_params_short = np.around(irf_params, 3)
+    irf_params_short = np.around(irf_params_sel, 3)
 
     # Find the uniques set of nodes, to compare and choose the indices
-    irf_unique, irf_num = np.unique(
-        irf_params_short, axis=0, return_counts=True
-    )
+    irf_unique, irf_num = np.unique(irf_params_short, axis=0, return_counts=True)
     idx = np.flatnonzero((irf_unique == irf_params_short[index]).all(1))
 
     if irf_num[idx] > 1:
         # Only using the overlapping nodes
-        idx_list = np.flatnonzero(
-            (irf_params_short == irf_params_short[index]).all(1)
-        )
+        idx_list = np.flatnonzero((irf_params_short == irf_params_short[index]).all(1))
         # Finding the shortest distance with respect to target azimuth
         diff = np.abs(irf_params_full[idx_list, 2] - target_params_full[2])
         idx = idx_list[np.where(diff == diff.min())[0]][0]
@@ -198,6 +195,7 @@ def compare_irfs(irfs):
             select_meta.append("GH_EFF")
         else:
             select_meta.append("GH_CUT")
+
         if point_like:
             if energy_dependent_theta:
                 select_meta.append("TH_CONT")
@@ -211,30 +209,29 @@ def compare_irfs(irfs):
 
     # Comparing the metadata information
     for k in select_meta:
-        meta = [
-            Table.read(i, hdu="ENERGY DISPERSION").meta[k] for i in irfs
-        ]
+        meta = [Table.read(i, hdu="ENERGY DISPERSION").meta[k] for i in irfs]
         m = np.unique(meta)
+
         if len(m) != 1:
             meta_bool *= False
 
     print(f"The metadata are{' ' if meta_bool else ' not '}comparable")
     for irf in irfs:
         e_table = Table.read(irf, hdu="ENERGY DISPERSION")
+
         for col in cols:
             params.append(e_table[col].quantity[0])
 
     # Comparing other paramater columns in IRFs
     for i in np.arange(len(cols)):
-        a = [params[len(cols)*j + i] for j in np.arange(len(irfs))]
+        a = [params[len(cols) * j + i] for j in np.arange(len(irfs))]
         a2, a_ind = np.unique(a, return_index=True)
 
         if len(a2) == len(params[i]):
             if (a2[np.argsort(a_ind)] == params[i].value).all():
                 bin_bool = True
     print(
-        "The other parameter axes data "
-        f"are{' ' if bin_bool else ' not '}comparable"
+        "The other parameter axes data " f"are{' ' if bin_bool else ' not '}comparable"
     )
 
     return bin_bool * meta_bool
@@ -265,18 +262,17 @@ def load_irf_grid(irfs, extname, interp_col, gadf_irf=True):
     irf_list = []
     for irf in irfs:
         if gadf_irf:
-            irf_list.append(
-                QTable.read(irf, hdu=extname)[interp_col][0].T
-            )
+            irf_list.append(QTable.read(irf, hdu=extname)[interp_col][0].T)
         else:
-            irf_list.append(
-                QTable.read(irf, hdu=extname)[interp_col]
-            )
+            irf_list.append(QTable.read(irf, hdu=extname)[interp_col])
     return np.stack(irf_list)
 
 
 def interpolate_gh_cuts(
-    gh_cuts, grid_points, target_point, method="linear",
+    gh_cuts,
+    grid_points,
+    target_point,
+    method="linear",
 ):
     """
     Interpolates a grid of GH CUTS tables to a target-point.
@@ -308,7 +304,10 @@ def interpolate_gh_cuts(
 
 
 def interpolate_rad_max(
-    rad_max, grid_points, target_point, method="linear",
+    rad_max,
+    grid_points,
+    target_point,
+    method="linear",
 ):
     """
     Interpolates a grid of RAD_MAX tables to a target-point.
@@ -342,9 +341,18 @@ def interpolate_rad_max(
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
     """
     Using pyirf functions with a list of IRFs and parameters to compare with
-    data, to interpolate over, to get the closest match
+    data, to interpolate over in a selected interpolation parameter space.
 
-    For now only Effective Area and Energy Dispersion is interpolated over.
+    Currently for the single telescope, we are using only cos zenith and
+    sin delta as the interpolation parameters for the IRFs, and not including
+    the contributions from azimuth direction (of the shower) as that becomes
+    significant only when considering a stereo system of telescopes. Hence,
+    we have to we perform the selection criteria only for the selected
+    interpolation parameters.
+
+    Along with IRFs, energy-depedent theta and gammaness cuts, RAD_MAX and
+    GH_CUTS respectively, are also interpolated if they exist in the list of
+    IRFs provided.
 
     Parameters
     ----------
@@ -364,18 +372,26 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     """
 
     # Gather the parameters to use for interpolation
-    # Exclude AZ_PNT as target interpolation parameter - Hard-coded
+    # Exclude AZ_PNT as target interpolation parameter
     d = data_pars.copy()
     d.pop("AZ_PNT", None)
-    params = [*d.keys()]
+
+    # For the interpolation parameters only
+    params_sel = [*d.keys()]
     n_grid = len(irfs)
-    irf_pars = np.empty((n_grid, len(params)))
-    interp_pars = list()
+    irf_pars_sel = np.empty((n_grid, len(params_sel)))
+    interp_pars_sel = list()
 
     extra_keys = [
-        "TELESCOP", "INSTRUME", "FOVALIGN",
-        "GH_CUT", "G_OFFSET", "RAD_MAX", "B_TOTAL", "B_INC"
-        ]
+        "TELESCOP",
+        "INSTRUME",
+        "FOVALIGN",
+        "GH_CUT",
+        "G_OFFSET",
+        "RAD_MAX",
+        "B_TOTAL",
+        "B_INC",
+    ]
     main_headers = fits.open(irfs[0])[1].header
 
     if main_headers["HDUCLAS3"] == "POINT-LIKE":
@@ -398,16 +414,21 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     for i in np.arange(n_grid):
         f = fits.open(irfs[i])[1].header
-        mc_pars = interp_params(params, f)
-        irf_pars[i, :] = np.array(mc_pars)
+        mc_pars_sel = interp_params(params_sel, f)
+        irf_pars_sel[i, :] = np.array(mc_pars_sel)
 
-    interp_pars = interp_params(params, data_pars)
+    interp_pars_sel = interp_params(params_sel, data_pars)
 
     # Keep interp_pars as a tuple to keep the right dimensions in interpolation
-    interp_pars = tuple(interp_pars)
-    irf_interp = fits.HDUList([fits.PrimaryHDU(), ])
+    interp_pars_sel = tuple(interp_pars_sel)
+    irf_interp = fits.HDUList(
+        [
+            fits.PrimaryHDU(),
+        ]
+    )
 
-    # Read select IRFs into lists and extract the necessary columns
+    # Read select IRFs, for which interpolation is supported into lists and
+    # extract the necessary columns
     hdus_interp = fits.open(irfs[0])
 
     try:
@@ -421,7 +442,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         aeff_interp = interpolate_effective_area_per_energy_and_fov(
-            effarea_list, irf_pars, interp_pars, method=interp_method
+            effarea_list, irf_pars_sel, interp_pars_sel, method=interp_method
         )
 
         aeff_hdu_interp = create_aeff2d_hdu(
@@ -451,11 +472,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         edisp_interp = interpolate_energy_dispersion(
-            e_migra,
-            edisp_list,
-            irf_pars,
-            interp_pars,
-            quantile_resolution=1e-3
+            e_migra, edisp_list, irf_pars_sel, interp_pars_sel, quantile_resolution=1e-3
         )
 
         edisp_hdu_interp = create_energy_dispersion_hdu(
@@ -482,7 +499,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         temp_irf = QTable.read(irfs[0], hdu="GH_CUTS")
 
         gh_cut_interp = interpolate_gh_cuts(
-            gh_cuts_list, irf_pars, interp_pars, method=interp_method
+            gh_cuts_list, irf_pars_sel, interp_pars_sel, method=interp_method
         )
 
         gh_header = fits.Header()
@@ -494,9 +511,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
         temp_irf["cut"] = gh_cut_interp
 
-        gh_cut_hdu_interp = fits.BinTableHDU(
-            temp_irf, header=gh_header, name="GH_CUTS"
-        )
+        gh_cut_hdu_interp = fits.BinTableHDU(temp_irf, header=gh_header, name="GH_CUTS")
 
         irf_interp.append(gh_cut_hdu_interp)
 
@@ -505,13 +520,11 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     try:
         hdus_interp["RAD_MAX"]
-        radmax_list = load_irf_grid(
-            irfs, extname="RAD_MAX", interp_col="RAD_MAX"
-        )
+        radmax_list = load_irf_grid(irfs, extname="RAD_MAX", interp_col="RAD_MAX")
         temp_irf = QTable.read(irfs[0], hdu="RAD_MAX")
 
         rad_max_interp = interpolate_rad_max(
-            radmax_list, irf_pars, interp_pars, method=interp_method
+            radmax_list, irf_pars_sel, interp_pars_sel, method=interp_method
         )
 
         temp_irf["RAD_MAX"] = rad_max_interp.T[np.newaxis, ...] * u.deg
@@ -534,9 +547,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     if not point_like:
         try:
             hdus_interp["PSF"]
-            psf_list = load_irf_grid(
-                irfs, extname="PSF", interp_col="RPSF"
-            )
+            psf_list = load_irf_grid(irfs, extname="PSF", interp_col="RPSF")
             temp_irf = QTable.read(irfs[0], hdu="PSF")
 
             e_true = np.append(temp_irf["ENERG_LO"][0], temp_irf["ENERG_HI"][0][-1])
@@ -546,9 +557,9 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             psf_interp = interpolate_psf_table(
                 src_bins,
                 psf_list,
-                irf_pars,
-                interp_pars,
-                quantile_resolution=1e-3
+                irf_pars_sel,
+                interp_pars_sel,
+                quantile_resolution=1e-3,
             )
             psf_hdu_interp = create_psf_table_hdu(
                 psf_interp,
@@ -556,7 +567,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
                 source_offset_bins=src_bins,
                 fov_offset_bins=fov_off,
                 extname="PSF",
-                **extra_headers
+                **extra_headers,
             )
 
             irf_interp.append(psf_hdu_interp)

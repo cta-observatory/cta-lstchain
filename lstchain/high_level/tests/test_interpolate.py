@@ -58,23 +58,19 @@ def test_interp_irf(simulated_irf_file):
     zen_2 = 2 * zen_1
     del_2 = 1.2 * del_1
 
-    factor_zd = (np.cos(zen_2))/np.cos(zen_1)
-    factor_del = (np.sin(del_2))/np.sin(del_1)
+    factor_zd = (np.cos(zen_2)) / np.cos(zen_1)
+    factor_del = (np.sin(del_2)) / np.sin(del_1)
 
     aeff_1["EFFAREA"][0] *= factor_zd
     aeff_2["EFFAREA"][0] *= factor_zd * factor_del
 
-    aeff_1_meta["ZEN_PNT"] = (zen_2 * 180/np.pi, "deg")
-    aeff_1_meta["B_DELTA"] = (del_1 * 180/np.pi, "deg")
-    aeff_2_meta["ZEN_PNT"] = (zen_2 * 180/np.pi, "deg")
-    aeff_2_meta["B_DELTA"] = (del_2 * 180/np.pi, "deg")
+    aeff_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+    aeff_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
+    aeff_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+    aeff_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
-    aeff_hdu_1 = fits.BinTableHDU(
-        aeff_1, header=aeff_1_meta, name="EFFECTIVE AREA"
-    )
-    aeff_hdu_2 = fits.BinTableHDU(
-        aeff_2, header=aeff_2_meta, name="EFFECTIVE AREA"
-    )
+    aeff_hdu_1 = fits.BinTableHDU(aeff_1, header=aeff_1_meta, name="EFFECTIVE AREA")
+    aeff_hdu_2 = fits.BinTableHDU(aeff_2, header=aeff_2_meta, name="EFFECTIVE AREA")
 
     # Change the energy migration for different angular pointings
     edisp_1 = Table.read(simulated_irf_file, hdu="ENERGY DISPERSION")
@@ -90,19 +86,16 @@ def test_interp_irf(simulated_irf_file):
         edisp_2, header=aeff_2_meta, name="ENERGY DISPERSION"
     )
 
-    fits.HDUList(
-        [fits.PrimaryHDU(), aeff_hdu_1, edisp_hdu_1]
-    ).writeto(irf_file_3, overwrite=True)
+    fits.HDUList([fits.PrimaryHDU(), aeff_hdu_1, edisp_hdu_1]).writeto(
+        irf_file_3, overwrite=True
+    )
 
-    fits.HDUList(
-        [fits.PrimaryHDU(), aeff_hdu_2, edisp_hdu_2]
-    ).writeto(irf_file_4, overwrite=True)
+    fits.HDUList([fits.PrimaryHDU(), aeff_hdu_2, edisp_hdu_2]).writeto(
+        irf_file_4, overwrite=True
+    )
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4]
-    data_pars = {
-        "ZEN_PNT": 30 * u.deg,
-        "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg)
-    }
+    data_pars = {"ZEN_PNT": 30 * u.deg, "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg)}
     print(data_pars)
     hdu = interpolate_irf(irfs, data_pars)
     hdu.writeto(irf_file_5, overwrite=True)
@@ -123,14 +116,8 @@ def test_check_delaunay_triangles(simulated_irf_file):
     irfs = [simulated_irf_file, irf_file_3, irf_file_4, irf_file_5]
 
     # Check on target being inside or outside Delaunay simplex
-    data_pars = {
-        "ZEN_PNT": 25 * u.deg,
-        "B_DELTA": 45 * u.deg
-    }
-    data_pars2 = {
-        "ZEN_PNT": 58 * u.deg,
-        "B_DELTA": 70 * u.deg
-    }
+    data_pars = {"ZEN_PNT": 25 * u.deg, "B_DELTA": 45 * u.deg}
+    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 70 * u.deg}
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
@@ -149,19 +136,19 @@ def test_get_nearest_az_node():
     from lstchain.high_level.interpolate import get_nearest_az_node, interp_params
 
     # 2 coincident nodes in IRF interpolation grid (cos zenith, sin delta)
-    data_0  = {
+    data_0 = {
         "ZEN_PNT": 10 * u.deg,
         "B_DELTA": 50.3607 * u.deg,
         "AZ_PNT": 102.199 * u.deg,
     }
-    data_1  = {
+    data_1 = {
         "ZEN_PNT": 10 * u.deg,
         "B_DELTA": 50.3607 * u.deg,
         "AZ_PNT": 248.117 * u.deg,
     }
     # Target node, with same b_delta (sin delta) value as the above nodes
     # AZ_PNT and ZEN_PNT are random close values, not physical.
-    data_target  = {
+    data_target = {
         "ZEN_PNT": 12 * u.deg,
         "B_DELTA": 50.3607 * u.deg,
         "AZ_PNT": 150 * u.deg,
@@ -195,9 +182,10 @@ def test_get_nearest_az_node():
 
     # Values to compare
     mc_closest_az = round(mc_closest[-1], 3)
-    az_check = round(102.199 * np.pi/180, 3)
+    az_check = round(102.199 * np.pi / 180, 3)
 
     assert mc_closest_az == az_check
+
 
 def test_interpolate_gh_cuts():
     from lstchain.high_level.interpolate import interpolate_gh_cuts

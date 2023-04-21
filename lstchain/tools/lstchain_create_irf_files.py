@@ -461,7 +461,10 @@ class IRFFITSWriter(Tool):
                         gammas["true_source_fov_offset"].max().to_value(), 3
                     )
                 ] * u.deg
-                self.log.info(f"For RAD MAX, FoV where we have all of the reconstructed events, is used, {fov_offset_bins}")
+                self.log.info(
+                    "For RAD MAX, FoV where we have all of the reconstructed "
+                    f"events, is used, {fov_offset_bins}"
+                )
 
         if not self.only_gamma_irf:
             background = table.vstack(

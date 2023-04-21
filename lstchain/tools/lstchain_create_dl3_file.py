@@ -2,13 +2,20 @@
 Create DL3 FITS file from given data DL2 file,
 selection cuts and IRF FITS files.
 
-For an interpolated IRF, based on the data provided by the event list,
-provide multiple IRFs. For that provide the common path to the IRFs,
-glob search pattern for the IRFs and a final interpolated IRF file name.
-
 Change the selection parameters as need be using the aliases.
 The default values are written in the EventSelector and DL3Cuts Component
 and also given in some example configs in docs/examples/
+
+For using IRF interpolation methods, to get IRF with sky pointing the same or
+closer (in the interpolation parameter space) to that of the data provided,
+one has to provide,
+1. the path to the IRFs,
+2. glob search pattern for selecting the IRFs to be used, and
+3. a final interpolated IRF file name.
+
+If instead of using IRF interpolation, one needs to add only the nearest IRF
+node to the given data, in the interpolation space, then one needs to pass the
+use-nearest-irf-node flag.
 
 For the cuts on gammaness, the Tool looks at the IRF provided or the final
 interpolated/selected IRF, to either use global cuts, based on the header
@@ -18,12 +25,11 @@ energy-dependent cuts, based on the GH_CUTS HDU.
 To use a separate config file for providing the selection parameters,
 copy and append the relevant example config files, into a custom config file.
 
-For source-dependent analysis, a source-dep flag should be activated.
+For source-dependent analysis, a source-dep flag should be passed.
 Similarly to the cuts on gammaness, the global alpha cut values are provided
-from AL_CUT stored in the HDU header.
-The alpha cut is already applied on this step, and all survived events with
-each assumed source position (on and off) are saved after the gammaness and
-alpha cut.
+from AL_CUT stored in the HDU header. The alpha cut is already applied on this
+step, and all survived events with each assumed source position (on and off)
+are saved after the gammaness and alpha cut.
 To adapt to the high-level analysis used by gammapy, assumed source position
 (on and off) is set as a reco source position just as a trick to obtain
 survived events easily.
