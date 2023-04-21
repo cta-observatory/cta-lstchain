@@ -112,10 +112,7 @@ def main():
               'corresponding DVR_settings_*.h5 file')
         print('(the --picture_threshold and --number-of-rings command-line '
               'options, if provided, will be ignored!)')
-        if len(dl1_files) > 1:
-            print('ERROR: option --write-pixel-masks can be used only with '
-                  'a single input DL1 file')
-            exit(1)
+        exit(1)
 
     else:
         print('I will calculate the Data Volume Reduction parameters from '
