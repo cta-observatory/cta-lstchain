@@ -179,7 +179,7 @@ def main():
 
             if not os.path.isfile(input_dvr_settings_file):
                 print('ERROR: option --write-pixel-masks selected, but file ' +
-                      input_dvr_settings_file + 'does not exist!')
+                      input_dvr_settings_file.name + 'does not exist!')
                 print('You must run first this script over all the subruns of '
                       'the run in one go, and without the --write-pixel-masks '
                       'option.')
