@@ -253,6 +253,55 @@ def test_create_dl3(temp_dir_observed_files, observed_dl2_file, simulated_irf_fi
         == 0
     )
 
+@pytest.mark.private_data
+def test_create_dl3_irf_interp(
+    temp_dir_observed_files, observed_dl2_file, simulated_dl2_file
+):
+    """
+    Generating an DL3 file from a test DL2 files and using IRF interpolation
+    function, to either get the interpolated IRF, or the nearest IRF node
+    """
+    from lstchain.tools.lstchain_create_dl3_file import DataReductionFITSWriter
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_files}",
+                f"--input-irf-path={simulated_dl2_file.parent}",
+                "--irf-file-pattern=en_dep_cut*gz",
+                "--final-irf-file=final_irf_interp_1.fits.gz",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                "--overwrite",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
+    assert (
+        run_tool(
+            DataReductionFITSWriter(),
+            argv=[
+                f"--input-dl2={observed_dl2_file}",
+                f"--output-dl3-path={temp_dir_observed_files}",
+                f"--input-irf-path={simulated_dl2_file.parent}",
+                "--irf-file-pattern=en_dep_cut*gz",
+                "--final-irf-file=final_irf_interp_2.fits.gz",
+                "--source-name=Crab",
+                "--source-ra=83.633deg",
+                "--source-dec=22.01deg",
+                "--overwrite",
+                "--use-nearest-irf-node",
+            ],
+            cwd=temp_dir_observed_files,
+        )
+        == 0
+    )
+
 
 @pytest.mark.private_data
 def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
@@ -286,7 +335,8 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
 
 @pytest.mark.private_data
 def test_create_srcdep_dl3(
-        temp_dir_observed_srcdep_files, observed_srcdep_dl2_file, simulated_srcdep_irf_file
+    temp_dir_observed_srcdep_files, observed_srcdep_dl2_file,
+    simulated_srcdep_irf_file
 ):
     """
     Generating a source-dependent DL3 file from a test DL2 files and test IRF file
