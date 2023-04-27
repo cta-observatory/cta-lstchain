@@ -46,6 +46,7 @@ import tables
 import glob
 import os
 import numpy as np
+import time
 
 from lstchain.paths import parse_dl1_filename
 from ctapipe.instrument import SubarrayDescription
@@ -348,34 +349,53 @@ def main():
         summary_info.max_pixel_survival_fraction = np.round(np.max(pixel_survival_fraction), 5)
         summary_info.mean_pixel_survival_fraction = np.round(np.mean(pixel_survival_fraction), 5)
 
-        writer_conf = tables.Filters(complevel=9, fletcher32=True)
+        # In case the system is temporarily unavailable writing of the file
+        # may fail. If so, we try again (every minute) until we succeed,
+        # and give up after one hour:
+        number_of_writing_attempts = 0
+        while True:
+            try:
+                number_of_writing_attempts += 1
+                writer_conf = tables.Filters(complevel=9, fletcher32=True)
+                filemode = 'w'
+                if not args.write_pixel_masks:
+                    if run_id != current_run_number:
+                        current_run_number = run_id
+                    else:
+                        filemode == 'a'
+                        # In the "DVR settings determination mode" (not writing pixel masks)
+                        # we will write only one file per run number, so for every new subrun
+                        # we just append one row to the run_summary table.
 
-        # In the "DVR settings determination mode" (not writing pixel masks)
-        # we will write only one file per run number, so for every new subrun
-        # we just append one row to the run_summary table.
-        filemode = 'a'
-        if run_id != current_run_number:
-            filemode = 'w'
-            current_run_number = run_id
+                with HDF5TableWriter(output_file, filters=writer_conf,
+                                     mode=filemode) as writer:
+                    writer.write("run_summary", summary_info)
 
-        with HDF5TableWriter(output_file, filters=writer_conf,
-                             mode=filemode) as writer:
-            writer.write("run_summary", summary_info)
-
-        # In the pixel selection mode we create a new file per subrun,
-        # which contains the event-wise pixel masks:
-        if args.write_pixel_masks:
-            data = PixelMask()
-            with HDF5TableWriter(output_file, filters=writer_conf, mode='a') as writer:
-                for evid, evtype, std_clean_npixels, highestQ, pixmask in zip(
-                        event_ids, event_type_data, data_parameters['n_pixels'],
-                        highest_removed_charge, selected_pixels_masks):
-                    data.event_id = evid
-                    data.event_type = evtype
-                    data.number_of_pixels_after_standard_cleaning = std_clean_npixels
-                    data.highest_removed_charge = highestQ
-                    data.pixmask = pixmask
-                    writer.write("selected_pixels_masks", data)
+                # In the pixel selection mode we create a new file per subrun,
+                # which contains the event-wise pixel masks:
+                if args.write_pixel_masks:
+                    data = PixelMask()
+                    with HDF5TableWriter(output_file, filters=writer_conf, mode='a') as writer:
+                        for evid, evtype, std_clean_npixels, highestQ, pixmask in zip(
+                                event_ids, event_type_data, data_parameters['n_pixels'],
+                                highest_removed_charge, selected_pixels_masks):
+                            data.event_id = evid
+                            data.event_type = evtype
+                            data.number_of_pixels_after_standard_cleaning = std_clean_npixels
+                            data.highest_removed_charge = highestQ
+                            data.pixmask = pixmask
+                            writer.write("selected_pixels_masks", data)
+                break
+            except:
+                if number_of_writing_attempts > 60:
+                    print("I gave up!")
+                    exit(1)
+                print(time.asctime(time.localtime()),
+                      "Could not write output, attempt",
+                      number_of_writing_attempts,
+                      "... Will try again after 60 s")
+                time.sleep(60)
+                continue
 
     print()
     print('lstchain_dvr_pixselector finished successfully!')
