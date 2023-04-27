@@ -351,7 +351,7 @@ def main():
 
         # In case the system is temporarily unavailable writing of the file
         # may fail. If so, we try again (every minute) until we succeed,
-        # and give up after one hour:
+        # and give up after a certain number of attempts:
         number_of_writing_attempts = 0
         while True:
             try:
@@ -387,14 +387,14 @@ def main():
                             writer.write("selected_pixels_masks", data)
                 break
             except:
-                if number_of_writing_attempts > 60:
+                if number_of_writing_attempts > 30:
                     print("I gave up!")
                     exit(1)
                 print(time.asctime(time.localtime()),
                       "Could not write output, attempt",
                       number_of_writing_attempts,
-                      "... Will try again after 60 s")
-                time.sleep(60)
+                      "... Will try again after 5 minutes")
+                time.sleep(300)
                 continue
 
     print()
