@@ -387,7 +387,7 @@ def main():
                             writer.write("selected_pixels_masks", data)
                 break
             except:
-                if number_of_writing_attempts > 30:
+                if number_of_writing_attempts > 60:
                     print("I gave up!")
                     exit(1)
                 print(time.asctime(time.localtime()),
