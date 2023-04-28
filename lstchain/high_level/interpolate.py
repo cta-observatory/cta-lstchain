@@ -18,7 +18,7 @@ from pyirf.interpolation import (
     interpolate_psf_table,
     # interpolate_rad_max,
 )
-from scipy.spatial import Delaunay, distance
+from scipy.spatial import Delaunay, distance, QhullError
 from scipy.interpolate import griddata
 
 log = logging.getLogger(__name__)
@@ -27,10 +27,20 @@ log = logging.getLogger(__name__)
 def interp_params(params_list, data):
     """
     From a given list of angular parameters, to be used for interpolation,
-    take values from a given data table/dict.
+    take values from a given data dict.
 
-    Returns the neccessary values with applied functions as need be for the
-    interpolation, for each parameter as a list.
+    Parameters
+    ----------
+    params_list: List of basic angular parameters to get interpolation
+        parameters information .
+        'list'
+    data: dict containing the required basic angular parameters.
+        'dict'
+
+    Returns
+    -------
+    mc_pars: List of interpolation parameters
+        'list'
     """
     mc_pars = []
     if "ZEN_PNT" in params_list:
@@ -52,8 +62,8 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
     target points in data_params.
 
     If the target point does not exist inside the simplex, the IRF
-    corresponding to the nearest grid point to the target value. This is also
-    acheived if use_nearest_irf_node is passed as True.
+    corresponding to the nearest grid point to the target value is used. This
+    is also achieved if use_nearest_irf_node is passed as True.
 
     Fetching the nearest IRF node is also performed by checking the azimuth
     values, as there might be more than a single node, with the same position
@@ -78,10 +88,9 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
         'List'
     """
     # Exclude AZ_PNT as target interpolation parameter
-    d = data_params.copy()
-    d.pop("AZ_PNT", None)
     # For the interpolation parameters only
-    data_pars_sel = [*d.keys()]
+    data_pars_sel = [d for d in data_params.keys() if d != "AZ_PNT"]
+    az_idx = list(data_params.keys()).index("AZ_PNT")
 
     new_irfs = []
     mc_params_sel = np.empty((len(irfs), len(data_pars_sel)))
@@ -101,9 +110,14 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
 
     try:
         tri = Delaunay(mc_params_sel)
-    except ValueError:
+    except QhullError:
         print("Not enough grid values for Delaunay triangulation")
-        return new_irfs
+        # Fetch the nearest IRF node
+        index = distance.cdist([data_val_sel], mc_params_sel).argmin()
+        index = get_nearest_az_node(
+            mc_params_sel, index, mc_params_full, data_val_full, az_idx
+        )
+        return [irfs[index]]
 
     target_in_simplex = tri.find_simplex(data_val_sel)
 
@@ -117,30 +131,58 @@ def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
             index = distance.cdist([data_val_sel], mc_params_sel).argmin()
             print("Target value is outside interpolation. Using the nearest IRF.")
             index = get_nearest_az_node(
-                mc_params_sel, index, mc_params_full, data_val_full
+                mc_params_sel, index, mc_params_full, data_val_full, az_idx
             )
             new_irfs.append(irfs[index])
         else:
             # Just select the IRFs that are needed for the Delaunay triangulation
             for i in tri.simplices[target_in_simplex]:
                 i_sel = get_nearest_az_node(
-                    mc_params_sel, i, mc_params_full, data_val_full
+                    mc_params_sel, i, mc_params_full, data_val_full, az_idx
                 )
                 new_irfs.append(irfs[i_sel])
     else:
         index = distance.cdist([data_val_sel], mc_params_sel).argmin()
         print("Using the nearest IRF.")
-        index = get_nearest_az_node(mc_params_sel, index, mc_params_full, data_val_full)
+        index = get_nearest_az_node(
+            mc_params_sel, index, mc_params_full, data_val_full, az_idx
+        )
         new_irfs.append(irfs[index])
 
     return new_irfs
 
 
-def get_nearest_az_node(irf_params_sel, index, irf_params_full, target_params_full):
+def get_nearest_az_node(
+    irf_params_sel, index, irf_params_full, target_params_full, az_idx
+):
     """
     Check to see if a given IRF node overlaps with another node, in the
-    interpolation parameter space, and to select based on the azimuth (hard-
-    coded to be index 2 for now) angle, the nearest node to the target.
+    interpolation parameter space, and to select based on the azimuth angle,
+    the nearest node to the target.
+
+    All interp_params objects are assumed to generated with the same IRF list.
+
+    Parameters
+    ----------
+    irf_params_sel: interp_params object for the interpolation parameters-based
+        information.
+        'dict'
+    index: index of the list of IRF node information to compare.
+        'int'
+    irf_params_full: interp_params object for all parameters information.
+        'dict'
+    target_params_full: interp_params object for all parameters information of
+        the target.
+        'dict'
+    az_idx: index of azimuth information (AZ_PNT) in the main dict information
+        used for the target.
+        'int'
+
+    Returns
+    -------
+    idx: index of the IRF node information with the closest azimuth value as
+        with the target.
+        'int'
     """
     # Remove the numerical variations by shortening the precision of values
     irf_params_short = np.around(irf_params_sel, 3)
@@ -151,9 +193,13 @@ def get_nearest_az_node(irf_params_sel, index, irf_params_full, target_params_fu
 
     if irf_num[idx] > 1:
         # Only using the overlapping nodes
-        idx_list = np.flatnonzero((irf_params_short == irf_params_short[index]).all(1))
+        idx_list = np.flatnonzero(
+            (irf_params_short == irf_params_short[index]).all(1)
+        )
         # Finding the shortest distance with respect to target azimuth
-        diff = np.abs(irf_params_full[idx_list, 2] - target_params_full[2])
+        diff = np.abs(
+            irf_params_full[idx_list, az_idx] - target_params_full[az_idx]
+        )
         idx = idx_list[np.where(diff == diff.min())[0]][0]
     else:
         # if there are no overlapping nodes
@@ -170,6 +216,7 @@ def compare_irfs(irfs):
     ----------
     irfs: List of IRFs to compare
         'List'
+
     Returns
     -------
     : Boolean indicating whether the given list of IRFs are comparable
@@ -347,10 +394,10 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     sin delta as the interpolation parameters for the IRFs, and not including
     the contributions from azimuth direction (of the shower) as that becomes
     significant only when considering a stereo system of telescopes. Hence,
-    we have to we perform the selection criteria only for the selected
+    we have to perform the selection criteria only for the selected
     interpolation parameters.
 
-    Along with IRFs, energy-depedent theta and gammaness cuts, RAD_MAX and
+    Along with IRFs, energy-dependent theta and gammaness cuts, RAD_MAX and
     GH_CUTS respectively, are also interpolated if they exist in the list of
     IRFs provided.
 
@@ -371,13 +418,9 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         'astropy.io.fits'
     """
 
-    # Gather the parameters to use for interpolation
     # Exclude AZ_PNT as target interpolation parameter
-    d = data_pars.copy()
-    d.pop("AZ_PNT", None)
-
     # For the interpolation parameters only
-    params_sel = [*d.keys()]
+    params_sel = [d for d in data_pars.keys() if d != "AZ_PNT"]#[*d.keys()]
     n_grid = len(irfs)
     irf_pars_sel = np.empty((n_grid, len(params_sel)))
     interp_pars_sel = list()

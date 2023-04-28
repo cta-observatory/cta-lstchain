@@ -111,9 +111,11 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         aeff_2_meta = aeff_1_meta.copy()
 
         zen_1 = u.Quantity(aeff_1_meta["ZEN_PNT"], "deg").to_value(u.rad)
+        az_1 = u.Quantity(aeff_1_meta["AZ_PNT"], "deg").to_value(u.rad)
         del_1 = u.Quantity(aeff_1_meta["B_DELTA"], "deg").to_value(u.rad)
 
         zen_2 = 2 * zen_1
+        az_2 = 2 * az_1
         del_2 = 1.2 * del_1
 
         factor_zd = (np.cos(zen_2)) / np.cos(zen_1)
@@ -123,8 +125,10 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         aeff_2["EFFAREA"][0] *= factor_zd * factor_del
 
         aeff_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+        aeff_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
         aeff_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
         aeff_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+        aeff_1_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
         aeff_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
         aeff_hdu_1 = fits.BinTableHDU(
@@ -144,8 +148,10 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         edisp_2["MATRIX"][0] *= factor_zd * factor_del
 
         edisp_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+        edisp_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
         edisp_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
         edisp_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+        edisp_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
         edisp_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
         edisp_hdu_1 = fits.BinTableHDU(
@@ -168,8 +174,10 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
             gh_2["cut"][mask] *= factor_zd * factor_del
 
             gh_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+            gh_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
             gh_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
             gh_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+            gh_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
             gh_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
             gh_hdu_1 = fits.BinTableHDU(gh_1, header=gh_1_meta, name="GH_CUTS")
@@ -187,8 +195,10 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
             th_2["RAD_MAX"][mask] *= factor_zd * factor_del
 
             th_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+            th_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
             th_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
             th_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+            th_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
             th_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
             th_hdu_1 = fits.BinTableHDU(th_1, header=th_1_meta, name="RAD_MAX")
@@ -217,7 +227,11 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
 
     irfs_g = [simulated_irf_file, irf_file_g_2, irf_file_g_3]
     irfs_en = [irf_file_en, irf_file_en_2, irf_file_en_3]
-    data_pars = {"ZEN_PNT": 30 * u.deg, "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg)}
+    data_pars = {
+        "ZEN_PNT": 30 * u.deg,
+        "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg),
+        "AZ_PNT": 120 * u.deg
+    }
 
     hdu_g = interpolate_irf(irfs_g, data_pars)
     hdu_g.writeto(irf_file_g_final, overwrite=True)
@@ -246,22 +260,22 @@ def test_check_delaunay_triangles(simulated_irf_file):
     irfs = [simulated_irf_file, irf_file_3, irf_file_4, irf_file_5]
 
     # Check on target being inside or outside Delaunay simplex
-    data_pars = {"ZEN_PNT": 25 * u.deg, "B_DELTA": 45 * u.deg}
-    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 70 * u.deg}
+    data_pars = {"ZEN_PNT": 25 * u.deg, "B_DELTA": 45 * u.deg, "AZ_PNT": 100 * u.deg}
+    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 70 * u.deg, "AZ_PNT": 200 * u.deg}
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
     new_irfs3 = check_in_delaunay_triangle(
         irfs, data_pars, use_nearest_irf_node=True
     )
-    new_irfs4 = check_in_delaunay_triangle([], data_pars)
+    new_irfs4 = check_in_delaunay_triangle([irfs[0]], data_pars)
 
     t3 = Table.read(new_irfs3[0], hdu=1).meta
 
     assert len(new_irfs) == 3
     assert len(new_irfs2) == 1
     assert t3["ZEN_PNT"] == 20
-    assert len(new_irfs4) == 0
+    assert len(new_irfs4) == 1
 
 
 def test_get_nearest_az_node():
@@ -289,6 +303,7 @@ def test_get_nearest_az_node():
     }
     params_list = ["ZEN_PNT", "B_DELTA"]
     params_list_full = ["ZEN_PNT", "B_DELTA", "AZ_PNT"]
+    az_idx = list(data_target.keys()).index("AZ_PNT")
 
     # Use interp_params to have appropriate lists for the test
     # Without AZ_PNT, for IRF interpolation space
@@ -308,7 +323,7 @@ def test_get_nearest_az_node():
 
     # Fetch the index of node, closest to the target
     index2 = get_nearest_az_node(
-        check_params, index, check_params_full, check_params_target_full
+        check_params, index, check_params_full, check_params_target_full, az_idx
     )
 
     # Closest node
