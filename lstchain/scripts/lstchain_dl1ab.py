@@ -125,7 +125,8 @@ def main():
 
 
 
-            catB_calib_time = (np.array(catB_calib["time_max"])+np.array(catB_calib["time_min"]))/2
+            #catB_calib_time = (np.array(catB_calib["time_max"])+np.array(catB_calib["time_min"]))/2
+            catB_calib_time = np.array(catB_calib["time_min"])
             catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
             catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
 
@@ -303,6 +304,9 @@ def main():
  
                     # search right Cat-B calibration and update the index
                     calib_idx = np.searchsorted(catB_calib_time,trigger_times[ii])
+                    if calib_idx > 0:
+                        calib_idx -= 1 
+
                     dl1_container.calibration_id = calib_idx                             
 
                     dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain,pixel_index]
