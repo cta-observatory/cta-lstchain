@@ -32,7 +32,8 @@ docs_require = [
     "sphinx_rtd_theme",
     "numpydoc",
     "nbsphinx",
-    "sphinxcontrib-mermaid"
+    "sphinxcontrib-mermaid",
+    "sphinx-togglebutton"
 ]
 
 setup(
