@@ -5,18 +5,21 @@ This script uses DL1 files to determine for each event which pixels
 contain relevant information and should hence be kept when reducing the raw
 data volume.
 
-We need to change the main parameter of the data reduction (pixel selection
+We need to change the main parameter of the data reduction (a pixel selection
 threshold, called "min_charge_for_certain_selection") depending on the NSB
 level (otherwise high NSB data would not be reduced at all).
 However, since we do not want to use different threshold for the subruns of a
 given run (for reasons of stability & simplicity of analysis), we cannot
 decide the threshold subrun by subrun.
 
-The approach is the following: we run first the script over all subruns of a
+The approach is the following: we run first the script over *all* subruns of a
 run, for example:
 
-lstchain_dvr_pixselector -f "/xxx/yyy/dl1_LST-1.Run12469.????.h5"
+lstchain_dvr_pixselector -f "/.../dl1_LST-1.Run12469.????.h5"
 
+(the default "action" compute_dvr_settings will be chosen by default, and the
+default parameters will be used for "picture_threshold" and "number_of_rings" -
+see below)
 This creates in the output directory (which is the current by default) a file
 DVR_settings_LST-1.Run12469.h5 which contains a table "run_summary" which
 includes the DVR algorithm parameters determined for each subrun.
@@ -24,19 +27,20 @@ includes the DVR algorithm parameters determined for each subrun.
 Then we run again the script over all subruns, and using the option to create
 the pixel maks:
 
-lstchain_dvr_pixselector -f "/xxx/yyy/dl1_LST-1.Run12469.????.h5" --write-pixel-masks
+lstchain_dvr_pixselector -f "/.../dl1_LST-1.Run12469.????.h5" --action create_pixel_masks
 
 The script will detect that the file DVR_settings_LST-1.Run12469.h5 already
-exists, read it, and use as threshold for DVR the average for all subruns,
+exists, read it, and use, as threshold for DVR, the average for all subruns,
 in p.e., rounded to the closest lower integer (we do not want to have too many
 different ways of reducing the data, so we "discretize" the threshold in
 1-p.e. steps). Then the event-wise pixel maks (selected pixels) for the subrun
 will be computed and written out to a file
 Pixel_selection_LST-1.Run12469.xxxx.h5  for each subrun xxxx
 
-If the option --write-pixel-masks is used, then options --number-of-rings and
---picture-threshold will be ignored, since the DVR settings will be obtained
-from the DVR_settings file.
+Note that when the option --action create_pixel_masks is used, the options
+--number-of-rings and --picture-threshold are ignored, since in that
+case the DVR settings will be obtained from the previously created DVR_settings
+file.
 
 """
 
@@ -58,20 +62,21 @@ from ctapipe.containers import EventType
 parser = argparse.ArgumentParser(description="DVR pixel selector")
 
 parser.add_argument('-f', '--dl1-files', dest='dl1_files',
-                    type=str,
+                    type=str, default='',
                     help='Input DL1 file names')
 parser.add_argument('-o', '--output-dir', dest='output_dir',
                     type=Path, default='./',
-                    help='Path to the output directory')
+                    help='Path to the output directory (default: %(default)s)')
 parser.add_argument('-t', '--picture-threshold', dest='picture_threshold',
                     type=float, default=8.,
-                    help='Picture threshold (p.e.)')
+                    help='Picture threshold (p.e., default: %(default)s)')
+parser.add_argument('--action', dest='action', type=str,
+                    default='compute_dvr_settings',
+                    help='compute_dvr_settings (default) or create_pixel_masks')
 parser.add_argument('-n', '--number-of-rings', dest='number_of_rings',
                     type=int, default=1,
-                    help='Number of rings around picture pixels')
-parser.add_argument('-m', '--write-pixel-masks', action='store_true',
-                    help='Write out the event-wise masks of relevant pixels'
-                    )
+                    help='Number of rings around picture pixels (default: %('
+                         'default)s)')
 
 class PixelMask(Container):
     event_id = Field(-1, 'event id')
@@ -104,19 +109,27 @@ def main():
     args = parser.parse_args()
     summary_info = RunSummary()
 
-    dl1_files = glob.glob(args.dl1_files)
-    dl1_files.sort()
-
-    if (args.write_pixel_masks):
+    write_pixel_masks = False
+    if args.action == 'compute_dvr_settings':
+        print('I will calculate the Data Volume Reduction parameters from '
+              'the input DL1 files, and write them to the output file')
+    elif args.action == 'create_pixel_masks':
+        write_pixel_masks = True
         print('Option to write pixel masks in output file selected. I will '
               'read in the Data Volume Reduction parameters from the '
               'corresponding DVR_settings_*.h5 file')
         print('(the --picture_threshold and --number-of-rings command-line '
               'options, if provided, will be ignored!)')
-
     else:
-        print('I will calculate the Data Volume Reduction parameters from '
-              'the input DL1 files, and write them to the output file')
+        print('Unknown option in --action flag!')
+        return 1
+
+    if args.dl1_files == '':
+        print('Please use --dl1-files provide a valid set of DL1 files!')
+        return 1
+
+    dl1_files = glob.glob(args.dl1_files)
+    dl1_files.sort()
 
     # The pixel selection will be applied only to "physics triggers"
     # (showers), not to other events like interleaved pedestal and flatfield
@@ -163,7 +176,7 @@ def main():
         output_dir.mkdir(exist_ok=True, parents=True)
 
         # The file DVR_settings_LST-1.Run*.h5 will be needed in case the
-        # --write-pixel_masks option is used:
+        # --action create_pixel_masks  option is used:
         input_dvr_settings_file = Path(output_dir,
                                        f'DVR_settings_LST-1.Run{run_id:05d}.h5')
         dvr_settings = None
@@ -174,16 +187,15 @@ def main():
 
         # On the other hand, for writing the pixels masks we will create
         # subrun-wise files:
-        if args.write_pixel_masks:
+        if write_pixel_masks:
             output_file = Path(output_dir, f'Pixel_selection_LST-1.Run'
                                            f'{run_id:05d}.{subrun_id:04d}.h5')
 
             if not os.path.isfile(input_dvr_settings_file):
-                print('ERROR: option --write-pixel-masks selected, but file ' +
+                print('ERROR: --action create_pixel_masks selected, but file ' +
                       input_dvr_settings_file.name + 'does not exist!')
                 print('You must run first this script over all the subruns of '
-                      'the run in one go, and without the --write-pixel-masks '
-                      'option.')
+                      'the run in one go, using --action compute_dvr_settings')
                 exit(1)
 
             dvr_settings = read_table(input_dvr_settings_file, '/run_summary')
@@ -261,7 +273,7 @@ def main():
         print('  Mean: ', np.round(np.mean(image_mask, axis=0).mean(), 5))
 
         charges_cosmics = charges_data[cosmic_mask]
-        if not args.write_pixel_masks:
+        if not write_pixel_masks:
             # Calculate an adequate data volume reduction pixel threshold for
             # this subrun:
             min_charge_for_certain_selection = find_DVR_threshold(charges_cosmics,
@@ -358,14 +370,15 @@ def main():
                 number_of_writing_attempts += 1
                 writer_conf = tables.Filters(complevel=9, fletcher32=True)
                 filemode = 'w'
-                if not args.write_pixel_masks:
+                if not write_pixel_masks:
                     if run_id != current_run_number:
                         current_run_number = run_id
                     else:
                         filemode == 'a'
-                        # In the "DVR settings determination mode" (not writing pixel masks)
-                        # we will write only one file per run number, so for every new subrun
-                        # we just append one row to the run_summary table.
+                        # In the "compute_dvr_settings" mode (not writing pixel
+                        # masks) we will write only one file per run number,
+                        # so for every new subrun we just append one row to the
+                        # run_summary table.
 
                 with HDF5TableWriter(output_file, filters=writer_conf,
                                      mode=filemode) as writer:
@@ -373,7 +386,7 @@ def main():
 
                 # In the pixel selection mode we create a new file per subrun,
                 # which contains the event-wise pixel masks:
-                if args.write_pixel_masks:
+                if write_pixel_masks:
                     data = PixelMask()
                     with HDF5TableWriter(output_file, filters=writer_conf, mode='a') as writer:
                         for evid, evtype, std_clean_npixels, highestQ, pixmask in zip(
@@ -400,6 +413,7 @@ def main():
     print()
     print('lstchain_dvr_pixselector finished successfully!')
     print()
+    return 0
 
 def get_selected_pixels(charge_map, min_charge_for_certain_selection,
                         number_of_rings, geom,
