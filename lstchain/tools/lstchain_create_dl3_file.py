@@ -360,7 +360,7 @@ class DataReductionFITSWriter(Tool):
                 self.use_energy_dependent_gh_cuts = (
                     "GH_CUT" not in hdul["EFFECTIVE AREA"].header
                 )
-        except Exception:
+        except KeyError:
             raise ToolConfigurationError(
                 f"{self.final_irf_output} does not have EFFECTIVE AREA HDU, "
                 " to check for global cut information in the Header value"

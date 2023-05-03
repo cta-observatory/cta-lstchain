@@ -4,67 +4,6 @@ from astropy.io import fits
 from astropy.table import Table
 
 
-def test_compare_irfs(
-    simulated_irf_file, simulated_srcdep_irf_file, simulated_dl2_file,
-):
-    from lstchain.high_level.interpolate import compare_irfs
-    from lstchain.scripts.tests.test_lstchain_scripts import run_program
-
-    # Creating IRFs with different global cuts, en-dep cuts for point-like
-    # IRFs, to make the comparisons
-    irf_file_2 = simulated_dl2_file.parent / "diff_cut_irf.fits.gz"
-    run_program(
-        "lstchain_create_irf_files",
-        "--input-gamma-dl2",
-        simulated_dl2_file,
-        "--input-proton-dl2",
-        simulated_dl2_file,
-        "--input-electron-dl2",
-        simulated_dl2_file,
-        "--output-irf-file",
-        irf_file_2,
-        "--global-gh-cut=0.7",
-    )
-    irf_file_3 = simulated_dl2_file.parent / "en_dep_cut_irf_1.fits.gz"
-    run_program(
-        "lstchain_create_irf_files",
-        "--input-gamma-dl2",
-        simulated_dl2_file,
-        "--output-irf-file",
-        irf_file_3,
-        "--energy-dependent-gh",
-        "--energy-dependent-theta",
-        "--point-like",
-        "--gh-efficiency=0.7",
-        "--theta-containment=0.7",
-    )
-    irf_file_4 = simulated_dl2_file.parent / "en_dep_cut_irf_2.fits.gz"
-    run_program(
-        "lstchain_create_irf_files",
-        "--input-gamma-dl2",
-        simulated_dl2_file,
-        "--output-irf-file",
-        irf_file_4,
-        "--energy-dependent-gh",
-        "--energy-dependent-theta",
-        "--point-like",
-        "--gh-efficiency=0.8",
-        "--theta-containment=0.8",
-    )
-
-    irfs_1 = [simulated_irf_file, irf_file_2]
-    irfs_2 = [simulated_irf_file, simulated_irf_file]
-    irfs_3 = [irf_file_3, irf_file_4]
-    irfs_4 = [irf_file_3, irf_file_3]
-    irfs_5 = [simulated_srcdep_irf_file, simulated_srcdep_irf_file]
-
-    assert compare_irfs(irfs_1) == 0
-    assert compare_irfs(irfs_2)
-    assert compare_irfs(irfs_3) == 0
-    assert compare_irfs(irfs_4)
-    assert compare_irfs(irfs_5)
-
-
 def test_load_irf_grid(simulated_irf_file):
     from lstchain.high_level.interpolate import load_irf_grid
 
@@ -75,9 +14,11 @@ def test_load_irf_grid(simulated_irf_file):
 
 def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     from lstchain.high_level.interpolate import interpolate_irf
+    from lstchain.scripts.tests.test_lstchain_scripts import run_program
 
     # Create another IRFs with different zenith and azimuth parameter
-    # Global cuts IRF
+    # Global cuts
+
     irf_file_g_2 = simulated_irf_file.parent / "irf_interp_0.fits.gz"
     irf_file_g_3 = simulated_irf_file.parent / "irf_interp_1.fits.gz"
     irf_file_g_final = simulated_irf_file.parent / "irf_interp_final.fits.gz"
@@ -90,11 +31,23 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     ]
 
     # En-dep, point-like cuts IRF
-    irf_file_en = simulated_dl2_file.parent / "en_dep_cut_irf_1.fits.gz"
-
+    irf_file_en_1 = simulated_dl2_file.parent / "en_dep_cut_irf_1.fits.gz"
     irf_file_en_2 = simulated_dl2_file.parent / "en_dep_cut_irf_2.fits.gz"
     irf_file_en_3 = simulated_dl2_file.parent / "en_dep_cut_irf_3.fits.gz"
     irf_file_en_final = simulated_dl2_file.parent / "interp_en_dep_cut_irf.fits.gz"
+
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file_en_1,
+        "--energy-dependent-gh",
+        "--energy-dependent-theta",
+        "--point-like",
+        "--gh-efficiency=0.8",
+        "--theta-containment=0.8",
+    )
 
     hdus_2_en = [
         fits.PrimaryHDU(),
@@ -103,7 +56,7 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         fits.PrimaryHDU(),
     ]
 
-    for irf in [simulated_irf_file, irf_file_en]:
+    for irf in [simulated_irf_file, irf_file_en_1]:
         # Change the effective area for different angular pointings
         aeff_1 = Table.read(irf, hdu="EFFECTIVE AREA")
         aeff_1_meta = fits.open(irf)["EFFECTIVE AREA"].header
@@ -226,7 +179,7 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     fits.HDUList(hdus_3_en).writeto(irf_file_en_3, overwrite=True)
 
     irfs_g = [simulated_irf_file, irf_file_g_2, irf_file_g_3]
-    irfs_en = [irf_file_en, irf_file_en_2, irf_file_en_3]
+    irfs_en = [irf_file_en_1, irf_file_en_2, irf_file_en_3]
     data_pars = {
         "ZEN_PNT": 30 * u.deg,
         "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg),
@@ -248,6 +201,76 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     assert irf_file_en_2.exists()
     assert irf_file_en_3.exists()
     assert irf_file_en_final.exists()
+
+
+def test_compare_irfs(
+    simulated_irf_file, simulated_srcdep_irf_file, simulated_dl2_file,
+    simulated_srcdep_dl2_file
+):
+    from lstchain.high_level.interpolate import compare_irfs
+    from lstchain.scripts.tests.test_lstchain_scripts import run_program
+
+    # Create IRF with different global cuts for comparison
+    irf_file_2 = simulated_dl2_file.parent / "diff_cut_irf.fits.gz"
+
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--input-proton-dl2",
+        simulated_dl2_file,
+        "--input-electron-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file_2,
+        "--global-gh-cut=0.7",
+    )
+    # IRFs with same and different efficiency values for energy-dependent cuts,
+    # and same direction pointing values.
+    irf_file_en_1 = simulated_dl2_file.parent / "en_dep_cut_irf_1.fits.gz"
+    irf_file_en_1_cut2 = simulated_dl2_file.parent / "en_dep_diff_cut_irf_1.fits.gz"
+
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_dl2_file,
+        "--output-irf-file",
+        irf_file_en_1_cut2,
+        "--energy-dependent-gh",
+        "--energy-dependent-theta",
+        "--point-like",
+        "--gh-efficiency=0.7",
+        "--theta-containment=0.7",
+    )
+
+    # IRFs with same efficiency values for energy-dependent cuts,
+    # and different direction pointing values.
+    irf_file_en_2 = simulated_dl2_file.parent / "en_dep_cut_irf_2.fits.gz"
+
+    # Src-dep IRF with different global alpha cut
+    srcdep_irf_file_2 = simulated_srcdep_dl2_file.parent / "irf_srcdep_2.fits.gz"
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_srcdep_dl2_file,
+        "--output-irf-file",
+        srcdep_irf_file_2,
+        "--point-like",
+        "--source-dep",
+        "--global-alpha-cut=11"
+    )
+
+    irfs_diff_global_cuts = [simulated_irf_file, irf_file_2]
+    irfs_same_file = [simulated_irf_file, simulated_irf_file]
+    irfs_same_en_dep_cuts_diff_dir = [irf_file_en_1, irf_file_en_2]
+    irfs_diff_en_dep_cuts = [irf_file_en_1, irf_file_en_1_cut2]
+    irfs_srcdep_diff_global_cuts = [simulated_srcdep_irf_file, srcdep_irf_file_2]
+
+    assert compare_irfs(irfs_diff_global_cuts) == 0
+    assert compare_irfs(irfs_same_file)
+    assert compare_irfs(irfs_diff_en_dep_cuts) == 0
+    assert compare_irfs(irfs_same_en_dep_cuts_diff_dir)
+    assert compare_irfs(irfs_srcdep_diff_global_cuts) == 0
 
 
 def test_check_delaunay_triangles(simulated_irf_file):
