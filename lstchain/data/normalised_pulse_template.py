@@ -190,7 +190,11 @@ class NormalizedPulseTemplate:
         """
 
         t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
-        hg, lg = eventsource_camera_readout.reference_pulse_shape
+        pulses = eventsource_camera_readout.reference_pulse_shape
+        if len(pulses) == 2:
+            hg, lg = pulses[0], pulses[1]
+        if len(pulses) == 1:
+            hg, lg = pulses[0], pulses[0]
         i = np.argmax(hg)
         t = t - t[i] + 9.0
         return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)
