@@ -55,11 +55,13 @@ def test_create_irf_point_like(temp_dir_observed_files, simulated_dl2_file):
 
     with fits.open(irf_file) as hdul:
         for hdu in hdul[1:]:
-            assert 'RAD_MAX' in hdu.header
-            assert isinstance(hdu.header['RAD_MAX'], float)
+            assert "RAD_MAX" in hdu.header
+            assert isinstance(hdu.header["RAD_MAX"], float)
 
 
-def test_create_irf_full_enclosure_with_config(temp_dir_observed_files, simulated_dl2_file):
+def test_create_irf_full_enclosure_with_config(
+    temp_dir_observed_files, simulated_dl2_file
+):
     """
     Generating full enclosure IRF file from a test DL2 files, using
     a config file
@@ -113,8 +115,8 @@ def test_create_irf_point_like_srcdep(
 
     with fits.open(irf_file) as hdul:
         for hdu in hdul[1:]:
-            assert 'AL_CUT' in hdu.header
-            assert isinstance(hdu.header['AL_CUT'], float)
+            assert "AL_CUT" in hdu.header
+            assert isinstance(hdu.header["AL_CUT"], float)
 
 
 def test_create_irf_point_like_energy_dependent_cuts(
@@ -142,7 +144,7 @@ def test_create_irf_point_like_energy_dependent_cuts(
                 "--point-like",
                 "--energy-dependent-theta",
                 "--DL3Cuts.max_theta_cut=1",
-                "--DL3Cuts.fill_theta_cut=1"
+                "--DL3Cuts.fill_theta_cut=1",
             ],
             cwd=temp_dir_observed_files,
         )
@@ -150,6 +152,7 @@ def test_create_irf_point_like_energy_dependent_cuts(
     )
 
     assert RadMax2D.read(irf_file, hdu="RAD_MAX")
+
 
 def test_create_irf_point_like_srcdep_energy_dependent_cuts(
     temp_dir_observed_srcdep_files, simulated_srcdep_dl2_file
@@ -176,8 +179,8 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
                 "--overwrite",
             ],
             cwd=temp_dir_observed_srcdep_files,
-       )
-       == 0
+        )
+        == 0
     )
 
     gh_cuts = QTable.read(irf_file, hdu="GH_CUTS")
@@ -186,10 +189,9 @@ def test_create_irf_point_like_srcdep_energy_dependent_cuts(
     al_cuts = QTable.read(irf_file, hdu="AL_CUTS")
     assert isinstance(al_cuts.meta["AL_CONT"], float)
 
+
 @pytest.mark.private_data
-def test_create_dl3_energy_dependent_cuts(
-    temp_dir_observed_files, observed_dl2_file
-):
+def test_create_dl3_energy_dependent_cuts(temp_dir_observed_files, observed_dl2_file):
     """
     Generating an DL3 file from a test DL2 files and test IRF file, using
     energy dependent cuts. Here the previously created IRF is used.
@@ -200,7 +202,7 @@ def test_create_dl3_energy_dependent_cuts(
     irf_file = temp_dir_observed_files / "pnt_irf.fits.gz"
 
     dl2_name = observed_dl2_file.name
-    observed_dl3_file = temp_dir_observed_files / dl2_name.replace('dl2', 'dl3')
+    observed_dl3_file = temp_dir_observed_files / dl2_name.replace("dl2", "dl3")
     observed_dl3_file = observed_dl3_file.with_suffix(".fits")
 
     assert (
@@ -222,9 +224,9 @@ def test_create_dl3_energy_dependent_cuts(
         == 0
     )
 
-    assert Observation.read(
-        event_file=observed_dl3_file, irf_file=irf_file
-    ).obs_id == 2008
+    assert (
+        Observation.read(event_file=observed_dl3_file, irf_file=irf_file).obs_id == 2008
+    )
 
 
 @pytest.mark.private_data
@@ -286,8 +288,7 @@ def test_create_dl3_with_config(temp_dir_observed_files, observed_dl2_file):
 
 @pytest.mark.private_data
 def test_create_srcdep_dl3(
-    temp_dir_observed_srcdep_files, observed_srcdep_dl2_file,
-    simulated_srcdep_irf_file
+    temp_dir_observed_srcdep_files, observed_srcdep_dl2_file, simulated_srcdep_irf_file
 ):
     """
     Generating a source-dependent DL3 file from a test DL2 files and test IRF file
@@ -318,8 +319,8 @@ def test_create_srcdep_dl3(
     hdulist = fits.open(
         temp_dir_observed_srcdep_files / dl2_to_dl3_filename(observed_srcdep_dl2_file)
     )
-    ra = hdulist[1].data['RA']
-    dec = hdulist[1].data['DEC']
+    ra = hdulist[1].data["RA"]
+    dec = hdulist[1].data["DEC"]
 
     np.testing.assert_allclose(ra, 83.63, atol=1e-2)
     np.testing.assert_allclose(dec, 22.01, atol=1e-2)
@@ -327,7 +328,7 @@ def test_create_srcdep_dl3(
 
 @pytest.mark.private_data
 def test_create_srcdep_dl3_energy_dependent_cuts(
-        temp_dir_observed_srcdep_files, observed_srcdep_dl2_file
+    temp_dir_observed_srcdep_files, observed_srcdep_dl2_file
 ):
     """
     Generating a source-dependent DL3 file from a test DL2 files and test IRF file,
