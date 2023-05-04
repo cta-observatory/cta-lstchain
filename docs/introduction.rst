@@ -33,6 +33,9 @@ Data levels
 Analysis steps
 ==============
 
+These individuals steps can be run one by one but are also integrated
+in more complete workflows presented in :doc:`lst_analysis_workflow`.
+
 R1 to DL1
 ---------
 
@@ -41,7 +44,7 @@ MC data
 
 Use ``lstchain.scripts.lstchain_mc_r0_to_dl1``. 
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 
 Real data
@@ -49,7 +52,7 @@ Real data
 
 Use ``lstchain.scripts.lstchain_data_r0_to_dl1``.
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 
 DL1 to DL1a and DL1b
@@ -58,7 +61,7 @@ DL1 to DL1a and DL1b
 If you already have a DL1 file containing images and parameters (DL1a and DL1b), you can recalculate the parameters
 using a different cleaning by using ``lstchain.scripts.lstchain_dl1ab``.
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 
 Configuration file
@@ -77,7 +80,7 @@ DL1 to DL2
 
 Use ``lstchain.scripts.lstchain_dl1_to_dl2`` for real data and MC.
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 Configuration file
 ^^^^^^^^^^^^^^^^^^
@@ -102,7 +105,7 @@ IRF creation
 
 To write IRF files, you should use ``lstchain.tools.lstchain_create_irf_files``.
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 
 Here is an example configuration file for the IRF creation step.
@@ -113,15 +116,15 @@ Here is an example configuration file for the IRF creation step.
         :code: json
 
 
-Events creation
-^^^^^^^^^^^^^^^
+Event list creation
+^^^^^^^^^^^^^^^^^^^
 
 To write DL3 files, you should use:
 
 - ``lstchain.tools.lstchain_create_dl3_file``
 - ``lstchain.tools.lstchain_create_dl3_index_files``
 
-For more information, try --help or see the :doc:`lstchain_api/index`.
+For more information, try ``--help`` or see the :doc:`lstchain_api/index`.
 
 Here is an example configuration file for the IRF creation step.
 
@@ -132,7 +135,7 @@ Here is an example configuration file for the IRF creation step.
 
 
 Post DL3 analysis
-^^^^^^^^^^^^^^^^^
+-----------------
 
-You may analyze the resulting files using ``gammapy``
+You may analyze the resulting files using ``gammapy``, see its doc: https://docs.gammapy.org/.
 
