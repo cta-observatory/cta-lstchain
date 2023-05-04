@@ -71,8 +71,8 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         az_2 = 2 * az_1
         del_2 = 1.2 * del_1
 
-        factor_zd = (np.cos(zen_2)) / np.cos(zen_1)
-        factor_del = (np.sin(del_2)) / np.sin(del_1)
+        factor_zd = np.cos(zen_2) / np.cos(zen_1)
+        factor_del = np.sin(del_2) / np.sin(del_1)
 
         aeff_1["EFFAREA"][0] *= factor_zd
         aeff_2["EFFAREA"][0] *= factor_zd * factor_del
@@ -362,7 +362,7 @@ def test_get_nearest_az_node():
 def test_interpolate_gh_cuts():
     from lstchain.high_level.interpolate import interpolate_gh_cuts
 
-    # Similar function as interpolate_th_cuts, hence no need for extra test
+    # Similar function as interpolate_rad_max, hence no need for extra test
     # linear test case
     gh_cuts_1 = np.array([[0, 0], [0.1, 0], [0.2, 0.1], [0.3, 0.2]])
     gh_cuts_2 = 2 * gh_cuts_1
