@@ -42,7 +42,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
-    'sphinx.ext.githubpages', 
+    "sphinx.ext.githubpages", 
     "numpydoc",
     "nbsphinx",
     "sphinx_automodapi.automodapi",
@@ -52,7 +52,6 @@ extensions = [
 ]
 
 numpydoc_show_class_members = False
-nbsphinx_allow_errors = True
 autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -140,13 +139,23 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 #
 # html_theme_options = {}
 
+
+# NbSphinx
+nbsphinx_allow_errors = True
+nbsphinx_notebooks = "../notebooks"
+nbsphinx_builders = ['html']
+nbsphinx_output_dir = 'examples/notebooks'
+nbsphinx_toctree = {
+    'maxdepth': 2,
+    'caption': 'Notebooks',
+    'glob': '*.html',
+}
+
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_js_files = ['custom.js']
-html_css_files = ['custom.css']
-
 html_extra_path = ['examples']
 
 
@@ -205,3 +214,6 @@ texinfo_documents = [
      author, 'lstchain', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+
