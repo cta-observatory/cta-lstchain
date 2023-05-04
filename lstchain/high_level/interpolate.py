@@ -420,7 +420,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     # Exclude AZ_PNT as target interpolation parameter
     # For the interpolation parameters only
-    params_sel = [d for d in data_pars.keys() if d != "AZ_PNT"]#[*d.keys()]
+    params_sel = [d for d in data_pars.keys() if d != "AZ_PNT"]
     n_grid = len(irfs)
     irf_pars_sel = np.empty((n_grid, len(params_sel)))
     interp_pars_sel = list()
