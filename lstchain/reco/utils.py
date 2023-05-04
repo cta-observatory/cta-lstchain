@@ -44,7 +44,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side",
+    "source_side"
 ]
 
 # position of the LST1
@@ -54,15 +54,16 @@ horizon_frame = AltAz(location=location, obstime=obstime)
 
 # Geomagnetic parameters for the LST1 as per
 # https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm and
-# using IGRF model on date  TIME_MC = 2020-06-29
-GEOM_MAG_REFERENCE_TIME = Time("2020-06-29", format="iso")
-GEOMAG_DEC = (-5.0674 * u.deg).to(u.rad)
-GEOMAG_INC = (37.4531 * u.deg).to(u.rad)
-GEOMAG_TOTAL = 38.7305 * u.uT
+# using IGRF model on date  TIME_MC = 2021-11-29 at elevation 10 km a.s.l
+# for the position where the particle shower is at its peak
+GEOM_MAG_REFERENCE_TIME = Time("2021-11-29", format="iso")
+GEOMAG_DEC = (-4.8443 * u.deg).to(u.rad)
+GEOMAG_INC = (37.3663 * u.deg).to(u.rad)
+GEOMAG_TOTAL = 38.5896 * u.uT
 
-DELTA_DEC = (0.1656 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_INC = (-0.0698 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_TOTAL = 0.009 * u.uT / u.yr
+DELTA_DEC = (0.1653 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_INC = (-0.0700 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_TOTAL = 0.0089 * u.uT / u.yr
 
 log = logging.getLogger(__name__)
 
@@ -693,7 +694,6 @@ def get_effective_time(events):
     return t_eff, t_elapsed
 
 
-
 def get_geomagnetic_field_orientation(time=None):
     '''
     Linearly extrapolate the geomagnetic field parameters from the
@@ -752,8 +752,8 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
         geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
 
     term = (
-        (np.sin(geomag_inc) * np.cos(zen)) +
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+        (np.sin(geomag_inc) * np.cos(zen)) -
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az - geomag_dec))
     )
 
     delta = np.arccos(term)
