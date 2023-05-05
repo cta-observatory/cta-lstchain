@@ -31,6 +31,7 @@ dependencies:
   - pandas>=2
   - pymongo
   - seaborn
+  - scipy>=1.8
   - jinja2=3.0 # pinned for bokeh 1.0 compatibility
   - pip:
       - ctapipe_io_lst~=0.18.2
