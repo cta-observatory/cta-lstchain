@@ -56,7 +56,7 @@ setup(
         'pandas',
         'protobuf~=3.20.0',
         'pyirf==0.7',
-        'scipy',
+        'scipy>=1.8',
         'seaborn',
         'scikit-learn~=1.0',
         'tables',
