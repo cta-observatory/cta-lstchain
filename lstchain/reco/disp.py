@@ -1,4 +1,3 @@
-import astropy.units as u
 import numpy as np
 
 from . import utils
@@ -14,7 +13,7 @@ __all__ = [
     ]
 
 
-def disp(cog_x, cog_y, src_x, src_y):
+def disp(cog_x, cog_y, src_x, src_y, hillas_psi):
     """
     Compute the disp parameters
 
@@ -24,6 +23,7 @@ def disp(cog_x, cog_y, src_x, src_y):
     cog_y: `numpy.ndarray` or float
     src_x: `numpy.ndarray` or float
     src_y: `numpy.ndarray` or float
+    hillas_psi: `numpy.ndarray` or float
 
     Returns
     -------
@@ -36,7 +36,16 @@ def disp(cog_x, cog_y, src_x, src_y):
     """
     disp_dx = src_x - cog_x
     disp_dy = src_y - cog_y
-    disp_norm = np.sqrt(disp_dx**2 + disp_dy**2)
+
+    disp_norm = disp_dx * np.cos(hillas_psi) + disp_dy * np.sin(hillas_psi)
+    disp_sign = np.sign(disp_norm)
+    disp_norm = np.abs(disp_norm)
+
+    # disp_sign : indicates in which direction, "positive" or "negative", we must move along the
+    # reconstructed image axis (with direction defined by the versor cos(hillas_psi), sin(hillas_psi))
+    # we must move from cog_x, cog_y to get closest to the true direction (src_x, src_y)
+
+
     if hasattr(disp_dx, '__len__'):
         disp_angle = np.arctan(disp_dy / disp_dx)
         disp_angle[disp_dx == 0] = np.pi / 2. * np.sign(disp_dy[disp_dx == 0])
@@ -45,8 +54,6 @@ def disp(cog_x, cog_y, src_x, src_y):
             disp_angle = np.pi/2. * np.sign(disp_dy)
         else:
             disp_angle = np.arctan(disp_dy/disp_dx)
-
-    disp_sign = np.sign(disp_dx)
 
     return disp_dx, disp_dy, disp_norm, disp_angle, disp_sign
 
@@ -65,10 +72,10 @@ def miss(disp_dx, disp_dy, hillas_psi):
     -------
 
     """
-    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi)*disp_dy)
+    return np.abs(np.sin(hillas_psi) * disp_dx - np.cos(hillas_psi) * disp_dy)
 
 
-def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
+def disp_parameters(cog_x, cog_y, hillas_psi, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
     """
     Compute disp parameters.
 
@@ -76,6 +83,7 @@ def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
     ----------
     cog_x: `numpy.ndarray` or float
     cog_y: `numpy.ndarray` or float
+    hillas_psi: `numpy.ndarray` or float
     mc_alt: `numpy.ndarray` or float
     mc_az: `numpy.ndarray` or float
     mc_alt_tel: `numpy.ndarray` or float
@@ -87,7 +95,7 @@ def disp_parameters(cog_x, cog_y, mc_alt, mc_az, mc_alt_tel, mc_az_tel, focal):
     (disp_dx, disp_dy, disp_norm, disp_angle, disp_sign) : `numpy.ndarray` or float
     """
     source_pos_in_camera = utils.sky_to_camera(mc_alt, mc_az, focal, mc_alt_tel, mc_az_tel)
-    return disp(cog_x, cog_y, source_pos_in_camera.x, source_pos_in_camera.y)
+    return disp(cog_x, cog_y, source_pos_in_camera.x, source_pos_in_camera.y, hillas_psi)
 
 
 
@@ -108,23 +116,23 @@ def disp_parameters_event(hillas_parameters, source_pos_x, source_pos_y):
     -------
     `lstchain.io.containers.DispContainer`
     """
-    disp_container = lstcontainers.DispContainer()
 
-    d = disp(hillas_parameters.x.to(u.m).value,
-             hillas_parameters.y.to(u.m).value,
-             source_pos_x.to(u.m).value,
-             source_pos_y.to(u.m).value,
-             )
+    dx, dy, norm, angle, sign = disp(
+        hillas_parameters.x,
+        hillas_parameters.y,
+        source_pos_x,
+        source_pos_y,
+        hillas_parameters.psi
+    )
 
-    disp_container.dx = d[0] * u.m
-    disp_container.dy = d[1] * u.m
-    disp_container.norm = d[2] * u.m
-    disp_container.angle = d[3] * u.rad
-    disp_container.sign = d[4]
-    disp_container.miss = miss(disp_container.dx.value,
-                               disp_container.dy.value,
-                               hillas_parameters.psi.to(u.rad).value) * u.m
-    return disp_container
+    return lstcontainers.DispContainer(
+        dx=dx,
+        dy=dy,
+        norm=norm,
+        angle=angle,
+        sign=sign,
+        miss=miss(dx, dy, hillas_parameters.psi)
+    )
 
 
 

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Merge all HDF5 files resulting 
-from parallel reconstructions present in a 
-directory. Every dataset in the files must be 
+Merge all HDF5 files resulting
+from parallel reconstructions present in a
+directory. Every dataset in the files must be
 readable with pandas.
 
 - Input: several hdf5 files.
 - Output single hdf5 file.
 
-Usage: 
+Usage:
 
 $> python lstchain_merge_hdf5_files.py
 --input-dir ./
@@ -66,6 +66,12 @@ parser.add_argument(
     help='Do not display the progress bar during event processing'
 )
 
+parser.add_argument(
+    '--skip-checks',
+    action='store_true',
+    help='Skip checks when merging files'
+)
+
 
 def main():
     args = parser.parse_args()
@@ -89,7 +95,8 @@ def main():
         file_list,
         args.output_file,
         nodes_keys=keys,
-        progress_bar=not args.no_progress
+        progress_bar=not args.no_progress,
+        run_checks=not args.skip_checks
     )
 
 

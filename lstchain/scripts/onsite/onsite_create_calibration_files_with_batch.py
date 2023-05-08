@@ -91,7 +91,7 @@ optional.add_argument(
 
 
 def main():
-    args = parser.parse_args()
+    args, remaining_args = parser.parse_known_args()
     run_list = args.run_list
     filters_list = args.filters_list
     ped_run = args.pedestal_run
@@ -171,6 +171,7 @@ def main():
                     "onsite_create_calibration_file",
                     f"-r {run}",
                     f"-v {prod_id}",
+                    f"--r0-dir {r0_dir}",
                     f"--sub_run={sub_run}",
                     f"-b {base_dir}",
                     f"-s {stat_events}",
@@ -201,6 +202,8 @@ def main():
 
                 if args.use_flatfield_heuristic is False:
                     cmd.append("--no-flatfield-heuristic")
+
+                cmd.extend(remaining_args)
 
                 # join command together with newline, line continuation and indentation
                 fh.write(" \\\n  ".join(cmd))

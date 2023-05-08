@@ -166,7 +166,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -267,21 +267,28 @@ def test_merge_datacheck_files(temp_dir_observed_files):
 
 
 def test_lstchain_merged_dl1_to_dl2(
-    temp_dir_simulated_files, merged_simulated_dl1_file, rf_models
+    temp_dir_simulated_files, simulated_dl1_file, merged_simulated_dl1_file, rf_models
 ):
-    output_file = merged_simulated_dl1_file.with_name(
+    simulated_dl1_file_ = simulated_dl1_file.parent.joinpath('another_dl1.h5')
+    simulated_dl1_file_.symlink_to(simulated_dl1_file)
+    output_file_1 = simulated_dl1_file_.with_name(
+        simulated_dl1_file_.name.replace("dl1", "dl2")
+    )
+    output_file_2 = merged_simulated_dl1_file.with_name(
         merged_simulated_dl1_file.name.replace("dl1", "dl2")
     )
     run_program(
         "lstchain_dl1_to_dl2",
         "-f",
+        simulated_dl1_file_,
         merged_simulated_dl1_file,
         "-p",
         rf_models["path"],
         "--output-dir",
         temp_dir_simulated_files,
     )
-    assert output_file.is_file()
+    assert output_file_1.is_file()
+    assert output_file_2.is_file()
 
 
 def test_lstchain_dl1_to_dl2(simulated_dl2_file):
@@ -311,7 +318,7 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dx" in dl2_srcdep_df['on'].columns
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
-    assert "reco_src_y" in dl2_srcdep_df['on'].columns    
+    assert "reco_src_y" in dl2_srcdep_df['on'].columns
 
 
 @pytest.mark.private_data
@@ -465,9 +472,10 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
     from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
 
-    events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
+    events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+    assert "GEOMAG_DELTA" in simu_geomag
 
 
 @pytest.mark.private_data
@@ -477,8 +485,10 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
     real_data_dl2_file = temp_dir_observed_files / (
         observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
-    events = read_data_dl2_to_QTable(real_data_dl2_file)
+    events, data_pars = read_data_dl2_to_QTable(real_data_dl2_file)
+
     assert "gh_score" in events.colnames
+    assert "B_DELTA" in data_pars
 
 
 @pytest.mark.private_data

@@ -185,9 +185,9 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     ring_size : `float`
         Total intensity in ring in photoelectrons
     size_outside_ring : `float`
-        Intensity outside the muon ting in photoelectrons
+        Intensity outside the muon ring in photoelectrons
         to check for "shower contamination"
-    muonringparam : `MuonParametersContainer`
+    muonringparam : `MuonRingContainer`
     good_ring : `bool`
         It determines whether the ring can be used for analysis or not
     radial_distribution : `dict`

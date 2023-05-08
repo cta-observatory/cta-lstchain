@@ -92,7 +92,7 @@ def main():
     logging.getLogger().addHandler(handler)
 
     if Path(args.output_file).exists():
-        log.critical('Outputfile already exists')
+        log.critical(f'Output file {args.output_file} already exists')
         sys.exit(1)
 
     std_config = get_standard_config()
@@ -101,30 +101,27 @@ def main():
     else:
         config = std_config
 
-
     with tables.open_file(args.input_file, 'r') as f:
         is_simulation = 'simulation' in f.root
 
-    increase_nsb = False
-    increase_psf = False
-    if "image_modifier" in config:
-        imconfig = config["image_modifier"]
-        increase_nsb = imconfig["increase_nsb"]
-        increase_psf = imconfig["increase_psf"]
-        if increase_nsb or increase_psf:
-            log.info(f"image_modifier configuration: {imconfig}")
+    imconfig = config.get('image_modifier', {})
+    increase_nsb = imconfig.get("increase_nsb", False)
+    increase_psf = imconfig.get("increase_psf", False)
+
+    if increase_nsb or increase_psf:
+        log.info(f"image_modifier configuration: {imconfig}")
+        log.info("NOTE: Using the image_modifier options means images will "
+                 "not be saved.")
+        args.no_image = True
+    if increase_nsb:
         extra_noise_in_dim_pixels = imconfig["extra_noise_in_dim_pixels"]
         extra_bias_in_dim_pixels = imconfig["extra_bias_in_dim_pixels"]
         transition_charge = imconfig["transition_charge"]
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
+    if increase_psf:
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-        if (increase_nsb or increase_psf):
-            log.info("NOTE: Using the image_modifier options means images will "
-                     "not be saved.")
-            args.no_image = True
 
-    if is_simulation:
-        args.pedestal_cleaning = False
+    args.pedestal_cleaning = False if is_simulation else args.pedestal_cleaning
 
     if args.pedestal_cleaning:
         log.info("Pedestal cleaning")
@@ -193,7 +190,8 @@ def main():
         'time_gradient',
         'n_pixels',
         'wl',
-        'log_intensity'
+        'log_intensity',
+        'sin_az_tel'
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
@@ -225,8 +223,14 @@ def main():
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
 
+            params_node = outfile.root[dl1_params_lstcam_key]
+            params = params_node.read()
 
-            params = outfile.root[dl1_params_lstcam_key].read()
+            new_params = set(parameters_to_update) - set(params_node.colnames)
+            if new_params:
+                log.warning(f"Parameters not in original DL1 file {args.input_file} that can't be recomputed:"
+                            f"{new_params}")
+            parameters_to_update = list(set(parameters_to_update) & set(params_node.colnames))
             if image_mask_save:
                 image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
 
@@ -317,7 +321,8 @@ def main():
                         dl1_container['x'].to_value(u.m),
                         dl1_container['y'].to_value(u.m),
                         params['src_x'][ii],
-                        params['src_y'][ii]
+                        params['src_y'][ii],
+                        dl1_container['psi'].to_value(u.rad)
                     )
 
                     dl1_container['disp_dx'] = disp_dx
@@ -326,6 +331,8 @@ def main():
                     dl1_container['disp_angle'] = disp_angle
                     dl1_container['disp_sign'] = disp_sign
 
+                dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
+                    
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 

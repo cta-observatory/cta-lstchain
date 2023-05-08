@@ -24,6 +24,7 @@ from eventio.simtel.objects import History, HistoryConfig
 
 from pyirf.simulations import SimulatedEventsInfo
 
+from lstchain.reco.utils import get_geomagnetic_delta
 from .lstcontainers import (
     ExtraMCInfo,
     MetaData,
@@ -81,6 +82,8 @@ dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -293,7 +296,8 @@ def auto_merge_h5files(
         nodes_keys=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
-        progress_bar=True
+        progress_bar=True,
+        run_checks=True,
 ):
     """
     Automatic merge of HDF5 files.
@@ -307,12 +311,14 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
-    progress_bar : bool
+    progress_bar: bool
         Enabling the display of the progress bar during event processing.
+    run_checks: bool
+        Check if the files to be merged are consistent
     """
 
     file_list = list(file_list)
-    if len(file_list) > 1:
+    if len(file_list) > 1 and run_checks:
         file_list = merging_check(file_list)
 
     if nodes_keys is None:
@@ -847,7 +853,8 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
 def read_mc_dl2_to_QTable(filename):
     """
     Read MC DL2 files from lstchain and convert into pyirf internal format
-    - astropy.table.QTable
+    - astropy.table.QTable.
+    Also include simulation information necessary for some functions.
 
     Parameters
     ----------
@@ -855,9 +862,11 @@ def read_mc_dl2_to_QTable(filename):
 
     Returns
     -------
-    `astropy.table.QTable`, `pyirf.simulations.SimulatedEventsInfo`
+    events: `astropy.table.QTable`
+    pyirf_simu_info: `pyirf.simulations.SimulatedEventsInfo`
+    extra_data: 'Dict'
     """
-    
+
     # mapping
     name_mapping = {
         "mc_energy": "true_energy",
@@ -881,18 +890,33 @@ def read_mc_dl2_to_QTable(filename):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
     simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Temporary addition here, but can be included in the pyirf.simulations
+    # class of SimulatedEventsInfo
+    extra_data = {}
+    extra_data["GEOMAG_TOTAL"] = simu_info.prod_site_B_total
+    extra_data["GEOMAG_DEC"] = simu_info.prod_site_B_declination
+    extra_data["GEOMAG_INC"] = simu_info.prod_site_B_inclination
+
+    extra_data["GEOMAG_DELTA"] = get_geomagnetic_delta(
+        zen = np.pi/2 - simu_info.min_alt.to_value(u.rad),
+        az = simu_info.min_az.to_value(u.rad),
+        geomag_dec = simu_info.prod_site_B_declination.to_value(u.rad),
+        geomag_inc = simu_info.prod_site_B_inclination.to_value(u.rad)
+    ) * u.rad
+
     pyirf_simu_info = SimulatedEventsInfo(
         n_showers=simu_info.num_showers * simu_info.shower_reuse,
         energy_min=simu_info.energy_range_min,
         energy_max=simu_info.energy_range_max,
         max_impact=simu_info.max_scatter_range,
         spectral_index=simu_info.spectral_index,
-        viewcone=simu_info.max_viewcone_radius,
+        viewcone=simu_info.max_viewcone_radius
     )
 
     events = pd.read_hdf(filename, key=dl2_params_lstcam_key)
@@ -908,12 +932,14 @@ def read_mc_dl2_to_QTable(filename):
     for k, v in unit_mapping.items():
         events[k] *= v
 
-    return events, pyirf_simu_info
+    return events, pyirf_simu_info, extra_data
 
 
 def read_data_dl2_to_QTable(filename, srcdep_pos=None):
     """
-    Read data DL2 files from lstchain and return QTable format
+    Read data DL2 files from lstchain and return QTable format, along with
+    a dict of target parameters for IRF interpolation
+
     Parameters
     ----------
     filename: path to the lstchain DL2 file
@@ -921,7 +947,8 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     Returns
     -------
-    `astropy.table.QTable`
+    data: `astropy.table.QTable`
+    data_params: 'Dict' of target interpolation parameters
     """
 
     # Mapping
@@ -941,7 +968,7 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     # add alpha for source-dependent analysis
     srcdep_flag = dl2_params_src_dep_lstcam_key in get_dataset_keys(filename)
-    
+
     if srcdep_flag:
         unit_mapping['alpha'] = u.deg
 
@@ -952,14 +979,26 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
         data = pd.concat([data, data_srcdep], axis=1)
 
     data = data.rename(columns=name_mapping)
-
     data = QTable.from_pandas(data)
 
     # Make the columns as Quantity
     for k, v in unit_mapping.items():
         data[k] *= v
 
-    return data
+    # Create dict of target parameters for IRF interpolation
+    data_params = {}
+
+    zen = np.pi / 2 * u.rad - data["pointing_alt"].mean().to(u.rad)
+    az = data["pointing_az"].mean().to(u.rad)
+    if az < 0:
+        az += 2*np.pi * u.rad
+    b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
+
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 5) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 5) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 5) * u.deg
+
+    return data, data_params
 
 
 def read_dl2_params(t_filename, columns_to_read=None):
@@ -1166,6 +1205,7 @@ def extract_simulation_nsb(filename):
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
 
+
 def check_mc_type(filename):
     """
     Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
@@ -1178,7 +1218,7 @@ def check_mc_type(filename):
     """
 
     simu_info = read_simu_info_merged_hdf5(filename)
-    
+
     min_viewcone = simu_info.min_viewcone_radius.value
     max_viewcone = simu_info.max_viewcone_radius.value
 
@@ -1187,7 +1227,7 @@ def check_mc_type(filename):
 
     elif min_viewcone == 0.0:
         mc_type = 'diffuse'
-        
+
     elif (max_viewcone - min_viewcone) < 0.1:
         mc_type = 'ring_wobble'
 
@@ -1196,4 +1236,3 @@ def check_mc_type(filename):
 
     return mc_type
             
-

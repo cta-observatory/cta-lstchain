@@ -1,139 +1,4 @@
 {
-  "source_config" : {
-    "EventSource": {
-      "allowed_tels": [1],
-      "max_events": null
-    },
-    "LSTEventSource": {
-      "default_trigger_type": "ucts",
-      "allowed_tels": [1],
-      "min_flatfield_adc": 3000,
-      "min_flatfield_pixel_fraction": 0.8,
-      "calibrate_flatfields_and_pedestals": false,
-      "EventTimeCalculator": {
-        "dragon_reference_counter": null,
-        "dragon_reference_time": null
-      },
-      "PointingSource":{
-        "drive_report_path": null
-      },
-      "LSTR0Corrections":{
-        "calib_scale_high_gain":1.088,
-        "calib_scale_low_gain":1.004,
-        "drs4_pedestal_path": null,
-        "calibration_path": null,
-        "drs4_time_calibration_path": null
-      }
-    }
-  },
-
-  "events_filters": {
-    "intensity": [0, Infinity],
-    "width": [0, Infinity],
-    "length": [0, Infinity],
-    "wl": [0, Infinity],
-    "r": [0, Infinity],
-    "leakage_intensity_width_2": [0, Infinity]
-  },
-
-  "tailcut": {
-    "picture_thresh":8,
-    "boundary_thresh":4,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
-  "tailcuts_clean_with_pedestal_threshold": {
-    "picture_thresh":8,
-    "boundary_thresh":4,
-    "sigma":2.5,
-    "keep_isolated_pixels":false,
-    "min_number_picture_neighbors":2,
-    "use_only_main_island":false,
-    "delta_time": 2
-  },
-  "dynamic_cleaning": {
-    "apply": true,
-    "threshold": 267,
-    "fraction_cleaning_intensity": 0.03
-  },
-
-  "random_forest_energy_regressor_args": {
-    "max_depth": 30,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 150,
-    "bootstrap": true,
-    "criterion": "squared_error",
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_split": 10,
-    "min_weight_fraction_leaf": 0.0,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0,
-    "warm_start": false
-  },
-
-  "random_forest_disp_regressor_args": {
-    "max_depth": 30,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 150,
-    "bootstrap": true,
-    "criterion": "squared_error",
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_split": 10,
-    "min_weight_fraction_leaf": 0.0,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0,
-    "warm_start": false
-  },
-
-  "random_forest_disp_classifier_args": {
-    "max_depth": 30,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 100,
-    "criterion": "gini",
-    "min_samples_split": 10,
-    "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "bootstrap": true,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0.0,
-    "warm_start": false,
-    "class_weight": null
-  },
-
-  "random_forest_particle_classifier_args": {
-    "max_depth": 30,
-    "min_samples_leaf": 2,
-    "n_jobs": 4,
-    "n_estimators": 100,
-    "criterion": "gini",
-    "min_samples_split": 10,
-    "min_weight_fraction_leaf": 0.0,
-    "max_features": "auto",
-    "max_leaf_nodes": null,
-    "min_impurity_decrease": 0.0,
-    "bootstrap": true,
-    "oob_score": false,
-    "random_state": 42,
-    "verbose": 0.0,
-    "warm_start": false,
-    "class_weight": null
-  },
-
-
   "energy_regression_features": [
     "log_intensity",
     "width",
@@ -143,11 +8,11 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "dist"
+    "dist",
+    "alt_tel",
+    "sin_az_tel"
   ],
-
   "disp_method": "disp_norm_sign",
-
   "disp_regression_features": [
     "log_intensity",
     "width",
@@ -157,9 +22,10 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "dist"
+    "dist",
+    "alt_tel",
+    "sin_az_tel"
   ],
-
   "disp_classification_features": [
     "log_intensity",
     "width",
@@ -169,9 +35,10 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "dist"
+    "dist",
+    "alt_tel",
+    "sin_az_tel"
   ],
-
   "particle_classification_features": [
     "log_intensity",
     "width",
@@ -182,32 +49,15 @@
     "time_gradient_from_source",
     "leakage_intensity_width_2",
     "log_reco_energy",
-    "dist"
+    "dist",
+    "alt_tel",
+    "sin_az_tel"
   ],
 
-  "allowed_tels": [1, 2, 3, 4],
-  "write_pe_image": false,
-  "mc_image_scaling_factor": 1,
-  "image_extractor": "LocalPeakWindowSum",
-  "image_extractor_for_muons": "GlobalPeakWindowSum",
-  "CameraCalibrator": {
-    "apply_waveform_time_shift": false
-  },
-  "time_sampling_correction_path": "default",
-  "LocalPeakWindowSum":{
-    "window_shift": 4,
-    "window_width": 8,
-    "apply_integration_correction": false
-  },
-  "GlobalPeakWindowSum":{
-    "window_shift": 4,
-    "window_width": 8,
-    "apply_integration_correction": false
-  },
-  "timestamps_pointing":"ucts",
-
-  "train_gamma_src_r_deg": [0, Infinity],
-
+  "train_gamma_src_r_deg": [
+    0,
+    Infinity
+  ],
   "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,
   "mc_nominal_source_y_deg": 0.0,
@@ -215,55 +65,6 @@
   "observation_mode": "wobble",
   "n_off_wobble": 1,
   "source_name": "Crab Nebula",
-  "source_ra":83.63308333,
-  "source_dec":22.0145,
-
-  "volume_reducer":{
-    "algorithm": null,
-    "parameters": {
-    }
-  },
-  "calibration_product": "LSTCalibrationCalculator",
-
-  "LSTCalibrationCalculator":{
-    "systematic_correction_path": null,
-    "squared_excess_noise_factor": 1.222,
-    "flatfield_product": "FlasherFlatFieldCalculator",
-    "pedestal_product": "PedestalIntegrator",
-    "PedestalIntegrator":{
-      "sample_size": 10000,
-      "sample_duration":100000,
-      "tel_id":1,
-      "time_sampling_correction_path": null,
-      "charge_median_cut_outliers": [-10,10],
-      "charge_std_cut_outliers": [-10,10],
-      "charge_product":"FixedWindowSum",
-      "FixedWindowSum":{
-        "window_shift": 6,
-        "window_width":12,
-        "peak_index": 18,
-        "apply_integration_correction": false
-      }
-    },
-    "FlasherFlatFieldCalculator":{
-      "sample_size": 10000,
-      "sample_duration":100000,
-      "tel_id":1,
-      "time_sampling_correction_path": null,
-      "charge_product":"LocalPeakWindowSum",
-      "charge_median_cut_outliers": [-0.5,0.5],
-      "charge_std_cut_outliers": [-10,10],
-      "time_cut_outliers": [2,38],
-      "LocalPeakWindowSum":{
-        "window_shift": 5,
-        "window_width":12,
-        "apply_integration_correction": false
-      }
-    }
-  },
-  "waveform_nsb_tuning":{
-    "nsb_tuning": false,
-    "nsb_tuning_ratio": 0.52,
-    "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
-  }
+  "source_ra": 83.63308333,
+  "source_dec": 22.0145
 }
