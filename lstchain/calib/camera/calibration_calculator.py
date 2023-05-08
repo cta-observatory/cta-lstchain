@@ -226,7 +226,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         
         # give to the unusable pixels the median camera value for the dc_to_pe and pedestal
         # (these are the starting data for the Cat-B calibration)        
-        dc_to_pe_masked=np.ma.array(calib_data.dc_to_pe, mask=calib_data.unusable_pixels)
+        dc_to_pe_masked = np.ma.array(calib_data.dc_to_pe, mask=calib_data.unusable_pixels)
         median_dc_to_pe = np.ma.median(dc_to_pe_masked, axis=1)[:,np.newaxis]
         fill_array = np.ones((constants.N_GAINS, constants.N_PIXELS)) * median_dc_to_pe
         calib_data.dc_to_pe = np.ma.filled(dc_to_pe_masked, fill_array)
