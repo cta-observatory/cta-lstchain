@@ -144,17 +144,16 @@ def main():
 
     # For the record, keep the input "picture threshold". It is not necessarily
     # the value that will be used for pixel selection, if it allows too many
-    # pixels too survive.
+    # pixels to survive (see below)
     summary_info.picture_threshold = args.picture_threshold
 
-    # Value will be modified, if a too high average fraction (
-    # > max_pix_survival_fraction) of pixels (and FIRST neighbors)
-    # survive, in shower events, with that picture threshold. The value is
-    # computed excluding the 10% noisiest pixels in the camera, because we
-    # want it to be stable when e.g. stars get in and out of the camera,
-    # or when changing wobbles (star field changes)
+    # The threshold charge for pixel selection will be modified, if a too
+    # high average fraction (> max_pix_survival_fraction) of pixels (and FIRST
+    # neighbors) survive, in shower events, with that picture threshold. The
+    # value is computed excluding the 10% noisiest pixels in the camera,
+    # because we want it to be stable when e.g. stars get in and out of the
+    # camera, or when changing wobbles (star field changes)
     max_pix_survival_fraction = 0.1
-
 
     # Number of "rings" of pixels to be finally kept around pixels which are
     # above min_charge_for_certain_selection
