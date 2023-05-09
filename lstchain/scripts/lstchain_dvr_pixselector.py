@@ -53,6 +53,9 @@ import numpy as np
 import time
 
 from lstchain.paths import parse_dl1_filename
+from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
+from lstchain.io.io import dl1_params_tel_mon_cal_key
+
 from ctapipe.instrument import SubarrayDescription
 from ctapipe.io import read_table
 from ctapipe.core import Container, Field
@@ -160,6 +163,14 @@ def main():
     number_of_rings = args.number_of_rings
     summary_info.number_of_rings = number_of_rings
 
+    # Cuts to identify muon rings candidates (in order to save them fully)
+    # These are conservative cuts which are fulfilled comfortable by all "good
+    # quality" rigs that are actually used for calibration:
+    muon_ring_min_intensity = 1000
+    muon_ring_min_length = 0.5
+    muon_ring_min_n_pixels = 50
+    muon_ring_max_t_gradient = 5
+
     current_run_number = -1
 
     for dl1_file in dl1_files:
@@ -207,8 +218,7 @@ def main():
 
         print('Output file:', output_file)
 
-        data_parameters = read_table(dl1_file,
-                                     '/dl1/event/telescope/parameters/LST_LSTCam')
+        data_parameters = read_table(dl1_file, dl1_params_lstcam_key)
 
         # Read some useful extra info from the file:
         subarray_info = SubarrayDescription.from_hdf(dl1_file)
@@ -240,9 +250,9 @@ def main():
         cosmic_mask   = event_type_data == EventType.SUBARRAY.value  # showers
         pedestal_mask = event_type_data == EventType.SKY_PEDESTAL.value
 
-        data_images = read_table(dl1_file, "/dl1/event/telescope/image/LST_LSTCam")
+        data_images = read_table(dl1_file, dl1_images_lstcam_key)
 
-        data_calib = read_table(dl1_file, "/dl1/event/telescope/monitoring/calibration")
+        data_calib = read_table(dl1_file, dl1_params_tel_mon_cal_key)
         # data_calib['unusable_pixels'] , indices: (Gain  Calib_id  Pixel)
 
         # Get the "unusable" flags from the pedcal file:
@@ -292,10 +302,14 @@ def main():
 
         # Cuts to identify promising muon ring candidates:
         mucan_event_list = np.where(cosmic_mask &
-                                    (data_parameters['intensity']>1000) &
-                                    (data_parameters['length']>0.5) &
-                                    (data_parameters['n_pixels']>50) &
-                                    (abs(data_parameters['time_gradient'])<5))[0]
+                                    (data_parameters['intensity'] >
+                                     muon_ring_min_intensity) &
+                                    (data_parameters['length'] >
+                                     muon_ring_min_length) &
+                                    (data_parameters['n_pixels'] >
+                                     muon_ring_min_n_pixels) &
+                                    (abs(data_parameters['time_gradient']) <
+                                     muon_ring_max_t_gradient))[0]
 
         mucan_event_id_list = np.array(data_parameters['event_id'][mucan_event_list])
         summary_info.number_of_muon_candidates = len(mucan_event_list)
