@@ -222,10 +222,7 @@ def main():
 
         # Read some useful extra info from the file:
         subarray_info = SubarrayDescription.from_hdf(dl1_file)
-        focal_length = subarray_info.tel[1].optics.equivalent_focal_length
-        print('Focal length:', focal_length)
         camera_geom = subarray_info.tel[1].camera.geometry
-        print('Camera geometry:', camera_geom)
 
         # Time between first and last timestamp:
         summary_info.elapsed_time = (data_parameters['dragon_time'][-1] -
