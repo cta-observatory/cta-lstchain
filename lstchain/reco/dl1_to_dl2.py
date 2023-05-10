@@ -460,7 +460,7 @@ def build_models(filegammas, fileprotons,
                 "The requested number of protons for the classifier training is not valid."
             ) from e
 
-    test = testg.append(df_proton, ignore_index=True)
+    test = pd.concat([testg, df_proton], ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
     # Apply the temporary energy regressors to the test set

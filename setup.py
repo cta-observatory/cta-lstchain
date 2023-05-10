@@ -32,7 +32,8 @@ docs_require = [
     "sphinx_rtd_theme",
     "numpydoc",
     "nbsphinx",
-    "sphinxcontrib-mermaid"
+    "sphinxcontrib-mermaid",
+    "sphinx-togglebutton"
 ]
 
 setup(
@@ -48,14 +49,14 @@ setup(
         'gammapy~=0.19.0',
         'h5py',
         'iminuit>=2',
-        'joblib',
+        'joblib~=1.2.0',
         'matplotlib~=3.5',
         'numba',
         'numpy<1.22.0a0',
         'pandas',
         'protobuf~=3.20.0',
-        'pyirf~=0.6.0',
-        'scipy',
+        'pyirf==0.7',
+        'scipy>=1.8',
         'seaborn',
         'scikit-learn~=1.0',
         'tables',

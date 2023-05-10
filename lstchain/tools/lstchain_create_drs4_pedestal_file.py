@@ -165,6 +165,11 @@ class DRS4PedestalAndSpikeHeight(Tool):
             "DRS4PedestalAndSpikeHeight.full_statistics",
             "Whether to write the full statistics about spikes or not",
         ),
+        **flag(
+            "timelapse-correction",
+            "LSTR0Corrections.apply_timelapse_correction",
+            "Whether to apply drs4 timelapse correction or not.",
+        ),
     }
 
     classes = [LSTEventSource]
@@ -196,7 +201,6 @@ class DRS4PedestalAndSpikeHeight(Tool):
 
         self.source.r0_r1_calibrator.offset = 0
         self.source.r0_r1_calibrator.apply_spike_correction = False
-        self.source.r0_r1_calibrator.apply_timelapse_correction = True
         self.source.r0_r1_calibrator.apply_drs4_pedestal_correction = False
 
         n_stats = N_GAINS * N_PIXELS * N_CAPACITORS_PIXEL
