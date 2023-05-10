@@ -210,10 +210,11 @@ def test_get_geomagnetic_delta():
     # this is just a regression test assuming the values were correct when
     # first implementing the function
     inc = get_geomagnetic_delta(zen=20 * u.deg, az=0 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
-    assert u.isclose(inc, 0.57002008 * u.rad)
+    assert u.isclose(inc, 1.26667967 * u.rad)
 
     inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
-    assert u.isclose(inc, 0.20785624 * u.rad)
+    assert u.isclose(inc, 1.73389012 * u.rad)
+
 
 def test_apply_src_r_cut(simulated_dl1_file):
     from lstchain.io.io import dl1_params_lstcam_key

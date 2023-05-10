@@ -48,6 +48,7 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
     "sphinxcontrib.mermaid",
+    "sphinx_togglebutton",
 ]
 
 numpydoc_show_class_members = False
@@ -143,6 +144,10 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_js_files = ['custom.js']
+html_css_files = ['custom.css']
+
+html_extra_path = ['examples']
 
 
 # -- Options for HTMLHelp output ------------------------------------------

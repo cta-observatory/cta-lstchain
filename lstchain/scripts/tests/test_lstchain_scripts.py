@@ -475,9 +475,10 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
     from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
 
-    events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
+    events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+    assert "GEOMAG_DELTA" in simu_geomag
 
 
 @pytest.mark.private_data
@@ -487,8 +488,10 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
     real_data_dl2_file = temp_dir_observed_files / (
         observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
-    events = read_data_dl2_to_QTable(real_data_dl2_file)
+    events, data_pars = read_data_dl2_to_QTable(real_data_dl2_file)
+
     assert "gh_score" in events.colnames
+    assert "B_DELTA" in data_pars
 
 
 @pytest.mark.private_data
