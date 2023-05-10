@@ -145,18 +145,30 @@ def main():
     # labeled as "unknown" are cosmics (=showers), so we include them among the
     # types to be reduced.
 
-    # For the record, keep the input "picture threshold". It is not necessarily
-    # the value that will be used for pixel selection, if it allows too many
-    # pixels to survive (see below)
+    # For the record, keep the input "picture threshold".
+    # Note that it is the value that will be used for the pixel selection
+    # algorithm, ONLY IF it results in an average fraction of surviving
+    # pixels (see below) smaller than max_pix_survival_fraction, defined below.
+    # If it allows a larger fraction of pixels to survive.
     summary_info.picture_threshold = args.picture_threshold
 
-    # The threshold charge for pixel selection will be modified, if a too
-    # high average fraction (> max_pix_survival_fraction) of pixels (and FIRST
-    # neighbors) survive, in shower events, with that picture threshold. The
-    # value is computed excluding the 10% noisiest pixels in the camera,
-    # because we want it to be stable when e.g. stars get in and out of the
-    # camera, or when changing wobbles (star field changes)
+    # The threshold charge for pixel selection, called
+    # min_charge_for_certain_selection is equal to args.picture_threshold by
+    # default, but it will be modified, if a too high average fraction
+    # (> max_pix_survival_fraction) of pixels (and FIRST neighbors) survive,
+    # in shower events, with that picture threshold (this is to adapt the
+    # selection to higher NSB levels). The survival fraction is computed
+    # excluding the 10% noisiest pixels in the camera, because we want it to
+    # be stable when e.g. stars get in and out of the camera, or when
+    # changing wobbles (star field changes).
     max_pix_survival_fraction = 0.1
+    # Note that in this calculation of survival fraction we use one ring,
+    # no matter what the value of args.number_of_rings (see below) is. This
+    # is because we want the pixels saved using args.number_of_rings=N
+    # to be a superset of those saved when using N-1 rings (otherwise the
+    # "adding one ring" operation becomes a complicated and hard to interpret
+    # one!)
+
 
     # Number of "rings" of pixels to be finally kept around pixels which are
     # above min_charge_for_certain_selection
