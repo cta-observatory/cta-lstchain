@@ -319,7 +319,8 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
     assert "reco_src_y" in dl2_srcdep_df['on'].columns
-
+    assert "reco_disp_norm_diff" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_sign_correctness" in dl2_srcdep_df['on'].columns
 
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
@@ -374,7 +375,9 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
         'reco_disp_dx',
         'reco_disp_dy',
         'reco_src_x',
-        'reco_src_y'
+        'reco_src_y',
+        'reco_disp_norm_diff',
+        'reco_disp_sign_correctness',
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:
