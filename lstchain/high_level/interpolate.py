@@ -630,7 +630,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         temp_irf = QTable.read(irfs[0], hdu="AL_CUTS")
 
         al_cut_interp = interpolate_al_cuts(
-            al_cuts_list, irf_pars, interp_pars, method=interp_method
+            al_cuts_list, irf_pars_sel, interp_pars_sel, method=interp_method
         )
 
         al_header = fits.Header()
