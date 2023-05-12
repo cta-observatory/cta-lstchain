@@ -193,13 +193,9 @@ def get_nearest_az_node(
 
     if irf_num[idx] > 1:
         # Only using the overlapping nodes
-        idx_list = np.flatnonzero(
-            (irf_params_short == irf_params_short[index]).all(1)
-        )
+        idx_list = np.flatnonzero((irf_params_short == irf_params_short[index]).all(1))
         # Finding the shortest distance with respect to target azimuth
-        diff = np.abs(
-            irf_params_full[idx_list, az_idx] - target_params_full[az_idx]
-        )
+        diff = np.abs(irf_params_full[idx_list, az_idx] - target_params_full[az_idx])
         idx = idx_list[np.where(diff == diff.min())[0]][0]
     else:
         # if there are no overlapping nodes
@@ -420,7 +416,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     # Exclude AZ_PNT as target interpolation parameter
     # For the interpolation parameters only
-    params_sel = [d for d in data_pars.keys() if d != "AZ_PNT"]#[*d.keys()]
+    params_sel = [d for d in data_pars.keys() if d != "AZ_PNT"]
     n_grid = len(irfs)
     irf_pars_sel = np.empty((n_grid, len(params_sel)))
     interp_pars_sel = list()

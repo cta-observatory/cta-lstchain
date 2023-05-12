@@ -14,8 +14,10 @@ def test_get_srcdep_config():
     assert 'tailcut' in srcdep_config
     assert srcdep_config['source_dependent']
     assert srcdep_config['mc_nominal_source_x_deg'] == 0.4
+    assert srcdep_config['mc_nominal_source_y_deg'] == 0
     assert srcdep_config['observation_mode'] == 'wobble'
     assert srcdep_config['n_off_wobble'] == 1
+    assert srcdep_config['train_gamma_src_r_deg'] == [0, 1]
 
 
 def test_get_mc_config():

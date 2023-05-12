@@ -84,12 +84,8 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         aeff_1_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
         aeff_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
-        aeff_hdu_1 = fits.BinTableHDU(
-            aeff_1, header=aeff_1_meta, name="EFFECTIVE AREA"
-        )
-        aeff_hdu_2 = fits.BinTableHDU(
-            aeff_2, header=aeff_2_meta, name="EFFECTIVE AREA"
-        )
+        aeff_hdu_1 = fits.BinTableHDU(aeff_1, header=aeff_1_meta, name="EFFECTIVE AREA")
+        aeff_hdu_2 = fits.BinTableHDU(aeff_2, header=aeff_2_meta, name="EFFECTIVE AREA")
 
         # Change the energy migration for different angular pointings
         edisp_1 = Table.read(irf, hdu="ENERGY DISPERSION")
@@ -183,7 +179,7 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     data_pars = {
         "ZEN_PNT": 30 * u.deg,
         "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg),
-        "AZ_PNT": 120 * u.deg
+        "AZ_PNT": 120 * u.deg,
     }
 
     hdu_g = interpolate_irf(irfs_g, data_pars)
@@ -204,8 +200,10 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
 
 
 def test_compare_irfs(
-    simulated_irf_file, simulated_srcdep_irf_file, simulated_dl2_file,
-    simulated_srcdep_dl2_file
+    simulated_irf_file,
+    simulated_srcdep_irf_file,
+    simulated_dl2_file,
+    simulated_srcdep_dl2_file,
 ):
     from lstchain.high_level.interpolate import compare_irfs
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
@@ -257,7 +255,7 @@ def test_compare_irfs(
         srcdep_irf_file_2,
         "--point-like",
         "--source-dep",
-        "--global-alpha-cut=11"
+        "--global-alpha-cut=11",
     )
 
     irfs_diff_global_cuts = [simulated_irf_file, irf_file_2]
@@ -288,9 +286,7 @@ def test_check_delaunay_triangles(simulated_irf_file):
 
     new_irfs = check_in_delaunay_triangle(irfs, data_pars)
     new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
-    new_irfs3 = check_in_delaunay_triangle(
-        irfs, data_pars, use_nearest_irf_node=True
-    )
+    new_irfs3 = check_in_delaunay_triangle(irfs, data_pars, use_nearest_irf_node=True)
     new_irfs4 = check_in_delaunay_triangle([irfs[0]], data_pars)
 
     t3 = Table.read(new_irfs3[0], hdu=1).meta

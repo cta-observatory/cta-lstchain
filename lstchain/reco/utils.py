@@ -17,12 +17,14 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe_io_lst import OPTICS
 
 from . import disp
 
 __all__ = [
     "add_delta_t_key",
     "alt_to_theta",
+    "apply_src_r_cut",
     "az_to_phi",
     "camera_to_altaz",
     "cartesian_to_polar",
@@ -798,3 +800,28 @@ def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inpla
 
     if not inplace:
         return events
+
+def apply_src_r_cut(events, src_r_min, src_r_max):
+    """
+    apply src_r cut to filter out large off-axis MC events
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    src_r_min: float
+    src_r_max: fload
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    
+    src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
+    foclen = OPTICS.equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    events = events[
+        (src_r_deg >= src_r_min) & 
+        (src_r_deg <= src_r_max)
+    ]
+
+    return events
