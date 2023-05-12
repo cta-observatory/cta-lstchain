@@ -35,10 +35,12 @@ from ..calib.camera import load_calibrator_from_config
 from ..calib.camera.calibration_calculator import CalibrationCalculator
 from ..image.cleaning import apply_dynamic_cleaning
 from ..image.modifier import tune_nsb_on_waveform, calculate_required_additional_nsb
+from .reconstructor import TimeWaveformFitter
 from ..image.muon import analyze_muon_event, tag_pix_thr
 from ..image.muon import create_muon_table, fill_muon_event
 from ..io import (
     DL1ParametersContainer,
+    DL1LikelihoodParametersContainer,
     replace_config,
     standard_config,
     HDF5_ZSTD_FILTERS,
@@ -57,6 +59,7 @@ from ..io import (
 from ..io.io import add_column_table, extract_simulation_nsb, dl1_params_lstcam_key
 from ..io.lstcontainers import ExtraImageInfo, DL1MonitoringEventIndexContainer
 from ..paths import parse_r0_filename, run_to_dl1_filename, r0_to_dl1_filename
+from ..visualization.plot_reconstructor import plot_debug
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     'add_disp_to_parameters_table',
     'get_dl1',
+    'apply_lh_fit',
     'r0_to_dl1',
 ]
 
@@ -83,7 +87,6 @@ def setup_writer(writer, subarray, is_simulation):
     # Forcing filters for the dl1 dataset that are currently read from the pre-existing files
     writer.h5file.filters = HDF5_ZSTD_FILTERS
     logger.info(f"USING FILTERS: {writer.h5file.filters}")
-
 
     tel_names = {str(tel)[4:] for tel in subarray.telescope_types}
 
@@ -144,7 +147,7 @@ def parametrize_image(image, peak_time, signal_pixels, camera_geometry, focal_le
 
     # convert ctapipe's width and length (in m) to deg:
 
-    for key  in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
+    for key in ['width', 'width_uncertainty', 'length', 'length_uncertainty']:
         value = getattr(dl1_container, key)
         setattr(dl1_container, key, _camera_distance_to_angle(value, focal_length))
 
@@ -166,7 +169,7 @@ def get_dl1(
     subarray,
     telescope_id,
     dl1_container=None,
-    custom_config={},
+    custom_config={}
 ):
     """
     Return a DL1ParametersContainer of extracted features from a calibrated event.
@@ -242,7 +245,6 @@ def get_dl1(
             max_island_label = np.argmax(n_pixels_on_island)
             signal_pixels[island_labels != max_island_label] = False
 
-
         # count surviving pixels
         n_pixels = np.count_nonzero(signal_pixels)
         dl1_container.n_pixels = n_pixels
@@ -265,6 +267,46 @@ def get_dl1(
     calibrated_event.dl1.tel[telescope_id].image_mask = signal_pixels
 
     return dl1_container
+
+
+def apply_lh_fit(
+        event,
+        telescope_id,
+        dl1_container,
+        fitter
+):
+    """
+    Prepare and performs the extraction of DL1 parameters using a likelihood
+    based reconstruction method.
+
+    Parameters
+    ----------
+    event: ctapipe event container
+    telescope_id: int
+    dl1_container: DL1ParametersContainer
+    fitter: TimeWaveformFitter
+
+    Returns
+    -------
+    DL1LikelihoodParametersContainer
+
+    """
+    # Applied to all physic events
+    if event.trigger.event_type == EventType.SUBARRAY:
+        # Don't fit if the cleaning used in the seed parametrisation didn't select any pixels
+        if dl1_container.n_pixels <= 0:
+            lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=0)
+        else:
+            try:
+                lhfit_container = fitter(event=event, telescope_id=telescope_id, dl1_container=dl1_container)
+            except Exception:
+                logger.error("Unexpected error encountered in likelihood reconstruction.\n"
+                             "Compiled likelihood reconstruction numbaCC functions may be missing.\n"
+                             "In this case you should run: lstchain/scripts/numba_compil_lhfit.py")
+                raise
+    else:
+        lhfit_container = DL1LikelihoodParametersContainer(lhfit_call_status=-10)
+    return lhfit_container
 
 
 def r0_to_dl1(
@@ -384,7 +426,7 @@ def r0_to_dl1(
                                                                          config=config)[0]
                 spe = np.loadtxt(config['waveform_nsb_tuning']['spe_location']).T
                 spe_integral = np.cumsum(spe[1])
-                charge_spe_cumulative_pdf = interp1d(spe_integral,spe[0], kind='cubic',
+                charge_spe_cumulative_pdf = interp1d(spe_integral, spe[0], kind='cubic',
                                                      bounds_error=False, fill_value=0.,
                                                      assume_sorted=True)
                 allowed_tel = np.zeros(len(nsb_original), dtype=bool)
@@ -396,6 +438,11 @@ def r0_to_dl1(
             else:
                 logger.warning('NSB tuning on waveform active in config but file is real data, option will be ignored')
                 nsb_tuning = False
+
+    lhfit_fitter = None
+    if 'lh_fit_config' in config.keys():
+        lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
+        lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
 
     with HDF5TableWriter(
         filename=output_filename,
@@ -569,6 +616,17 @@ def r0_to_dl1(
                     containers=[event.index, dl1_tel, extra_im]
                 )
 
+                if lhfit_fitter is not None:
+                    lhfit_container = apply_lh_fit(event, telescope_id, dl1_container, lhfit_fitter)
+                    # Plotting code for development purpose only, will disappear in final release
+                    if lhfit_fitter.verbose >= 2 and lhfit_container["lhfit_call_status"] == 1:
+                        plot_debug(lhfit_fitter, event, telescope_id, dl1_container, str(event.index.event_id))
+                    lhfit_container.prefix = dl1_tel.prefix
+                    add_global_metadata(lhfit_container, metadata)
+                    add_config_metadata(lhfit_container, config)
+                    writer.write(table_name=f'telescope/likelihood_parameters/{tel_name}',
+                                 containers=[event.index, lhfit_container])
+
                 # Muon ring analysis, for real data only (MC is done starting from DL1 files)
                 if not is_simu:
                     bad_pixels = event.mon.tel[telescope_id].calibration.unusable_pixels[0]
@@ -713,7 +771,8 @@ def add_disp_to_parameters_table(dl1_file, table_path, focal):
     disp_parameters = disp.disp(df.x.values * u.m,
                                 df.y.values * u.m,
                                 source_pos_in_camera.x,
-                                source_pos_in_camera.y)
+                                source_pos_in_camera.y,
+                                df.psi.values * u.rad)
 
     with tables.open_file(dl1_file, mode="a") as file:
         tab = file.root[table_path]

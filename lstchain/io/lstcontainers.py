@@ -19,6 +19,7 @@ from ..reco.utils import get_event_pos_in_camera
 __all__ = [
     'DL1MonitoringEventIndexContainer',
     'DL1ParametersContainer',
+    'DL1LikelihoodParametersContainer',
     'DispContainer',
     'ExtraImageInfo',
     'ExtraMCInfo',
@@ -34,34 +35,34 @@ class DL1ParametersContainer(Container):
     TODO: maybe fields could be inherited from ctapipe containers definition
         For now I have not found an elegant way to do so
     """
-    intensity = Field(np.float64(np.nan), 'total intensity (size)')
+    intensity = Field(np.float64(np.nan), 'Total intensity (size)')
     log_intensity = Field(np.float64(np.nan), 'log of total intensity (size)')
 
-    x = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
-    y = Field(u.Quantity(np.nan, u.m), 'centroid x coordinate', unit=u.m)
-    r = Field(u.Quantity(np.nan, u.m), 'radial coordinate of centroid', unit=u.m)
-    phi = Field(Angle(np.nan, u.rad), 'polar coordinate of centroid',
+    x = Field(u.Quantity(np.nan, u.m), 'Centroid x coordinate', unit=u.m)
+    y = Field(u.Quantity(np.nan, u.m), 'Centroid y coordinate', unit=u.m)
+    r = Field(u.Quantity(np.nan, u.m), 'Radial coordinate of centroid', unit=u.m)
+    phi = Field(Angle(np.nan, u.rad), 'Polar coordinate of centroid',
                 unit=u.rad)
     length = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the major-axis',
                    unit=u.deg)
-    length_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of length',
+    length_uncertainty = Field(u.Quantity(np.nan, u.deg), 'Uncertainty of length',
                                unit=u.deg)
     width = Field(u.Quantity(np.nan, u.deg), 'RMS spread along the minor-axis',
                   unit=u.deg)
-    width_uncertainty = Field(u.Quantity(np.nan, u.deg), 'uncertainty of width',
+    width_uncertainty = Field(u.Quantity(np.nan, u.deg), 'Uncertainty of width',
                               unit=u.deg)
-    psi = Field(Angle(np.nan, u.rad), 'rotation angle of ellipse', unit=u.rad)
+    psi = Field(Angle(np.nan, u.rad), 'Rotation angle of ellipse', unit=u.rad)
 
-    skewness = Field(np.nan, 'measure of the asymmetry')
-    kurtosis = Field(np.nan, 'measure of the tailedness')
+    skewness = Field(np.nan, 'Measure of the asymmetry')
+    kurtosis = Field(np.nan, 'Measure of the tailedness')
     disp_norm = Field(None, 'disp_norm [m]', unit=u.m)
     disp_dx = Field(None, 'disp_dx [m]', unit=u.m)
     disp_dy = Field(None, 'disp_dy [m]', unit=u.m)
     disp_angle = Field(None, 'disp_angle [rad]', unit=u.rad)
     disp_sign = Field(None, 'disp_sign')
     disp_miss = Field(None, 'disp_miss [m]', unit=u.m)
-    src_x = Field(None, 'source x coordinate in camera frame', unit=u.m)
-    src_y = Field(None, 'source y coordinate in camera frame', unit=u.m)
+    src_x = Field(None, 'Source x coordinate in camera frame', unit=u.m)
+    src_y = Field(None, 'Source y coordinate in camera frame', unit=u.m)
     time_gradient = Field(np.nan, 'Time gradient in the camera')
     intercept = Field(np.nan, 'Intercept')
     leakage_intensity_width_1 = \
@@ -120,14 +121,14 @@ class DL1ParametersContainer(Container):
     tel_pos_y = Field(None, "Telescope y position in the ground")
     tel_pos_z = Field(None, "Telescope z position in the ground")
 
-    trigger_type = Field(None, "trigger type")
+    trigger_type = Field(None, "Trigger type")
     ucts_trigger_type = Field(None, "UCTS trigger type")
-    trigger_time = Field(None, "trigger time")
-    event_type = Field(None, "event type")
+    trigger_time = Field(None, "Trigger time")
+    event_type = Field(None, "Event type")
 
     # info not available in data
     # num_trig_pix = Field(None, "Number of trigger groups (sectors) listed")
-    # trig_pix_id = Field(None, "pixels involved in the camera trigger")
+    # trig_pix_id = Field(None, "Pixels involved in the camera trigger")
 
     def fill_hillas(self, hillas):
         """
@@ -228,6 +229,45 @@ class DL1ParametersContainer(Container):
         self.src_y = source_pos[1]
 
 
+class DL1LikelihoodParametersContainer(Container):
+    """
+    Parameters obtained with the likelihood reconstruction method
+    """
+    lhfit_call_status = Field(-1, "Status of the processing of the event "
+                                  "by the LH fit method. -10: inactive,"
+                                  " 0: event with no pixels, -1: error"
+                                  " 1: success")
+    lhfit_intensity = Field(np.float64(np.nan), 'Fitted intensity')
+    lhfit_log_intensity = Field(np.float64(np.nan), 'log of fitted intensity')
+    lhfit_intensity_uncertainty = Field(np.float64(np.nan), '')
+    lhfit_x = Field(u.Quantity(np.nan, u.m), 'Centroid x coordinate', unit=u.m)
+    lhfit_x_uncertainty = Field(u.Quantity(np.nan, u.m), '', unit=u.m)
+    lhfit_y = Field(u.Quantity(np.nan, u.m), 'Centroid y coordinate', unit=u.m)
+    lhfit_y_uncertainty = Field(u.Quantity(np.nan, u.m), '', unit=u.m)
+    lhfit_r = Field(u.Quantity(np.nan, u.m), 'Radial coordinate of centroid', unit=u.m)
+    lhfit_phi = Field(Angle(np.nan, u.rad), 'Polar coordinate of centroid',
+                      unit=u.rad)
+    lhfit_length = Field(u.Quantity(np.nan, u.deg), 'Average model spread along the major-axis',
+                         unit=u.deg)
+    lhfit_length_uncertainty = Field(u.Quantity(np.nan, u.deg), '',
+                                     unit=u.deg)
+    lhfit_width = Field(u.Quantity(np.nan, u.deg), 'Model spread along the minor-axis',
+                        unit=u.deg)
+    lhfit_psi = Field(Angle(np.nan, u.rad), 'Rotation angle of the model', unit=u.rad)
+    lhfit_psi_uncertainty = Field(Angle(np.nan, u.rad), '', unit=u.rad)
+    lhfit_time_gradient = Field(np.nan, 'Time gradient in the camera')
+    lhfit_time_gradient_uncertainty = Field(np.nan, '')
+    lhfit_ref_time = Field(np.nan, 'Time of the 0 of the pulse template at the peak signal position')
+    lhfit_ref_time_uncertainty = Field(np.nan, '')
+    lhfit_length_asymmetry = Field(np.nan, "Major-axis asymmetry factor", type=float)
+    lhfit_length_asymmetry_uncertainty = Field(np.nan, "", type=float)
+    lhfit_TS = Field(np.float64(np.nan), "")
+    lhfit_wl = Field(u.Quantity(np.nan), "Fitted width/length")
+    lhfit_wl_uncertainty = Field(u.Quantity(np.nan), "")
+    lhfit_t_68 = Field(np.nan, 'Time gradient times length')
+    lhfit_area = Field(u.Quantity(np.nan, u.deg ** 2), '', unit=u.deg ** 2)
+
+
 class DispContainer(Container):
     """
     Disp vector container
@@ -238,7 +278,7 @@ class DispContainer(Container):
     angle = Field(nan, 'Angle between the X axis and the disp_norm vector')
     norm = Field(nan, 'Norm of the disp_norm vector')
     sign = Field(nan, 'Sign of the disp_norm')
-    miss = Field(nan, 'miss parameter norm')
+    miss = Field(nan, 'Miss parameter norm')
 
 
 class ExtraMCInfo(Container):
@@ -256,9 +296,9 @@ class ThrownEventsHistogram(Container):
     obs_id = Field(-1, 'MC run ID')
     hist_id = Field(-1, 'Histogram ID')
     num_entries = Field(-1, 'Number of entries in the histogram')
-    bins_energy = Field(None, 'array of energy bin lower edges, as in np.histogram')
-    bins_core_dist = Field(None, 'array of core-distance bin lower edges, as in np.histogram')
-    histogram = Field(None, "array of histogram entries, size (n_bins_x, n_bins_y)")
+    bins_energy = Field(None, 'Array of energy bin lower edges, as in np.histogram')
+    bins_core_dist = Field(None, 'Array of core-distance bin lower edges, as in np.histogram')
+    histogram = Field(None, "Array of histogram entries, size (n_bins_x, n_bins_y)")
 
     def fill_from_simtel(self, hist):
         """ fill from a SimTel Histogram entry"""
@@ -278,9 +318,9 @@ class MetaData(Container):
     """
     Some metadata
     """
-    LSTCHAIN_VERSION = Field(None, "version of lstchain")
-    CTAPIPE_VERSION = Field(None, "version of ctapipe")
-    CTAPIPE_IO_LST_VERSION = Field(None, "version of ctapipe_io_lst")
+    LSTCHAIN_VERSION = Field(None, "Version of lstchain")
+    CTAPIPE_VERSION = Field(None, "Version of ctapipe")
+    CTAPIPE_IO_LST_VERSION = Field(None, "Version of ctapipe_io_lst")
     CONTACT = Field(None, "Person or institution responsible for this data product")
 
 

@@ -8,7 +8,9 @@
     "kurtosis",
     "time_gradient_from_source",
     "leakage_intensity_width_2",
-    "dist"
+    "dist",
+    "alt_tel",
+    "sin_az_tel"
   ],
   "disp_method": "disp_norm_sign",
   "disp_regression_features": [
@@ -16,22 +18,24 @@
     "width",
     "length",
     "wl",
-    "skewness_from_source",
+    "skewness",
     "kurtosis",
-    "time_gradient_from_source",
+    "time_gradient",
     "leakage_intensity_width_2",
-    "dist"
+    "alt_tel",
+    "sin_az_tel"
   ],
   "disp_classification_features": [
     "log_intensity",
     "width",
     "length",
     "wl",
-    "skewness_from_source",
+    "skewness",
     "kurtosis",
-    "time_gradient_from_source",
+    "time_gradient",
     "leakage_intensity_width_2",
-    "dist"
+    "alt_tel",
+    "sin_az_tel"
   ],
   "particle_classification_features": [
     "log_intensity",
@@ -43,12 +47,16 @@
     "time_gradient_from_source",
     "leakage_intensity_width_2",
     "log_reco_energy",
-    "dist"
+    "dist",
+    "reco_disp_norm_diff",
+    "reco_disp_sign_correctness",
+    "alt_tel",
+    "sin_az_tel"
   ],
 
   "train_gamma_src_r_deg": [
     0,
-    Infinity
+    1.0
   ],
   "source_dependent": true,
   "mc_nominal_source_x_deg": 0.4,

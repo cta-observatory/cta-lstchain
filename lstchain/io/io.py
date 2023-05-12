@@ -81,6 +81,8 @@ dl1_images_lstcam_key = "/dl1/event/telescope/image/LST_LSTCam"
 dl2_params_lstcam_key = "/dl2/event/telescope/parameters/LST_LSTCam"
 dl1_params_src_dep_lstcam_key = "/dl1/event/telescope/parameters_src_dependent/LST_LSTCam"
 dl2_params_src_dep_lstcam_key = "/dl2/event/telescope/parameters_src_dependent/LST_LSTCam"
+dl1_likelihood_params_lstcam_key = "/dl1/event/telescope/likelihood_parameters/LST_LSTCam"
+dl2_likelihood_params_lstcam_key = "/dl2/event/telescope/likelihood_parameters/LST_LSTCam"
 
 HDF5_ZSTD_FILTERS = tables.Filters(
     complevel=5,  # enable compression, 5 is a good tradeoff between compression and speed
@@ -293,7 +295,8 @@ def auto_merge_h5files(
         nodes_keys=None,
         merge_arrays=False,
         filters=HDF5_ZSTD_FILTERS,
-        progress_bar=True
+        progress_bar=True,
+        run_checks=True,
 ):
     """
     Automatic merge of HDF5 files.
@@ -307,12 +310,14 @@ def auto_merge_h5files(
     nodes_keys: list of path
     merge_arrays: bool
     filters
-    progress_bar : bool
+    progress_bar: bool
         Enabling the display of the progress bar during event processing.
+    run_checks: bool
+        Check if the files to be merged are consistent
     """
 
     file_list = list(file_list)
-    if len(file_list) > 1:
+    if len(file_list) > 1 and run_checks:
         file_list = merging_check(file_list)
 
     if nodes_keys is None:
@@ -984,11 +989,13 @@ def read_data_dl2_to_QTable(filename, srcdep_pos=None):
 
     zen = np.pi / 2 * u.rad - data["pointing_alt"].mean().to(u.rad)
     az = data["pointing_az"].mean().to(u.rad)
+    if az < 0:
+        az += 2*np.pi * u.rad
     b_delta = u.Quantity(get_geomagnetic_delta(zen=zen, az=az))
 
-    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 1) * u.deg
-    data_params["AZ_PNT"] = round(az.to_value(u.deg), 1) * u.deg
-    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 1) * u.deg
+    data_params["ZEN_PNT"] = round(zen.to_value(u.deg), 5) * u.deg
+    data_params["AZ_PNT"] = round(az.to_value(u.deg), 5) * u.deg
+    data_params["B_DELTA"] = round(b_delta.to_value(u.deg), 5) * u.deg
 
     return data, data_params
 
@@ -1162,6 +1169,7 @@ def extract_simulation_nsb(filename):
                 except Exception as e:
                     print('Unexpected end of %s,\n caught exception %s', filename, e)
     return nsb
+
 
 def check_mc_type(filename):
     """

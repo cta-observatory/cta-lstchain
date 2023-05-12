@@ -2,6 +2,7 @@ from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
 from ctapipe.utils import get_dataset_path
+from ctapipe.instrument import SubarrayDescription
 import os
 
 from lstchain.io.io import dl1_params_lstcam_key
@@ -27,8 +28,7 @@ def pytest_configure(config):
     if "private_data" not in config.option.markexpr:
         if config.option.markexpr:
             config.option.markexpr += " and "
-        else:
-            config.option.markexpr += "not private_data"
+        config.option.markexpr += "not private_data"
 
 
 @pytest.fixture(scope="session")
@@ -135,6 +135,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         "2516351600",
         "--dragon-module-id",
         "132",
+        "--default-trigger-type=tib",
     )
 
     run_program(
@@ -163,6 +164,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         test_drive_report,
         '--run-summary-path',
         run_summary_path,
+        "--default-trigger-type=tib",
     )
 
     run_program(
@@ -228,7 +230,7 @@ def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_fil
 @pytest.fixture(scope="session")
 def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     """
-    Produce a fake dl1 proton file by copying the dl2 gamma test file
+    Produce a fake dl1 proton file by copying the dl1 gamma test file
     and changing mc_type.
     """
     dl1_proton_file = temp_dir_simulated_files / "dl1_fake_proton.simtel.h5"
@@ -236,6 +238,21 @@ def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     events.mc_type = 101
     events.to_hdf(dl1_proton_file, key=dl1_params_lstcam_key)
     return dl1_proton_file
+
+@pytest.fixture(scope="session")
+def simulated_dl1_srcdep_file(temp_dir_simulated_files, simulated_dl1_file):
+    """
+    Produce a fake dl1 gamma file by copying the dl1 gamma test file
+    and changing src_x & src_y to zeros to keep events after src_r cuts.
+    """
+    dl1_gamma_srcdep_file = temp_dir_simulated_files / "dl1_fake_gamma_srcdep.simtel.h5"
+    events = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
+    subarray_info = SubarrayDescription.from_hdf(simulated_dl1_file)
+    events.src_x = 0
+    events.src_y = 0
+    events.to_hdf(dl1_gamma_srcdep_file, key=dl1_params_lstcam_key)
+    subarray_info.to_hdf(dl1_gamma_srcdep_file)
+    return dl1_gamma_srcdep_file
 
 
 @pytest.fixture(scope="session")
@@ -267,9 +284,9 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     }
 
 @pytest.fixture(scope="session")
-def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file, simulated_dl1_srcdep_file):
     """Produce test random forest models for source-dependent analysis."""
-    gamma_file = simulated_dl1_file
+    gamma_file = simulated_dl1_srcdep_file
     proton_file = simulated_dl1_file
     models_srcdep_path = temp_dir_simulated_srcdep_files
     file_model_energy_srcdep = models_srcdep_path / "reg_energy.sav"

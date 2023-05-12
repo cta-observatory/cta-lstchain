@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
+from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
@@ -26,11 +27,10 @@ from ..io import (
     get_dataset_keys,
     get_srcdep_params,
 )
-from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key
+from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_likelihood_params_lstcam_key
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
-from ctapipe_io_lst import OPTICS
 
 __all__ = [
     'apply_models',
@@ -268,6 +268,7 @@ def train_sep(train, custom_config=None):
 
 def build_models(filegammas, fileprotons,
                  save_models=True, path_models="./",
+                 free_model_memory=True,
                  energy_min=-np.inf,
                  custom_config=None,
                  ):
@@ -306,6 +307,8 @@ def build_models(filegammas, fileprotons,
     path_models: string
         path of a directory where to save the models.
         if it does exist, the directory is created
+    free_model_memory: bool
+        If True RF models are freed after use and not returned
     energy_min: float
         Cut in intensity of the showers for training RF
     custom_config: dictionnary
@@ -366,6 +369,13 @@ def build_models(filegammas, fileprotons,
 
         df_proton = pd.concat([df_proton, src_dep_df_proton['on']], axis=1)
 
+    if 'lh_fit_config' in config.keys():
+        lhfit_df_gamma = pd.read_hdf(filegammas, key=dl1_likelihood_params_lstcam_key)
+        df_gamma = pd.concat([df_gamma, lhfit_df_gamma], axis=1)
+
+        lhfit_df_proton = pd.read_hdf(fileprotons, key=dl1_likelihood_params_lstcam_key)
+        df_proton = pd.concat([df_proton, lhfit_df_proton], axis=1)
+
     df_gamma = utils.filter_events(df_gamma,
                                    filters=events_filters,
                                    finite_params=config['energy_regression_features']
@@ -383,11 +393,9 @@ def build_models(filegammas, fileprotons,
                                     )
 
     # Training MC gammas in reduced viewcone
-    src_r_m = np.sqrt(df_gamma['src_x'] ** 2 + df_gamma['src_y'] ** 2)
-    foclen = OPTICS.equivalent_focal_length.value
-    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
-            src_r_deg <= config['train_gamma_src_r_deg'][1])]
+    src_r_min = config['train_gamma_src_r_deg'][0]
+    src_r_max = config['train_gamma_src_r_deg'][1]
+    df_gamma = utils.apply_src_r_cut(df_gamma, src_r_min, src_r_max)
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
@@ -402,11 +410,33 @@ def build_models(filegammas, fileprotons,
 
     reg_energy = train_energy(df_gamma_reg, custom_config=config)
 
+    if save_models:
+        os.makedirs(path_models, exist_ok=True)
+
+        file_reg_energy = path_models + "/reg_energy.sav"
+        joblib.dump(reg_energy, file_reg_energy, compress=3)
+    if free_model_memory:
+        del reg_energy
+
+
     if config['disp_method'] == 'disp_vector':
         reg_disp_vector = train_disp_vector(df_gamma, custom_config=config)
+        if save_models:
+            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
+            joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
+        if free_model_memory:
+            del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
         reg_disp_norm = train_disp_norm(df_gamma, custom_config=config)
         cls_disp_sign = train_disp_sign(df_gamma, custom_config=config)
+        if save_models:
+            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
+            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
+            joblib.dump(reg_disp_norm, file_reg_disp_norm, compress=3)
+            joblib.dump(cls_disp_sign, file_cls_disp_sign, compress=3)
+        if free_model_memory:
+            del reg_disp_norm
+            del cls_disp_sign
 
     # Train classifier for gamma/hadron separation.
     test_size = config['n_training_events']['gamma_classifier']
@@ -427,28 +457,33 @@ def build_models(filegammas, fileprotons,
                 "The requested number of protons for the classifier training is not valid."
             ) from e
 
-    test = testg.append(df_proton, ignore_index=True)
+    test = pd.concat([testg, df_proton], ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
+    # Apply the temporary energy regressors to the test set
+    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
+    del temp_reg_energy
 
     if config['disp_method'] == 'disp_vector':
         temp_reg_disp_vector = train_disp_vector(train, custom_config=config)
+        # Apply the temporary disp vector regressors to the test set
+        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
+        del temp_reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
         tmp_reg_disp_norm = train_disp_norm(train, custom_config=config)
         tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
-
-    # Apply the regressors to the test set
-
-    test['log_reco_energy'] = temp_reg_energy.predict(test[config['energy_regression_features']])
-
-    if config['disp_method'] == 'disp_vector':
-        disp_vector = temp_reg_disp_vector.predict(test[config['disp_regression_features']])
-    elif config['disp_method'] == 'disp_norm_sign':
+        # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
-        disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        disp_sign_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
+        col = list(tmp_cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
+        del tmp_reg_disp_norm
+        del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
         test['reco_disp_sign'] = disp_sign
-
+        test['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -470,40 +505,29 @@ def build_models(filegammas, fileprotons,
 
     train = test[test['log_reco_energy'] > energy_min]
 
-    del temp_reg_energy
+    # source-dep & indep combined parameters
+    if config['source_dependent']:
+        train['reco_disp_sign_correctness'] = train['reco_disp_sign_proba']
+        select = np.sign(train['skewness']) * np.sign(train['skewness_from_source']) == -1
+        train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
 
-    if config['disp_method'] == 'disp_vector':
-        del temp_reg_disp_vector
-    elif config['disp_method'] == 'disp_norm_sign':
-        del tmp_reg_disp_norm, tmp_cls_disp_sign
-
+        train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
+    
     # Train the Classifier
 
     cls_gh = train_sep(train, custom_config=config)
 
     if save_models:
-        os.makedirs(path_models, exist_ok=True)
-
-        file_reg_energy = path_models + "/reg_energy.sav"
-        joblib.dump(reg_energy, file_reg_energy, compress=3)
-
-        if config['disp_method'] == 'disp_vector':
-            file_reg_disp_vector = path_models + "/reg_disp_vector.sav"
-            joblib.dump(reg_disp_vector, file_reg_disp_vector, compress=3)
-
-        elif config['disp_method'] == 'disp_norm_sign':
-            file_reg_disp_norm = os.path.join(path_models, 'reg_disp_norm.sav')
-            file_cls_disp_sign = os.path.join(path_models, 'cls_disp_sign.sav')
-            joblib.dump(reg_disp_norm, file_reg_disp_norm, compress=3)
-            joblib.dump(cls_disp_sign, file_cls_disp_sign, compress=3)
-
         file_cls_gh = path_models + "/cls_gh.sav"
         joblib.dump(cls_gh, file_cls_gh, compress=3)
+    if free_model_memory:
+        del cls_gh
 
-    if config['disp_method'] == 'disp_vector':
-        return reg_energy, reg_disp_vector, cls_gh
-    elif config['disp_method'] == 'disp_norm_sign':
-        return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
+    if not free_model_memory:
+        if config['disp_method'] == 'disp_vector':
+            return reg_energy, reg_disp_vector, cls_gh
+        elif config['disp_method'] == 'disp_norm_sign':
+            return reg_energy, reg_disp_norm, cls_disp_sign, cls_gh
 
 
 def apply_models(dl1,
@@ -513,7 +537,7 @@ def apply_models(dl1,
                  reg_disp_norm=None,
                  cls_disp_sign=None,
                  focal_length=28 * u.m,
-                 custom_config=None
+                 custom_config=None,
                  ):
     """
     Apply previously trained Random Forests to a set of data
@@ -523,18 +547,23 @@ def apply_models(dl1,
     Parameters
     ----------
     dl1: `pandas.DataFrame`
-    classifier: Random Forest Classifier
-        RF for Gamma/Hadron separation
-    reg_energy: Random Forest Regressor
-        RF for Energy reconstruction
-    reg_disp_vector: Random Forest Regressor
-        RF for disp vector reconstruction
-    reg_disp_norm: Random Forest Regressor
-        RF for disp norm reconstruction
-    cls_disp_sign: Random Forest Classifier
-        RF for disp sign reconstruction
+    classifier: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
+        Path to the random forest filename or file or pre-loaded RandomForestClassifier object
+        for Gamma/Hadron separation
+    reg_energy: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for Energy reconstruction
+    reg_disp_vector: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for disp vector reconstruction
+    reg_disp_norm: string | Path | bytes | sklearn.ensemble.RandomForestRegressor
+        Path to the random forest filename or file or pre-loaded RandomForestRegressor object
+        for disp norm reconstruction
+    cls_disp_sign: string | Path | bytes | sklearn.ensemble.RandomForestClassifier
+        Path to the random forest filename or file or pre-loaded RandomForestClassifier object
+        for disp sign reconstruction
     focal_length: `astropy.unit`
-    custom_config: dictionnary
+    custom_config: dictionary
         Modified configuration to update the standard one
 
     Returns
@@ -559,17 +588,33 @@ def apply_models(dl1,
                               )
 
     # Reconstruction of Energy and disp_norm distance
+    if isinstance(reg_energy, (str, bytes, Path)):
+        reg_energy = joblib.load(reg_energy)
     dl2['log_reco_energy'] = reg_energy.predict(dl2[energy_regression_features])
+    del reg_energy
     dl2['reco_energy'] = 10 ** (dl2['log_reco_energy'])
 
     if config['disp_method'] == 'disp_vector':
+        if isinstance(reg_disp_vector, (str, bytes, Path)):
+            reg_disp_vector = joblib.load(reg_disp_vector)
         disp_vector = reg_disp_vector.predict(dl2[disp_regression_features])
+        del reg_disp_vector
     elif config['disp_method'] == 'disp_norm_sign':
+        if isinstance(reg_disp_norm, (str, bytes, Path)):
+            reg_disp_norm = joblib.load(reg_disp_norm)
+        if isinstance(cls_disp_sign, (str, bytes, Path)):
+            cls_disp_sign = joblib.load(cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
-        disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
+        disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
+        col = list(cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
+        del reg_disp_norm
+        del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
-
+        dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -592,7 +637,7 @@ def apply_models(dl1,
     dl2['signed_time_gradient'] = -1 * np.sign(longi) * dl2['time_gradient']
 
     # Obtain skewness with sign relative to the reconstructed shower direction (reco_src_x, reco_src_y)
-    # Defined on the major image axis; sign is such that it is typically positive for gammas:    
+    # Defined on the major image axis; sign is such that it is typically positive for gammas:
     dl2['signed_skewness'] = -1 * np.sign(longi) * dl2['skewness']
 
     if 'mc_alt_tel' in dl2.columns:
@@ -616,8 +661,20 @@ def apply_models(dl1,
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
 
+    # source-dep & indep combined parameters    
+    if config['source_dependent']:
+        dl2['reco_disp_sign_correctness'] = dl2['reco_disp_sign_proba']
+        select = np.sign(dl2['skewness']) * np.sign(dl2['skewness_from_source']) == -1
+        dl2['reco_disp_sign_correctness'][select] = 1 - dl2['reco_disp_sign_correctness'][select]
+
+        dl2['reco_disp_norm_diff'] = np.abs(dl2['dist'] - dl2['reco_disp_norm'])
+        
+    
+    if isinstance(classifier, (str, bytes, Path)):
+        classifier = joblib.load(classifier)
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
     probs = classifier.predict_proba(dl2[classification_features])
+    del classifier
 
     # This check is valid as long as we train on only two classes (gammas and protons)
     if probs.shape[1] > 2:
@@ -734,12 +791,16 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = np.zeros(len(data))
 
         # compute source position in camera coordinate event by event for wobble mode
-        if config.get('observation_mode') == 'wobble':
+        elif config.get('observation_mode') == 'wobble':
 
             if 'source_name' in config:
                 source_coord = SkyCoord.from_name(config.get('source_name'))
-            else:
+            elif 'source_ra' and 'source_dec' in config:
                 source_coord = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
+            else:
+                raise KeyError(
+                    'source position (`source_name` or `source_ra` & `source_dec`) is not defined in a config file for source-dependent analysis.'
+                )
 
             time = data['dragon_time']
             obstime = Time(time, scale='utc', format='unix')
@@ -749,5 +810,10 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
+            
+        else:
+            raise KeyError(
+                '`observation_mode` is not defined in a config file for source-dependent analysis. It should be `on` or `wobble`'
+            )
 
     return expected_src_pos_x_m, expected_src_pos_y_m

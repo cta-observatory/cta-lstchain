@@ -19,3 +19,5 @@ def test_load_from_file_and_miscellaneous(tmp_path):
     assert np.isclose(template.compute_time_of_max(), 1.0, rtol=0.1)
     save_path = tmp_path / "tmp_pulse2.txt"
     template.save(save_path)
+    template = NormalizedPulseTemplate.load_from_file(path, resample=True)
+    template = NormalizedPulseTemplate.load_from_file(path, resample=True, dt=0.5)

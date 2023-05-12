@@ -166,7 +166,7 @@ def test_validity_tune_nsb(tune_nsb):
         if "extra_noise_in_dim_pixels" in line:
             assert line == '  "extra_noise_in_dim_pixels": 0.0,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.304,'
+            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -267,21 +267,28 @@ def test_merge_datacheck_files(temp_dir_observed_files):
 
 
 def test_lstchain_merged_dl1_to_dl2(
-    temp_dir_simulated_files, merged_simulated_dl1_file, rf_models
+    temp_dir_simulated_files, simulated_dl1_file, merged_simulated_dl1_file, rf_models
 ):
-    output_file = merged_simulated_dl1_file.with_name(
+    simulated_dl1_file_ = simulated_dl1_file.parent.joinpath('another_dl1.h5')
+    simulated_dl1_file_.symlink_to(simulated_dl1_file)
+    output_file_1 = simulated_dl1_file_.with_name(
+        simulated_dl1_file_.name.replace("dl1", "dl2")
+    )
+    output_file_2 = merged_simulated_dl1_file.with_name(
         merged_simulated_dl1_file.name.replace("dl1", "dl2")
     )
     run_program(
         "lstchain_dl1_to_dl2",
         "-f",
+        simulated_dl1_file_,
         merged_simulated_dl1_file,
         "-p",
         rf_models["path"],
         "--output-dir",
         temp_dir_simulated_files,
     )
-    assert output_file.is_file()
+    assert output_file_1.is_file()
+    assert output_file_2.is_file()
 
 
 def test_lstchain_dl1_to_dl2(simulated_dl2_file):
@@ -312,7 +319,8 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
     assert "reco_src_y" in dl2_srcdep_df['on'].columns
-
+    assert "reco_disp_norm_diff" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_sign_correctness" in dl2_srcdep_df['on'].columns
 
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
@@ -367,7 +375,9 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
         'reco_disp_dx',
         'reco_disp_dy',
         'reco_src_x',
-        'reco_src_y'
+        'reco_src_y',
+        'reco_disp_norm_diff',
+        'reco_disp_sign_correctness',
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:

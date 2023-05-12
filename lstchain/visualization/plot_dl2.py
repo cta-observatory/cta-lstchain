@@ -629,10 +629,10 @@ def plot_angular_resolution(dl2_data, ax=None, bias_correction=False, cta_req_no
     ax: `matplotlib.pyplot.axes`
     """
 
-    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt.values * u.rad,
-                                                    dl2_data.reco_az.values * u.rad,
-                                                    dl2_data.mc_alt.values * u.rad,
+    ax = ctaplot.plot_angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                                    dl2_data.reco_alt.values * u.rad,
                                                     dl2_data.mc_az.values * u.rad,
+                                                    dl2_data.reco_az.values * u.rad,
                                                     dl2_data.reco_energy.values * u.TeV,
                                                     ax=ax,
                                                     bias_correction=bias_correction,
@@ -663,20 +663,20 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
-    ax = ctaplot.plot_theta2(dl2_data.reco_alt.values * u.rad,
-                             dl2_data.reco_az.values * u.rad,
-                             dl2_data.mc_alt.values * u.rad,
+    ax = ctaplot.plot_theta2(dl2_data.mc_alt.values * u.rad,
+                             dl2_data.reco_alt.values * u.rad,
                              dl2_data.mc_az.values * u.rad,
+                             dl2_data.reco_az.values * u.rad,
                              ax=axes[0, 0],
                              bins=100,
                              range=(0, 1),
                              )
     ax.grid()
 
-    ctaplot.plot_angular_resolution_per_energy(dl2_data.reco_alt.values * u.rad,
-                                               dl2_data.reco_az.values * u.rad,
-                                               dl2_data.mc_alt.values * u.rad,
+    ctaplot.plot_angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                               dl2_data.reco_alt.values * u.rad,
                                                dl2_data.mc_az.values * u.rad,
+                                               dl2_data.reco_az.values * u.rad,
                                                dl2_data.reco_energy.values * u.TeV,
                                                ax=axes[0, 1],
                                                )
@@ -710,10 +710,10 @@ def direction_results(dl2_data, points_outfile=None, plot_outfile=None):
     fig.tight_layout()
 
     if points_outfile:
-        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.reco_alt.values * u.rad,
-                                                                dl2_data.reco_az.values * u.rad,
-                                                                dl2_data.mc_alt.values * u.rad,
+        e_bins, ang_res = ctaplot.angular_resolution_per_energy(dl2_data.mc_alt.values * u.rad,
+                                                                dl2_data.reco_alt.values * u.rad,
                                                                 dl2_data.mc_az.values * u.rad,
+                                                                dl2_data.reco_az.values * u.rad,
                                                                 dl2_data.reco_energy.values * u.TeV,
                                                                 )
 
