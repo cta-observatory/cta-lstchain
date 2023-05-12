@@ -387,9 +387,9 @@ def interpolate_rad_max(
 
 
 def interpolate_al_cuts(
-    al_cuts, 
+    al_cuts,
     grid_points,
-    target_point, 
+    target_point,
     method="linear",
 ):
     """
@@ -642,15 +642,12 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
         temp_irf["cut"] = al_cut_interp * u.deg
 
-        al_cut_hdu_interp = fits.BinTableHDU(
-            temp_irf, header=al_header, name="AL_CUTS"
-        )
+        al_cut_hdu_interp = fits.BinTableHDU(temp_irf, header=al_header, name="AL_CUTS")
 
         irf_interp.append(al_cut_hdu_interp)
 
     except KeyError:
         log.error("AL CUTS not present for IRF interpolation")
-
 
     if not point_like:
         try:
