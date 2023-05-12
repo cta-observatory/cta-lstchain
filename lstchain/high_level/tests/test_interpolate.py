@@ -246,8 +246,8 @@ def test_interp_irf(
                 al_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
                 al_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
-                al_hdu_1 = fits.BinTableHDU(al_1, header=al_1_meta, name="GH_CUTS")
-                al_hdu_2 = fits.BinTableHDU(al_2, header=al_2_meta, name="GH_CUTS")
+                al_hdu_1 = fits.BinTableHDU(al_1, header=al_1_meta, name="AL_CUTS")
+                al_hdu_2 = fits.BinTableHDU(al_2, header=al_2_meta, name="AL_CUTS")
 
                 hdus_2_en_srcdep.append(aeff_hdu_1)
                 hdus_2_en_srcdep.append(edisp_hdu_1)
@@ -304,8 +304,6 @@ def test_interp_irf(
     hdu_en = interpolate_irf(irfs_en, data_pars)
     hdu_en.writeto(irf_file_en_final, overwrite=True)
 
-    print(irfs_g)
-    print(irfs_g_srcdep)
     hdu_g_srcdep = interpolate_irf(irfs_g_srcdep, data_pars)
     hdu_g_srcdep.writeto(irf_file_g_srcdep_final, overwrite=True)
 
