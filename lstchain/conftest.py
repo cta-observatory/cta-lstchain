@@ -379,7 +379,7 @@ def simulated_srcdep_irf_file(temp_dir_simulated_srcdep_files, simulated_srcdep_
     Produce test source-dependent irf file from the simulated dl2 test file.
     """
 
-    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "irf.fits.gz"
+    srcdep_irf_file = simulated_srcdep_dl2_file.parent / "srcdep_irf.fits.gz"
     run_program(
         "lstchain_create_irf_files",
         "--input-gamma-dl2",
