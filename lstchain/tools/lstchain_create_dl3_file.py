@@ -426,10 +426,6 @@ class DataReductionFITSWriter(Tool):
                     self.cuts.global_gh_cut = hdul[1].header["GH_CUT"]
                 data_temp = self.cuts.apply_global_gh_cut(data_temp)
 
-            with fits.open(self.final_irf_output) as hdul:
-                self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
-            data_temp = self.cuts.apply_global_alpha_cut(data_temp)
-
             if self.use_energy_dependent_alpha_cuts:
                 self.energy_dependent_alpha_cuts = QTable.read(
                     self.final_irf_output, hdu="AL_CUTS"

@@ -1200,3 +1200,4 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
+
