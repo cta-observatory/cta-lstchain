@@ -108,6 +108,7 @@ def test_dl3_energy_dependent_cuts():
     assert gh_cut["cut"][1] == 0.38
     assert alpha_cut["cut"][0] == 21.32 * u.deg
     assert len(data_th) == 31
+    assert len(data_th_2) == 31
     assert len(data_gh) == 36
     assert len(data_al) == 23
 
