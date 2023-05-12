@@ -52,7 +52,7 @@ def interp_params(params_list, data):
     if "AZ_PNT" in params_list:
         mc_pars.append(u.Quantity(data["AZ_PNT"], "deg").to_value(u.rad))
 
-    return mc_pars
+    return np.array(mc_pars)
 
 
 def check_in_delaunay_triangle(irfs, data_params, use_nearest_irf_node=False):
@@ -459,7 +459,6 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
     interp_pars_sel = interp_params(params_sel, data_pars)
 
     # Keep interp_pars as a tuple to keep the right dimensions in interpolation
-    interp_pars_sel = tuple(interp_pars_sel)
     irf_interp = fits.HDUList(
         [
             fits.PrimaryHDU(),

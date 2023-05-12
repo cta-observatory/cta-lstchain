@@ -9,7 +9,7 @@ def test_load_irf_grid(simulated_irf_file):
 
     aeff_list = load_irf_grid([simulated_irf_file], "EFFECTIVE AREA", "EFFAREA")
 
-    assert aeff_list.shape == (1, 23, 8)
+    assert aeff_list.shape == (1, 25, 8)
 
 
 def test_interp_irf(simulated_irf_file, simulated_dl2_file):
