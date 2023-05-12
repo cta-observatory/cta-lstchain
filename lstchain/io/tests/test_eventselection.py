@@ -13,8 +13,6 @@ def test_event_selection():
             "a": u.Quantity([1, 2, 3, 4], unit=u.kg),
             "b": u.Quantity([np.nan, 2.2, 3.2, 5], unit=u.m),
             "c": u.Quantity([1, 3, np.inf, 4], unit=u.s),
-            "reco_disp_sign": np.array([1, -1, 1, 1]),
-            "disp_sign": np.array([-1, -1, 1, 1])
         }
     )
 
@@ -31,10 +29,8 @@ def test_event_selection():
                 "a": [2],
                 "b": [2.2],
                 "c": [3],
-                "reco_disp_sign": [-1],
-                "disp_sign": [-1]
             }
-        )
+        ),
     )
 
     np.testing.assert_array_equal(
@@ -44,30 +40,9 @@ def test_event_selection():
                 "a": u.Quantity([2], unit=u.kg),
                 "b": u.Quantity([2.2], unit=u.m),
                 "c": u.Quantity([3], unit=u.s),
-                "reco_disp_sign": np.array([-1]),
-                "disp_sign": np.array([-1])
             }
         ),
     )
-
-    evt_fil.filters = dict(a=[0, 5], b=[0, 6], c=[0, 7])
-
-    data_t3 = evt_fil.filter_cut(data_t)
-    data_t3 = evt_fil.same_disp_sign_filter(data_t3)
-
-    np.testing.assert_array_equal(
-        data_t3,
-        QTable(
-            {
-                "a": u.Quantity([2, 4], unit=u.kg),
-                "b": u.Quantity([2.2, 5], unit=u.m),
-                "c": u.Quantity([3, 4], unit=u.s),
-                "reco_disp_sign": np.array([-1, 1]),
-                "disp_sign": np.array([-1, 1])
-            }
-        ),
-    )
-
 
 
 def test_dl3_global_cuts():
@@ -78,14 +53,15 @@ def test_dl3_global_cuts():
     temp_cuts.global_alpha_cut = 20
     temp_cuts.allowed_tels = [1, 2]
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
-        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
-        "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
-        "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 3), unit=u.deg),
-        "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
-        "mc_type": u.Quantity(np.repeat([0], 30)),
-        })
+    temp_data = QTable(
+        {
+            "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
+            "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
+            "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
+            "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 3), unit=u.deg),
+            "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
+        }
+    )
 
     assert len(temp_cuts.apply_global_gh_cut(temp_data)) == 6
     assert len(temp_cuts.apply_global_theta_cut(temp_data)) == 15
@@ -100,43 +76,38 @@ def test_dl3_energy_dependent_cuts():
     temp_cuts.theta_containment = 0.68
     temp_cuts.alpha_containment = 0.68
     temp_cuts.min_event_p_en_bin = 2
-    temp_cuts.max_theta_range = 0.3
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 4)),
-        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 40),
-        "theta": u.Quantity(np.tile(np.arange(0.05, 0.7, 0.07), 4), unit=u.deg),
-        "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 4), unit=u.deg),
-        "tel_id": u.Quantity(np.repeat([1, 2, 3, 4], 10)),
-        "mc_type": u.Quantity(np.repeat([0], 40)),
-        })
-    en_range = u.Quantity([0.01, 0.1, 1, 10, 100, np.inf], unit=u.TeV)
+    temp_data = QTable(
+        {
+            "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 4)),
+            "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 40),
+            "theta": u.Quantity(np.tile(np.arange(0.05, 0.4, 0.07), 8), unit=u.deg),
+            "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 4), unit=u.deg),
+            "reco_disp_sign": u.Quantity(np.tile([1, 1, -1, 1, 1], 8)),
+            "disp_sign": u.Quantity(np.tile([-1, 1, -1, 1, 1], 8)),
+        }
+    )
+    en_range = u.Quantity([0.01, 0.1, 1, 10, 100], unit=u.TeV)
 
     theta_cut = temp_cuts.energy_dependent_theta_cuts(
-        temp_data, en_range,
+        temp_data, en_range, use_same_disp_sign=True
     )
-    mask = temp_data["theta"] <= temp_cuts.max_theta_range * u.deg
     theta_cut_2 = temp_cuts.energy_dependent_theta_cuts(
-        temp_data[mask], en_range,
+        temp_data, en_range, use_same_disp_sign=False
     )
-    gh_cut = temp_cuts.energy_dependent_gh_cuts(
-        temp_data, en_range,
-    )
-
-    alpha_cut = temp_cuts.energy_dependent_alpha_cuts(
-        temp_data, en_range,
-    )
+    gh_cut = temp_cuts.energy_dependent_gh_cuts(temp_data, en_range)
+    alpha_cut = temp_cuts.energy_dependent_alpha_cuts(temp_data, en_range)
 
     data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
     data_th_2 = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut_2)
     data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
     data_al = temp_cuts.apply_energy_dependent_alpha_cuts(temp_data, alpha_cut)
 
-    assert theta_cut["cut"][0] == 0.1928 * u.deg
+    assert theta_cut["cut"][0] == 0.2152 * u.deg
+    assert theta_cut_2["cut"][0] == 0.1928 * u.deg
     assert gh_cut["cut"][1] == 0.38
     assert alpha_cut["cut"][0] == 21.32 * u.deg
-    assert len(data_th) == 15
-    assert len(data_th_2) == 12
+    assert len(data_th) == 31
     assert len(data_gh) == 36
     assert len(data_al) == 23
 

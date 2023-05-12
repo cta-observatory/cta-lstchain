@@ -23,7 +23,6 @@
     "min_theta_cut": 0.05,
     "max_theta_cut": 0.32,
     "fill_theta_cut": 0.32,
-    "max_theta_range": 0.7,
     "min_alpha_cut": 1,
     "max_alpha_cut": 45,
     "fill_alpha_cut": 45,

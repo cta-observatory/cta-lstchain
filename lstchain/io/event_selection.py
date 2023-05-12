@@ -24,9 +24,6 @@ class EventSelector(Component):
     For event_type, we choose the sub-array trigger, EventType.SUBARRAY.value,
     32, which is for shower event candidate, as per the latest CTA R1 Event
     Data Model.
-
-    Another event selection can happen by selecting events where the
-    reconstructed disp sign is the same as the "true" disp sign value.
     """
 
     filters = Dict(
@@ -49,18 +46,6 @@ class EventSelector(Component):
         Apply the standard event filters.
         """
         return filter_events(events, self.filters, self.finite_params)
-
-    def same_disp_sign_filter(self, events):
-        """
-        Apply a mask to have events with the reconstructed disp sign
-        (reco_disp_sign), be the same as the true value (disp_sign),
-        to avoid wrong head-tail assignment in the reconstructed
-        image of the MC data.
-
-        The function returns modified events after applying the mask.
-        """
-        disp_mask = events["reco_disp_sign"] == events["disp_sign"]
-        return events[disp_mask]
 
 
 class DL3Cuts(Component):
@@ -103,15 +88,9 @@ class DL3Cuts(Component):
         default_value=0.32,
     ).tag(config=True)
 
-    max_theta_range = Float(
-        help="Maximum value of theta (deg), approximate for the PSF size," +
-            " to calculate the percentile cut in each energy bin.",
-        default_value=0.7,
-    ).tag(config=True)
-
     fill_theta_cut = Float(
-        help="Fill value of theta cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
+        help="Fill value of theta cut (deg) in an energy bin with fewer "
+        + "than minimum number of events present",
         default_value=0.32,
     ).tag(config=True)
 
@@ -136,8 +115,8 @@ class DL3Cuts(Component):
     ).tag(config=True)
 
     fill_alpha_cut = Float(
-        help="Fill value of alpha cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
+        help="Fill value of alpha cut (deg) in an energy bin with fewer "
+        + "than minimum number of events present",
         default_value=45,
     ).tag(config=True)
 
@@ -163,9 +142,7 @@ class DL3Cuts(Component):
         """
         return data[data["gh_score"] > self.global_gh_cut]
 
-    def energy_dependent_gh_cuts(
-        self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_gh_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating energy-dependent gammaness cuts, in a given
         data, with provided reco energy bins, and other parameters to
@@ -184,7 +161,6 @@ class DL3Cuts(Component):
             min_events=self.min_event_p_en_bin,
         )
         return gh_cuts
-
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
@@ -207,15 +183,32 @@ class DL3Cuts(Component):
         return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
     def energy_dependent_theta_cuts(
-        self, data, energy_bins, smoothing=None,
+        self,
+        data,
+        energy_bins,
+        use_same_disp_sign=True,
+        smoothing=None,
     ):
         """
-        Evaluating an optimized energy-dependent theta cuts, with provided
-        reco energy bins, and other parameters to pass to the
+        Evaluating an optimized energy-dependent theta cuts, in a given MC data,
+        with provided reco energy bins, and other parameters to pass to the
         pyirf.cuts.calculate_percentile_cut function.
+
+        For MC data, the reconstructed disp_sign may not be the same as the
+        True value, and thus resulting in a distinct angular distribution at
+        larger theta values owing to the events with incorrect disp_sign. This
+        affects the total range over which percentile cuts are evaluated. To
+        fix this by default we apply a mask on the data, so as to only use
+        events with the same disp_sign after reconstruction, for evaluating the
+        percentile cut. If the user wishes to not use this method, they can make
+        the boolean False.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
+
+        if use_same_disp_sign:
+            disp_mask = data["reco_disp_sign"] == data["disp_sign"]
+            data = data[disp_mask]
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],
@@ -250,9 +243,7 @@ class DL3Cuts(Component):
         """
         return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
-    def energy_dependent_alpha_cuts(
-            self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_alpha_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating an optimized energy-dependent alpha cuts, in a given
         data, with provided reco energy bins, and other parameters to
