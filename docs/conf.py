@@ -69,16 +69,16 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://cta-observatory.github.io/ctapipe/", None)
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/stable/", None)
 }
 
 # These links are ignored in the checks, necessary due to broken intersphinx for
 # these
 nitpick_ignore = [
-    # ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
-    # ("py:class", "ctapipe.core.tool.Tool"),
-    # ("py:class", "ctapipe.core.component.Component"),
-    # ("py:class", "ctapipe.core.container.Container"),
+    ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
+    ("py:class", "ctapipe.core.tool.Tool"),
+    ("py:class", "ctapipe.core.component.Component"),
+    ("py:class", "ctapipe.core.container.Container"),
     ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
     ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
 ]
