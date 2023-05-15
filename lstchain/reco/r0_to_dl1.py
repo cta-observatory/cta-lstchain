@@ -446,7 +446,7 @@ def r0_to_dl1(
 
     # initialize the writer of the interleaved events 
     interleaved_writer = None
-    if 'write_interleaved_events' in config.keys():
+    if 'write_interleaved_events' in config:
         interleaved_writer_config = Config(config['write_interleaved_events'])
         dir, name = os.path.split(output_filename)
         name = name.replace('dl1', 'interleaved').replace('LST-1.1', 'LST-1')
@@ -524,7 +524,8 @@ def r0_to_dl1(
                     # write the calibrated R1 waveform without gain selection
                     source.r0_r1_calibrator.select_gain = False
                     source.r0_r1_calibrator.calibrate(event)
-                    interleaved_writer(event)
+                    if interleaved_writer is not None:
+                        interleaved_writer(event)
                     
                     # calibrate and gain select the event by hand for DL1
                     source.r0_r1_calibrator.select_gain = True
@@ -764,7 +765,7 @@ def r0_to_dl1(
         table.write(muon_output_filename, format='fits', overwrite=True)
         
         # close the interleaved output file and write metadata
-        if 'write_interleaved_events' in config.keys():
+        if interleaved_writer is not None:
             interleaved_writer.finish()
 
 
