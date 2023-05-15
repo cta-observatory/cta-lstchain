@@ -13,13 +13,13 @@ from pyirf.io.gadf import (
     create_psf_table_hdu,
 )
 from pyirf.interpolation import (
+    GridDataInterpolator,
     interpolate_effective_area_per_energy_and_fov,
     interpolate_energy_dispersion,
     interpolate_psf_table,
-    # interpolate_rad_max,
+    interpolate_rad_max,
 )
 from scipy.spatial import Delaunay, distance, QhullError
-from scipy.interpolate import griddata
 
 log = logging.getLogger(__name__)
 
@@ -318,67 +318,38 @@ def interpolate_gh_cuts(
     method="linear",
 ):
     """
-    Interpolates a grid of GH CUTS tables to a target-point.
+    Interpolates a grid of GH_CUTS tables to a target-point. Same as pyirf's
+    interpolate_rad_max function.
+
     Wrapper around scipy.interpolate.griddata [1].
 
     Parameters
     ----------
     gh_cuts: numpy.ndarray, shape=(N, M, ...)
-        Gammaness-cuts for all combinations of grid-points, energy and
-        fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
+        Gammaness-cuts for all combinations of grid-points, like energy.
+        Shape (N:n_grid_points, M:n_energy_bins)
     grid_points: numpy.ndarray, shape=(N, O)
         Array of the N O-dimensional morphing parameter values corresponding
         to the N input templates.
     target_point: numpy.ndarray, shape=(O)
         Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
+    method: 'linear', 'nearest', 'cubic'
         Interpolation method for scipy.interpolate.griddata [1].
         Defaults to 'linear'.
 
     Returns
     -------
     gh_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Gammaness-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
-    """
+        Gammaness-cuts for the target grid-point, shape (1, M:n_energy_bins)
 
-    return griddata(grid_points, gh_cuts, target_point, method=method)
-
-
-def interpolate_rad_max(
-    rad_max,
-    grid_points,
-    target_point,
-    method="linear",
-):
-    """
-    Interpolates a grid of RAD_MAX tables to a target-point.
-    Wrapper around scipy.interpolate.griddata [1].
-
-    Parameters
+    References
     ----------
-    rad_max: numpy.ndarray, shape=(N, M, ...)
-        Theta-cuts for all combinations of grid-points, energy and
-        fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
-    grid_points: numpy.ndarray, shape=(N, O)
-        Array of the N O-dimensional morphing parameter values corresponding
-        to the N input templates.
-    target_point: numpy.ndarray, shape=(O)
-        Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
-        Interpolation method for scipy.interpolate.griddata [1].
-        Defaults to 'linear'.
-
-    Returns
-    -------
-    rad_max_interp: numpy.ndarray, shape=(1, M, ...)
-        Theta-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
+    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
+    interp = GridDataInterpolator(grid_points=grid_points, params=gh_cuts)
+    gh_cuts_interp = interp(target_point, method=method)
 
-    return griddata(grid_points, rad_max, target_point, method=method)
+    return gh_cuts_interp
 
 
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
@@ -480,11 +451,14 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         aeff_interp = interpolate_effective_area_per_energy_and_fov(
-            effarea_list, irf_pars_sel, interp_pars_sel, method=interp_method
+            effective_area=effarea_list,
+            grid_points=irf_pars_sel,
+            target_point=interp_pars_sel,
+            method=interp_method
         )
 
         aeff_hdu_interp = create_aeff2d_hdu(
-            aeff_interp.T,
+            effective_area=aeff_interp.T[0],
             true_energy_bins=e_true,
             fov_offset_bins=fov_off,
             point_like=point_like,
@@ -510,11 +484,15 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
         edisp_interp = interpolate_energy_dispersion(
-            e_migra, edisp_list, irf_pars_sel, interp_pars_sel, quantile_resolution=1e-3
+            migra_bins=e_migra,
+            edisps=edisp_list,
+            grid_points=irf_pars_sel,
+            target_point=interp_pars_sel,
+            quantile_resolution=1e-3
         )
 
         edisp_hdu_interp = create_energy_dispersion_hdu(
-            edisp_interp,
+            energy_dispersion=edisp_interp[0],
             true_energy_bins=e_true,
             migration_bins=e_migra,
             fov_offset_bins=fov_off,
@@ -537,7 +515,10 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         temp_irf = QTable.read(irfs[0], hdu="GH_CUTS")
 
         gh_cut_interp = interpolate_gh_cuts(
-            gh_cuts_list, irf_pars_sel, interp_pars_sel, method=interp_method
+            gh_cuts=gh_cuts_list,
+            grid_points=irf_pars_sel,
+            target_point=interp_pars_sel,
+            method=interp_method
         )
 
         gh_header = fits.Header()
@@ -562,10 +543,13 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         temp_irf = QTable.read(irfs[0], hdu="RAD_MAX")
 
         rad_max_interp = interpolate_rad_max(
-            radmax_list, irf_pars_sel, interp_pars_sel, method=interp_method
+            rad_max=radmax_list,
+            grid_points=irf_pars_sel,
+            target_point=interp_pars_sel,
+            method=interp_method
         )
 
-        temp_irf["RAD_MAX"] = rad_max_interp.T[np.newaxis, ...] * u.deg
+        temp_irf["RAD_MAX"] = rad_max_interp[0].T[np.newaxis, ...] * u.deg
 
         radmax_header = fits.Header()
         radmax_header["CREATOR"] = f"lstchain v{__version__}"
@@ -593,14 +577,14 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
             fov_off = np.append(temp_irf["THETA_LO"][0], temp_irf["THETA_HI"][0][-1])
 
             psf_interp = interpolate_psf_table(
-                src_bins,
-                psf_list,
-                irf_pars_sel,
-                interp_pars_sel,
+                source_offset_bins=src_bins,
+                psfs=psf_list,
+                grid_points=irf_pars_sel,
+                target_point=interp_pars_sel,
                 quantile_resolution=1e-3,
             )
             psf_hdu_interp = create_psf_table_hdu(
-                psf_interp,
+                psf=psf_interp[0],
                 true_energy=e_true,
                 source_offset_bins=src_bins,
                 fov_offset_bins=fov_off,
