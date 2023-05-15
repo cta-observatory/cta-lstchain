@@ -1,55 +1,20 @@
 import numpy as np
-# read back the monitoring containers written with the tool calc_camera_calibration.py
-from ctapipe.containers import (
-    FlatFieldContainer,
-    WaveformCalibrationContainer,
-    PedestalContainer,
-    PixelStatusContainer,
-)
 from ctapipe.coordinates import EngineeringCameraFrame
-from ctapipe.io.hdf5tableio import HDF5TableReader
 from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 __all__ = [
-    "plot_all",
-    "read_file",
+    "plot_calibration_results",
 ]
-
-ff_data = FlatFieldContainer()
-ped_data = PedestalContainer()
-calib_data = WaveformCalibrationContainer()
-status_data = PixelStatusContainer()
 
 channel = ["HG", "LG"]
 
 plot_dir = "none"
 
 
-def read_file(file_name, tel_id=1):
-    """
-    read camera calibration quantities
-
-    Parameters
-    ----------
-    file_name:   calibration hdf5 file
-
-    tel_id:      telescope id
-    """
-    with HDF5TableReader(file_name) as h5_table:
-        table = f"/tel_{tel_id}/flatfield"
-        next(h5_table.read(table, ff_data))
-        table = f"/tel_{tel_id}/calibration"
-        next(h5_table.read(table, calib_data))
-        table = f"/tel_{tel_id}/pedestal"
-        next(h5_table.read(table, ped_data))
-        table = f"/tel_{tel_id}/pixel_status"
-        next(h5_table.read(table, status_data))
-
-
-def plot_all(ped_data, ff_data, calib_data, run=0, plot_file=None):
+def plot_calibration_results(ped_data, ff_data, calib_data, run=0, plot_file=None):
     """
     plot camera calibration quantities
 

@@ -321,7 +321,7 @@ def r0_to_dl1(
     Parameters
     ----------
     input_filename: str
-        path to input file, default: `gamma_test_large.simtel.gz`
+        path to input file, default is an example simulation file
     output_filename: str or None
         path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
@@ -399,7 +399,7 @@ def r0_to_dl1(
 
     if is_simu:
         write_mcheader(
-            source.simulation_config,
+            source.simulation_config[source.obs_ids[0]],
             output_filename,
             obs_id=source.obs_ids[0],
             filters=HDF5_ZSTD_FILTERS,
@@ -651,7 +651,10 @@ def r0_to_dl1(
 
                         event.r1.tel[telescope_id].waveform *= ~bad_waveform
                         r1_dl1_calibrator_for_muon_rings(event)
-                        image = dl1_tel.image*(~bad_pixels)
+                        # since ctapipe 0.17,  the calibrator overwrites the full dl1 container
+                        # instead of overwriting the image in the existing container
+                        # so we need to get the image again
+                        image = event.dl1.tel[telescope_id].image * (~bad_pixels)
 
                         # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
                         # perhaps the event is no longer promising (e.g. if it has a large time evolution)

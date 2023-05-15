@@ -81,6 +81,15 @@ nitpick_ignore = [
     ("py:class", "ctapipe.core.container.Container"),
     ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
     ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
+    # coming from inherited traitlets docs
+    ("py:class", "t.Union"),
+    ("py:class", "t.Dict"),
+    ("py:class", "t.Tuple"),
+    ("py:class", "t.List"),
+    ("py:class", "t.Any"),
+    ("py:class", "t.Type"),
+    ("py:class", "Config"),
+    ("py:class", "Unicode"),
 ]
 
 # The suffix(es) of source filenames.

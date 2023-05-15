@@ -1,32 +1,24 @@
 import numpy as np
 import astropy.units as u
 from ctapipe.containers import ArrayEventContainer
-from ctapipe.instrument import SubarrayDescription, TelescopeDescription
 from traitlets.config import Config
 from astropy.time import Time
+from copy import deepcopy
 
-def test_pedestal_calculator():
+def test_pedestal_calculator(lst1_subarray):
     """ test of PedestalIntegrator """
     from lstchain.calib.camera.pedestals import PedestalIntegrator
 
-    tel_id = 0
+    tel_id = 1
     n_events = 1000
     n_gain = 2
     n_pixels = 1855
     ped_level = 300
     ped_std = 10
 
-    subarray = SubarrayDescription(
-        "test array",
-        tel_positions={0: np.zeros(3) * u.m},
-        tel_descriptions={
-            0: TelescopeDescription.from_name(
-                optics_name="SST-ASTRI", camera_name="CHEC"
-            ),
-        },
-    )
-    subarray.tel[0].camera.readout.reference_pulse_shape = np.ones((1, 2))
-    subarray.tel[0].camera.readout.reference_pulse_sample_width = u.Quantity(1, u.ns)
+    subarray = deepcopy(lst1_subarray)
+    subarray.tel[tel_id].camera.readout.reference_pulse_shape = np.ones((1, 2))
+    subarray.tel[tel_id].camera.readout.reference_pulse_sample_width = u.Quantity(1, u.ns)
 
     config = Config({
         "FixedWindowSum": {

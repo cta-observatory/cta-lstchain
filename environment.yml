@@ -3,12 +3,12 @@ channels:
   - conda-forge
   - default
 dependencies:
-  - python=3.8
-  - numpy=1.21
-  - astropy~=4.2
+  - python=3.10
+  - numpy=1.22
+  - astropy=5
   - pip
-  - ctapipe=0.12
-  - gammapy=0.19
+  - ctapipe=0.18
+  - gammapy=1
   - h5py
   - ipython
   - jupyter
@@ -17,23 +17,22 @@ dependencies:
   - iminuit>=2
   - joblib~=1.2.0
   - toml
-  - protozfits=2.0
   - protobuf=3.20
   - pyparsing
   - scikit-learn=1.0
-  - sphinx~=4.2
+  - sphinx=4
   - sphinx-automodapi
   - sphinx_rtd_theme
   - sphinx-argparse
+  - sphinxcontrib-mermaid
   - nbsphinx
   - numba
   - numpydoc
   - pandas>=2
   - pymongo
   - seaborn
-  - scipy>=1.8
-  - jinja2=3.0 # pinned for bokeh 1.0 compatibility
+  - ctapipe_io_lst=0.20
+  - pytest
   - pip:
-      - ctapipe_io_lst~=0.18.2
       - ctaplot~=0.6.2
-      - pyirf==0.7
+      - pyirf~=0.8.0

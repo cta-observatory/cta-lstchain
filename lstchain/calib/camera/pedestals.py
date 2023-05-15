@@ -10,7 +10,7 @@ from astropy.stats import sigma_clipped_stats
 from ctapipe.core.traits import List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
 
-from lstchain.ctapipe_compat import PedestalCalculator
+from ctapipe.calib.camera.pedestals import PedestalCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
 
@@ -136,7 +136,10 @@ class PedestalIntegrator(PedestalCalculator):
         charge = 0
         peak_pos = 0
         if self.extractor:
-            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
+            charge = dl1.image
+            peak_pos = dl1.peak_time
 
         return charge, peak_pos
 
