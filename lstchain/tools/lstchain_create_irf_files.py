@@ -318,7 +318,6 @@ class IRFFITSWriter(Tool):
             ) = read_mc_dl2_to_QTable(p["file"])
 
             p["mc_type"] = check_mc_type(p["file"])
-            mean_fov_offset = check_mc_fov_offset(p)
 
             self.log.debug(
                 f"Simulated {p['mc_type']} {particle_type.title()} Events:"
@@ -369,6 +368,7 @@ class IRFFITSWriter(Tool):
 
         self.log.debug(p["simulation_info"])
         gammas = self.mc_particle["gamma"]["events"]
+        mean_fov_offset = check_mc_fov_offset(self.mc_particle["gammas"]["file"])
         geomag_params = self.mc_particle["gamma"]["geomag_params"]
         self.log.info(geomag_params)
 
