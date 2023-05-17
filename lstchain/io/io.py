@@ -42,6 +42,7 @@ __all__ = [
     'check_mcheader',
     'check_metadata',
     'check_mc_type',
+    'check_mv_fov_offset',
     'check_thrown_events_histogram',
     'copy_h5_nodes',
     'extract_simulation_nsb',
@@ -1200,4 +1201,25 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
-            
+
+
+def check_mc_fov_offset(filename):
+    """
+    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+    Returns
+    -------
+    string
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    min_viewcone = simu_info.min_viewcone_radius.value
+    max_viewcone = simu_info.max_viewcone_radius.value
+
+    # This calculation is slightly more stable
+    mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
+
+    return mean_offset

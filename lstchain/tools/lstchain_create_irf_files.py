@@ -76,7 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
-from lstchain.io.io import check_mc_type
+from lstchain.io.io import check_mc_type, check_mc_fov_offset
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -318,6 +318,7 @@ class IRFFITSWriter(Tool):
             ) = read_mc_dl2_to_QTable(p["file"])
 
             p["mc_type"] = check_mc_type(p["file"])
+            mean_fov_offset = check_mc_fov_offset(p)
 
             self.log.debug(
                 f"Simulated {p['mc_type']} {particle_type.title()} Events:"
@@ -376,9 +377,6 @@ class IRFFITSWriter(Tool):
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
-        mean_fov_offset = round(
-            gammas["true_source_fov_offset"].mean().to_value(), 4
-        )
 
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
@@ -439,12 +437,7 @@ class IRFFITSWriter(Tool):
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
-            mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 4
-            )
-            fov_offset_bins = [
-                mean_fov_offset - 0.1, mean_fov_offset + 0.1
-            ] * u.deg
+            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
 
             self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
             self.log.info("Single offset for point like gamma MC")
