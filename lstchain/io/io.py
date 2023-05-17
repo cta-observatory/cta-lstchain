@@ -1215,8 +1215,9 @@ def get_mc_fov_offset(filename):
 
     simu_info = read_simu_info_merged_hdf5(filename)
 
-    min_viewcone = simu_info.min_viewcone_radius.value
-    max_viewcone = simu_info.max_viewcone_radius.value
+    # Make sure we have full precision here
+    min_viewcone = simu_info.min_viewcone_radius.value.astype(float)
+    max_viewcone = simu_info.max_viewcone_radius.value.astype(float)
 
     # This calculation is slightly more stable
     mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
