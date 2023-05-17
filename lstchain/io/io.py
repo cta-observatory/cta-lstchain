@@ -1204,13 +1204,16 @@ def check_mc_type(filename):
 
 def get_mc_fov_offset(filename):
     """
-    Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
+    Calculate the mean field of view offset (the "wobble-distance")
+    from the simulation info.
+
     Parameters
     ----------
     filename:path (DL1/DL2 hdf file)
+
     Returns
     -------
-    string
+    mean_offset: float
     """
 
     simu_info = read_simu_info_merged_hdf5(filename)
