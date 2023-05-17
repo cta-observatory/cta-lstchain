@@ -370,7 +370,7 @@ class IRFFITSWriter(Tool):
         gammas = self.mc_particle["gamma"]["events"]
         geomag_params = self.mc_particle["gamma"]["geomag_params"]
         self.log.info(geomag_params)
-        mean_fov_offset = get_mc_fov_offset(self.mc_particle["gammas"]["file"])
+        mean_fov_offset = get_mc_fov_offset(self.mc_particle["gamma"]["file"])
         self.log.debug(mean_fov_offset)
 
         # Binning of parameters used in IRFs
