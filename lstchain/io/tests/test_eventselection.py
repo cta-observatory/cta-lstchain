@@ -46,14 +46,16 @@ def test_dl3_global_cuts():
     temp_cuts.global_alpha_cut = 20
     temp_cuts.allowed_tels = [1, 2]
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
-        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
-        "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
-        "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 3), unit=u.deg),
-        "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
-        "mc_type": u.Quantity(np.repeat([0], 30)),
-        })
+    temp_data = QTable(
+        {
+            "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
+            "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
+            "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
+            "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 3), unit=u.deg),
+            "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
+            "mc_type": u.Quantity(np.repeat([0], 30)),
+        }
+    )
 
     assert len(temp_cuts.apply_global_gh_cut(temp_data)) == 6
     assert len(temp_cuts.apply_global_theta_cut(temp_data)) == 15
@@ -66,41 +68,49 @@ def test_dl3_energy_dependent_cuts():
 
     temp_cuts.gh_max_efficiency = 0.8
     temp_cuts.theta_containment = 0.68
+    temp_cuts.n_off_wobbles = 3
     temp_cuts.alpha_containment = 0.68
-    temp_cuts.min_event_p_en_bin = 2
+    temp_cuts.max_alpha_cut = 20
+    temp_cuts.fill_alpha_cut = 20
+    temp_cuts.min_event_p_en_bin = 4
 
-    temp_data = QTable({
-        "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
-        "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
-        "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
-        "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 3), unit=u.deg),
-        "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
-        "mc_type": u.Quantity(np.repeat([0], 30)),
-        })
-    en_range = u.Quantity([0.01, 0.1, 1, 10, 100, np.inf], unit=u.TeV)
+    temp_data = QTable(
+        {
+            "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 3)),
+            "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 30),
+            "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 3), unit=u.deg),
+            "alpha": u.Quantity(np.tile(np.arange(3, 25, 5), 6), unit=u.deg),
+            "tel_id": u.Quantity(np.repeat([1, 2, 3], 10)),
+            "mc_type": u.Quantity(np.repeat([0], 30)),
+        }
+    )
+    en_range = u.Quantity([0.01, 0.1, 1, 10, 100], unit=u.TeV)
 
     theta_cut = temp_cuts.energy_dependent_theta_cuts(
-        temp_data, en_range,
+        temp_data,
+        en_range,
     )
 
     gh_cut = temp_cuts.energy_dependent_gh_cuts(
-        temp_data, en_range,
+        temp_data,
+        en_range,
     )
 
     alpha_cut = temp_cuts.energy_dependent_alpha_cuts(
-        temp_data, en_range,
+        temp_data,
+        en_range,
     )
 
     data_th = temp_cuts.apply_energy_dependent_theta_cuts(temp_data, theta_cut)
     data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
     data_al = temp_cuts.apply_energy_dependent_alpha_cuts(temp_data, alpha_cut)
 
-    assert theta_cut["cut"][0] == 0.0908 * u.deg
+    assert theta_cut["cut"][0] == 0.2336 * u.deg
     assert gh_cut["cut"][1] == 0.3725
-    assert alpha_cut["cut"][0] == 15.88 * u.deg
-    assert len(data_th) == 21
+    assert alpha_cut["cut"][0] == 18 * u.deg
+    assert len(data_th) == 22
     assert len(data_gh) == 26
-    assert len(data_al) == 17
+    assert len(data_al) == 24
 
 
 def test_data_binning():

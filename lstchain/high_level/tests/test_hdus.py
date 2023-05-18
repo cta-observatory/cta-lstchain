@@ -12,7 +12,7 @@ def tmp_dl3_path(tmp_path_factory):
 
 @pytest.fixture
 def dl3_file(tmp_dl3_path, observed_dl2_file, simulated_irf_file):
-    from lstchain.high_level.hdu_table import create_event_list, add_icrs_position_params
+    from lstchain.high_level.hdu_table import create_event_list
     from lstchain.io.io import read_data_dl2_to_QTable
     from lstchain.reco.utils import get_effective_time
     from astropy.coordinates import SkyCoord

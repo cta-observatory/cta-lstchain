@@ -13,6 +13,8 @@ from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 __all__ = ["EventSelector", "DL3Cuts", "DataBinning"]
 
+WOBBLE_OFFSET_STD = 0.4 * u.deg
+
 
 class EventSelector(Component):
     """
@@ -79,18 +81,12 @@ class DL3Cuts(Component):
 
     min_theta_cut = Float(
         help="Minimum theta cut (deg) in an energy bin",
-        default_value=0.05,
+        default_value=0.1,
     ).tag(config=True)
 
-    max_theta_cut = Float(
-        help="Maximum theta cut (deg) in an energy bin",
-        default_value=0.32,
-    ).tag(config=True)
-
-    fill_theta_cut = Float(
-        help="Fill value of theta cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
-        default_value=0.32,
+    n_off_wobbles = Int(
+        help="Number of wobbles considered for evaluating OFF regions",
+        default_value=3,
     ).tag(config=True)
 
     theta_containment = Float(
@@ -114,8 +110,10 @@ class DL3Cuts(Component):
     ).tag(config=True)
 
     fill_alpha_cut = Float(
-        help="Fill value of alpha cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
+        help=(
+            "Fill value of alpha cut (deg) in an energy bin with fewer "
+            + "than minimum number of events present"
+        ),
         default_value=45,
     ).tag(config=True)
 
@@ -141,9 +139,7 @@ class DL3Cuts(Component):
         """
         return data[data["gh_score"] > self.global_gh_cut]
 
-    def energy_dependent_gh_cuts(
-        self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_gh_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating energy-dependent gammaness cuts, in a given
         data, with provided reco energy bins, and other parameters to
@@ -161,15 +157,41 @@ class DL3Cuts(Component):
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+        if (gh_cuts["n_events"] < self.min_event_p_en_bin).any():
+            gh_cuts = self.update_fill_cuts(gh_cuts)
+
         return gh_cuts
 
+    def update_fill_cuts(self, cut_table):
+        """
+        For a energy-dependent cut table, update the cuts for bins with number
+        of events fewer than the minimum number, for which pyirf uses a
+        constant fill_value, usually at the energy threshold limits, with cut
+        evaluated at the nearest bin with number of events more than the given
+        minimum.
+        """
+        cut_mask = cut_table["n_events"] >= self.min_event_p_en_bin
+        cut_min_idx = np.nonzero(cut_mask)[0][0]
+        cut_max_idx = np.nonzero(cut_mask)[0][-1]
+        cut_min_value = cut_table["cut"][cut_min_idx].value
+        cut_max_value = cut_table["cut"][cut_max_idx].value
+
+        cut_table_new = cut_table.copy()
+
+        for i, cut_ in enumerate(cut_table):
+            if cut_ in cut_table[~cut_mask]:
+                if i < cut_min_idx:
+                    cut_table_new["cut"].value[i] = cut_min_value
+                if i > cut_max_idx:
+                    cut_table_new["cut"].value[i] = cut_max_value
+
+        return cut_table_new
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
-        Applying a given energy-dependent gh cuts to a data file, along the reco
-        energy bins provided.
+        Applying a given energy-dependent gh cuts on the given data, along the
+        reco energy bins.
         """
-
         data["selected_gh"] = evaluate_binned_cut(
             data["gh_score"],
             data["reco_energy"],
@@ -185,7 +207,10 @@ class DL3Cuts(Component):
         return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
     def energy_dependent_theta_cuts(
-        self, data, energy_bins, smoothing=None,
+        self,
+        data,
+        energy_bins,
+        smoothing=None,
     ):
         """
         Evaluating an optimized energy-dependent theta cuts, in a given
@@ -194,26 +219,32 @@ class DL3Cuts(Component):
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
+        max_theta = (
+            WOBBLE_OFFSET_STD.value * np.sin(np.pi / (self.n_off_wobbles + 1))
+        ) * u.deg
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],
             data["reco_energy"],
             bins=energy_bins,
             min_value=self.min_theta_cut * u.deg,
-            max_value=self.max_theta_cut * u.deg,
-            fill_value=self.fill_theta_cut * u.deg,
+            max_value=max_theta,
+            fill_value=max_theta,
             percentile=100 * self.theta_containment,
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+
+        if (theta_cuts["n_events"] < self.min_event_p_en_bin).any():
+            theta_cuts = self.update_fill_cuts(theta_cuts)
+
         return theta_cuts
 
     def apply_energy_dependent_theta_cuts(self, data, theta_cuts):
         """
-        Applying a given energy-dependent theta cuts to a data file, along the
-        reco energy bins provided.
+        Applying a given energy-dependent theta cuts on a given data, along the
+        reco energy bins.
         """
-
         data["selected_theta"] = evaluate_binned_cut(
             data["theta"],
             data["reco_energy"],
@@ -228,13 +259,12 @@ class DL3Cuts(Component):
         """
         return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
-    def energy_dependent_alpha_cuts(
-            self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_alpha_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating an optimized energy-dependent alpha cuts, in a given
         data, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function.
+
         Note: Using too fine binning will result in too un-smooth cuts.
         """
 
@@ -249,12 +279,16 @@ class DL3Cuts(Component):
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+
+        if (alpha_cuts["n_events"] < self.min_event_p_en_bin).any():
+            alpha_cuts = self.update_fill_cuts(alpha_cuts)
+
         return alpha_cuts
 
     def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
         """
-        Applying a given energy-dependent alpha cuts to a data file, along the
-        reco energy bins provided.
+        Applying a given energy-dependent alpha cuts on a given data, along the
+        reco energy bins.
         """
 
         data["selected_alpha"] = evaluate_binned_cut(
