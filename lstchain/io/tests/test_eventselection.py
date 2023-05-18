@@ -113,6 +113,40 @@ def test_dl3_energy_dependent_cuts():
     assert len(data_al) == 24
 
 
+def test_update_fill_cut():
+    temp_cuts = DL3Cuts()
+
+    temp_cuts.min_event_p_en_bin = 5
+
+    temp_cut_table_1 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 10, 15, 4])),
+            "cut": u.Quantity(np.array([0.4, 0.07, 0.1, 0.4]) * u.m),
+        }
+    )
+    temp_cut_table_2 = QTable(
+        {
+            "n_events": u.Quantity(np.array([13, 10, 15, 4])),
+            "cut": u.Quantity(np.array([0.04, 0.07, 0.1, 0.4]) * u.s),
+        }
+    )
+    temp_cut_table_3 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 10, 15, 14])),
+            "cut": u.Quantity(np.array([0.4, 0.07, 0.1, 0.04])),
+        }
+    )
+
+    cut_table_new_1 = temp_cuts.update_fill_cuts(temp_cut_table_1)
+    cut_table_new_2 = temp_cuts.update_fill_cuts(temp_cut_table_2)
+    cut_table_new_3 = temp_cuts.update_fill_cuts(temp_cut_table_3)
+
+    assert cut_table_new_1["cut"][0] == 0.07 * u.m
+    assert cut_table_new_1["cut"][-1] == 0.1 * u.m
+    assert cut_table_new_2["cut"][-1] == 0.1 * u.s
+    assert cut_table_new_3["cut"][0] == 0.07
+
+
 def test_data_binning():
     tempbin = DataBinning()
 

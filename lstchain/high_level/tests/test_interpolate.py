@@ -43,6 +43,7 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         "--point-like",
         "--gh-efficiency=0.8",
         "--theta-containment=0.8",
+        "--DL3Cuts.min_event_p_en_bin=2",
     )
 
     hdus_2_en = [fits.PrimaryHDU(), ]
@@ -238,6 +239,7 @@ def test_compare_irfs(
         "--point-like",
         "--gh-efficiency=0.7",
         "--theta-containment=0.7",
+        "--DL3Cuts.min_event_p_en_bin=2",
     )
 
     # IRFs with same efficiency values for energy-dependent cuts,

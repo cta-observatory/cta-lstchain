@@ -139,6 +139,35 @@ class DL3Cuts(Component):
         """
         return data[data["gh_score"] > self.global_gh_cut]
 
+    def update_fill_cuts(self, cut_table):
+        """
+        For an energy-dependent cut table, update the cuts for bins with number
+        of events fewer than the minimum number, for which pyirf uses a
+        constant fill_value, usually at the energy threshold limits, with cut
+        evaluated at the nearest bin with number of events more than the given
+        minimum.
+        """
+        cut_table_new = cut_table.copy()
+
+        low_event_bins = np.argwhere(
+            cut_table["n_events"] < self.min_event_p_en_bin
+        ).ravel()
+        high_event_bins = np.where(
+            cut_table["n_events"] >= self.min_event_p_en_bin
+        )[0]
+
+        for low_ in low_event_bins:
+            if low_ < high_event_bins[0]:
+                cut_table_new["cut"].value[low_] = cut_table["cut"].value[
+                    high_event_bins[0]
+                ]
+            elif low_ > high_event_bins[-1]:
+                cut_table_new["cut"].value[low_] = cut_table["cut"].value[
+                    high_event_bins[-1]
+                ]
+
+        return cut_table_new
+
     def energy_dependent_gh_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating energy-dependent gammaness cuts, in a given
@@ -161,31 +190,6 @@ class DL3Cuts(Component):
             gh_cuts = self.update_fill_cuts(gh_cuts)
 
         return gh_cuts
-
-    def update_fill_cuts(self, cut_table):
-        """
-        For a energy-dependent cut table, update the cuts for bins with number
-        of events fewer than the minimum number, for which pyirf uses a
-        constant fill_value, usually at the energy threshold limits, with cut
-        evaluated at the nearest bin with number of events more than the given
-        minimum.
-        """
-        cut_mask = cut_table["n_events"] >= self.min_event_p_en_bin
-        cut_min_idx = np.nonzero(cut_mask)[0][0]
-        cut_max_idx = np.nonzero(cut_mask)[0][-1]
-        cut_min_value = cut_table["cut"][cut_min_idx].value
-        cut_max_value = cut_table["cut"][cut_max_idx].value
-
-        cut_table_new = cut_table.copy()
-
-        for i, cut_ in enumerate(cut_table):
-            if cut_ in cut_table[~cut_mask]:
-                if i < cut_min_idx:
-                    cut_table_new["cut"].value[i] = cut_min_value
-                if i > cut_max_idx:
-                    cut_table_new["cut"].value[i] = cut_max_value
-
-        return cut_table_new
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
