@@ -190,18 +190,18 @@ class DL3Cuts(Component):
         smoothing=None,
     ):
         """
-        Evaluating an optimized energy-dependent theta cuts, in a given MC data,
+        Evaluating energy-dependent theta cuts, in a given MC data,
         with provided reco energy bins, and other parameters to pass to the
         pyirf.cuts.calculate_percentile_cut function.
 
-        For MC data, the reconstructed disp_sign may not be the same as the
-        True value, and thus resulting in a distinct angular distribution at
-        larger theta values owing to the events with incorrect disp_sign. This
-        affects the total range over which percentile cuts are evaluated. To
-        fix this by default we apply a mask on the data, so as to only use
-        events with the same disp_sign after reconstruction, for evaluating the
-        percentile cut. If the user wishes to not use this method, they can make
-        the boolean False.
+        For MC events, the disp_sign may be reconstructed incorrectly with
+        respect to the true value, and thus resulting in a bi-modal PSF.
+        For evaluating the energy-dependent theta cuts, we want to consider,
+        only the central region of PSF. To fix this issue, by default, we apply
+        a mask on the data, so as to only use events with the same disp_sign
+        after reconstruction, for evaluating the percentile cut.
+        If the user wishes to not use this method, they can make the boolean
+        False.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
