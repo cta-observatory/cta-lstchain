@@ -377,6 +377,7 @@ def calculate_noise_parameters(simtel_filename, data_dl1_filename,
     return extra_noise_in_dim_pixels, extra_bias_in_dim_pixels, \
            extra_noise_in_bright_pixels
 
+
 def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
                          dt, pulse_templates, gain, charge_spe_cumulative_pdf):
     """
@@ -394,21 +395,22 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     fluctuation cumulative pdf used to randomise the normalisation of
     injected pulses
     """
+    n = 25
     n_pixels, n_samples = waveform.shape
-    duration = (20 + n_samples) * dt  # TODO check needed time window, effect of edges
-    t = np.arange(-20, n_samples) * dt.value
+    duration = (n + n_samples) * dt  # TODO check needed time window, effect of edges
+    t = np.arange(-n, n_samples) * dt.value
     mean_added_nsb = (added_nsb_fraction * original_nsb) * duration
     rng = np.random.default_rng()
     additional_nsb = rng.poisson(mean_added_nsb, n_pixels)
-    added_nsb_time = rng.uniform(-20 * dt.value, -20 * dt.value + duration.value, (n_pixels, max(additional_nsb)))
+    added_nsb_time = rng.uniform(-n * dt.value, -n * dt.value + duration.value, (n_pixels, max(additional_nsb)))
     added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
-
     baseline_correction = (added_nsb_fraction * original_nsb * dt).value
     waveform -= baseline_correction
     for i in range(n_pixels):
         for j in range(additional_nsb[i]):
-            waveform[i] += (added_nsb_amp[i][j]
-                            * (pulse_templates(t[20:] - added_nsb_time[i][j], 'HG' if gain[i] else 'LG')))
+            waveform[i] += pulse_templates(t[n:], 'HG' if gain[i] else 'LG',
+                                           amplitude=added_nsb_amp[i][j],
+                                           t_0=added_nsb_time[i][j])
 
 
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
