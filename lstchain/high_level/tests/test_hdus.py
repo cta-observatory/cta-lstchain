@@ -22,7 +22,6 @@ def dl3_file(tmp_dl3_path, observed_dl2_file, simulated_irf_file):
     t_eff, t_tot = get_effective_time(events)
     events = events[events["intensity"] > 200]
     source_pos = SkyCoord(ra=83.633, dec=22.01, unit="deg")
-    events = add_icrs_position_params(events, source_pos)
 
     evts, gti, pnt = create_event_list(
         events,
@@ -85,7 +84,7 @@ def test_get_timing_params():
         'dragon_time': t.unix,
     })
 
-    params = get_timing_params(data)
+    params, time_utc = get_timing_params(data)
 
     # Converting to a single mjd number loses precision but should be better than 0.1 us
     epoch = Time(params["MJDREFI"], params["MJDREFF"], format="mjd")

@@ -53,7 +53,6 @@ from lstchain.io import (
     read_data_dl2_to_QTable,
 )
 from lstchain.high_level import (
-    add_icrs_position_params,
     check_in_delaunay_triangle,
     compare_irfs,
     create_event_list,
@@ -443,7 +442,7 @@ class DataReductionFITSWriter(Tool):
                 data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
             # set expected source positions as reco positions
-            set_expected_pos_to_reco_altaz(data_temp)
+            data_temp = set_expected_pos_to_reco_altaz(data_temp)
 
             if i == 0:
                 self.data = data_temp
@@ -473,8 +472,6 @@ class DataReductionFITSWriter(Tool):
             self.apply_srcindep_gh_cut()
         else:
             self.apply_srcdep_gh_alpha_cut()
-
-        self.data = add_icrs_position_params(self.data, self.source_pos)
 
         self.log.info("Generating event list")
         self.events, self.gti, self.pointing = create_event_list(
