@@ -149,13 +149,9 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         status_data = event.mon.tel[self.tel_id].pixel_status
         calib_data = event.mon.tel[self.tel_id].calibration
 
-        # mask from pedestal and flat-field data
-        monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
+        # calibration unusable pixels 
+        calib_data.unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                    status_data.flatfield_failing_pixels)
-
-        # calibration unusable pixels are an OR of all masks
-        calib_data.unusable_pixels = np.logical_or(monitoring_unusable_pixels,
-                                                   status_data.hardware_failing_pixels)
 
         signal = ff_data.charge_median - ped_data.charge_median
 

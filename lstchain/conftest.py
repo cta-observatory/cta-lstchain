@@ -109,6 +109,8 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     dl1_output_path1 = temp_dir_observed_files / "dl1_LST-1.Run02008.0000.h5"
     muons_file1 = temp_dir_observed_files / "muons_LST-1.Run02008.0000.fits"
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
+    dvr_file1 = temp_dir_observed_files / "DVR_settings_LST-1.Run02008.h5"
+    pixmasks_file1 = temp_dir_observed_files / "Pixel_selection_LST-1.Run02008.0000.h5"
 
     # Second set of files
     dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
@@ -149,6 +151,24 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     )
 
     run_program(
+        "lstchain_dvr_pixselector",
+        "--dl1-files",
+        dl1_output_path1,
+        "--output-dir",
+        temp_dir_observed_files
+    )
+
+    run_program(
+        "lstchain_dvr_pixselector",
+        "--dl1-files",
+        dl1_output_path1,
+        "--output-dir",
+        temp_dir_observed_files,
+        "--action",
+        "create_pixel_masks"
+    )
+
+    run_program(
         "lstchain_data_r0_to_dl1",
         "-f",
         test_r0_path2,
@@ -181,6 +201,8 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         'dl1_file1': dl1_output_path1,
         'muons1': muons_file1,
         'datacheck1': datacheck_file1,
+        'dvr_file1': dvr_file1,
+        'pixmasks_file1': pixmasks_file1,
         'dl1_file2': dl1_output_path2,
         'muons2': muons_file2,
         'datacheck2': datacheck_file2
