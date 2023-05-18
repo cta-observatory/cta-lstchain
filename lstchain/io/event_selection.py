@@ -200,8 +200,13 @@ class DL3Cuts(Component):
         only the central region of PSF. To fix this issue, by default, we apply
         a mask on the data, so as to only use events with the same disp_sign
         after reconstruction, for evaluating the percentile cut.
+
+        Note: In this case, at low energies, where disp_sign determination is
+        pretty uncertain, an efficiency of 40% or larger will result in a cut
+        which keeps the whole central region of the PSF.
+
         If the user wishes to not use this method, they can make the boolean
-        False.
+        use_same_disp_sign as False.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
