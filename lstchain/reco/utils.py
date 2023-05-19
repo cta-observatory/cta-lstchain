@@ -46,7 +46,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side"
+    "source_side",
 ]
 
 # position of the LST1
@@ -72,7 +72,7 @@ log = logging.getLogger(__name__)
 
 def rotate(flat_object, degree=0, origin=(0, 0)):
     """
-    Rotate 2D object around given axle
+    Rotate 2D object around given axle.
 
     Parameters
     ----------
@@ -96,6 +96,7 @@ def rotate(flat_object, degree=0, origin=(0, 0)):
         ).T
         for point in np.atleast_2d(flat_object)
     ]
+
     return res
 
 
@@ -109,7 +110,8 @@ def extract_source_position(
     ----------
     pandas.DataFrame data: input data
     str observed_source_name: Name of the observed source
-    astropy.units.m equivalent_focal_length: Equivalent focal length of a telescope
+    astropy.units.m equivalent_focal_length: Equivalent focal length of a
+    telescope.
 
     Returns
     -------
@@ -127,6 +129,7 @@ def extract_source_position(
         focal=equivalent_focal_length,
     )
     source_position = [source_pos_camera.x, source_pos_camera.y]
+
     return source_position
 
 
@@ -146,14 +149,16 @@ def compute_theta2(data, source_position, conversion_factor=2.0):
     """
     reco_src_x = np.array(data["reco_src_x"]) * u.m
     reco_src_y = np.array(data["reco_src_y"]) * u.m
-    return conversion_factor ** 2 * (
-        (source_position[0] - reco_src_x) ** 2 + (source_position[1] - reco_src_y) ** 2
+    return conversion_factor**2 * (
+        (source_position[0] - reco_src_x) ** 2 +
+        (source_position[1] - reco_src_y) ** 2
     )
 
 
 def compute_alpha(data):
     """
-    Computes the angle between the shower major axis and polar angle of the shower centroid
+    Computes the angle between the shower major axis and polar angle of the
+    shower centroid.
 
     Parameters
     ----------
@@ -228,7 +233,10 @@ def get_event_pos_in_camera(event, tel):
 
     focal = tel.optics.equivalent_focal_length
 
-    camera_frame = CameraFrame(focal_length=focal, telescope_pointing=array_pointing)
+    camera_frame = CameraFrame(
+        focal_length=focal,
+        telescope_pointing=array_pointing
+    )
 
     camera_pos = event_direction.transform_to(camera_frame)
     return camera_pos.x, camera_pos.y
@@ -291,7 +299,9 @@ def camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=None
     >>> focal = 28 * u.m
     >>> pointing_alt = np.array([1.0, 1.0]) * u.rad
     >>> pointing_az = np.array([0.2, 0.5]) * u.rad
-    >>> sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
+    >>> sky_coords = utils.camera_to_altaz(
+            pos_x, pos_y, focal, pointing_alt, pointing_az
+        )
     """
     if not obstime:
         logging.info("No time given. To be use only for MC data.")
@@ -346,7 +356,8 @@ def sky_to_camera(alt, az, focal, pointing_alt, pointing_az):
 
 def radec_to_camera(sky_coordinate, obstime, pointing_alt, pointing_az, focal):
     """
-    Coordinate transform from sky coordinate to camera coordinates (x, y) in distance
+    Coordinate transform from sky coordinate to camera coordinates (x, y) in
+    distance.
 
     Parameters
     ----------
@@ -397,7 +408,8 @@ def source_side(source_pos_x, cog_x):
 
 def source_dx_dy(source_pos_x, source_pos_y, cog_x, cog_y):
     """
-    Compute the coordinates of the vector (dx, dy) from the center of gravity to the source position
+    Compute the coordinates of the vector (dx, dy) from the center of gravity
+    to the source position.
 
     Parameters
     ----------
@@ -429,8 +441,10 @@ def polar_to_cartesian(norm, angle, sign):
 
     """
     assert np.isfinite([norm, angle, sign]).all()
+
     x = norm * sign * np.cos(angle)
     y = norm * sign * np.sin(angle)
+
     return x, y
 
 
@@ -449,12 +463,13 @@ def cartesian_to_polar(x, y):
     -------
     norm, angle, sign
     """
-    norm = np.sqrt(x ** 2 + y ** 2)
+    norm = np.sqrt(x**2 + y**2)
     if x == 0:
         angle = np.pi / 2.0 * np.sign(y)
     else:
         angle = np.arctan(y / x)
     sign = np.sign(x)
+
     return norm, angle, sign
 
 
@@ -464,8 +479,10 @@ def predict_source_position_in_camera(cog_x, cog_y, disp_dx, disp_dy):
 
     Parameters
     ----------
-    cog_x: float or `numpy.ndarray` - x coordinate of the center of gravity (hillas.x)
-    cog_y: float or `numpy.ndarray` - y coordinate of the center of gravity (hillas.y)
+    cog_x: x coordinate of the center of gravity (hillas.x)
+        float or `numpy.ndarray`
+    cog_y: y coordinate of the center of gravity (hillas.y)
+        float or `numpy.ndarray`
     disp_dx: float or `numpy.ndarray`
     disp_dy: float or `numpy.ndarray`
 
@@ -486,19 +503,20 @@ def expand_tel_list(tel_list, max_tels):
     """
     pattern = np.zeros(max_tels).astype(bool)
     pattern[tel_list] = 1
+
     return pattern
 
 
 def filter_events(
-        events,
-        filters=None,
-        finite_params=None,
+    events,
+    filters=None,
+    finite_params=None,
 ):
     """
     Apply data filtering to a pandas dataframe or astropy Table.
     The Table object will be converted to pandas dataframe and used.
-    Each filtering range is applied if the column name exists in the DataFrame so that
-    `(events >= range[0]) & (events <= range[1])`
+    Each filtering range is applied if the column name exists in the DataFrame
+    so that `(events >= range[0]) & (events <= range[1])`
     The returned object is of the same type as passed `events`
 
     Parameters
@@ -531,8 +549,10 @@ def filter_events(
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
 
     if finite_params is not None:
-        _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_na', True):
+        _finite_params = list(
+            set(finite_params).intersection(list(events_df.columns))
+        )
+        with pd.option_context("mode.use_inf_as_na", True):
             not_finite_mask = events_df[_finite_params].isna()
         filter &= ~(not_finite_mask.any(axis=1))
 
@@ -545,7 +565,7 @@ def filter_events(
                     log.warning(f"{k} : {v}")
 
     # if pandas DataFrame or Series, transforms to numpy
-    filter = filter.to_numpy() if hasattr(filter, 'to_numpy') else filter
+    filter = filter.to_numpy() if hasattr(filter, "to_numpy") else filter
     events = events[filter]
 
     return events
@@ -553,15 +573,18 @@ def filter_events(
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
     """
-    Replace missing values in y with values from a linear interpolation on their position in the array.
+    Replace missing values in y with values from a linear interpolation on
+    their position in the array.
 
     Parameters
     ----------
     y: list or `numpy.array`
     missing_values: number, string, np.nan or None, default=`np.nan`
-        The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
+        The placeholder for the missing values. All occurrences of
+        `missing_values` will be imputed.
     copy : bool, default=True
-        If True, a copy of X will be created. If False, imputation will be done in-place whenever possible.
+        If True, a copy of X will be created. If False, imputation will be
+        done in-place whenever possible.
 
     Returns
     -------
@@ -590,24 +613,32 @@ def impute_pointing(dl1_data, missing_values=np.nan):
     ----------
     dl1_data: `pandas.DataFrame`
     missing_values: number, string, np.nan or None, default=`np.nan`
-        The placeholder for the missing values. All occurrences of `missing_values` will be imputed.
+        The placeholder for the missing values. All occurrences of
+        `missing_values` will be imputed.
     """
     if len(set(dl1_data.event_id)) != len(dl1_data.event_id):
         warn(
-            "Beware, the data has been resorted by `event_id` to interpolate invalid pointing values but there are "
-            "several events with the same `event_id` in the data, thus probably leading to unexpected behaviour",
+            "Beware, the data has been resorted by `event_id` to interpolate "
+            "invalid pointing values but there are several events with the "
+            "same `event_id` in the data, thus probably leading to "
+            "unexpected behaviour",
             UserWarning,
         )
     dl1_data = dl1_data.sort_values(by="event_id")
+
     for k in ["alt_tel", "az_tel"]:
-        dl1_data[k] = linear_imputer(dl1_data[k].values, missing_values=missing_values)
+        dl1_data[k] = linear_imputer(
+            dl1_data[k].values,
+            missing_values=missing_values
+        )
+
     return dl1_data
 
 
 def clip_alt(alt):
     """
-    Make sure altitude is not larger than 90 deg (it happens in some MC files for zenith=0),
-    to keep astropy happy
+    Make sure altitude is not larger than 90 deg (it happens in some MC files
+    for zenith=0), to keep astropy happy.
     """
     return np.clip(alt, -90.0 * u.deg, 90.0 * u.deg)
 
@@ -633,6 +664,7 @@ def add_delta_t_key(events):
         time = np.array(events["dragon_time"])
         delta_t = np.insert(np.diff(time), 0, 0)
         events["delta_t"] = delta_t
+
     return events
 
 
@@ -697,13 +729,13 @@ def get_effective_time(events):
 
 
 def get_geomagnetic_field_orientation(time=None):
-    '''
+    """
     Linearly extrapolate the geomagnetic field parameters from the
     reference period to the given timestamp.
 
     time: astropy.time.Time or None
         Timestamp for which to calculate. If ``None``, ``Time.now()`` is used.
-    '''
+    """
     if time is None:
         time = Time.now()
 
@@ -753,9 +785,8 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     if geomag_dec is None or geomag_inc is None:
         geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
 
-    term = (
-        (np.sin(geomag_inc) * np.cos(zen)) -
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az - geomag_dec))
+    term = (np.sin(geomag_inc) * np.cos(zen)) - (
+        np.cos(geomag_inc) * np.sin(zen) * np.cos(az - geomag_dec)
     )
 
     delta = np.arccos(term)
@@ -763,10 +794,13 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
     return delta
 
 
-def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inplace=True):
+def correct_bias_focal_length(
+    events, effective_focal_length=29.30565 * u.m, inplace=True
+):
     """
-    Fix the bias introduced by reconstructing the events direction with the nominal focal length.
-    This should not be necessary in the future, when the effective focal length is read and used directly from the MC
+    Fix the bias introduced by reconstructing the events direction with the
+    nominal focal length. This should not be necessary in the future, when the
+    effective focal length is read and used directly from the MC.
     See https://github.com/cta-observatory/ctaplot/issues/190 for more details.
 
     Parameters
@@ -783,23 +817,26 @@ def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inpla
     if not inplace:
         events = deepcopy(events)
 
-    reco_altaz = reco_source_position_sky(events['x'],
-                                          events['y'],
-                                          events['reco_disp_dx'],
-                                          events['reco_disp_dy'],
-                                          effective_focal_length,
-                                          events['alt_tel'],
-                                          events['az_tel'])
+    reco_altaz = reco_source_position_sky(
+        events["x"],
+        events["y"],
+        events["reco_disp_dx"],
+        events["reco_disp_dy"],
+        effective_focal_length,
+        events["alt_tel"],
+        events["az_tel"],
+    )
 
     if isinstance(events, pd.DataFrame):
-        events['reco_alt'] = reco_altaz.alt.to_value(u.rad)
-        events['reco_az'] = reco_altaz.az.to_value(u.rad)
+        events["reco_alt"] = reco_altaz.alt.to_value(u.rad)
+        events["reco_az"] = reco_altaz.az.to_value(u.rad)
     else:
-        events['reco_alt'] = reco_altaz.alt.to(u.rad)
-        events['reco_az'] = reco_altaz.az.to(u.rad)
+        events["reco_alt"] = reco_altaz.alt.to(u.rad)
+        events["reco_az"] = reco_altaz.az.to(u.rad)
 
     if not inplace:
         return events
+
 
 def apply_src_r_cut(events, src_r_min, src_r_max):
     """
@@ -815,13 +852,11 @@ def apply_src_r_cut(events, src_r_min, src_r_max):
     -------
     `pandas.DataFrame`
     """
-    
-    src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
+
+    src_r_m = np.sqrt(events["src_x"] ** 2 + events["src_y"] ** 2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-    events = events[
-        (src_r_deg >= src_r_min) & 
-        (src_r_deg <= src_r_max)
-    ]
+
+    events = events[(src_r_deg >= src_r_min) & (src_r_deg <= src_r_max)]
 
     return events

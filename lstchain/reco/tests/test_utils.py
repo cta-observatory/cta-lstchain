@@ -14,6 +14,7 @@ def test_camera_to_altaz():
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     sky_coords = utils.camera_to_altaz(pos_x, pos_y, focal, pointing_alt, pointing_az)
+
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
@@ -22,6 +23,7 @@ def test_camera_to_altaz():
     sky_coords = utils.camera_to_altaz(
         pos_x, pos_y, focal, pointing_alt, pointing_az, obstime=obs_time
     )
+
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
@@ -36,6 +38,7 @@ def test_radec_to_camera():
     pointing_pos_camera = utils.radec_to_camera(
         pointing_radec, obstime, pointing_alt, pointing_az, focal
     )
+
     np.testing.assert_allclose(
         pointing_pos_camera.x.to_value(),
         expected_source_pos_camera[0].to_value(),
@@ -59,6 +62,7 @@ def test_reco_source_position_sky():
     sky_coords = utils.reco_source_position_sky(
         cog_x, cog_y, disp_dx, disp_dy, focal_length, pointing_alt, pointing_az
     )
+
     np.testing.assert_allclose(sky_coords.alt, pointing_alt, rtol=1e-4)
     np.testing.assert_allclose(sky_coords.az, pointing_az, rtol=1e-4)
 
@@ -70,6 +74,7 @@ def test_sky_to_camera():
     pointing_alt = np.array([1.0, 1.0]) * u.rad
     pointing_az = np.array([0.2, 0.5]) * u.rad
     camera_coords = utils.sky_to_camera(alt, az, focal, pointing_alt, pointing_az)
+
     np.testing.assert_allclose(
         camera_coords.x.value, np.array([0, 0]), rtol=1e-4, atol=1e-4
     )
@@ -81,6 +86,7 @@ def test_sky_to_camera():
 def test_linear_imputer():
     a = np.array([0.2, 0.3, np.nan, np.nan, np.nan, 0.7, np.nan, 0.8, np.nan])
     utils.linear_imputer(a, missing_values=np.nan, copy=False)
+
     np.testing.assert_allclose(a, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.8])
 
 
@@ -144,7 +150,9 @@ def test_get_obstime_real():
     n_cosmics = np.random.poisson(cosmics_rate * t_obs)
 
     timestamps = np.random.uniform(0, t_obs, n_cosmics)
-    timestamps = np.append(timestamps, np.arange(t0_pedestal, t_obs, 1 / pedestal_rate))
+    timestamps = np.append(
+        timestamps, np.arange(t0_pedestal, t_obs, 1 / pedestal_rate)
+    )
     timestamps = np.append(
         timestamps, np.arange(t0_flatfield, t_obs, 1 / flatfield_rate)
     )
@@ -172,7 +180,7 @@ def test_get_obstime_real():
         }
     )
     t_eff, t_elapsed = utils.get_effective_time(events)
-    print(t_obs, t_elapsed, true_t_eff, t_eff)
+
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
@@ -181,7 +189,7 @@ def test_get_obstime_real():
     b = timestamps[recorded_events][cut] * u.s
     events = QTable([a, b], names=("delta_t", "dragon_time"))
     t_eff, t_elapsed = utils.get_effective_time(events)
-    print(t_obs, t_elapsed, true_t_eff, t_eff)
+
     # test accuracy to 0.05%:
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
@@ -194,12 +202,16 @@ def test_get_geomagnetic_field_orientation():
         GEOMAG_DEC,
     )
 
-    assert get_geomagnetic_field_orientation(GEOM_MAG_REFERENCE_TIME) == (GEOMAG_DEC, GEOMAG_INC)
+    assert get_geomagnetic_field_orientation(GEOM_MAG_REFERENCE_TIME) == (
+        GEOMAG_DEC,
+        GEOMAG_INC,
+    )
 
     # value calculated with https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm
     # for given date using IGRF2020 model
     time = Time("2021-06-30")
     dec, inc = get_geomagnetic_field_orientation(time)
+
     assert np.isclose(dec.to(u.deg), -4.8985 * u.deg, atol=0.05)
     assert np.isclose(inc.to(u.deg), 37.3801 * u.deg, atol=0.05)
 
@@ -209,10 +221,14 @@ def test_get_geomagnetic_delta():
 
     # this is just a regression test assuming the values were correct when
     # first implementing the function
-    inc = get_geomagnetic_delta(zen=20 * u.deg, az=0 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
+    inc = get_geomagnetic_delta(
+        zen=20 * u.deg, az=0 * u.deg, time=GEOM_MAG_REFERENCE_TIME
+    )
     assert u.isclose(inc, 1.26667967 * u.rad)
 
-    inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
+    inc = get_geomagnetic_delta(
+        zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME
+    )
     assert u.isclose(inc, 1.73389012 * u.rad)
 
 
@@ -220,10 +236,13 @@ def test_apply_src_r_cut(simulated_dl1_file):
     from lstchain.io.io import dl1_params_lstcam_key
     from lstchain.reco.utils import apply_src_r_cut
     from lstchain.io.config import get_srcdep_config
-    
+
     params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     srcdep_config = get_srcdep_config()
-    src_r_min = srcdep_config['train_gamma_src_r_deg'][0]
-    src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
+
+    src_r_min = srcdep_config["train_gamma_src_r_deg"][0]
+    src_r_max = srcdep_config["train_gamma_src_r_deg"][1]
+
     params = apply_src_r_cut(params, src_r_min, src_r_max)
-    assert (params.event_id.values == np.array([998705, 1680619])).all()
+
+    assert (params.event_id.values == np.arange(100, 110, 1)).all()
