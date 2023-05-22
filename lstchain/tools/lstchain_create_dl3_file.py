@@ -51,6 +51,7 @@ from lstchain.io import (
     DL3Cuts,
     get_srcdep_assumed_positions,
     read_data_dl2_to_QTable,
+    remove_duplicated_events,
 )
 from lstchain.high_level import (
     add_icrs_position_params,
@@ -203,6 +204,11 @@ class DataReductionFITSWriter(Tool):
         default_value=False,
     ).tag(config=True)
 
+    keep_duplicated_events = traits.Bool(
+        help="If True, duplicated events after alpha and gammaness cut are not removed.",
+        default_value=False,
+    ).tag(config=True)
+
     use_nearest_irf_node = traits.Bool(
         help="If True, only look for the nearest IRF node to the data. No interpolation",
         default_value=False,
@@ -235,6 +241,10 @@ class DataReductionFITSWriter(Tool):
         "source-dep": (
             {"DataReductionFITSWriter": {"source_dep": True}},
             "source-dependent analysis if True",
+        ),
+        "keep-duplicated-events": (
+            {"DataReductionFITSWriter": {"keep_duplicated_events": True}},
+            "duplicated events are not removed if True",
         ),
         "use-nearest-irf-node": (
             {"DataReductionFITSWriter": {"use_nearest_irf_node": True}},
@@ -449,6 +459,21 @@ class DataReductionFITSWriter(Tool):
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
+         
+        if not self.keep_duplicated_events:
+            if len(srcdep_assumed_positions) > 2:
+                self.log.warning(
+                    "If multiple off positions are assumed, the process to remove duplicated events can introduce a bias"
+                )
+            n_events_before = len(self.data)
+            
+            remove_duplicated_events(self.data)
+            n_events_after = len(self.data)
+            
+            duplicated_events_ratio = (n_events_before - n_events_after)/n_events_after
+            self.log.info(
+                f"Remove duplicated events: a ratio of duplicated events is {duplicated_events_ratio}"
+            )
 
     def start(self):
 

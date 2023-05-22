@@ -30,6 +30,7 @@ from .io import (
     get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
+    remove_duplicated_events,
 )
 
 standard_config = get_standard_config()
@@ -62,5 +63,6 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'get_srcdep_assumed_positions',
     'get_srcdep_params',
-    'add_source_filenames'
+    'add_source_filenames',
+    'remove_duplicated_events'
 ]

@@ -669,12 +669,15 @@ def get_effective_time(events):
 
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
-    # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff < 0.1 * u.s])
-
+    # than one run). We set 0.01 s as limit to decide a "break" occurred:
+    t_elapsed = np.sum(time_diff[time_diff < 0.01 * u.s])
+    
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t > 0.0 * u.s]
+    # Same as the elapsed time, we exclude events with delta_t larger than 0.01 s.
+    delta_t = delta_t[
+        (delta_t > 0.0 * u.s) & (delta_t < 0.01 * u.s)
+    ]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)

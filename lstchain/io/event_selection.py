@@ -43,7 +43,7 @@ class EventSelector(Component):
 
     def filter_cut(self, events):
         """
-        Apply the event filters
+        Apply the standard event filters.
         """
         return filter_events(events, self.filters, self.finite_params)
 
@@ -89,8 +89,8 @@ class DL3Cuts(Component):
     ).tag(config=True)
 
     fill_theta_cut = Float(
-        help="Fill value of theta cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
+        help="Fill value of theta cut (deg) in an energy bin with fewer "
+        + "than minimum number of events present",
         default_value=0.32,
     ).tag(config=True)
 
@@ -115,8 +115,8 @@ class DL3Cuts(Component):
     ).tag(config=True)
 
     fill_alpha_cut = Float(
-        help="Fill value of alpha cut (deg) in an energy bin with fewer " +
-            "than minimum number of events present",
+        help="Fill value of alpha cut (deg) in an energy bin with fewer "
+        + "than minimum number of events present",
         default_value=45,
     ).tag(config=True)
 
@@ -142,9 +142,7 @@ class DL3Cuts(Component):
         """
         return data[data["gh_score"] > self.global_gh_cut]
 
-    def energy_dependent_gh_cuts(
-        self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_gh_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating energy-dependent gammaness cuts, in a given
         data, with provided reco energy bins, and other parameters to
@@ -163,7 +161,6 @@ class DL3Cuts(Component):
             min_events=self.min_event_p_en_bin,
         )
         return gh_cuts
-
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
@@ -186,15 +183,37 @@ class DL3Cuts(Component):
         return data[data["theta"].to_value(u.deg) < self.global_theta_cut]
 
     def energy_dependent_theta_cuts(
-        self, data, energy_bins, smoothing=None,
+        self,
+        data,
+        energy_bins,
+        use_same_disp_sign=True,
+        smoothing=None,
     ):
         """
-        Evaluating an optimized energy-dependent theta cuts, in a given
-        data, with provided reco energy bins, and other parameters to
-        pass to the pyirf.cuts.calculate_percentile_cut function.
+        Evaluating energy-dependent theta cuts, in a given MC data,
+        with provided reco energy bins, and other parameters to pass to the
+        pyirf.cuts.calculate_percentile_cut function.
+
+        For MC events, the disp_sign may be reconstructed incorrectly with
+        respect to the true value, and thus resulting in a bi-modal PSF.
+        For evaluating the energy-dependent theta cuts, we want to consider,
+        only the central region of PSF. To fix this issue, by default, we apply
+        a mask on the data, so as to only use events with the same disp_sign
+        after reconstruction, for evaluating the percentile cut.
+
+        Note: In this case, at low energies, where disp_sign determination is
+        pretty uncertain, an efficiency of 40% or larger will result in a cut
+        which keeps the whole central region of the PSF.
+
+        If the user wishes to not use this method, they can make the boolean
+        use_same_disp_sign as False.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
+
+        if use_same_disp_sign:
+            disp_mask = data["reco_disp_sign"] == data["disp_sign"]
+            data = data[disp_mask]
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],
@@ -229,16 +248,14 @@ class DL3Cuts(Component):
         """
         return data[data["alpha"].to_value(u.deg) < self.global_alpha_cut]
 
-    def energy_dependent_alpha_cuts(
-            self, data, energy_bins, smoothing=None
-    ):
+    def energy_dependent_alpha_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating an optimized energy-dependent alpha cuts, in a given
         data, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function.
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        
+
         alpha_cuts = calculate_percentile_cut(
             data["alpha"],
             data["reco_energy"],
@@ -251,13 +268,13 @@ class DL3Cuts(Component):
             min_events=self.min_event_p_en_bin,
         )
         return alpha_cuts
-        
+
     def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
         """
         Applying a given energy-dependent alpha cuts to a data file, along the
         reco energy bins provided.
         """
-        
+
         data["selected_alpha"] = evaluate_binned_cut(
             data["alpha"],
             data["reco_energy"],
@@ -265,7 +282,7 @@ class DL3Cuts(Component):
             operator.le,
         )
         return data[data["selected_alpha"]]
-            
+
     def allowed_tels_filter(self, data):
         """
         Applying a filter on telescopes used for observation.
