@@ -143,6 +143,18 @@ def test_observed_dl1_validity(observed_dl1_files):
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
+@pytest.mark.private_data
+def test_dvr_file_validity(observed_dl1_files):
+    dvr_file = pd.read_hdf(observed_dl1_files["dvr_file1"], key="run_summary")
+    assert "mean_pixel_survival_fraction" in dvr_file.columns
+    assert dvr_file['number_of_events'].iloc[0] == 200
+    assert dvr_file['mean_pixel_survival_fraction'].iloc[0] < 0.1
+
+@pytest.mark.private_data
+def test_pixmasks_file_validity(observed_dl1_files):
+    pixmasks_file = tables.open_file(observed_dl1_files["pixmasks_file1"])
+    pixmasks = pixmasks_file.root.selected_pixels_masks.col('pixmask')
+    assert pixmasks.sum() < 0.1 * len(pixmasks.flatten())
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
@@ -319,7 +331,8 @@ def test_lstchain_dl1_to_dl2_srcdep(simulated_srcdep_dl2_file):
     assert "reco_disp_dy" in dl2_srcdep_df['on'].columns
     assert "reco_src_x" in dl2_srcdep_df['on'].columns
     assert "reco_src_y" in dl2_srcdep_df['on'].columns
-
+    assert "reco_disp_norm_diff" in dl2_srcdep_df['on'].columns
+    assert "reco_disp_sign_correctness" in dl2_srcdep_df['on'].columns
 
 @pytest.mark.private_data
 def test_lstchain_find_pedestals(temp_dir_observed_files, observed_dl1_files):
@@ -374,7 +387,9 @@ def test_lstchain_observed_dl1_to_dl2_srcdep(observed_srcdep_dl2_file):
         'reco_disp_dx',
         'reco_disp_dy',
         'reco_src_x',
-        'reco_src_y'
+        'reco_src_y',
+        'reco_disp_norm_diff',
+        'reco_disp_sign_correctness',
     ]
 
     for srcdep_assumed_position in srcdep_assumed_positions:
@@ -472,9 +487,10 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
     from lstchain.io.io import read_mc_dl2_to_QTable
     import astropy.units as u
 
-    events, sim_info = read_mc_dl2_to_QTable(simulated_dl2_file)
+    events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
     assert sim_info.energy_max == 330 * u.TeV
+    assert "GEOMAG_DELTA" in simu_geomag
 
 
 @pytest.mark.private_data
@@ -484,8 +500,10 @@ def test_read_data_dl2_to_QTable(temp_dir_observed_files, observed_dl1_files):
     real_data_dl2_file = temp_dir_observed_files / (
         observed_dl1_files["dl1_file1"].name.replace("dl1", "dl2")
     )
-    events = read_data_dl2_to_QTable(real_data_dl2_file)
+    events, data_pars = read_data_dl2_to_QTable(real_data_dl2_file)
+
     assert "gh_score" in events.colnames
+    assert "B_DELTA" in data_pars
 
 
 @pytest.mark.private_data

@@ -48,6 +48,7 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
     "sphinxcontrib.mermaid",
+    "sphinx_togglebutton",
 ]
 
 numpydoc_show_class_members = False
@@ -68,16 +69,16 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://cta-observatory.github.io/ctapipe/", None)
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/stable/", None)
 }
 
 # These links are ignored in the checks, necessary due to broken intersphinx for
 # these
 nitpick_ignore = [
-    # ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
-    # ("py:class", "ctapipe.core.tool.Tool"),
-    # ("py:class", "ctapipe.core.component.Component"),
-    # ("py:class", "ctapipe.core.container.Container"),
+    ("py:class", "ctapipe.instrument.camera.geometry.CameraGeometry"),
+    ("py:class", "ctapipe.core.tool.Tool"),
+    ("py:class", "ctapipe.core.component.Component"),
+    ("py:class", "ctapipe.core.container.Container"),
     ("py:class", "ctapipe.calib.camera.flatfield.FlatFieldCalculator"),
     ("py:class", "ctapipe.calib.camera.pedestals.PedestalCalculator"),
 ]
@@ -143,6 +144,10 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_js_files = ['custom.js']
+html_css_files = ['custom.css']
+
+html_extra_path = ['examples']
 
 
 # -- Options for HTMLHelp output ------------------------------------------

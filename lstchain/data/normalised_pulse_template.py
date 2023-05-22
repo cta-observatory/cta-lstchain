@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from lstchain.reco.reconstructorCC import template_interpolation
 
 
 class NormalizedPulseTemplate:
@@ -54,30 +55,34 @@ class NormalizedPulseTemplate:
         Use the interpolated template to access the value of the pulse at
         time = time in gain regime = gain. Additionally, an alternative
         normalisation, origin of time and baseline can be used.
+        Uses compiled function instead of scipy to gain time.
+        Works only for a single pixel.
 
         Parameters
         ----------
         time: float array
             Time after the origin to estimate the value of the pulse
-        gain: string array
-            Identifier of the gain channel used for each pixel
+        gain: string
+            Identifier of the gain channel used
             Either "HG" or "LG"
         amplitude: float
             Normalisation factor to apply to the template
         t_0: float
             Shift in the origin of time
         baseline: float array
-            Baseline to be subtracted for each pixel
+            Baseline to be subtracted
 
         Return
         ----------
         y: array
-            Value of the template in each pixel at the requested times
+            Value of the template at the requested times
 
         """
 
-        y = amplitude * self._template[gain](time - t_0) + baseline
-        return np.array(y)
+        is_high_gain = np.array([gain == 'HG'])
+        y = amplitude * template_interpolation(is_high_gain, np.array([time-t_0]), self.t0, self.dt,
+                                               self.amplitude_HG, self.amplitude_LG) - baseline
+        return y[0]
 
     def resample_template(self):
         """
@@ -190,7 +195,11 @@ class NormalizedPulseTemplate:
         """
 
         t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
-        hg, lg = eventsource_camera_readout.reference_pulse_shape
+        pulses = eventsource_camera_readout.reference_pulse_shape
+        if len(pulses) == 2:
+            hg, lg = pulses[0], pulses[1]
+        if len(pulses) == 1:
+            hg, lg = pulses[0], pulses[0]
         i = np.argmax(hg)
         t = t - t[i] + 9.0
         return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)

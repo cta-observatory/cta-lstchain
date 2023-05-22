@@ -17,12 +17,14 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe_io_lst import OPTICS
 
 from . import disp
 
 __all__ = [
     "add_delta_t_key",
     "alt_to_theta",
+    "apply_src_r_cut",
     "az_to_phi",
     "camera_to_altaz",
     "cartesian_to_polar",
@@ -44,7 +46,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side",
+    "source_side"
 ]
 
 # position of the LST1
@@ -54,15 +56,16 @@ horizon_frame = AltAz(location=location, obstime=obstime)
 
 # Geomagnetic parameters for the LST1 as per
 # https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm and
-# using IGRF model on date  TIME_MC = 2020-06-29
-GEOM_MAG_REFERENCE_TIME = Time("2020-06-29", format="iso")
-GEOMAG_DEC = (-5.0674 * u.deg).to(u.rad)
-GEOMAG_INC = (37.4531 * u.deg).to(u.rad)
-GEOMAG_TOTAL = 38.7305 * u.uT
+# using IGRF model on date  TIME_MC = 2021-11-29 at elevation 10 km a.s.l
+# for the position where the particle shower is at its peak
+GEOM_MAG_REFERENCE_TIME = Time("2021-11-29", format="iso")
+GEOMAG_DEC = (-4.8443 * u.deg).to(u.rad)
+GEOMAG_INC = (37.3663 * u.deg).to(u.rad)
+GEOMAG_TOTAL = 38.5896 * u.uT
 
-DELTA_DEC = (0.1656 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_INC = (-0.0698 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_TOTAL = 0.009 * u.uT / u.yr
+DELTA_DEC = (0.1653 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_INC = (-0.0700 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_TOTAL = 0.0089 * u.uT / u.yr
 
 log = logging.getLogger(__name__)
 
@@ -529,8 +532,8 @@ def filter_events(
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_null', True):
-            not_finite_mask = events_df[_finite_params].isnull()
+        with pd.option_context('mode.use_inf_as_na', True):
+            not_finite_mask = events_df[_finite_params].isna()
         filter &= ~(not_finite_mask.any(axis=1))
 
         not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
@@ -666,12 +669,15 @@ def get_effective_time(events):
 
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
-    # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff < 0.1 * u.s])
-
+    # than one run). We set 0.01 s as limit to decide a "break" occurred:
+    t_elapsed = np.sum(time_diff[time_diff < 0.01 * u.s])
+    
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t > 0.0 * u.s]
+    # Same as the elapsed time, we exclude events with delta_t larger than 0.01 s.
+    delta_t = delta_t[
+        (delta_t > 0.0 * u.s) & (delta_t < 0.01 * u.s)
+    ]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
@@ -691,7 +697,6 @@ def get_effective_time(events):
     t_eff = t_elapsed / (1 + rate * dead_time)
 
     return t_eff, t_elapsed
-
 
 
 def get_geomagnetic_field_orientation(time=None):
@@ -752,8 +757,8 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
         geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
 
     term = (
-        (np.sin(geomag_inc) * np.cos(zen)) +
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+        (np.sin(geomag_inc) * np.cos(zen)) -
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az - geomag_dec))
     )
 
     delta = np.arccos(term)
@@ -798,3 +803,28 @@ def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inpla
 
     if not inplace:
         return events
+
+def apply_src_r_cut(events, src_r_min, src_r_max):
+    """
+    apply src_r cut to filter out large off-axis MC events
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    src_r_min: float
+    src_r_max: fload
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    
+    src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
+    foclen = OPTICS.equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    events = events[
+        (src_r_deg >= src_r_min) & 
+        (src_r_deg <= src_r_max)
+    ]
+
+    return events

@@ -31,7 +31,6 @@ from ..io.io import dl1_params_lstcam_key, dl1_params_src_dep_lstcam_key, dl1_li
 
 from ctapipe.image.hillas import camera_to_shower_coordinates
 from ctapipe.instrument import SubarrayDescription
-from ctapipe_io_lst import OPTICS
 
 __all__ = [
     'apply_models',
@@ -394,11 +393,9 @@ def build_models(filegammas, fileprotons,
                                     )
 
     # Training MC gammas in reduced viewcone
-    src_r_m = np.sqrt(df_gamma['src_x'] ** 2 + df_gamma['src_y'] ** 2)
-    foclen = OPTICS.equivalent_focal_length.value
-    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
-    df_gamma = df_gamma[(src_r_deg >= config['train_gamma_src_r_deg'][0]) & (
-            src_r_deg <= config['train_gamma_src_r_deg'][1])]
+    src_r_min = config['train_gamma_src_r_deg'][0]
+    src_r_max = config['train_gamma_src_r_deg'][1]
+    df_gamma = utils.apply_src_r_cut(df_gamma, src_r_min, src_r_max)
 
     # Train regressors for energy and disp_norm reconstruction, only with gammas
     n_gamma_regressors = config["n_training_events"]["gamma_regressors"]
@@ -460,7 +457,7 @@ def build_models(filegammas, fileprotons,
                 "The requested number of protons for the classifier training is not valid."
             ) from e
 
-    test = testg.append(df_proton, ignore_index=True)
+    test = pd.concat([testg, df_proton], ignore_index=True)
 
     temp_reg_energy = train_energy(train, custom_config=config)
     # Apply the temporary energy regressors to the test set
@@ -477,11 +474,16 @@ def build_models(filegammas, fileprotons,
         tmp_cls_disp_sign = train_disp_sign(train, custom_config=config)
         # Apply the temporary disp norm regressor and sign classifier to the test set
         disp_norm = tmp_reg_disp_norm.predict(test[config['disp_regression_features']])
-        disp_sign = tmp_cls_disp_sign.predict(test[config['disp_classification_features']])
+        disp_sign_proba = tmp_cls_disp_sign.predict_proba(test[config['disp_classification_features']])
+        col = list(tmp_cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
         del tmp_reg_disp_norm
         del tmp_cls_disp_sign
         test['reco_disp_norm'] = disp_norm
         test['reco_disp_sign'] = disp_sign
+        test['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = test['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -503,6 +505,14 @@ def build_models(filegammas, fileprotons,
 
     train = test[test['log_reco_energy'] > energy_min]
 
+    # source-dep & indep combined parameters
+    if config['source_dependent']:
+        train['reco_disp_sign_correctness'] = train['reco_disp_sign_proba']
+        select = np.sign(train['skewness']) * np.sign(train['skewness_from_source']) == -1
+        train['reco_disp_sign_correctness'][select] = 1 - train['reco_disp_sign_correctness'][select]
+
+        train['reco_disp_norm_diff'] = np.abs(train['dist'] - train['reco_disp_norm'])
+    
     # Train the Classifier
 
     cls_gh = train_sep(train, custom_config=config)
@@ -595,12 +605,16 @@ def apply_models(dl1,
         if isinstance(cls_disp_sign, (str, bytes, Path)):
             cls_disp_sign = joblib.load(cls_disp_sign)
         disp_norm = reg_disp_norm.predict(dl2[disp_regression_features])
-        disp_sign = cls_disp_sign.predict(dl2[disp_classification_features])
+        disp_sign_proba = cls_disp_sign.predict_proba(dl2[disp_classification_features])
+        col = list(cls_disp_sign.classes_).index(1)
+        disp_sign = np.where(disp_sign_proba[:, col] > 0.5, 1, -1)
+
         del reg_disp_norm
         del cls_disp_sign
         dl2['reco_disp_norm'] = disp_norm
         dl2['reco_disp_sign'] = disp_sign
-
+        dl2['reco_disp_sign_proba'] = disp_sign_proba[:, 0]
+        
         disp_angle = dl2['psi']  # the source here is supposed to be in the direction given by Hillas
         disp_vector = disp.disp_vector(disp_norm, disp_angle, disp_sign)
 
@@ -647,6 +661,15 @@ def apply_models(dl1,
     dl2['reco_alt'] = src_pos_reco.alt.rad
     dl2['reco_az'] = src_pos_reco.az.rad
 
+    # source-dep & indep combined parameters    
+    if config['source_dependent']:
+        dl2['reco_disp_sign_correctness'] = dl2['reco_disp_sign_proba']
+        select = np.sign(dl2['skewness']) * np.sign(dl2['skewness_from_source']) == -1
+        dl2['reco_disp_sign_correctness'][select] = 1 - dl2['reco_disp_sign_correctness'][select]
+
+        dl2['reco_disp_norm_diff'] = np.abs(dl2['dist'] - dl2['reco_disp_norm'])
+        
+    
     if isinstance(classifier, (str, bytes, Path)):
         classifier = joblib.load(classifier)
     dl2['reco_type'] = classifier.predict(dl2[classification_features]).astype(int)
@@ -768,12 +791,16 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
             expected_src_pos_y_m = np.zeros(len(data))
 
         # compute source position in camera coordinate event by event for wobble mode
-        if config.get('observation_mode') == 'wobble':
+        elif config.get('observation_mode') == 'wobble':
 
             if 'source_name' in config:
                 source_coord = SkyCoord.from_name(config.get('source_name'))
-            else:
+            elif 'source_ra' and 'source_dec' in config:
                 source_coord = SkyCoord(config.get('source_ra'), config.get('source_dec'), frame="icrs", unit="deg")
+            else:
+                raise KeyError(
+                    'source position (`source_name` or `source_ra` & `source_dec`) is not defined in a config file for source-dependent analysis.'
+                )
 
             time = data['dragon_time']
             obstime = Time(time, scale='utc', format='unix')
@@ -783,5 +810,10 @@ def get_expected_source_pos(data, data_type, config, focal_length=28 * u.m):
 
             expected_src_pos_x_m = source_pos.x.to_value(u.m)
             expected_src_pos_y_m = source_pos.y.to_value(u.m)
+            
+        else:
+            raise KeyError(
+                '`observation_mode` is not defined in a config file for source-dependent analysis. It should be `on` or `wobble`'
+            )
 
     return expected_src_pos_x_m, expected_src_pos_y_m
