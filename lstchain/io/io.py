@@ -71,7 +71,6 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
-
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -1203,7 +1202,7 @@ def check_mc_type(filename):
     return mc_type
 
 
-def check_mc_fov_offset(filename):
+def get_mc_fov_offset(filename):
     """
     Check MC type ('point_like', 'diffuse', 'ring_wobble') based on the viewcone setting
     Parameters

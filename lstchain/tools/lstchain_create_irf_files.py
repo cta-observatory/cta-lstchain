@@ -76,7 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
-from lstchain.io.io import check_mc_type, check_mc_fov_offset
+from lstchain.io.io import check_mc_type, get_mc_fov_offset
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -370,7 +370,7 @@ class IRFFITSWriter(Tool):
         gammas = self.mc_particle["gamma"]["events"]
         geomag_params = self.mc_particle["gamma"]["geomag_params"]
         self.log.info(geomag_params)
-        mean_fov_offset = check_mc_fov_offset(self.mc_particle["gammas"]["file"])
+        mean_fov_offset = get_mc_fov_offset(self.mc_particle["gammas"]["file"])
         self.log.debug(mean_fov_offset)
 
         # Binning of parameters used in IRFs
