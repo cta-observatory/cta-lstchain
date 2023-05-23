@@ -14,7 +14,6 @@ PEDCAL_RUN="02006"
 
 version=v$(python -c 'import lstchain; print(lstchain.__version__, end="")')
 OUTPUT_PATH="/fefs/aswg/workspace/$USER/lstchain-dev/$version"
-CALIB_PATH="$OUTPUT_PATH/monitoring/PixelCalibration/LevelA"
 echo $OUTPUT_PATH
 mkdir -p $OUTPUT_PATH
 mkdir -p $OUTPUT_PATH/monitoring/RunSummary
