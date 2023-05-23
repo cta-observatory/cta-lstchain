@@ -364,29 +364,38 @@ def interpolate_al_cuts(
     method="linear",
 ):
     """
-    Interpolates a grid of AL CUTS tables to a target-point.
+    Interpolates a grid of AL_CUTS tables to a target-point. Same as pyirf's
+    interpolate_rad_max function.
+
     Wrapper around scipy.interpolate.griddata [1].
+
     Parameters
     ----------
     al_cuts: numpy.ndarray, shape=(N, M, ...)
-        Alpha-cuts for all combinations of grid-points, energy and
-        fov_offset.
-        Shape (N:n_grid_points, M:n_energy_bins, n_fov_offset_bins)
+        Alpha-cuts for all combinations of grid-points, like energy.
+        Shape (N:n_grid_points, M:n_energy_bins)
     grid_points: numpy.ndarray, shape=(N, O)
         Array of the N O-dimensional morphing parameter values corresponding
         to the N input templates.
     target_point: numpy.ndarray, shape=(O)
         Value for which the interpolation is performed (target point)
-    method: 'linear’, ‘nearest’, ‘cubic’
+    method: 'linear', 'nearest', 'cubic'
         Interpolation method for scipy.interpolate.griddata [1].
         Defaults to 'linear'.
+
     Returns
     -------
     al_cuts_interp: numpy.ndarray, shape=(1, M, ...)
-        Gammaness-cuts for the target grid-point,
-        shape (1, M:n_energy_bins, n_fov_offset_bins)
+        Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)
+
+    References
+    ----------
+    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
     """
-    return griddata(grid_points, al_cuts, target_point, method=method)
+    interp = GridDataInterpolator(grid_points=grid_points, params=al_cuts)
+    al_cuts_interp = interp(target_point, method=method)
+
+    return al_cuts_interp
 
 
 def interpolate_irf(irfs, data_pars, interp_method="linear"):

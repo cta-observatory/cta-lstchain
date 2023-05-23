@@ -110,13 +110,13 @@ class DL3Cuts(Component):
 
     max_alpha_cut = Float(
         help="Maximum alpha cut (deg) in an energy bin",
-        default_value=45,
+        default_value=20,
     ).tag(config=True)
 
     fill_alpha_cut = Float(
         help="Fill value of alpha cut (deg) in an energy bin with fewer " +
             "than minimum number of events present",
-        default_value=45,
+        default_value=20,
     ).tag(config=True)
 
     alpha_containment = Float(
