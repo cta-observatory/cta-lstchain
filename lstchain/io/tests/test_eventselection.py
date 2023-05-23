@@ -81,8 +81,8 @@ def test_dl3_energy_dependent_cuts():
         {
             "gh_score": u.Quantity(np.tile(np.arange(0.35, 0.85, 0.05), 4)),
             "reco_energy": np.geomspace(50 * u.GeV, 50 * u.TeV, 40),
-            "theta": u.Quantity(np.tile(np.arange(0.05, 0.4, 0.07), 8), unit=u.deg),
-            "alpha": u.Quantity(np.tile(np.arange(5, 85, 8), 4), unit=u.deg),
+            "theta": u.Quantity(np.tile(np.arange(0.05, 0.35, 0.03), 4), unit=u.deg),
+            "alpha": u.Quantity(np.tile(np.arange(3, 25, 5), 8), unit=u.deg),
             "reco_disp_sign": u.Quantity(np.tile([1, 1, -1, 1, 1], 8)),
             "disp_sign": u.Quantity(np.tile([-1, 1, -1, 1, 1], 8)),
         }
@@ -103,14 +103,14 @@ def test_dl3_energy_dependent_cuts():
     data_gh = temp_cuts.apply_energy_dependent_gh_cuts(temp_data, gh_cut)
     data_al = temp_cuts.apply_energy_dependent_alpha_cuts(temp_data, alpha_cut)
 
-    assert theta_cut["cut"][0] == 0.2152 * u.deg
-    assert theta_cut_2["cut"][0] == 0.1928 * u.deg
+    assert theta_cut["cut"][-1] == 0.2528 * u.deg
+    assert theta_cut_2["cut"][-1] == 0.2336 * u.deg
     assert gh_cut["cut"][1] == 0.38
-    assert alpha_cut["cut"][0] == 21.32 * u.deg
-    assert len(data_th) == 31
-    assert len(data_th_2) == 31
+    assert alpha_cut["cut"][0] == 13.2 * u.deg
+    assert len(data_th) == 29
+    assert len(data_th_2) == 29
     assert len(data_gh) == 36
-    assert len(data_al) == 23
+    assert len(data_al) == 31
 
 
 def test_data_binning():
