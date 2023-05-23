@@ -44,7 +44,7 @@ class EventSelector(Component):
 
     def filter_cut(self, events):
         """
-        Apply the event filters
+        Apply the standard event filters.
         """
         return filter_events(events, self.filters, self.finite_params)
 
@@ -214,18 +214,37 @@ class DL3Cuts(Component):
         self,
         data,
         energy_bins,
+        use_same_disp_sign=True,
         smoothing=None,
     ):
         """
-        Evaluating an optimized energy-dependent theta cuts, in a given
-        data, with provided reco energy bins, and other parameters to
-        pass to the pyirf.cuts.calculate_percentile_cut function.
+        Evaluating energy-dependent theta cuts, in a given MC data,
+        with provided reco energy bins, and other parameters to pass to the
+        pyirf.cuts.calculate_percentile_cut function.
+
+        For MC events, the disp_sign may be reconstructed incorrectly with
+        respect to the true value, and thus resulting in a bi-modal PSF.
+        For evaluating the energy-dependent theta cuts, we want to consider,
+        only the central region of PSF. To fix this issue, by default, we apply
+        a mask on the data, so as to only use events with the same disp_sign
+        after reconstruction, for evaluating the percentile cut.
+
+        Note: In this case, at low energies, where disp_sign determination is
+        pretty uncertain, an efficiency of 40% or larger will result in a cut
+        which keeps the whole central region of the PSF.
+
+        If the user wishes to not use this method, they can make the boolean
+        use_same_disp_sign as False.
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
         max_theta = (
             WOBBLE_OFFSET_STD.value * np.sin(np.pi / (self.n_off_wobbles + 1))
         ) * u.deg
+
+        if use_same_disp_sign:
+            disp_mask = data["reco_disp_sign"] == data["disp_sign"]
+            data = data[disp_mask]
 
         theta_cuts = calculate_percentile_cut(
             data["theta"],

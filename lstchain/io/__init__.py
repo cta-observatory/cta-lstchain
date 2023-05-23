@@ -30,6 +30,7 @@ from .io import (
     get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
+    remove_duplicated_events,
 )
 
 from .calibration import read_calibration_file
@@ -70,4 +71,5 @@ __all__ = [
     'write_subarray_tables',
     'standard_config',
     'srcdep_config',
+    'remove_duplicated_events',
 ]
