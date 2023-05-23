@@ -226,4 +226,4 @@ def test_apply_src_r_cut(simulated_dl1_file):
     src_r_min = srcdep_config['train_gamma_src_r_deg'][0]
     src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
     params = apply_src_r_cut(params, src_r_min, src_r_max)
-    assert (params.event_id.values == np.array([998705, 1680619])).all()
+    assert (params.event_id.values == np.arange(100, 110, 1)).all()
