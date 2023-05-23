@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import tables
-from astropy.table import Table
+from astropy.table import Table, QTable
 from ctapipe.instrument import SubarrayDescription
 
 
@@ -152,8 +152,34 @@ def test_extract_simulation_nsb(mc_gamma_testfile):
     assert np.isclose(nsb[1], 0.217, rtol=0.1)
 
 
+def test_remove_duplicated_events():
+    from lstchain.io.io import remove_duplicated_events
+    
+    d = {'event_id': [1, 2, 3,
+                      1, 2, 4,
+                      1, 2, 3], 
+         'gh_score': [0.1, 0.5, 0.7,
+                      0.5, 0.8, 0.1,
+                      0.9, 0.1, 0.5],
+         'alpha': range(9) 
+     }
+    df = pd.DataFrame(data=d)
+    data1 = QTable.from_pandas(df)
+    remove_duplicated_events(data1)
+
+    d2 = {'event_id': [3, 2, 4, 1], 
+          'gh_score': [0.7, 0.8, 0.1, 0.9],
+          'alpha': [2, 4, 5, 6]
+      }
+    df2 = pd.DataFrame(data=d2)
+    data2= QTable.from_pandas(df2)
+
+    assert np.all(data1==data2)
+
+
 def test_check_mc_type(simulated_dl1_file):
     from lstchain.io.io import check_mc_type
 
     mc_type = check_mc_type(simulated_dl1_file)
     assert mc_type == 'diffuse'
+

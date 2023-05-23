@@ -87,7 +87,9 @@ optional.add_argument(
         " Should be used only for data from before 2022"
     )
 )
-
+optional.add_argument('--queue',
+                      help="Slurm queue. Deafault: short ",
+                      default="short")
 
 
 def main():
@@ -105,6 +107,7 @@ def main():
     sys_date = args.sys_date
     no_sys_correction = args.no_sys_correction
     yes = args.yes
+    queue = args.queue
 
     output_base_name = args.output_base_name
 
@@ -161,7 +164,7 @@ def main():
                 fh.write("#SBATCH --job-name=%s.job\n" % run)
                 fh.write("#SBATCH --output=log/run_%s_subrun_%s_date_%s.out\n" % (run, sub_run, now))
                 fh.write("#SBATCH --error=log/run_%s_subrun_%s_date_%s.err\n" % (run, sub_run, now))
-                fh.write("#SBATCH -p short\n")
+                fh.write("#SBATCH -p %s\n" % queue)
                 fh.write("#SBATCH --cpus-per-task=1\n")
                 fh.write("#SBATCH --mem-per-cpu=10G\n")
                 fh.write("#SBATCH -D %s \n" % output_dir)

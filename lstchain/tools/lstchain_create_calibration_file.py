@@ -19,6 +19,7 @@ __all__ = [
     'CalibrationHDF5Writer'
 ]
 
+
 class CalibrationHDF5Writer(Tool):
     """
      Tool that generates a HDF5 file with camera calibration coefficients.
@@ -125,8 +126,6 @@ class CalibrationHDF5Writer(Tool):
 
             if self.eventsource.r0_r1_calibrator.drs4_pedestal_path.tel[tel_id] is None:
                 raise IOError("Missing (mandatory) drs4 pedestal file in trailets")
-
-            # remember how many events in the files
         else:
             self.simulation = True
 
@@ -216,7 +215,6 @@ class CalibrationHDF5Writer(Tool):
 
                 # write on file
                 self.writer.write('flatfield', ff_data)
-
                 new_ff = False
 
                 # Then, calculate calibration coefficients
@@ -237,7 +235,6 @@ class CalibrationHDF5Writer(Tool):
             role='mon.tel.calibration'
         )
         self.writer.close()
-
 
     @staticmethod
     def _median_waveform_sum(event, tel_id):
@@ -277,7 +274,6 @@ def initialize_pixel_status(mon_camera_container,shape):
     status_container.flatfield_failing_pixels = np.zeros((shape[0],shape[1]), dtype=bool)
 
     mon_camera_container.pixel_status = status_container
-
 
 def main():
     exe = CalibrationHDF5Writer()
