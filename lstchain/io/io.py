@@ -62,6 +62,7 @@ __all__ = [
     'read_simu_info_hdf5',
     'read_simu_info_merged_hdf5',
     'recursive_copy_node',
+    'remove_duplicated_events',
     'stack_tables_h5files',
     'write_calibration_data',
     'write_dataframe',
@@ -1137,6 +1138,40 @@ def get_srcdep_params(filename, wobble_angles=None):
     return data
 
 
+def remove_duplicated_events(data):
+    """
+    Remove duplicated events after gammaness/alpha cut when generating DL3 files.
+    This function is for source-dependent analysis since each event has multiple gammaness
+    values depending on assumed source positions. When any events are duplicated, it 
+    selects a row with higher gammaness assumed a given source position.
+    
+    Parameters                                                                                                                                                                                                                
+    ----------                                                                                                                                                                                                               
+    `astropy.table.QTable`
+
+    Returns                                                                                                                                                                                                                
+    -------                                                                                                                                                                                                                  
+    `astropy.table.QTable` 
+    """
+    
+    event_id = data['event_id'].data
+    gh_score = data['gh_score'].data
+    
+    unique_event_ids, counts = np.unique(event_id, return_counts=True)
+    duplicated_event_ids = unique_event_ids[counts>1]
+    
+    remove_row_list = []
+    
+    # Check which row has higher gammaness value for each duplicated event
+    for dup_ev_id in duplicated_event_ids:
+        dup_ev_index = np.where(event_id==dup_ev_id)[0]
+        dup_ev_max_gh_index = dup_ev_index[np.argmax(gh_score[dup_ev_index])]
+        dup_ev_lower_gh_index = dup_ev_index[dup_ev_index!=dup_ev_max_gh_index]
+        remove_row_list.extend(dup_ev_lower_gh_index)
+        
+    data.remove_rows(remove_row_list)
+
+
 def parse_cfg_bytestring(bytestring):
     """
     Parse configuration as read by eventio
@@ -1200,4 +1235,3 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
-            

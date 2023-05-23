@@ -144,6 +144,18 @@ def test_observed_dl1_validity(observed_dl1_files):
     )
     np.testing.assert_allclose(dl1_df["dragon_time"], dl1_df["trigger_time"])
 
+@pytest.mark.private_data
+def test_dvr_file_validity(observed_dl1_files):
+    dvr_file = pd.read_hdf(observed_dl1_files["dvr_file1"], key="run_summary")
+    assert "mean_pixel_survival_fraction" in dvr_file.columns
+    assert dvr_file['number_of_events'].iloc[0] == 200
+    assert dvr_file['mean_pixel_survival_fraction'].iloc[0] < 0.1
+
+@pytest.mark.private_data
+def test_pixmasks_file_validity(observed_dl1_files):
+    pixmasks_file = tables.open_file(observed_dl1_files["pixmasks_file1"])
+    pixmasks = pixmasks_file.root.selected_pixels_masks.col('pixmask')
+    assert pixmasks.sum() < 0.1 * len(pixmasks.flatten())
 
 @pytest.mark.private_data
 @pytest.fixture(scope="session")
