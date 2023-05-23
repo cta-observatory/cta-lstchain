@@ -17,10 +17,13 @@ test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
 test_r0_path2 = test_data / 'real/R0/20200218/LST-1.1.Run02008.0100_first50.fits.fz'
 test_drs4_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02005.0000_first50.fits.fz'
-test_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/calibration/20200218/v0.8.2.post2.dev48+gb1343281/calibration_filters_52.Run02006.0000.h5'
-test_drs4_pedestal_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_baseline/20200218/v0.8.2.post2.dev48+gb1343281/drs4_pedestal.Run02005.0000.h5'
-test_time_calib_path = test_data / 'real/monitoring/PixelCalibration/LevelA/drs4_time_sampling_from_FF/20191124/v0.8.2.post2.dev48+gb1343281/time_calibration.Run01625.0000.h5'
-test_drive_report = test_data / 'real/monitoring/DrivePositioning/drive_log_20200218.txt'
+
+calib_path = test_data / 'real/monitoring/PixelCalibration/Cat-A'
+calib_version = 'ctapipe-v0.17'
+test_calib_path = calib_path / f'calibration/20200218/{calib_version}/calibration_filters_52.Run02006.0000.h5'
+test_drs4_pedestal_path = calib_path / f'drs4_baseline/20200218/{calib_version}/drs4_pedestal.Run02005.0000.h5'
+test_time_calib_path = calib_path / f'drs4_time_sampling_from_FF/20191124/{calib_version}/time_calibration.Run01625.0000.h5'
+test_drive_report = test_data / 'real/monitoring/DrivePositioning/DrivePosition_log_20200218.txt'
 
 
 def test_r0_to_dl1(tmp_path, mc_gamma_testfile):
@@ -118,14 +121,14 @@ def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
         os.remove('./event/'+path)
     os.rmdir('./event')
     os.remove(tmp_path / "tmp.h5")
-    config['source_config']['EventSource']['allowed_tels'] = [1, 2]
+
+    config['source_config']['EventSource']['allowed_tels'] = [1]
     config['lh_fit_config']["no_asymmetry"] = True
     config['lh_fit_config']["use_weight"] = True
     config['lh_fit_config']["verbose"] = 0
     r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
 
 
-@pytest.mark.run(after='test_lhfit_numba_compiled')
 @pytest.mark.private_data
 def test_r0_to_dl1_lhfit_observed(tmp_path):
     from lstchain.reco.r0_to_dl1 import r0_to_dl1

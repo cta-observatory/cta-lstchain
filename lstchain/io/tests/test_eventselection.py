@@ -108,13 +108,13 @@ def test_data_binning():
 
     tempbin.true_energy_min = 0.01
     tempbin.true_energy_max = 100
-    tempbin.true_energy_n_bins_per_decade = 5
+    tempbin.true_energy_n_bins = 20
     tempbin.reco_energy_min = 0.01
     tempbin.reco_energy_max = 100
-    tempbin.reco_energy_n_bins_per_decade = 5
+    tempbin.reco_energy_n_bins = 20
     tempbin.energy_migration_min = 0.2
     tempbin.energy_migration_max = 5
-    tempbin.energy_migration_n_bins = 15
+    tempbin.energy_migration_n_bins = 14
     tempbin.fov_offset_min = 0.1
     tempbin.fov_offset_max = 1.1
     tempbin.fov_offset_n_edges = 9
@@ -132,8 +132,8 @@ def test_data_binning():
     bkg_fov = tempbin.bkg_fov_offset_bins()
     src_off = tempbin.source_offset_bins()
 
-    assert len(e_true) == 20
-    assert len(e_reco) == 20
+    assert len(e_true) == 21
+    assert len(e_reco) == 21
     assert len(e_migra) == 15
     assert len(fov_off) == 9
     assert len(bkg_fov) == 11

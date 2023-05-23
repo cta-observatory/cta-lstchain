@@ -9,10 +9,15 @@ def test_load_irf_grid(simulated_irf_file):
 
     aeff_list = load_irf_grid([simulated_irf_file], "EFFECTIVE AREA", "EFFAREA")
 
-    assert aeff_list.shape == (1, 23, 8)
+    assert aeff_list.shape == (1, 25, 8)
 
 
-def test_interp_irf(simulated_irf_file, simulated_dl2_file):
+def test_interp_irf(
+    simulated_irf_file,
+    simulated_srcdep_irf_file,
+    simulated_dl2_file,
+    simulated_srcdep_dl2_file,
+):
     from lstchain.high_level.interpolate import interpolate_irf
     from lstchain.scripts.tests.test_lstchain_scripts import run_program
 
@@ -23,10 +28,24 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     irf_file_g_3 = simulated_irf_file.parent / "irf_interp_1.fits.gz"
     irf_file_g_final = simulated_irf_file.parent / "irf_interp_final.fits.gz"
 
-    hdus_2_g = [
+    hdus_2_g = [fits.PrimaryHDU(), ]
+    hdus_3_g = [fits.PrimaryHDU(), ]
+
+    # Global cuts (srcdep)
+    irf_file_g_srcdep_2 = (
+        simulated_srcdep_irf_file.parent / "irf_interp_srcdep_0.fits.gz"
+    )
+    irf_file_g_srcdep_3 = (
+        simulated_srcdep_irf_file.parent / "irf_interp_srcdep_1.fits.gz"
+    )
+    irf_file_g_srcdep_final = (
+        simulated_srcdep_irf_file.parent / "irf_interp_srcdep_final.fits.gz"
+    )
+
+    hdus_2_g_srcdep = [
         fits.PrimaryHDU(),
     ]
-    hdus_3_g = [
+    hdus_3_g_srcdep = [
         fits.PrimaryHDU(),
     ]
 
@@ -49,14 +68,46 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         "--theta-containment=0.8",
     )
 
-    hdus_2_en = [
-        fits.PrimaryHDU(),
-    ]
-    hdus_3_en = [
-        fits.PrimaryHDU(),
-    ]
+    hdus_2_en = [fits.PrimaryHDU(), ]
+    hdus_3_en = [fits.PrimaryHDU(), ]
 
-    for irf in [simulated_irf_file, irf_file_en_1]:
+    # En-dep, point-like cuts IRF (srcdep)
+    irf_file_en_srcdep_1 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_cut_irf_srcdep_1.fits.gz"
+    )
+    irf_file_en_srcdep_2 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_cut_irf_srcdep_2.fits.gz"
+    )
+    irf_file_en_srcdep_3 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_cut_irf_srcdep_3.fits.gz"
+    )
+    irf_file_en_srcdep_final = (
+        simulated_srcdep_dl2_file.parent / "interp_en_dep_cut_irf_srcdep.fits.gz"
+    )
+
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_srcdep_dl2_file,
+        "--output-irf-file",
+        irf_file_en_srcdep_1,
+        "--energy-dependent-gh",
+        "--energy-dependent-alpha",
+        "--point-like",
+        "--source-dep",
+        "--gh-efficiency=0.8",
+        "--alpha-containment=0.8",
+    )
+
+    hdus_2_en_srcdep = [fits.PrimaryHDU(), ]
+    hdus_3_en_srcdep = [fits.PrimaryHDU(), ]
+
+    for irf in [
+        simulated_irf_file,
+        simulated_srcdep_irf_file,
+        irf_file_en_1,
+        irf_file_en_srcdep_1,
+    ]:
         # Change the effective area for different angular pointings
         aeff_1 = Table.read(irf, hdu="EFFECTIVE AREA")
         aeff_1_meta = fits.open(irf)["EFFECTIVE AREA"].header
@@ -67,15 +118,15 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         az_1 = u.Quantity(aeff_1_meta["AZ_PNT"], "deg").to_value(u.rad)
         del_1 = u.Quantity(aeff_1_meta["B_DELTA"], "deg").to_value(u.rad)
 
-        zen_2 = 2 * zen_1
-        az_2 = 2 * az_1
-        del_2 = 1.2 * del_1
+        factor_czd = 0.7
+        factor_sd = 1.2
 
-        factor_zd = np.cos(zen_2) / np.cos(zen_1)
-        factor_del = np.sin(del_2) / np.sin(del_1)
+        zen_2 = np.arccos(np.cos(zen_1) * factor_czd)
+        az_2 = az_1 * factor_czd
+        del_2 = np.arcsin(np.sin(del_1) * factor_sd)
 
-        aeff_1["EFFAREA"][0] *= factor_zd
-        aeff_2["EFFAREA"][0] *= factor_zd * factor_del
+        aeff_1["EFFAREA"][0] *= factor_czd
+        aeff_2["EFFAREA"][0] *= factor_czd * factor_sd
 
         aeff_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
         aeff_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
@@ -93,8 +144,8 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
         edisp_2 = edisp_1.copy()
         edisp_2_meta = edisp_1_meta.copy()
 
-        edisp_1["MATRIX"][0] *= factor_zd
-        edisp_2["MATRIX"][0] *= factor_zd * factor_del
+        edisp_1["MATRIX"][0] *= factor_czd
+        edisp_2["MATRIX"][0] *= factor_czd * factor_sd
 
         edisp_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
         edisp_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
@@ -119,8 +170,8 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
 
             mask = gh_1["cut"] < gh_1["cut"].max()
 
-            gh_1["cut"][mask] *= factor_zd
-            gh_2["cut"][mask] *= factor_zd * factor_del
+            gh_1["cut"][mask] *= factor_czd
+            gh_2["cut"][mask] *= factor_czd * factor_sd
 
             gh_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
             gh_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
@@ -132,54 +183,114 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
             gh_hdu_1 = fits.BinTableHDU(gh_1, header=gh_1_meta, name="GH_CUTS")
             gh_hdu_2 = fits.BinTableHDU(gh_2, header=gh_2_meta, name="GH_CUTS")
 
-            # For RAD_MAX CUTS, apply the factors for cuts, lower than the max value
-            th_1 = Table.read(irf, hdu="RAD_MAX")
-            th_1_meta = fits.open(irf)["RAD_MAX"].header
-            th_2 = th_1.copy()
-            th_2_meta = th_1_meta.copy()
+            if not "srcdep" in irf.name:
+                # For RAD_MAX CUTS, apply the factors for cuts, lower than the max value
+                th_1 = Table.read(irf, hdu="RAD_MAX")
+                th_1_meta = fits.open(irf)["RAD_MAX"].header
+                th_2 = th_1.copy()
+                th_2_meta = th_1_meta.copy()
 
-            mask = th_1["RAD_MAX"] < th_1["RAD_MAX"].max()
+                mask = th_1["RAD_MAX"] < th_1["RAD_MAX"].max()
 
-            th_1["RAD_MAX"][mask] *= factor_zd
-            th_2["RAD_MAX"][mask] *= factor_zd * factor_del
+                th_1["RAD_MAX"][mask] *= factor_czd
+                th_2["RAD_MAX"][mask] *= factor_czd * factor_sd
 
-            th_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
-            th_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
-            th_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
-            th_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
-            th_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
-            th_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
+                th_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                th_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
+                th_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
+                th_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                th_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
+                th_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
 
-            th_hdu_1 = fits.BinTableHDU(th_1, header=th_1_meta, name="RAD_MAX")
-            th_hdu_2 = fits.BinTableHDU(th_2, header=th_2_meta, name="RAD_MAX")
+                th_hdu_1 = fits.BinTableHDU(th_1, header=th_1_meta, name="RAD_MAX")
+                th_hdu_2 = fits.BinTableHDU(th_2, header=th_2_meta, name="RAD_MAX")
 
-            hdus_2_en.append(aeff_hdu_1)
-            hdus_2_en.append(edisp_hdu_1)
-            hdus_2_en.append(gh_hdu_1)
-            hdus_2_en.append(th_hdu_1)
+                hdus_2_en.append(aeff_hdu_1)
+                hdus_2_en.append(edisp_hdu_1)
+                hdus_2_en.append(gh_hdu_1)
+                hdus_2_en.append(th_hdu_1)
 
-            hdus_3_en.append(aeff_hdu_2)
-            hdus_3_en.append(edisp_hdu_2)
-            hdus_3_en.append(gh_hdu_2)
-            hdus_3_en.append(th_hdu_2)
+                hdus_3_en.append(aeff_hdu_2)
+                hdus_3_en.append(edisp_hdu_2)
+                hdus_3_en.append(gh_hdu_2)
+                hdus_3_en.append(th_hdu_2)
+
+            else:
+                # For AL CUTS, apply the factors for cuts, lower than the max value
+                al_1 = Table.read(irf, hdu="AL_CUTS")
+                al_1_meta = fits.open(irf)["AL_CUTS"].header
+                al_2 = al_1.copy()
+                al_2_meta = al_1_meta.copy()
+
+                mask = al_1["cut"] < al_1["cut"].max()
+
+                al_1["cut"][mask] *= factor_czd
+                al_2["cut"][mask] *= factor_czd * factor_sd
+
+                al_1_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                al_1_meta["AZ_PNT"] = (az_1 * 180 / np.pi, "deg")
+                al_1_meta["B_DELTA"] = (del_1 * 180 / np.pi, "deg")
+                al_2_meta["ZEN_PNT"] = (zen_2 * 180 / np.pi, "deg")
+                al_2_meta["AZ_PNT"] = (az_2 * 180 / np.pi, "deg")
+                al_2_meta["B_DELTA"] = (del_2 * 180 / np.pi, "deg")
+
+                al_hdu_1 = fits.BinTableHDU(al_1, header=al_1_meta, name="AL_CUTS")
+                al_hdu_2 = fits.BinTableHDU(al_2, header=al_2_meta, name="AL_CUTS")
+
+                hdus_2_en_srcdep.append(aeff_hdu_1)
+                hdus_2_en_srcdep.append(edisp_hdu_1)
+                hdus_2_en_srcdep.append(gh_hdu_1)
+                hdus_2_en_srcdep.append(al_hdu_1)
+
+                hdus_3_en_srcdep.append(aeff_hdu_2)
+                hdus_3_en_srcdep.append(edisp_hdu_2)
+                hdus_3_en_srcdep.append(gh_hdu_2)
+                hdus_3_en_srcdep.append(al_hdu_2)
+
         else:
-            hdus_2_g.append(aeff_hdu_1)
-            hdus_2_g.append(edisp_hdu_1)
+            if not "srcdep" in irf.name:
+                hdus_2_g.append(aeff_hdu_1)
+                hdus_2_g.append(edisp_hdu_1)
 
-            hdus_3_g.append(aeff_hdu_2)
-            hdus_3_g.append(edisp_hdu_2)
+                hdus_3_g.append(aeff_hdu_2)
+                hdus_3_g.append(edisp_hdu_2)
+
+            else:
+                hdus_2_g_srcdep.append(aeff_hdu_1)
+                hdus_2_g_srcdep.append(edisp_hdu_1)
+
+                hdus_3_g_srcdep.append(aeff_hdu_2)
+                hdus_3_g_srcdep.append(edisp_hdu_2)
 
     fits.HDUList(hdus_2_g).writeto(irf_file_g_2, overwrite=True)
     fits.HDUList(hdus_3_g).writeto(irf_file_g_3, overwrite=True)
     fits.HDUList(hdus_2_en).writeto(irf_file_en_2, overwrite=True)
     fits.HDUList(hdus_3_en).writeto(irf_file_en_3, overwrite=True)
 
+    fits.HDUList(hdus_2_g_srcdep).writeto(irf_file_g_srcdep_2, overwrite=True)
+    fits.HDUList(hdus_3_g_srcdep).writeto(irf_file_g_srcdep_3, overwrite=True)
+    fits.HDUList(hdus_2_en_srcdep).writeto(irf_file_en_srcdep_2, overwrite=True)
+    fits.HDUList(hdus_3_en_srcdep).writeto(irf_file_en_srcdep_3, overwrite=True)
+
     irfs_g = [simulated_irf_file, irf_file_g_2, irf_file_g_3]
     irfs_en = [irf_file_en_1, irf_file_en_2, irf_file_en_3]
+    irfs_g_srcdep = [
+        simulated_srcdep_irf_file,
+        irf_file_g_srcdep_2,
+        irf_file_g_srcdep_3,
+    ]
+    irfs_en_srcdep = [irf_file_en_srcdep_1, irf_file_en_srcdep_2, irf_file_en_srcdep_3]
+
+    factor_czd_t = 1 - (1 - factor_czd) / 2  # as factor_czd < 1
+    factor_sd_t = 1 + (factor_sd - 1) / 2
+
+    zen_t = np.arccos(np.cos(zen_1) * factor_czd_t) * 180 / np.pi
+    del_t = np.arcsin(np.sin(del_1) * factor_sd_t) * 180 / np.pi
+    az_t = az_1 * factor_czd_t * 180 / np.pi
     data_pars = {
-        "ZEN_PNT": 30 * u.deg,
-        "B_DELTA": (del_1 * 0.8 * u.rad).to(u.deg),
-        "AZ_PNT": 120 * u.deg,
+        "ZEN_PNT": zen_t * u.deg,
+        "B_DELTA": del_t * u.deg,
+        "AZ_PNT": az_t * u.deg,
     }
 
     hdu_g = interpolate_irf(irfs_g, data_pars)
@@ -188,15 +299,31 @@ def test_interp_irf(simulated_irf_file, simulated_dl2_file):
     hdu_en = interpolate_irf(irfs_en, data_pars)
     hdu_en.writeto(irf_file_en_final, overwrite=True)
 
-    assert hdu_g[1].header["ZEN_PNT"] == 30
+    hdu_g_srcdep = interpolate_irf(irfs_g_srcdep, data_pars)
+    hdu_g_srcdep.writeto(irf_file_g_srcdep_final, overwrite=True)
+
+    hdu_en_srcdep = interpolate_irf(irfs_en_srcdep, data_pars)
+    hdu_en_srcdep.writeto(irf_file_en_srcdep_final, overwrite=True)
+
+    assert hdu_g[1].header["ZEN_PNT"] == zen_t
     assert irf_file_g_2.exists()
     assert irf_file_g_3.exists()
     assert irf_file_g_final.exists()
 
-    assert hdu_en[1].header["ZEN_PNT"] == 30
+    assert hdu_en[1].header["ZEN_PNT"] == zen_t
     assert irf_file_en_2.exists()
     assert irf_file_en_3.exists()
     assert irf_file_en_final.exists()
+
+    assert hdu_g_srcdep[1].header["ZEN_PNT"] == zen_t
+    assert irf_file_g_srcdep_2.exists()
+    assert irf_file_g_srcdep_3.exists()
+    assert irf_file_g_srcdep_final.exists()
+
+    assert hdu_en_srcdep[1].header["ZEN_PNT"] == zen_t
+    assert irf_file_en_srcdep_2.exists()
+    assert irf_file_en_srcdep_3.exists()
+    assert irf_file_en_srcdep_final.exists()
 
 
 def test_compare_irfs(
@@ -258,17 +385,50 @@ def test_compare_irfs(
         "--global-alpha-cut=11",
     )
 
+    # IRFs with same and different efficiency values for energy-dependent cuts
+    srcdep_irf_file_en_1 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_cut_irf_srcdep_1.fits.gz"
+    )
+    srcdep_irf_file_en_1_cut2 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_diff_cut_irf_srcdep_1.fits.gz"
+    )
+
+    run_program(
+        "lstchain_create_irf_files",
+        "--input-gamma-dl2",
+        simulated_srcdep_dl2_file,
+        "--output-irf-file",
+        srcdep_irf_file_en_1_cut2,
+        "--energy-dependent-gh",
+        "--energy-dependent-alpha",
+        "--point-like",
+        "--source-dep",
+        "--gh-efficiency=0.7",
+        "--alpha-containment=0.7",
+    )
+
+    # IRFs with same efficiency values for energy-dependent cuts
+    srcdep_irf_file_en_2 = (
+        simulated_srcdep_dl2_file.parent / "en_dep_cut_irf_srcdep_2.fits.gz"
+    )
+
     irfs_diff_global_cuts = [simulated_irf_file, irf_file_2]
     irfs_same_file = [simulated_irf_file, simulated_irf_file]
     irfs_same_en_dep_cuts_diff_dir = [irf_file_en_1, irf_file_en_2]
     irfs_diff_en_dep_cuts = [irf_file_en_1, irf_file_en_1_cut2]
     irfs_srcdep_diff_global_cuts = [simulated_srcdep_irf_file, srcdep_irf_file_2]
+    irfs_srcdep_same_file = [simulated_srcdep_irf_file, simulated_srcdep_irf_file]
+    irfs_srcdep_same_en_dep_cuts_diff_dir = [srcdep_irf_file_en_1, srcdep_irf_file_en_2]
+    irfs_srcdep_diff_en_dep_cuts = [srcdep_irf_file_en_1, srcdep_irf_file_en_1_cut2]
 
     assert compare_irfs(irfs_diff_global_cuts) == 0
     assert compare_irfs(irfs_same_file)
     assert compare_irfs(irfs_diff_en_dep_cuts) == 0
     assert compare_irfs(irfs_same_en_dep_cuts_diff_dir)
     assert compare_irfs(irfs_srcdep_diff_global_cuts) == 0
+    assert compare_irfs(irfs_srcdep_same_file)
+    assert compare_irfs(irfs_srcdep_diff_en_dep_cuts) == 0
+    assert compare_irfs(irfs_srcdep_same_en_dep_cuts_diff_dir)
 
 
 def test_check_delaunay_triangles(simulated_irf_file):
@@ -280,21 +440,50 @@ def test_check_delaunay_triangles(simulated_irf_file):
 
     irfs = [simulated_irf_file, irf_file_3, irf_file_4, irf_file_5]
 
+    # Fetch the grid parameters to get target points inside and outside grids.
+    czd_list = []
+    sd_list = []
+    az_list = []
+
+    for i in irfs:
+        meta_ = fits.open(i)["EFFECTIVE AREA"].header
+        czd_list.append(np.cos(meta_["ZEN_PNT"] * np.pi/180))
+        sd_list.append(np.sin(meta_["B_DELTA"] * np.pi/180))
+        az_list.append(meta_["AZ_PNT"])
+    czd_list = np.array(czd_list)
+    sd_list = np.array(sd_list)
+    az_list = np.array(az_list)
+
     # Check on target being inside or outside Delaunay simplex
-    data_pars = {"ZEN_PNT": 25 * u.deg, "B_DELTA": 45 * u.deg, "AZ_PNT": 100 * u.deg}
-    data_pars2 = {"ZEN_PNT": 58 * u.deg, "B_DELTA": 70 * u.deg, "AZ_PNT": 200 * u.deg}
+    zen_t1 = np.arccos(np.mean(czd_list)) * 180 / np.pi
+    zen_t2 = np.arccos(np.min(czd_list) - 0.1) * 180 / np.pi
+    del_t = np.arcsin(np.mean(sd_list)) * 180 / np.pi
+    az_close_t = az_list[np.where(czd_list == np.min(czd_list))[0][0]]
 
-    new_irfs = check_in_delaunay_triangle(irfs, data_pars)
-    new_irfs2 = check_in_delaunay_triangle(irfs, data_pars2)
-    new_irfs3 = check_in_delaunay_triangle(irfs, data_pars, use_nearest_irf_node=True)
-    new_irfs4 = check_in_delaunay_triangle([irfs[0]], data_pars)
+    data_pars = {
+        "ZEN_PNT": zen_t1 * u.deg,
+        "B_DELTA": del_t * u.deg,
+        "AZ_PNT": 100 * u.deg
+    }
+    data_pars2 = {
+        "ZEN_PNT": zen_t2 * u.deg,
+        "B_DELTA": del_t * u.deg,
+        "AZ_PNT": az_close_t * u.deg
+    }
 
-    t3 = Table.read(new_irfs3[0], hdu=1).meta
+    new_irfs_in_grid = check_in_delaunay_triangle(irfs, data_pars)
+    new_irfs_out_grid = check_in_delaunay_triangle(irfs, data_pars2)
+    new_irfs_in_grid_near_az = check_in_delaunay_triangle(
+        irfs, data_pars2, use_nearest_irf_node=True
+    )
+    new_irfs_no_grid = check_in_delaunay_triangle([irfs[0]], data_pars)
 
-    assert len(new_irfs) == 3
-    assert len(new_irfs2) == 1
-    assert t3["ZEN_PNT"] == 20
-    assert len(new_irfs4) == 1
+    az_check = Table.read(new_irfs_in_grid_near_az[0], hdu=1).meta
+
+    assert len(new_irfs_in_grid) == 3
+    assert len(new_irfs_out_grid) == 1
+    assert az_check["AZ_PNT"] == az_close_t
+    assert len(new_irfs_no_grid) == 1
 
 
 def test_get_nearest_az_node():
@@ -358,7 +547,6 @@ def test_get_nearest_az_node():
 def test_interpolate_gh_cuts():
     from lstchain.high_level.interpolate import interpolate_gh_cuts
 
-    # Similar function as interpolate_rad_max, hence no need for extra test
     # linear test case
     gh_cuts_1 = np.array([[0, 0], [0.1, 0], [0.2, 0.1], [0.3, 0.2]])
     gh_cuts_2 = 2 * gh_cuts_1
