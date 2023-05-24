@@ -7,7 +7,7 @@ dependencies:
   - numpy=1.22
   - astropy=5
   - pip
-  - ctapipe=0.18
+  - ctapipe=0.19
   - gammapy=1
   - h5py
   - ipython
@@ -31,7 +31,7 @@ dependencies:
   - pandas>=2
   - pymongo
   - seaborn
-  - ctapipe_io_lst=0.20
+  - ctapipe_io_lst=0.20.1
   - pytest
   - pip:
       - ctaplot~=0.6.2
