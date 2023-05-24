@@ -232,7 +232,8 @@ def compare_irfs(irfs):
         energy_dependent_gh = "GH_EFF" in h_meta
         point_like = h_meta["HDUCLAS3"] == "POINT-LIKE"
         energy_dependent_theta = "TH_CONT" in h_meta
-        source_dep = "AL_CUT" in h_meta
+        source_dep = ("AL_CUT" in h_meta) or ("AL_CONT" in h_meta)
+        energy_dependent_al = "AL_CONT" in h_meta
 
         if energy_dependent_gh:
             select_meta.append("GH_EFF")
@@ -240,13 +241,17 @@ def compare_irfs(irfs):
             select_meta.append("GH_CUT")
 
         if point_like:
-            if energy_dependent_theta:
-                select_meta.append("TH_CONT")
-            else:
-                if source_dep:
-                    select_meta.append("AL_CUT")
+            if not source_dep:
+                if energy_dependent_theta:
+                    select_meta.append("TH_CONT")
                 else:
                     select_meta.append("RAD_MAX")
+            else:
+                if energy_dependent_al:
+                    select_meta.append("AL_CONT")
+                else:
+                    select_meta.append("AL_CUT")
+
     except KeyError:
         print(f"Effective Area is not present in {irfs[0]}")
 
@@ -352,6 +357,47 @@ def interpolate_gh_cuts(
     return gh_cuts_interp
 
 
+def interpolate_al_cuts(
+    al_cuts,
+    grid_points,
+    target_point,
+    method="linear",
+):
+    """
+    Interpolates a grid of AL_CUTS tables to a target-point. Same as pyirf's
+    interpolate_rad_max function.
+
+    Wrapper around scipy.interpolate.griddata [1].
+
+    Parameters
+    ----------
+    al_cuts: numpy.ndarray, shape=(N, M, ...)
+        Alpha-cuts for all combinations of grid-points, like energy.
+        Shape (N:n_grid_points, M:n_energy_bins)
+    grid_points: numpy.ndarray, shape=(N, O)
+        Array of the N O-dimensional morphing parameter values corresponding
+        to the N input templates.
+    target_point: numpy.ndarray, shape=(O)
+        Value for which the interpolation is performed (target point)
+    method: 'linear', 'nearest', 'cubic'
+        Interpolation method for scipy.interpolate.griddata [1].
+        Defaults to 'linear'.
+
+    Returns
+    -------
+    al_cuts_interp: numpy.ndarray, shape=(1, M, ...)
+        Alpha-cuts for the target grid-point, shape (1, M:n_energy_bins)
+
+    References
+    ----------
+    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
+    """
+    interp = GridDataInterpolator(grid_points=grid_points, params=al_cuts)
+    al_cuts_interp = interp(target_point, method=method)
+
+    return al_cuts_interp
+
+
 def interpolate_irf(irfs, data_pars, interp_method="linear"):
     """
     Using pyirf functions with a list of IRFs and parameters to compare with
@@ -399,6 +445,7 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
         "GH_CUT",
         "G_OFFSET",
         "RAD_MAX",
+        "AL_CUT",
         "B_TOTAL",
         "B_INC",
     ]
@@ -565,6 +612,34 @@ def interpolate_irf(irfs, data_pars, interp_method="linear"):
 
     except KeyError:
         log.error("RAD_MAX not present for IRF interpolation")
+
+    try:
+        hdus_interp["AL_CUTS"]
+        al_cuts_list = load_irf_grid(
+            irfs, extname="AL_CUTS", interp_col="cut", gadf_irf=False
+        )
+
+        temp_irf = QTable.read(irfs[0], hdu="AL_CUTS")
+
+        al_cut_interp = interpolate_al_cuts(
+            al_cuts_list, irf_pars_sel, interp_pars_sel, method=interp_method
+        )
+
+        al_header = fits.Header()
+        al_header["CREATOR"] = f"lstchain v{__version__}"
+        al_header["DATE"] = Time.now().utc.iso
+
+        for k, v in extra_headers.items():
+            al_header[k] = v
+
+        temp_irf["cut"] = al_cut_interp * u.deg
+
+        al_cut_hdu_interp = fits.BinTableHDU(temp_irf, header=al_header, name="AL_CUTS")
+
+        irf_interp.append(al_cut_hdu_interp)
+
+    except KeyError:
+        log.error("AL CUTS not present for IRF interpolation")
 
     if not point_like:
         try:

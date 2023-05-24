@@ -23,8 +23,8 @@
     "min_theta_cut": 0.1,
     "n_off_wobbles": 3,
     "min_alpha_cut": 1,
-    "max_alpha_cut": 45,
-    "fill_alpha_cut": 45,
+    "max_alpha_cut": 20,
+    "fill_alpha_cut": 20,
     "allowed_tels": [1]
   },
   "DataBinning": {
