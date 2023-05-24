@@ -370,8 +370,6 @@ class IRFFITSWriter(Tool):
         gammas = self.mc_particle["gamma"]["events"]
         geomag_params = self.mc_particle["gamma"]["geomag_params"]
         self.log.info(geomag_params)
-        mean_fov_offset = get_mc_fov_offset(self.mc_particle["gamma"]["file"])
-        self.log.debug(mean_fov_offset)
 
         # Binning of parameters used in IRFs
         true_energy_bins = self.data_bin.true_energy_bins()
@@ -438,10 +436,9 @@ class IRFFITSWriter(Tool):
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
+            mean_fov_offset = get_mc_fov_offset(self.mc_particle["gamma"]["file"])
+            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
             fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
-
-            self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
-            self.log.info("Single offset for point like gamma MC")
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")
@@ -511,10 +508,6 @@ class IRFFITSWriter(Tool):
         )
         extra_headers["AZ_PNT"] = (
             self.mc_particle["gamma"]["AZ_PNT"],
-            "deg"
-        )
-        extra_headers["G_OFFSET"] = (
-            mean_fov_offset,
             "deg"
         )
         extra_headers["B_TOTAL"] = (

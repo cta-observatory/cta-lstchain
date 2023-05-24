@@ -527,12 +527,6 @@ class DataReductionFITSWriter(Tool):
         for p in self.data_params.keys():
             self.mc_params[p] = u.Quantity(h[p], "deg")
 
-        mc_gamma_offset = u.Quantity(
-            h["G_OFFSET"],
-            "deg"
-        )
-
-        self.log.info(f"Gamma offset for MC is {mc_gamma_offset:.3f}")
         self.log.info(
             f"Zenith pointing of MC at {self.mc_params['ZEN_PNT']:.3f}"
         )
