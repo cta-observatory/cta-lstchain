@@ -6,11 +6,12 @@ import numpy as np
 import pandas as pd
 import pytest
 import tables
+from copy import deepcopy
 
 from lstchain.io import standard_config, srcdep_config
 from lstchain.io.io import dl1_params_lstcam_key, dl2_params_lstcam_key, dl1_images_lstcam_key
 from lstchain.reco.utils import filter_events
-
+from lstchain.reco.dl1_to_dl2 import build_models
 
 test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data'))
 test_r0_path = test_data / 'real/R0/20200218/LST-1.1.Run02008.0000_first50.fits.fz'
@@ -75,6 +76,89 @@ def test_r0_available():
     assert test_r0_path2.is_file()
 
 
+def test_lhfit_numba_compiled():
+    from lstchain.reco.reconstructorCC import log_pdf_hl
+    log_pdf_hl(np.float64([0]), np.float32([[0]]), np.float32([1]),
+               np.float64([0]), np.float64([[1]]), np.float64([[1]]))
+
+
+def test_r0_to_dl1_lhfit_mc(tmp_path, mc_gamma_testfile):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    config = deepcopy(standard_config)
+    config['source_config']['EventSource']['max_events'] = 5
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['lh_fit_config'] = {
+        "sigma_s": [
+            ["type", "*", 1.0],
+            ["type", "LST_LST_LSTCam", 0.3282]
+        ],
+        "crosstalk": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "sigma_space": 3,
+        "sigma_time": 4,
+        "time_before_shower": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "time_after_shower": [
+            ["type", "*", 20.0],
+            ["type", "LST_LST_LSTCam", 20.0]
+        ],
+        "n_peaks": 20,
+        "no_asymmetry": False,
+        "use_weight": False,
+        "verbose": 4
+    }
+    os.makedirs('./event', exist_ok=True)
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+    assert len(os.listdir('./event')) > 1
+    for path in os.listdir('./event'):
+        os.remove('./event/'+path)
+    os.rmdir('./event')
+    os.remove(tmp_path / "tmp.h5")
+    config['source_config']['EventSource']['allowed_tels'] = [1, 2]
+    config['lh_fit_config']["no_asymmetry"] = True
+    config['lh_fit_config']["use_weight"] = True
+    config['lh_fit_config']["verbose"] = 0
+    r0_to_dl1(mc_gamma_testfile, custom_config=config, output_filename=tmp_path / "tmp.h5")
+
+
+@pytest.mark.run(after='test_lhfit_numba_compiled')
+@pytest.mark.private_data
+def test_r0_to_dl1_lhfit_observed(tmp_path):
+    from lstchain.reco.r0_to_dl1 import r0_to_dl1
+    config = deepcopy(standard_config)
+    config['source_config']['EventSource']['max_events'] = None
+    config['source_config']['EventSource']['allowed_tels'] = [1]
+    config['lh_fit_config'] = {
+        "sigma_s": [
+            ["type", "*", 1.0],
+            ["type", "LST_LST_LSTCam", 0.3282]
+        ],
+        "crosstalk": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "sigma_space": 3,
+        "sigma_time": 4,
+        "time_before_shower": [
+            ["type", "*", 0.0],
+            ["type", "LST_LST_LSTCam", 0.0]
+        ],
+        "time_after_shower": [
+            ["type", "*", 20.0],
+            ["type", "LST_LST_LSTCam", 20.0]
+        ],
+        "n_peaks": 0,
+        "no_asymmetry": False,
+        "use_weight": False,
+        "verbose": 0
+    }
+    r0_to_dl1(test_r0_path, custom_config=config, output_filename=tmp_path / "tmp2.h5")
+
+
 def test_content_dl1(simulated_dl1_file):
     # test presence of images and parameters
     with tables.open_file(simulated_dl1_file, 'r') as f:
@@ -126,7 +210,7 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 
     # wobble observation data
     srcdep_config['observation_mode']='wobble'
-    dl1_params['alt_tel'] += np.deg2rad(0.4) 
+    dl1_params['alt_tel'] += np.deg2rad(0.4)
     src_dep_df_wobble = get_source_dependent_parameters(dl1_params, srcdep_config)
 
     assert 'alpha' in src_dep_df_on['on'].columns
@@ -151,14 +235,29 @@ def test_get_source_dependent_parameters_observed(observed_dl1_files):
 
 
 def test_build_models(simulated_dl1_file, rf_models):
-    from lstchain.reco.dl1_to_dl2 import build_models
     infile = simulated_dl1_file
-
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.21,
+            "proton_classifier": 0.98
+        }
+    }
     reg_energy, reg_disp_norm, cls_disp_sign, cls_gh = build_models(
         infile,
         infile,
-        custom_config=standard_config,
-        save_models=False
+        save_models=False,
+        free_model_memory=False,
+        custom_config=custom_config
+    )
+
+    build_models(
+        infile,
+        infile,
+        save_models=True,
+        free_model_memory=True,
+        custom_config=custom_config
     )
 
     import joblib
@@ -167,6 +266,24 @@ def test_build_models(simulated_dl1_file, rf_models):
     joblib.dump(cls_gh, rf_models["gh_sep"], compress=3)
     joblib.dump(reg_disp_norm, rf_models["disp_norm"], compress=3)
     joblib.dump(cls_disp_sign, rf_models["disp_sign"], compress=3)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_fail_build_models(simulated_dl1_file):
+    custom_config = {
+        "n_training_events": {
+            "gamma_regressors": 0.99,
+            "gamma_tmp_regressors": 0.78,
+            "gamma_classifier": 0.31,
+            "proton_classifier": 0.98
+        }
+    }
+    _, _, _, _ = build_models(
+        simulated_dl1_file,
+        simulated_dl1_file,
+        save_models=False,
+        custom_config=custom_config
+    )
 
 
 def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
@@ -188,8 +305,12 @@ def test_apply_models(simulated_dl1_file, simulated_dl2_file, rf_models):
     reg_disp_norm = joblib.load(rf_models["disp_norm"])
     cls_disp_sign = joblib.load(rf_models["disp_sign"])
 
-    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm = reg_disp_norm, 
-                       cls_disp_sign = cls_disp_sign, custom_config=standard_config)
+    dl2 = apply_models(dl1, reg_cls_gh, reg_energy, reg_disp_norm=reg_disp_norm,
+                       cls_disp_sign=cls_disp_sign, custom_config=standard_config)
+
+    dl2 = apply_models(dl1, rf_models["gh_sep"], rf_models["energy"], reg_disp_norm=rf_models["disp_norm"],
+                       cls_disp_sign=rf_models["disp_sign"], custom_config=standard_config)
+
     dl2.to_hdf(simulated_dl2_file, key=dl2_params_lstcam_key)
 
 
@@ -204,6 +325,7 @@ def fake_dl2_proton_file(temp_dir_simulated_files, simulated_dl2_file):
     events.mc_type = 101
     events.to_hdf(dl2_proton_file, key=dl2_params_lstcam_key)
     return dl2_proton_file
+
 
 def test_disp_vector():
     from lstchain.reco.disp import disp_vector

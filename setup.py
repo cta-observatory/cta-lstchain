@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# import sys
 from setuptools import setup, find_packages
 import os
 
@@ -32,7 +31,9 @@ docs_require = [
     "sphinx_argparse",
     "sphinx_rtd_theme",
     "numpydoc",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinxcontrib-mermaid",
+    "sphinx-togglebutton"
 ]
 
 setup(
@@ -42,18 +43,20 @@ setup(
         'astropy~=4.2',
         'bokeh~=1.0',
         'ctapipe~=0.12.0',
-        'ctapipe_io_lst~=0.16.1',
-        'ctaplot~=0.5.5',
-        'eventio>=1.5.1,<2.0.0a0',  # at least 1.1.1, but not 2
+        'ctapipe_io_lst~=0.18.2',
+        'ctaplot~=0.6.2',
+        'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
         'gammapy~=0.19.0',
         'h5py',
-        'joblib',
+        'iminuit>=2',
+        'joblib~=1.2.0',
         'matplotlib~=3.5',
         'numba',
         'numpy<1.22.0a0',
         'pandas',
-        'pyirf~=0.6.0',
-        'scipy',
+        'protobuf~=3.20.0',
+        'pyirf==0.7',
+        'scipy>=1.8',
         'seaborn',
         'scikit-learn~=1.0',
         'tables',
@@ -61,6 +64,7 @@ setup(
         'pymongo',
         'pyparsing',
         'setuptools_scm',
+        'jinja2~=3.0.2',  # pinned for bokeh 1.0 compatibility
     ],
     extras_require={
         "all": tests_require + docs_require,

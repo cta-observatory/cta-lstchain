@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-
+from astropy.time import Time
 import pymongo
 
 import lstchain
@@ -84,10 +84,24 @@ optional.add_argument('-y', '--yes', action="store_true", help='Do not ask inter
 optional.add_argument('--no_pro_symlink', action="store_true",
                       help='Do not update the pro dir symbolic link, assume true')
 
+optional.add_argument(
+    '--flatfield-heuristic', action='store_const', const=True, dest="use_flatfield_heuristic",
+    help=(
+        "If given, try to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
+optional.add_argument(
+    '--no-flatfield-heuristic', action='store_const', const=False, dest="use_flatfield_heuristic",
+    help=(
+        "If given, do not to identify flatfield events from the raw data."
+        " Should be used only for data from before 2022"
+    )
+)
 
 
 def main():
-    args = parser.parse_args()
+    args, remaining_args = parser.parse_known_args()
     run = args.run_number
     prod_id = args.prod_version
     stat_events = args.statistics
@@ -209,18 +223,20 @@ def main():
         "lstchain_create_calibration_file",
         f"--input_file={input_file}",
         f"--output_file={output_file}",
-        "--EventSource.default_trigger_type=tib",
+        "--LSTEventSource.default_trigger_type=tib",
         f"--EventSource.min_flatfield_adc={min_ff}",
         f"--EventSource.max_flatfield_adc={max_ff}",
         f"--LSTCalibrationCalculator.systematic_correction_path={systematics_file}",
         f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_path}",
         f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
         f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={pedestal_file}",
+        f"--LSTEventSource.use_flatfield_heuristic={args.use_flatfield_heuristic}",
         f"--FlatFieldCalculator.sample_size={stat_events}",
         f"--PedestalCalculator.sample_size={stat_events}",
         f"--config={config_file}",
         f"--log-file={log_file}",
         "--log-file-level=DEBUG",
+        *remaining_args,
     ]
 
     print("\n--> RUNNING...")
@@ -238,6 +254,10 @@ def main():
 
 def search_filter(run, database_url):
     """read the employed filters form mongodb"""
+
+    # there was a change of Mongo DB data names on 5/12/2022
+    NEW_DB_NAMES_DATE = Time("2022-12-04T00:00:00")
+
     filters = None
     try:
 
@@ -247,8 +267,14 @@ def search_filter(run, database_url):
         mycol = mydb["RUN_INFORMATION"]
         mydoc = mycol.find({"run_number": {"$eq": run}})
         for x in mydoc:
-            w1 = int(x["cbox"]["wheel1 position"])
-            w2 = int(x["cbox"]["wheel2 position"])
+            date =  Time(x["start_time"])
+            if date < NEW_DB_NAMES_DATE:
+                w1 = int(x["cbox"]["wheel1 position"])
+                w2 = int(x["cbox"]["wheel2 position"])
+            else:
+                w1 = int(x["cbox"]["CBOX_WheelPosition1"])
+                w2 = int(x["cbox"]["CBOX_WheelPosition2"])
+
             filters = f"{w1:1d}{w2:1d}"
 
     except Exception as e:

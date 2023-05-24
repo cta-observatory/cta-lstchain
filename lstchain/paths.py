@@ -227,10 +227,15 @@ def r0_to_dl1_filename(r0_path):
     return p.with_name("dl1_" + p.name + ".h5")
 
 
-def dl2_to_dl3_filename(dl2_path):
+def dl2_to_dl3_filename(dl2_path, compress=False):
     """Create the filename for a dl3 file from a given dl2 file path"""
 
     filename_dl2 = str(dl2_path).split("/")[-1]
     filename_dl3 = filename_dl2.replace("dl2", "dl3")
-    filename_dl3 = filename_dl3.replace("h5", "fits.gz")
+
+    if compress:
+        filename_dl3 = filename_dl3.replace("h5", "fits.gz")
+    else:
+        filename_dl3 = filename_dl3.replace("h5", "fits")
+
     return filename_dl3

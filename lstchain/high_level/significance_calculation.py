@@ -20,11 +20,6 @@ from lstchain.reco.utils import (
     rotate
 )
 
-__all__ = [
-    'analyze_on_off',
-    'analyze_wobble',
-    'setup_logging',
-]
 
 __all__ = [
     'analyze_on_off',
@@ -83,7 +78,7 @@ def analyze_wobble(config):
     for key, value in config['preselection'].items():
         LOGGER.debug('\nParameter: %s, range: %s, value type: %s', key, value, type(value))
 
-    selected_data = filter_events(data, config['preselection'])
+    selected_data = filter_events(data, filters=config['preselection'])
     # Add theta2 to selected data
     true_source_position = extract_source_position(selected_data, config['input']['observed_source'])
     plotting.plot_wobble(true_source_position, n_points, ax1)

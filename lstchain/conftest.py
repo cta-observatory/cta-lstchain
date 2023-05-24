@@ -2,6 +2,7 @@ from ctapipe_io_lst import LSTEventSource
 import pandas as pd
 import pytest
 from ctapipe.utils import get_dataset_path
+from ctapipe.instrument import SubarrayDescription
 import os
 
 from lstchain.io.io import dl1_params_lstcam_key
@@ -27,8 +28,7 @@ def pytest_configure(config):
     if "private_data" not in config.option.markexpr:
         if config.option.markexpr:
             config.option.markexpr += " and "
-        else:
-            config.option.markexpr += "not private_data"
+        config.option.markexpr += "not private_data"
 
 
 @pytest.fixture(scope="session")
@@ -109,6 +109,8 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
     dl1_output_path1 = temp_dir_observed_files / "dl1_LST-1.Run02008.0000.h5"
     muons_file1 = temp_dir_observed_files / "muons_LST-1.Run02008.0000.fits"
     datacheck_file1 = temp_dir_observed_files / "datacheck_dl1_LST-1.Run02008.0000.h5"
+    dvr_file1 = temp_dir_observed_files / "DVR_settings_LST-1.Run02008.h5"
+    pixmasks_file1 = temp_dir_observed_files / "Pixel_selection_LST-1.Run02008.0000.h5"
 
     # Second set of files
     dl1_output_path2 = temp_dir_observed_files / "dl1_LST-1.Run02008.0100.h5"
@@ -135,6 +137,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         "2516351600",
         "--dragon-module-id",
         "132",
+        "--default-trigger-type=tib",
     )
 
     run_program(
@@ -145,6 +148,24 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         temp_dir_observed_files,
         "--input-file",
         dl1_output_path1
+    )
+
+    run_program(
+        "lstchain_dvr_pixselector",
+        "--dl1-files",
+        dl1_output_path1,
+        "--output-dir",
+        temp_dir_observed_files
+    )
+
+    run_program(
+        "lstchain_dvr_pixselector",
+        "--dl1-files",
+        dl1_output_path1,
+        "--output-dir",
+        temp_dir_observed_files,
+        "--action",
+        "create_pixel_masks"
     )
 
     run_program(
@@ -163,6 +184,7 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         test_drive_report,
         '--run-summary-path',
         run_summary_path,
+        "--default-trigger-type=tib",
     )
 
     run_program(
@@ -179,6 +201,8 @@ def observed_dl1_files(temp_dir_observed_files, run_summary_path):
         'dl1_file1': dl1_output_path1,
         'muons1': muons_file1,
         'datacheck1': datacheck_file1,
+        'dvr_file1': dvr_file1,
+        'pixmasks_file1': pixmasks_file1,
         'dl1_file2': dl1_output_path2,
         'muons2': muons_file2,
         'datacheck2': datacheck_file2
@@ -228,7 +252,7 @@ def simulated_srcdep_dl2_file(temp_dir_simulated_srcdep_files, simulated_dl1_fil
 @pytest.fixture(scope="session")
 def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     """
-    Produce a fake dl1 proton file by copying the dl2 gamma test file
+    Produce a fake dl1 proton file by copying the dl1 gamma test file
     and changing mc_type.
     """
     dl1_proton_file = temp_dir_simulated_files / "dl1_fake_proton.simtel.h5"
@@ -236,6 +260,21 @@ def fake_dl1_proton_file(temp_dir_simulated_files, simulated_dl1_file):
     events.mc_type = 101
     events.to_hdf(dl1_proton_file, key=dl1_params_lstcam_key)
     return dl1_proton_file
+
+@pytest.fixture(scope="session")
+def simulated_dl1_srcdep_file(temp_dir_simulated_files, simulated_dl1_file):
+    """
+    Produce a fake dl1 gamma file by copying the dl1 gamma test file
+    and changing src_x & src_y to zeros to keep events after src_r cuts.
+    """
+    dl1_gamma_srcdep_file = temp_dir_simulated_files / "dl1_fake_gamma_srcdep.simtel.h5"
+    events = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
+    subarray_info = SubarrayDescription.from_hdf(simulated_dl1_file)
+    events.src_x = 0
+    events.src_y = 0
+    events.to_hdf(dl1_gamma_srcdep_file, key=dl1_params_lstcam_key)
+    subarray_info.to_hdf(dl1_gamma_srcdep_file)
+    return dl1_gamma_srcdep_file
 
 
 @pytest.fixture(scope="session")
@@ -267,9 +306,9 @@ def rf_models(temp_dir_simulated_files, simulated_dl1_file):
     }
 
 @pytest.fixture(scope="session")
-def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file):
+def rf_models_srcdep(temp_dir_simulated_srcdep_files, simulated_dl1_file, simulated_dl1_srcdep_file):
     """Produce test random forest models for source-dependent analysis."""
-    gamma_file = simulated_dl1_file
+    gamma_file = simulated_dl1_srcdep_file
     proton_file = simulated_dl1_file
     models_srcdep_path = temp_dir_simulated_srcdep_files
     file_model_energy_srcdep = models_srcdep_path / "reg_energy.sav"

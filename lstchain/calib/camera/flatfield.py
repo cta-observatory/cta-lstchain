@@ -1,13 +1,16 @@
 """
 Factory for the estimation of the flat field coefficients
 """
-
 import numpy as np
 from astropy import units as u
-from ctapipe.calib.camera.flatfield import FlatFieldCalculator
-from ctapipe.core.traits import  List, Path
-from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from astropy.stats import sigma_clipped_stats
+
+from ctapipe.core.traits import  List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
+
+from lstchain.ctapipe_compat import FlatFieldCalculator
+from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
+from lstchain.calib.camera.utils import check_outlier_mask
 
 __all__ = [
     'FlasherFlatFieldCalculator'
@@ -49,6 +52,17 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         exists=True, directory_ok=False,
         help='Path to time sampling correction file'
     ).tag(config=True)
+
+    sigma_clipping_max_sigma = Int(
+        default_value=4,
+        help="max_sigma value for the sigma clipping outlier removal",
+    ).tag(config=True)
+
+    sigma_clipping_iterations = Int(
+        default_value=5,
+        help="Number of iterations for the sigma clipping outlier removal",
+    ).tag(config=True)
+
 
     def __init__(self, subarray, **kwargs):
 
@@ -157,7 +171,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         # time
         self.trigger_time = event.trigger.tel[self.tel_id].time
-
+        
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -168,8 +182,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
 
         self.collect_sample(charge, pixel_mask, arrival_time)
 
-        sample_age = self.trigger_time - self.time_start
-
+        sample_age = (self.trigger_time - self.time_start).to_value(u.s)
         # check if to create a calibration event
         if (self.num_events_seen > 0 and
                 (sample_age > self.sample_duration or
@@ -193,7 +206,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         """
         if self.num_events_seen == 0:
             raise ValueError("No flat-field events in statistics, zero results")
-
+       
         container = event.mon.tel[self.tel_id].flatfield
 
         # mask the part of the array not filled
@@ -306,14 +319,23 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             mask=masked_pixels_of_sample
         )
 
-        # median over the sample per pixel
-        pixel_median = np.ma.median(masked_trace_integral, axis=0)
+        # mean and std over the sample per pixel
+        max_sigma = self.sigma_clipping_max_sigma
+        pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(
+            masked_trace_integral,
+            sigma=max_sigma,
+            maxiters=self.sigma_clipping_iterations,
+            cenfunc="mean",
+            axis=0,
+        )
 
-        # mean over the sample per pixel
-        pixel_mean = np.ma.mean(masked_trace_integral, axis=0)
+        unused_values = np.abs(masked_trace_integral - pixel_mean) > (max_sigma * pixel_std)
+        # only warn for values discard in the sigma clipping, not those from before
+        outliers = unused_values & (~masked_trace_integral.mask)
+        check_outlier_mask(outliers, self.log, "flatfield")
 
-        # std over the sample per pixel
-        pixel_std = np.ma.std(masked_trace_integral, axis=0)
+        # ignore outliers identified by sigma clipping also for following operations
+        masked_trace_integral.mask = unused_values
 
         # median of the median over the camera
         median_of_pixel_median = np.ma.median(pixel_median, axis=1)
@@ -327,17 +349,22 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         # outliers from median
         charge_deviation = pixel_median - median_of_pixel_median[:, np.newaxis]
 
-        charge_median_outliers = np.logical_or(
-            charge_deviation < self.charge_median_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
-            charge_deviation > self.charge_median_cut_outliers[1] * median_of_pixel_median[:,np.newaxis],
-        )
-
+        charge_median_outliers = (
+            np.logical_or(charge_deviation < self.charge_median_cut_outliers[0] * median_of_pixel_median[:,np.newaxis],
+                          charge_deviation > self.charge_median_cut_outliers[1] * median_of_pixel_median[:,np.newaxis]))
+        
+        
         # outliers from standard deviation
-        charge_std_outliers = np.logical_or(
-            pixel_std < self.charge_std_cut_outliers[0] * median_of_pixel_std[:, np.newaxis],
-            pixel_std > self.charge_std_cut_outliers[1] * median_of_pixel_std[:, np.newaxis],
-        )
-
+        deviation = pixel_std - median_of_pixel_std[:, np.newaxis]
+        charge_std_outliers = (
+            np.logical_or(deviation < self.charge_std_cut_outliers[0] * std_of_pixel_std[:, np.newaxis],
+                          deviation > self.charge_std_cut_outliers[1] * std_of_pixel_std[:, np.newaxis]))
+        
+        # mask pixels with NaN mean, due to missing statistics
+        pixels_without_stat = np.where(np.isnan(pixel_mean)==True)
+        charge_median_outliers[pixels_without_stat] = True
+        charge_std_outliers[pixels_without_stat] = True
+        
         return {
             'relative_gain_median': np.ma.getdata(np.ma.median(relative_gain_event, axis=0)),
             'relative_gain_mean': np.ma.getdata(np.ma.mean(relative_gain_event, axis=0)),
@@ -348,4 +375,3 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             'charge_std_outliers': np.ma.getdata(charge_std_outliers),
             'charge_median_outliers': np.ma.getdata(charge_median_outliers),
         }
-

@@ -6,6 +6,7 @@ from .config import (
 )
 from .lstcontainers import (
     DL1ParametersContainer,
+    DL1LikelihoodParametersContainer,
     DispContainer,
 )
 from .event_selection import EventSelector, DL3Cuts, DataBinning
@@ -29,6 +30,7 @@ from .io import (
     get_srcdep_assumed_positions,
     get_srcdep_params,
     add_source_filenames,
+    remove_duplicated_events,
 )
 
 standard_config = get_standard_config()
@@ -38,6 +40,7 @@ __all__ = [
     'replace_config',
     'read_configuration_file',
     'DL1ParametersContainer',
+    'DL1LikelihoodParametersContainer',
     'DispContainer',
     'EventSelector',
     'DL3Cuts',
@@ -60,5 +63,6 @@ __all__ = [
     'read_data_dl2_to_QTable',
     'get_srcdep_assumed_positions',
     'get_srcdep_params',
-    'add_source_filenames'
+    'add_source_filenames',
+    'remove_duplicated_events'
 ]

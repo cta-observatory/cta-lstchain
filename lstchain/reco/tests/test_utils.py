@@ -103,6 +103,9 @@ def test_filter_events():
     from lstchain.reco.utils import filter_events
 
     df = pd.DataFrame({"a": [1, 2, 3], "b": [np.nan, 2.2, 3.2], "c": [1, 2, np.inf]})
+
+    np.testing.assert_array_equal(filter_events(df), df)
+
     np.testing.assert_array_equal(
         filter_events(
             df,
@@ -183,7 +186,6 @@ def test_get_obstime_real():
     assert np.isclose(t_eff, true_t_eff, rtol=5e-4)
 
 
-
 def test_get_geomagnetic_field_orientation():
     from lstchain.reco.utils import (
         get_geomagnetic_field_orientation,
@@ -208,7 +210,20 @@ def test_get_geomagnetic_delta():
     # this is just a regression test assuming the values were correct when
     # first implementing the function
     inc = get_geomagnetic_delta(zen=20 * u.deg, az=0 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
-    assert u.isclose(inc, 0.57002008 * u.rad)
+    assert u.isclose(inc, 1.26667967 * u.rad)
 
     inc = get_geomagnetic_delta(zen=50 * u.deg, az=20 * u.deg, time=GEOM_MAG_REFERENCE_TIME)
-    assert u.isclose(inc, 0.20785624 * u.rad)
+    assert u.isclose(inc, 1.73389012 * u.rad)
+
+
+def test_apply_src_r_cut(simulated_dl1_file):
+    from lstchain.io.io import dl1_params_lstcam_key
+    from lstchain.reco.utils import apply_src_r_cut
+    from lstchain.io.config import get_srcdep_config
+    
+    params = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
+    srcdep_config = get_srcdep_config()
+    src_r_min = srcdep_config['train_gamma_src_r_deg'][0]
+    src_r_max = srcdep_config['train_gamma_src_r_deg'][1]
+    params = apply_src_r_cut(params, src_r_min, src_r_max)
+    assert (params.event_id.values == np.array([998705, 1680619])).all()

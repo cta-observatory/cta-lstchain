@@ -9,6 +9,7 @@ Module with auxiliar functions:
 
 import logging
 from warnings import warn
+from copy import deepcopy
 
 import astropy.units as u
 import numpy as np
@@ -16,12 +17,14 @@ import pandas as pd
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 from astropy.time import Time
 from ctapipe.coordinates import CameraFrame
+from ctapipe_io_lst import OPTICS
 
 from . import disp
 
 __all__ = [
     "add_delta_t_key",
     "alt_to_theta",
+    "apply_src_r_cut",
     "az_to_phi",
     "camera_to_altaz",
     "cartesian_to_polar",
@@ -43,7 +46,7 @@ __all__ = [
     "rotate",
     "sky_to_camera",
     "source_dx_dy",
-    "source_side",
+    "source_side"
 ]
 
 # position of the LST1
@@ -53,15 +56,16 @@ horizon_frame = AltAz(location=location, obstime=obstime)
 
 # Geomagnetic parameters for the LST1 as per
 # https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml?#igrfwmm and
-# using IGRF model on date  TIME_MC = 2020-06-29
-GEOM_MAG_REFERENCE_TIME = Time("2020-06-29", format="iso")
-GEOMAG_DEC = (-5.0674 * u.deg).to(u.rad)
-GEOMAG_INC = (37.4531 * u.deg).to(u.rad)
-GEOMAG_TOTAL = 38.7305 * u.uT
+# using IGRF model on date  TIME_MC = 2021-11-29 at elevation 10 km a.s.l
+# for the position where the particle shower is at its peak
+GEOM_MAG_REFERENCE_TIME = Time("2021-11-29", format="iso")
+GEOMAG_DEC = (-4.8443 * u.deg).to(u.rad)
+GEOMAG_INC = (37.3663 * u.deg).to(u.rad)
+GEOMAG_TOTAL = 38.5896 * u.uT
 
-DELTA_DEC = (0.1656 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_INC = (-0.0698 * u.deg / u.yr).to(u.rad / u.year)
-DELTA_TOTAL = 0.009 * u.uT / u.yr
+DELTA_DEC = (0.1653 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_INC = (-0.0700 * u.deg / u.yr).to(u.rad / u.year)
+DELTA_TOTAL = 0.0089 * u.uT / u.yr
 
 log = logging.getLogger(__name__)
 
@@ -486,31 +490,28 @@ def expand_tel_list(tel_list, max_tels):
 
 
 def filter_events(
-    events,
-    filters=dict(
-        intensity=[0, np.inf],
-        width=[0, np.inf],
-        length=[0, np.inf],
-        wl=[0, np.inf],
-        r=[0, np.inf],
-        leakage_intensity_width_2=[0, 1],
-    ),
-    finite_params=None,
+        events,
+        filters=None,
+        finite_params=None,
 ):
     """
     Apply data filtering to a pandas dataframe or astropy Table.
     The Table object will be converted to pandas dataframe and used.
     Each filtering range is applied if the column name exists in the DataFrame so that
     `(events >= range[0]) & (events <= range[1])`
-    Returning filter is converted to a numpy object so that it can be used by both dataframe
-    and table inputs
+    The returned object is of the same type as passed `events`
 
     Parameters
     ----------
     events: `pandas.DataFrame` or 'astropy.table.Table'
     filters: dict containing events features names and their filtering range
+        example : dict(intensity=[0, np.inf], width=[0, np.inf], r=[0, np.inf])
     finite_params: optional, None or list of strings
         extra filter to ensure finite parameters
+    n_events: int or float
+        Number of events to keep.
+        If an integer > 1 is passed this will be the maximum number of events to keep.
+        If a float < 1, this is the ratio of events to keep.
 
     Returns
     -------
@@ -524,14 +525,15 @@ def filter_events(
         events_df = events
 
     filter = np.ones(len(events_df), dtype=bool)
+    filters = {} if filters is None else filters
 
     for col, (lower_limit, upper_limit) in filters.items():
         filter &= (events_df[col] >= lower_limit) & (events_df[col] <= upper_limit)
 
     if finite_params is not None:
         _finite_params = list(set(finite_params).intersection(list(events_df.columns)))
-        with pd.option_context('mode.use_inf_as_null', True):
-            not_finite_mask = events_df[_finite_params].isnull()
+        with pd.option_context('mode.use_inf_as_na', True):
+            not_finite_mask = events_df[_finite_params].isna()
         filter &= ~(not_finite_mask.any(axis=1))
 
         not_finite_counts = (not_finite_mask).sum(axis=0)[_finite_params]
@@ -542,7 +544,11 @@ def filter_events(
                 if v > 0:
                     log.warning(f"{k} : {v}")
 
-    return events[filter.to_numpy()]
+    # if pandas DataFrame or Series, transforms to numpy
+    filter = filter.to_numpy() if hasattr(filter, 'to_numpy') else filter
+    events = events[filter]
+
+    return events
 
 
 def linear_imputer(y, missing_values=np.nan, copy=True):
@@ -663,12 +669,15 @@ def get_effective_time(events):
 
     # elapsed time: sum of those time differences, excluding large ones which
     # might indicate the DAQ was stopped (e.g. if the table contains more
-    # than one run). We set 0.1 s as limit to decide a "break" occurred:
-    t_elapsed = np.sum(time_diff[time_diff < 0.1 * u.s])
-
+    # than one run). We set 0.01 s as limit to decide a "break" occurred:
+    t_elapsed = np.sum(time_diff[time_diff < 0.01 * u.s])
+    
     # delta_t is the time elapsed since the previous triggered event.
     # We exclude the null values that might be set for the first even in a file.
-    delta_t = delta_t[delta_t > 0.0 * u.s]
+    # Same as the elapsed time, we exclude events with delta_t larger than 0.01 s.
+    delta_t = delta_t[
+        (delta_t > 0.0 * u.s) & (delta_t < 0.01 * u.s)
+    ]
 
     # dead time per event (minimum observed delta_t, ):
     dead_time = np.amin(delta_t)
@@ -688,7 +697,6 @@ def get_effective_time(events):
     t_eff = t_elapsed / (1 + rate * dead_time)
 
     return t_eff, t_elapsed
-
 
 
 def get_geomagnetic_field_orientation(time=None):
@@ -749,10 +757,74 @@ def get_geomagnetic_delta(zen, az, geomag_dec=None, geomag_inc=None, time=None):
         geomag_dec, geomag_inc = get_geomagnetic_field_orientation(time)
 
     term = (
-        (np.sin(geomag_inc) * np.cos(zen)) +
-        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az + geomag_dec))
+        (np.sin(geomag_inc) * np.cos(zen)) -
+        (np.cos(geomag_inc) * np.sin(zen) * np.cos(az - geomag_dec))
     )
 
     delta = np.arccos(term)
 
     return delta
+
+
+def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inplace=True):
+    """
+    Fix the bias introduced by reconstructing the events direction with the nominal focal length.
+    This should not be necessary in the future, when the effective focal length is read and used directly from the MC
+    See https://github.com/cta-observatory/ctaplot/issues/190 for more details.
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame` | `astropy.table.Table`
+    effective_focal_length: `astropy.Quantity`
+    inplace: bool
+        If True, modify the input events inplace. Otherwise, return a copy.
+
+    Returns
+    -------
+    None | `pandas.DataFrame` | `astropy.table.Table`
+    """
+    if not inplace:
+        events = deepcopy(events)
+
+    reco_altaz = reco_source_position_sky(events['x'],
+                                          events['y'],
+                                          events['reco_disp_dx'],
+                                          events['reco_disp_dy'],
+                                          effective_focal_length,
+                                          events['alt_tel'],
+                                          events['az_tel'])
+
+    if isinstance(events, pd.DataFrame):
+        events['reco_alt'] = reco_altaz.alt.to_value(u.rad)
+        events['reco_az'] = reco_altaz.az.to_value(u.rad)
+    else:
+        events['reco_alt'] = reco_altaz.alt.to(u.rad)
+        events['reco_az'] = reco_altaz.az.to(u.rad)
+
+    if not inplace:
+        return events
+
+def apply_src_r_cut(events, src_r_min, src_r_max):
+    """
+    apply src_r cut to filter out large off-axis MC events
+
+    Parameters
+    ----------
+    events: `pandas.DataFrame`
+    src_r_min: float
+    src_r_max: fload
+
+    Returns
+    -------
+    `pandas.DataFrame`
+    """
+    
+    src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
+    foclen = OPTICS.equivalent_focal_length.value
+    src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
+    events = events[
+        (src_r_deg >= src_r_min) & 
+        (src_r_deg <= src_r_max)
+    ]
+
+    return events

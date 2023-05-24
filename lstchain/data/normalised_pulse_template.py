@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from lstchain.reco.reconstructorCC import template_interpolation
 
 
 class NormalizedPulseTemplate:
@@ -10,7 +11,7 @@ class NormalizedPulseTemplate:
     """
 
     def __init__(self, amplitude_HG, amplitude_LG, time, amplitude_HG_err=None,
-                 amplitude_LG_err=None):
+                 amplitude_LG_err=None, resample=False, dt=None):
         """
         Save the pulse template and optional error
         and create an interpolation.
@@ -28,6 +29,8 @@ class NormalizedPulseTemplate:
         """
 
         self.time = np.array(time)
+        self.t0 = time[0]
+        self.dt = np.mean(time[1:]-time[:-1])
         self.amplitude_HG = np.array(amplitude_HG)
         self.amplitude_LG = np.array(amplitude_LG)
         if amplitude_HG_err is not None:
@@ -42,36 +45,57 @@ class NormalizedPulseTemplate:
             self.amplitude_LG_err = self.amplitude_LG * 0
         self._template = self._interpolate()
         self._template_err = self._interpolate_err()
+        if resample:
+            if dt is not None:
+                self.dt = dt
+            self.resample_template()
 
     def __call__(self, time, gain, amplitude=1, t_0=0, baseline=0):
         """
         Use the interpolated template to access the value of the pulse at
         time = time in gain regime = gain. Additionally, an alternative
         normalisation, origin of time and baseline can be used.
+        Uses compiled function instead of scipy to gain time.
+        Works only for a single pixel.
 
         Parameters
         ----------
         time: float array
             Time after the origin to estimate the value of the pulse
-        gain: string array
-            Identifier of the gain channel used for each pixel
+        gain: string
+            Identifier of the gain channel used
             Either "HG" or "LG"
         amplitude: float
             Normalisation factor to apply to the template
         t_0: float
             Shift in the origin of time
         baseline: float array
-            Baseline to be subtracted for each pixel
+            Baseline to be subtracted
 
         Return
         ----------
         y: array
-            Value of the template in each pixel at the requested times
+            Value of the template at the requested times
 
         """
 
-        y = amplitude * self._template[gain](time - t_0) + baseline
-        return np.array(y)
+        is_high_gain = np.array([gain == 'HG'])
+        y = amplitude * template_interpolation(is_high_gain, np.array([time-t_0]), self.t0, self.dt,
+                                               self.amplitude_HG, self.amplitude_LG) - baseline
+        return y[0]
+
+    def resample_template(self):
+        """
+        Use scipy interpolate to resample the pulse template table.
+        Override the times, amplitude and errors to be able to exploit the uniform binning.
+
+        """
+        times = np.arange(self.t0, self.time[-1], self.dt)
+        self.time = times
+        self.amplitude_HG = self._template['HG'](times)
+        self.amplitude_LG = self._template['LG'](times)
+        self.amplitude_HG_err = self._template_err['HG'](times)
+        self.amplitude_LG_err = self._template_err['LG'](times)
 
     def get_error(self, time, gain, amplitude=1, t_0=0):
         """
@@ -118,7 +142,7 @@ class NormalizedPulseTemplate:
         np.savetxt(filename, data.T)
 
     @classmethod
-    def load_from_file(cls, filename):
+    def load_from_file(cls, filename, **kwargs):
         """
         Load a pulse template from a text file.
         Allows for only one gain channel and no errors,
@@ -127,7 +151,7 @@ class NormalizedPulseTemplate:
         Parameters
         ----------
         cls: This class
-        filename: string
+        filename: Path or string
             Location of the template file
 
         Return
@@ -141,17 +165,17 @@ class NormalizedPulseTemplate:
         assert len(data) in [2, 3, 5]
         if len(data) == 2:  # one shape in file
             t, x = data
-            return cls(amplitude_HG=x, amplitude_LG=x, time=t)
+            return cls(amplitude_HG=x, amplitude_LG=x, time=t, **kwargs)
         if len(data) == 3:  # no error in file
             t, hg, lg = data
-            return cls(amplitude_HG=hg, amplitude_LG=lg, time=t)
+            return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)
         elif len(data) == 5:  # two gains and errors
             t, hg, lg, dhg, dlg = data
             return cls(amplitude_HG=hg, amplitude_LG=lg, time=t,
-                       amplitude_HG_err=dhg, amplitude_LG_err=dlg)
+                       amplitude_HG_err=dhg, amplitude_LG_err=dlg, **kwargs)
 
     @classmethod
-    def load_from_eventsource(cls, eventsource_camera_readout):
+    def load_from_eventsource(cls, eventsource_camera_readout, **kwargs):
         """
         Load a pulse template from an event source camera readout.
         Read the sampling rate to create a time variable reaching
@@ -171,10 +195,14 @@ class NormalizedPulseTemplate:
         """
 
         t = eventsource_camera_readout.reference_pulse_sample_time.to_value('ns')
-        hg, lg = eventsource_camera_readout.reference_pulse_shape
+        pulses = eventsource_camera_readout.reference_pulse_shape
+        if len(pulses) == 2:
+            hg, lg = pulses[0], pulses[1]
+        if len(pulses) == 1:
+            hg, lg = pulses[0], pulses[0]
         i = np.argmax(hg)
         t = t - t[i] + 9.0
-        return cls(amplitude_HG=hg, amplitude_LG=lg, time=t)
+        return cls(amplitude_HG=hg, amplitude_LG=lg, time=t, **kwargs)
 
     @staticmethod
     def _normalize(time, amplitude, error):
@@ -205,10 +233,10 @@ class NormalizedPulseTemplate:
         self.amplitude_LG, self.amplitude_LG_err = self._normalize(self.time,
                                                                    self.amplitude_LG,
                                                                    self.amplitude_LG_err)
-        return {"HG": interp1d(self.time, self.amplitude_HG, kind='cubic',
+        return {"HG": interp1d(self.time, self.amplitude_HG, kind='linear',
                                bounds_error=False, fill_value=0.,
                                assume_sorted=True),
-                "LG": interp1d(self.time, self.amplitude_LG, kind='cubic',
+                "LG": interp1d(self.time, self.amplitude_LG, kind='linear',
                                bounds_error=False, fill_value=0.,
                                assume_sorted=True)}
 
