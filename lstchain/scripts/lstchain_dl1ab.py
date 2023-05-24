@@ -202,7 +202,7 @@ def main():
     metadata = global_metadata()
 
     with tables.open_file(args.input_file, mode='r') as infile:
-        image_table = infile.root[dl1_images_lstcam_key]
+        image_table = read_table(infile, dl1_images_lstcam_key)
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
@@ -220,7 +220,7 @@ def main():
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
         if image_mask_save:
-            image_mask = infile.root[dl1_images_lstcam_key].col('image_mask')
+            image_mask = image_table['image_mask']
 
         params = read_table(infile, dl1_params_lstcam_key)
         new_params = set(parameters_to_update) - set(params.colnames)
@@ -236,116 +236,117 @@ def main():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
             outfile.root[dl1_params_lstcam_key].attrs["config"] = str(config)
 
-        for ii, row in enumerate(image_table):
+            for ii, row in enumerate(image_table):
 
-            dl1_container.reset()
+                dl1_container.reset()
 
-            image = row['image']
-            peak_time = row['peak_time']
+                image = row['image']
+                peak_time = row['peak_time']
 
-            if increase_nsb:
-                # Add noise in pixels, to adjust MC to data noise levels.
-                # TO BE DONE: in case of "pedestal cleaning" (not used now
-                # in MC) we should recalculate picture_th above!
-                image = add_noise_in_pixels(rng, image,
-                                            extra_noise_in_dim_pixels,
-                                            extra_bias_in_dim_pixels,
-                                            transition_charge,
-                                            extra_noise_in_bright_pixels)
-            if increase_psf:
-                image = random_psf_smearer(image, smeared_light_fraction,
-                                            camera_geom.neighbor_matrix_sparse.indices,
-                                            camera_geom.neighbor_matrix_sparse.indptr)
+                if increase_nsb:
+                    # Add noise in pixels, to adjust MC to data noise levels.
+                    # TO BE DONE: in case of "pedestal cleaning" (not used now
+                    # in MC) we should recalculate picture_th above!
+                    image = add_noise_in_pixels(rng, image,
+                                                extra_noise_in_dim_pixels,
+                                                extra_bias_in_dim_pixels,
+                                                transition_charge,
+                                                extra_noise_in_bright_pixels)
+                if increase_psf:
+                    image = random_psf_smearer(image, smeared_light_fraction,
+                                                camera_geom.neighbor_matrix_sparse.indices,
+                                                camera_geom.neighbor_matrix_sparse.indptr)
 
-            signal_pixels = tailcuts_clean(camera_geom,
-                                           image,
-                                           picture_th,
-                                           boundary_th,
-                                           isolated_pixels,
-                                           min_n_neighbors,
-                                           )
+                signal_pixels = tailcuts_clean(camera_geom,
+                                            image,
+                                            picture_th,
+                                            boundary_th,
+                                            isolated_pixels,
+                                            min_n_neighbors,
+                                            )
 
-            n_pixels = np.count_nonzero(signal_pixels)
-
-            if n_pixels > 0:
-
-                # if delta_time has been set, we require at least one
-                # neighbor within delta_time to accept a pixel in the image:
-                if delta_time is not None:
-                    cleaned_pixel_times = peak_time
-                    # makes sure only signal pixels are used in the time
-                    # check:
-                    cleaned_pixel_times[~signal_pixels] = np.nan
-                    new_mask = apply_time_delta_cleaning(camera_geom,
-                                                            signal_pixels,
-                                                            cleaned_pixel_times,
-                                                            1, delta_time)
-                    signal_pixels = new_mask
-
-                if use_dynamic_cleaning:
-                    new_mask = apply_dynamic_cleaning(image,
-                                                        signal_pixels,
-                                                        THRESHOLD_DYNAMIC_CLEANING,
-                                                        FRACTION_CLEANING_SIZE)
-                    signal_pixels = new_mask
-
-                # count a number of islands after all of the image cleaning steps
-                num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
-                dl1_container.n_islands = num_islands
-
-                n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
-                n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
-                max_island_label = np.argmax(n_pixels_on_island)
-
-                if use_only_main_island:
-                    signal_pixels[island_labels != max_island_label] = False
-
-                # count the surviving pixels
                 n_pixels = np.count_nonzero(signal_pixels)
-                dl1_container.n_pixels = n_pixels
 
                 if n_pixels > 0:
-                    parametrize_image(
-                        image=image,
-                        peak_time=peak_time,
-                        signal_pixels=signal_pixels,
-                        camera_geometry=camera_geom,
-                        focal_length=optics.equivalent_focal_length,
-                        dl1_container=dl1_container,
+
+                    # if delta_time has been set, we require at least one
+                    # neighbor within delta_time to accept a pixel in the image:
+                    if delta_time is not None:
+                        cleaned_pixel_times = peak_time
+                        # makes sure only signal pixels are used in the time
+                        # check:
+                        cleaned_pixel_times[~signal_pixels] = np.nan
+                        new_mask = apply_time_delta_cleaning(camera_geom,
+                                                                signal_pixels,
+                                                                cleaned_pixel_times,
+                                                                1, delta_time)
+                        signal_pixels = new_mask
+
+                    if use_dynamic_cleaning:
+                        new_mask = apply_dynamic_cleaning(image,
+                                                            signal_pixels,
+                                                            THRESHOLD_DYNAMIC_CLEANING,
+                                                            FRACTION_CLEANING_SIZE)
+                        signal_pixels = new_mask
+
+                    # count a number of islands after all of the image cleaning steps
+                    num_islands, island_labels = number_of_islands(camera_geom, signal_pixels)
+                    dl1_container.n_islands = num_islands
+
+                    n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
+                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    max_island_label = np.argmax(n_pixels_on_island)
+
+                    if use_only_main_island:
+                        signal_pixels[island_labels != max_island_label] = False
+
+                    # count the surviving pixels
+                    n_pixels = np.count_nonzero(signal_pixels)
+                    dl1_container.n_pixels = n_pixels
+
+                    if n_pixels > 0:
+                        parametrize_image(
+                            image=image,
+                            peak_time=peak_time,
+                            signal_pixels=signal_pixels,
+                            camera_geometry=camera_geom,
+                            focal_length=optics.equivalent_focal_length,
+                            dl1_container=dl1_container,
+                        )
+
+                if set(dl1_params_input).intersection(disp_params):
+                    disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
+                        dl1_container['x'].to_value(u.m),
+                        dl1_container['y'].to_value(u.m),
+                        params['src_x'][ii],
+                        params['src_y'][ii],
+                        dl1_container['psi'].to_value(u.rad)
                     )
 
-            if set(dl1_params_input).intersection(disp_params):
-                disp_dx, disp_dy, disp_norm, disp_angle, disp_sign = disp(
-                    dl1_container['x'].to_value(u.m),
-                    dl1_container['y'].to_value(u.m),
-                    params['src_x'][ii],
-                    params['src_y'][ii],
-                    dl1_container['psi'].to_value(u.rad)
-                )
+                    dl1_container['disp_dx'] = disp_dx
+                    dl1_container['disp_dy'] = disp_dy
+                    dl1_container['disp_norm'] = disp_norm
+                    dl1_container['disp_angle'] = disp_angle
+                    dl1_container['disp_sign'] = disp_sign
 
-                dl1_container['disp_dx'] = disp_dx
-                dl1_container['disp_dy'] = disp_dy
-                dl1_container['disp_norm'] = disp_norm
-                dl1_container['disp_angle'] = disp_angle
-                dl1_container['disp_sign'] = disp_sign
+                dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
+                    
+                for p in parameters_to_update:
+                    params[ii][p] = u.Quantity(dl1_container[p]).value
 
-            dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
-                
-            for p in parameters_to_update:
-                params[ii][p] = u.Quantity(dl1_container[p]).value
+                if image_mask_save:
+                    image_mask[ii] = signal_pixels
 
             if image_mask_save:
-                image_mask[ii] = signal_pixels
+                write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
-        if image_mask_save:
-            write_table(image_table, args.output_file, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
+            # reset added parameters types
+            for p in new_params:
+                params[p] = params[p].astype(type(dl1_container[p][0]))
 
-        # reset added parameters types
-        for p in new_params:
-            params[p] = params[p].astype(type(dl1_container[p][0]))
-
+            write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
+        
         write_metadata(metadata, args.output_file)
-        write_table(params, args.output_file, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
 
 if __name__ == '__main__':
