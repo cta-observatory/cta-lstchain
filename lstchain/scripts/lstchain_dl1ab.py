@@ -41,7 +41,7 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
-    global_metadata, 
+    global_metadata,
     write_metadata,
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
@@ -212,8 +212,7 @@ def main():
             parameters_to_update.extend(uncertainty_params)
 
         if increase_nsb:
-            rng = np.random.default_rng(
-                    infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
+            rng = np.random.default_rng(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         if increase_psf:
             set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
@@ -247,23 +246,25 @@ def main():
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
                     # in MC) we should recalculate picture_th above!
-                    image = add_noise_in_pixels(rng, image,
+                    image = add_noise_in_pixels(rng, 
+                                                image,
                                                 extra_noise_in_dim_pixels,
                                                 extra_bias_in_dim_pixels,
                                                 transition_charge,
                                                 extra_noise_in_bright_pixels)
                 if increase_psf:
-                    image = random_psf_smearer(image, smeared_light_fraction,
-                                                camera_geom.neighbor_matrix_sparse.indices,
-                                                camera_geom.neighbor_matrix_sparse.indptr)
+                    image = random_psf_smearer(image, 
+                                               smeared_light_fraction,
+                                               camera_geom.neighbor_matrix_sparse.indices,
+                                               camera_geom.neighbor_matrix_sparse.indptr)
 
                 signal_pixels = tailcuts_clean(camera_geom,
-                                            image,
-                                            picture_th,
-                                            boundary_th,
-                                            isolated_pixels,
-                                            min_n_neighbors,
-                                            )
+                                               image,
+                                               picture_th,
+                                               boundary_th,
+                                               isolated_pixels,
+                                               min_n_neighbors,
+                                               )
 
                 n_pixels = np.count_nonzero(signal_pixels)
 
@@ -277,16 +278,17 @@ def main():
                         # check:
                         cleaned_pixel_times[~signal_pixels] = np.nan
                         new_mask = apply_time_delta_cleaning(camera_geom,
-                                                                signal_pixels,
-                                                                cleaned_pixel_times,
-                                                                1, delta_time)
+                                                             signal_pixels,
+                                                             cleaned_pixel_times,
+                                                             1,
+                                                             delta_time)
                         signal_pixels = new_mask
 
                     if use_dynamic_cleaning:
                         new_mask = apply_dynamic_cleaning(image,
-                                                            signal_pixels,
-                                                            THRESHOLD_DYNAMIC_CLEANING,
-                                                            FRACTION_CLEANING_SIZE)
+                                                          signal_pixels,
+                                                          THRESHOLD_DYNAMIC_CLEANING,
+                                                          FRACTION_CLEANING_SIZE)
                         signal_pixels = new_mask
 
                     # count a number of islands after all of the image cleaning steps
@@ -294,7 +296,8 @@ def main():
                     dl1_container.n_islands = num_islands
 
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
-                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    # first island is no-island and should not be considered
+                    n_pixels_on_island[0] = 0
                     max_island_label = np.argmax(n_pixels_on_island)
 
                     if use_only_main_island:
@@ -330,7 +333,7 @@ def main():
                     dl1_container['disp_sign'] = disp_sign
 
                 dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
-                    
+
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
@@ -345,7 +348,7 @@ def main():
                 params[p] = params[p].astype(type(dl1_container[p][0]))
 
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
-        
+
         write_metadata(metadata, args.output_file)
 
 
