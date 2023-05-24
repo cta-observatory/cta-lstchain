@@ -74,7 +74,6 @@ def test_dl3_energy_dependent_cuts():
 
     temp_cuts.gh_max_efficiency = 0.8
     temp_cuts.theta_containment = 0.68
-    temp_cuts.n_off_wobbles = 3
     temp_cuts.alpha_containment = 0.68
     temp_cuts.max_alpha_cut = 20
     temp_cuts.fill_alpha_cut = 20

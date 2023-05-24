@@ -13,8 +13,6 @@ from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 __all__ = ["EventSelector", "DL3Cuts", "DataBinning"]
 
-WOBBLE_OFFSET_STD = 0.4 * u.deg
-
 
 class EventSelector(Component):
     """
@@ -84,9 +82,17 @@ class DL3Cuts(Component):
         default_value=0.1,
     ).tag(config=True)
 
-    n_off_wobbles = Int(
-        help="Number of wobbles considered for evaluating OFF regions",
-        default_value=3,
+    max_theta_cut = Float(
+        help="Maximum theta cut (deg) in an energy bin",
+        default_value=0.32,
+    ).tag(config=True)
+
+    fill_theta_cut = Float(
+        help=(
+            "Fill value of theta cut (deg) in an energy bin with fewer "
+            + "than minimum number of events present"
+        ),
+        default_value=0.32,
     ).tag(config=True)
 
     theta_containment = Float(
@@ -238,10 +244,6 @@ class DL3Cuts(Component):
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-        max_theta = (
-            WOBBLE_OFFSET_STD.value * np.sin(np.pi / (self.n_off_wobbles + 1))
-        ) * u.deg
-
         if use_same_disp_sign:
             disp_mask = data["reco_disp_sign"] == data["disp_sign"]
             data = data[disp_mask]
@@ -251,8 +253,8 @@ class DL3Cuts(Component):
             data["reco_energy"],
             bins=energy_bins,
             min_value=self.min_theta_cut * u.deg,
-            max_value=max_theta,
-            fill_value=max_theta,
+            max_value=self.max_theta_cut * u.deg,
+            fill_value=self.fill_theta_cut * u.deg,
             percentile=100 * self.theta_containment,
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
