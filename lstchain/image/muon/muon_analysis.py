@@ -101,7 +101,7 @@ def update_parameters(config, n_pixels):
     return params
 
 
-def fit_muon(x, y, image, geom, tailcuts):
+def fit_muon(x, y, image, geom, tailcuts=None):
     """
     Fit the muon ring
 
@@ -113,7 +113,9 @@ def fit_muon(x, y, image, geom, tailcuts):
         Number of photoelectrons in each pixel
     geom : CameraGeometry
     tailcuts :`list`
-        Tail cuts for image cleaning
+        Tail cuts for image cleaning.
+        Default is None, such that the tailcuts are calculated for each image.
+        If tailcuts are an input, those indicated will be used.
 
     Returns
     -------
@@ -125,13 +127,34 @@ def fit_muon(x, y, image, geom, tailcuts):
     image_clean: `np.ndarray`
         Image after cleaning
     """
+    
+    if tailcuts == None:
+        #we want to quantize the noise of the image. To do so, we will use the negative Q cumulative distribution.
+        negative_Q = np.sort(image[image <= 0])
+        
+        hist, bins = np.histogram(negative_Q,range=(-15,0),bins=30)
+        bins=bins[:-1]
+        
+        normalised_cumulative_hist = np.asarray(np.cumsum(hist)/np.sum(hist))
 
+        idx = (np.abs(normalised_cumulative_hist - 0.318)).argmin() #Find q closest to standard deviation
+        dev = np.abs(bins[idx])
+        #MORALEJO: we want to get, from a single image, a quantity related to the width of the noise distribution, 
+        #but only using the negative side of the distribution of pixel charges (because the positive side includes actual signal, 
+        #i.e. the light from the muon). So we look for the value of q below which we find 31.8% of the pixels in the image. 
+        #We consider that "1 sigma" to use it as a reference to determine the image cleaning.
+        #"dev" is just the absolute value of that (it would correspond to the standard deviation in case the distribution was gaussian).
+
+        tailcuts = [4*dev,2*dev]   # tailcuts are placed at 4*dev of each image.
+        
+        
     fitter = MuonRingFitter(fit_method='kundu_chaudhuri')
 
     clean_mask = tailcuts_clean(
         geom, image,
         picture_thresh=tailcuts[0],
         boundary_thresh=tailcuts[1],
+        min_number_picture_neighbors = 2
     )
 
     ring = fitter(x, y, image, clean_mask)
@@ -210,8 +233,8 @@ def analyze_muon_event(subarray, tel_id, event_id, image, good_ring_config, plot
     params = update_parameters(good_ring_config, geom.n_pixels)
 
     x, y = pixel_coords_to_telescope(geom, equivalent_focal_length)
-    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom,
-                                                            params['tailcuts'])
+    muonringparam, clean_mask, dist, image_clean = fit_muon(x, y, image, geom)
+                                                            # params['tailcuts'])
 
     mirror_radius = np.sqrt(mirror_area / np.pi)  # meters
     dist_mask = np.abs(dist - muonringparam.radius
