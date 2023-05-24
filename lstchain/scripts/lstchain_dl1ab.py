@@ -201,8 +201,6 @@ def main():
 
     metadata = global_metadata()
 
-    # image_table = read_table(args.input_file, dl1_images_lstcam_key)
-
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
