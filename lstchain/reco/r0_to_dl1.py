@@ -26,6 +26,9 @@ from ctapipe.image import number_of_islands, apply_time_delta_cleaning
 from ctapipe.io import EventSource, HDF5TableWriter, DataWriter 
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
+from ctapipe_io_lst.constants import (
+    PIXEL_INDEX
+)
 
 from . import disp
 from .utils import sky_to_camera
@@ -455,7 +458,7 @@ def r0_to_dl1(
             name = f"interleaved_{name}"
         interleaved_output_file = Path(dir, name)
         interleaved_writer = DataWriter(event_source=source,output_path=interleaved_output_file,config=interleaved_writer_config)
-       
+        interleaved_writer._writer.exclude("/r1/event/telescope/.*", "selected_gain_channel")
 
     with HDF5TableWriter( 
         filename=output_filename,
@@ -527,13 +530,23 @@ def r0_to_dl1(
                     # write the calibrated R1 waveform without gain selection
                     source.r0_r1_calibrator.select_gain = False
                     source.r0_r1_calibrator.calibrate(event)
+                
                     if interleaved_writer is not None:
                         interleaved_writer(event)
-                    
-                    # calibrate and gain select the event by hand for DL1
-                    source.r0_r1_calibrator.select_gain = True
-                    source.r0_r1_calibrator.calibrate(event)
 
+                    # gain select the events
+                    source.r0_r1_calibrator.select_gain = True
+
+                    r1 = event.r1.tel[tel_id]                   
+                    r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
+                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+
+                    event.calibration.tel[tel_id].dl1.time_shift = \
+                    event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
+                    
+                    event.calibration.tel[tel_id].dl1.relative_factor = \
+                    event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
+                    
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
