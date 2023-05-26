@@ -832,20 +832,20 @@ def write_calibration_data(writer, mon_index, mon_event, new_ped=False, new_ff=F
     if new_ped:
         # write ped container
         writer.write(
-            table_name="telescope/monitoring/catA/pedestal",
+            table_name="telescope/monitoring/pedestal",
             containers=[mon_index, mon_event.pedestal],
         )
 
     if new_ff:
         # write calibration container
         writer.write(
-            table_name="telescope/monitoring/catA/flatfield",
+            table_name="telescope/monitoring/flatfield",
             containers=[mon_index, mon_event.flatfield],
         )
 
         # write ff container
         writer.write(
-            table_name="telescope/monitoring/catA/calibration",
+            table_name="telescope/monitoring/calibration",
             containers=[mon_index, mon_event.calibration],
         )
 
