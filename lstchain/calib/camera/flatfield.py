@@ -167,9 +167,6 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
-        #pixel_mask = np.logical_or(
-        #    event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
-        #    event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
         pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         # time
@@ -280,7 +277,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             trace_time,
             mask=masked_pixels_of_sample
         )
-
+ 
         # median over the sample per pixel
         pixel_median = np.ma.median(masked_trace_time, axis=0)
 
@@ -320,8 +317,8 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         masked_trace_integral = np.ma.array(
             trace_integral,
             mask=masked_pixels_of_sample
-        )   
-    
+        )
+
         # mean and std over the sample per pixel
         max_sigma = self.sigma_clipping_max_sigma
         pixel_mean, pixel_median, pixel_std = sigma_clipped_stats(

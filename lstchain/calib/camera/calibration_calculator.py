@@ -10,8 +10,6 @@ from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
 from ctapipe_io_lst import constants
 
-
-
 __all__ = [
     'CalibrationCalculator',
     'LSTCalibrationCalculator'
