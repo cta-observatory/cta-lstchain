@@ -277,7 +277,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
             trace_time,
             mask=masked_pixels_of_sample
         )
- 
+
         # median over the sample per pixel
         pixel_median = np.ma.median(masked_trace_time, axis=0)
 

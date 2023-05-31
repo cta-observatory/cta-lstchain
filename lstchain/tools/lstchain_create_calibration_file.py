@@ -19,7 +19,6 @@ __all__ = [
     'CalibrationHDF5Writer'
 ]
 
-
 class CalibrationHDF5Writer(Tool):
     """
      Tool that generates a HDF5 file with camera calibration coefficients.
@@ -146,6 +145,8 @@ class CalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
+        count_ff = 0
+        count_ped = 0
 
         self.log.debug("Start loop")
         self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
@@ -198,11 +199,11 @@ class CalibrationHDF5Writer(Tool):
                 if self.processor.flatfield.calculate_relative_gain(event):
                     new_ff = True
                     count_ff = count+1
-                
-            # write flatfield results when enough statistics (also for pedestals) 
+
+            # write flatfield results when enough statistics (also for pedestals)
             if (new_ff and new_ped):
                 self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
-                                
+
                 self.log.debug(f"Ready flatfield data at event n. {count_ff} "
                                 f"stat = {ff_data.n_events} events")
 
@@ -212,12 +213,12 @@ class CalibrationHDF5Writer(Tool):
                 self.log.debug(f"Ready pedestal data at event n. {count_ped}"
                                 f"stat = {ped_data.n_events} events")
 
-                # write only pedestal data used for calibration                                 
-                self.writer.write('pedestal', ped_data)                  
+                # write only pedestal data used for calibration
+                self.writer.write('pedestal', ped_data)
 
                 new_ff = False
                 new_ped = False
-                
+
                 # Then, calculate calibration coefficients
                 self.processor.calculate_calibration_coefficients(event)
 

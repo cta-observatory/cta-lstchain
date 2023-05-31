@@ -214,12 +214,12 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # define unusables on number of estimated pe
         npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
-        
+
         # cut on the base of pe statistical uncertanty (neglect the 7% spread due to detection QE)
         npe_outliers = (
             np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * np.sqrt(npe_median)[:,np.newaxis],
                           npe_deviation > self.npe_median_cut_outliers[1] * np.sqrt(npe_median)[:,np.newaxis]))
-        
+
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
         

@@ -2,7 +2,7 @@
 Extract flat field coefficients from flasher data files.
 """
 import numpy as np
-from pathlib import Path 
+from pathlib import Path
 from copy import deepcopy
 from traitlets import Unicode,  Bool
 from tqdm.auto import tqdm
@@ -71,10 +71,10 @@ class CatBCalibrationHDF5Writer(Tool):
         ("i", "input_file"): 'EventSource.input_url',
         ("m", "max_events"): 'EventSource.max_events',
         ("o", "output_file"): 'CatBCalibrationHDF5Writer.output_file',
-        ("k", "cat_A_calibration_file"): 'CatBCalibrationHDF5Writer.cat_A_calibration_file',  
+        ("k", "cat_A_calibration_file"): 'CatBCalibrationHDF5Writer.cat_A_calibration_file',
         ("s", "systematics_file"): "LSTCalibrationCalculator.systematic_correction_path",
         ("input_file_pattern"): 'CatBCalibrationHDF5Writer.input_file_pattern',
-        ("input_path"): 'CatBCalibrationHDF5Writer.input_path',      
+        ("input_path"): 'CatBCalibrationHDF5Writer.input_path',
 
     }
 
@@ -105,13 +105,12 @@ class CatBCalibrationHDF5Writer(Tool):
         self.eventsource = None
         self.processor = None
         self.writer = None
-        
+
     def setup(self):
 
         self.log.debug("Opening file")
 
         self.input_paths = sorted(Path(f"{self.input_path}").rglob(f"{self.input_file_pattern}"))
-        
         self.subarray = SubarrayDescription.from_hdf(self.input_paths[0])
 
         self.processor = CalibrationCalculator.from_name(
@@ -132,7 +131,7 @@ class CatBCalibrationHDF5Writer(Tool):
 
         # initialize the monitoring data
         self.cat_A_monitoring_data = read_calibration_file(self.cat_A_calibration_file)
-        
+
     def start(self):
         '''Calibration coefficient calculator'''
 
@@ -142,14 +141,14 @@ class CatBCalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
-    
+
         stop = False
         self.log.debug("Start loop")
-        
+
         # initialize the monitoring data with the cat-A calibration
         monitoring_data = deepcopy(self.cat_A_monitoring_data)
-    
-        for path in self.input_paths:                    
+
+        for path in self.input_paths:
             self.log.debug(f"read {path}")
 
             with EventSource(path,parent=self) as eventsource:
@@ -158,10 +157,10 @@ class CatBCalibrationHDF5Writer(Tool):
 
                      # initialize the event monitoring data for event (to be improved)
                     event.mon.tel[tel_id] = monitoring_data
-                             
+
                     # save the config, to be retrieved as data.meta['config']
                     if count == 0:
-                        
+
                         ped_data = event.mon.tel[tel_id].pedestal
                         add_config_metadata(ped_data, self.config)
                         add_global_metadata(ped_data, metadata)
@@ -192,7 +191,7 @@ class CatBCalibrationHDF5Writer(Tool):
                             new_ff = True
                             count_ff = count+1
                         
-                    # write flatfield results when enough statistics (also for pedestals) 
+                    # write flatfield results when enough statistics (also for pedestals)
                     if (new_ff and new_ped):
                         self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
                                         
@@ -205,12 +204,12 @@ class CatBCalibrationHDF5Writer(Tool):
                         self.log.debug(f"Ready pedestal data at event n. {count_ped} "
                                         f"stat = {ped_data.n_events} events")
 
-                        # write only pedestal data used for calibration                                 
-                        self.writer.write('pedestal', ped_data)                  
+                        # write only pedestal data used for calibration
+                        self.writer.write('pedestal', ped_data)
 
                         new_ff = False
                         new_ped = False
-                        
+
                         # Then, calculate calibration coefficients
                         self.processor.calculate_calibration_coefficients(event)
 
