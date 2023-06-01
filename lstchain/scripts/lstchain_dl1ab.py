@@ -71,7 +71,7 @@ parser.add_argument(
 # Optional arguments
 parser.add_argument(
     '--catB-calibration-file',
-    dest='catB_calibration_file',
+    type=Path,
     help='path to the Cat-B calibration file ',
 )
 
@@ -107,31 +107,31 @@ def main():
     # read Cat-B calibration data if available
     catB_calib = None
     if args.catB_calibration_file is not None:
-        if Path(args.catB_calibration_file).exists():
-            log.info(f"Cat-B calbration: {args.catB_calibration_file}")
-            catB_calib = read_table(args.catB_calibration_file, "/tel_1/calibration")
-
-            # add the calibration index
-            catB_calib['calibration_id'] = np.arange(len(catB_calib))
-            catB_calib['pedestal_id'] = np.arange(len(catB_calib))
-            catB_calib['flatfield_id'] = np.arange(len(catB_calib))
-
-            catB_pedestal = read_table(args.catB_calibration_file, "/tel_1/pedestal")
-            catB_pedestal['pedestal_id'] = np.arange(len(catB_pedestal))
-
-            catB_flatfield = read_table(args.catB_calibration_file, "/tel_1/flatfield")
-            catB_flatfield['pedestal_id'] = np.arange(len(catB_flatfield))
-
-            catB_calib_time = np.array(catB_calib["time_min"])
-            catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
-            catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
-
-            catB_time_correction = np.array(catB_calib["time_correction"])
-            catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
-            pixel_index = np.arange(constants.N_PIXELS)
-        else:
+        if not args.catB_calibration_file.exists():
             log.critical(f"Calibration file {args.catB_calibration_file} not found")
             sys.exit(1)
+
+        log.info(f"Cat-B calbration file: {args.catB_calibration_file}")
+        catB_calib = read_table(args.catB_calibration_file, "/tel_1/calibration")
+
+        # add the calibration index
+        catB_calib['calibration_id'] = np.arange(len(catB_calib))
+        catB_calib['pedestal_id'] = np.arange(len(catB_calib))
+        catB_calib['flatfield_id'] = np.arange(len(catB_calib))
+
+        catB_pedestal = read_table(args.catB_calibration_file, "/tel_1/pedestal")
+        catB_pedestal['pedestal_id'] = np.arange(len(catB_pedestal))
+
+        catB_flatfield = read_table(args.catB_calibration_file, "/tel_1/flatfield")
+        catB_flatfield['pedestal_id'] = np.arange(len(catB_flatfield))
+
+        catB_calib_time = np.array(catB_calib["time_min"])
+        catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
+        catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
+
+        catB_time_correction = np.array(catB_calib["time_correction"])
+        catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
+        pixel_index = np.arange(constants.N_PIXELS)
 
 
     std_config = get_standard_config()
