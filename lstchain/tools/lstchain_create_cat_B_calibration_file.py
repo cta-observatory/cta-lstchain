@@ -19,7 +19,7 @@ from lstchain.io.calibration import read_calibration_file
 
 
 __all__ = [
-    'CalibrationHDF5Writer'
+    'CatBCalibrationHDF5Writer'
 ]
 
 class CatBCalibrationHDF5Writer(Tool):

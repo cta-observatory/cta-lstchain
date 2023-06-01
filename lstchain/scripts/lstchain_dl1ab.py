@@ -43,7 +43,6 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
-    dl1_params_tel_mon_cal_key,
     global_metadata, 
     write_metadata,
 )

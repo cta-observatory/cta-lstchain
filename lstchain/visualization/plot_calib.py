@@ -4,7 +4,6 @@ from ctapipe.visualization import CameraDisplay
 from ctapipe_io_lst import load_camera_geometry
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from lstchain.io import read_calibration_file
 
 __all__ = [
     "plot_calibration_results",
