@@ -122,7 +122,6 @@ def main():
             catB_flatfield = read_table(args.catB_calibration_file, "/tel_1/flatfield")
             catB_flatfield['pedestal_id'] = np.arange(len(catB_flatfield))
 
-            #catB_calib_time = (np.array(catB_calib["time_max"])+np.array(catB_calib["time_min"]))/2
             catB_calib_time = np.array(catB_calib["time_min"])
             catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
             catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
@@ -231,9 +230,11 @@ def main():
         'n_pixels',
         'wl',
         'log_intensity',
-        'sin_az_tel',
-        'calibration_id'
+        'sin_az_tel'
     ]
+
+    if catB_calib:
+        parameters_to_update.apend("calibration_id") 
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
