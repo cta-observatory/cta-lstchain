@@ -451,22 +451,16 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     )
     assert output_dl1ab.is_file()
 
-    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-
-    np.testing.assert_allclose(
-        dl1.to_numpy(dtype='float'),
-        dl1ab.to_numpy(dtype='float'),
-        rtol=1e-3,
-        equal_nan=True,
-    )
+    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
+    pd.testing.assert_frame_equal(dl1, dl1ab)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     dl1_df = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     dl1ab_df = pd.read_hdf(simulated_dl1ab, key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1_df, dl1ab_df, rtol=1e-4, equal_nan=True)
+    pd.testing.assert_frame_equal(dl1_df, dl1ab_df)
 
 
 def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
