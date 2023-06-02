@@ -76,7 +76,7 @@ from lstchain.io import (
     EventSelector,
 )
 from lstchain.io import read_mc_dl2_to_QTable
-from lstchain.io.io import check_mc_type
+from lstchain.io.io import check_mc_type, get_mc_fov_offset
 from lstchain.__init__ import __version__
 
 __all__ = ["IRFFITSWriter"]
@@ -376,9 +376,6 @@ class IRFFITSWriter(Tool):
         reco_energy_bins = self.data_bin.reco_energy_bins()
         migration_bins = self.data_bin.energy_migration_bins()
         source_offset_bins = self.data_bin.source_offset_bins()
-        mean_fov_offset = round(
-            gammas["true_source_fov_offset"].mean().to_value(), 4
-        )
 
         gammas = self.event_sel.filter_cut(gammas)
         gammas = self.cuts.allowed_tels_filter(gammas)
@@ -439,15 +436,10 @@ class IRFFITSWriter(Tool):
                     )
 
         if self.mc_particle["gamma"]["mc_type"] in ["point_like", "ring_wobble"]:
-            mean_fov_offset = round(
-                gammas["true_source_fov_offset"].mean().to_value(), 4
-            )
-            fov_offset_bins = [
-                mean_fov_offset - 0.1, mean_fov_offset + 0.1
-            ] * u.deg
-
-            self.mc_particle["gamma"]["G_OFFSET"] = mean_fov_offset
-            self.log.info("Single offset for point like gamma MC")
+            # The 4 is semi-arbitray. This keeps the same precision as the previous code
+            mean_fov_offset = np.round(get_mc_fov_offset(self.mc_particle["gamma"]["file"]), 4)
+            self.log.info(f"Single offset for point like gamma MC with offset {mean_fov_offset}")
+            fov_offset_bins = [mean_fov_offset - 0.1, mean_fov_offset + 0.1] * u.deg
         else:
             fov_offset_bins = self.data_bin.fov_offset_bins()
             self.log.info("Multiple offset for diffuse gamma MC")
@@ -517,10 +509,6 @@ class IRFFITSWriter(Tool):
         )
         extra_headers["AZ_PNT"] = (
             self.mc_particle["gamma"]["AZ_PNT"],
-            "deg"
-        )
-        extra_headers["G_OFFSET"] = (
-            mean_fov_offset,
             "deg"
         )
         extra_headers["B_TOTAL"] = (
