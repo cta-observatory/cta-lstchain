@@ -168,7 +168,7 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         status_data = event.mon.tel[self.tel_id].pixel_status
         calib_data = event.mon.tel[self.tel_id].calibration
 
-        # find unususable from pedestal and flat-field data
+        # find unusable pixel from pedestal and flat-field data
         unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                    status_data.flatfield_failing_pixels)
         
