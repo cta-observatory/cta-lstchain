@@ -309,8 +309,8 @@ def add_icrs_position_params(data, source_pos, time_utc):
 
 def set_expected_pos_to_reco_altaz(data):
     """
-    Set expected source positions to reconstructed alt, az positions for
-    source-dependent analysis.
+    Fill the reconstructed alt, az positions with the expected source positions,
+    for source-dependent analysis.
 
     Note: This is just a trick to easily extract ON/OFF events in gammapy
     analysis.
