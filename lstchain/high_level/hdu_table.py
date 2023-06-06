@@ -25,8 +25,8 @@ __all__ = [
     "create_event_list",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
+    "fill_reco_altaz_w_expected_pos",
     "get_timing_params",
-    "set_expected_pos_to_reco_altaz",
     "get_pointing_params",
     "get_timing_params",
 ]
@@ -307,7 +307,7 @@ def add_icrs_position_params(data, source_pos, time_utc):
     return data
 
 
-def set_expected_pos_to_reco_altaz(data):
+def fill_reco_altaz_w_expected_pos(data):
     """
     Fill the reconstructed alt, az positions with the expected source positions,
     for source-dependent analysis.
@@ -315,7 +315,6 @@ def set_expected_pos_to_reco_altaz(data):
     Note: This is just a trick to easily extract ON/OFF events in gammapy
     analysis.
     """
-    # set expected source positions as reco positions
     obstime = Time(data["dragon_time"], scale="utc", format="unix")
     expected_src_x = data["expected_src_x"] * u.m
     expected_src_y = data["expected_src_y"] * u.m

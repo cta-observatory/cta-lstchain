@@ -9,9 +9,10 @@ and also given in some example configs in docs/examples/
 For using IRF interpolation methods, to get IRF with sky pointing the same or
 closer (in the interpolation parameter space) to that of the data provided,
 one has to provide,
-1. the path to the IRFs,
-2. glob search pattern for selecting the IRFs to be used, and
-3. a final interpolated IRF file name.
+
+- the path to the IRFs,
+- glob search pattern for selecting the IRFs to be used, and
+- a final interpolated IRF file name.
 
 If instead of using IRF interpolation, one needs to add only the nearest IRF
 node to the given data, in the interpolation space, then one needs to pass the
@@ -57,8 +58,8 @@ from lstchain.high_level import (
     check_in_delaunay_triangle,
     compare_irfs,
     create_event_list,
+    fill_reco_altaz_w_expected_pos,
     interpolate_irf,
-    set_expected_pos_to_reco_altaz,
 )
 from lstchain.paths import (
     dl2_to_dl3_filename,
@@ -451,27 +452,29 @@ class DataReductionFITSWriter(Tool):
                     self.cuts.global_alpha_cut = hdul[1].header["AL_CUT"]
                 data_temp = self.cuts.apply_global_alpha_cut(data_temp)
 
-            # set expected source positions as reco positions
-            data_temp = set_expected_pos_to_reco_altaz(data_temp)
+            # Fill the reco alt/az positions with expected source positions
+            data_temp = fill_reco_altaz_w_expected_pos(data_temp)
 
             if i == 0:
                 self.data = data_temp
             else:
                 self.data = vstack([self.data, data_temp])
-         
+
         if not self.keep_duplicated_events:
             if len(srcdep_assumed_positions) > 2:
                 self.log.warning(
-                    "If multiple off positions are assumed, the process to remove duplicated events can introduce a bias"
+                    "If multiple off positions are assumed, the process to "
+                    "remove duplicated events can introduce a bias"
                 )
             n_events_before = len(self.data)
-            
+
             remove_duplicated_events(self.data)
             n_events_after = len(self.data)
-            
+
             duplicated_events_ratio = (n_events_before - n_events_after)/n_events_after
             self.log.info(
-                f"Remove duplicated events: a ratio of duplicated events is {duplicated_events_ratio}"
+                "Remove duplicated events: a ratio of duplicated events is "
+                f"{duplicated_events_ratio}"
             )
 
     def start(self):
