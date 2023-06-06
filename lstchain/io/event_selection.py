@@ -152,13 +152,17 @@ class DL3Cuts(Component):
         constant fill_value, usually at the energy threshold limits, with cut
         evaluated at the nearest bin with number of events more than the given
         minimum.
+
+        In the case, where the low-events bin is in between high-events bins,
+        the cut value for that low-events bin is taken as the mean of the
+        neighbouring cut values.
         """
         cut_table_new = cut_table.copy()
 
-        low_event_bins = np.argwhere(
+        low_event_bins = np.nonzero(
             cut_table["n_events"] < self.min_event_p_en_bin
-        ).ravel()
-        high_event_bins = np.where(
+        )[0]
+        high_event_bins = np.nonzero(
             cut_table["n_events"] >= self.min_event_p_en_bin
         )[0]
 
@@ -171,6 +175,11 @@ class DL3Cuts(Component):
                 cut_table_new["cut"].value[low_] = cut_table["cut"].value[
                     high_event_bins[-1]
                 ]
+            else:
+                cut_table_new["cut"].value[low_] = np.mean([
+                    cut_table["cut"].value[low_-1],
+                    cut_table["cut"].value[low_+1]
+                ])
 
         return cut_table_new
 

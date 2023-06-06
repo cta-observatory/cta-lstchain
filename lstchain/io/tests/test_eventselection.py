@@ -142,15 +142,26 @@ def test_update_fill_cut():
             "cut": u.Quantity(np.array([0.4, 0.07, 0.1, 0.04])),
         }
     )
+    temp_cut_table_4 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 4, 10, 3, 15, 14, 4, 2])),
+            "cut": u.Quantity(np.array(
+                [0.4, 0.4, 0.07, 0.4, 0.1, 0.04, 0.4, 0.4]
+            )),
+        }
+    )
+
 
     cut_table_new_1 = temp_cuts.update_fill_cuts(temp_cut_table_1)
     cut_table_new_2 = temp_cuts.update_fill_cuts(temp_cut_table_2)
     cut_table_new_3 = temp_cuts.update_fill_cuts(temp_cut_table_3)
+    cut_table_new_4 = temp_cuts.update_fill_cuts(temp_cut_table_4)
 
     assert cut_table_new_1["cut"][0] == 0.07 * u.m
     assert cut_table_new_1["cut"][-1] == 0.1 * u.m
     assert cut_table_new_2["cut"][-1] == 0.1 * u.s
     assert cut_table_new_3["cut"][0] == 0.07
+    assert cut_table_new_4["cut"][3] == 0.085
 
 
 def test_data_binning():
