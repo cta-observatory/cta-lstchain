@@ -9,9 +9,9 @@ from .hdu_table import (
     create_event_list,
     create_hdu_index_hdu,
     create_obs_index_hdu,
+    fill_reco_altaz_w_expected_pos,
     get_pointing_params,
     get_timing_params,
-    set_expected_pos_to_reco_altaz,
 )
 from .interpolate import (
     check_in_delaunay_triangle,
@@ -31,12 +31,12 @@ __all__ = [
     "create_event_list",
     "create_hdu_index_hdu",
     "create_obs_index_hdu",
+    "fill_reco_altaz_w_expected_pos",
     "get_nearest_az_node",
     "get_pointing_params",
     "get_timing_params",
     "interp_params",
     "interpolate_irf",
     "load_irf_grid",
-    "set_expected_pos_to_reco_altaz",
     "setup_logging",
 ]
