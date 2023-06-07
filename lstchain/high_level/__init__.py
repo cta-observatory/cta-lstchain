@@ -18,6 +18,8 @@ from .interpolate import (
     compare_irfs,
     get_nearest_az_node,
     interp_params,
+    interpolate_al_cuts,
+    interpolate_gh_cuts,
     interpolate_irf,
     load_irf_grid,
 )
@@ -36,6 +38,8 @@ __all__ = [
     "get_pointing_params",
     "get_timing_params",
     "interp_params",
+    "interpolate_al_cuts",
+    "interpolate_gh_cuts",
     "interpolate_irf",
     "load_irf_grid",
     "setup_logging",
