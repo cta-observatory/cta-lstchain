@@ -168,32 +168,32 @@ def main():
     camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
-    parameters_to_update = [
-        'intensity',
-        'x',
-        'y',
-        'r',
-        'phi',
-        'length',
-        'width',
-        'psi',
-        'skewness',
-        'kurtosis',
-        'concentration_cog',
-        'concentration_core',
-        'concentration_pixel',
-        'leakage_intensity_width_1',
-        'leakage_intensity_width_2',
-        'leakage_pixels_width_1',
-        'leakage_pixels_width_2',
-        'n_islands',
-        'intercept',
-        'time_gradient',
-        'n_pixels',
-        'wl',
-        'log_intensity',
-        'sin_az_tel',
-    ]
+    parameters_to_update = {
+        'intensity': np.float64,
+        'x': np.float32,
+        'y': np.float32,
+        'r': np.float32,
+        'phi': np.float32,
+        'length': np.float32,
+        'width': np.float32,
+        'psi': np.float32,
+        'skewness': np.float32,
+        'kurtosis': np.float32,
+        'concentration_cog': np.float32,
+        'concentration_core': np.float32,
+        'concentration_pixel': np.float32,
+        'leakage_intensity_width_1': np.float32,
+        'leakage_intensity_width_2': np.float32,
+        'leakage_pixels_width_1': np.float32,
+        'leakage_pixels_width_2': np.float32,
+        'n_islands': np.int32,
+        'intercept': np.float64,
+        'time_gradient': np.float64,
+        'n_pixels': np.int32,
+        'wl': np.float32,
+        'log_intensity': np.float64,
+        'sin_az_tel': np.float32,
+    }
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
@@ -222,9 +222,9 @@ def main():
             image_mask = image_table['image_mask']
 
         params = read_table(infile, dl1_params_lstcam_key)
-        new_params = set(parameters_to_update) - set(params.colnames)
+        new_params = set(parameters_to_update.keys()) - set(params.colnames)
         for p in new_params:
-            params[p] = np.empty(len(params), dtype=np.float32)
+            params[p] = np.empty(len(params), dtype=parameters_to_update[p])
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
@@ -342,10 +342,6 @@ def main():
 
             if image_mask_save:
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
-
-            # reset added parameters types
-            for p in new_params:
-                params[p] = params[p].astype(type(dl1_container[p][0]))
 
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
