@@ -19,7 +19,6 @@ __all__ = [
     'CalibrationHDF5Writer'
 ]
 
-
 class CalibrationHDF5Writer(Tool):
     """
      Tool that generates a HDF5 file with camera calibration coefficients.
@@ -146,6 +145,8 @@ class CalibrationHDF5Writer(Tool):
         tel_id = self.processor.tel_id
         new_ped = False
         new_ff = False
+        count_ff = 0
+        count_ped = 0
 
         self.log.debug("Start loop")
         self.log.debug(f"If not simulation, skip first {self.events_to_skip} events")
@@ -184,38 +185,39 @@ class CalibrationHDF5Writer(Tool):
                 continue
 
             # if pedestal event
-            # use a cut on the charge for MC events if trigger not defined
+            # (use a cut on the charge for MC events if trigger not defined)
             if self._is_pedestal(event, tel_id):
-                new_ped = self.processor.pedestal.calculate_pedestals(event)
+
+                if self.processor.pedestal.calculate_pedestals(event):
+                    new_ped = True
+                    count_ped = count+1
 
             # if flat-field event
-            # use a cut on the charge for MC events if trigger not defined
+            # (use a cut on the charge for MC events if trigger not defined)
             elif self._is_flatfield(event, tel_id):
 
-               new_ff = self.processor.flatfield.calculate_relative_gain(event)
+                if self.processor.flatfield.calculate_relative_gain(event):
+                    new_ff = True
+                    count_ff = count+1
 
-            # write pedestal results when enough statistics or end of file
-            if new_ped:
-                # update the monitoring container with the last statistics
-                self.processor.pedestal.store_results(event)
+            # write flatfield results when enough statistics (also for pedestals)
+            if (new_ff and new_ped):
+                self.log.debug(f"Write calibration at event n. {count+1}, event id {event.index.event_id} ")
 
-                # write the event
-                self.log.info(f"Write pedestal data at event n. {count+1}, id {event.index.event_id} "
-                               f"stat = {ped_data.n_events} events")
-
-                # write on file
-                self.writer.write('pedestal', ped_data)
-                new_ped = False
-
-            # write flatfield results when enough statistics (also for pedestals) or end of file
-            if new_ff and ped_data.n_events > 0:
-                # update the monitoring container with the last statistics
-                self.log.info(f"Write flatfield data at event n. {count+1}, id {event.index.event_id} "
-                               f"stat = {ff_data.n_events} events")
+                self.log.debug(f"Ready flatfield data at event n. {count_ff} "
+                                f"stat = {ff_data.n_events} events")
 
                 # write on file
                 self.writer.write('flatfield', ff_data)
+
+                self.log.debug(f"Ready pedestal data at event n. {count_ped}"
+                                f"stat = {ped_data.n_events} events")
+
+                # write only pedestal data used for calibration
+                self.writer.write('pedestal', ped_data)
+
                 new_ff = False
+                new_ped = False
 
                 # Then, calculate calibration coefficients
                 self.processor.calculate_calibration_coefficients(event)

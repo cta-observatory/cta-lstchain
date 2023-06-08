@@ -804,6 +804,7 @@ def correct_bias_focal_length(events, effective_focal_length=29.30565*u.m, inpla
     if not inplace:
         return events
 
+
 def apply_src_r_cut(events, src_r_min, src_r_max):
     """
     apply src_r cut to filter out large off-axis MC events
@@ -818,12 +819,12 @@ def apply_src_r_cut(events, src_r_min, src_r_max):
     -------
     `pandas.DataFrame`
     """
-    
+
     src_r_m = np.sqrt(events['src_x'] ** 2 + events['src_y'] ** 2)
     foclen = OPTICS.equivalent_focal_length.value
     src_r_deg = np.rad2deg(np.arctan(src_r_m / foclen))
     events = events[
-        (src_r_deg >= src_r_min) & 
+        (src_r_deg >= src_r_min) &
         (src_r_deg <= src_r_max)
     ]
 

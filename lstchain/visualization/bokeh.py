@@ -431,6 +431,7 @@ def show_camera(content, camgeom, pad_width, label, titles=None,
     </style>
     """)
 
+
     slider = None
     if numsets > 1:
         sstyle = ["fixed-length-slider"]

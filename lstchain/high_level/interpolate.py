@@ -21,8 +21,18 @@ from pyirf.interpolation import (
 )
 from scipy.spatial import Delaunay, distance, QhullError
 
-log = logging.getLogger(__name__)
+__all__ = [
+    "check_in_delaunay_triangle",
+    "compare_irfs",
+    "get_nearest_az_node",
+    "interp_params",
+    "interpolate_al_cuts",
+    "interpolate_gh_cuts",
+    "interpolate_irf",
+    "load_irf_grid",
+]
 
+log = logging.getLogger(__name__)
 
 def interp_params(params_list, data):
     """

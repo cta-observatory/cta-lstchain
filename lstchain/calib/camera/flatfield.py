@@ -167,9 +167,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
-        pixel_mask = np.logical_or(
-            event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
-            event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
+        pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         # time
         self.trigger_time = event.trigger.tel[self.tel_id].time

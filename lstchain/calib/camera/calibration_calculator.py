@@ -165,15 +165,10 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         status_data = event.mon.tel[self.tel_id].pixel_status
         calib_data = event.mon.tel[self.tel_id].calibration
 
-        # mask from pedestal and flat-field data
-        monitoring_unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
+        # unusable_pixels from pedestal and flat-field data
+        unusable_pixels = np.logical_or(status_data.pedestal_failing_pixels,
                                                    status_data.flatfield_failing_pixels)
         
-        # calibration unusable pixels are an OR of all previous masks
-        unusable_pixels = np.logical_or(monitoring_unusable_pixels,
-                                                   status_data.hardware_failing_pixels)
-  
-
         signal = ff_data.charge_median - ped_data.charge_median
 
         # Extract calibration coefficients with F-factor method
@@ -200,10 +195,10 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # find signal median of good pixels over the camera (FF factor=<npe>/npe)
         masked_npe = np.ma.array(n_pe, mask=unusable_pixels)
-        npe_signal_median = np.ma.median(masked_npe, axis=1)
+        npe_median = np.ma.median(masked_npe, axis=1)
 
         # flat-fielded calibration coefficients
-        numerator = npe_signal_median[:,np.newaxis]
+        numerator = npe_median[:,np.newaxis]
         denominator = signal
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
@@ -213,10 +208,12 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # define unusables on number of estimated pe
-        npe_deviation =  calib_data.n_pe - npe_signal_median[:,np.newaxis]
+        npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
+
+        # cut on the base of pe statistical uncertanty (neglect the 7% spread due to detection QE)
         npe_outliers = (
-            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * npe_signal_median[:,np.newaxis],
-                          npe_deviation > self.npe_median_cut_outliers[1] * npe_signal_median[:,np.newaxis]))
+            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * np.sqrt(npe_median)[:,np.newaxis],
+                          npe_deviation > self.npe_median_cut_outliers[1] * np.sqrt(npe_median)[:,np.newaxis]))
 
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
@@ -236,9 +233,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
-            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.HG_LG_ratio
+            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
             
-        
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
 

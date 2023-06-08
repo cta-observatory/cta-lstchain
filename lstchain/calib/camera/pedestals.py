@@ -131,7 +131,6 @@ class PedestalIntegrator(PedestalCalculator):
             waveforms *= (self.time_sampling_corrector.get_corrections(event, self.tel_id)
             [no_gain_selection, np.arange(n_pixels)])
 
-
         # Extract charge and time
         charge = 0
         peak_pos = 0
@@ -167,7 +166,6 @@ class PedestalIntegrator(PedestalCalculator):
 
         self.trigger_time = event.trigger.time
 
-
         if self.num_events_seen == 0:
             self.time_start = self.trigger_time
             self.setup_sample_buffers(waveform, self.sample_size)
@@ -175,7 +173,6 @@ class PedestalIntegrator(PedestalCalculator):
         # extract the charge of the event and
         # the peak position (assumed as time for the moment)
         charge = self._extract_charge(event)[0]
-
 
         self.collect_sample(charge, pixel_mask)
 
@@ -235,7 +232,6 @@ class PedestalIntegrator(PedestalCalculator):
     def setup_sample_buffers(self, waveform, sample_size):
         """Initialize sample buffers"""
 
-
         n_channels = waveform.shape[0]
         n_pix = waveform.shape[1]
         shape = (sample_size, n_channels, n_pix)
@@ -243,7 +239,6 @@ class PedestalIntegrator(PedestalCalculator):
         self.charge_medians = np.zeros((sample_size, n_channels))
         self.charges = np.zeros(shape)
         self.sample_masked_pixels = np.zeros(shape)
-
 
     def collect_sample(self, charge, pixel_mask):
         """Collect the sample data"""
@@ -255,7 +250,6 @@ class PedestalIntegrator(PedestalCalculator):
         self.sample_masked_pixels[self.num_events_seen] = pixel_mask
         self.charge_medians[self.num_events_seen] = charge_median
         self.num_events_seen += 1
-
 
     def calculate_pedestal_results(self, trace_integral, masked_pixels_of_sample):
         """Calculate and return the sample statistics"""

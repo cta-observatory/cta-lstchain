@@ -75,7 +75,9 @@ def test_dl3_energy_dependent_cuts():
     temp_cuts.gh_max_efficiency = 0.8
     temp_cuts.theta_containment = 0.68
     temp_cuts.alpha_containment = 0.68
-    temp_cuts.min_event_p_en_bin = 2
+    temp_cuts.max_alpha_cut = 20
+    temp_cuts.fill_alpha_cut = 20
+    temp_cuts.min_event_p_en_bin = 4
 
     temp_data = QTable(
         {
@@ -90,10 +92,14 @@ def test_dl3_energy_dependent_cuts():
     en_range = u.Quantity([0.01, 0.1, 1, 10, 100], unit=u.TeV)
 
     theta_cut = temp_cuts.energy_dependent_theta_cuts(
-        temp_data, en_range, use_same_disp_sign=True
+        temp_data,
+        en_range,
+        use_same_disp_sign=True,
     )
     theta_cut_2 = temp_cuts.energy_dependent_theta_cuts(
-        temp_data, en_range, use_same_disp_sign=False
+        temp_data,
+        en_range,
+        use_same_disp_sign=False,
     )
     gh_cut = temp_cuts.energy_dependent_gh_cuts(temp_data, en_range)
     alpha_cut = temp_cuts.energy_dependent_alpha_cuts(temp_data, en_range)
@@ -107,10 +113,55 @@ def test_dl3_energy_dependent_cuts():
     assert theta_cut_2["cut"][-1] == 0.2336 * u.deg
     assert gh_cut["cut"][1] == 0.38
     assert alpha_cut["cut"][0] == 13.2 * u.deg
-    assert len(data_th) == 29
+    assert len(data_th) == 30
     assert len(data_th_2) == 29
     assert len(data_gh) == 36
     assert len(data_al) == 31
+
+
+def test_update_fill_cut():
+    temp_cuts = DL3Cuts()
+
+    temp_cuts.min_event_p_en_bin = 5
+
+    temp_cut_table_1 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 10, 15, 4])),
+            "cut": u.Quantity(np.array([0.4, 0.07, 0.1, 0.4]) * u.m),
+        }
+    )
+    temp_cut_table_2 = QTable(
+        {
+            "n_events": u.Quantity(np.array([13, 10, 15, 4])),
+            "cut": u.Quantity(np.array([0.04, 0.07, 0.1, 0.4]) * u.s),
+        }
+    )
+    temp_cut_table_3 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 10, 15, 14])),
+            "cut": u.Quantity(np.array([0.4, 0.07, 0.1, 0.04])),
+        }
+    )
+    temp_cut_table_4 = QTable(
+        {
+            "n_events": u.Quantity(np.array([3, 4, 10, 3, 15, 14, 4, 2])),
+            "cut": u.Quantity(np.array(
+                [0.4, 0.4, 0.07, 0.4, 0.1, 0.04, 0.4, 0.4]
+            )),
+        }
+    )
+
+
+    cut_table_new_1 = temp_cuts.update_fill_cuts(temp_cut_table_1)
+    cut_table_new_2 = temp_cuts.update_fill_cuts(temp_cut_table_2)
+    cut_table_new_3 = temp_cuts.update_fill_cuts(temp_cut_table_3)
+    cut_table_new_4 = temp_cuts.update_fill_cuts(temp_cut_table_4)
+
+    assert cut_table_new_1["cut"][0] == 0.07 * u.m
+    assert cut_table_new_1["cut"][-1] == 0.1 * u.m
+    assert cut_table_new_2["cut"][-1] == 0.1 * u.s
+    assert cut_table_new_3["cut"][0] == 0.07
+    assert cut_table_new_4["cut"][3] == 0.085
 
 
 def test_data_binning():
