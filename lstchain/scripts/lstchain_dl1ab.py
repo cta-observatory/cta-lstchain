@@ -243,16 +243,18 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = read_table(infile, dl1_images_lstcam_key)
-        dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
+        params = read_table(infile, dl1_params_lstcam_key)
+        dl1_params_input = params.colnames
+
         disp_params = {'disp_dx': np.float32,
                        'disp_dy': np.float32,
                        'disp_norm': np.float32,
                        'disp_angle': np.float32,
                        'disp_sign': np.int32
                        }
-        
         if set(dl1_params_input).intersection(disp_params):
             parameters_to_update.update(disp_params)
+
         uncertainty_params = {'width_uncertainty': np.float32,
                               'length_uncertainty': np.float32,
                               }
@@ -260,7 +262,7 @@ def main():
             parameters_to_update.update(uncertainty_params)
 
         if catB_calib:
-            trigger_times = infile.root.dl1.event.telescope.parameters.LST_LSTCam.col('trigger_time')
+            trigger_times = params['trigger_time']
 
         if increase_nsb:
             rng = np.random.default_rng(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
@@ -272,7 +274,6 @@ def main():
         if image_mask_save:
             image_mask = image_table['image_mask']
 
-        params = read_table(infile, dl1_params_lstcam_key)
         new_params = set(parameters_to_update.keys()) - set(params.colnames)
         for p in new_params:
             params[p] = np.empty(len(params), dtype=parameters_to_update[p])
@@ -298,15 +299,15 @@ def main():
                     selected_gain = row['selected_gain_channel']
 
                     # search right Cat-B calibration and update the index
-                    calib_idx = np.searchsorted(catB_calib_time,trigger_times[ii])
+                    calib_idx = np.searchsorted(catB_calib_time, trigger_times[ii])
                     if calib_idx > 0:
                         calib_idx -= 1
 
                     dl1_container.calibration_id = calib_idx
 
-                    dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain,pixel_index]
-                    time_correction = catB_time_correction[calib_idx][selected_gain,pixel_index]
-                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain,pixel_index]
+                    dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain, pixel_index]
+                    time_correction = catB_time_correction[calib_idx][selected_gain, pixel_index]
+                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain, pixel_index]
 
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
@@ -423,6 +424,7 @@ def main():
                     image_mask[ii] = signal_pixels
 
             if image_mask_save or catB_calib:
+                # the image table has been modified and needs to be saved
                 write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
             write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
