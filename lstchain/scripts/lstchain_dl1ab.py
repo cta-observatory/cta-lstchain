@@ -244,12 +244,20 @@ def main():
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = read_table(infile, dl1_images_lstcam_key)
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
-        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        disp_params = {'disp_dx': np.float32,
+                       'disp_dy': np.float32,
+                       'disp_norm': np.float32,
+                       'disp_angle': np.float32,
+                       'disp_sign': np.int32
+                       }
+        
         if set(dl1_params_input).intersection(disp_params):
-            parameters_to_update.extend(disp_params)
-        uncertainty_params = {'width_uncertainty', 'length_uncertainty'}
+            parameters_to_update.update(disp_params)
+        uncertainty_params = {'width_uncertainty': np.float32,
+                              'length_uncertainty': np.float32,
+                              }
         if set(dl1_params_input).intersection(uncertainty_params):
-            parameters_to_update.extend(uncertainty_params)
+            parameters_to_update.update(uncertainty_params)
 
         if catB_calib:
             trigger_times = infile.root.dl1.event.telescope.parameters.LST_LSTCam.col('trigger_time')
