@@ -25,6 +25,9 @@ from ctapipe.image import (
     apply_time_delta_cleaning,
 )
 from ctapipe.instrument import SubarrayDescription
+from ctapipe.io import read_table
+from ctapipe.io import write_table
+from ctapipe_io_lst import constants
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
 from lstchain.image.cleaning import apply_dynamic_cleaning
@@ -67,6 +70,12 @@ parser.add_argument(
 )
 # Optional arguments
 parser.add_argument(
+    '--catB-calibration-file',
+    type=Path,
+    help='path to the Cat-B calibration file ',
+)
+
+parser.add_argument(
     '-c', '--config',
     dest='config_file',
     help='Path to a configuration file. If none is given, a standard configuration is applied',
@@ -94,6 +103,36 @@ def main():
     if Path(args.output_file).exists():
         log.critical(f'Output file {args.output_file} already exists')
         sys.exit(1)
+
+    # read Cat-B calibration data if available
+    catB_calib = None
+    if args.catB_calibration_file is not None:
+        if not args.catB_calibration_file.exists():
+            log.critical(f"Calibration file {args.catB_calibration_file} not found")
+            sys.exit(1)
+
+        log.info(f"Cat-B calbration file: {args.catB_calibration_file}")
+        catB_calib = read_table(args.catB_calibration_file, "/tel_1/calibration")
+
+        # add the calibration index
+        catB_calib['calibration_id'] = np.arange(len(catB_calib))
+        catB_calib['pedestal_id'] = np.arange(len(catB_calib))
+        catB_calib['flatfield_id'] = np.arange(len(catB_calib))
+
+        catB_pedestal = read_table(args.catB_calibration_file, "/tel_1/pedestal")
+        catB_pedestal['pedestal_id'] = np.arange(len(catB_pedestal))
+
+        catB_flatfield = read_table(args.catB_calibration_file, "/tel_1/flatfield")
+        catB_flatfield['pedestal_id'] = np.arange(len(catB_flatfield))
+
+        catB_calib_time = np.array(catB_calib["time_min"])
+        catB_dc_to_pe = np.array(catB_calib["dc_to_pe"])
+        catB_pedestal_per_sample = np.array(catB_calib["pedestal_per_sample"])
+
+        catB_time_correction = np.array(catB_calib["time_correction"])
+        catB_unusable_pixels = np.array(catB_calib["unusable_pixels"])
+        pixel_index = np.arange(constants.N_PIXELS)
+
 
     std_config = get_standard_config()
     if args.config_file is not None:
@@ -194,6 +233,9 @@ def main():
         'sin_az_tel'
     ]
 
+    if catB_calib:
+        parameters_to_update.apend("calibration_id") 
+
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
         nodes_keys.remove(dl1_images_lstcam_key)
@@ -202,6 +244,7 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
+
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
@@ -209,6 +252,9 @@ def main():
         uncertainty_params = {'width_uncertainty', 'length_uncertainty'}
         if set(dl1_params_input).intersection(uncertainty_params):
             parameters_to_update.extend(uncertainty_params)
+
+        if catB_calib:
+            trigger_times = infile.root.dl1.event.telescope.parameters.LST_LSTCam.col('trigger_time')
 
         if increase_nsb:
             rng = np.random.default_rng(
@@ -234,6 +280,10 @@ def main():
             if image_mask_save:
                 image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
 
+            if catB_calib:
+                calibrated_image = outfile.root[dl1_images_lstcam_key].col('image')
+                calibrated_peak_time = outfile.root[dl1_images_lstcam_key].col('peak_time')
+
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
                 outfile.root[dl1_params_lstcam_key].attrs[k] = item
@@ -245,6 +295,36 @@ def main():
 
                 image = row['image']
                 peak_time = row['peak_time']
+
+                if catB_calib:
+                    selected_gain = row['selected_gain_channel']
+
+                    # search right Cat-B calibration and update the index
+                    calib_idx = np.searchsorted(catB_calib_time,trigger_times[ii])
+                    if calib_idx > 0:
+                        calib_idx -= 1
+
+                    dl1_container.calibration_id = calib_idx
+
+                    dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain,pixel_index]
+                    time_correction = catB_time_correction[calib_idx][selected_gain,pixel_index]
+                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain,pixel_index]
+
+                    n_samples = config['LocalPeakWindowSum']['window_width']
+                    pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
+
+                    # calibrate charge
+                    image = (image - pedestal) * dc_to_pe
+
+                    # put to zero charge unusable pixels in order not to select them in the cleaning
+                    image[unusable_pixels] = 0
+
+                    # time flafielding
+                    peak_time = peak_time - time_correction
+
+                    # store it to save it later
+                    calibrated_image[ii] = image
+                    calibrated_peak_time[ii] = peak_time
 
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
@@ -340,8 +420,19 @@ def main():
                     image_mask[ii] = signal_pixels
 
             outfile.root[dl1_params_lstcam_key][:] = params
+
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
+
+            if catB_calib:
+                outfile.root[dl1_images_lstcam_key].modify_column(colname='image', column=calibrated_image)
+                outfile.root[dl1_images_lstcam_key].modify_column(colname='peak_time', column=calibrated_peak_time)
+
+        # write a cat-B calibrations in DL1b
+        if catB_calib:
+            write_table(catB_calib, args.output_file, "/dl1/event/telescope/monitoring/catB/calibration")
+            write_table(catB_pedestal, args.output_file, "/dl1/event/telescope/monitoring/catB/pedestal")
+            write_table(catB_flatfield, args.output_file, "/dl1/event/telescope/monitoring/catB/flatfield")
 
         write_metadata(metadata, args.output_file)
 

@@ -391,7 +391,6 @@ def r0_to_dl1(
         )
 
     calibration_index = DL1MonitoringEventIndexContainer()
-
     dl1_container = DL1ParametersContainer()
 
     extra_im = ExtraImageInfo()
