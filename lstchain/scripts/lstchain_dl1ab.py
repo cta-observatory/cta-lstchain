@@ -19,14 +19,13 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 import tables
+from ctapipe.io import read_table, write_table
 from ctapipe.image import (
     tailcuts_clean,
     number_of_islands,
     apply_time_delta_cleaning,
 )
 from ctapipe.instrument import SubarrayDescription
-from ctapipe.io import read_table
-from ctapipe.io import write_table
 from ctapipe_io_lst import constants
 
 from lstchain.calib.camera.pixel_threshold_estimation import get_threshold_from_dl1_file
@@ -43,7 +42,7 @@ from lstchain.io.config import (
 from lstchain.io.io import (
     dl1_images_lstcam_key,
     dl1_params_lstcam_key,
-    global_metadata, 
+    global_metadata,
     write_metadata,
 )
 from lstchain.io.lstcontainers import DL1ParametersContainer
@@ -206,35 +205,35 @@ def main():
     camera_geom = subarray_info.tel[tel_id].camera.geometry
 
     dl1_container = DL1ParametersContainer()
-    parameters_to_update = [
-        'intensity',
-        'x',
-        'y',
-        'r',
-        'phi',
-        'length',
-        'width',
-        'psi',
-        'skewness',
-        'kurtosis',
-        'concentration_cog',
-        'concentration_core',
-        'concentration_pixel',
-        'leakage_intensity_width_1',
-        'leakage_intensity_width_2',
-        'leakage_pixels_width_1',
-        'leakage_pixels_width_2',
-        'n_islands',
-        'intercept',
-        'time_gradient',
-        'n_pixels',
-        'wl',
-        'log_intensity',
-        'sin_az_tel'
-    ]
+    parameters_to_update = {
+        'intensity': np.float64,
+        'x': np.float32,
+        'y': np.float32,
+        'r': np.float32,
+        'phi': np.float32,
+        'length': np.float32,
+        'width': np.float32,
+        'psi': np.float32,
+        'skewness': np.float32,
+        'kurtosis': np.float32,
+        'concentration_cog': np.float32,
+        'concentration_core': np.float32,
+        'concentration_pixel': np.float32,
+        'leakage_intensity_width_1': np.float32,
+        'leakage_intensity_width_2': np.float32,
+        'leakage_pixels_width_1': np.float32,
+        'leakage_pixels_width_2': np.float32,
+        'n_islands': np.int32,
+        'intercept': np.float64,
+        'time_gradient': np.float64,
+        'n_pixels': np.int32,
+        'wl': np.float32,
+        'log_intensity': np.float64,
+        'sin_az_tel': np.float32,
+    }
 
     if catB_calib:
-        parameters_to_update.apend("calibration_id") 
+        parameters_to_update["calibration_id"] = np.int32 
 
     nodes_keys = get_dataset_keys(args.input_file)
     if args.no_image:
@@ -243,46 +242,46 @@ def main():
     metadata = global_metadata()
 
     with tables.open_file(args.input_file, mode='r') as infile:
-        image_table = infile.root[dl1_images_lstcam_key]
+        image_table = read_table(infile, dl1_images_lstcam_key)
+        params = read_table(infile, dl1_params_lstcam_key)
+        dl1_params_input = params.colnames
 
-        dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
-        disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
+        disp_params = {'disp_dx': np.float32,
+                       'disp_dy': np.float32,
+                       'disp_norm': np.float32,
+                       'disp_angle': np.float32,
+                       'disp_sign': np.int32
+                       }
         if set(dl1_params_input).intersection(disp_params):
-            parameters_to_update.extend(disp_params)
-        uncertainty_params = {'width_uncertainty', 'length_uncertainty'}
+            parameters_to_update.update(disp_params)
+
+        uncertainty_params = {'width_uncertainty': np.float32,
+                              'length_uncertainty': np.float32,
+                              }
         if set(dl1_params_input).intersection(uncertainty_params):
-            parameters_to_update.extend(uncertainty_params)
+            parameters_to_update.update(uncertainty_params)
 
         if catB_calib:
-            trigger_times = infile.root.dl1.event.telescope.parameters.LST_LSTCam.col('trigger_time')
+            trigger_times = params['trigger_time']
 
         if increase_nsb:
-            rng = np.random.default_rng(
-                    infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
+            rng = np.random.default_rng(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         if increase_psf:
             set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
         image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
+        if image_mask_save:
+            image_mask = image_table['image_mask']
+
+        new_params = set(parameters_to_update.keys()) - set(params.colnames)
+        for p in new_params:
+            params[p] = np.empty(len(params), dtype=parameters_to_update[p])
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
             add_source_filenames(outfile, [args.input_file])
 
-            params_node = outfile.root[dl1_params_lstcam_key]
-            params = params_node.read()
-
-            new_params = set(parameters_to_update) - set(params_node.colnames)
-            if new_params:
-                log.warning(f"Parameters not in original DL1 file {args.input_file} that can't be recomputed:"
-                            f"{new_params}")
-            parameters_to_update = list(set(parameters_to_update) & set(params_node.colnames))
-            if image_mask_save:
-                image_mask = outfile.root[dl1_images_lstcam_key].col('image_mask')
-
-            if catB_calib:
-                calibrated_image = outfile.root[dl1_images_lstcam_key].col('image')
-                calibrated_peak_time = outfile.root[dl1_images_lstcam_key].col('peak_time')
 
             # need container to use lstchain.io.add_global_metadata and lstchain.io.add_config_metadata
             for k, item in metadata.as_dict().items():
@@ -300,15 +299,15 @@ def main():
                     selected_gain = row['selected_gain_channel']
 
                     # search right Cat-B calibration and update the index
-                    calib_idx = np.searchsorted(catB_calib_time,trigger_times[ii])
+                    calib_idx = np.searchsorted(catB_calib_time, trigger_times[ii])
                     if calib_idx > 0:
                         calib_idx -= 1
 
                     dl1_container.calibration_id = calib_idx
 
-                    dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain,pixel_index]
-                    time_correction = catB_time_correction[calib_idx][selected_gain,pixel_index]
-                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain,pixel_index]
+                    dc_to_pe = catB_dc_to_pe[calib_idx][selected_gain, pixel_index]
+                    time_correction = catB_time_correction[calib_idx][selected_gain, pixel_index]
+                    unusable_pixels = catB_unusable_pixels[calib_idx][selected_gain, pixel_index]
 
                     n_samples = config['LocalPeakWindowSum']['window_width']
                     pedestal = catB_pedestal_per_sample[calib_idx][selected_gain,pixel_index] * n_samples
@@ -323,20 +322,22 @@ def main():
                     peak_time = peak_time - time_correction
 
                     # store it to save it later
-                    calibrated_image[ii] = image
-                    calibrated_peak_time[ii] = peak_time
+                    image_table['image'][ii] = image
+                    image_table['peak_time'][ii] = peak_time
 
                 if increase_nsb:
                     # Add noise in pixels, to adjust MC to data noise levels.
                     # TO BE DONE: in case of "pedestal cleaning" (not used now
                     # in MC) we should recalculate picture_th above!
-                    image = add_noise_in_pixels(rng, image,
+                    image = add_noise_in_pixels(rng, 
+                                                image,
                                                 extra_noise_in_dim_pixels,
                                                 extra_bias_in_dim_pixels,
                                                 transition_charge,
                                                 extra_noise_in_bright_pixels)
                 if increase_psf:
-                    image = random_psf_smearer(image, smeared_light_fraction,
+                    image = random_psf_smearer(image, 
+                                               smeared_light_fraction,
                                                camera_geom.neighbor_matrix_sparse.indices,
                                                camera_geom.neighbor_matrix_sparse.indptr)
 
@@ -345,7 +346,8 @@ def main():
                                                picture_th,
                                                boundary_th,
                                                isolated_pixels,
-                                               min_n_neighbors)
+                                               min_n_neighbors,
+                                               )
 
                 n_pixels = np.count_nonzero(signal_pixels)
 
@@ -361,7 +363,8 @@ def main():
                         new_mask = apply_time_delta_cleaning(camera_geom,
                                                              signal_pixels,
                                                              cleaned_pixel_times,
-                                                             1, delta_time)
+                                                             1,
+                                                             delta_time)
                         signal_pixels = new_mask
 
                     if use_dynamic_cleaning:
@@ -376,7 +379,8 @@ def main():
                     dl1_container.n_islands = num_islands
 
                     n_pixels_on_island = np.bincount(island_labels.astype(np.int64))
-                    n_pixels_on_island[0] = 0  # first island is no-island and should not be considered
+                    # first island is no-island and should not be considered
+                    n_pixels_on_island[0] = 0
                     max_island_label = np.argmax(n_pixels_on_island)
 
                     if use_only_main_island:
@@ -412,27 +416,24 @@ def main():
                     dl1_container['disp_sign'] = disp_sign
 
                 dl1_container['sin_az_tel'] = np.sin(params['az_tel'][ii])
-                    
+
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
 
-            outfile.root[dl1_params_lstcam_key][:] = params
+            if image_mask_save or catB_calib:
+                # the image table has been modified and needs to be saved
+                write_table(image_table, outfile, dl1_images_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
-            if image_mask_save:
-                outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
+            write_table(params, outfile, dl1_params_lstcam_key, overwrite=True, filters=HDF5_ZSTD_FILTERS)
 
+            # write a cat-B calibrations in DL1b
             if catB_calib:
-                outfile.root[dl1_images_lstcam_key].modify_column(colname='image', column=calibrated_image)
-                outfile.root[dl1_images_lstcam_key].modify_column(colname='peak_time', column=calibrated_peak_time)
-
-        # write a cat-B calibrations in DL1b
-        if catB_calib:
-            write_table(catB_calib, args.output_file, "/dl1/event/telescope/monitoring/catB/calibration")
-            write_table(catB_pedestal, args.output_file, "/dl1/event/telescope/monitoring/catB/pedestal")
-            write_table(catB_flatfield, args.output_file, "/dl1/event/telescope/monitoring/catB/flatfield")
+                write_table(catB_calib, outfile, "/dl1/event/telescope/monitoring/catB/calibration")
+                write_table(catB_pedestal, outfile, "/dl1/event/telescope/monitoring/catB/pedestal")
+                write_table(catB_flatfield, outfile, "/dl1/event/telescope/monitoring/catB/flatfield")
 
         write_metadata(metadata, args.output_file)
 
