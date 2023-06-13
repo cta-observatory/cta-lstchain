@@ -13,6 +13,7 @@ from traitlets.config import Config
 
 from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
+from lstchain.reco.reconstructorCC import template_interpolation_withNSB
 
 __all__ = [
     'add_noise_in_pixels',
@@ -406,12 +407,18 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
     baseline_correction = (added_nsb_fraction * original_nsb * dt).value
     waveform -= baseline_correction
-    for i in range(n_pixels):
-        for j in range(additional_nsb[i]):
-            waveform[i] += pulse_templates(t[n:], 'HG' if gain[i] else 'LG',
-                                           amplitude=added_nsb_amp[i][j],
-                                           t_0=added_nsb_time[i][j])
-
+    waveform += template_interpolation_withNSB(
+        empty_waveform=np.zeros(waveform.shape),
+        time=t[n:],
+        is_high_gain=gain,
+        additional_nsb=additional_nsb,
+        amplitude=added_nsb_amp,
+        t_0=added_nsb_time,
+        t0_template=pulse_templates.t0,
+        dt_template=pulse_templates.dt,
+        a_hg_template=pulse_templates.amplitude_HG,
+        a_lg_template=pulse_templates.amplitude_LG
+    )
 
 def calculate_required_additional_nsb(simtel_filename, data_dl1_filename, config=None):
     # TODO check if good estimation

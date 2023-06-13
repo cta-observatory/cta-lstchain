@@ -228,6 +228,71 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
 
 
 @njit(cache=True)
+def template_interpolation_withNSB(empty_waveform, time, is_high_gain, additional_nsb, amplitude, t_0,
+                           t0_template, dt_template, a_hg_template, a_lg_template):
+    """
+    Fast template interpolator using uniformly sampled base with known origin and step to add additional_nsb photons
+    as NSB with a certain amplitude at t_0. The code works for all pixel and selected gains.
+
+    Code interpolation duplicated from function template_interpolation.
+
+    Parameters
+    ----------
+    empty_waveform: empty charge (p.e. / ns) in each pixel and sampled time.
+    time: float64 1D array
+        Times of each waveform samples
+    is_high_gain: boolean 1D array
+        Gain channel used per pixel: True=hg, False=lg
+    additional_nsb: float64 1D array
+        Number of NSB photons to add per pixel
+    amplitude: float 2D array
+        Normalisation factor to apply to the template per photon in each pixel
+    t_0: float 2D array
+        Shift in the origin of time per photon in each pixel
+    t0_template: float64
+        Time of the first value of the pulse templates
+    dt_template: float 64
+        Time step between templates values
+    a_hg_template: float64 1D array
+        Template values for the high gain channel
+    a_lg_template: float64 1D array
+        Template values for the low gain channel
+
+    Returns
+    -------
+    dummy_waveform: float64 2D array
+        charge (p.e. / ns) in each pixel and sampled time with NSB
+    """
+    n_pixels, _ = empty_waveform.shape
+    dummy_waveform = np.copy(empty_waveform)
+    m = time.shape[0]
+    size = a_hg_template.shape[0]
+
+    for i in range(n_pixels):
+
+        for j in range(additional_nsb[i]):
+            times = time - t_0[i][j]
+            temp_val = np.empty(m)
+
+            for k in range(m):
+                # Find the index before the requested time
+                a = (times[k] - t0_template) / dt_template
+                t = int(a)
+
+                if 0 < t + 1 < size:
+                    # Select the gain and interpolate the pulse template at the requested time
+                    temp_val[k] = a_hg_template[t] * (1. - a + t) + a_hg_template[t + 1] * (a - t) if is_high_gain[i] else\
+                        a_lg_template[t] * (1. - a + t) + a_lg_template[t + 1] * (a - t)
+                else:
+                    # Assume 0 if outside the recorded range
+                    temp_val[k] = 0.0
+
+            dummy_waveform[i] += amplitude[i, j] * temp_val
+
+    return dummy_waveform
+
+
+@njit(cache=True)
 def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
             data, error, is_high_gain, sig_s, crosstalks, times, time_shift,
             p_x, p_y, pix_area,  template_dt, template_t0, template_lg,
@@ -293,12 +358,26 @@ def log_pdf(charge, t_cm, x_cm, y_cm, length, wl, psi, v, rl,
     dy = (p_y - y_cm)
     long = dx * np.cos(psi) + dy * np.sin(psi)
     t_model = linval(v, t_cm, long)
-    t = np.empty(data.shape, dtype=np.float64)
-    for i in range(n_pixels):
-        for j in range(n_samples):
-            t[i, j] = times[j] - t_model[i] - time_shift[i]
-    templates = template_interpolation(is_high_gain, t, template_t0, template_dt,
-                                       template_hg, template_lg)
+
+    t_model_datashape = t_model[:, None] * (np.ones((n_pixels, n_samples), dtype=t_model.dtype))
+    time_shift_datashape = time_shift[:, None] * (np.ones((n_pixels, n_samples), dtype=time_shift.dtype))
+    t_0 = t_model_datashape + time_shift_datashape
+
+    # Use template_interpolation_withNSB to interpolate without adding NSB. Consider additional_nsb
+    # as the number of samples in each pixel, no previous values in the waveform and constant amplitude of 1.
+    templates = template_interpolation_withNSB(
+        empty_waveform=np.zeros(data.shape),
+        time=times,
+        is_high_gain=is_high_gain,
+        additional_nsb=np.full(n_pixels, n_samples),
+        amplitude=np.ones(data.shape),
+        t_0=t_0,
+        t0_template=template_t0,
+        dt_template=template_dt,
+        a_hg_template=template_hg,
+        a_lg_template=template_lg
+    )
+
     rl = 1 + rl if rl >= 0 else 1 / (1 - rl)
     mu = asygaussian2d(charge * pix_area,
                        p_x,
