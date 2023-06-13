@@ -31,7 +31,7 @@ dependencies:
   - pandas>=2
   - pymongo
   - seaborn
-  - ctapipe_io_lst=0.20.1
+  - ctapipe_io_lst=0.21.0
   - pytest
   - pip:
       - ctaplot~=0.6.2
