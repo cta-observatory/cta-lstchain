@@ -47,6 +47,7 @@ __all__ = [
     'extract_simulation_nsb',
     'extract_observation_time',
     'get_dataset_keys',
+    'get_mc_fov_offset',
     'get_srcdep_assumed_positions',
     'get_srcdep_params',
     'get_stacked_table',
@@ -71,7 +72,6 @@ __all__ = [
     'write_metadata',
     'write_simtel_energy_histogram',
     'write_subarray_tables',
-
 ]
 
 dl1_params_tel_mon_ped_key = "/dl1/event/telescope/monitoring/pedestal"
@@ -1235,3 +1235,29 @@ def check_mc_type(filename):
         raise ValueError('mc type cannot be identified')
 
     return mc_type
+
+
+def get_mc_fov_offset(filename):
+    """
+    Calculate the mean field of view offset (the "wobble-distance")
+    from the simulation info.
+
+    Parameters
+    ----------
+    filename:path (DL1/DL2 hdf file)
+
+    Returns
+    -------
+    mean_offset: float
+    """
+
+    simu_info = read_simu_info_merged_hdf5(filename)
+
+    # Make sure we have full precision here
+    min_viewcone = simu_info.min_viewcone_radius.value.astype(float)
+    max_viewcone = simu_info.max_viewcone_radius.value.astype(float)
+
+    # This calculation is slightly more stable
+    mean_offset = min_viewcone + 0.5 * (max_viewcone - min_viewcone)
+
+    return mean_offset

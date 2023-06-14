@@ -233,7 +233,7 @@ def compare_irfs(irfs):
     params = []
 
     # Collect the list of metadata and column names to compare the values/data
-    select_meta = ["HDUCLAS3", "INSTRUME", "G_OFFSET"]
+    select_meta = ["HDUCLAS3", "INSTRUME"]
     try:
         h = Table.read(irfs[0], hdu="EFFECTIVE AREA")
         h_meta = h.meta
