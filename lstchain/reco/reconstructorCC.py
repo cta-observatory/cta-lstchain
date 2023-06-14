@@ -228,31 +228,32 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
 
 
 @njit(cache=True)
-def template_interpolation_withNSB(empty_waveform, time, is_high_gain, additional_nsb, amplitude, t_0,
+def nsb_only_waveforms(nsb_waveform, time, is_high_gain, additional_nsb, amplitude, t_0,
                            t0_template, dt_template, a_hg_template, a_lg_template):
     """
-    Fast template interpolator using uniformly sampled base with known origin and step to add additional_nsb photons
-    as NSB with a certain amplitude at t_0. The code works for all pixel and selected gains.
+    Generate waveforms of pure NSB. NSB photons injected through a fast interpolator using a
+    uniformly sampled base with known origin and step with a certain amplitude at t_0.
 
     Code interpolation duplicated from function template_interpolation.
 
     Parameters
     ----------
-    empty_waveform: empty charge (p.e. / ns) in each pixel and sampled time.
+    nsb_waveform: float64 2D array
+        Empty charge (p.e. / ns) in each pixel and sampled time.
     time: float64 1D array
         Times of each waveform samples
     is_high_gain: boolean 1D array
         Gain channel used per pixel: True=hg, False=lg
     additional_nsb: float64 1D array
-        Number of NSB photons to add per pixel
+        Number of NSB photons to inject per pixel
     amplitude: float 2D array
         Normalisation factor to apply to the template per photon in each pixel
     t_0: float 2D array
         Shift in the origin of time per photon in each pixel
     t0_template: float64
-        Time of the first value of the pulse templates
+        Time of the first value of the pulse template
     dt_template: float 64
-        Time step between templates values
+        Time step between template values
     a_hg_template: float64 1D array
         Template values for the high gain channel
     a_lg_template: float64 1D array
@@ -260,17 +261,16 @@ def template_interpolation_withNSB(empty_waveform, time, is_high_gain, additiona
 
     Returns
     -------
-    dummy_waveform: float64 2D array
-        charge (p.e. / ns) in each pixel and sampled time with NSB
+    nsb_waveform: float64 2D array
+        Charge (p.e. / ns) in each pixel and sampled time of the injected NSB photons
     """
-    n_pixels, _ = empty_waveform.shape
+    n_pixels, _ = nsb_waveform.shape
     m = time.shape[0]
     size = a_hg_template.shape[0]
+    single_spe_waveform = np.empty(m)
 
     for i in range(n_pixels):
-
         for j in range(additional_nsb[i]):
-            single_spe_waveform = np.empty(m)
             # Find the index before the requested time
             a = (time - t_0[i][j] - t0_template) / dt_template
 
@@ -285,9 +285,9 @@ def template_interpolation_withNSB(empty_waveform, time, is_high_gain, additiona
                     # Assume 0 if outside the recorded range
                     single_spe_waveform[k] = 0.0
 
-            empty_waveform[i] += amplitude[i, j] * single_spe_waveform
+            nsb_waveform[i] += amplitude[i, j] * single_spe_waveform
 
-    return empty_waveform
+    return nsb_waveform
 
 
 @njit(cache=True)

@@ -13,7 +13,7 @@ from traitlets.config import Config
 
 from lstchain.io import standard_config
 from lstchain.io.config import read_configuration_file
-from lstchain.reco.reconstructorCC import template_interpolation_withNSB
+from lstchain.reco.reconstructorCC import nsb_only_waveforms
 
 __all__ = [
     'add_noise_in_pixels',
@@ -407,8 +407,8 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     added_nsb_amp = charge_spe_cumulative_pdf(rng.uniform(size=(n_pixels, max(additional_nsb))))
     baseline_correction = (added_nsb_fraction * original_nsb * dt).value
     waveform -= baseline_correction
-    waveform += template_interpolation_withNSB(
-        empty_waveform=np.zeros(waveform.shape),
+    waveform += nsb_only_waveforms(
+        nsb_waveform=np.zeros(waveform.shape),
         time=t[n:],
         is_high_gain=gain,
         additional_nsb=additional_nsb,
