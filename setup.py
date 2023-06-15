@@ -45,7 +45,7 @@ setup(
         'ctapipe_io_lst~=0.21.0',
         'ctaplot~=0.6.2',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
-        'gammapy~=1.0',
+        'gammapy~=1.1',
         'h5py',
         'iminuit>=2',
         'joblib~=1.2.0',
