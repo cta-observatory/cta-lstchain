@@ -49,7 +49,7 @@ setup(
         'h5py',
         'iminuit>=2',
         'joblib~=1.2.0',
-        'matplotlib~=3.5',
+        'matplotlib~=3.7',
         'numba',
         'numpy',
         'pandas',

@@ -12,7 +12,7 @@ dependencies:
   - h5py
   - ipython
   - jupyter
-  - matplotlib=3.5
+  - matplotlib=3.7
   - notebook
   - iminuit>=2
   - joblib~=1.2.0
