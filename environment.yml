@@ -4,22 +4,22 @@ channels:
   - default
 dependencies:
   - python=3.10
-  - numpy=1.22
+  - numpy
   - astropy=5
   - pip
-  - ctapipe=0.19
-  - gammapy=1
+  - ctapipe=0.19.2
+  - gammapy=1.1
   - h5py
   - ipython
   - jupyter
-  - matplotlib=3.5
+  - matplotlib=3.7
   - notebook
   - iminuit>=2
   - joblib~=1.2.0
   - toml
   - protobuf=3.20
   - pyparsing
-  - scikit-learn=1.0
+  - scikit-learn=1.2
   - sphinx=4
   - sphinx-automodapi
   - sphinx_rtd_theme

@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: pyflakes
         run: |
@@ -39,8 +39,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
-        ctapipe-version: ["v0.19.0"]
+        python-version: ["3.9", "3.10", "3.11"]
+        ctapipe-version: ["v0.19.2"]
 
     steps:
       - uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install doc dependencies
         run: |
