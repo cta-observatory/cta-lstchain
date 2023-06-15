@@ -228,18 +228,18 @@ def template_interpolation(gain, times, t0, dt, a_hg, a_lg):
 
 
 @njit(cache=True)
-def nsb_only_waveforms(nsb_waveform, time, is_high_gain, additional_nsb, amplitude, t_0,
-                           t0_template, dt_template, a_hg_template, a_lg_template):
+def nsb_only_waveforms(time, is_high_gain, additional_nsb, amplitude, t_0,
+                        t0_template, dt_template, a_hg_template, a_lg_template):
     """
     Generate waveforms of pure NSB. NSB photons injected through a fast interpolator using a
-    uniformly sampled base with known origin and step with a certain amplitude at t_0.
+    uniformly sampled normalised template with known time of first value and time step.
+    The method requires as input the number of NSB events to inject per pixel,
+    the times of injection and the events normalisations.
 
-    Code interpolation duplicated from function template_interpolation.
+    Interpolation code duplicated from function template_interpolation.
 
     Parameters
     ----------
-    nsb_waveform: float64 2D array
-        Empty charge (p.e. / ns) in each pixel and sampled time.
     time: float64 1D array
         Times of each waveform samples
     is_high_gain: boolean 1D array
@@ -264,15 +264,18 @@ def nsb_only_waveforms(nsb_waveform, time, is_high_gain, additional_nsb, amplitu
     nsb_waveform: float64 2D array
         Charge (p.e. / ns) in each pixel and sampled time of the injected NSB photons
     """
-    n_pixels, _ = nsb_waveform.shape
+    n_pixels = additional_nsb.shape[0]
     m = time.shape[0]
+    nsb_waveform = np.zeros((n_pixels, m), dtype=np.float64)
     size = a_hg_template.shape[0]
     single_spe_waveform = np.empty(m)
 
+    times = time / dt_template
+    t0 = (t_0 + t0_template) / dt_template
     for i in range(n_pixels):
         for j in range(additional_nsb[i]):
             # Find the index before the requested time
-            a = (time - t_0[i][j] - t0_template) / dt_template
+            a = times - t0[i, j]
 
             for k in range(m):
                 t = int(a[k])

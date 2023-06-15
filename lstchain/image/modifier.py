@@ -408,7 +408,6 @@ def tune_nsb_on_waveform(waveform, added_nsb_fraction, original_nsb,
     baseline_correction = (added_nsb_fraction * original_nsb * dt).value
     waveform -= baseline_correction
     waveform += nsb_only_waveforms(
-        nsb_waveform=np.zeros(waveform.shape),
         time=t[n:],
         is_high_gain=gain,
         additional_nsb=additional_nsb,
