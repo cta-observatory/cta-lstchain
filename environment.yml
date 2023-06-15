@@ -19,7 +19,7 @@ dependencies:
   - toml
   - protobuf=3.20
   - pyparsing
-  - scikit-learn=1.0
+  - scikit-learn=1.2
   - sphinx=4
   - sphinx-automodapi
   - sphinx_rtd_theme
