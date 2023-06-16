@@ -197,8 +197,8 @@ def main():
     ]
 
     nodes_keys = get_dataset_keys(args.input_file)
-    if args.no_image:
-        nodes_keys.remove(dl1_images_lstcam_key)
+    # if args.no_image:
+        # nodes_keys.remove(dl1_images_lstcam_key)
 
     metadata = global_metadata()
 
@@ -220,7 +220,8 @@ def main():
         if increase_psf:
             set_numba_seed(infile.root.dl1.event.subarray.trigger.col('obs_id')[0])
 
-        image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
+        # image_mask_save = not args.no_image and 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
+        image_mask_save = 'image_mask' in infile.root[dl1_images_lstcam_key].colnames
 
         with tables.open_file(args.output_file, mode='a', filters=HDF5_ZSTD_FILTERS) as outfile:
             copy_h5_nodes(infile, outfile, nodes=nodes_keys)
@@ -330,8 +331,7 @@ def main():
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
-                if not args.no_image:
-                    images[ii] = image
+                images[ii] = image
 
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
