@@ -59,24 +59,20 @@ def test_calculate_noise_parameters(mc_gamma_testfile, observed_dl1_files):
         mc_gamma_testfile,
         observed_dl1_files["dl1_file1"]
     )
-    assert extra_noise_in_dim_pixels == 0.0
-    assert np.isclose(extra_bias_in_dim_pixels, 11.02, atol=0.1)
+    assert np.isclose(extra_noise_in_dim_pixels, 1.96, atol=0.01)
+    assert np.isclose(extra_bias_in_dim_pixels, 0.0, atol=0.1)
     assert extra_noise_in_bright_pixels == 0.0
 
 
 def test_calculate_required_additional_nsb(mc_gamma_testfile, observed_dl1_files):
     from lstchain.image.modifier import calculate_required_additional_nsb
-    [extra_nsb,
-     data_ped_variance,
-     mc_ped_variance] = calculate_required_additional_nsb(
+    extra_nsb, data_ped_variance, mc_ped_variance = calculate_required_additional_nsb(
         mc_gamma_testfile,
         observed_dl1_files["dl1_file1"]
     )
-    # Test mc_gamma_testfile file event.simulation.tel[1].true_image is None
-    # Files are not adapted to obtain usable results
-    assert data_ped_variance == 0.0
-    assert np.isnan(mc_ped_variance)
-    assert np.isnan(extra_nsb)
+    assert np.isclose(data_ped_variance, 0.0, atol=0.1)
+    assert np.isclose(mc_ped_variance, 3.11, atol=0.01)
+    assert np.isclose(extra_nsb, -1.0)
 
 
 def test_tune_nsb_on_waveform():

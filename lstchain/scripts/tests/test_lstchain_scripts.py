@@ -88,6 +88,7 @@ def merged_simulated_dl1_file(simulated_dl1_file, temp_dir_simulated_files):
         "-o",
         merged_dl1_file,
         "--no-image",
+        "--pattern=dl1_*.h5"
     )
     return merged_dl1_file
 
@@ -176,9 +177,9 @@ def test_validity_tune_nsb(tune_nsb):
         if "increase_nsb" in line:
             assert line == '  "increase_nsb": true,'
         if "extra_noise_in_dim_pixels" in line:
-            assert line == '  "extra_noise_in_dim_pixels": 0.0,'
+            assert line == '  "extra_noise_in_dim_pixels": 1.962,'
         if "extra_bias_in_dim_pixels" in line:
-            assert line == '  "extra_bias_in_dim_pixels": 11.019,'
+            assert line == '  "extra_bias_in_dim_pixels": 0,'
         if "transition_charge" in line:
             assert line == '  "transition_charge": 8,'
         if "extra_noise_in_bright_pixels" in line:
@@ -450,26 +451,20 @@ def test_observed_dl1ab(tmp_path, observed_dl1_files):
     )
     assert output_dl1ab.is_file()
 
-    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
     dl1 = pd.read_hdf(observed_dl1_files["dl1_file1"], key=dl1_params_lstcam_key)
-
-    np.testing.assert_allclose(
-        dl1.to_numpy(dtype='float'),
-        dl1ab.to_numpy(dtype='float'),
-        rtol=1e-3,
-        equal_nan=True,
-    )
+    dl1ab = pd.read_hdf(output_dl1ab, key=dl1_params_lstcam_key)
+    pd.testing.assert_frame_equal(dl1, dl1ab)
 
 
 def test_simulated_dl1ab_validity(simulated_dl1_file, simulated_dl1ab):
     assert simulated_dl1ab.is_file()
     dl1_df = pd.read_hdf(simulated_dl1_file, key=dl1_params_lstcam_key)
     dl1ab_df = pd.read_hdf(simulated_dl1ab, key=dl1_params_lstcam_key)
-    np.testing.assert_allclose(dl1_df, dl1ab_df, rtol=1e-4, equal_nan=True)
+    pd.testing.assert_frame_equal(dl1_df, dl1ab_df)
 
 
 def test_mc_r0_to_dl2(tmp_path, rf_models, mc_gamma_testfile):
-    dl2_file = tmp_path / "dl2_gamma_test_large.h5"
+    dl2_file = tmp_path / "dl2_simtel_theta_20_az_180_gdiffuse_10evts.h5"
     run_program(
         "lstchain_mc_r0_to_dl2",
         "--input-file",
@@ -489,8 +484,7 @@ def test_read_mc_dl2_to_QTable(simulated_dl2_file):
 
     events, sim_info, simu_geomag = read_mc_dl2_to_QTable(simulated_dl2_file)
     assert "true_energy" in events.colnames
-    assert sim_info.energy_max == 330 * u.TeV
-    assert "GEOMAG_DELTA" in simu_geomag
+    assert sim_info.energy_max == 5 * u.TeV
 
 
 @pytest.mark.private_data

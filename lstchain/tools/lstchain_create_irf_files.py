@@ -583,6 +583,7 @@ class IRFFITSWriter(Tool):
                     self.mc_particle["gamma"]["simulation_info"],
                     true_energy_bins=true_energy_bins,
                 )
+                self.effective_area = np.nan_to_num(self.effective_area)  # To be added in pyirf
                 self.hdus.append(
                     create_aeff2d_hdu(
                         # add one dimension for single FOV offset
@@ -601,6 +602,7 @@ class IRFFITSWriter(Tool):
                     true_energy_bins=true_energy_bins,
                     fov_offset_bins=fov_offset_bins,
                 )
+                self.effective_area = np.nan_to_num(self.effective_area)
                 self.hdus.append(
                     create_aeff2d_hdu(
                         effective_area=self.effective_area,
@@ -621,7 +623,7 @@ class IRFFITSWriter(Tool):
         )
         self.hdus.append(
             create_energy_dispersion_hdu(
-                self.edisp,
+                energy_dispersion=self.edisp,
                 true_energy_bins=true_energy_bins,
                 migration_bins=migration_bins,
                 fov_offset_bins=fov_offset_bins,
@@ -641,7 +643,7 @@ class IRFFITSWriter(Tool):
             )
             self.hdus.append(
                 create_background_2d_hdu(
-                    self.background.T,
+                    background_2d=self.background.T,
                     reco_energy_bins=reco_energy_bins,
                     fov_offset_bins=background_offset_bins,
                     extname="BACKGROUND",
@@ -659,7 +661,7 @@ class IRFFITSWriter(Tool):
             )
             self.hdus.append(
                 create_psf_table_hdu(
-                    self.psf,
+                    psf=self.psf,
                     true_energy_bins=true_energy_bins,
                     source_offset_bins=source_offset_bins,
                     fov_offset_bins=fov_offset_bins,

@@ -79,7 +79,6 @@
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0,
     "warm_start": false
   },
 
@@ -97,7 +96,6 @@
     "min_weight_fraction_leaf": 0.0,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0,
     "warm_start": false
   },
 
@@ -115,7 +113,6 @@
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0.0,
     "warm_start": false,
     "class_weight": null
   },
@@ -134,7 +131,6 @@
     "bootstrap": true,
     "oob_score": false,
     "random_state": 42,
-    "verbose": 0.0,
     "warm_start": false,
     "class_weight": null
   },
@@ -276,5 +272,17 @@
     "nsb_tuning": false,
     "nsb_tuning_ratio": 0.52,
     "spe_location": "lstchain/data/SinglePhE_ResponseInPhE_expo2Gaus.dat"
+  },
+  "write_interleaved_events":{
+    "DataWriter": {
+      "overwrite":  true,
+      "write_images": false,
+      "write_parameters": false,
+      "write_waveforms": true,
+      "transform_waveform": true,
+      "waveform_dtype": "uint16",
+      "waveform_offset": 400,
+      "waveform_scale": 80  
+    }
   }
 }

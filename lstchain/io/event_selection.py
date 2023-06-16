@@ -2,13 +2,12 @@ import numpy as np
 import operator
 import astropy.units as u
 
+from ctapipe.core import Component
 from ctapipe.containers import EventType
 from ctapipe.core.traits import Dict, List, Float, Int
 from lstchain.reco.utils import filter_events
 
-from lstchain.ctapipe_compat import Component
 
-from pyirf.binning import create_bins_per_decade  # , add_overflow_bins
 from pyirf.cuts import calculate_percentile_cut, evaluate_binned_cut
 
 
@@ -80,7 +79,7 @@ class DL3Cuts(Component):
 
     min_theta_cut = Float(
         help="Minimum theta cut (deg) in an energy bin",
-        default_value=0.05,
+        default_value=0.1,
     ).tag(config=True)
 
     max_theta_cut = Float(
@@ -89,8 +88,10 @@ class DL3Cuts(Component):
     ).tag(config=True)
 
     fill_theta_cut = Float(
-        help="Fill value of theta cut (deg) in an energy bin with fewer "
-        + "than minimum number of events present",
+        help=(
+            "Fill value of theta cut (deg) in an energy bin with fewer "
+            + "than minimum number of events present"
+        ),
         default_value=0.32,
     ).tag(config=True)
 
@@ -111,13 +112,15 @@ class DL3Cuts(Component):
 
     max_alpha_cut = Float(
         help="Maximum alpha cut (deg) in an energy bin",
-        default_value=45,
+        default_value=20,
     ).tag(config=True)
 
     fill_alpha_cut = Float(
-        help="Fill value of alpha cut (deg) in an energy bin with fewer "
-        + "than minimum number of events present",
-        default_value=45,
+        help=(
+            "Fill value of alpha cut (deg) in an energy bin with fewer "
+            + "than minimum number of events present"
+        ),
+        default_value=20,
     ).tag(config=True)
 
     alpha_containment = Float(
@@ -142,6 +145,44 @@ class DL3Cuts(Component):
         """
         return data[data["gh_score"] > self.global_gh_cut]
 
+    def update_fill_cuts(self, cut_table):
+        """
+        For an energy-dependent cut table, update the cuts for bins with number
+        of events fewer than the minimum number, for which pyirf uses a
+        constant fill_value, usually at the energy threshold limits, with cut
+        evaluated at the nearest bin with number of events more than the given
+        minimum.
+
+        In the case, where the low-events bin is in between high-events bins,
+        the cut value for that low-events bin is taken as the mean of the
+        neighbouring cut values.
+        """
+        cut_table_new = cut_table.copy()
+
+        low_event_bins = np.nonzero(
+            cut_table["n_events"] < self.min_event_p_en_bin
+        )[0]
+        high_event_bins = np.nonzero(
+            cut_table["n_events"] >= self.min_event_p_en_bin
+        )[0]
+
+        for low_ in low_event_bins:
+            if low_ < high_event_bins[0]:
+                cut_table_new["cut"].value[low_] = cut_table["cut"].value[
+                    high_event_bins[0]
+                ]
+            elif low_ > high_event_bins[-1]:
+                cut_table_new["cut"].value[low_] = cut_table["cut"].value[
+                    high_event_bins[-1]
+                ]
+            else:
+                cut_table_new["cut"].value[low_] = np.mean([
+                    cut_table["cut"].value[low_-1],
+                    cut_table["cut"].value[low_+1]
+                ])
+
+        return cut_table_new
+
     def energy_dependent_gh_cuts(self, data, energy_bins, smoothing=None):
         """
         Evaluating energy-dependent gammaness cuts, in a given
@@ -160,14 +201,16 @@ class DL3Cuts(Component):
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+        if (gh_cuts["n_events"] < self.min_event_p_en_bin).any():
+            gh_cuts = self.update_fill_cuts(gh_cuts)
+
         return gh_cuts
 
     def apply_energy_dependent_gh_cuts(self, data, gh_cuts):
         """
-        Applying a given energy-dependent gh cuts to a data file, along the reco
-        energy bins provided.
+        Applying a given energy-dependent gh cuts on the given data, along the
+        reco energy bins.
         """
-
         data["selected_gh"] = evaluate_binned_cut(
             data["gh_score"],
             data["reco_energy"],
@@ -210,7 +253,6 @@ class DL3Cuts(Component):
 
         Note: Using too fine binning will result in too un-smooth cuts.
         """
-
         if use_same_disp_sign:
             disp_mask = data["reco_disp_sign"] == data["disp_sign"]
             data = data[disp_mask]
@@ -226,14 +268,17 @@ class DL3Cuts(Component):
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+
+        if (theta_cuts["n_events"] < self.min_event_p_en_bin).any():
+            theta_cuts = self.update_fill_cuts(theta_cuts)
+
         return theta_cuts
 
     def apply_energy_dependent_theta_cuts(self, data, theta_cuts):
         """
-        Applying a given energy-dependent theta cuts to a data file, along the
-        reco energy bins provided.
+        Applying a given energy-dependent theta cuts on a given data, along the
+        reco energy bins.
         """
-
         data["selected_theta"] = evaluate_binned_cut(
             data["theta"],
             data["reco_energy"],
@@ -253,6 +298,7 @@ class DL3Cuts(Component):
         Evaluating an optimized energy-dependent alpha cuts, in a given
         data, with provided reco energy bins, and other parameters to
         pass to the pyirf.cuts.calculate_percentile_cut function.
+
         Note: Using too fine binning will result in too un-smooth cuts.
         """
 
@@ -267,12 +313,16 @@ class DL3Cuts(Component):
             smoothing=smoothing,
             min_events=self.min_event_p_en_bin,
         )
+
+        if (alpha_cuts["n_events"] < self.min_event_p_en_bin).any():
+            alpha_cuts = self.update_fill_cuts(alpha_cuts)
+
         return alpha_cuts
 
     def apply_energy_dependent_alpha_cuts(self, data, alpha_cuts):
         """
-        Applying a given energy-dependent alpha cuts to a data file, along the
-        reco energy bins provided.
+        Applying a given energy-dependent alpha cuts on a given data, along the
+        reco energy bins.
         """
 
         data["selected_alpha"] = evaluate_binned_cut(
@@ -306,12 +356,12 @@ class DataBinning(Component):
 
     true_energy_max = Float(
         help="Maximum value for True Energy bins in TeV units",
-        default_value=200,
+        default_value=500,
     ).tag(config=True)
 
-    true_energy_n_bins_per_decade = Float(
-        help="Number of edges per decade for True Energy bins",
-        default_value=5,
+    true_energy_n_bins = Int(
+        help="Number of bins in log scale for True Energy",
+        default_value=25,
     ).tag(config=True)
 
     reco_energy_min = Float(
@@ -321,12 +371,12 @@ class DataBinning(Component):
 
     reco_energy_max = Float(
         help="Maximum value for Reco Energy bins in TeV units",
-        default_value=200,
+        default_value=500,
     ).tag(config=True)
 
-    reco_energy_n_bins_per_decade = Float(
-        help="Number of edges per decade for Reco Energy bins",
-        default_value=5,
+    reco_energy_n_bins = Int(
+        help="Number of bins in log scale for Reco Energy",
+        default_value=25,
     ).tag(config=True)
 
     energy_migration_min = Float(
@@ -341,7 +391,7 @@ class DataBinning(Component):
 
     energy_migration_n_bins = Int(
         help="Number of bins in log scale for Energy Migration matrix",
-        default_value=31,
+        default_value=30,
     ).tag(config=True)
 
     fov_offset_min = Float(
@@ -391,48 +441,37 @@ class DataBinning(Component):
 
     def true_energy_bins(self):
         """
-        Creates bins per decade for true MC energy using pyirf function.
-        The overflow binning added is not needed at the current stage.
-
-        Examples
-        --------
-        It can be used as:
-
-        >>> add_overflow_bins(***)[1:-1]
+        Creates bins for true energy in log scale using numpy.geomspace with
+        true_energy_n_bins + 1 edges.
         """
-        true_energy = create_bins_per_decade(
+        true_energy = np.geomspace(
             self.true_energy_min * u.TeV,
             self.true_energy_max * u.TeV,
-            self.true_energy_n_bins_per_decade,
+            self.true_energy_n_bins + 1,
         )
         return true_energy
 
     def reco_energy_bins(self):
         """
-        Creates bins per decade for reconstructed MC energy using pyirf function.
-        The overflow binning added is not needed at the current stage.
-
-        Examples
-        --------
-        It can be used as:
-
-        >>> add_overflow_bins(***)[1:-1]
+        Creates bins for reco energy in log scale using numpy.geomspace with
+        reco_energy_n_bins + 1 edges.
         """
-        reco_energy = create_bins_per_decade(
+        reco_energy = np.geomspace(
             self.reco_energy_min * u.TeV,
             self.reco_energy_max * u.TeV,
-            self.reco_energy_n_bins_per_decade,
+            self.reco_energy_n_bins + 1,
         )
         return reco_energy
 
     def energy_migration_bins(self):
         """
-        Creates bins for energy migration.
+        Creates bins for energy migration in log scale using numpy.geomspace
+        with energy_migration_n_bins + 1 edges.
         """
         energy_migration = np.geomspace(
             self.energy_migration_min,
             self.energy_migration_max,
-            self.energy_migration_n_bins,
+            self.energy_migration_n_bins + 1,
         )
         return energy_migration
 

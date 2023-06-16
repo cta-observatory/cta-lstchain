@@ -14,7 +14,7 @@ test_data = Path(os.getenv('LSTCHAIN_TEST_DATA', 'test_data')).absolute()
 def test_fit_intensity_scan(tmp_path):
     '''Test the lstchain_fit_intensity_scan tool'''
     
-    input_dir = test_data / "real/monitoring/PixelCalibration/Cat-A/calibration/20221001/v0.9.11/"
+    input_dir = test_data / "real/monitoring/PixelCalibration/Cat-A/calibration/20221001/ctapipe-v0.17/"
 
     config_file = Path(resource_filename(
         'lstchain',
@@ -37,4 +37,3 @@ def test_fit_intensity_scan(tmp_path):
     gain = fit_data.root.gain
     pixel = 0
     assert math.isclose(gain[0,pixel], 75.751, abs_tol = 0.001) and math.isclose(gain[1,pixel], 4.216, abs_tol = 0.001)
-   
