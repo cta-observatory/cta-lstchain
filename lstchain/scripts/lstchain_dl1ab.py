@@ -336,6 +336,7 @@ def main():
                     image_mask[ii] = signal_pixels
 
             outfile.root[dl1_params_lstcam_key][:] = params
+            outfile.root[dl1_images_lstcam_key][:] = image_table
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
