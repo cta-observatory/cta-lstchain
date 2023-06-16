@@ -204,6 +204,7 @@ def main():
 
     with tables.open_file(args.input_file, mode='r') as infile:
         image_table = infile.root[dl1_images_lstcam_key]
+        images = image_table.col('image')
         dl1_params_input = infile.root[dl1_params_lstcam_key].colnames
         disp_params = {'disp_dx', 'disp_dy', 'disp_norm', 'disp_angle', 'disp_sign'}
         if set(dl1_params_input).intersection(disp_params):
@@ -330,13 +331,13 @@ def main():
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
                 if not args.no_image:
-                    image_table[ii]['image'] = image
+                    images[ii] = image
 
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
 
             outfile.root[dl1_params_lstcam_key][:] = params
-            outfile.root[dl1_images_lstcam_key].modify_column(colname='image', column=image_table['image'])
+            outfile.root[dl1_images_lstcam_key].modify_column(colname='image', column=images)
             if image_mask_save:
                 outfile.root[dl1_images_lstcam_key].modify_column(colname='image_mask', column=image_mask)
 
