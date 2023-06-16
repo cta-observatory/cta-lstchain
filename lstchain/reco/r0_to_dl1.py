@@ -23,9 +23,12 @@ from ctapipe.image import (
     tailcuts_clean,
 )
 from ctapipe.image import number_of_islands, apply_time_delta_cleaning
-from ctapipe.io import EventSource, HDF5TableWriter
+from ctapipe.io import EventSource, HDF5TableWriter, DataWriter 
 from ctapipe.utils import get_dataset_path
 from traitlets.config import Config
+from ctapipe_io_lst.constants import (
+    PIXEL_INDEX
+)
 
 from . import disp
 from .utils import sky_to_camera
@@ -321,7 +324,7 @@ def r0_to_dl1(
     Parameters
     ----------
     input_filename: str
-        path to input file, default: `gamma_test_large.simtel.gz`
+        path to input file, default is an example simulation file
     output_filename: str or None
         path to output file, defaults to writing dl1 into the current directory
     custom_config: path to a configuration file
@@ -388,7 +391,6 @@ def r0_to_dl1(
         )
 
     calibration_index = DL1MonitoringEventIndexContainer()
-
     dl1_container = DL1ParametersContainer()
 
     extra_im = ExtraImageInfo()
@@ -399,7 +401,7 @@ def r0_to_dl1(
 
     if is_simu:
         write_mcheader(
-            source.simulation_config,
+            source.simulation_config[source.obs_ids[0]],
             output_filename,
             obs_id=source.obs_ids[0],
             filters=HDF5_ZSTD_FILTERS,
@@ -444,7 +446,20 @@ def r0_to_dl1(
         lhfit_fitter_config = {'TimeWaveformFitter': config['lh_fit_config']}
         lhfit_fitter = TimeWaveformFitter(subarray=subarray, config=Config(lhfit_fitter_config))
 
-    with HDF5TableWriter(
+    # initialize the writer of the interleaved events 
+    interleaved_writer = None
+    if 'write_interleaved_events' in config:
+        interleaved_writer_config = Config(config['write_interleaved_events'])
+        dir, name = os.path.split(output_filename)
+        if 'dl1' in name: 
+            name = name.replace('dl1', 'interleaved').replace('LST-1.1', 'LST-1')
+        else:
+            name = f"interleaved_{name}"
+        interleaved_output_file = Path(dir, name)
+        interleaved_writer = DataWriter(event_source=source,output_path=interleaved_output_file,config=interleaved_writer_config)
+        interleaved_writer._writer.exclude("/r1/event/telescope/.*", "selected_gain_channel")
+
+    with HDF5TableWriter( 
         filename=output_filename,
         group_name='dl1/event',
         mode='a',
@@ -510,10 +525,27 @@ def r0_to_dl1(
                                            calibration_index,
                                            event.mon.tel[tel_id],
                                            new_ped=new_ped_event, new_ff=new_ff_event)
-
-                    # calibrate and gain select the event by hand for DL1
+                    
+                    # write the calibrated R1 waveform without gain selection
+                    source.r0_r1_calibrator.select_gain = False
                     source.r0_r1_calibrator.calibrate(event)
+                
+                    if interleaved_writer is not None:
+                        interleaved_writer(event)
 
+                    # gain select the events
+                    source.r0_r1_calibrator.select_gain = True
+
+                    r1 = event.r1.tel[tel_id]                   
+                    r1.selected_gain_channel = source.r0_r1_calibrator.gain_selector(event.r0.tel[tel_id].waveform)
+                    r1.waveform = r1.waveform[r1.selected_gain_channel, PIXEL_INDEX]
+
+                    event.calibration.tel[tel_id].dl1.time_shift = \
+                    event.calibration.tel[tel_id].dl1.time_shift[r1.selected_gain_channel, PIXEL_INDEX]
+                    
+                    event.calibration.tel[tel_id].dl1.relative_factor = \
+                    event.calibration.tel[tel_id].dl1.relative_factor[r1.selected_gain_channel, PIXEL_INDEX]
+                    
             # Option to add nsb in waveforms
             if nsb_tuning:
                 # FIXME? assumes same correction ratio for all telescopes
@@ -651,7 +683,10 @@ def r0_to_dl1(
 
                         event.r1.tel[telescope_id].waveform *= ~bad_waveform
                         r1_dl1_calibrator_for_muon_rings(event)
-                        image = dl1_tel.image*(~bad_pixels)
+                        # since ctapipe 0.17,  the calibrator overwrites the full dl1 container
+                        # instead of overwriting the image in the existing container
+                        # so we need to get the image again
+                        image = event.dl1.tel[telescope_id].image * (~bad_pixels)
 
                         # Check again: with the extractor for muon rings (most likely GlobalPeakWindowSum)
                         # perhaps the event is no longer promising (e.g. if it has a large time evolution)
@@ -743,6 +778,11 @@ def r0_to_dl1(
         muon_output_filename = Path(dir, name)
         table = Table(muon_parameters)
         table.write(muon_output_filename, format='fits', overwrite=True)
+        
+        # close the interleaved output file and write metadata
+        if interleaved_writer is not None:
+            interleaved_writer.finish()
+
 
 
 def add_disp_to_parameters_table(dl1_file, table_path, focal):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from setuptools import setup, find_packages
 import os
@@ -40,25 +39,25 @@ setup(
     use_scm_version={"write_to": os.path.join("lstchain", "_version.py")},
     packages=find_packages(exclude="lstchain._dev_version"),
     install_requires=[
-        'astropy~=4.2',
-        'bokeh~=1.0',
-        'ctapipe~=0.12.0',
-        'ctapipe_io_lst~=0.18.2',
+        'astropy~=5.0',
+        'bokeh~=2.0',
+        'ctapipe~=0.19.2',
+        'ctapipe_io_lst~=0.21.0',
         'ctaplot~=0.6.2',
         'eventio>=1.9.1,<2.0.0a0',  # at least 1.1.1, but not 2
-        'gammapy~=0.19.0',
+        'gammapy~=1.1',
         'h5py',
         'iminuit>=2',
         'joblib~=1.2.0',
-        'matplotlib~=3.5',
+        'matplotlib~=3.7',
         'numba',
-        'numpy<1.22.0a0',
+        'numpy',
         'pandas',
         'protobuf~=3.20.0',
-        'pyirf==0.7',
+        'pyirf~=0.8.0',
         'scipy>=1.8',
         'seaborn',
-        'scikit-learn~=1.0',
+        'scikit-learn~=1.2',
         'tables',
         'toml',
         'pymongo',

@@ -206,9 +206,10 @@ def read_counters(date_path, run_number):
     -------
     dict: reference counters and timestamps
     """
-    pattern = date_path / f"LST-1.*.Run{run_number:05d}.0000*.fits.fz"
+    pattern = date_path / f"LST-1.1.Run{run_number:05d}.0000*.fits.fz"
     try:
-        f = MultiFiles(glob(str(pattern)))
+        path = glob(str(pattern))[0]
+        f = MultiFiles(path, all_streams=True, all_subruns=False)
         first_event = next(f)
 
         if first_event.event_id != 1:
@@ -250,7 +251,7 @@ def read_counters(date_path, run_number):
         )
 
     except Exception as err:
-        log.error(f"Files {pattern} have error: {err}")
+        log.exception(f"Files {pattern} have error: {err}")
 
         return dict(
             ucts_timestamp=-1,
@@ -305,7 +306,7 @@ def main():
     run_summary.add_column(n_subruns, name="n_subruns", index=1)
     run_summary.add_column(run_types, name="run_type", index=2)
     run_summary.write(
-        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=","
+        args.output_dir / f"RunSummary_{args.date}.ecsv", format="ascii.ecsv", delimiter=",",
     )
 
 

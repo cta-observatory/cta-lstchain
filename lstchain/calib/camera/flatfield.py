@@ -7,8 +7,8 @@ from astropy.stats import sigma_clipped_stats
 
 from ctapipe.core.traits import  List, Path, Int
 from ctapipe.image.extractor import ImageExtractor
+from ctapipe.calib.camera.flatfield import FlatFieldCalculator
 
-from lstchain.ctapipe_compat import FlatFieldCalculator
 from lstchain.calib.camera.time_sampling_correction import TimeSamplingCorrection
 from lstchain.calib.camera.utils import check_outlier_mask
 
@@ -134,14 +134,16 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         charge = 0
         peak_pos = 0
         if self.extractor:
-            charge, peak_pos = self.extractor(waveforms, self.tel_id, no_gain_selection)
+            broken_pixels = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
+            dl1 = self.extractor(waveforms, self.tel_id, no_gain_selection, broken_pixels=broken_pixels)
+            charge = dl1.image
+            peak_pos = dl1.peak_time
 
         # shift the time if time shift is already defined
         # (e.g. drs4 waveform time shifts for LST)
         time_shift = event.calibration.tel[self.tel_id].dl1.time_shift
         if time_shift is not None:
                 peak_pos -= time_shift
-
 
         return charge, peak_pos
 
@@ -165,9 +167,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
         if self.num_events_seen == self.sample_size:
             self.num_events_seen = 0
 
-        pixel_mask = np.logical_or(
-            event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels,
-            event.mon.tel[self.tel_id].pixel_status.flatfield_failing_pixels)
+        pixel_mask = event.mon.tel[self.tel_id].pixel_status.hardware_failing_pixels
 
         # time
         self.trigger_time = event.trigger.tel[self.tel_id].time
@@ -296,7 +296,7 @@ class FlasherFlatFieldCalculator(FlatFieldCalculator):
                                              pixel_median > self.time_cut_outliers[1])
 
         return {
-            'sample_time': (time_start +(trigger_time - time_start) / 2).unix*u.s,
+            'sample_time': (time_start + (trigger_time - time_start) / 2).unix * u.s,
             'sample_time_min': time_start.unix*u.s,
             'sample_time_max': trigger_time.unix*u.s,
             'time_mean': np.ma.getdata(pixel_mean)*u.ns,

@@ -30,7 +30,7 @@ from lstchain.image.muon import (
     tag_pix_thr,
 )
 from lstchain.io.io import dl1_params_lstcam_key, dl1_images_lstcam_key
-from lstchain.visualization import plot_calib
+from lstchain.io import read_calibration_file
 
 parser = argparse.ArgumentParser()
 
@@ -93,8 +93,8 @@ def main():
     output_parameters = create_muon_table()
 
     if args.calib_file is not None:
-        plot_calib.read_file(args.calib_file)
-        bad_pixels = plot_calib.calib_data.unusable_pixels[0]
+        calibration = read_calibration_file(args.calib_file)
+        bad_pixels = calibration.calibration.unusable_pixels[0]
         print(f"Found a total of {np.sum(bad_pixels)} bad pixels.")
 
     # image = pd.read_hdf(args.input_file, key = dl1_image_lstcam_key)

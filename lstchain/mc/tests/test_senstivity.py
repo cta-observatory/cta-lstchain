@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+
+import astropy.units as u
 from lstchain.io.io import dl2_params_lstcam_key
 
 from lstchain.mc.sensitivity import (
@@ -20,12 +22,12 @@ from lstchain.mc.sensitivity import (
 def test_read_sim_par(simulated_dl1_file):
     par = read_sim_par(simulated_dl1_file)
 
-    assert np.isclose(par['emin'].to_value(), 0.003)
-    assert np.isclose(par['emax'].to_value(), 330.0)
+    assert u.isclose(par['emin'], 0.1 * u.TeV)
+    assert u.isclose(par['emax'], 5.0 * u.TeV)
     assert np.isclose(par['sp_idx'], -2.0)
-    assert np.isclose(par['sim_ev'], 400000)
-    assert np.isclose(par['area_sim'].to_value(), 2.82743339e+11)
-    assert np.isclose(par['cone'].to_value(), 10.0)
+    assert np.isclose(par['sim_ev'], 100)
+    assert u.isclose(par['area_sim'], np.pi * (250*u.m)**2)
+    assert u.isclose(par['cone'], 2 * u.deg)
 
 
 def test_process_mc(simulated_dl2_file):

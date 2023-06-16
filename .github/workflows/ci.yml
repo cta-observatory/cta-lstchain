@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: pyflakes
         run: |
@@ -35,12 +35,12 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
 
     strategy:
       matrix:
-        python-version: [3.8]
-        ctapipe-version: [v0.12.0]
+        python-version: ["3.9", "3.10", "3.11"]
+        ctapipe-version: ["v0.19.2"]
 
     steps:
       - uses: actions/checkout@v3
@@ -68,13 +68,16 @@ jobs:
         run: |
           python --version
           echo "Installing additional pip packages"
-          # we install ctapipe using pip to be able to select any commit, e.g. the current master
-          pip install \
-            "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION" \
-            pytest-cov 'coverage!=6.3.0' pytest-xdist
 
           echo "pip install -e ."
           pip install -e .
+
+          pip install pytest-cov 'coverage!=6.3.0' pytest-xdist
+          # we install ctapipe using pip to be able to select any commit, e.g. the current master
+          pip install "git+https://github.com/cta-observatory/ctapipe@$CTAPIPE_VERSION"
+
+          which pip
+          pip freeze
 
       - name: Download test data
         env:
@@ -103,7 +106,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install doc dependencies
         run: |

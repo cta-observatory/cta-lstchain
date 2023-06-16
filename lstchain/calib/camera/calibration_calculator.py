@@ -4,9 +4,7 @@ Component for the estimation of the calibration coefficients  events
 
 import numpy as np
 import h5py
-from lstchain.ctapipe_compat import Component
-from ctapipe.core import traits
-from ctapipe.core.traits import  Float, Path, List, Bool
+from ctapipe.core import Component, traits
 from lstchain.calib.camera.flatfield import FlatFieldCalculator
 from lstchain.calib.camera.pedestals import PedestalCalculator
 from ctapipe.containers import EventType
@@ -38,15 +36,14 @@ class CalibrationCalculator(Component):
 
     """
 
-    systematic_correction_path = Path(
+    systematic_correction_path = traits.Path(
         default_value=None,
         allow_none=True,
         exists=True, directory_ok=False,
         help='Path to systematic correction file ',
     ).tag(config=True)
 
-
-    squared_excess_noise_factor = Float(
+    squared_excess_noise_factor = traits.Float(
         1.222,
         help='Excess noise factor squared: 1+ Var(gain)/Mean(Gain)**2'
     ).tag(config=True)
@@ -60,24 +57,24 @@ class CalibrationCalculator(Component):
         FlatFieldCalculator,
         default_value='FlasherFlatFieldCalculator'
     )
-    
-    npe_median_cut_outliers = List(
+
+    npe_median_cut_outliers = traits.List(
         [-5, 5],
         help='Interval (number of std) of accepted number of pe in FF events around camera median value'
     ).tag(config=True)
-    
-    use_scaled_low_gain = Bool(
+
+    use_scaled_low_gain = traits.Bool(
         default_value=False,
         help=(
             'If true, low gain calibration coefficients are scaled from high gain coefficients'
         )
     ).tag(config=True)
-    
-    HG_LG_ratio = Float(
+
+    HG_LG_ratio = traits.Float(
         17.4,
         help='HG/LG ratio applied if use_scaled_low_gain is True'
     ).tag(config=True)
-    
+
     classes = (
         [FlatFieldCalculator, PedestalCalculator]
         + traits.classes_with_traits(FlatFieldCalculator)
@@ -198,10 +195,10 @@ class LSTCalibrationCalculator(CalibrationCalculator):
 
         # find signal median of good pixels over the camera (FF factor=<npe>/npe)
         masked_npe = np.ma.array(n_pe, mask=unusable_pixels)
-        npe_signal_median = np.ma.median(masked_npe, axis=1)
+        npe_median = np.ma.median(masked_npe, axis=1)
 
         # flat-fielded calibration coefficients
-        numerator = npe_signal_median[:,np.newaxis]
+        numerator = npe_median[:,np.newaxis]
         denominator = signal
         calib_data.dc_to_pe = np.divide(numerator, denominator, out=np.zeros_like(denominator), where=denominator != 0)
 
@@ -211,10 +208,12 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         calib_data.pedestal_per_sample = ped_data.charge_median / self.pedestal.extractor.window_width.tel[self.tel_id]
 
         # define unusables on number of estimated pe
-        npe_deviation =  calib_data.n_pe - npe_signal_median[:,np.newaxis]
+        npe_deviation =  calib_data.n_pe - npe_median[:,np.newaxis]
+
+        # cut on the base of pe statistical uncertanty (neglect the 7% spread due to detection QE)
         npe_outliers = (
-            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * npe_signal_median[:,np.newaxis],
-                          npe_deviation > self.npe_median_cut_outliers[1] * npe_signal_median[:,np.newaxis]))
+            np.logical_or(npe_deviation < self.npe_median_cut_outliers[0] * np.sqrt(npe_median)[:,np.newaxis],
+                          npe_deviation > self.npe_median_cut_outliers[1] * np.sqrt(npe_median)[:,np.newaxis]))
 
         # calibration unusable pixels are an OR of all masks
         calib_data.unusable_pixels = np.logical_or(unusable_pixels, npe_outliers)
@@ -234,9 +233,8 @@ class LSTCalibrationCalculator(CalibrationCalculator):
         # in the case FF intensity is not sufficiently high, better to scale low gain calibration from high gain results
         if self.use_scaled_low_gain:
             calib_data.unusable_pixels[constants.LOW_GAIN] = calib_data.unusable_pixels[constants.HIGH_GAIN]
-            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.HG_LG_ratio
+            calib_data.dc_to_pe[constants.LOW_GAIN] = calib_data.dc_to_pe[constants.HIGH_GAIN] * self.hg_lg_ratio
             
-        
         # eliminate inf values id any (still necessary?)
         calib_data.dc_to_pe[np.isinf(calib_data.dc_to_pe)] = 0
 
