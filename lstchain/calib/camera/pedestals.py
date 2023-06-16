@@ -38,13 +38,13 @@ class PedestalIntegrator(PedestalCalculator):
 
      """
     charge_median_cut_outliers = List(
-        [-3, 3],
+        [-4, 4],
         help='Interval (number of std) of accepted charge values around camera median value'
     ).tag(config=True)
 
     charge_std_cut_outliers = List(
-        [-3, 3],
-        help='Interval (number of std) of accepted charge standard deviation around camera median value'
+        [1/3, 3],
+        help='Interval (factor of median over pixels of std over events) of accepted charge standard deviation',
     ).tag(config=True)
 
     time_sampling_correction_path = Path(
