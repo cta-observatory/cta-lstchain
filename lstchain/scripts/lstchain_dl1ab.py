@@ -329,6 +329,9 @@ def main():
                 for p in parameters_to_update:
                     params[ii][p] = u.Quantity(dl1_container[p]).value
 
+                if not args.no_image:
+                    image_table[ii]['image'] = image
+
                 if image_mask_save:
                     image_mask[ii] = signal_pixels
 
