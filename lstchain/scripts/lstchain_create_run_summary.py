@@ -182,7 +182,7 @@ def type_of_run(date_path, run_number, counters, n_events=500):
         else:
             run_type = "ERROR"
 
-    except (AttributeError, ValueError, IOError, IndexError) as err:
+    except Exception as err:
         log.error(f"File {filename} has error: {err!r}")
 
         run_type = "ERROR"
