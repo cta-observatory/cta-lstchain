@@ -118,10 +118,10 @@ def main():
         transition_charge = imconfig["transition_charge"]
         extra_noise_in_bright_pixels = imconfig["extra_noise_in_bright_pixels"]
         smeared_light_fraction = imconfig["smeared_light_fraction"]
-        if (increase_nsb or increase_psf) and args.no_image is False:
-            log.info("NOTE: Using the image_modifier options means images will "
-                     "not be saved.")
-            args.no_image = True
+        # if (increase_nsb or increase_psf) and args.no_image is False:
+        #     log.info("NOTE: Using the image_modifier options means images will "
+        #              "not be saved.")
+        #     args.no_image = True
 
     if is_simulation:
         args.pedestal_cleaning = False
